@@ -1,0 +1,32 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.VC.db
+*.opendb
+
+# CMake
+out/
+build/
+CMakeUserPresets.json
+
+# vcpkg manifest installation
+vcpkg_installed/
+
+# Editors
+.vscode/
+.idea/
+
+# Build and runtime output
+*.obj
+*.pdb
+*.ilk
+*.exe
+*.dll
+*.lib
+*.exp
+*.log
+
+# Operating systems
+.DS_Store
+Thumbs.db
