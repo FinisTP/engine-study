@@ -1,0 +1,15 @@
+{
+  "dependencies": [
+    "catch2",
+    "glm",
+    {
+      "name": "sdl3",
+      "features": [
+        "vulkan"
+      ]
+    },
+    "spdlog",
+    "volk",
+    "vulkan-memory-allocator"
+  ]
+}
