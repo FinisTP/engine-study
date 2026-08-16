@@ -1,94 +1,79 @@
 #include <umbra/platform/Platform.hpp>
-
 #include <string>
-
 #include <SDL3/SDL.h>
-
 #include <umbra/diagnostics/Log.hpp>
 
 namespace umbra::platform
 {
-    bool Initialize()
-    {
-        if (!SDL_Init(SDL_INIT_VIDEO))
-        {
-            diagnostics::Error(
-                std::string{"SDL initialization failed: "} + SDL_GetError());
+	bool Initialize()
+	{
+		if (!SDL_Init(SDL_INIT_VIDEO))
+		{
+			diagnostics::Error(std::string{ "SDL initialization failed: " } + SDL_GetError());
+			return false;
+		}
 
-            return false;
-        }
+		diagnostics::Info("Platform initialized.");
+		return true;
+	}
 
-        diagnostics::Info("Platform initialized.");
-        return true;
-    }
+	void Shutdown()
+	{
+		SDL_Quit();
+		diagnostics::Info("Platform shut down.");
+	}
 
-    void Shutdown()
-    {
-        SDL_Quit();
-        diagnostics::Info("Platform shut down.");
-    }
+	Window::~Window()
+	{
+		Destroy();
+	}
 
-    Window::~Window()
-    {
-        Destroy();
-    }
+	bool Window::Create(std::string_view title, int width, int height)
+	{
+		const std::string windowTitle{ title };
 
-    bool Window::Create(
-        std::string_view title,
-        int width,
-        int height)
-    {
-        const std::string windowTitle{title};
+		window_ = SDL_CreateWindow(windowTitle.c_str(), width, height, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
 
-        window_ = SDL_CreateWindow(
-            windowTitle.c_str(),
-            width,
-            height,
-            SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
+		if (window_ == nullptr)
+		{
+			diagnostics::Error(std::string{ "Window creation failed: " } + SDL_GetError());
+			return false;
+		}
 
-        if (window_ == nullptr)
-        {
-            diagnostics::Error(
-                std::string{"Window creation failed: "} + SDL_GetError());
+		diagnostics::Info("Window created.");
+		return true;
+	}
 
-            return false;
-        }
+	bool Window::PollCloseRequested()
+	{
+		SDL_Event event{};
 
-        diagnostics::Info("Window created.");
-        return true;
-    }
+		while (SDL_PollEvent(&event))
+		{
+			if (event.type == SDL_EVENT_QUIT)
+			{
+				return true;
+			}
 
-    bool Window::PollCloseRequested()
-    {
-        SDL_Event event{};
+			if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE)
+			{
+				return true;
+			}
+		}
 
-        while (SDL_PollEvent(&event))
-        {
-            if (event.type == SDL_EVENT_QUIT)
-            {
-                return true;
-            }
+		return false;
+	}
 
-            if (event.type == SDL_EVENT_KEY_DOWN &&
-                event.key.key == SDLK_ESCAPE)
-            {
-                return true;
-            }
-        }
+	void Window::Destroy()
+	{
+		if (window_ == nullptr)
+		{
+			return;
+		}
 
-        return false;
-    }
+		SDL_DestroyWindow(window_);
+		window_ = nullptr;
 
-    void Window::Destroy()
-    {
-        if (window_ == nullptr)
-        {
-            return;
-        }
-
-        SDL_DestroyWindow(window_);
-        window_ = nullptr;
-
-        diagnostics::Info("Window destroyed.");
-    }
+		diagnostics::Info("Window destroyed.");
+	}
 }

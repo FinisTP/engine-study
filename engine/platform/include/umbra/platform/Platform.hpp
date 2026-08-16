@@ -6,28 +6,25 @@ struct SDL_Window;
 
 namespace umbra::platform
 {
-    bool Initialize();
-    void Shutdown();
+	bool Initialize();
+	void Shutdown();
 
-    class Window final
-    {
-    public:
-        Window() = default;
-        ~Window();
+	class Window final
+	{
+	public:
+		Window() = default;
+		~Window();
 
-        Window(const Window&) = delete;
-        Window& operator=(const Window&) = delete;
+		Window(const Window&) = delete;
+		Window& operator=(const Window&) = delete;
 
-        [[nodiscard]] bool Create(
-            std::string_view title,
-            int width,
-            int height);
+		[[nodiscard]] bool Create(std::string_view title, int width, int height);
 
-        [[nodiscard]] bool PollCloseRequested();
+		[[nodiscard]] bool PollCloseRequested();
 
-        void Destroy();
+		void Destroy();
 
-    private:
-        SDL_Window* window_ = nullptr;
-    };
+	private:
+		SDL_Window* window_ = nullptr;
+	};
 }

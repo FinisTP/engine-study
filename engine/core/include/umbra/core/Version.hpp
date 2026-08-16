@@ -4,5 +4,5 @@
 
 namespace umbra::core
 {
-    [[nodiscard]] std::string_view Version() noexcept;
+	[[nodiscard]] std::string_view Version() noexcept;
 }
