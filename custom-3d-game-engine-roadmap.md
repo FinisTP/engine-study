@@ -20,6 +20,120 @@ The initial platform pair should be **Windows x64 + Android ARM64**. Keep the ar
 
 This gives you low-level access where learning and optimization matter, while avoiding spending years rebuilding windowing, font rasterization, image decoding, and production collision detection before a game exists.
 
+## Current implementation status (2026-08-16)
+
+Umbra has completed its first **Windows x64 bootstrap smoke test**. The toolchain, dependency restoration, modular CMake target graph, SDL3 window, logging wrapper, and first automated test are working. This is a verified subset of Phase 1 rather than completion of the full Foundation phase.
+
+### Confirmed project decisions
+
+| Area | Current decision |
+|---|---|
+| Development host | Windows 11 x64 |
+| Primary IDE | Visual Studio Community 2026, opening the repository directly as a CMake folder project |
+| Language | C++20 |
+| Primary Windows compiler | MSVC 19.51.36256, native x64 host and target |
+| Verification compiler | Clang/clang-cl 22.1.3, x64 |
+| Build tools | CMake 4.3.1-msvc1 + Ninja 1.13.2, using `Ninja Multi-Config` |
+| Dependency management | vcpkg manifest mode, `x64-windows`, pinned registry baseline |
+| First desktop target | Windows x64 |
+| First mobile target | Android `arm64-v8a`, minimum API 28; not yet configured |
+| Graphics direction | Vulkan on Windows first, Android afterward |
+
+`CMakePresets.json` currently provides shared MSVC and Clang configure presets, MSVC Debug/Release build presets, a Clang Debug build preset, and an MSVC Debug test preset. The Windows preset declares `architecture.value = "x64"` with `strategy = "external"`, allowing Visual Studio to prepare the native x64 environment while command-line builds continue to use an x64 Developer shell.
+
+### Verified dependency baseline
+
+| Package | Resolved version | Current use |
+|---|---:|---|
+| Catch2 | 3.15.3 | Active in `UmbraCoreTests` |
+| fmt | 12.2.0#1 | Transitive dependency of spdlog |
+| GLM | 1.0.3 | Installed; deliberately deferred until math/render work needs it |
+| SDL3 | 3.4.14 with `core` and `vulkan` | Active in `UmbraPlatform` |
+| spdlog | 1.17.0#1 with `core`, `tz-offset`, and `fmt` | Active behind the Umbra Diagnostics API |
+| Volk | 1.4.357.0 | Installed; deferred to the Render/RHI module |
+| Vulkan Headers | 1.4.357.0 | Installed transitively; deferred to Render/RHI |
+| Vulkan Memory Allocator | 3.4.0 | Installed; deferred until Vulkan device/resource allocation exists |
+
+The Vulkan SDK and RenderDoc are installed separately from vcpkg. `vkcube.exe` displays correctly, proving that the Windows Vulkan loader, GPU driver, and presentation path work. A saved RenderDoc capture has not yet been recorded as a project checkpoint.
+
+### Active repository architecture
+
+```text
+/apps/umbra                 current Umbra desktop executable and composition root
+/engine/core                foundational module; currently exposes the engine version
+/engine/diagnostics         engine-owned logging API backed privately by spdlog
+/engine/platform            SDL3 initialization, Vulkan-capable window, and close/Escape events
+/tests/core                 Catch2/CTest coverage for Core
+/engine/assets              reserved; not yet part of the CMake target graph
+/engine/editor              reserved; not yet part of the CMake target graph
+/engine/physics             reserved; not yet part of the CMake target graph
+/engine/render              reserved; not yet part of the CMake target graph
+/engine/script              reserved; not yet part of the CMake target graph
+/engine/world               reserved; not yet part of the CMake target graph
+/samples                    reserved for focused executable samples
+/tools                      reserved for offline/headless tools
+```
+
+Only directories reached by `add_subdirectory(...)` participate in configuration or compilation. The reserved folders do not yet define runtime behavior merely because they exist.
+
+Current CMake targets and dependency direction:
+
+```mermaid
+flowchart TD
+    App["Umbra executable"] --> Core["UmbraCore"]
+    App --> Diagnostics["UmbraDiagnostics"]
+    App --> Platform["UmbraPlatform"]
+    Platform --> Diagnostics
+    Platform --> SDL3["SDL3"]
+    Diagnostics --> Spdlog["spdlog"]
+    Tests["UmbraCoreTests"] --> Core
+    Tests --> Catch2["Catch2"]
+```
+
+- `UmbraCore` is a static library with the stable alias `Umbra::Core`. `Version.hpp/.cpp` currently return `0.1.0`.
+- `UmbraDiagnostics` is a static library with the alias `Umbra::Diagnostics`. Its public API exposes initialization, info/error logging, and shutdown without exposing spdlog types.
+- `UmbraPlatform` is a static library with the alias `Umbra::Platform`. It privately uses SDL3 and Diagnostics. Its `Window` owns an `SDL_Window`, prevents copying, destroys the window through RAII, and recognizes window-close and Escape events.
+- `Umbra` is the executable composition root. It initializes Diagnostics and Platform, creates a resizable `SDL_WINDOW_VULKAN` window, polls events, sleeps briefly to avoid unrestricted busy-spinning, and shuts down in reverse ownership order.
+- `UmbraCoreTests` links `Umbra::Core` with `Catch2::Catch2WithMain` and is registered in CTest as `Umbra.Core`.
+
+The `SDL_WINDOW_VULKAN` flag only makes the window eligible for later Vulkan surface creation. Umbra does not yet create a Vulkan instance, device, surface, swapchain, command buffer, or rendered frame.
+
+### Verified bootstrap evidence
+
+The following sequence succeeds from the native x64 developer environment:
+
+```powershell
+cmake --fresh --preset windows-msvc
+cmake --build --preset windows-msvc-debug
+ctest --preset windows-msvc-debug
+& ".\out\build\windows-msvc\apps\umbra\Debug\Umbra.exe"
+```
+
+Verified results:
+
+- CMake selects `Hostx64/x64/cl.exe`, restores the manifest dependencies, and generates Ninja build files.
+- The MSVC Debug build completes and links `Umbra.exe`.
+- CTest runs `Umbra.Core`: 1/1 tests pass.
+- The executable logs Diagnostics initialization, Umbra `0.1.0`, Platform initialization, window creation, window destruction, Platform shutdown, and Diagnostics shutdown in the expected order.
+- The window opens, remains responsive, and closes through Escape or the native close action.
+
+CMake's failed probes for `pthread_create` are expected on Windows; `Found Threads: TRUE` confirms that CMake selected the supported Windows threading implementation.
+
+### Foundation work still required
+
+Before declaring Phase 1 complete, Umbra still needs:
+
+- an engine-owned monotonic clock and clamped frame delta;
+- a fixed-timestep accumulator with a deterministic unit test;
+- an input snapshot with explicit pressed/held/released semantics instead of handling only close/Escape directly;
+- resize, focus, suspend/resume, and quit lifecycle events with deterministic ownership;
+- a defined failure/assertion path and basic crash information;
+- MSVC and Clang warning policies plus an AddressSanitizer configuration;
+- continuous integration that configures, builds, and tests a clean checkout;
+- at least one RenderDoc capture once Umbra itself submits Vulkan work.
+
+The immediate next implementation slice is therefore **the remainder of Phase 1: Clock + fixed engine loop + input/lifecycle contracts**. After those exit tests pass, Phase 2 begins with Vulkan validation, instance/device selection, SDL surface creation, swapchain lifecycle, and a captured triangle.
+
 ## How established engines are structured
 
 Large engines are rarely designed completely and then implemented. They usually grow with one or more games: a platform layer and loop appear first, rendering and resource management follow, game-specific systems reveal reusable abstractions, and editors/pipelines are added to reduce iteration cost. Their mature architectures show three recurring ideas:
@@ -44,7 +158,8 @@ flowchart TD
 Suggested repository layout:
 
 ```text
-/engine/core          IDs, containers, memory, logging, time
+/engine/core          IDs, foundational types, math/time utilities, memory primitives
+/engine/diagnostics   logging, assertions, crash reporting, profiling hooks
 /engine/platform      window, input, filesystem, threads
 /engine/render        RHI, renderer, materials, lighting
 /engine/assets        import, build, cache, resource manager
@@ -52,7 +167,7 @@ Suggested repository layout:
 /engine/physics       public API + Jolt adapter
 /engine/script        native ABI + .NET host
 /engine/editor        editor services and panels
-/apps/game            shipping game executable
+/apps/umbra           current runtime bootstrap; later the shipping game executable
 /apps/editor          editor executable
 /tools/assetc         headless asset compiler
 /tests                unit, integration, replay tests
@@ -115,7 +230,7 @@ These are primitive building blocks, not an engine assembled from another engine
 | C# hosting | `nethost` + `hostfxr` | Official native .NET hosting path | ABI, object lifetime, bindings, exception policy |
 | C# compiling | Roslyn | Compiler APIs can produce IL and diagnostics programmatically | Build orchestration, reload/migration protocol |
 | Profiling | Tracy | CPU, GPU, allocation, lock, and frame profiling | Engine zones, counters, budgets, performance tests |
-| Logging | fmt + spdlog, or a tiny wrapper | Avoids rebuilding formatting and sinks | Categories, crash ring buffer, structured fields |
+| Logging | spdlog behind an Umbra-owned Diagnostics API; fmt currently arrives transitively | Avoids rebuilding formatting and sinks without leaking third-party types | Categories, crash ring buffer, structured fields |
 | Tests | Catch2 or GoogleTest | Mature unit-test runner | Deterministic fixtures, golden images, replay tests |
 
 SDL documents its supported platforms in [SDL3 platform support](https://wiki.libsdl.org/SDL3/README-platforms). The official [Khronos Vulkan tutorial](https://docs.vulkan.org/tutorial/latest/00_Introduction.html) explicitly covers Windows, Linux, and Android and notes MoltenVK for Apple platforms. VMA provides allocation algorithms and heap budgets; see its [documentation](https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/) and [budget API](https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/statistics.html).
@@ -271,7 +386,7 @@ Required diagnostics:
 - on-screen CPU/GPU frame graph and memory budget;
 - Tracy instrumentation;
 - RenderDoc captures for rendering bugs;
-- AddressSanitizer and UndefinedBehaviorSanitizer builds; ThreadSanitizer after jobs appear;
+- AddressSanitizer builds on supported MSVC/Clang targets; UndefinedBehaviorSanitizer and, after jobs appear, ThreadSanitizer on supporting Clang platforms rather than as MSVC requirements;
 - deterministic input recording/replay;
 - headless unit and asset-import tests;
 - golden-image tests with tolerances for stable reference scenes.
@@ -301,6 +416,8 @@ Every one of these can become a focused learning branch after the small game exi
 4. **Interactive sandbox:** simple world, Jolt bodies/debug draw, input-controlled capsule, asset reload, and captured performance counters.
 
 Only after these checkpoints should the editor and C# host become primary work. That ordering ensures scripts and tools sit on a stable runtime instead of defining it accidentally.
+
+Current checkpoint status: the Bootstrap's CMake presets, native x64 MSVC build, Clang preset, SDL window/event smoke path, Diagnostics wrapper, and first Catch2/CTest test are complete. The monotonic clock, fixed loop, input/lifecycle contracts, failure path, sanitizer preset, and CI remain before Checkpoint 1 is complete.
 
 ## Research and validation backlog
 

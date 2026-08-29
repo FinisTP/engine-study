@@ -6,6 +6,7 @@ target_sources(
     UmbraCoreTests
     PRIVATE
         VersionTests.cpp
+        FrameClockTests.cpp
 )
 
 target_compile_features(UmbraCoreTests PRIVATE cxx_std_20)
