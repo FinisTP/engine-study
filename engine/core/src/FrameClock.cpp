@@ -27,15 +27,15 @@ namespace umbra::core
         {
             deltaTime_ = currentTime - lastTickTime_;
         }
-        deltaTime_ = std::min(deltaTime_, std::chrono::duration<double>(maxDeltaTimeSeconds_));
-        deltaTime_ = std::max(deltaTime_, std::chrono::duration<double>::zero());
+        deltaTime_ = std::min(deltaTime_, Duration(maxDeltaTimeSeconds_));
+        deltaTime_ = std::max(deltaTime_, Duration::zero());
         lastTickTime_ = currentTime;
     }
 
     void FrameClock::ResetClock() noexcept
     {
         lastTickTime_ = timeSource_();
-        deltaTime_ = std::chrono::duration<double>::zero();
+        deltaTime_ = Duration::zero();
         isFirstTick_ = true;
     }
 
