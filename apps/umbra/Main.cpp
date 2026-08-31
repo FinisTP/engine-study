@@ -6,15 +6,21 @@
 #include <umbra/core/FrameClock.hpp>
 #include <umbra/core/FixedStepAccumulator.hpp>
 #include <umbra/diagnostics/Log.hpp>
+
 #include <umbra/platform/Platform.hpp>
+#include <umbra/platform/Input.hpp>
+#include <umbra/platform/EventPump.hpp>
+#include <umbra/platform/Window.hpp>
+#include <umbra/platform/ApplicationEvents.hpp>
 
 int main()
 {
 	umbra::diagnostics::Initialize();
+	umbra::platform::Platform platform;
 
 	umbra::diagnostics::Info(std::string{"Starting Umbra "} + std::string{umbra::core::Version()});
 
-	if (!umbra::platform::Initialize())
+	if (!platform.Initialize())
 	{
 		umbra::diagnostics::Shutdown();
 		return 1;
@@ -25,17 +31,48 @@ int main()
 
 		if (!window.Create("Umbra", 1280, 720))
 		{
-			umbra::platform::Shutdown();
+			platform.Shutdown();
 			umbra::diagnostics::Shutdown();
 			return 1;
 		}
 
 		umbra::core::FrameClock clock;
 		umbra::core::FixedStepAccumulator accumulator(1.0 / 60.0); // Fixed step of 1/60 seconds
+		umbra::platform::Input input;
+		umbra::platform::ApplicationEvents applicationEvents;
+		umbra::platform::EventPump eventPump;
 
-		while (!window.PollCloseRequested())
+		while (true)
 		{
-			std::this_thread::sleep_for(std::chrono::milliseconds{1});
+			input.BeginFrame();
+			applicationEvents.BeginFrame();
+			eventPump.PumpEvents(input, applicationEvents);
+
+			if (applicationEvents.IsEventRequested(umbra::platform::ApplicationEventType::Quit) ||
+				applicationEvents.IsEventRequested(umbra::platform::ApplicationEventType::WindowClose) ||
+				input.IsKeyPressed(umbra::platform::InputKey::Escape))
+			{
+				break;
+			}
+
+			if (applicationEvents.IsEventRequested(umbra::platform::ApplicationEventType::WindowResize))
+			{
+				const int newWidth = applicationEvents.GetWindowWidth();
+				const int newHeight = applicationEvents.GetWindowHeight();
+				window.Resize(newWidth, newHeight);
+			}
+
+			if (applicationEvents.IsEventRequested(umbra::platform::ApplicationEventType::WindowFocusGained))
+			{
+				// Handle window focus gained event
+				umbra::diagnostics::Info("Window focus gained.");
+			}
+
+			if (applicationEvents.IsEventRequested(umbra::platform::ApplicationEventType::WindowFocusLost))
+			{
+				// Handle window focus lost event
+				umbra::diagnostics::Info("Window focus lost.");
+			}
 
 			clock.Tick();
 			const double deltaTime = clock.GetDeltaTimeSeconds();
@@ -48,10 +85,12 @@ int main()
 
 			const double interpolationFactor = accumulator.GetInterpolationFactor();
 			// rendering loop
+
+			std::this_thread::sleep_for(std::chrono::milliseconds{1});
 		}
 	}
 
-	umbra::platform::Shutdown();
+	platform.Shutdown();
 	umbra::diagnostics::Shutdown();
 
 	return 0;
