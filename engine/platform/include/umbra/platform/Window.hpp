@@ -22,6 +22,7 @@ namespace umbra::platform
         [[nodiscard]] bool Resize(int width, int height);
         [[nodiscard]] int GetWidth() const noexcept { return width_; }
         [[nodiscard]] int GetHeight() const noexcept { return height_; }
+        void UpdateSizeFromEvent(int width, int height);
 
     private:
         SDL_Window *window_ = nullptr;

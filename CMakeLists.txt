@@ -17,4 +17,5 @@ include(CTest)
 
 if(BUILD_TESTING)
     add_subdirectory(tests/core)
+    add_subdirectory(tests/platform)
 endif()

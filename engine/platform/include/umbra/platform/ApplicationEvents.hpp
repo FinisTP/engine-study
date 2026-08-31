@@ -13,6 +13,9 @@ namespace umbra::platform
         WindowResize,
         WindowFocusGained,
         WindowFocusLost,
+        WindowSuspended,
+        WindowResumed,
+        Terminated,
         Count
     };
 
@@ -31,6 +34,9 @@ namespace umbra::platform
         void RequestWindowResize(int width, int height) noexcept;
         void RequestWindowFocusGained() noexcept;
         void RequestWindowFocusLost() noexcept;
+        void RequestWindowSuspended() noexcept;
+        void RequestWindowResumed() noexcept;
+        void RequestTerminated() noexcept;
 
         void BeginFrame() noexcept;
         [[nodiscard]] bool IsEventRequested(ApplicationEventType eventType) const noexcept;

@@ -81,4 +81,18 @@ namespace umbra::platform
         diagnostics::Info("Window resized to " + std::to_string(width) + "x" + std::to_string(height) + ".");
         return true;
     }
+
+    void Window::UpdateSizeFromEvent(int width, int height)
+    {
+        if (width <= 0 || height <= 0)
+        {
+            diagnostics::Error("Cannot update window size from event: Dimensions must be positive.");
+            return;
+        }
+
+        width_ = width;
+        height_ = height;
+
+        diagnostics::Info("Window size updated from event to " + std::to_string(width) + "x" + std::to_string(height) + ".");
+    }
 }

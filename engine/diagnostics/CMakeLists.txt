@@ -7,11 +7,13 @@ target_sources(
     UmbraDiagnostics
     PRIVATE
         src/Log.cpp
+        src/CrashHandler.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
         FILES
             include/umbra/diagnostics/Log.hpp
+            include/umbra/diagnostics/CrashHandler.hpp
 )
 
 target_compile_features(UmbraDiagnostics PUBLIC cxx_std_20)

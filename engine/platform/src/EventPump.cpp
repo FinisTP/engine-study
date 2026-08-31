@@ -76,6 +76,18 @@ namespace umbra::platform
                 applicationEvents.RequestWindowFocusLost();
                 input.ClearKeyStates();
                 break;
+            case SDL_EVENT_WILL_ENTER_BACKGROUND:
+            case SDL_EVENT_DID_ENTER_BACKGROUND:
+                applicationEvents.RequestWindowSuspended();
+                input.ClearKeyStates();
+                break;
+            case SDL_EVENT_WILL_ENTER_FOREGROUND:
+            case SDL_EVENT_DID_ENTER_FOREGROUND:
+                applicationEvents.RequestWindowResumed();
+                break;
+            case SDL_EVENT_TERMINATING:
+                applicationEvents.RequestTerminated();
+                break;
             case SDL_EVENT_KEY_DOWN:
                 input.HandleKeyDown(TranslateKeyCode(event.key.scancode), event.key.repeat);
                 break;

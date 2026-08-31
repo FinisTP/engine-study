@@ -34,6 +34,21 @@ namespace umbra::platform
         Request(ApplicationEventType::WindowFocusLost);
     }
 
+    void ApplicationEvents::RequestWindowSuspended() noexcept
+    {
+        Request(ApplicationEventType::WindowSuspended);
+    }
+
+    void ApplicationEvents::RequestWindowResumed() noexcept
+    {
+        Request(ApplicationEventType::WindowResumed);
+    }
+
+    void ApplicationEvents::RequestTerminated() noexcept
+    {
+        Request(ApplicationEventType::Terminated);
+    }
+
     void ApplicationEvents::BeginFrame() noexcept
     {
         requestedEvents_.fill(false);
