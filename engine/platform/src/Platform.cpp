@@ -5,6 +5,11 @@
 
 namespace umbra::platform
 {
+	Platform::~Platform() noexcept
+	{
+		Shutdown();
+	}
+
 	bool Platform::Initialize()
 	{
 		if (isInitialized_)
@@ -19,21 +24,27 @@ namespace umbra::platform
 			return false;
 		}
 
-		diagnostics::Info("Platform initialized.");
 		isInitialized_ = true;
+		diagnostics::Info("Platform initialized.");
 		return true;
 	}
 
-	void Platform::Shutdown()
+	void Platform::Shutdown() noexcept
 	{
-		if (isShutdown_)
+		if (!isInitialized_)
 		{
-			diagnostics::Error("Platform is already shut down.");
 			return;
 		}
 
 		SDL_Quit();
-		isShutdown_ = true;
-		diagnostics::Info("Platform shut down.");
+		isInitialized_ = false;
+
+		try
+		{
+			diagnostics::Info("Platform shut down.");
+		}
+		catch (...)
+		{
+		}
 	}
 }

@@ -28,3 +28,36 @@ TEST_CASE("Application resize events retain their dimensions")
 	REQUIRE(events.GetWindowWidth() == 1600);
 	REQUIRE(events.GetWindowHeight() == 900);
 }
+
+TEST_CASE("Application suspension events are frame-local")
+{
+	umbra::platform::ApplicationEvents events;
+
+	events.RequestWindowSuspended();
+	REQUIRE(events.IsEventRequested(umbra::platform::ApplicationEventType::WindowSuspended));
+
+	events.BeginFrame();
+	REQUIRE_FALSE(events.IsEventRequested(umbra::platform::ApplicationEventType::WindowSuspended));
+}
+
+TEST_CASE("Application resume events are frame-local")
+{
+	umbra::platform::ApplicationEvents events;
+
+	events.RequestWindowResumed();
+	REQUIRE(events.IsEventRequested(umbra::platform::ApplicationEventType::WindowResumed));
+
+	events.BeginFrame();
+	REQUIRE_FALSE(events.IsEventRequested(umbra::platform::ApplicationEventType::WindowResumed));
+}
+
+TEST_CASE("Application termination events are frame-local")
+{
+	umbra::platform::ApplicationEvents events;
+
+	events.RequestTerminated();
+	REQUIRE(events.IsEventRequested(umbra::platform::ApplicationEventType::Terminated));
+
+	events.BeginFrame();
+	REQUIRE_FALSE(events.IsEventRequested(umbra::platform::ApplicationEventType::Terminated));
+}

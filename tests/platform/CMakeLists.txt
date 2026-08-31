@@ -7,6 +7,7 @@ target_sources(
     PRIVATE
         ApplicationEventsTests.cpp
         InputTests.cpp
+        PlatformLifetimeTests.cpp
         WindowTests.cpp
 )
 

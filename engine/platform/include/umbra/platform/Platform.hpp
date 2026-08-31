@@ -1,17 +1,22 @@
 #pragma once
 
-#include <string_view>
-
 namespace umbra::platform
 {
 	class Platform
 	{
 	private:
 		bool isInitialized_ = false;
-		bool isShutdown_ = false;
 
 	public:
+		Platform() = default;
+		~Platform() noexcept;
+
+		Platform(const Platform &) = delete;
+		Platform &operator=(const Platform &) = delete;
+		Platform(Platform &&) = delete;
+		Platform &operator=(Platform &&) = delete;
+
 		bool Initialize();
-		void Shutdown();
+		void Shutdown() noexcept;
 	};
 }

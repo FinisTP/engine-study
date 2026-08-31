@@ -7,6 +7,7 @@ target_sources(
     PRIVATE
         VersionTests.cpp
         FrameClockTests.cpp
+        FixedStepAccumulatorTests.cpp
 )
 
 target_compile_features(UmbraCoreTests PRIVATE cxx_std_20)
