@@ -2,6 +2,11 @@
 
 #include <memory>
 
+namespace umbra::platform
+{
+    class Window;
+}
+
 namespace umbra::render
 {
     class Renderer final
@@ -15,7 +20,7 @@ namespace umbra::render
         Renderer(Renderer &&) = delete;
         Renderer &operator=(Renderer &&) = delete;
 
-        [[nodiscard]] bool Initialize();
+        [[nodiscard]] bool Initialize(platform::Window &window);
         void Shutdown() noexcept;
 
     private:

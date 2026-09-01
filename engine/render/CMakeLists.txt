@@ -8,8 +8,13 @@ target_sources(
     UmbraRender
     PRIVATE
         src/Renderer.cpp
+        src/PhysicalDeviceSelection.hpp
         src/VulkanInstance.cpp
         src/VulkanInstance.hpp
+        src/VulkanPhysicalDevice.cpp
+        src/VulkanPhysicalDevice.hpp
+        src/VulkanSurface.cpp
+        src/VulkanSurface.hpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
@@ -23,6 +28,7 @@ target_link_libraries(
     UmbraRender
     PRIVATE
         Umbra::Diagnostics
+        Umbra::Platform
         SDL3::SDL3
         volk::volk
         Umbra::Warnings

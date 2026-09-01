@@ -43,7 +43,7 @@ int RunApplication()
 				}
 
 				umbra::render::Renderer renderer;
-				if (!renderer.Initialize())
+				if (!renderer.Initialize(window))
 				{
 					return 1;
 				}

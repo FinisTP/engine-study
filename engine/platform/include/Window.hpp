@@ -23,6 +23,11 @@ namespace umbra::platform
         [[nodiscard]] int GetWidth() const noexcept { return width_; }
         [[nodiscard]] int GetHeight() const noexcept { return height_; }
         void UpdateSizeFromEvent(int width, int height);
+        
+        [[nodiscard]] SDL_Window *GetNativeHandle() const noexcept
+        {
+            return window_;
+        }
 
     private:
         SDL_Window *window_ = nullptr;

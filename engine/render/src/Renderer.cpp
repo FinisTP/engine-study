@@ -1,8 +1,11 @@
 #include <Renderer.hpp>
 
 #include "VulkanInstance.hpp"
+#include "VulkanPhysicalDevice.hpp"
+#include "VulkanSurface.hpp"
 
 #include <Log.hpp>
+#include <Window.hpp>
 
 #include <memory>
 #include <utility>
@@ -12,6 +15,8 @@ namespace umbra::render
     struct Renderer::Implementation final
     {
         VulkanInstance instance;
+        VulkanSurface surface;
+        VulkanPhysicalDevice physicalDevice;
     };
 
     Renderer::Renderer() = default;
@@ -21,7 +26,7 @@ namespace umbra::render
         Shutdown();
     }
 
-    bool Renderer::Initialize()
+    bool Renderer::Initialize(platform::Window &window)
     {
         if (implementation_ != nullptr)
         {
@@ -31,6 +36,17 @@ namespace umbra::render
 
         auto implementation = std::make_unique<Implementation>();
         if (!implementation->instance.Initialize())
+        {
+            return false;
+        }
+
+        if (!implementation->surface.Initialize(window.GetNativeHandle(), implementation->instance.GetHandle()))
+        {
+            return false;
+        }
+
+        if (!implementation->physicalDevice.Initialize(
+                implementation->instance.GetHandle(), implementation->surface.GetHandle()))
         {
             return false;
         }
