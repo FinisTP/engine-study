@@ -14,6 +14,7 @@ target_link_libraries(
         Umbra::Core
         Umbra::Diagnostics
         Umbra::Platform
+        Umbra::Render
         Umbra::Warnings
         Umbra::Sanitizers
 )

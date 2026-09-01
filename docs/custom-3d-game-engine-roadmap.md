@@ -447,3 +447,21 @@ Version 1 is successful when:
 - every later optimization starts from a reproducible benchmark.
 
 That is already a real engine. Features beyond it should be driven by the second game or by a narrowly defined engine experiment.
+
+```mermaid
+flowchart TD
+    Main["Umbra composition root"] --> Core["Clock + fixed-step timing"]
+    Main --> Lifecycle["ApplicationEvents"]
+    Main --> Input["Input snapshot"]
+    Main --> Window["Window"]
+    Main --> Diagnostics["Logging / assertions / fatal errors"]
+
+    EventPump["SDL EventPump adapter"] --> Lifecycle
+    EventPump --> Input
+    EventPump --> SDL["SDL3"]
+
+    Window --> SDL
+    Platform["Platform lifetime"] --> SDL
+
+    Diagnostics --> Crash["Crash/termination handler"]
+```

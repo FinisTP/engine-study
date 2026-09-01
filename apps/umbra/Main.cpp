@@ -13,6 +13,7 @@
 #include <Window.hpp>
 #include <ApplicationEvents.hpp>
 #include <CrashHandler.hpp>
+#include <Renderer.hpp>
 
 int RunApplication()
 {
@@ -38,6 +39,12 @@ int RunApplication()
 				if (!window.Create("Umbra", 1280, 720))
 				{
 					platform.Shutdown();
+					return 1;
+				}
+
+				umbra::render::Renderer renderer;
+				if (!renderer.Initialize())
+				{
 					return 1;
 				}
 

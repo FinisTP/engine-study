@@ -15,6 +15,7 @@ include(UmbraSanitizers)
 add_subdirectory(engine/core)
 add_subdirectory(engine/diagnostics)
 add_subdirectory(engine/platform)
+add_subdirectory(engine/render)
 add_subdirectory(apps/umbra)
 
 include(CTest)
