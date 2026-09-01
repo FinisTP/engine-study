@@ -3,7 +3,7 @@
 
 #include <chrono>
 
-#include <umbra/core/FrameClock.hpp>
+#include <FrameClock.hpp>
 
 namespace
 {

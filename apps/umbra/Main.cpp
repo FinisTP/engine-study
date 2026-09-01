@@ -2,17 +2,17 @@
 #include <string>
 #include <thread>
 
-#include <umbra/core/Version.hpp>
-#include <umbra/core/FrameClock.hpp>
-#include <umbra/core/FixedStepAccumulator.hpp>
-#include <umbra/diagnostics/Log.hpp>
+#include <Version.hpp>
+#include <FrameClock.hpp>
+#include <FixedStepAccumulator.hpp>
+#include <Log.hpp>
 
-#include <umbra/platform/Platform.hpp>
-#include <umbra/platform/Input.hpp>
-#include <umbra/platform/EventPump.hpp>
-#include <umbra/platform/Window.hpp>
-#include <umbra/platform/ApplicationEvents.hpp>
-#include <umbra/diagnostics/CrashHandler.hpp>
+#include <Platform.hpp>
+#include <Input.hpp>
+#include <EventPump.hpp>
+#include <Window.hpp>
+#include <ApplicationEvents.hpp>
+#include <CrashHandler.hpp>
 
 int RunApplication()
 {

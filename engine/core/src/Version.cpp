@@ -1,4 +1,4 @@
-#include <umbra/core/Version.hpp>
+#include <Version.hpp>
 
 namespace umbra::core
 {

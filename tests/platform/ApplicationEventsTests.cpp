@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <umbra/platform/ApplicationEvents.hpp>
+#include <ApplicationEvents.hpp>
 
 TEST_CASE("Application events are frame-local")
 {

@@ -1,4 +1,4 @@
-#include <umbra/core/FixedStepAccumulator.hpp>
+#include <FixedStepAccumulator.hpp>
 #include <algorithm>
 #include <utility>
 

@@ -1,5 +1,5 @@
-#include <umbra/diagnostics/CrashHandler.hpp>
-#include <umbra/diagnostics/Log.hpp>
+#include <CrashHandler.hpp>
+#include <Log.hpp>
 #include <atomic>
 #include <cstdio>
 #include <cstdlib>

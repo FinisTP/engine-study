@@ -1,5 +1,5 @@
-#include <umbra/platform/Input.hpp>
-#include <umbra/diagnostics/Log.hpp>
+#include <Input.hpp>
+#include <Log.hpp>
 #include <string>
 
 namespace umbra::platform

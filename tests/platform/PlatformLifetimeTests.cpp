@@ -2,7 +2,7 @@
 
 #include <type_traits>
 
-#include <umbra/platform/Platform.hpp>
+#include <Platform.hpp>
 
 static_assert(std::is_destructible_v<umbra::platform::Platform>);
 static_assert(std::is_nothrow_destructible_v<umbra::platform::Platform>);

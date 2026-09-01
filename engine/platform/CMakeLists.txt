@@ -15,11 +15,11 @@ target_sources(
         FILE_SET HEADERS
         BASE_DIRS include
         FILES
-            include/umbra/platform/Platform.hpp
-            include/umbra/platform/Input.hpp
-            include/umbra/platform/EventPump.hpp
-            include/umbra/platform/ApplicationEvents.hpp
-            include/umbra/platform/Window.hpp
+            include/Platform.hpp
+            include/Input.hpp
+            include/EventPump.hpp
+            include/ApplicationEvents.hpp
+            include/Window.hpp
 )
 
 target_compile_features(UmbraPlatform PUBLIC cxx_std_20)

@@ -3,7 +3,7 @@
 #include <source_location>
 #include <string>
 
-#include <umbra/diagnostics/Log.hpp>
+#include <Log.hpp>
 
 namespace
 {

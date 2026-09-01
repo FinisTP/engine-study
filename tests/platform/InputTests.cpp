@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <umbra/platform/Input.hpp>
+#include <Input.hpp>
 
 TEST_CASE("Input tracks key transitions across frames")
 {

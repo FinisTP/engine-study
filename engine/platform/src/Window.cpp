@@ -1,7 +1,7 @@
-#include <umbra/platform/Window.hpp>
+#include <Window.hpp>
 #include <string>
 #include <SDL3/SDL.h>
-#include <umbra/diagnostics/Log.hpp>
+#include <Log.hpp>
 
 namespace umbra::platform
 {

@@ -1,6 +1,6 @@
 #pragma once
-#include <umbra/platform/Input.hpp>
-#include <umbra/platform/ApplicationEvents.hpp>
+#include <Input.hpp>
+#include <ApplicationEvents.hpp>
 
 namespace umbra::platform
 {

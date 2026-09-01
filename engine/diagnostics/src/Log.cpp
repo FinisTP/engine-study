@@ -1,4 +1,4 @@
-#include <umbra/diagnostics/Log.hpp>
+#include <Log.hpp>
 
 #include <spdlog/spdlog.h>
 #include <cstdlib>

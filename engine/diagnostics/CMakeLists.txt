@@ -12,8 +12,8 @@ target_sources(
         FILE_SET HEADERS
         BASE_DIRS include
         FILES
-            include/umbra/diagnostics/Log.hpp
-            include/umbra/diagnostics/CrashHandler.hpp
+            include/Log.hpp
+            include/CrashHandler.hpp
 )
 
 target_compile_features(UmbraDiagnostics PUBLIC cxx_std_20)
