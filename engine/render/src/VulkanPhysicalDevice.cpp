@@ -4,6 +4,8 @@
 
 #include <Log.hpp>
 
+#include <vulkan/vk_enum_string_helper.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <string>
@@ -80,18 +82,18 @@ namespace
                                    { return std::string_view{extension.extensionName} == VK_KHR_SWAPCHAIN_EXTENSION_NAME; });
     }
 
+    // A surface format is a combination of a color format and a color space that can be used for rendering to a surface.
     [[nodiscard]] bool HasSurfaceFormats(VkPhysicalDevice device, VkSurfaceKHR surface)
     {
         std::uint32_t formatCount = 0;
-        return vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr) == VK_SUCCESS &&
-               formatCount > 0;
+        return vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr) == VK_SUCCESS && formatCount > 0;
     }
 
+    // A present mode defines how images are presented to the surface, such as immediate, mailbox, or FIFO.
     [[nodiscard]] bool HasPresentModes(VkPhysicalDevice device, VkSurfaceKHR surface)
     {
         std::uint32_t presentModeCount = 0;
-        return vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr) == VK_SUCCESS &&
-               presentModeCount > 0;
+        return vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr) == VK_SUCCESS && presentModeCount > 0;
     }
 
     [[nodiscard]] EvaluatedDevice EvaluateDevice(VkPhysicalDevice device, VkSurfaceKHR surface)
@@ -104,10 +106,8 @@ namespace
 
         evaluated.candidate.deviceType = evaluated.properties.deviceType;
         evaluated.candidate.maxImageDimension2D = evaluated.properties.limits.maxImageDimension2D;
-        evaluated.candidate.hasGraphicsQueue =
-            evaluated.queueFamilies.graphics != QueueFamilyIndices::invalidIndex;
-        evaluated.candidate.hasPresentQueue =
-            evaluated.queueFamilies.present != QueueFamilyIndices::invalidIndex;
+        evaluated.candidate.hasGraphicsQueue = evaluated.queueFamilies.graphics != QueueFamilyIndices::invalidIndex;
+        evaluated.candidate.hasPresentQueue = evaluated.queueFamilies.present != QueueFamilyIndices::invalidIndex;
         evaluated.candidate.hasSwapchainExtension = HasSwapchainExtension(device);
 
         if (evaluated.candidate.hasSwapchainExtension)
@@ -183,7 +183,8 @@ namespace umbra::render
         {
             diagnostics::Error(
                 "Failed to enumerate Vulkan physical devices. VkResult=" +
-                std::to_string(static_cast<int>(enumerateResult)) + ".");
+                std::string{string_VkResult(enumerateResult)} + " (" +
+                std::to_string(static_cast<int>(enumerateResult)) + ").");
             return false;
         }
 

@@ -55,8 +55,7 @@ namespace umbra::render::detail
         return typeScore + candidate.maxImageDimension2D;
     }
 
-    [[nodiscard]] constexpr std::optional<std::size_t> SelectBestCandidate(
-        std::span<const PhysicalDeviceCandidate> candidates) noexcept
+    [[nodiscard]] constexpr std::optional<std::size_t> SelectBestCandidate(std::span<const PhysicalDeviceCandidate> candidates) noexcept
     {
         std::optional<std::size_t> selectedIndex;
         std::uint64_t selectedScore = 0;

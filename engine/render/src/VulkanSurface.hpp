@@ -6,6 +6,7 @@ struct SDL_Window;
 
 namespace umbra::render
 {
+    // A vulkan surface allows Vulkan to present rendered images to the screen.
     class VulkanSurface final
     {
     public:

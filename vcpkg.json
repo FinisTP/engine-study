@@ -2,6 +2,7 @@
   "dependencies": [
     "catch2",
     "glm",
+    "imgui",
     {
       "name": "sdl3",
       "features": [
@@ -10,6 +11,7 @@
     },
     "spdlog",
     "volk",
+    "tinygltf",
     "vulkan-memory-allocator"
   ]
 }

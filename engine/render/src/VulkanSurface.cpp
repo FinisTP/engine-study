@@ -53,5 +53,4 @@ namespace umbra::render
         instance_ = VK_NULL_HANDLE;
         diagnostics::Info("Vulkan surface shut down.");
     }
-
 }

@@ -4,6 +4,7 @@
 
 namespace umbra::platform
 {
+    class Input;
     class Window;
 }
 
@@ -21,6 +22,8 @@ namespace umbra::render
         Renderer &operator=(Renderer &&) = delete;
 
         [[nodiscard]] bool Initialize(platform::Window &window);
+        [[nodiscard]] bool RenderFrame(const platform::Input &input, float deltaSeconds);
+        void RequestResize() noexcept;
         void Shutdown() noexcept;
 
     private:

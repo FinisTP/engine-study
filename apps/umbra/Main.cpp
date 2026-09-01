@@ -68,6 +68,7 @@ int RunApplication()
 						const int newWidth = applicationEvents.GetWindowWidth();
 						const int newHeight = applicationEvents.GetWindowHeight();
 						window.UpdateSizeFromEvent(newWidth, newHeight);
+						renderer.RequestResize();
 					}
 
 					if (applicationEvents.IsEventRequested(umbra::platform::ApplicationEventType::WindowFocusGained))
@@ -123,7 +124,11 @@ int RunApplication()
 
 					const double interpolationFactor = accumulator.GetInterpolationFactor();
 					(void)interpolationFactor;
-					// rendering loop
+
+					if (!renderer.RenderFrame(input, static_cast<float>(deltaTime)))
+					{
+						return 1;
+					}
 
 					std::this_thread::sleep_for(std::chrono::milliseconds{1});
 				}
