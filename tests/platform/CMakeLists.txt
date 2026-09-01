@@ -17,8 +17,12 @@ target_link_libraries(
     UmbraPlatformTests
     PRIVATE
         Umbra::Platform
+        Umbra::Warnings
+        Umbra::Sanitizers
         Catch2::Catch2WithMain
 )
+
+umbra_copy_asan_runtime(UmbraPlatformTests)
 
 add_test(
     NAME Umbra.Platform

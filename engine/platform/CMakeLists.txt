@@ -29,4 +29,6 @@ target_link_libraries(
     PRIVATE
         Umbra::Diagnostics
         SDL3::SDL3
+        Umbra::Warnings
+        Umbra::Sanitizers
 )

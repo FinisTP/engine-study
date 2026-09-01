@@ -115,6 +115,7 @@ int RunApplication()
 					}
 
 					const double interpolationFactor = accumulator.GetInterpolationFactor();
+					(void)interpolationFactor;
 					// rendering loop
 
 					std::this_thread::sleep_for(std::chrono::milliseconds{1});

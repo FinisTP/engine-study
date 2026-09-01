@@ -9,12 +9,6 @@
 
 namespace
 {
-	void ReportFailure(std::string_view category, std::string_view expression, std::string_view message, std::source_location location)
-	{
-		spdlog::critical("[{}] Expression: {}. Message: {}. Location: {}:{} in function {}",
-					  category, expression, message, location.file_name(), location.line(), location.function_name());
-	}
-
 	void BreakIntoDebuggerIfAttached() noexcept
 	{
 #if defined(_WIN32)
@@ -73,7 +67,7 @@ namespace umbra::diagnostics
 	{
 		try
 		{
-			ReportFailure("Fatal", "Fatal error", message, location);
+			Critical(detail::FormatFailure("Fatal", "Fatal error", message, location));
 			Flush();
 			BreakIntoDebuggerIfAttached();
 		}
@@ -85,11 +79,23 @@ namespace umbra::diagnostics
 
 	namespace detail
 	{
+		std::string FormatFailure(std::string_view category, std::string_view expression, std::string_view message, std::source_location location)
+		{
+			std::string result;
+			result.reserve(category.size() + expression.size() + message.size() + 128);
+			result.append("[").append(category).append("] Expression: ").append(expression);
+			result.append(". Message: ").append(message);
+			result.append(". Location: ").append(location.file_name());
+			result.append(":").append(std::to_string(location.line()));
+			result.append(" in function ").append(location.function_name());
+			return result;
+		}
+
 		[[noreturn]] void AssertionFailed(std::string_view expression, std::string_view message, std::source_location location) noexcept
 		{
 			try
 			{
-				ReportFailure("Assertion", expression, message, location);
+				Critical(FormatFailure("Assertion", expression, message, location));
 				Flush();
 				BreakIntoDebuggerIfAttached();
 			}

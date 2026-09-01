@@ -8,6 +8,10 @@ project(
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(UmbraWarnings)
+include(UmbraSanitizers)
+
 add_subdirectory(engine/core)
 add_subdirectory(engine/diagnostics)
 add_subdirectory(engine/platform)
@@ -18,4 +22,5 @@ include(CTest)
 if(BUILD_TESTING)
     add_subdirectory(tests/core)
     add_subdirectory(tests/platform)
+    add_subdirectory(tests/diagnostics)
 endif()

@@ -30,6 +30,15 @@
       "cacheVariables": {
         "CMAKE_CXX_COMPILER": "clang-cl"
       }
+    },
+    {
+      "name": "windows-msvc-asan",
+      "displayName": "Windows x64 - MSVC AddressSanitizer",
+      "inherits": "windows-msvc",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "UMBRA_ENABLE_ASAN": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -47,12 +56,39 @@
       "name": "windows-clang-debug",
       "configurePreset": "windows-clang",
       "configuration": "Debug"
+    },
+    {
+      "name": "windows-msvc-asan-debug",
+      "configurePreset": "windows-msvc-asan",
+      "configuration": "Debug"
     }
   ],
   "testPresets": [
     {
       "name": "windows-msvc-debug",
       "configurePreset": "windows-msvc",
+      "configuration": "Debug",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "stopOnFailure": true
+      }
+    },
+    {
+      "name": "windows-clang-debug",
+      "configurePreset": "windows-clang",
+      "configuration": "Debug",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "stopOnFailure": true
+      }
+    },
+    {
+      "name": "windows-msvc-asan-debug",
+      "configurePreset": "windows-msvc-asan",
       "configuration": "Debug",
       "output": {
         "outputOnFailure": true

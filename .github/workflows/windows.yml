@@ -1,0 +1,57 @@
+name: Windows
+
+on:
+  push:
+  pull_request:
+
+env:
+  VCPKG_ROOT: E:\Projects\vcpkg
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.name }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: MSVC Debug
+            configure: windows-msvc
+            build: windows-msvc-debug
+            test: windows-msvc-debug
+          - name: clang-cl Debug
+            configure: windows-clang
+            build: windows-clang-debug
+            test: windows-clang-debug
+          - name: MSVC AddressSanitizer
+            configure: windows-msvc-asan
+            build: windows-msvc-asan-debug
+            test: windows-msvc-asan-debug
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Configure Visual Studio environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: amd64
+
+      - name: Verify tools
+        shell: pwsh
+        run: |
+          cmake --version
+          ninja --version
+          if ('${{ matrix.configure }}' -eq 'windows-clang') { clang-cl --version }
+
+      - name: Configure
+        shell: pwsh
+        run: cmake --fresh --preset ${{ matrix.configure }}
+
+      - name: Build
+        shell: pwsh
+        run: cmake --build --preset ${{ matrix.build }}
+
+      - name: Test
+        shell: pwsh
+        run: ctest --preset ${{ matrix.test }}

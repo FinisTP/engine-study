@@ -1,20 +1,8 @@
 #pragma once
 
-#include <string_view>
 #include <source_location>
-
-#if !defined(NDEBUG)
-#define UMBRA_ASSERT(expression, message)                                                                       \
-    do                                                                                                          \
-    {                                                                                                           \
-        if (!(expression))                                                                                      \
-        {                                                                                                       \
-            ::umbra::diagnostics::detail::AssertionFailed(#expression, message, std::source_location::current()); \
-        }                                                                                                       \
-    } while (false)
-#else
-#define UMBRA_ASSERT(expression, message) ((void)0)
-#endif
+#include <string>
+#include <string_view>
 
 namespace umbra::diagnostics
 {
@@ -30,6 +18,20 @@ namespace umbra::diagnostics
 
     namespace detail
     {
+        [[nodiscard]] std::string FormatFailure(std::string_view category, std::string_view expression, std::string_view message, std::source_location location);
         [[noreturn]] void AssertionFailed(std::string_view expression, std::string_view message, std::source_location location) noexcept;
     }
 }
+
+#if !defined(NDEBUG)
+#define UMBRA_ASSERT(expression, message)                                                                         \
+    do                                                                                                            \
+    {                                                                                                             \
+        if (!(expression))                                                                                        \
+        {                                                                                                         \
+            ::umbra::diagnostics::detail::AssertionFailed(#expression, message, std::source_location::current()); \
+        }                                                                                                         \
+    } while (false)
+#else
+#define UMBRA_ASSERT(expression, message) ((void)0)
+#endif

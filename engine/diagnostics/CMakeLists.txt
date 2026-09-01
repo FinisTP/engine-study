@@ -22,4 +22,6 @@ target_link_libraries(
     UmbraDiagnostics
     PRIVATE
         spdlog::spdlog
+        Umbra::Warnings
+        Umbra::Sanitizers
 )

@@ -14,4 +14,8 @@ target_link_libraries(
         Umbra::Core
         Umbra::Diagnostics
         Umbra::Platform
+        Umbra::Warnings
+        Umbra::Sanitizers
 )
+
+umbra_copy_asan_runtime(Umbra)

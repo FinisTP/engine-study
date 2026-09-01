@@ -16,8 +16,12 @@ target_link_libraries(
     UmbraCoreTests
     PRIVATE
         Umbra::Core
+        Umbra::Warnings
+        Umbra::Sanitizers
         Catch2::Catch2WithMain
 )
+
+umbra_copy_asan_runtime(UmbraCoreTests)
 
 add_test(
     NAME Umbra.Core

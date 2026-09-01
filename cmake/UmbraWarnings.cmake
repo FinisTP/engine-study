@@ -1,0 +1,12 @@
+add_library(UmbraWarnings INTERFACE)
+add_library(Umbra::Warnings ALIAS UmbraWarnings)
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    target_compile_options(UmbraWarnings INTERFACE /W4 /permissive- /Zc:preprocessor)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+    target_compile_options(UmbraWarnings INTERFACE /W4)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(UmbraWarnings INTERFACE -Wall -Wextra -Wpedantic)
+else()
+    message(WARNING "No centralized warning policy is defined for ${CMAKE_CXX_COMPILER_ID}")
+endif()

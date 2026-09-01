@@ -17,3 +17,17 @@ target_sources(
 )
 
 target_compile_features(UmbraCore PUBLIC cxx_std_20)
+
+target_link_libraries(
+    UmbraCore
+    PRIVATE
+        Umbra::Warnings
+        Umbra::Sanitizers
+)
+
+target_link_libraries(
+    UmbraCore
+    PRIVATE
+        Umbra::Warnings
+        Umbra::Sanitizers
+)
