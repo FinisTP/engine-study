@@ -361,11 +361,11 @@ Each phase ends with a runnable artifact. Do not move forward because an abstrac
 
 Use forward rendering first, then Forward+ or clustered lighting only when the light-count requirement justifies it. Recommended order:
 
-1. unlit triangle and validation layers;
-2. indexed mesh and depth buffer;
-3. texture sampling and mipmaps;
-4. camera and transform hierarchy;
-5. glTF metallic-roughness material;
+1. unlit triangle and validation layers (complete);
+2. indexed mesh, depth buffer, camera, and transforms (complete);
+3. base-color texture sampling, a controlled glTF primitive, resource handles, and diagnostics (complete Phase 2);
+4. mip generation and derived runtime asset processing;
+5. glTF metallic-roughness material support;
 6. linear color, HDR target, tone mapping, and gamma-correct output;
 7. directional light and one shadow map;
 8. point/spot lights and IBL;
@@ -410,14 +410,14 @@ Every one of these can become a focused learning branch after the small game exi
 
 ## First four implementation checkpoints
 
-1. **Bootstrap:** CMake presets for MSVC and Clang, SDL window, event pump, monotonic clock, fixed loop, logging, tests, and CI.
-2. **Render triangle:** Vulkan validation, device/swapchain, command submission, resize handling, colored triangle, and a RenderDoc capture.
-3. **Render scene:** camera, depth, indexed mesh, textures, a single glTF loader, resource handles, and a basic ImGui diagnostics overlay.
-4. **Interactive sandbox:** simple world, Jolt bodies/debug draw, input-controlled capsule, asset reload, and captured performance counters.
+1. **Bootstrap — complete:** CMake presets for MSVC and Clang, SDL window, event pump, monotonic clock, fixed loop, logging, tests, and CI.
+2. **Render triangle — complete:** Vulkan validation, device/swapchain, command submission, resize handling, colored triangle, and a RenderDoc capture.
+3. **Render scene — complete:** camera, depth, indexed mesh, textures, a single glTF loader, resource handles, and a basic ImGui diagnostics overlay.
+4. **Interactive sandbox — next:** simple world, Jolt bodies/debug draw, input-controlled capsule, asset reload, and captured performance counters.
 
 Only after these checkpoints should the editor and C# host become primary work. That ordering ensures scripts and tools sit on a stable runtime instead of defining it accidentally.
 
-Current checkpoint status: the Bootstrap's CMake presets, native x64 MSVC build, Clang preset, SDL window/event smoke path, Diagnostics wrapper, and first Catch2/CTest test are complete. The monotonic clock, fixed loop, input/lifecycle contracts, failure path, sanitizer preset, and CI remain before Checkpoint 1 is complete.
+Current checkpoint status (2026-09-02): Phase 2 and the Render scene checkpoint are complete. Umbra renders a textured indexed glTF primitive with a movable camera, depth testing, HLSL shaders, stable mesh/texture handles, and an ImGui diagnostics overlay. Swapchain recreation treats minimized or otherwise zero-sized surfaces as temporarily unavailable and resumes after restoration. Phase 3, Assets and world, is the next milestone.
 
 ## Research and validation backlog
 

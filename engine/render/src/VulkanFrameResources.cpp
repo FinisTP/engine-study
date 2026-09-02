@@ -24,7 +24,7 @@ namespace
     {
         if (imageIndex >= pipeline.GetFramebuffers().size())
         {
-            umbra::diagnostics::Error("Cannot record triangle: swapchain image index is out of range.");
+            umbra::diagnostics::Error("Cannot record scene: swapchain image index is out of range.");
             return false;
         }
 
@@ -118,7 +118,7 @@ namespace umbra::render
             return false;
         }
 
-        // 2. ALlocate 2 command buffers for rendering frames in flight.
+        // 2. Allocate two command buffers for rendering frames in flight.
         std::array<VkCommandBuffer, framesInFlight> commandBuffers{};
         VkCommandBufferAllocateInfo allocationInfo{};
         allocationInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;

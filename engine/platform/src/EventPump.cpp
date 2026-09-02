@@ -69,6 +69,9 @@ namespace umbra::platform
             case SDL_EVENT_WINDOW_RESIZED:
                 applicationEvents.RequestWindowResize(event.window.data1, event.window.data2);
                 break;
+            case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+                applicationEvents.RequestWindowPixelSizeChanged();
+                break;
             case SDL_EVENT_WINDOW_FOCUS_GAINED:
                 applicationEvents.RequestWindowFocusGained();
                 break;
@@ -76,11 +79,13 @@ namespace umbra::platform
                 applicationEvents.RequestWindowFocusLost();
                 input.ClearKeyStates();
                 break;
+            case SDL_EVENT_WINDOW_MINIMIZED:
             case SDL_EVENT_WILL_ENTER_BACKGROUND:
             case SDL_EVENT_DID_ENTER_BACKGROUND:
                 applicationEvents.RequestWindowSuspended();
                 input.ClearKeyStates();
                 break;
+            case SDL_EVENT_WINDOW_RESTORED:
             case SDL_EVENT_WILL_ENTER_FOREGROUND:
             case SDL_EVENT_DID_ENTER_FOREGROUND:
                 applicationEvents.RequestWindowResumed();

@@ -11,6 +11,7 @@ namespace umbra::platform
         Quit,
         WindowClose,
         WindowResize,
+        WindowPixelSizeChanged,
         WindowFocusGained,
         WindowFocusLost,
         WindowSuspended,
@@ -32,6 +33,7 @@ namespace umbra::platform
         void RequestQuit() noexcept;
         void RequestWindowClose() noexcept;
         void RequestWindowResize(int width, int height) noexcept;
+        void RequestWindowPixelSizeChanged() noexcept;
         void RequestWindowFocusGained() noexcept;
         void RequestWindowFocusLost() noexcept;
         void RequestWindowSuspended() noexcept;

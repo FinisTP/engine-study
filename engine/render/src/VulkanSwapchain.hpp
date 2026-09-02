@@ -10,6 +10,13 @@ struct SDL_Window;
 
 namespace umbra::render
 {
+    enum class SwapchainInitializationResult
+    {
+        Initialized,
+        SurfaceUnavailable,
+        FatalError
+    };
+
     class VulkanSwapchain final
     {
     public:
@@ -21,7 +28,7 @@ namespace umbra::render
         VulkanSwapchain(VulkanSwapchain &&) = delete;
         VulkanSwapchain &operator=(VulkanSwapchain &&) = delete;
 
-        [[nodiscard]] bool Initialize(
+        [[nodiscard]] SwapchainInitializationResult Initialize(
             VkPhysicalDevice physicalDevice,
             VkDevice device,
             VkSurfaceKHR surface,

@@ -71,6 +71,11 @@ int RunApplication()
 						renderer.RequestResize();
 					}
 
+					if (applicationEvents.IsEventRequested(umbra::platform::ApplicationEventType::WindowPixelSizeChanged))
+					{
+						renderer.RequestResize();
+					}
+
 					if (applicationEvents.IsEventRequested(umbra::platform::ApplicationEventType::WindowFocusGained))
 					{
 						// Handle window focus gained event
@@ -96,6 +101,7 @@ int RunApplication()
 						umbra::diagnostics::Info("Window resumed.");
 						clock.ResetClock();
 						accumulator.Reset();
+						renderer.RequestResize();
 						isSuspended = false;
 					}
 

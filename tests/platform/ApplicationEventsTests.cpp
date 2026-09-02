@@ -29,6 +29,17 @@ TEST_CASE("Application resize events retain their dimensions")
 	REQUIRE(events.GetWindowHeight() == 900);
 }
 
+TEST_CASE("Application pixel-size changes are frame-local")
+{
+	umbra::platform::ApplicationEvents events;
+
+	events.RequestWindowPixelSizeChanged();
+	REQUIRE(events.IsEventRequested(umbra::platform::ApplicationEventType::WindowPixelSizeChanged));
+
+	events.BeginFrame();
+	REQUIRE_FALSE(events.IsEventRequested(umbra::platform::ApplicationEventType::WindowPixelSizeChanged));
+}
+
 TEST_CASE("Application suspension events are frame-local")
 {
 	umbra::platform::ApplicationEvents events;

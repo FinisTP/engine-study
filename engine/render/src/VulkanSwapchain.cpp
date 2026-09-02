@@ -13,6 +13,13 @@
 
 namespace
 {
+    enum class ExtentSelectionResult
+    {
+        Selected,
+        SurfaceUnavailable,
+        FatalError
+    };
+
     struct SwapchainSupport final
     {
         VkSurfaceCapabilitiesKHR capabilities{};
@@ -75,12 +82,17 @@ namespace
     }
 
     // An extent represents width and height of the swapchain images.
-    [[nodiscard]] bool ChooseExtent(const VkSurfaceCapabilitiesKHR &capabilities, SDL_Window *window, VkExtent2D &extent)
+    [[nodiscard]] ExtentSelectionResult ChooseExtent(
+        const VkSurfaceCapabilitiesKHR &capabilities,
+        SDL_Window *window,
+        VkExtent2D &extent)
     {
         if (capabilities.currentExtent.width != std::numeric_limits<std::uint32_t>::max())
         {
             extent = capabilities.currentExtent;
-            return extent.width > 0 && extent.height > 0;
+            return extent.width > 0 && extent.height > 0
+                       ? ExtentSelectionResult::Selected
+                       : ExtentSelectionResult::SurfaceUnavailable;
         }
 
         int pixelWidth = 0;
@@ -88,16 +100,16 @@ namespace
         if (!SDL_GetWindowSizeInPixels(window, &pixelWidth, &pixelHeight))
         {
             umbra::diagnostics::Error(std::string{"Failed to query SDL window pixel extent: "} + SDL_GetError());
-            return false;
+            return ExtentSelectionResult::FatalError;
         }
         if (pixelWidth <= 0 || pixelHeight <= 0)
         {
-            return false;
+            return ExtentSelectionResult::SurfaceUnavailable;
         }
 
         extent.width = std::clamp(static_cast<std::uint32_t>(pixelWidth), capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
         extent.height = std::clamp(static_cast<std::uint32_t>(pixelHeight), capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
-        return true;
+        return ExtentSelectionResult::Selected;
     }
 
     [[nodiscard]] VkCompositeAlphaFlagBitsKHR ChooseCompositeAlpha(VkCompositeAlphaFlagsKHR supportedFlags)
@@ -125,7 +137,7 @@ namespace umbra::render
         Shutdown();
     }
 
-    bool VulkanSwapchain::Initialize(
+    SwapchainInitializationResult VulkanSwapchain::Initialize(
         VkPhysicalDevice physicalDevice,
         VkDevice device,
         VkSurfaceKHR surface,
@@ -135,29 +147,33 @@ namespace umbra::render
         if (swapchain_ != VK_NULL_HANDLE)
         {
             diagnostics::Error("Cannot initialize Vulkan swapchain: it is already initialized.");
-            return false;
+            return SwapchainInitializationResult::FatalError;
         }
         if (physicalDevice == VK_NULL_HANDLE || device == VK_NULL_HANDLE ||
             surface == VK_NULL_HANDLE || window == nullptr || !queueFamilies.IsComplete())
         {
             diagnostics::Error("Cannot initialize Vulkan swapchain: required handles are invalid.");
-            return false;
+            return SwapchainInitializationResult::FatalError;
         }
 
         SwapchainSupport support;
         if (!QuerySwapchainSupport(physicalDevice, surface, support))
         {
             diagnostics::Error("Failed to query Vulkan swapchain support.");
-            return false;
+            return SwapchainInitializationResult::FatalError;
         }
 
         const VkSurfaceFormatKHR surfaceFormat = ChooseSurfaceFormat(support.formats);
         const VkPresentModeKHR presentMode = ChoosePresentMode(support.presentModes);
         VkExtent2D selectedExtent{};
-        if (!ChooseExtent(support.capabilities, window, selectedExtent))
+        const ExtentSelectionResult extentResult = ChooseExtent(support.capabilities, window, selectedExtent);
+        if (extentResult == ExtentSelectionResult::SurfaceUnavailable)
         {
-            diagnostics::Error("Cannot create Vulkan swapchain for a zero-sized or invalid window.");
-            return false;
+            return SwapchainInitializationResult::SurfaceUnavailable;
+        }
+        if (extentResult == ExtentSelectionResult::FatalError)
+        {
+            return SwapchainInitializationResult::FatalError;
         }
 
         std::uint32_t imageCount = support.capabilities.minImageCount + 1;
@@ -193,7 +209,7 @@ namespace umbra::render
             diagnostics::Error(
                 "Failed to create Vulkan swapchain. VkResult=" +
                 std::to_string(static_cast<int>(createResult)) + ".");
-            return false;
+            return SwapchainInitializationResult::FatalError;
         }
 
         device_ = device;
@@ -208,7 +224,7 @@ namespace umbra::render
         {
             diagnostics::Error("Failed to query Vulkan swapchain images.");
             Shutdown();
-            return false;
+            return SwapchainInitializationResult::FatalError;
         }
 
         images_.resize(actualImageCount);
@@ -217,7 +233,7 @@ namespace umbra::render
         {
             diagnostics::Error("Failed to retrieve Vulkan swapchain images.");
             Shutdown();
-            return false;
+            return SwapchainInitializationResult::FatalError;
         }
 
         // for each swapchain image, we create an image view
@@ -249,7 +265,7 @@ namespace umbra::render
                     "Failed to create Vulkan swapchain image view. VkResult=" +
                     std::to_string(static_cast<int>(viewResult)) + ".");
                 Shutdown();
-                return false;
+                return SwapchainInitializationResult::FatalError;
             }
             imageViews_.push_back(imageView);
         }
@@ -257,11 +273,12 @@ namespace umbra::render
         diagnostics::Info(
             "Vulkan swapchain initialized with " + std::to_string(images_.size()) +
             " images at " + std::to_string(extent_.width) + "x" + std::to_string(extent_.height) + ".");
-        return true;
+        return SwapchainInitializationResult::Initialized;
     }
 
     void VulkanSwapchain::Shutdown() noexcept
     {
+        const bool wasInitialized = swapchain_ != VK_NULL_HANDLE || !imageViews_.empty();
         if (device_ != VK_NULL_HANDLE)
         {
             for (const VkImageView imageView : imageViews_)
@@ -280,6 +297,9 @@ namespace umbra::render
         imageFormat_ = VK_FORMAT_UNDEFINED;
         extent_ = {};
         device_ = VK_NULL_HANDLE;
-        diagnostics::Info("Vulkan swapchain shut down.");
+        if (wasInitialized)
+        {
+            diagnostics::Info("Vulkan swapchain shut down.");
+        }
     }
 }

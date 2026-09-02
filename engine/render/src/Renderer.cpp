@@ -34,6 +34,20 @@ namespace umbra::render
 {
     struct Renderer::Implementation final
     {
+        enum class PresentationInitializationResult
+        {
+            Initialized,
+            SurfaceUnavailable,
+            FatalError
+        };
+
+        enum class DrawableExtentResult
+        {
+            Available,
+            Unavailable,
+            FatalError
+        };
+
         VulkanInstance instance;
         VulkanSurface surface;
         VulkanPhysicalDevice physicalDevice;
@@ -53,28 +67,36 @@ namespace umbra::render
 
         ~Implementation() { (void)device.WaitIdle(); }
 
-        [[nodiscard]] bool HasDrawableExtent() const
+        [[nodiscard]] DrawableExtentResult QueryDrawableExtent() const
         {
             int width = 0, height = 0;
             if (!SDL_GetWindowSizeInPixels(window->GetNativeHandle(), &width, &height))
             {
                 diagnostics::Error(std::string{"Failed querying drawable extent: "} + SDL_GetError());
-                return false;
+                return DrawableExtentResult::FatalError;
             }
-            return width > 0 && height > 0;
+            return width > 0 && height > 0
+                       ? DrawableExtentResult::Available
+                       : DrawableExtentResult::Unavailable;
         }
 
-        [[nodiscard]] bool InitializePresentationResources()
+        [[nodiscard]] PresentationInitializationResult InitializePresentationResources()
         {
             // first we need swapchain
-            if (!swapchain.Initialize(
-                    physicalDevice.GetHandle(),
-                    device.GetHandle(),
-                    surface.GetHandle(),
-                    physicalDevice.GetQueueFamilyIndices(),
-                    window->GetNativeHandle()))
+            const SwapchainInitializationResult swapchainResult = swapchain.Initialize(
+                physicalDevice.GetHandle(),
+                device.GetHandle(),
+                surface.GetHandle(),
+                physicalDevice.GetQueueFamilyIndices(),
+                window->GetNativeHandle());
+            if (swapchainResult == SwapchainInitializationResult::SurfaceUnavailable)
             {
-                return false;
+                resizeRequested = true;
+                return PresentationInitializationResult::SurfaceUnavailable;
+            }
+            if (swapchainResult == SwapchainInitializationResult::FatalError)
+            {
+                return PresentationInitializationResult::FatalError;
             }
 
             const std::filesystem::path shaderDirectory{UMBRA_SHADER_DIRECTORY};
@@ -86,13 +108,13 @@ namespace umbra::render
                                      shaderDirectory / "Scene.vert.spv",
                                      shaderDirectory / "Scene.frag.spv"))
             {
-                return false;
+                return PresentationInitializationResult::FatalError;
             }
 
             const TextureResource *texture = sceneResources.GetTexture(sceneResources.GetSceneTexture());
             if (texture == nullptr)
             {
-                return false;
+                return PresentationInitializationResult::FatalError;
             }
             if (!frameResources.Initialize(
                     device.GetHandle(),
@@ -102,7 +124,7 @@ namespace umbra::render
                     pipeline.GetDescriptorSetLayout(),
                     *texture))
             {
-                return false;
+                return PresentationInitializationResult::FatalError;
             }
 
             if (!overlay.Initialize(
@@ -118,23 +140,28 @@ namespace umbra::render
                     shaderDirectory / "Overlay.vert.spv",
                     shaderDirectory / "Overlay.frag.spv"))
             {
-                return false;
+                return PresentationInitializationResult::FatalError;
             }
             resizeRequested = false;
-            return true;
+            return PresentationInitializationResult::Initialized;
         }
 
-        [[nodiscard]] bool RecreatePresentationResources()
+        [[nodiscard]] PresentationInitializationResult RecreatePresentationResources()
         {
-            if (!HasDrawableExtent())
+            const DrawableExtentResult drawableExtent = QueryDrawableExtent();
+            if (drawableExtent == DrawableExtentResult::Unavailable)
             {
                 // If the window is minimized, we cannot create a swapchain with zero width or height.
-                return true;
+                return PresentationInitializationResult::SurfaceUnavailable;
+            }
+            if (drawableExtent == DrawableExtentResult::FatalError)
+            {
+                return PresentationInitializationResult::FatalError;
             }
             if (!device.WaitIdle())
             {
                 // If the device is busy, we cannot destroy and recreate the swapchain.
-                return false;
+                return PresentationInitializationResult::FatalError;
             }
 
             // Clear all resources that depend on the swapchain before recreating it.
@@ -247,7 +274,9 @@ namespace umbra::render
         }
 
         implementation->window = &window;
-        if (!implementation->InitializePresentationResources())
+        const Implementation::PresentationInitializationResult presentationResult =
+            implementation->InitializePresentationResources();
+        if (presentationResult == Implementation::PresentationInitializationResult::FatalError)
         {
             return false;
         }
@@ -267,12 +296,13 @@ namespace umbra::render
 
         if (implementation_->resizeRequested)
         {
-            if (!implementation_->RecreatePresentationResources())
+            const Implementation::PresentationInitializationResult recreationResult =
+                implementation_->RecreatePresentationResources();
+            if (recreationResult == Implementation::PresentationInitializationResult::FatalError)
             {
                 return false;
             }
-
-            if (implementation_->resizeRequested)
+            if (recreationResult == Implementation::PresentationInitializationResult::SurfaceUnavailable)
             {
                 return true;
             }

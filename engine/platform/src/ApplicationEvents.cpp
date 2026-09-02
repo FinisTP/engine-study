@@ -24,6 +24,11 @@ namespace umbra::platform
         windowHeight_ = height;
     }
 
+    void ApplicationEvents::RequestWindowPixelSizeChanged() noexcept
+    {
+        Request(ApplicationEventType::WindowPixelSizeChanged);
+    }
+
     void ApplicationEvents::RequestWindowFocusGained() noexcept
     {
         Request(ApplicationEventType::WindowFocusGained);
