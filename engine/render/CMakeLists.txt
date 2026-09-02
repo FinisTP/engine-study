@@ -13,8 +13,15 @@ find_path(
 )
 
 find_program(
-    UMBRA_GLSLC_EXECUTABLE
-    NAMES glslc
+    UMBRA_DXC_EXECUTABLE
+    NAMES dxc
+    HINTS "$ENV{VULKAN_SDK}/Bin"
+    REQUIRED
+)
+
+find_program(
+    UMBRA_SPIRV_VAL_EXECUTABLE
+    NAMES spirv-val
     HINTS "$ENV{VULKAN_SDK}/Bin"
     REQUIRED
 )
@@ -25,37 +32,29 @@ set(UMBRA_FRAGMENT_SHADER "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Scene.frag.spv")
 set(UMBRA_OVERLAY_VERTEX_SHADER "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Overlay.vert.spv")
 set(UMBRA_OVERLAY_FRAGMENT_SHADER "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Overlay.frag.spv")
 
-add_custom_command(
-    OUTPUT "${UMBRA_VERTEX_SHADER}"
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${UMBRA_SHADER_OUTPUT_DIRECTORY}"
-    COMMAND "${UMBRA_GLSLC_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Scene.vert" -o "${UMBRA_VERTEX_SHADER}"
-    DEPENDS shaders/Scene.vert
-    VERBATIM
-)
+function(umbra_compile_hlsl output source profile entry_point)
+    add_custom_command(
+        OUTPUT "${output}"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${UMBRA_SHADER_OUTPUT_DIRECTORY}"
+        COMMAND "${UMBRA_DXC_EXECUTABLE}"
+                -spirv
+                -fspv-target-env=vulkan1.3
+                -fspv-entrypoint-name=main
+                -T "${profile}"
+                -E "${entry_point}"
+                -Fo "${output}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/${source}"
+        COMMAND "${UMBRA_SPIRV_VAL_EXECUTABLE}" --target-env vulkan1.3 "${output}"
+        DEPENDS "${source}"
+        COMMENT "Compiling HLSL ${source}:${entry_point}"
+        VERBATIM
+    )
+endfunction()
 
-add_custom_command(
-    OUTPUT "${UMBRA_FRAGMENT_SHADER}"
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${UMBRA_SHADER_OUTPUT_DIRECTORY}"
-    COMMAND "${UMBRA_GLSLC_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Scene.frag" -o "${UMBRA_FRAGMENT_SHADER}"
-    DEPENDS shaders/Scene.frag
-    VERBATIM
-)
-
-add_custom_command(
-    OUTPUT "${UMBRA_OVERLAY_VERTEX_SHADER}"
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${UMBRA_SHADER_OUTPUT_DIRECTORY}"
-    COMMAND "${UMBRA_GLSLC_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Overlay.vert" -o "${UMBRA_OVERLAY_VERTEX_SHADER}"
-    DEPENDS shaders/Overlay.vert
-    VERBATIM
-)
-
-add_custom_command(
-    OUTPUT "${UMBRA_OVERLAY_FRAGMENT_SHADER}"
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${UMBRA_SHADER_OUTPUT_DIRECTORY}"
-    COMMAND "${UMBRA_GLSLC_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Overlay.frag" -o "${UMBRA_OVERLAY_FRAGMENT_SHADER}"
-    DEPENDS shaders/Overlay.frag
-    VERBATIM
-)
+umbra_compile_hlsl("${UMBRA_VERTEX_SHADER}" shaders/Scene.hlsl vs_6_0 VSMain)
+umbra_compile_hlsl("${UMBRA_FRAGMENT_SHADER}" shaders/Scene.hlsl ps_6_0 PSMain)
+umbra_compile_hlsl("${UMBRA_OVERLAY_VERTEX_SHADER}" shaders/Overlay.hlsl vs_6_0 VSMain)
+umbra_compile_hlsl("${UMBRA_OVERLAY_FRAGMENT_SHADER}" shaders/Overlay.hlsl ps_6_0 PSMain)
 
 add_custom_target(
     UmbraRenderShaders
@@ -87,8 +86,8 @@ target_sources(
         src/VulkanSurface.hpp
         src/VulkanSwapchain.cpp
         src/VulkanSwapchain.hpp
-        src/VulkanTrianglePipeline.cpp
-        src/VulkanTrianglePipeline.hpp
+        src/VulkanVertexPipeline.cpp
+        src/VulkanVertexPipeline.hpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include

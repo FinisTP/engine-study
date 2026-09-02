@@ -11,11 +11,12 @@
 
 namespace
 {
+    // Summary: Records Vulkan commands to render a scene with a single mesh and a diagnostics overlay.
     [[nodiscard]] bool RecordSceneCommands(
         VkCommandBuffer commandBuffer,
         std::uint32_t imageIndex,
         const umbra::render::VulkanSwapchain &swapchain,
-        const umbra::render::VulkanTrianglePipeline &pipeline,
+        const umbra::render::VulkanVertexPipeline &pipeline,
         const umbra::render::MeshResource &mesh,
         VkDescriptorSet descriptorSet,
         umbra::render::DiagnosticsOverlay &overlay,
@@ -57,8 +58,7 @@ namespace
         constexpr VkDeviceSize vertexOffset = 0;
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, &vertexOffset);
         vkCmdBindIndexBuffer(commandBuffer, mesh.indexBuffer.GetHandle(), 0, VK_INDEX_TYPE_UINT32);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(),
-                                0, 1, &descriptorSet, 0, nullptr);
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(), 0, 1, &descriptorSet, 0, nullptr);
         vkCmdDrawIndexed(commandBuffer, mesh.indexCount, 1, 0, 0, 0);
         overlay.Render(commandBuffer, frameIndex);
         vkCmdEndRenderPass(commandBuffer);
@@ -103,6 +103,7 @@ namespace umbra::render
 
         device_ = device;
 
+        // 1. Create a command pool for allocating command buffers for rendering.
         VkCommandPoolCreateInfo poolCreateInfo{};
         poolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         poolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -117,6 +118,7 @@ namespace umbra::render
             return false;
         }
 
+        // 2. ALlocate 2 command buffers for rendering frames in flight.
         std::array<VkCommandBuffer, framesInFlight> commandBuffers{};
         VkCommandBufferAllocateInfo allocationInfo{};
         allocationInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -133,6 +135,9 @@ namespace umbra::render
             return false;
         }
 
+        // 3. Create semaphores and fences for synchronizing rendering of frames in flight.
+        // imageAvailable: signaled when the swapchain image is available for rendering
+        // inFlight: signaled when the frame is finished rendering
         VkSemaphoreCreateInfo semaphoreCreateInfo{};
         semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -158,6 +163,7 @@ namespace umbra::render
             }
         }
 
+        // 4. Create a descriptor pool and allocate per-frame descriptor sets for uniform buffers and textures.
         const std::array poolSizes{
             VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<std::uint32_t>(framesInFlight)},
             VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, static_cast<std::uint32_t>(framesInFlight)}};
@@ -168,8 +174,11 @@ namespace umbra::render
         result = vkCreateDescriptorPool(device_, &descriptorPoolInfo, nullptr, &descriptorPool_);
         if (result != VK_SUCCESS)
         {
-            diagnostics::Error("Failed to create scene descriptor pool."); Shutdown(); return false;
+            diagnostics::Error("Failed to create scene descriptor pool.");
+            Shutdown();
+            return false;
         }
+        // 5. Allocate and update per-frame descriptor sets with uniform buffer and texture information.
         const std::array layouts{descriptorSetLayout, descriptorSetLayout};
         std::array<VkDescriptorSet, framesInFlight> descriptorSets{};
         VkDescriptorSetAllocateInfo descriptorAllocateInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
@@ -179,13 +188,22 @@ namespace umbra::render
         result = vkAllocateDescriptorSets(device_, &descriptorAllocateInfo, descriptorSets.data());
         if (result != VK_SUCCESS)
         {
-            diagnostics::Error("Failed to allocate per-frame descriptor sets."); Shutdown(); return false;
+            diagnostics::Error("Failed to allocate per-frame descriptor sets.");
+            Shutdown();
+            return false;
         }
+
+        // 6. Create and update uniform buffers and descriptor sets for each frame in flight.
+        // For each frame: create SceneUniform buffer, put buffer in descriptor binding 0
+        // and put texture in descriptor binding 1.
         for (std::size_t index = 0; index < frames_.size(); ++index)
         {
             if (!allocator.CreateMappedBuffer(sizeof(SceneUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                               frames_[index].uniformBuffer))
-            { Shutdown(); return false; }
+            {
+                Shutdown();
+                return false;
+            }
             frames_[index].descriptorSet = descriptorSets[index];
             const VkDescriptorBufferInfo bufferInfo{frames_[index].uniformBuffer.GetHandle(), 0, sizeof(SceneUniform)};
             const VkDescriptorImageInfo imageInfo{texture.sampler, texture.image.GetView(),
@@ -198,6 +216,7 @@ namespace umbra::render
             vkUpdateDescriptorSets(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
         }
 
+        // 7. Create semaphores for signaling when rendering of each frame is finished.
         renderFinished_.resize(swapchainImageCount, VK_NULL_HANDLE);
         for (VkSemaphore &semaphore : renderFinished_)
         {
@@ -218,11 +237,12 @@ namespace umbra::render
         return true;
     }
 
+    // one call = draw a single frame, including acquiring a swapchain image, recording command buffer, submitting it, and presenting the image.
     FrameResult VulkanFrameResources::DrawFrame(
         VkQueue graphicsQueue,
         VkQueue presentQueue,
         const VulkanSwapchain &swapchain,
-        const VulkanTrianglePipeline &pipeline,
+        const VulkanVertexPipeline &pipeline,
         const MeshResource &mesh,
         const SceneUniform &uniform,
         DiagnosticsOverlay &overlay)
@@ -234,8 +254,8 @@ namespace umbra::render
         }
 
         Frame &frame = frames_[currentFrame_];
-        VkResult result = vkWaitForFences(
-            device_, 1, &frame.inFlight, VK_TRUE, std::numeric_limits<std::uint64_t>::max());
+        // first we must wait for the current frame to finish rendering before we can reuse its resources.
+        VkResult result = vkWaitForFences(device_, 1, &frame.inFlight, VK_TRUE, std::numeric_limits<std::uint64_t>::max());
         if (result != VK_SUCCESS)
         {
             diagnostics::Error(
@@ -244,6 +264,7 @@ namespace umbra::render
             return FrameResult::FatalError;
         }
 
+        // acquire the next available swapchain image for rendering
         std::uint32_t imageIndex = 0;
         result = vkAcquireNextImageKHR(
             device_,
@@ -270,6 +291,8 @@ namespace umbra::render
             diagnostics::Error("Acquired Vulkan swapchain image index is out of range.");
             return FrameResult::FatalError;
         }
+
+        // if the acquired swapchain image is already in use by another frame, wait for that frame to finish before reusing it.
         if (imagesInFlight_[imageIndex] != VK_NULL_HANDLE)
         {
             result = vkWaitForFences(
@@ -292,6 +315,8 @@ namespace umbra::render
             diagnostics::Error("Failed resetting Vulkan frame resources.");
             return FrameResult::FatalError;
         }
+
+        // update the uniform buffer with the latest scene data for this frame
         std::memcpy(frame.uniformBuffer.GetMappedData(), &uniform, sizeof(uniform));
         frame.uniformBuffer.Flush();
         if (!RecordSceneCommands(frame.commandBuffer, imageIndex, swapchain, pipeline,
@@ -300,6 +325,7 @@ namespace umbra::render
             return FrameResult::FatalError;
         }
 
+        // add to graphic queue for execution, and signal the inFlight fence when rendering is finished.
         constexpr VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -320,6 +346,7 @@ namespace umbra::render
             return FrameResult::FatalError;
         }
 
+        // add to present queue for presentation, and wait for the renderFinished semaphore to ensure rendering is complete before presenting.
         const VkSwapchainKHR swapchainHandle = swapchain.GetHandle();
         VkPresentInfoKHR presentInfo{};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;

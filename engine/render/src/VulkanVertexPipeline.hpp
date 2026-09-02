@@ -8,13 +8,13 @@
 
 namespace umbra::render
 {
-    class VulkanTrianglePipeline final
+    class VulkanVertexPipeline final
     {
     public:
-        VulkanTrianglePipeline() = default;
-        ~VulkanTrianglePipeline();
-        VulkanTrianglePipeline(const VulkanTrianglePipeline &) = delete;
-        VulkanTrianglePipeline &operator=(const VulkanTrianglePipeline &) = delete;
+        VulkanVertexPipeline() = default;
+        ~VulkanVertexPipeline();
+        VulkanVertexPipeline(const VulkanVertexPipeline &) = delete;
+        VulkanVertexPipeline &operator=(const VulkanVertexPipeline &) = delete;
 
         [[nodiscard]] bool Initialize(VkPhysicalDevice physicalDevice, VkDevice device,
             VulkanAllocator &allocator, const VulkanSwapchain &swapchain,

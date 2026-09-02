@@ -15,6 +15,7 @@
 
 namespace umbra::render
 {
+    // Represents a single vertex with position, normal, and texture coordinates.
     struct Vertex final
     {
         glm::vec3 position{};
@@ -22,17 +23,22 @@ namespace umbra::render
         glm::vec2 uv{};
     };
 
+    // Wraps VkBuffer, think of it as GPU memory array
     class GpuBuffer final
     {
     public:
         GpuBuffer() = default;
         ~GpuBuffer();
+        // copy is not allowed because two objects cannot own the same GPU memory, move is allowed to transfer ownership
         GpuBuffer(const GpuBuffer &) = delete;
         GpuBuffer &operator=(const GpuBuffer &) = delete;
         GpuBuffer(GpuBuffer &&other) noexcept;
         GpuBuffer &operator=(GpuBuffer &&other) noexcept;
 
+        // Resets the buffer, releasing its resources.
         void Reset() noexcept;
+
+        // Flushes any pending writes to the GPU. Important for uniform buffer
         void Flush() const noexcept;
         [[nodiscard]] VkBuffer GetHandle() const noexcept { return buffer_; }
         [[nodiscard]] void *GetMappedData() const noexcept { return mappedData_; }
@@ -40,13 +46,15 @@ namespace umbra::render
 
     private:
         friend class VulkanAllocator;
-        VmaAllocator allocator_ = VK_NULL_HANDLE;
-        VkBuffer buffer_ = VK_NULL_HANDLE;
-        VmaAllocation allocation_ = VK_NULL_HANDLE;
-        void *mappedData_ = nullptr;
+        VmaAllocator allocator_ = VK_NULL_HANDLE; // save to destroy the buffer later
+        VkBuffer buffer_ = VK_NULL_HANDLE; // a handle to the GPU buffer object
+        VmaAllocation allocation_ = VK_NULL_HANDLE; // save to destroy the buffer later
+        void *mappedData_ = nullptr; // pointer to CPU-accessible memory mapped to the GPU buffer
         VkDeviceSize size_ = 0;
     };
 
+    // Wraps VkImage and VkImageView, think of it as GPU texture
+    // VkImage is raw pixel data, VkImageView describes how to access that data (like 2D color texture or depth texture)
     class GpuImage final
     {
     public:
@@ -72,6 +80,8 @@ namespace umbra::render
         VkFormat format_ = VK_FORMAT_UNDEFINED;
     };
 
+    // Allocator built based on VMA (Vulkan Memory Allocator) to manage GPU memory for buffers and images.
+    // Without VMA, we need to manually create buffer/allocate mem/bind mem for each buffer/image, which is cumbersome and error-prone.
     class VulkanAllocator final
     {
     public:
@@ -80,32 +90,21 @@ namespace umbra::render
         VulkanAllocator(const VulkanAllocator &) = delete;
         VulkanAllocator &operator=(const VulkanAllocator &) = delete;
 
-        [[nodiscard]] bool Initialize(
-            VkInstance instance,
-            VkPhysicalDevice physicalDevice,
-            VkDevice device,
-            VkQueue graphicsQueue,
-            std::uint32_t graphicsQueueFamily);
+        // Create a VMA allocator for the given Vulkan instance, physical device, and logical device.
+        [[nodiscard]] bool Initialize(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, VkQueue graphicsQueue, std::uint32_t graphicsQueueFamily);
         void Shutdown() noexcept;
 
-        [[nodiscard]] bool CreateDeviceBuffer(
-            const void *data,
-            VkDeviceSize size,
-            VkBufferUsageFlags usage,
-            GpuBuffer &buffer);
-        [[nodiscard]] bool CreateMappedBuffer(
-            VkDeviceSize size,
-            VkBufferUsageFlags usage,
-            GpuBuffer &buffer);
-        [[nodiscard]] bool CreateTexture(
-            std::span<const std::byte> rgbaPixels,
-            std::uint32_t width,
-            std::uint32_t height,
-            GpuImage &image);
-        [[nodiscard]] bool CreateDepthImage(
-            VkExtent2D extent,
-            VkFormat format,
-            GpuImage &image);
+        // Create GPU-only memory buffer
+        [[nodiscard]] bool CreateDeviceBuffer(const void *data, VkDeviceSize size, VkBufferUsageFlags usage, GpuBuffer &buffer);
+
+        // Create CPU-writable buffer that is mapped using CPU address space.
+        [[nodiscard]] bool CreateMappedBuffer(VkDeviceSize size, VkBufferUsageFlags usage, GpuBuffer &buffer);
+
+        // Create a GPU-only texture from RGBA pixel data, and create a VkImageView for it.
+        [[nodiscard]] bool CreateTexture(std::span<const std::byte> rgbaPixels, std::uint32_t width, std::uint32_t height, GpuImage &image);
+
+        // Create a GPU-only depth image with the specified extent and format, and create a VkImageView for it.
+        [[nodiscard]] bool CreateDepthImage(VkExtent2D extent, VkFormat format, GpuImage &image);
 
         [[nodiscard]] VmaAllocator GetHandle() const noexcept { return allocator_; }
 
@@ -133,7 +132,10 @@ namespace umbra::render
 
     struct MeshResource final
     {
+        // holds the vertices (like dots)
         GpuBuffer vertexBuffer;
+        // holds the indices (like lines connecting the dots), should be divisible by 3 for triangles
+        // clockwise winding order is used for front face, counter-clockwise for back face
         GpuBuffer indexBuffer;
         std::uint32_t indexCount = 0;
         glm::vec4 baseColor{1.0F};
@@ -161,11 +163,8 @@ namespace umbra::render
         SceneResources(const SceneResources &) = delete;
         SceneResources &operator=(const SceneResources &) = delete;
 
-        [[nodiscard]] bool LoadGltf(
-            const std::filesystem::path &path,
-            VulkanAllocator &allocator,
-            VkDevice device,
-            const VkPhysicalDeviceProperties &deviceProperties);
+        // Load one mesh primitive and one texture from a glTF file
+        [[nodiscard]] bool LoadGltf(const std::filesystem::path &path, VulkanAllocator &allocator, VkDevice device, const VkPhysicalDeviceProperties &deviceProperties);
         void Shutdown() noexcept;
 
         [[nodiscard]] const MeshResource *GetMesh(MeshHandle handle) const noexcept;

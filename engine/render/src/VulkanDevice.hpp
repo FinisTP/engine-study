@@ -20,6 +20,9 @@ namespace umbra::render
         VulkanDevice &operator=(VulkanDevice &&) = delete;
 
         [[nodiscard]] bool Initialize(const VulkanPhysicalDevice &physicalDevice);
+
+        // Wait until the device is idle (all pending operations are completed).
+        // We don't want to destroy the device while it is still processing commands.
         [[nodiscard]] bool WaitIdle() const noexcept;
         void Shutdown() noexcept;
 

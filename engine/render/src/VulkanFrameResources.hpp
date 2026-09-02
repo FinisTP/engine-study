@@ -1,7 +1,7 @@
 #pragma once
 
 #include "VulkanSwapchain.hpp"
-#include "VulkanTrianglePipeline.hpp"
+#include "VulkanVertexPipeline.hpp"
 #include "RenderResources.hpp"
 
 #include <volk.h>
@@ -22,11 +22,19 @@ namespace umbra::render
         FatalError
     };
 
+    // vertex shader -> model -> view -> projection -> fragment shader
     struct SceneUniform final
     {
+        // local coordinate -> world coordinate
         glm::mat4 model{1.0F};
+
+        // world coordinate -> camera coordinate
         glm::mat4 view{1.0F};
+
+        // camera coordinate -> clip coordinate
         glm::mat4 projection{1.0F};
+
+        // tint
         glm::vec4 baseColor{1.0F};
     };
 
@@ -50,14 +58,16 @@ namespace umbra::render
             VulkanAllocator &allocator,
             VkDescriptorSetLayout descriptorSetLayout,
             const TextureResource &texture);
+
         [[nodiscard]] FrameResult DrawFrame(
             VkQueue graphicsQueue,
             VkQueue presentQueue,
             const VulkanSwapchain &swapchain,
-            const VulkanTrianglePipeline &pipeline,
+            const VulkanVertexPipeline &pipeline,
             const MeshResource &mesh,
             const SceneUniform &uniform,
             DiagnosticsOverlay &overlay);
+
         void Shutdown() noexcept;
 
     private:
