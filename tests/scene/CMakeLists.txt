@@ -22,3 +22,10 @@ add_test(
     NAME Umbra.SceneCheck.Sample
     COMMAND UmbraSceneCheck ${PROJECT_SOURCE_DIR}/assets/scenes/sample.scene.json --assets ${PROJECT_SOURCE_DIR}/assets
 )
+
+# A broken scene must make the validator exit with an error.
+add_test(
+    NAME Umbra.SceneCheck.Broken
+    COMMAND UmbraSceneCheck ${CMAKE_CURRENT_SOURCE_DIR}/data/broken.scene.json --assets ${PROJECT_SOURCE_DIR}/assets --json
+)
+set_tests_properties(Umbra.SceneCheck.Broken PROPERTIES WILL_FAIL TRUE)

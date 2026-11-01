@@ -1,6 +1,6 @@
 # Umbra — project context and confirmed decisions
 
-**Version:** 1.1  
+**Version:** 1.2  
 **Requirements updated:** 2026-11-01, through user answers 1–23  
 **Implementation evidence:** status document dated 2026-09-02; partial repository check (B0) on 2026-11-01  
 **Companions:** [Working instructions](../CLAUDE.md) · [Implementation roadmap](ROADMAP.md)
@@ -69,7 +69,7 @@ The player-facing runtime learned AI is a compact policy choosing allowed action
 
 The status report says the user completed Phase 2 build/runtime/validation/resize/shutdown/RenderDoc checks on 2026-09-02, recorded in `docs/testing/phase2-rendering-smoke-test.md`. The Phase 1 interactive record (`docs/testing/phase1-smoke-test.md`) is still marked "Partial" with no items ticked, even though the status doc calls Phase 1 complete.
 
-A partial check on 2026-11-01 confirmed the source and docs exist as described and ran the Core/Diagnostics/Platform tests on Linux/GCC (all pass). No Windows build, renderer run or GPU check has been repeated since 2026-09-02.
+A partial check on 2026-11-01 confirmed the source and docs exist as described. Phase 3 was then implemented the same day; all 13 CTest entries pass on Linux (GCC, Clang, GCC ASan+UBSan). No Windows build, renderer run or GPU check has been repeated since 2026-09-02.
 
 ### Existing stack reported by the source
 
@@ -98,30 +98,29 @@ Instance/device/surface/swapchain ownership; VMA buffers/images and staging uplo
 
 The importer handles the first primitive and one base-color texture of a controlled glTF asset. Textures have one mip level. Initialization uploads wait for the graphics queue. Existing stable resource handles are **not proof that general generational resource management is implemented**.
 
-The source does not establish a general world, complete glTF hierarchy traversal, general resource manager, derived asset pipeline, safe content reload, PBR/HDR/shadows/IBL, animation system, physics integration, RPG systems, editor, C# host, or AI integration. Do not infer completion from roadmap language or empty directories.
+Phase 3 (2026-11-01) added the general world, glTF hierarchy import, generational resource handles, derived asset cache and transactional reload, all still pending Windows/GPU verification. The source does not establish PBR/HDR/shadows/IBL, animation system, physics integration, RPG systems, editor, C# host, or AI integration. Do not infer completion from roadmap language or empty directories.
 
-### Observed target graph (2026-11-01)
+### Observed target graph (2026-11-01, after Phase 3)
 
 ```text
-Umbra (apps/umbra)
-  ├─ Umbra::Core
-  ├─ Umbra::Diagnostics → spdlog
+Umbra (apps/umbra: Main, ModelLibrary, SceneRuntime)
+  ├─ Umbra::Scene   → World, Assets, nlohmann-json   (scene files, model instancing)
+  ├─ Umbra::Assets  → Core, tinygltf                 (glTF import, .umodel cache, file watcher)
+  ├─ Umbra::World   → Core                           (entities, hierarchy, renderables)
+  ├─ Umbra::Render  → Core, Diagnostics, Platform, SDL3, Volk, VMA, glm, imgui; HLSL via DXC
   ├─ Umbra::Platform → SDL3
-  ├─ Umbra::Render → SDL3, Volk, VMA, glm, imgui, TinyGLTF; HLSL shaders via DXC
-  └─ Umbra::World   (uncommitted stub: empty World class)
-UmbraCoreTests        → Core          (CTest: Umbra.Core)
-UmbraDiagnosticsTests → Diagnostics   (Umbra.Diagnostics.Formatting)
-UmbraDiagnosticsProbe → Diagnostics   (Umbra.Diagnostics.fatal/assert/terminate[/windows-exception])
-UmbraPlatformTests    → Platform      (Umbra.Platform)
-UmbraRenderTests      → Render, volk  (Umbra.Render)
-Umbra::Warnings / Umbra::Sanitizers   interface targets from cmake/
+  ├─ Umbra::Diagnostics → spdlog
+  └─ Umbra::Core    → glm                            (SlotMap, DrawList, MeshData, RetireQueue, Diagnostic, clocks)
+UmbraSceneCheck → Scene, Assets                      (headless validator CLI)
+Tests: Umbra.Core, .Platform, .Diagnostics.*, .Render, .World, .Assets, .Scene,
+       .SceneCheck.Sample/.Broken, .HeadlessDependencies
 ```
 
-App path: `/apps/umbra`, executable `Umbra`. Empty folders: `/apps/editor`, `/apps/game`, `/engine/assets`, `/engine/physics`, `/engine/script`, `/engine/editor`, `/samples`, `/tools`. Only CMake registration makes a target. Do not rename the existing app to `/apps/game` because an illustrative tree used that name.
+Core, World, Assets, Scene and UmbraSceneCheck must stay headless; `Umbra.HeadlessDependencies` enforces it. App path: `/apps/umbra`, executable `Umbra`. Still-empty folders: `/apps/editor`, `/apps/game`, `/engine/physics`, `/engine/script`, `/engine/editor`, `/samples`. Do not rename the existing app to `/apps/game` because an illustrative tree used that name.
 
-Last commit: `63e6fe7` (2026-09-02, "UMBRA-11 ... minimized window"). Commit messages follow `issue #UMBRA-<n> <summary>`.
+Commit messages follow `issue #UMBRA-<n> <summary>`. Phase 3 is `#UMBRA-13` … `#UMBRA-20`.
 
-**Current milestone:** Phase 3 — Assets and World. P3.1 has an uncommitted stub (`engine/world`, 2026-09-05) and nothing more.
+**Current milestone:** Phase 3, Assets and World, is implemented and verified headlessly on Linux. The Windows build, GPU, validation-layer and live-reload checks are open (`docs/testing/phase3-assets-world.md`).
 
 ## 5. Superseded directions and explicit exclusions
 

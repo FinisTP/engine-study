@@ -11,6 +11,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(UmbraWarnings)
 include(UmbraSanitizers)
+include(UmbraHeadlessCheck)
 
 add_subdirectory(engine/core)
 add_subdirectory(engine/diagnostics)
@@ -32,4 +33,11 @@ if(BUILD_TESTING)
     add_subdirectory(tests/world)
     add_subdirectory(tests/assets)
     add_subdirectory(tests/scene)
+
+    # Simulation, assets and scene tools must build and run without a window, GPU, editor or model runtime.
+    umbra_add_headless_check(
+        Umbra.HeadlessDependencies
+        TARGETS Umbra::Core Umbra::World Umbra::Assets Umbra::Scene UmbraSceneCheck
+        FORBIDDEN "Umbra(Render|Platform)|SDL3|volk|Vulkan|imgui|onnx|python"
+    )
 endif()

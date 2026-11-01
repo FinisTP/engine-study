@@ -1,6 +1,6 @@
 # Umbra — implementation roadmap and verification register
 
-**Version:** 1.1 · **Requirements snapshot:** 2026-11-01, user answers 1–23  
+**Version:** 1.2 · **Requirements snapshot:** 2026-11-01, user answers 1–23  
 **Last implementation status record:** [`current-engine-status.md`](current-engine-status.md), 2026-09-02; Phases 1 and 2 documented complete  
 **Repository verification:** partial B0 on 2026-11-01 — source inspected; Core/Diagnostics/Platform tests run on Linux/GCC only; Windows presets not run. See [`testing/b0-baseline-reconciliation.md`](testing/b0-baseline-reconciliation.md)  
 **Companions:** [Project context](CONTEXT.md) · [Claude working instructions](../CLAUDE.md)
@@ -32,14 +32,14 @@ The three formerly open decisions are resolved: the combat modes are independent
 
 **First action for a new agent:** finish B0 — the Windows-side checks are still open (see the B0 record). Re-inspect the checkout; if it has advanced past this dashboard, preserve completed work and select the earliest genuinely unmet task. Do not blindly implement P3.1 again.
 
-**Current next implementation task:** P3.1, world identity and ownership. An empty `umbra::world::World` class and `Umbra::World` target already exist as **uncommitted** work (2026-09-05); extend that stub rather than creating a parallel one. A document creation date does not update source-code completion dates.
+**Current next task:** run the Phase 3 Windows/GPU gate (`testing/phase3-assets-world.md`, sections 3–4) and close B0. Then W0 (narrow web feasibility) and P4.1. A document creation date does not update source-code completion dates.
 
 | Gate | Dependency | Status (updated 2026-11-01) | Evidence / exit summary |
 |---|---|---|---|
 | P1 Foundation | — | Documented complete, 2026-09-02; interactive checklist unsigned | Status doc reports tests, lifecycle, diagnostics, CI and ownership checks. But `testing/phase1-smoke-test.md` is still "Partial" with every checklist item unticked. Core/Diagnostics/Platform tests re-run on Linux/GCC 2026-11-01 (pass). |
 | P2 Rendering | P1 | Documented complete, 2026-09-02 | `testing/phase2-rendering-smoke-test.md` records user-confirmed pass of the textured glTF primitive, validation, resize recovery and RenderDoc checks. Not re-run since. |
 | B0 Baseline reconciliation | Existing checkout | In progress | Source inspection and Linux test run done 2026-11-01. Open: Windows MSVC/clang-cl/ASan build + CTest, CI status, Phase 1 checklist sign-off. |
-| P3 Assets and World | B0; existing P1/P2 | In progress — P3.1 stub only | Multi-object world, identities, assets, validation, safe reload and headless fixture. |
+| P3 Assets and World | B0; existing P1/P2 | Implemented 2026-11-01; headless verified on Linux; **Windows/GPU gate open** | All tasks P3.1–P3.8 implemented. Evidence and the remaining checklist: `testing/phase3-assets-world.md`. |
 | W0 Early web feasibility | P3 core contracts; minimal rendering sample | Planned experiment | Native-independent simulation, browser rendering/storage proof; policy experiment when available. |
 | P4 Playable 3D sandbox | P3 | Planned | Player movement, collision, interaction, minimal presentation and checkpoint restart. |
 | P5 Shared rules and combat modes | P3; P4 for graphical integration | Planned | Common RPG rules; turn-only, real-time-only and integrated fixtures. |
@@ -124,7 +124,7 @@ Prefer explicit composition and direct interfaces over a general service locator
 
 ### 3.2 Repository evolution
 
-Retain existing `/apps/umbra` (target `Umbra`), Core, Diagnostics, Platform, Render and the new `Umbra::World` stub. `/apps/editor`, `/apps/game`, `/engine/assets`, `/engine/physics`, `/engine/script`, `/engine/editor`, `/samples` and `/tools` exist only as empty folders; they are not targets. Add only targets needed by the active slice. Names below are illustrative proposals; fit them to actual conventions before implementation.
+Retain existing `/apps/umbra` (target `Umbra`), Core, Diagnostics, Platform and Render. Phase 3 added `Umbra::World`, `Umbra::Assets` (`/engine/assets`), `Umbra::Scene` (`/engine/scene`) and `/tools/scenecheck` (`UmbraSceneCheck`). `/apps/editor`, `/apps/game`, `/engine/physics`, `/engine/script`, `/engine/editor` and `/samples` are still empty folders, not targets. Add only targets needed by the active slice. Names below are illustrative proposals; fit them to actual conventions before implementation.
 
 ```text
 /engine/assets, world, physics           added as used
@@ -371,11 +371,11 @@ Inspect current source control state, applicable instructions, target graph, pre
 
 | # | Finding | Action |
 |---|---|---|
-| 1 | HEAD `63e6fe7` (2026-09-02) on `main`. Uncommitted: `engine/world/` (empty `World` class + `Umbra::World` target), wiring in root and `apps/umbra` CMake. | Treat as P3.1 starting point. Commit or discard is the user's call. |
+| 1 | HEAD `63e6fe7` (2026-09-02) on `main`. Uncommitted: `engine/world/` (empty `World` class + `Umbra::World` target), wiring in root and `apps/umbra` CMake. | Used as the P3.1 starting point and committed with it (`#UMBRA-13`). |
 | 2 | Phase 1 is "complete" in the status doc, but `testing/phase1-smoke-test.md` is "Partial" with no ticked items. | User sign-off needed, or record the gap. |
 | 3 | Registered tests: `Umbra.Core`, `Umbra.Diagnostics.*` (formatting + fatal/assert/terminate crash probes, plus `windows-exception` on Windows), `Umbra.Platform`, `Umbra.Render`. The older text listing only `UmbraCoreTests` is stale. | Use the real list. |
 | 4 | `.github/workflows/windows.yml` sets `VCPKG_ROOT: E:\Projects\vcpkg`, a local path that `windows-latest` runners don't have. Hosted CI probably can't configure. | Check real CI runs before relying on CI evidence. |
-| 5 | Small duplication: `umbra_copy_asan_runtime` is defined twice in `cmake/UmbraSanitizers.cmake`; `engine/core/CMakeLists.txt` repeats the same `target_link_libraries` block. | Harmless; clean up in a later slice. |
+| 5 | Small duplication: `umbra_copy_asan_runtime` is defined twice in `cmake/UmbraSanitizers.cmake`; `engine/core/CMakeLists.txt` repeats the same `target_link_libraries` block. | Fixed in P3.1 (core) and P3.8 (sanitizers). |
 | 6 | Core/Diagnostics/Platform build with zero warnings (`-Wall -Wextra -Wpedantic`) and all 6 CTest entries pass on Linux GCC 13 with SDL3 3.2.24 (dummy video driver). | Portability evidence only. Not a Windows gate. |
 | 7 | Not run: any Windows preset, `Umbra.Render`, the app, Vulkan validation, RenderDoc. | Still open B0 items. |
 
@@ -391,7 +391,7 @@ Inspect current source control state, applicable instructions, target graph, pre
 | P3.5 | Implemented: importer + cache tests pass (Linux GCC/Clang, GCC ASan+UBSan); app loads models through the cache (compile-checked only). Windows/vcpkg tinygltf 3.0 build not run | `tests/assets/*`, `tests/scene/ModelInstanceTests.cpp`; format in `engine/assets/include/AssetPipeline.md` |
 | P3.6 | Implemented: scene load/save/validate tests pass (Linux GCC/Clang, GCC ASan+UBSan); UmbraSceneCheck CLI + CTest on sample scene; app loads scenes into a fresh World (compile-checked only) | `tests/scene/SceneFileTests.cpp`, `Umbra.SceneCheck.Sample`; format in `engine/scene/include/SceneFormat.md` |
 | P3.7 | Implemented/unverified: FileWatcher + SameStructure tests pass (Linux GCC/Clang, GCC ASan+UBSan); transactional model/scene reload in the app compile-checked only; live edit-and-observe NOT run | `tests/assets/ReloadTests.cpp`; protocol in `engine/assets/include/Reload.md` |
-| P3.8 | Planned | |
+| P3.8 | Implemented: Umbra.HeadlessDependencies (verified to catch an injected leak), validator CTests on good/broken scenes, --json diagnostics; evidence record written. Windows gate open | `cmake/UmbraHeadlessCheck.cmake`, `docs/testing/phase3-assets-world.md` |
 <!-- /P3-status -->
 
 **Prerequisite:** reconciled B0; existing rendering retained. **Goal:** replace the hard-coded primitive with a general small world and dependable asset identities/lifetimes.
@@ -889,5 +889,7 @@ This reference list supports the limited factual technology statements, not a re
 Version 1.0, 2026-11-01: incorporates final answers 21–23; makes independent combat-mode use an explicit contract/test; selects turn-based learned policy; removes mandatory-threshold interpretation of aggression; preserves deferred modding and offline scope; expands milestone tasks/evidence; retains T01–T38 and adds T39–T60; establishes concise root instructions plus separate context/roadmap files.
 
 No implementation completion was advanced by preparing this pack. Further updates must record actual evidence, product changes and their source separately.
+
+Version 1.2, 2026-11-01: Phase 3 implemented (P3.1–P3.8); dashboard, task status, B0 findings and repository layout updated; evidence in `testing/phase3-assets-world.md`.
 
 Version 1.1, 2026-11-01: adapted to the repository. Files moved to `docs/` with corrected links. Dashboard updated from a partial B0: B0 in progress, P3 in progress (uncommitted World stub), Phase 1 checklist gap noted. B0 findings table added. Real module, folder and test names recorded. Evidence location set to `docs/current-engine-status.md` + `docs/testing/`. Project code-style rule (short code, step comments, markdown beside code for deep topics) added. No requirement (C01–C18) changed.

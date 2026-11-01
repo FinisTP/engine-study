@@ -1,0 +1,10 @@
+{
+  "format": "umbra.scene",
+  "version": 1,
+  "entities": [
+    { "id": "a", "parent": "b" },
+    { "id": "b", "parent": "a" },
+    { "id": "c", "model": "../outside.gltf", "positon": [0, 0, 0] },
+    { "id": "c" }
+  ]
+}

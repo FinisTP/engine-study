@@ -45,27 +45,3 @@ function(umbra_copy_asan_runtime target)
         VERBATIM
     )
 endfunction()
-
-function(umbra_copy_asan_runtime target)
-    if(NOT UMBRA_ENABLE_ASAN OR NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        return()
-    endif()
-
-    get_filename_component(msvc_compiler_directory "${CMAKE_CXX_COMPILER}" DIRECTORY)
-    set(asan_runtime "${msvc_compiler_directory}/clang_rt.asan_dynamic-x86_64.dll")
-
-    if(NOT EXISTS "${asan_runtime}")
-        message(FATAL_ERROR "MSVC AddressSanitizer runtime was not found at ${asan_runtime}")
-    endif()
-
-    add_custom_command(
-        TARGET ${target}
-        POST_BUILD
-        COMMAND
-            ${CMAKE_COMMAND} -E copy_if_different
-            "${asan_runtime}"
-            "$<TARGET_FILE_DIR:${target}>"
-        COMMENT "Copying the MSVC AddressSanitizer runtime for ${target}"
-        VERBATIM
-    )
-endfunction()

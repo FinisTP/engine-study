@@ -1,16 +1,32 @@
 # Umbra Engine - Current Development Status
 
-**Status date:** 2026-09-02
-**Current milestone:** Phase 3 - Assets and world
-**Phase 1 status:** Complete
+**Status date:** 2026-11-01 (Phase 1/2 records dated 2026-09-02)
+**Current milestone:** Phase 3 - Assets and world, implemented; Windows/GPU gate open
+**Phase 1 status:** Complete (interactive checklist unsigned)
 **Phase 2 status:** Complete
+**Phase 3 status:** Implemented. Headless tests verified on Linux; Windows build and GPU checks not run yet
 
 ## Update 2026-11-01
 
 - Plan and requirements moved to [`ROADMAP.md`](ROADMAP.md) and [`CONTEXT.md`](CONTEXT.md); agent rules in [`../CLAUDE.md`](../CLAUDE.md).
-- B0 baseline reconciliation is in progress: [`testing/b0-baseline-reconciliation.md`](testing/b0-baseline-reconciliation.md). Core/Diagnostics/Platform tests pass on Linux/GCC; Windows presets not re-run.
-- Phase 3 has started: uncommitted `engine/world` stub (`Umbra::World`, empty `World` class).
+- B0 baseline reconciliation is partly done: [`testing/b0-baseline-reconciliation.md`](testing/b0-baseline-reconciliation.md).
+- Phase 3 (P3.1–P3.8) implemented in commits `#UMBRA-13` … `#UMBRA-20`. Evidence: [`testing/phase3-assets-world.md`](testing/phase3-assets-world.md).
 - Phase 1 interactive checklist (`testing/phase1-smoke-test.md`) is still unsigned.
+
+## Phase 3 completed work (implemented 2026-11-01)
+
+| Area | What exists | Explained in |
+|---|---|---|
+| Identity | `core::SlotMap` / `Handle<Tag>`; `world::World` with string durable ids, per-world handle check | `engine/core/include/SlotMap.md`, `engine/world/include/World.md` |
+| Hierarchy | Local TRS, parent/child links, cycle rejection, subtree destroy, dirty propagation | `engine/world/include/Transform.md` |
+| Draw lists | `world::Renderable` → `core::DrawList` → renderer; per-draw push constants, per-texture descriptor sets | `engine/render/shaders/Scene.hlsl` |
+| GPU resources | Generational mesh/texture handles, create/replace/destroy, fallback texture, frame-serial retire queue | `engine/render/src/ResourceLifetime.md` |
+| Import / derived assets | `Umbra::Assets`: full glTF node hierarchy, bounds-checked accessors, `.umodel` cache with source+dependency hash | `engine/assets/include/AssetPipeline.md` |
+| Scenes | `Umbra::Scene`: versioned JSON scene files, all-or-nothing load, save, structured diagnostics, `UmbraSceneCheck` CLI | `engine/scene/include/SceneFormat.md` |
+| Reload | File watcher with settle time; transactional model reload; scene swap on success | `engine/assets/include/Reload.md` |
+| Gates | `Umbra.HeadlessDependencies` test; validator CTests on good/broken scenes | `cmake/UmbraHeadlessCheck.cmake` |
+
+The app now loads `assets/scenes/sample.scene.json` (or a scene path given as the first argument): a ring of tinted cubes, a spinning parent with a child, and the `models/tower.gltf` hierarchy. Editing the scene, `tower.gltf` or `tower.bin` while it runs reloads them.
 
 ## Project summary
 
@@ -39,26 +55,27 @@ The Phase 1 verification record remains in [`testing/phase1-smoke-test.md`](test
 | Graphics API | Vulkan through Volk |
 | GPU allocation | Vulkan Memory Allocator |
 | Shader source | HLSL compiled to SPIR-V with DXC and checked by `spirv-val` |
-| Scene interchange | glTF 2.0 through TinyGLTF |
+| Scene interchange | glTF 2.0 through TinyGLTF (in Umbra::Assets); scenes as versioned JSON via nlohmann-json |
 | Diagnostics UI | Dear ImGui with an Umbra-owned Vulkan renderer |
 
 ## Current architecture
 
 ```text
-Umbra executable
-|- Umbra::Core
-|- Umbra::Diagnostics
-|- Umbra::Platform
-|  `- SDL3
-`- Umbra::Render
-   |- Vulkan instance, surface, physical-device selection, and logical device
-   |- VMA allocator and staging uploads
-   |- SceneResources with mesh and texture handles
-   |- Swapchain and per-image color views
-   |- Indexed HLSL scene pipeline and per-image depth attachments
-   |- Two frame slots with commands, synchronization, uniforms, and descriptors
-   `- ImGui diagnostics overlay
+Umbra executable (apps/umbra: Main, ModelLibrary, SceneRuntime)
+|- Umbra::Scene      scene files, model instancing      -> World, Assets, nlohmann-json
+|- Umbra::Assets     glTF import, .umodel cache, watcher -> Core, tinygltf
+|- Umbra::World      entities, hierarchy, renderables    -> Core
+|- Umbra::Render     Vulkan renderer, draws a DrawList   -> Core, Diagnostics, Platform, SDL3, Volk, VMA, ImGui
+|  |- SceneResources: generational mesh/texture handles, fallback texture, retire queue
+|  |- Indexed HLSL scene pipeline: set 0 camera, set 1 texture, push constants per draw
+|  `- Swapchain, depth, two frames in flight, ImGui diagnostics overlay
+|- Umbra::Platform   SDL3 window, events, input
+|- Umbra::Diagnostics logging, crash handling            -> spdlog
+`- Umbra::Core       SlotMap, DrawList, MeshData, RetireQueue, Diagnostic, clocks -> glm
+UmbraSceneCheck      headless scene/model validator      -> Scene, Assets
 ```
+
+Headless rule (checked by `Umbra.HeadlessDependencies`): Core, World, Assets, Scene and UmbraSceneCheck never link Render, Platform, SDL3, Vulkan or ImGui.
 
 Long-lived device and scene resources survive resize. Swapchain images, their views, depth images, framebuffers, compatible pipelines, per-frame submission resources, and overlay resources are recreated when presentation changes.
 
@@ -126,17 +143,16 @@ These are intentional later-phase items rather than Phase 2 blockers:
 - Render-graph and multi-pass scheduling
 - GPU timestamp-based profiling
 
-## Phase 3 entry point
+## Phase 3 scope boundary and next steps
 
-Phase 3 begins with the Assets and world milestone:
+All seven items of the old Phase 3 entry point are implemented (see the table above). Left out on purpose:
 
-1. Define world/entity and transform ownership without exposing graphics API handles.
-2. Replace the single hard-coded scene primitive with a renderable draw list.
-3. Introduce generational resource handles and explicit loading states.
-4. Separate source glTF import from a compact, versioned runtime representation.
-5. Traverse glTF nodes and preserve hierarchy, transforms, meshes, and materials.
-6. Add dependency tracking and safe asset reload behavior.
-7. Complete the checkpoint by editing a source asset and observing a safe derived-asset reload.
+- Async uploads, mipmaps, texture compression, streaming. Uploads are synchronous; textures have one mip level.
+- Materials beyond base color factor + texture. No PBR, normal maps, skinning or animation (the importer warns and skips them).
+- Gameplay-state preservation across scene reloads (checkpoints are P4.4).
+- Packaging: the app reads assets from the source tree (`UMBRA_ASSET_DIRECTORY`) and caches in the build tree. A relocatable package layout is a P6/P9 task (roadmap T43).
+
+Next: run the Windows/GPU gate in [`testing/phase3-assets-world.md`](testing/phase3-assets-world.md), then W0 (web feasibility) and P4 (playable sandbox).
 
 ## Local verification
 
@@ -149,4 +165,8 @@ ctest --preset windows-msvc-debug
 & ".\out\build\windows-msvc\apps\umbra\Debug\Umbra.exe"
 ```
 
-Additional clang-cl and AddressSanitizer verification remains available through `CMakePresets.json`.
+Additional clang-cl and AddressSanitizer verification remains available through `CMakePresets.json`. Validate scenes without the GPU:
+
+```powershell
+& ".\out\build\windows-msvc\tools\scenecheck\Debug\UmbraSceneCheck.exe" assets\scenes\sample.scene.json --assets assets
+```

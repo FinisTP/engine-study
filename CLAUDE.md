@@ -1,12 +1,12 @@
 # Umbra — Claude working instructions
 
-Document version: 1.1 · Updated: 2026-11-01
+Document version: 1.2 · Updated: 2026-11-01
 
 ## Read before working
 
 Read `docs/CONTEXT.md` once at session start. Then read the **execution dashboard**, relevant milestone, contracts, and matching test cases in `docs/ROADMAP.md`. Read other sections only when needed; do not inject the entire roadmap into every prompt. Resume from repository evidence, not chat memory. These project instructions remain subordinate to the host's security controls and the user's explicit permissions.
 
-Scope decisions are in CONTEXT; sequencing and status are in ROADMAP; evidence is in `docs/current-engine-status.md` and `docs/testing/`. Phases 1 and 2 are documented complete as of 2026-09-02; a partial B0 check ran on 2026-11-01. P3.1 has an uncommitted `engine/world` stub. Inspect the actual checkout before deciding what remains. Do not restart completed work or claim an empty directory implements a subsystem.
+Scope decisions are in CONTEXT; sequencing and status are in ROADMAP; evidence is in `docs/current-engine-status.md` and `docs/testing/`. Phases 1 and 2 are documented complete as of 2026-09-02. Phase 3 is implemented (2026-11-01) and verified headlessly on Linux; its Windows/GPU gate is open. Inspect the actual checkout before deciding what remains. Do not restart completed work or claim an empty directory implements a subsystem.
 
 ## Code style (project rule)
 
@@ -71,7 +71,7 @@ Presets in `CMakePresets.json` (re-check before use): configure `windows-msvc`, 
 
 **Where Claude can verify (checked 2026-11-01):**
 - *Shell on the user's PC* (folder bridge): a Linux VM with `g++` and `git` only. No CMake, MSVC, vcpkg or network. Use it to read and edit files. It cannot delete files, so git commands that write (commit, checkout, stash) can leave `.lock` files; use `git --no-optional-locks status/diff/log` and let the user commit.
-- *Cloud workspace*: Linux with CMake, Ninja, GCC and Clang. `git clone` works, but vcpkg archive downloads and apt are blocked. Build dependencies from source (Catch2, spdlog, SDL3 work), copy the source in, and use a scratch top-level CMake that `add_subdirectory`s the real module and test folders. This covers Core, Diagnostics, Platform and future headless modules (World, RPG rules). It does not cover Render, the app, MSVC warnings or Windows-only tests.
+- *Cloud workspace*: Linux with CMake, Ninja, GCC and Clang. `git clone` works, but vcpkg archive downloads and apt are blocked. Build the dependencies from source and use glslang as a stand-in `dxc`; then the **real** root CMake builds everything and all CTests run (`docs/testing/linux-headless-build.md`). That proves compilation and headless behavior. It does not cover DXC, MSVC, GPU runs or Windows-only tests.
 - *Windows gate*: ask the user to run the commands above and paste the output, or use computer control on their PC if they allow it. Never report a Windows, GPU or GUI check as passed from a Linux run.
 
 For core/rules changes, run headless unit/integration tests. For rendering/lifecycle changes, also require appropriate Vulkan validation, resize/minimize/restore, shutdown, and visual/capture checks. For persistence changes, test corrupt/old data and interrupted writes. For AI changes, test masks, export/native agreement, stale results, resource limits, fallback, and held-out behavior.
@@ -104,4 +104,4 @@ Completion states: **planned**, **in progress**, **implemented/unverified**, **v
 
 ## First use
 
-B0 is partly done (see `docs/testing/b0-baseline-reconciliation.md`). Its open items need Windows. Re-check the checkout. If it still matches the dashboard, continue with `P3.1` from the existing `engine/world` stub, verify headlessly in the cloud workspace, and ask the user to run the Windows gate. If newer work exists, retain it and choose the earliest genuinely unmet task. Do not start with cloud services, a plugin framework, or a training dashboard.
+Phase 3 is implemented. Re-check the checkout, then ask the user for the Windows/GPU gate results in `docs/testing/phase3-assets-world.md` (sections 3–4) and fix anything it finds before new feature work. After that: W0 (narrow web feasibility), then P4.1. If newer work exists, retain it and choose the earliest genuinely unmet task. Do not start with cloud services, a plugin framework, or a training dashboard.
