@@ -5,6 +5,13 @@
 **Phase 1 status:** Complete
 **Phase 2 status:** Complete
 
+## Update 2026-11-01
+
+- Plan and requirements moved to [`ROADMAP.md`](ROADMAP.md) and [`CONTEXT.md`](CONTEXT.md); agent rules in [`../CLAUDE.md`](../CLAUDE.md).
+- B0 baseline reconciliation is in progress: [`testing/b0-baseline-reconciliation.md`](testing/b0-baseline-reconciliation.md). Core/Diagnostics/Platform tests pass on Linux/GCC; Windows presets not re-run.
+- Phase 3 has started: uncommitted `engine/world` stub (`Umbra::World`, empty `World` class).
+- Phase 1 interactive checklist (`testing/phase1-smoke-test.md`) is still unsigned.
+
 ## Project summary
 
 Umbra is a learning-first, modular 3D game engine written in C++20. The first product target is Windows x64, followed by Android ARM64 after the desktop runtime and renderer are stable.

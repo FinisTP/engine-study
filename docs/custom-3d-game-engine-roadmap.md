@@ -1,5 +1,7 @@
 # Custom 3D Game Engine: Learning-First Roadmap
 
+> **Superseded for planning (2026-11-01).** Future scope and sequencing now live in [`ROADMAP.md`](ROADMAP.md), with confirmed requirements in [`CONTEXT.md`](CONTEXT.md). This file is kept as the original learning-first plan and history. Where they disagree (Android-next, mandatory C#, mods), ROADMAP and CONTEXT win.
+
 ## Project brief
 
 Build a small, modular 3D engine whose first real deliverable is a complete small game. The engine should teach the fundamentals—loop, rendering, lighting, scripting, memory, tooling, physics, and debugging—while creating room to experiment with faster C# iteration, explicit memory budgets, and improved physics workflows.
