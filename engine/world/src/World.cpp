@@ -1,5 +1,6 @@
 #include <World.hpp>
 
+#include <algorithm>
 #include <atomic>
 #include <utility>
 
@@ -9,6 +10,17 @@ namespace umbra::world
     {
         // Every world gets a unique id so handles from one world are rejected by another.
         std::atomic<std::uint32_t> nextWorldId{1};
+
+        glm::mat4 ToMatrix(const Transform &t)
+        {
+            // M = T * R * S (scale first, then rotate, then move)
+            glm::mat4 matrix = glm::mat4_cast(t.rotation);
+            matrix[0] *= t.scale.x;
+            matrix[1] *= t.scale.y;
+            matrix[2] *= t.scale.z;
+            matrix[3] = glm::vec4(t.position, 1.0F);
+            return matrix;
+        }
     }
 
     World::World() : worldId_(nextWorldId.fetch_add(1)) {}
@@ -20,18 +32,32 @@ namespace umbra::world
         {
             return {};
         }
-        const Entity entity{entities_.Insert({id, std::move(name)}), worldId_};
+        Record record;
+        record.id = id;
+        record.name = std::move(name);
+        const Entity entity{entities_.Insert(std::move(record)), worldId_};
         byId_.emplace(std::move(id), entity);
         return entity;
     }
 
     bool World::Destroy(Entity entity)
     {
-        const Record *record = Get(entity);
+        Record *record = Get(entity);
         if (record == nullptr)
         {
             return false;
         }
+
+        // 1. Destroy children first (copy: the list shrinks as they detach).
+        const std::vector<Entity> children = record->children;
+        for (const Entity child : children)
+        {
+            Destroy(child);
+        }
+
+        // 2. Unlink from the parent, then free the slot.
+        record = Get(entity);
+        Detach(entity, *record);
         byId_.erase(record->id);
         return entities_.Remove(entity.slot);
     }
@@ -62,8 +88,118 @@ namespace umbra::world
         return record ? &record->name : nullptr;
     }
 
+    bool World::SetParent(Entity child, Entity parent)
+    {
+        Record *record = Get(child);
+        if (record == nullptr || (parent && !IsAlive(parent)) || child == parent)
+        {
+            return false;
+        }
+
+        // Walk up from the new parent: finding the child there would make a cycle.
+        for (Entity up = parent; up; up = Get(up)->parent)
+        {
+            if (up == child)
+            {
+                return false;
+            }
+        }
+
+        Detach(child, *record);
+        record->parent = parent;
+        record->dirty = true;
+        if (parent)
+        {
+            Get(parent)->children.push_back(child);
+        }
+        return true;
+    }
+
+    Entity World::GetParent(Entity entity) const noexcept
+    {
+        const Record *record = Get(entity);
+        return record ? record->parent : Entity{};
+    }
+
+    const std::vector<Entity> *World::GetChildren(Entity entity) const noexcept
+    {
+        const Record *record = Get(entity);
+        return record ? &record->children : nullptr;
+    }
+
+    bool World::SetLocalTransform(Entity entity, const Transform &transform)
+    {
+        Record *record = Get(entity);
+        if (record == nullptr)
+        {
+            return false;
+        }
+        record->local = transform;
+        record->dirty = true;
+        return true;
+    }
+
+    const Transform *World::GetLocalTransform(Entity entity) const noexcept
+    {
+        const Record *record = Get(entity);
+        return record ? &record->local : nullptr;
+    }
+
+    void World::UpdateTransforms()
+    {
+        // Start at every root; children are reached through their parents.
+        std::vector<Entity> roots;
+        ForEach([&](Entity entity) {
+            if (!Get(entity)->parent)
+            {
+                roots.push_back(entity);
+            }
+        });
+        for (const Entity root : roots)
+        {
+            UpdateRecursive(root, glm::mat4{1.0F}, false);
+        }
+    }
+
+    const glm::mat4 *World::GetWorldMatrix(Entity entity) const noexcept
+    {
+        const Record *record = Get(entity);
+        return record ? &record->worldMatrix : nullptr;
+    }
+
     const World::Record *World::Get(Entity entity) const noexcept
     {
         return entity.world == worldId_ ? entities_.Get(entity.slot) : nullptr;
+    }
+
+    World::Record *World::Get(Entity entity) noexcept
+    {
+        return const_cast<Record *>(std::as_const(*this).Get(entity));
+    }
+
+    void World::Detach(Entity child, Record &record)
+    {
+        if (Record *parent = Get(record.parent))
+        {
+            std::erase(parent->children, child);
+        }
+        record.parent = {};
+        record.dirty = true;
+    }
+
+    void World::UpdateRecursive(Entity entity, const glm::mat4 &parentMatrix, bool parentChanged)
+    {
+        // A node is recomputed if it changed itself or any ancestor changed.
+        Record &record = *Get(entity);
+        const bool changed = record.dirty || parentChanged;
+        if (changed)
+        {
+            record.worldMatrix = parentMatrix * ToMatrix(record.local);
+            record.dirty = false;
+        }
+        for (const Entity child : record.children)
+        {
+            UpdateRecursive(child, record.worldMatrix, changed);
+        }
     }
 }

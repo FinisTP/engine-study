@@ -385,7 +385,7 @@ Inspect current source control state, applicable instructions, target graph, pre
 | Task | Status | Evidence |
 |---|---|---|
 | P3.1 | Implemented; headless tests pass (Linux GCC/Clang, GCC ASan+UBSan); Windows not run | `tests/core/SlotMapTests.cpp`, `tests/world/WorldTests.cpp` |
-| P3.2 | Planned | |
+| P3.2 | Implemented; headless tests pass (Linux GCC/Clang, GCC ASan+UBSan); Windows not run | `tests/world/TransformTests.cpp`; conventions in `engine/world/include/Transform.md` |
 | P3.3 | Planned | |
 | P3.4 | Planned | |
 | P3.5 | Planned | |
