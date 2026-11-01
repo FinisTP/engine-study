@@ -390,7 +390,7 @@ Inspect current source control state, applicable instructions, target graph, pre
 | P3.4 | Implemented/unverified: RetireQueue + mesh/texture validation tests pass; Render create/replace/destroy + fallback texture compile on Linux; GPU run, validation layers and MSVC not run | `tests/core/ResourceDataTests.cpp`; design in `engine/render/src/ResourceLifetime.md` |
 | P3.5 | Implemented: importer + cache tests pass (Linux GCC/Clang, GCC ASan+UBSan); app loads models through the cache (compile-checked only). Windows/vcpkg tinygltf 3.0 build not run | `tests/assets/*`, `tests/scene/ModelInstanceTests.cpp`; format in `engine/assets/include/AssetPipeline.md` |
 | P3.6 | Implemented: scene load/save/validate tests pass (Linux GCC/Clang, GCC ASan+UBSan); UmbraSceneCheck CLI + CTest on sample scene; app loads scenes into a fresh World (compile-checked only) | `tests/scene/SceneFileTests.cpp`, `Umbra.SceneCheck.Sample`; format in `engine/scene/include/SceneFormat.md` |
-| P3.7 | Planned | |
+| P3.7 | Implemented/unverified: FileWatcher + SameStructure tests pass (Linux GCC/Clang, GCC ASan+UBSan); transactional model/scene reload in the app compile-checked only; live edit-and-observe NOT run | `tests/assets/ReloadTests.cpp`; protocol in `engine/assets/include/Reload.md` |
 | P3.8 | Planned | |
 <!-- /P3-status -->
 

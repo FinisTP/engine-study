@@ -17,12 +17,20 @@ struct LoadedModel final
     umbra::assets::Model model;
     std::vector<umbra::core::MeshHandle> meshes;
     std::vector<umbra::core::TextureHandle> textures;
+    std::vector<std::filesystem::path> files; // source + dependencies, for change watching
 };
 
 // Model path ("models/tower.gltf") -> build or refresh the cached .umodel -> read it -> upload it.
 class ModelLibrary final
 {
 public:
+    enum class ReloadResult
+    {
+        Failed,          // kept the previous version
+        Updated,         // new GPU data, same node structure: rebind handles
+        StructureChanged // nodes changed: entities built from this model must be rebuilt
+    };
+
     ModelLibrary(umbra::render::Renderer &renderer, std::filesystem::path assetRoot, std::filesystem::path cacheRoot);
     ~ModelLibrary();
 
@@ -34,8 +42,14 @@ public:
     // GPU handles for one mesh of a model (loading it if needed). Invalid handles if unknown.
     std::pair<umbra::core::MeshHandle, umbra::core::TextureHandle> Resolve(const std::string &modelPath, std::uint32_t mesh);
 
+    // Rebuilds and re-uploads a model as one transaction (see Reload.md). A model that failed
+    // before is simply tried again.
+    ReloadResult Reload(const std::string &modelPath);
+    // Every watched file -> the model path it belongs to (failed models: source only).
+    [[nodiscard]] std::map<std::filesystem::path, std::string> WatchedFiles() const;
+
 private:
-    bool Upload(const umbra::assets::Model &model, LoadedModel &loaded);
+    bool BuildAndUpload(const std::string &modelPath, LoadedModel &loaded);
     void Release(LoadedModel &loaded);
 
     umbra::render::Renderer &renderer_;

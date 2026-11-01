@@ -37,4 +37,20 @@ namespace umbra::assets
         std::vector<ModelMesh> meshes;
         std::vector<core::TextureData> textures;
     };
+
+    // True if both models have the same nodes (names, parents, meshes per node).
+    // Then only mesh/texture *contents* differ, and entities built from `a` still fit `b`.
+    [[nodiscard]] inline bool SameStructure(const Model &a, const Model &b)
+    {
+        if (a.nodes.size() != b.nodes.size() || a.meshes.size() != b.meshes.size())
+            return false;
+        for (std::size_t i = 0; i < a.nodes.size(); ++i)
+        {
+            const ModelNode &x = a.nodes[i];
+            const ModelNode &y = b.nodes[i];
+            if (x.name != y.name || x.parent != y.parent || x.meshes != y.meshes)
+                return false;
+        }
+        return true;
+    }
 }

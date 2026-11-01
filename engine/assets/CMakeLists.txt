@@ -8,6 +8,7 @@ target_sources(
     PRIVATE
         src/GltfImporter.cpp
         src/ModelCache.cpp
+        src/FileWatcher.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
@@ -15,6 +16,7 @@ target_sources(
             include/Model.hpp
             include/GltfImporter.hpp
             include/ModelCache.hpp
+            include/FileWatcher.hpp
 )
 
 target_compile_features(UmbraAssets PUBLIC cxx_std_20)

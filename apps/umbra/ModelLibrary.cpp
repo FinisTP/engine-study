@@ -21,28 +21,12 @@ const LoadedModel *ModelLibrary::Load(const std::string &modelPath)
     if (failed_.contains(modelPath))
         return nullptr;
 
-    // 1. Build the cached .umodel if the source (or a dependency) changed.
-    using namespace umbra::assets;
-    const BuildResult build = BuildModel(assetRoot_, modelPath, cacheRoot_);
-    for (const std::string &warning : build.warnings)
-        umbra::diagnostics::Info("Warning: " + modelPath + ": " + warning);
-    for (const std::string &error : build.errors)
-        umbra::diagnostics::Error(modelPath + ": " + error);
-
-    // 2. Read the cached file (still the last good one if the build just failed).
-    Model model;
-    BuildInfo info;
-    std::string error;
     LoadedModel loaded;
-    if (!ReadModelFile(build.output, model, info, error) || !Upload(model, loaded))
+    if (!BuildAndUpload(modelPath, loaded))
     {
-        umbra::diagnostics::Error("Cannot load model " + modelPath + (error.empty() ? "" : ": " + error));
         failed_.insert(modelPath);
         return nullptr;
     }
-    umbra::diagnostics::Info("Loaded model " + modelPath + (build.status == BuildStatus::UpToDate ? " (cached)" : " (built)") +
-                             ": " + std::to_string(model.nodes.size()) + " nodes, " + std::to_string(model.meshes.size()) + " meshes.");
-    loaded.model = std::move(model);
     return &models_.emplace(modelPath, std::move(loaded)).first->second;
 }
 
@@ -55,21 +39,84 @@ std::pair<umbra::core::MeshHandle, umbra::core::TextureHandle> ModelLibrary::Res
     return {loaded->meshes[mesh], texture >= 0 ? loaded->textures[static_cast<std::size_t>(texture)] : umbra::core::TextureHandle{}};
 }
 
-bool ModelLibrary::Upload(const umbra::assets::Model &model, LoadedModel &loaded)
+ModelLibrary::ReloadResult ModelLibrary::Reload(const std::string &modelPath)
 {
-    // All or nothing: on any failure, release what was already uploaded.
-    for (const umbra::core::TextureData &texture : model.textures)
+    // 1. Build and upload a complete new version next to the old one.
+    LoadedModel fresh;
+    if (!BuildAndUpload(modelPath, fresh))
+    {
+        umbra::diagnostics::Error("Reload of " + modelPath + " failed; keeping the previous version.");
+        return ReloadResult::Failed;
+    }
+
+    // 2. Publish: the new version replaces the old in one step. The caller rebinds
+    //    renderables before the next frame; old GPU data is retired, not freed at once.
+    failed_.erase(modelPath);
+    const auto it = models_.find(modelPath);
+    const bool sameStructure = it != models_.end() && umbra::assets::SameStructure(it->second.model, fresh.model);
+    if (it != models_.end())
+    {
+        Release(it->second);
+        it->second = std::move(fresh);
+    }
+    else
+        models_.emplace(modelPath, std::move(fresh));
+    umbra::diagnostics::Info("Reloaded " + modelPath + (sameStructure ? "." : " (structure changed)."));
+    return sameStructure ? ReloadResult::Updated : ReloadResult::StructureChanged;
+}
+
+std::map<std::filesystem::path, std::string> ModelLibrary::WatchedFiles() const
+{
+    std::map<std::filesystem::path, std::string> files;
+    for (const auto &[path, loaded] : models_)
+        for (const auto &file : loaded.files)
+            files.emplace(file, path);
+    for (const auto &path : failed_)
+        files.emplace(assetRoot_ / path, path);
+    return files;
+}
+
+bool ModelLibrary::BuildAndUpload(const std::string &modelPath, LoadedModel &loaded)
+{
+    // 1. Build the cached .umodel if the source (or a dependency) changed.
+    using namespace umbra::assets;
+    const BuildResult build = BuildModel(assetRoot_, modelPath, cacheRoot_);
+    for (const std::string &warning : build.warnings)
+        umbra::diagnostics::Info("Warning: " + modelPath + ": " + warning);
+    for (const std::string &error : build.errors)
+        umbra::diagnostics::Error(modelPath + ": " + error);
+    if (build.status == BuildStatus::Failed)
+        return false;
+
+    // 2. Read it back.
+    BuildInfo info;
+    std::string error;
+    if (!ReadModelFile(build.output, loaded.model, info, error))
+    {
+        umbra::diagnostics::Error("Cannot read " + build.output.string() + ": " + error);
+        return false;
+    }
+    loaded.files = {assetRoot_ / modelPath};
+    for (const std::string &dependency : info.dependencies)
+        loaded.files.push_back((assetRoot_ / modelPath).parent_path() / dependency);
+
+    // 3. Upload everything; on any failure release what was uploaded (all or nothing).
+    for (const umbra::core::TextureData &texture : loaded.model.textures)
         loaded.textures.push_back(renderer_.CreateTexture(texture));
-    for (const umbra::assets::ModelMesh &mesh : model.meshes)
+    for (const umbra::assets::ModelMesh &mesh : loaded.model.meshes)
         loaded.meshes.push_back(renderer_.CreateMesh(mesh.data));
     for (const auto handle : loaded.meshes)
     {
         if (!handle)
         {
             Release(loaded);
+            umbra::diagnostics::Error("Cannot upload " + modelPath + " to the GPU.");
             return false;
         }
     }
+    umbra::diagnostics::Info("Loaded model " + modelPath + (build.status == BuildStatus::UpToDate ? " (cached)" : " (built)") +
+                             ": " + std::to_string(loaded.model.nodes.size()) + " nodes, " +
+                             std::to_string(loaded.model.meshes.size()) + " meshes.");
     return true;
 }
 

@@ -1,5 +1,4 @@
 #include <chrono>
-#include <memory>
 #include <string>
 #include <thread>
 
@@ -16,48 +15,13 @@
 #include <CrashHandler.hpp>
 #include <Renderer.hpp>
 #include <World.hpp>
-#include <ModelInstance.hpp>
-#include <SceneFile.hpp>
-
 #include "ModelLibrary.hpp"
+#include "SceneRuntime.hpp"
 
 #include <glm/gtc/constants.hpp>
 
 namespace
 {
-	// Loads a scene file into a fresh world. The current world is replaced only on success,
-	// so a broken file never leaves a half-loaded scene on screen.
-	bool LoadSceneFile(std::unique_ptr<umbra::world::World> &world, ModelLibrary &models, const std::string &scenePath)
-	{
-		umbra::scene::SceneLoadOptions options;
-		options.assetRoot = UMBRA_ASSET_DIRECTORY;
-		options.models = [&](const std::string &path) -> const umbra::assets::Model * {
-			const LoadedModel *loaded = models.Load(path);
-			return loaded ? &loaded->model : nullptr;
-		};
-
-		auto fresh = std::make_unique<umbra::world::World>();
-		std::vector<umbra::core::Diagnostic> diagnostics;
-		const bool loaded = umbra::scene::LoadScene(options.assetRoot / scenePath, options, *fresh, diagnostics);
-		for (const umbra::core::Diagnostic &diagnostic : diagnostics)
-		{
-			if (diagnostic.severity == umbra::core::Severity::Error)
-				umbra::diagnostics::Error(umbra::core::Format(diagnostic));
-			else
-				umbra::diagnostics::Info(umbra::core::Format(diagnostic));
-		}
-		if (!loaded)
-		{
-			umbra::diagnostics::Error("Scene " + scenePath + " was not loaded; keeping the current scene.");
-			return false;
-		}
-
-		umbra::scene::BindRenderables(*fresh, [&](const std::string &model, std::uint32_t mesh) { return models.Resolve(model, mesh); });
-		world = std::move(fresh);
-		umbra::diagnostics::Info("Loaded scene " + scenePath + " with " + std::to_string(world->Count()) + " entities.");
-		return true;
-	}
-
 	void SpinEntity(umbra::world::World &world, const char *id, float radians)
 	{
 		const umbra::world::Entity entity = world.Find(id);
@@ -104,9 +68,9 @@ int RunApplication(const std::string &scenePath)
 				}
 
 				ModelLibrary models(renderer, UMBRA_ASSET_DIRECTORY, UMBRA_CACHE_DIRECTORY);
-				auto world = std::make_unique<umbra::world::World>();
+				SceneRuntime scene(models, UMBRA_ASSET_DIRECTORY, scenePath);
 				umbra::core::DrawList drawList;
-				LoadSceneFile(world, models, scenePath);
+				scene.Load();
 
 				bool isSuspended = false;
 
@@ -191,11 +155,13 @@ int RunApplication(const std::string &scenePath)
 					const double interpolationFactor = accumulator.GetInterpolationFactor();
 					(void)interpolationFactor;
 
-					// World -> draw list -> renderer. The renderer never sees the world.
-					SpinEntity(*world, "spinner", static_cast<float>(deltaTime) * glm::radians(45.0F));
-					world->UpdateTransforms();
+					// Pick up edited scene/model files, then world -> draw list -> renderer.
+					scene.Update();
+					umbra::world::World &world = scene.GetWorld();
+					SpinEntity(world, "spinner", static_cast<float>(deltaTime) * glm::radians(45.0F));
+					world.UpdateTransforms();
 					drawList.items.clear();
-					world->ExtractDrawList(drawList);
+					world.ExtractDrawList(drawList);
 
 					if (!renderer.RenderFrame(input, static_cast<float>(deltaTime), drawList))
 					{

@@ -6,6 +6,8 @@ target_sources(
         Main.cpp
         ModelLibrary.cpp
         ModelLibrary.hpp
+        SceneRuntime.cpp
+        SceneRuntime.hpp
 )
 
 target_compile_features(Umbra PRIVATE cxx_std_20)
