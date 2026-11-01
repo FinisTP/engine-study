@@ -1,5 +1,6 @@
 #pragma once
 
+#include <DrawList.hpp>
 #include <SlotMap.hpp>
 
 #include <glm/gtc/quaternion.hpp>
@@ -8,6 +9,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -33,6 +35,17 @@ namespace umbra::world
         glm::vec3 position{0.0F};
         glm::quat rotation = glm::identity<glm::quat>();
         glm::vec3 scale{1.0F};
+    };
+
+    // Something to draw. model/mesh are durable (saved); the handles are
+    // transient and filled in at runtime once the asset is loaded.
+    struct Renderable final
+    {
+        std::string model;
+        std::uint32_t mesh = 0;
+        glm::vec4 color{1.0F};
+        core::MeshHandle meshHandle;
+        core::TextureHandle textureHandle;
     };
 
     // Owns entities. Each entity has a durable string id (saved in files) and a
@@ -74,6 +87,13 @@ namespace umbra::world
         // Valid after UpdateTransforms().
         [[nodiscard]] const glm::mat4 *GetWorldMatrix(Entity entity) const noexcept;
 
+        bool SetRenderable(Entity entity, Renderable renderable);
+        bool RemoveRenderable(Entity entity);
+        [[nodiscard]] const Renderable *GetRenderable(Entity entity) const noexcept;
+        [[nodiscard]] Renderable *GetRenderable(Entity entity) noexcept;
+        // Appends one item per renderable with a valid mesh handle. Call after UpdateTransforms().
+        void ExtractDrawList(core::DrawList &drawList) const;
+
         // Calls function(entity) for every live entity.
         template <typename Function>
         void ForEach(Function &&function) const
@@ -91,6 +111,7 @@ namespace umbra::world
             Transform local;
             glm::mat4 worldMatrix{1.0F};
             bool dirty = true;
+            std::optional<Renderable> renderable;
         };
 
         [[nodiscard]] const Record *Get(Entity entity) const noexcept;

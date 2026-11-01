@@ -14,6 +14,51 @@
 #include <ApplicationEvents.hpp>
 #include <CrashHandler.hpp>
 #include <Renderer.hpp>
+#include <World.hpp>
+
+#include <glm/gtc/constants.hpp>
+
+namespace
+{
+	// Temporary sample scene until scenes load from files (P3.6):
+	// a ring of tinted cubes plus a spinning parent with an orbiting child.
+	void BuildSampleWorld(umbra::world::World &world, umbra::core::MeshHandle mesh, umbra::core::TextureHandle texture)
+	{
+		using namespace umbra::world;
+		const auto add = [&](const std::string &id, glm::vec3 position, float scale, glm::vec4 color) {
+			const Entity entity = world.Create(id);
+			Transform transform;
+			transform.position = position;
+			transform.scale = glm::vec3{scale};
+			world.SetLocalTransform(entity, transform);
+			world.SetRenderable(entity, Renderable{"scenes/phase2.gltf", 0, color, mesh, texture});
+			return entity;
+		};
+
+		constexpr int ringCount = 6;
+		for (int i = 0; i < ringCount; ++i)
+		{
+			const float angle = glm::two_pi<float>() * static_cast<float>(i) / ringCount;
+			const glm::vec4 color{0.5F + 0.5F * glm::cos(angle), 0.6F, 0.5F + 0.5F * glm::sin(angle), 1.0F};
+			add("ring_" + std::to_string(i), {2.5F * glm::cos(angle), 0.0F, -2.0F + 2.5F * glm::sin(angle)}, 0.5F, color);
+		}
+
+		const Entity spinner = add("spinner", {0.0F, 0.0F, -2.0F}, 0.6F, glm::vec4{1.0F});
+		const Entity moon = add("moon", {2.0F, 0.0F, 0.0F}, 0.4F, glm::vec4{1.0F, 0.8F, 0.4F, 1.0F});
+		world.SetParent(moon, spinner);
+	}
+
+	void SpinEntity(umbra::world::World &world, const char *id, float radians)
+	{
+		const umbra::world::Entity entity = world.Find(id);
+		if (const umbra::world::Transform *current = world.GetLocalTransform(entity))
+		{
+			umbra::world::Transform next = *current;
+			next.rotation = glm::angleAxis(radians, glm::vec3{0.0F, 1.0F, 0.0F}) * next.rotation;
+			world.SetLocalTransform(entity, next);
+		}
+	}
+}
 
 int RunApplication()
 {
@@ -47,6 +92,10 @@ int RunApplication()
 				{
 					return 1;
 				}
+
+				umbra::world::World world;
+				umbra::core::DrawList drawList;
+				BuildSampleWorld(world, renderer.GetSampleMesh(), renderer.GetSampleTexture());
 
 				bool isSuspended = false;
 
@@ -131,7 +180,13 @@ int RunApplication()
 					const double interpolationFactor = accumulator.GetInterpolationFactor();
 					(void)interpolationFactor;
 
-					if (!renderer.RenderFrame(input, static_cast<float>(deltaTime)))
+					// World -> draw list -> renderer. The renderer never sees the world.
+					SpinEntity(world, "spinner", static_cast<float>(deltaTime) * glm::radians(45.0F));
+					world.UpdateTransforms();
+					drawList.items.clear();
+					world.ExtractDrawList(drawList);
+
+					if (!renderer.RenderFrame(input, static_cast<float>(deltaTime), drawList))
 					{
 						return 1;
 					}

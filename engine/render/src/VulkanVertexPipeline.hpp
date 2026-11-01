@@ -4,10 +4,20 @@
 #include "VulkanSwapchain.hpp"
 
 #include <filesystem>
+
+#include <glm/mat4x4.hpp>
+#include <glm/vec4.hpp>
 #include <vector>
 
 namespace umbra::render
 {
+    // Per-draw data sent as push constants (must match DrawConstants in Scene.hlsl).
+    struct DrawConstants final
+    {
+        glm::mat4 model{1.0F};
+        glm::vec4 color{1.0F};
+    };
+
     class VulkanVertexPipeline final
     {
     public:
@@ -19,7 +29,8 @@ namespace umbra::render
         [[nodiscard]] bool Initialize(VkPhysicalDevice physicalDevice, VkDevice device,
             VulkanAllocator &allocator, const VulkanSwapchain &swapchain,
             const std::filesystem::path &vertexShaderPath,
-            const std::filesystem::path &fragmentShaderPath);
+            const std::filesystem::path &fragmentShaderPath,
+            VkDescriptorSetLayout textureSetLayout);
         void Shutdown() noexcept;
 
         [[nodiscard]] VkRenderPass GetRenderPass() const noexcept { return renderPass_; }

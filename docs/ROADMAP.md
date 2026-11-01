@@ -386,7 +386,7 @@ Inspect current source control state, applicable instructions, target graph, pre
 |---|---|---|
 | P3.1 | Implemented; headless tests pass (Linux GCC/Clang, GCC ASan+UBSan); Windows not run | `tests/core/SlotMapTests.cpp`, `tests/world/WorldTests.cpp` |
 | P3.2 | Implemented; headless tests pass (Linux GCC/Clang, GCC ASan+UBSan); Windows not run | `tests/world/TransformTests.cpp`; conventions in `engine/world/include/Transform.md` |
-| P3.3 | Planned | |
+| P3.3 | Implemented/unverified: world extraction tests pass; Render + app compile on Linux GCC/Clang; Scene.hlsl checked with glslang (not DXC); GPU run, Vulkan validation and MSVC not run | `tests/world/ExtractionTests.cpp`; push-constant draw path in `VulkanFrameResources.cpp` |
 | P3.4 | Planned | |
 | P3.5 | Planned | |
 | P3.6 | Planned | |

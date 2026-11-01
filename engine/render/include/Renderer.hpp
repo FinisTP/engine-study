@@ -1,5 +1,7 @@
 #pragma once
 
+#include <DrawList.hpp>
+
 #include <memory>
 
 namespace umbra::platform
@@ -22,7 +24,11 @@ namespace umbra::render
         Renderer &operator=(Renderer &&) = delete;
 
         [[nodiscard]] bool Initialize(platform::Window &window);
-        [[nodiscard]] bool RenderFrame(const platform::Input &input, float deltaSeconds);
+        // Draws every item in drawList. Items with stale mesh handles are skipped.
+        [[nodiscard]] bool RenderFrame(const platform::Input &input, float deltaSeconds, const core::DrawList &drawList);
+        // Handles of the built-in sample model loaded at initialization.
+        [[nodiscard]] core::MeshHandle GetSampleMesh() const noexcept;
+        [[nodiscard]] core::TextureHandle GetSampleTexture() const noexcept;
         void RequestResize() noexcept;
         void Shutdown() noexcept;
 

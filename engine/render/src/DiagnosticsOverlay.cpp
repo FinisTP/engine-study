@@ -225,7 +225,7 @@ namespace umbra::render
 
     void DiagnosticsOverlay::BeginFrame(
         VkExtent2D extent, float deltaSeconds, std::size_t meshCount,
-        std::size_t textureCount, std::uint32_t indexCount)
+        std::size_t textureCount, std::size_t drawCount, std::uint32_t indexCount)
     {
         if (!initialized_)
             return;
@@ -241,6 +241,7 @@ namespace umbra::render
         ImGui::Separator();
         ImGui::Text("Meshes: %zu", meshCount);
         ImGui::Text("Textures: %zu", textureCount);
+        ImGui::Text("Draws: %zu", drawCount);
         ImGui::Text("Indices: %u", indexCount);
         ImGui::TextDisabled("WASD move | Arrow keys look");
         ImGui::End();

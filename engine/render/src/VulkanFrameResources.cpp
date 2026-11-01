@@ -11,13 +11,15 @@
 
 namespace
 {
-    // Summary: Records Vulkan commands to render a scene with a single mesh and a diagnostics overlay.
+    // Summary: Records Vulkan commands to render every draw item and the diagnostics overlay.
     [[nodiscard]] bool RecordSceneCommands(
         VkCommandBuffer commandBuffer,
         std::uint32_t imageIndex,
         const umbra::render::VulkanSwapchain &swapchain,
         const umbra::render::VulkanVertexPipeline &pipeline,
-        const umbra::render::MeshResource &mesh,
+        const umbra::render::SceneResources &resources,
+        const umbra::core::DrawList &drawList,
+        umbra::render::TextureHandle fallbackTexture,
         VkDescriptorSet descriptorSet,
         umbra::render::DiagnosticsOverlay &overlay,
         std::size_t frameIndex)
@@ -54,12 +56,27 @@ namespace
 
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetHandle());
-        const VkBuffer vertexBuffer = mesh.vertexBuffer.GetHandle();
-        constexpr VkDeviceSize vertexOffset = 0;
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, &vertexOffset);
-        vkCmdBindIndexBuffer(commandBuffer, mesh.indexBuffer.GetHandle(), 0, VK_INDEX_TYPE_UINT32);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(), 0, 1, &descriptorSet, 0, nullptr);
-        vkCmdDrawIndexed(commandBuffer, mesh.indexCount, 1, 0, 0, 0);
+        for (const umbra::core::DrawItem &item : drawList.items)
+        {
+            // 1. Resolve handles; stale meshes are skipped, missing textures use the fallback.
+            const umbra::render::MeshResource *mesh = resources.GetMesh(item.mesh);
+            const umbra::render::TextureResource *texture = resources.GetTexture(item.texture);
+            if (texture == nullptr)
+                texture = resources.GetTexture(fallbackTexture);
+            if (mesh == nullptr || texture == nullptr)
+                continue;
+
+            // 2. Bind this item's texture (set 1) and buffers, push its matrix and tint, draw.
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(), 1, 1, &texture->descriptorSet, 0, nullptr);
+            const umbra::render::DrawConstants constants{item.model, item.color * mesh->baseColor};
+            vkCmdPushConstants(commandBuffer, pipeline.GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(constants), &constants);
+            const VkBuffer vertexBuffer = mesh->vertexBuffer.GetHandle();
+            constexpr VkDeviceSize vertexOffset = 0;
+            vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, &vertexOffset);
+            vkCmdBindIndexBuffer(commandBuffer, mesh->indexBuffer.GetHandle(), 0, VK_INDEX_TYPE_UINT32);
+            vkCmdDrawIndexed(commandBuffer, mesh->indexCount, 1, 0, 0, 0);
+        }
         overlay.Render(commandBuffer, frameIndex);
         vkCmdEndRenderPass(commandBuffer);
 
@@ -87,8 +104,7 @@ namespace umbra::render
         std::uint32_t graphicsQueueFamily,
         std::size_t swapchainImageCount,
         VulkanAllocator &allocator,
-        VkDescriptorSetLayout descriptorSetLayout,
-        const TextureResource &texture)
+        VkDescriptorSetLayout descriptorSetLayout)
     {
         if (device_ != VK_NULL_HANDLE)
         {
@@ -163,10 +179,9 @@ namespace umbra::render
             }
         }
 
-        // 4. Create a descriptor pool and allocate per-frame descriptor sets for uniform buffers and textures.
+        // 4. Create a descriptor pool and allocate per-frame descriptor sets for uniform buffers.
         const std::array poolSizes{
-            VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<std::uint32_t>(framesInFlight)},
-            VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, static_cast<std::uint32_t>(framesInFlight)}};
+            VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<std::uint32_t>(framesInFlight)}};
         VkDescriptorPoolCreateInfo descriptorPoolInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
         descriptorPoolInfo.maxSets = static_cast<std::uint32_t>(framesInFlight);
         descriptorPoolInfo.poolSizeCount = static_cast<std::uint32_t>(poolSizes.size());
@@ -178,7 +193,7 @@ namespace umbra::render
             Shutdown();
             return false;
         }
-        // 5. Allocate and update per-frame descriptor sets with uniform buffer and texture information.
+        // 5. Allocate per-frame descriptor sets (textures live in their own sets, see SceneResources).
         const std::array layouts{descriptorSetLayout, descriptorSetLayout};
         std::array<VkDescriptorSet, framesInFlight> descriptorSets{};
         VkDescriptorSetAllocateInfo descriptorAllocateInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
@@ -194,8 +209,7 @@ namespace umbra::render
         }
 
         // 6. Create and update uniform buffers and descriptor sets for each frame in flight.
-        // For each frame: create SceneUniform buffer, put buffer in descriptor binding 0
-        // and put texture in descriptor binding 1.
+        // For each frame: create SceneUniform buffer and put it in descriptor binding 0.
         for (std::size_t index = 0; index < frames_.size(); ++index)
         {
             if (!allocator.CreateMappedBuffer(sizeof(SceneUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -206,13 +220,9 @@ namespace umbra::render
             }
             frames_[index].descriptorSet = descriptorSets[index];
             const VkDescriptorBufferInfo bufferInfo{frames_[index].uniformBuffer.GetHandle(), 0, sizeof(SceneUniform)};
-            const VkDescriptorImageInfo imageInfo{texture.sampler, texture.image.GetView(),
-                                                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
             const std::array writes{
                 VkWriteDescriptorSet{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, descriptorSets[index], 0, 0, 1,
-                                     VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, nullptr, &bufferInfo, nullptr},
-                VkWriteDescriptorSet{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, descriptorSets[index], 1, 0, 1,
-                                     VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &imageInfo, nullptr, nullptr}};
+                                     VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, nullptr, &bufferInfo, nullptr}};
             vkUpdateDescriptorSets(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
         }
 
@@ -243,7 +253,9 @@ namespace umbra::render
         VkQueue presentQueue,
         const VulkanSwapchain &swapchain,
         const VulkanVertexPipeline &pipeline,
-        const MeshResource &mesh,
+        const SceneResources &resources,
+        const core::DrawList &drawList,
+        TextureHandle fallbackTexture,
         const SceneUniform &uniform,
         DiagnosticsOverlay &overlay)
     {
@@ -320,7 +332,7 @@ namespace umbra::render
         std::memcpy(frame.uniformBuffer.GetMappedData(), &uniform, sizeof(uniform));
         frame.uniformBuffer.Flush();
         if (!RecordSceneCommands(frame.commandBuffer, imageIndex, swapchain, pipeline,
-                                 mesh, frame.descriptorSet, overlay, currentFrame_))
+                                 resources, drawList, fallbackTexture, frame.descriptorSet, overlay, currentFrame_))
         {
             return FrameResult::FatalError;
         }

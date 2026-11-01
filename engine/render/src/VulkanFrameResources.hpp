@@ -11,6 +11,8 @@
 #include <cstdint>
 #include <vector>
 
+#include <DrawList.hpp>
+
 #include <glm/mat4x4.hpp>
 
 namespace umbra::render
@@ -22,20 +24,14 @@ namespace umbra::render
         FatalError
     };
 
-    // vertex shader -> model -> view -> projection -> fragment shader
+    // Per-frame camera data (set 0). The model matrix and tint are per draw (push constants).
     struct SceneUniform final
     {
-        // local coordinate -> world coordinate
-        glm::mat4 model{1.0F};
-
         // world coordinate -> camera coordinate
         glm::mat4 view{1.0F};
 
         // camera coordinate -> clip coordinate
         glm::mat4 projection{1.0F};
-
-        // tint
-        glm::vec4 baseColor{1.0F};
     };
 
     class DiagnosticsOverlay;
@@ -56,15 +52,16 @@ namespace umbra::render
             std::uint32_t graphicsQueueFamily,
             std::size_t swapchainImageCount,
             VulkanAllocator &allocator,
-            VkDescriptorSetLayout descriptorSetLayout,
-            const TextureResource &texture);
+            VkDescriptorSetLayout descriptorSetLayout);
 
         [[nodiscard]] FrameResult DrawFrame(
             VkQueue graphicsQueue,
             VkQueue presentQueue,
             const VulkanSwapchain &swapchain,
             const VulkanVertexPipeline &pipeline,
-            const MeshResource &mesh,
+            const SceneResources &resources,
+            const core::DrawList &drawList,
+            TextureHandle fallbackTexture,
             const SceneUniform &uniform,
             DiagnosticsOverlay &overlay);
 

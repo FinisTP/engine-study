@@ -3,6 +3,9 @@
 #include <volk.h>
 #include <vk_mem_alloc.h>
 
+#include <DrawList.hpp>
+#include <SlotMap.hpp>
+
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
@@ -118,17 +121,8 @@ namespace umbra::render
         VmaAllocator allocator_ = VK_NULL_HANDLE;
     };
 
-    struct MeshHandle final
-    {
-        std::uint32_t value = 0;
-        [[nodiscard]] explicit operator bool() const noexcept { return value != 0; }
-    };
-
-    struct TextureHandle final
-    {
-        std::uint32_t value = 0;
-        [[nodiscard]] explicit operator bool() const noexcept { return value != 0; }
-    };
+    using core::MeshHandle;
+    using core::TextureHandle;
 
     struct MeshResource final
     {
@@ -146,6 +140,8 @@ namespace umbra::render
         GpuImage image;
         VkSampler sampler = VK_NULL_HANDLE;
         VkDevice device = VK_NULL_HANDLE;
+        // set 1 of the scene pipeline; owned by SceneResources' descriptor pool
+        VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
 
         TextureResource() = default;
         ~TextureResource();
@@ -155,6 +151,7 @@ namespace umbra::render
         TextureResource &operator=(TextureResource &&other) noexcept;
     };
 
+    // Owns every mesh and texture. Handles are generational (see core SlotMap.md).
     class SceneResources final
     {
     public:
@@ -163,20 +160,28 @@ namespace umbra::render
         SceneResources(const SceneResources &) = delete;
         SceneResources &operator=(const SceneResources &) = delete;
 
+        // Creates the per-texture descriptor set layout and pool.
+        [[nodiscard]] bool Initialize(VkDevice device);
         // Load one mesh primitive and one texture from a glTF file
-        [[nodiscard]] bool LoadGltf(const std::filesystem::path &path, VulkanAllocator &allocator, VkDevice device, const VkPhysicalDeviceProperties &deviceProperties);
+        [[nodiscard]] bool LoadGltf(const std::filesystem::path &path, VulkanAllocator &allocator, const VkPhysicalDeviceProperties &deviceProperties);
         void Shutdown() noexcept;
 
-        [[nodiscard]] const MeshResource *GetMesh(MeshHandle handle) const noexcept;
-        [[nodiscard]] const TextureResource *GetTexture(TextureHandle handle) const noexcept;
+        [[nodiscard]] const MeshResource *GetMesh(MeshHandle handle) const noexcept { return meshes_.Get(handle); }
+        [[nodiscard]] const TextureResource *GetTexture(TextureHandle handle) const noexcept { return textures_.Get(handle); }
         [[nodiscard]] MeshHandle GetSceneMesh() const noexcept { return sceneMesh_; }
         [[nodiscard]] TextureHandle GetSceneTexture() const noexcept { return sceneTexture_; }
-        [[nodiscard]] std::size_t GetMeshCount() const noexcept { return meshes_.size(); }
-        [[nodiscard]] std::size_t GetTextureCount() const noexcept { return textures_.size(); }
+        [[nodiscard]] std::size_t GetMeshCount() const noexcept { return meshes_.Size(); }
+        [[nodiscard]] std::size_t GetTextureCount() const noexcept { return textures_.Size(); }
+        [[nodiscard]] VkDescriptorSetLayout GetTextureSetLayout() const noexcept { return textureSetLayout_; }
 
     private:
-        std::vector<MeshResource> meshes_;
-        std::vector<TextureResource> textures_;
+        [[nodiscard]] bool WriteTextureSet(TextureResource &texture);
+
+        VkDevice device_ = VK_NULL_HANDLE;
+        VkDescriptorSetLayout textureSetLayout_ = VK_NULL_HANDLE;
+        VkDescriptorPool texturePool_ = VK_NULL_HANDLE;
+        core::SlotMap<MeshResource, core::MeshTag> meshes_;
+        core::SlotMap<TextureResource, core::TextureTag> textures_;
         MeshHandle sceneMesh_{};
         TextureHandle sceneTexture_{};
     };

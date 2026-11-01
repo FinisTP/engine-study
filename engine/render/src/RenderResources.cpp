@@ -479,22 +479,71 @@ namespace umbra::render
             image = std::move(other.image);
             sampler = std::exchange(other.sampler, VK_NULL_HANDLE);
             device = std::exchange(other.device, VK_NULL_HANDLE);
+            descriptorSet = std::exchange(other.descriptorSet, VK_NULL_HANDLE);
         }
         return *this;
     }
 
     SceneResources::~SceneResources() { Shutdown(); }
-    const MeshResource *SceneResources::GetMesh(MeshHandle handle) const noexcept
+
+    bool SceneResources::Initialize(VkDevice device)
     {
-        return handle.value > 0 && handle.value <= meshes_.size() ? &meshes_[handle.value - 1] : nullptr;
+        device_ = device;
+
+        // 1. Layout for set 1: one combined image sampler read by the fragment shader.
+        const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+        VkDescriptorSetLayoutCreateInfo layoutInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
+        layoutInfo.bindingCount = 1;
+        layoutInfo.pBindings = &binding;
+        VkResult result = vkCreateDescriptorSetLayout(device_, &layoutInfo, nullptr, &textureSetLayout_);
+        if (result != VK_SUCCESS)
+        {
+            LogVkFailure("Failed creating texture descriptor set layout.", result);
+            return false;
+        }
+
+        // 2. Pool with one set per texture; FREE bit so single sets can be released later.
+        constexpr std::uint32_t maxTextures = 256;
+        const VkDescriptorPoolSize poolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, maxTextures};
+        VkDescriptorPoolCreateInfo poolInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
+        poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+        poolInfo.maxSets = maxTextures;
+        poolInfo.poolSizeCount = 1;
+        poolInfo.pPoolSizes = &poolSize;
+        result = vkCreateDescriptorPool(device_, &poolInfo, nullptr, &texturePool_);
+        if (result != VK_SUCCESS)
+        {
+            LogVkFailure("Failed creating texture descriptor pool.", result);
+            return false;
+        }
+        return true;
     }
-    const TextureResource *SceneResources::GetTexture(TextureHandle handle) const noexcept
+
+    bool SceneResources::WriteTextureSet(TextureResource &texture)
     {
-        return handle.value > 0 && handle.value <= textures_.size() ? &textures_[handle.value - 1] : nullptr;
+        VkDescriptorSetAllocateInfo allocateInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+        allocateInfo.descriptorPool = texturePool_;
+        allocateInfo.descriptorSetCount = 1;
+        allocateInfo.pSetLayouts = &textureSetLayout_;
+        const VkResult result = vkAllocateDescriptorSets(device_, &allocateInfo, &texture.descriptorSet);
+        if (result != VK_SUCCESS)
+        {
+            LogVkFailure("Failed allocating texture descriptor set.", result);
+            return false;
+        }
+        const VkDescriptorImageInfo imageInfo{texture.sampler, texture.image.GetView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+        VkWriteDescriptorSet write{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+        write.dstSet = texture.descriptorSet;
+        write.dstBinding = 0;
+        write.descriptorCount = 1;
+        write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        write.pImageInfo = &imageInfo;
+        vkUpdateDescriptorSets(device_, 1, &write, 0, nullptr);
+        return true;
     }
 
     bool SceneResources::LoadGltf(
-        const std::filesystem::path &path, VulkanAllocator &allocator, VkDevice device,
+        const std::filesystem::path &path, VulkanAllocator &allocator,
         const VkPhysicalDeviceProperties &deviceProperties)
     {
         tinygltf::TinyGLTF loader;
@@ -614,6 +663,7 @@ namespace umbra::render
                 std::as_bytes(std::span{rgba}), static_cast<std::uint32_t>(sourceImage->width),
                 static_cast<std::uint32_t>(sourceImage->height), texture.image))
             return false;
+        const VkDevice device = device_;
         texture.device = device;
         VkSamplerCreateInfo samplerInfo{VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
         samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -632,10 +682,11 @@ namespace umbra::render
             return false;
         }
 
-        meshes_.push_back(std::move(mesh));
-        textures_.push_back(std::move(texture));
-        sceneMesh_.value = static_cast<std::uint32_t>(meshes_.size());
-        sceneTexture_.value = static_cast<std::uint32_t>(textures_.size());
+        if (!WriteTextureSet(texture))
+            return false;
+
+        sceneMesh_ = meshes_.Insert(std::move(mesh));
+        sceneTexture_ = textures_.Insert(std::move(texture));
         diagnostics::Info("Loaded glTF primitive: " + std::to_string(vertices.size()) + " vertices, " +
                           std::to_string(indexValues.size()) + " indices, one texture.");
         return true;
@@ -643,9 +694,20 @@ namespace umbra::render
 
     void SceneResources::Shutdown() noexcept
     {
-        textures_.clear();
-        meshes_.clear();
+        // Samplers and images go first; destroying the pool frees every texture set.
+        textures_.Clear();
+        meshes_.Clear();
         sceneMesh_ = {};
         sceneTexture_ = {};
+        if (texturePool_ != VK_NULL_HANDLE)
+        {
+            vkDestroyDescriptorPool(device_, texturePool_, nullptr);
+            texturePool_ = VK_NULL_HANDLE;
+        }
+        if (textureSetLayout_ != VK_NULL_HANDLE)
+        {
+            vkDestroyDescriptorSetLayout(device_, textureSetLayout_, nullptr);
+            textureSetLayout_ = VK_NULL_HANDLE;
+        }
     }
 }

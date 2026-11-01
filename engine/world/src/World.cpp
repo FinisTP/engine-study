@@ -167,6 +167,50 @@ namespace umbra::world
         return record ? &record->worldMatrix : nullptr;
     }
 
+    bool World::SetRenderable(Entity entity, Renderable renderable)
+    {
+        Record *record = Get(entity);
+        if (record == nullptr)
+        {
+            return false;
+        }
+        record->renderable = std::move(renderable);
+        return true;
+    }
+
+    bool World::RemoveRenderable(Entity entity)
+    {
+        Record *record = Get(entity);
+        if (record == nullptr || !record->renderable)
+        {
+            return false;
+        }
+        record->renderable.reset();
+        return true;
+    }
+
+    const Renderable *World::GetRenderable(Entity entity) const noexcept
+    {
+        const Record *record = Get(entity);
+        return record && record->renderable ? &*record->renderable : nullptr;
+    }
+
+    Renderable *World::GetRenderable(Entity entity) noexcept
+    {
+        return const_cast<Renderable *>(std::as_const(*this).GetRenderable(entity));
+    }
+
+    void World::ExtractDrawList(core::DrawList &drawList) const
+    {
+        entities_.ForEach([&](core::Handle<EntityTag>, const Record &record) {
+            if (record.renderable && record.renderable->meshHandle)
+            {
+                const Renderable &r = *record.renderable;
+                drawList.items.push_back({r.meshHandle, r.textureHandle, record.worldMatrix, r.color});
+            }
+        });
+    }
+
     const World::Record *World::Get(Entity entity) const noexcept
     {
         return entity.world == worldId_ ? entities_.Get(entity.slot) : nullptr;

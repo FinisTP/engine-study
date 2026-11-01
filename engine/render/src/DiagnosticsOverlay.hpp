@@ -31,7 +31,7 @@ namespace umbra::render
             const std::filesystem::path &vertexShader,
             const std::filesystem::path &fragmentShader);
 
-        void BeginFrame(VkExtent2D extent, float deltaSeconds, std::size_t meshCount, std::size_t textureCount, std::uint32_t indexCount);
+        void BeginFrame(VkExtent2D extent, float deltaSeconds, std::size_t meshCount, std::size_t textureCount, std::size_t drawCount, std::uint32_t indexCount);
 
         void Render(VkCommandBuffer commandBuffer, std::size_t frameIndex);
 

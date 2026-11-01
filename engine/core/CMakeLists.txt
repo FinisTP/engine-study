@@ -1,3 +1,5 @@
+find_package(glm CONFIG REQUIRED)
+
 add_library(UmbraCore STATIC)
 add_library(Umbra::Core ALIAS UmbraCore)
 
@@ -15,12 +17,15 @@ target_sources(
             include/FrameClock.hpp
             include/FixedStepAccumulator.hpp
             include/SlotMap.hpp
+            include/DrawList.hpp
 )
 
 target_compile_features(UmbraCore PUBLIC cxx_std_20)
 
 target_link_libraries(
     UmbraCore
+    PUBLIC
+        glm::glm
     PRIVATE
         Umbra::Warnings
         Umbra::Sanitizers

@@ -63,7 +63,8 @@ namespace umbra::render
         VulkanAllocator &allocator,
         const VulkanSwapchain &swapchain,
         const std::filesystem::path &vertexShaderPath,
-        const std::filesystem::path &fragmentShaderPath)
+        const std::filesystem::path &fragmentShaderPath,
+        VkDescriptorSetLayout textureSetLayout)
     {
         if (device_ != VK_NULL_HANDLE || device == VK_NULL_HANDLE || swapchain.GetImageViews().empty())
         {
@@ -81,14 +82,12 @@ namespace umbra::render
         }
 
         // 2. create descriptor set layout
-        // set 0, binding 0: uniform buffer (vertex shader)
-        // set 0, binding 1: combined image sampler (fragment shader)
-        const std::array bindings{
-            VkDescriptorSetLayoutBinding{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
-            VkDescriptorSetLayoutBinding{1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        // set 0, binding 0: per-frame uniform buffer (vertex shader)
+        // set 1 (owned by SceneResources): per-texture combined image sampler
+        const VkDescriptorSetLayoutBinding uniformBinding{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr};
         VkDescriptorSetLayoutCreateInfo descriptorInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
-        descriptorInfo.bindingCount = static_cast<std::uint32_t>(bindings.size());
-        descriptorInfo.pBindings = bindings.data();
+        descriptorInfo.bindingCount = 1;
+        descriptorInfo.pBindings = &uniformBinding;
         if (vkCreateDescriptorSetLayout(device_, &descriptorInfo, nullptr, &descriptorSetLayout_) != VK_SUCCESS)
         {
             diagnostics::Error("Failed creating descriptor set layout.");
@@ -97,12 +96,14 @@ namespace umbra::render
         }
 
         // 3. create pipeline layout
-        // shader-interface between descriptor sets and shaders
-        // one descriptor set layout, no push constants
-
+        // shader-interface: two descriptor sets plus one push-constant block per draw
+        const std::array setLayouts{descriptorSetLayout_, textureSetLayout};
+        const VkPushConstantRange pushRange{VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(DrawConstants)};
         VkPipelineLayoutCreateInfo layoutInfo{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
-        layoutInfo.setLayoutCount = 1;
-        layoutInfo.pSetLayouts = &descriptorSetLayout_;
+        layoutInfo.setLayoutCount = static_cast<std::uint32_t>(setLayouts.size());
+        layoutInfo.pSetLayouts = setLayouts.data();
+        layoutInfo.pushConstantRangeCount = 1;
+        layoutInfo.pPushConstantRanges = &pushRange;
         if (vkCreatePipelineLayout(device_, &layoutInfo, nullptr, &pipelineLayout_) != VK_SUCCESS)
         {
             diagnostics::Error("Failed creating pipeline layout.");

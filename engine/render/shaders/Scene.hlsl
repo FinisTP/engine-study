@@ -1,20 +1,28 @@
+// set 0: per-frame camera data
 struct SceneUniform
 {
-    column_major float4x4 model;
     column_major float4x4 view;
     column_major float4x4 projection;
-    float4 baseColor;
+};
+
+// per-draw data (push constants, must match DrawConstants in VulkanVertexPipeline.hpp)
+struct DrawConstants
+{
+    column_major float4x4 model;
+    float4 color;
 };
 
 [[vk::binding(0, 0)]] ConstantBuffer<SceneUniform> scene;
+[[vk::push_constant]] ConstantBuffer<DrawConstants> perDraw;
+
+// set 1: per-texture descriptor
+[[vk::combinedImageSampler]]
+[[vk::binding(0, 1)]]
+Texture2D<float4> baseColorTexture : register(t0, space1);
 
 [[vk::combinedImageSampler]]
-[[vk::binding(1, 0)]]
-Texture2D<float4> baseColorTexture : register(t0);
-
-[[vk::combinedImageSampler]]
-[[vk::binding(1, 0)]]
-SamplerState baseColorSampler : register(s0);
+[[vk::binding(0, 1)]]
+SamplerState baseColorSampler : register(s0, space1);
 
 struct VertexInput
 {
@@ -34,11 +42,12 @@ struct VertexOutput
 VertexOutput VSMain(VertexInput input)
 {
     VertexOutput output;
-    const float4 worldPosition = mul(scene.model, float4(input.position, 1.0F));
+    const float4 worldPosition = mul(perDraw.model, float4(input.position, 1.0F));
     output.position = mul(scene.projection, mul(scene.view, worldPosition));
-    output.normal = normalize(mul((float3x3)scene.model, input.normal));
+    // Correct for rotation and uniform scale; non-uniform scale would need the inverse-transpose.
+    output.normal = normalize(mul((float3x3)perDraw.model, input.normal));
     output.uv = input.uv;
-    output.baseColor = scene.baseColor;
+    output.baseColor = perDraw.color;
     return output;
 }
 

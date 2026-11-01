@@ -115,6 +115,8 @@ target_include_directories(
 
 target_link_libraries(
     UmbraRender
+    PUBLIC
+        Umbra::Core
     PRIVATE
         Umbra::Diagnostics
         Umbra::Platform

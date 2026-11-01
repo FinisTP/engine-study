@@ -63,7 +63,6 @@ namespace umbra::render
         glm::vec3 cameraPosition{0.0F, 0.5F, 5.0F};
         float cameraYaw = -90.0F;
         float cameraPitch = -6.0F;
-        float sceneRotation = 0.0F;
 
         ~Implementation() { (void)device.WaitIdle(); }
 
@@ -106,23 +105,18 @@ namespace umbra::render
                                      allocator,
                                      swapchain,
                                      shaderDirectory / "Scene.vert.spv",
-                                     shaderDirectory / "Scene.frag.spv"))
+                                     shaderDirectory / "Scene.frag.spv",
+                                     sceneResources.GetTextureSetLayout()))
             {
                 return PresentationInitializationResult::FatalError;
             }
 
-            const TextureResource *texture = sceneResources.GetTexture(sceneResources.GetSceneTexture());
-            if (texture == nullptr)
-            {
-                return PresentationInitializationResult::FatalError;
-            }
             if (!frameResources.Initialize(
                     device.GetHandle(),
                     physicalDevice.GetQueueFamilyIndices().graphics,
                     swapchain.GetImages().size(),
                     allocator,
-                    pipeline.GetDescriptorSetLayout(),
-                    *texture))
+                    pipeline.GetDescriptorSetLayout()))
             {
                 return PresentationInitializationResult::FatalError;
             }
@@ -204,19 +198,16 @@ namespace umbra::render
                 cameraPosition -= right * movement;
             if (input.IsKeyHeld(platform::InputKey::D))
                 cameraPosition += right * movement;
-            sceneRotation += delta * glm::radians(18.0F);
         }
 
         [[nodiscard]] SceneUniform BuildUniform() const
         {
             SceneUniform uniform;
-            uniform.model = glm::rotate(glm::mat4{1.0F}, sceneRotation, glm::vec3{0.0F, 1.0F, 0.0F});
             uniform.view = glm::lookAtRH(cameraPosition, cameraPosition + Forward(), glm::vec3{0.0F, 1.0F, 0.0F});
             const VkExtent2D extent = swapchain.GetExtent();
             uniform.projection = glm::perspectiveRH_ZO(glm::radians(60.0F),
                                                        static_cast<float>(extent.width) / static_cast<float>(extent.height), 0.1F, 100.0F);
             uniform.projection[1][1] *= -1.0F;
-            uniform.baseColor = sceneResources.GetMesh(sceneResources.GetSceneMesh())->baseColor;
             return uniform;
         }
     };
@@ -264,10 +255,11 @@ namespace umbra::render
             return false;
         }
 
-        // test loading a glTF scene
-        if (!implementation->sceneResources.LoadGltf(
+        // load the built-in sample model
+        if (!implementation->sceneResources.Initialize(implementation->device.GetHandle()) ||
+            !implementation->sceneResources.LoadGltf(
                 std::filesystem::path{UMBRA_ASSET_DIRECTORY} / "scenes" / "phase2.gltf",
-                implementation->allocator, implementation->device.GetHandle(),
+                implementation->allocator,
                 implementation->physicalDevice.GetProperties()))
         {
             return false;
@@ -282,11 +274,11 @@ namespace umbra::render
         }
 
         implementation_ = std::move(implementation);
-        diagnostics::Info("Renderer initialized with the Phase 2 glTF scene.");
+        diagnostics::Info("Renderer initialized.");
         return true;
     }
 
-    bool Renderer::RenderFrame(const platform::Input &input, float deltaSeconds)
+    bool Renderer::RenderFrame(const platform::Input &input, float deltaSeconds, const core::DrawList &drawList)
     {
         if (implementation_ == nullptr)
         {
@@ -309,25 +301,35 @@ namespace umbra::render
         }
 
         implementation_->UpdateCamera(input, deltaSeconds);
-        const MeshResource *mesh = implementation_->sceneResources.GetMesh(implementation_->sceneResources.GetSceneMesh());
-        if (mesh == nullptr)
+
+        // Count what will actually be drawn (stale meshes are skipped).
+        const SceneResources &resources = implementation_->sceneResources;
+        std::size_t drawCount = 0;
+        std::uint32_t indexCount = 0;
+        for (const core::DrawItem &item : drawList.items)
         {
-            diagnostics::Error("Scene mesh handle is stale.");
-            return false;
+            if (const MeshResource *mesh = resources.GetMesh(item.mesh))
+            {
+                ++drawCount;
+                indexCount += mesh->indexCount;
+            }
         }
 
         implementation_->overlay.BeginFrame(implementation_->swapchain.GetExtent(),
                                             deltaSeconds,
-                                            implementation_->sceneResources.GetMeshCount(),
-                                            implementation_->sceneResources.GetTextureCount(),
-                                            mesh->indexCount);
+                                            resources.GetMeshCount(),
+                                            resources.GetTextureCount(),
+                                            drawCount,
+                                            indexCount);
 
         const FrameResult result = implementation_->frameResources.DrawFrame(
             implementation_->device.GetGraphicsQueue(),
             implementation_->device.GetPresentQueue(),
             implementation_->swapchain,
             implementation_->pipeline,
-            *mesh,
+            resources,
+            drawList,
+            resources.GetSceneTexture(),
             implementation_->BuildUniform(),
             implementation_->overlay);
 
@@ -338,6 +340,16 @@ namespace umbra::render
         }
 
         return result == FrameResult::Presented;
+    }
+
+    core::MeshHandle Renderer::GetSampleMesh() const noexcept
+    {
+        return implementation_ ? implementation_->sceneResources.GetSceneMesh() : core::MeshHandle{};
+    }
+
+    core::TextureHandle Renderer::GetSampleTexture() const noexcept
+    {
+        return implementation_ ? implementation_->sceneResources.GetSceneTexture() : core::TextureHandle{};
     }
 
     void Renderer::RequestResize() noexcept
