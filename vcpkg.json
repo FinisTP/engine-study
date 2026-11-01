@@ -3,6 +3,7 @@
     "catch2",
     "glm",
     "imgui",
+    "nlohmann-json",
     {
       "name": "sdl3",
       "features": [

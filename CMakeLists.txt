@@ -20,6 +20,7 @@ add_subdirectory(engine/world)
 add_subdirectory(engine/assets)
 add_subdirectory(engine/scene)
 add_subdirectory(apps/umbra)
+add_subdirectory(tools/scenecheck)
 
 include(CTest)
 

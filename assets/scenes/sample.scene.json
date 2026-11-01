@@ -1,0 +1,182 @@
+{
+  "format": "umbra.scene",
+  "version": 1,
+  "entities": [
+    {
+      "id": "ring_0",
+      "name": "Ring 0",
+      "position": [
+        2.5,
+        0,
+        -2.0
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        1.0,
+        0.6,
+        0.5,
+        1
+      ]
+    },
+    {
+      "id": "ring_1",
+      "name": "Ring 1",
+      "position": [
+        1.25,
+        0,
+        0.165064
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.75,
+        0.6,
+        0.933013,
+        1
+      ]
+    },
+    {
+      "id": "ring_2",
+      "name": "Ring 2",
+      "position": [
+        -1.25,
+        0,
+        0.165064
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.25,
+        0.6,
+        0.933013,
+        1
+      ]
+    },
+    {
+      "id": "ring_3",
+      "name": "Ring 3",
+      "position": [
+        -2.5,
+        0,
+        -2.0
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.0,
+        0.6,
+        0.5,
+        1
+      ]
+    },
+    {
+      "id": "ring_4",
+      "name": "Ring 4",
+      "position": [
+        -1.25,
+        0,
+        -4.16506
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.25,
+        0.6,
+        0.0669873,
+        1
+      ]
+    },
+    {
+      "id": "ring_5",
+      "name": "Ring 5",
+      "position": [
+        1.25,
+        0,
+        -4.16506
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.75,
+        0.6,
+        0.0669873,
+        1
+      ]
+    },
+    {
+      "id": "spinner",
+      "name": "Spinner",
+      "position": [
+        0,
+        0,
+        -2
+      ],
+      "scale": [
+        0.6,
+        0.6,
+        0.6
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0
+    },
+    {
+      "id": "moon",
+      "name": "Moon",
+      "parent": "spinner",
+      "position": [
+        2,
+        0,
+        0
+      ],
+      "scale": [
+        0.4,
+        0.4,
+        0.4
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        1,
+        0.8,
+        0.4,
+        1
+      ]
+    },
+    {
+      "id": "tower",
+      "name": "Tower",
+      "instance": "models/tower.gltf"
+    }
+  ]
+}

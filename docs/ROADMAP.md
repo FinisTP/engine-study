@@ -389,7 +389,7 @@ Inspect current source control state, applicable instructions, target graph, pre
 | P3.3 | Implemented/unverified: world extraction tests pass; Render + app compile on Linux GCC/Clang; Scene.hlsl checked with glslang (not DXC); GPU run, Vulkan validation and MSVC not run | `tests/world/ExtractionTests.cpp`; push-constant draw path in `VulkanFrameResources.cpp` |
 | P3.4 | Implemented/unverified: RetireQueue + mesh/texture validation tests pass; Render create/replace/destroy + fallback texture compile on Linux; GPU run, validation layers and MSVC not run | `tests/core/ResourceDataTests.cpp`; design in `engine/render/src/ResourceLifetime.md` |
 | P3.5 | Implemented: importer + cache tests pass (Linux GCC/Clang, GCC ASan+UBSan); app loads models through the cache (compile-checked only). Windows/vcpkg tinygltf 3.0 build not run | `tests/assets/*`, `tests/scene/ModelInstanceTests.cpp`; format in `engine/assets/include/AssetPipeline.md` |
-| P3.6 | Planned | |
+| P3.6 | Implemented: scene load/save/validate tests pass (Linux GCC/Clang, GCC ASan+UBSan); UmbraSceneCheck CLI + CTest on sample scene; app loads scenes into a fresh World (compile-checked only) | `tests/scene/SceneFileTests.cpp`, `Umbra.SceneCheck.Sample`; format in `engine/scene/include/SceneFormat.md` |
 | P3.7 | Planned | |
 | P3.8 | Planned | |
 <!-- /P3-status -->
@@ -744,7 +744,7 @@ These are bounded decisions, not a request to stop and ask the user all of them 
 | ID | Decision / default | Resolve before | Revisit trigger |
 |---|---|---|---|
 | O01 | World storage/ID encoding; simple generational ownership before a general ECS | P3.1 | Measured scale/query limitation |
-| O02 | Source format, serializer, descriptor approach, artifact version/hash design. **P3.5 (2026-11-01):** models stay glTF; derived `.umodel` is a custom versioned binary with FNV-1a source+dependency hash (see `engine/assets/include/AssetPipeline.md`). Scene file format decided in P3.6. | P3.5/P3.6 | Tool interop or measured pipeline issue |
+| O02 | Source format, serializer, descriptor approach, artifact version/hash design. **P3.5 (2026-11-01):** models stay glTF; derived `.umodel` is a custom versioned binary with FNV-1a source+dependency hash (see `engine/assets/include/AssetPipeline.md`). **P3.6:** scenes are versioned JSON (`*.scene.json`, nlohmann-json, already a tinygltf dependency) with string durable ids; see `engine/scene/include/SceneFormat.md`. | P3.5/P3.6 | Tool interop or measured pipeline issue |
 | O03 | Camera/controls/art and minimal animation approach | P4.2/P4.3 | User reference-game direction changes |
 | O04 | Jolt integration suitability; retain original intent pending spike | P4.1 | Platform/build/behavior mismatch |
 | O05 | Turn order/AP, real-time cost timing, effect clocks and mode integration | P5 controllers | A concrete mechanic requires another rule |

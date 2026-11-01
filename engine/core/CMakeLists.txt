@@ -19,6 +19,7 @@ target_sources(
             include/FixedStepAccumulator.hpp
             include/SlotMap.hpp
             include/DrawList.hpp
+            include/Diagnostic.hpp
             include/MeshData.hpp
             include/RetireQueue.hpp
 )

@@ -1,4 +1,5 @@
 #include <chrono>
+#include <memory>
 #include <string>
 #include <thread>
 
@@ -16,6 +17,7 @@
 #include <Renderer.hpp>
 #include <World.hpp>
 #include <ModelInstance.hpp>
+#include <SceneFile.hpp>
 
 #include "ModelLibrary.hpp"
 
@@ -23,39 +25,37 @@
 
 namespace
 {
-	// Temporary sample scene until scenes load from files (P3.6):
-	// a ring of tinted cubes, a spinning parent with an orbiting child,
-	// and the node hierarchy of models/tower.gltf.
-	void BuildSampleWorld(umbra::world::World &world, ModelLibrary &models)
+	// Loads a scene file into a fresh world. The current world is replaced only on success,
+	// so a broken file never leaves a half-loaded scene on screen.
+	bool LoadSceneFile(std::unique_ptr<umbra::world::World> &world, ModelLibrary &models, const std::string &scenePath)
 	{
-		using namespace umbra::world;
-		const auto add = [&](const std::string &id, glm::vec3 position, float scale, glm::vec4 color) {
-			const Entity entity = world.Create(id);
-			Transform transform;
-			transform.position = position;
-			transform.scale = glm::vec3{scale};
-			world.SetLocalTransform(entity, transform);
-			world.SetRenderable(entity, Renderable{"scenes/phase2.gltf", 0, color});
-			return entity;
+		umbra::scene::SceneLoadOptions options;
+		options.assetRoot = UMBRA_ASSET_DIRECTORY;
+		options.models = [&](const std::string &path) -> const umbra::assets::Model * {
+			const LoadedModel *loaded = models.Load(path);
+			return loaded ? &loaded->model : nullptr;
 		};
 
-		constexpr int ringCount = 6;
-		for (int i = 0; i < ringCount; ++i)
+		auto fresh = std::make_unique<umbra::world::World>();
+		std::vector<umbra::core::Diagnostic> diagnostics;
+		const bool loaded = umbra::scene::LoadScene(options.assetRoot / scenePath, options, *fresh, diagnostics);
+		for (const umbra::core::Diagnostic &diagnostic : diagnostics)
 		{
-			const float angle = glm::two_pi<float>() * static_cast<float>(i) / ringCount;
-			const glm::vec4 color{0.5F + 0.5F * glm::cos(angle), 0.6F, 0.5F + 0.5F * glm::sin(angle), 1.0F};
-			add("ring_" + std::to_string(i), {2.5F * glm::cos(angle), 0.0F, -2.0F + 2.5F * glm::sin(angle)}, 0.5F, color);
+			if (diagnostic.severity == umbra::core::Severity::Error)
+				umbra::diagnostics::Error(umbra::core::Format(diagnostic));
+			else
+				umbra::diagnostics::Info(umbra::core::Format(diagnostic));
+		}
+		if (!loaded)
+		{
+			umbra::diagnostics::Error("Scene " + scenePath + " was not loaded; keeping the current scene.");
+			return false;
 		}
 
-		const Entity spinner = add("spinner", {0.0F, 0.0F, -2.0F}, 0.6F, glm::vec4{1.0F});
-		const Entity moon = add("moon", {2.0F, 0.0F, 0.0F}, 0.4F, glm::vec4{1.0F, 0.8F, 0.4F, 1.0F});
-		world.SetParent(moon, spinner);
-
-		if (const LoadedModel *tower = models.Load("models/tower.gltf"))
-		{
-			umbra::scene::InstantiateModel(world, tower->model, "models/tower.gltf", "tower");
-		}
-		umbra::scene::BindRenderables(world, [&](const std::string &model, std::uint32_t mesh) { return models.Resolve(model, mesh); });
+		umbra::scene::BindRenderables(*fresh, [&](const std::string &model, std::uint32_t mesh) { return models.Resolve(model, mesh); });
+		world = std::move(fresh);
+		umbra::diagnostics::Info("Loaded scene " + scenePath + " with " + std::to_string(world->Count()) + " entities.");
+		return true;
 	}
 
 	void SpinEntity(umbra::world::World &world, const char *id, float radians)
@@ -70,7 +70,7 @@ namespace
 	}
 }
 
-int RunApplication()
+int RunApplication(const std::string &scenePath)
 {
 	umbra::platform::Platform platform;
 
@@ -104,9 +104,9 @@ int RunApplication()
 				}
 
 				ModelLibrary models(renderer, UMBRA_ASSET_DIRECTORY, UMBRA_CACHE_DIRECTORY);
-				umbra::world::World world;
+				auto world = std::make_unique<umbra::world::World>();
 				umbra::core::DrawList drawList;
-				BuildSampleWorld(world, models);
+				LoadSceneFile(world, models, scenePath);
 
 				bool isSuspended = false;
 
@@ -192,10 +192,10 @@ int RunApplication()
 					(void)interpolationFactor;
 
 					// World -> draw list -> renderer. The renderer never sees the world.
-					SpinEntity(world, "spinner", static_cast<float>(deltaTime) * glm::radians(45.0F));
-					world.UpdateTransforms();
+					SpinEntity(*world, "spinner", static_cast<float>(deltaTime) * glm::radians(45.0F));
+					world->UpdateTransforms();
 					drawList.items.clear();
-					world.ExtractDrawList(drawList);
+					world->ExtractDrawList(drawList);
 
 					if (!renderer.RenderFrame(input, static_cast<float>(deltaTime), drawList))
 					{
@@ -212,12 +212,15 @@ int RunApplication()
 	return 0;
 }
 
-int main()
+int main(int argc, char **argv)
 {
+	// Optional first argument: scene path relative to the asset folder.
+	const std::string scenePath = argc > 1 ? argv[1] : "scenes/sample.scene.json";
+
 	umbra::diagnostics::Initialize();
 	umbra::diagnostics::InstallCrashHandlers();
 
-	const int result = RunApplication();
+	const int result = RunApplication(scenePath);
 
 	umbra::diagnostics::UninstallCrashHandlers();
 	umbra::diagnostics::Shutdown();
