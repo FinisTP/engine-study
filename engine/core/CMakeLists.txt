@@ -14,16 +14,10 @@ target_sources(
             include/Version.hpp
             include/FrameClock.hpp
             include/FixedStepAccumulator.hpp
+            include/SlotMap.hpp
 )
 
 target_compile_features(UmbraCore PUBLIC cxx_std_20)
-
-target_link_libraries(
-    UmbraCore
-    PRIVATE
-        Umbra::Warnings
-        Umbra::Sanitizers
-)
 
 target_link_libraries(
     UmbraCore

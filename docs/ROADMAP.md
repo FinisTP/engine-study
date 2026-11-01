@@ -381,6 +381,19 @@ Inspect current source control state, applicable instructions, target graph, pre
 
 ### P3 — Assets and World
 
+<!-- P3-status -->
+| Task | Status | Evidence |
+|---|---|---|
+| P3.1 | Implemented; headless tests pass (Linux GCC/Clang, GCC ASan+UBSan); Windows not run | `tests/core/SlotMapTests.cpp`, `tests/world/WorldTests.cpp` |
+| P3.2 | Planned | |
+| P3.3 | Planned | |
+| P3.4 | Planned | |
+| P3.5 | Planned | |
+| P3.6 | Planned | |
+| P3.7 | Planned | |
+| P3.8 | Planned | |
+<!-- /P3-status -->
+
 **Prerequisite:** reconciled B0; existing rendering retained. **Goal:** replace the hard-coded primitive with a general small world and dependable asset identities/lifetimes.
 
 | Task | Implement | Required evidence |
