@@ -1,0 +1,179 @@
+{
+ "asset": {
+  "version": "2.0",
+  "generator": "Umbra Phase 3 sample"
+ },
+ "scene": 0,
+ "scenes": [
+  {
+   "nodes": [
+    0
+   ]
+  }
+ ],
+ "nodes": [
+  {
+   "name": "Tower",
+   "translation": [
+    0,
+    -0.5,
+    -6
+   ],
+   "children": [
+    1
+   ]
+  },
+  {
+   "name": "Base",
+   "mesh": 0,
+   "scale": [
+    1.2,
+    0.4,
+    1.2
+   ],
+   "children": [
+    2
+   ]
+  },
+  {
+   "name": "Middle",
+   "mesh": 0,
+   "translation": [
+    0,
+    3.5,
+    0
+   ],
+   "scale": [
+    0.6,
+    2.0,
+    0.6
+   ],
+   "children": [
+    3
+   ]
+  },
+  {
+   "name": "Top",
+   "mesh": 0,
+   "translation": [
+    0,
+    1.8,
+    0
+   ],
+   "rotation": [
+    0,
+    0.3826834323650898,
+    0,
+    0.9238795325112867
+   ],
+   "scale": [
+    1.2,
+    0.4,
+    1.2
+   ]
+  }
+ ],
+ "meshes": [
+  {
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 0,
+      "NORMAL": 1,
+      "TEXCOORD_0": 2
+     },
+     "indices": 3,
+     "material": 0
+    }
+   ]
+  }
+ ],
+ "materials": [
+  {
+   "pbrMetallicRoughness": {
+    "baseColorTexture": {
+     "index": 0
+    },
+    "baseColorFactor": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "metallicFactor": 0,
+    "roughnessFactor": 0.8
+   }
+  }
+ ],
+ "textures": [
+  {
+   "source": 0
+  }
+ ],
+ "images": [
+  {
+   "uri": "data:image/bmp;base64,Qk1GAAAAAAAAADYAAAAoAAAAAgAAAAIAAAABABgAAAAAABAAAAATCwAAEwsAAAAAAAAAAAAA/1AUFLT/AAAUtP//UBQAAA=="
+  }
+ ],
+ "buffers": [
+  {
+   "byteLength": 840,
+   "uri": "tower.bin"
+  }
+ ],
+ "bufferViews": [
+  {
+   "buffer": 0,
+   "byteOffset": 0,
+   "byteLength": 768,
+   "byteStride": 32,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteOffset": 768,
+   "byteLength": 72,
+   "target": 34963
+  }
+ ],
+ "accessors": [
+  {
+   "bufferView": 0,
+   "byteOffset": 0,
+   "componentType": 5126,
+   "count": 24,
+   "type": "VEC3",
+   "min": [
+    -1,
+    -1,
+    -1
+   ],
+   "max": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "bufferView": 0,
+   "byteOffset": 12,
+   "componentType": 5126,
+   "count": 24,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 0,
+   "byteOffset": 24,
+   "componentType": 5126,
+   "count": 24,
+   "type": "VEC2"
+  },
+  {
+   "bufferView": 1,
+   "byteOffset": 0,
+   "componentType": 5123,
+   "count": 36,
+   "type": "SCALAR"
+  }
+ ]
+}

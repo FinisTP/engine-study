@@ -207,8 +207,4 @@ namespace umbra::render
         std::uint64_t frameSerial_ = 0;
         TextureHandle fallbackTexture_{};
     };
-
-    // Reads the first primitive and its base-color texture from a glTF file.
-    // Temporary: replaced by the Assets module in P3.5.
-    [[nodiscard]] bool ReadGltfPrimitive(const std::filesystem::path &path, core::MeshData &mesh, core::TextureData &texture);
 }

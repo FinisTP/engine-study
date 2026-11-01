@@ -15,14 +15,18 @@
 #include <CrashHandler.hpp>
 #include <Renderer.hpp>
 #include <World.hpp>
+#include <ModelInstance.hpp>
+
+#include "ModelLibrary.hpp"
 
 #include <glm/gtc/constants.hpp>
 
 namespace
 {
 	// Temporary sample scene until scenes load from files (P3.6):
-	// a ring of tinted cubes plus a spinning parent with an orbiting child.
-	void BuildSampleWorld(umbra::world::World &world, umbra::core::MeshHandle mesh, umbra::core::TextureHandle texture)
+	// a ring of tinted cubes, a spinning parent with an orbiting child,
+	// and the node hierarchy of models/tower.gltf.
+	void BuildSampleWorld(umbra::world::World &world, ModelLibrary &models)
 	{
 		using namespace umbra::world;
 		const auto add = [&](const std::string &id, glm::vec3 position, float scale, glm::vec4 color) {
@@ -31,7 +35,7 @@ namespace
 			transform.position = position;
 			transform.scale = glm::vec3{scale};
 			world.SetLocalTransform(entity, transform);
-			world.SetRenderable(entity, Renderable{"scenes/phase2.gltf", 0, color, mesh, texture});
+			world.SetRenderable(entity, Renderable{"scenes/phase2.gltf", 0, color});
 			return entity;
 		};
 
@@ -46,6 +50,12 @@ namespace
 		const Entity spinner = add("spinner", {0.0F, 0.0F, -2.0F}, 0.6F, glm::vec4{1.0F});
 		const Entity moon = add("moon", {2.0F, 0.0F, 0.0F}, 0.4F, glm::vec4{1.0F, 0.8F, 0.4F, 1.0F});
 		world.SetParent(moon, spinner);
+
+		if (const LoadedModel *tower = models.Load("models/tower.gltf"))
+		{
+			umbra::scene::InstantiateModel(world, tower->model, "models/tower.gltf", "tower");
+		}
+		umbra::scene::BindRenderables(world, [&](const std::string &model, std::uint32_t mesh) { return models.Resolve(model, mesh); });
 	}
 
 	void SpinEntity(umbra::world::World &world, const char *id, float radians)
@@ -93,9 +103,10 @@ int RunApplication()
 					return 1;
 				}
 
+				ModelLibrary models(renderer, UMBRA_ASSET_DIRECTORY, UMBRA_CACHE_DIRECTORY);
 				umbra::world::World world;
 				umbra::core::DrawList drawList;
-				BuildSampleWorld(world, renderer.GetSampleMesh(), renderer.GetSampleTexture());
+				BuildSampleWorld(world, models);
 
 				bool isSuspended = false;
 

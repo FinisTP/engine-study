@@ -1,7 +1,6 @@
 find_package(SDL3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
-find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h" REQUIRED)
 find_package(volk CONFIG REQUIRED)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 
@@ -103,13 +102,11 @@ target_compile_definitions(
     UmbraRender
     PRIVATE
         UMBRA_SHADER_DIRECTORY="${UMBRA_SHADER_OUTPUT_DIRECTORY}"
-        UMBRA_ASSET_DIRECTORY="${PROJECT_SOURCE_DIR}/assets"
 )
 
 target_include_directories(
     UmbraRender
     PRIVATE
-        ${TINYGLTF_INCLUDE_DIRS}
         ${UMBRA_VULKAN_ENUM_HELPER_INCLUDE_DIR}
 )
 

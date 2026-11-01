@@ -27,10 +27,6 @@ namespace umbra::render
         [[nodiscard]] bool Initialize(platform::Window &window);
         // Draws every item in drawList. Items with stale mesh handles are skipped.
         [[nodiscard]] bool RenderFrame(const platform::Input &input, float deltaSeconds, const core::DrawList &drawList);
-        // Handles of the built-in sample model loaded at initialization.
-        [[nodiscard]] core::MeshHandle GetSampleMesh() const noexcept;
-        [[nodiscard]] core::TextureHandle GetSampleTexture() const noexcept;
-
         // GPU resources. Create* return an invalid handle if the data is invalid.
         // Replace* keep the handle and swap the data; Destroy* make the handle stale.
         // Old GPU memory is freed only after in-flight frames finish with it.

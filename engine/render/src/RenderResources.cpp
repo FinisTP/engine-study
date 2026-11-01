@@ -4,10 +4,6 @@
 #include "RenderResources.hpp"
 
 #include <Log.hpp>
-#define TINYGLTF_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <tiny_gltf.h>
 
 #include <algorithm>
 #include <array>
@@ -84,46 +80,6 @@ namespace
             0, 0, nullptr, 0, nullptr, 1, &toShader);
     }
 
-    [[nodiscard]] const unsigned char *AccessorData(const tinygltf::Model &model, const tinygltf::Accessor &accessor, std::size_t &stride)
-    {
-        if (accessor.bufferView < 0 || static_cast<std::size_t>(accessor.bufferView) >= model.bufferViews.size())
-        {
-            return nullptr;
-        }
-        const tinygltf::BufferView &view = model.bufferViews[static_cast<std::size_t>(accessor.bufferView)];
-        if (view.buffer < 0 || static_cast<std::size_t>(view.buffer) >= model.buffers.size())
-        {
-            return nullptr;
-        }
-        stride = accessor.ByteStride(view);
-        const tinygltf::Buffer &buffer = model.buffers[static_cast<std::size_t>(view.buffer)];
-        const std::size_t offset = view.byteOffset + accessor.byteOffset;
-        return offset < buffer.data.size() ? buffer.data.data() + offset : nullptr;
-    }
-
-    template <typename T>
-    [[nodiscard]] T ReadScalar(const unsigned char *data, int componentType)
-    {
-        switch (componentType)
-        {
-        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-            return static_cast<T>(*data);
-        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-        {
-            std::uint16_t value{};
-            std::memcpy(&value, data, sizeof(value));
-            return static_cast<T>(value);
-        }
-        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-        {
-            std::uint32_t value{};
-            std::memcpy(&value, data, sizeof(value));
-            return static_cast<T>(value);
-        }
-        default:
-            return {};
-        }
-    }
 }
 
 namespace umbra::render
@@ -691,121 +647,5 @@ namespace umbra::render
         {
             retired_.Collect(frameSerial_ - framesInFlight);
         }
-    }
-
-    bool ReadGltfPrimitive(const std::filesystem::path &path, core::MeshData &meshData, core::TextureData &textureData)
-    {
-        tinygltf::TinyGLTF loader;
-        tinygltf::Model model;
-        std::string warning;
-        std::string error;
-        const bool loaded = path.extension() == ".glb"
-                                ? loader.LoadBinaryFromFile(&model, &error, &warning, path.string())
-                                : loader.LoadASCIIFromFile(&model, &error, &warning, path.string());
-        if (!warning.empty())
-        {
-            diagnostics::Info("glTF: " + warning);
-        }
-        if (!loaded)
-        {
-            diagnostics::Error("Failed loading glTF scene: " + error);
-            return false;
-        }
-        if (model.meshes.empty() || model.meshes.front().primitives.empty())
-        {
-            diagnostics::Error("glTF scene has no mesh primitive.");
-            return false;
-        }
-        const tinygltf::Primitive &primitive = model.meshes.front().primitives.front();
-        const auto positionIt = primitive.attributes.find("POSITION");
-        if (positionIt == primitive.attributes.end() || primitive.indices < 0)
-        {
-            diagnostics::Error("glTF primitive requires POSITION and indices.");
-            return false;
-        }
-        const tinygltf::Accessor &positions = model.accessors[static_cast<std::size_t>(positionIt->second)];
-        if (positions.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT || positions.type != TINYGLTF_TYPE_VEC3)
-        {
-            diagnostics::Error("glTF POSITION must be float VEC3.");
-            return false;
-        }
-        std::size_t positionStride{};
-        const unsigned char *positionData = AccessorData(model, positions, positionStride);
-        if (positionData == nullptr)
-            return false;
-        std::vector<Vertex> &vertices = meshData.vertices;
-        vertices.assign(positions.count, Vertex{});
-        for (std::size_t index = 0; index < vertices.size(); ++index)
-            std::memcpy(&vertices[index].position, positionData + index * positionStride, sizeof(glm::vec3));
-
-        const auto readFloatAttribute = [&](const char *name, int expectedType, auto member)
-        {
-            const auto it = primitive.attributes.find(name);
-            if (it == primitive.attributes.end())
-                return;
-            const tinygltf::Accessor &accessor = model.accessors[static_cast<std::size_t>(it->second)];
-            if (accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT || accessor.type != expectedType ||
-                accessor.count != vertices.size())
-                return;
-            std::size_t stride{};
-            const unsigned char *data = AccessorData(model, accessor, stride);
-            if (data == nullptr)
-                return;
-            using Value = std::remove_reference_t<decltype(vertices[0].*member)>;
-            for (std::size_t index = 0; index < vertices.size(); ++index)
-                std::memcpy(&(vertices[index].*member), data + index * stride, sizeof(Value));
-        };
-        readFloatAttribute("NORMAL", TINYGLTF_TYPE_VEC3, &Vertex::normal);
-        readFloatAttribute("TEXCOORD_0", TINYGLTF_TYPE_VEC2, &Vertex::uv);
-
-        const tinygltf::Accessor &indices = model.accessors[static_cast<std::size_t>(primitive.indices)];
-        std::size_t indexStride{};
-        const unsigned char *indexData = AccessorData(model, indices, indexStride);
-        if (indexData == nullptr)
-            return false;
-        meshData.indices.resize(indices.count);
-        for (std::size_t index = 0; index < meshData.indices.size(); ++index)
-            meshData.indices[index] = ReadScalar<std::uint32_t>(indexData + index * indexStride, indices.componentType);
-
-        if (primitive.material >= 0)
-        {
-            const auto &factor = model.materials[static_cast<std::size_t>(primitive.material)].pbrMetallicRoughness.baseColorFactor;
-            if (factor.size() == 4)
-                meshData.baseColor = glm::vec4(factor[0], factor[1], factor[2], factor[3]);
-        }
-
-        const tinygltf::Image *sourceImage = model.images.empty() ? nullptr : &model.images.front();
-        if (primitive.material >= 0)
-        {
-            const int textureIndex = model.materials[static_cast<std::size_t>(primitive.material)]
-                                         .pbrMetallicRoughness.baseColorTexture.index;
-            if (textureIndex >= 0 && static_cast<std::size_t>(textureIndex) < model.textures.size())
-            {
-                const int source = model.textures[static_cast<std::size_t>(textureIndex)].source;
-                if (source >= 0 && static_cast<std::size_t>(source) < model.images.size())
-                    sourceImage = &model.images[static_cast<std::size_t>(source)];
-            }
-        }
-        if (sourceImage == nullptr || sourceImage->width <= 0 || sourceImage->height <= 0)
-        {
-            diagnostics::Error("glTF scene requires one decoded texture.");
-            return false;
-        }
-        textureData.width = static_cast<std::uint32_t>(sourceImage->width);
-        textureData.height = static_cast<std::uint32_t>(sourceImage->height);
-        textureData.rgba.resize(static_cast<std::size_t>(sourceImage->width * sourceImage->height * 4));
-        for (int pixel = 0; pixel < sourceImage->width * sourceImage->height; ++pixel)
-        {
-            for (int channel = 0; channel < 4; ++channel)
-            {
-                textureData.rgba[static_cast<std::size_t>(pixel * 4 + channel)] =
-                    channel < sourceImage->component
-                        ? sourceImage->image[static_cast<std::size_t>(pixel * sourceImage->component + channel)]
-                        : 255;
-            }
-        }
-        diagnostics::Info("Loaded glTF primitive: " + std::to_string(vertices.size()) + " vertices, " +
-                          std::to_string(meshData.indices.size()) + " indices, one texture.");
-        return true;
     }
 }

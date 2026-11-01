@@ -58,8 +58,6 @@ namespace umbra::render
         VulkanVertexPipeline pipeline;
         VulkanFrameResources frameResources;
         DiagnosticsOverlay overlay;
-        MeshHandle sampleMesh{};
-        TextureHandle sampleTexture{};
         platform::Window *window = nullptr;
         bool resizeRequested = false;
         glm::vec3 cameraPosition{0.0F, 0.5F, 5.0F};
@@ -266,19 +264,6 @@ namespace umbra::render
             return false;
         }
 
-        // load the built-in sample model
-        core::MeshData sampleMesh;
-        core::TextureData sampleTexture;
-        if (!ReadGltfPrimitive(std::filesystem::path{UMBRA_ASSET_DIRECTORY} / "scenes" / "phase2.gltf", sampleMesh, sampleTexture))
-        {
-            return false;
-        }
-        implementation->sampleMesh = implementation->sceneResources.CreateMesh(sampleMesh);
-        implementation->sampleTexture = implementation->sceneResources.CreateTexture(sampleTexture);
-        if (!implementation->sampleMesh || !implementation->sampleTexture)
-        {
-            return false;
-        }
 
         implementation->window = &window;
         const Implementation::PresentationInitializationResult presentationResult =
@@ -360,16 +345,6 @@ namespace umbra::render
 
         implementation_->sceneResources.OnFrameSubmitted();
         return true;
-    }
-
-    core::MeshHandle Renderer::GetSampleMesh() const noexcept
-    {
-        return implementation_ ? implementation_->sampleMesh : core::MeshHandle{};
-    }
-
-    core::TextureHandle Renderer::GetSampleTexture() const noexcept
-    {
-        return implementation_ ? implementation_->sampleTexture : core::TextureHandle{};
     }
 
     core::MeshHandle Renderer::CreateMesh(const core::MeshData &data)
