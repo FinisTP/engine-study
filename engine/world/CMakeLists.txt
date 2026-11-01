@@ -1,5 +1,3 @@
-find_package(glm CONFIG REQUIRED)
-
 add_library(UmbraWorld STATIC)
 add_library(Umbra::World ALIAS UmbraWorld)
 
@@ -20,7 +18,6 @@ target_link_libraries(
     UmbraWorld
     PUBLIC
         Umbra::Core
-        glm::glm
     PRIVATE
         Umbra::Warnings
         Umbra::Sanitizers
