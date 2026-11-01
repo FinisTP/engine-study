@@ -9,6 +9,7 @@ target_sources(
         src/Version.cpp
         src/FrameClock.cpp
         src/FixedStepAccumulator.cpp
+        src/MeshData.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
@@ -18,6 +19,8 @@ target_sources(
             include/FixedStepAccumulator.hpp
             include/SlotMap.hpp
             include/DrawList.hpp
+            include/MeshData.hpp
+            include/RetireQueue.hpp
 )
 
 target_compile_features(UmbraCore PUBLIC cxx_std_20)

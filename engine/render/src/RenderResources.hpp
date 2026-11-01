@@ -4,6 +4,8 @@
 #include <vk_mem_alloc.h>
 
 #include <DrawList.hpp>
+#include <MeshData.hpp>
+#include <RetireQueue.hpp>
 #include <SlotMap.hpp>
 
 #include <glm/vec2.hpp>
@@ -14,17 +16,13 @@
 #include <cstdint>
 #include <filesystem>
 #include <span>
+#include <variant>
 #include <vector>
 
 namespace umbra::render
 {
-    // Represents a single vertex with position, normal, and texture coordinates.
-    struct Vertex final
-    {
-        glm::vec3 position{};
-        glm::vec3 normal{};
-        glm::vec2 uv{};
-    };
+    // Vertex layout shared with the importer; see core MeshData.hpp.
+    using core::Vertex;
 
     // Wraps VkBuffer, think of it as GPU memory array
     class GpuBuffer final
@@ -140,8 +138,9 @@ namespace umbra::render
         GpuImage image;
         VkSampler sampler = VK_NULL_HANDLE;
         VkDevice device = VK_NULL_HANDLE;
-        // set 1 of the scene pipeline; owned by SceneResources' descriptor pool
+        // set 1 of the scene pipeline, allocated from (and freed back to) pool
         VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+        VkDescriptorPool pool = VK_NULL_HANDLE;
 
         TextureResource() = default;
         ~TextureResource();
@@ -149,40 +148,67 @@ namespace umbra::render
         TextureResource &operator=(const TextureResource &) = delete;
         TextureResource(TextureResource &&other) noexcept;
         TextureResource &operator=(TextureResource &&other) noexcept;
+        void Release() noexcept;
     };
 
-    // Owns every mesh and texture. Handles are generational (see core SlotMap.md).
+    // Owns every mesh and texture. Handles are generational (see core SlotMap.md);
+    // destroyed or replaced GPU data is kept alive until the GPU is done with it
+    // (see ResourceLifetime.md).
     class SceneResources final
     {
     public:
+        static constexpr std::uint64_t framesInFlight = 2;
+
         SceneResources() = default;
         ~SceneResources();
         SceneResources(const SceneResources &) = delete;
         SceneResources &operator=(const SceneResources &) = delete;
 
-        // Creates the per-texture descriptor set layout and pool.
-        [[nodiscard]] bool Initialize(VkDevice device);
-        // Load one mesh primitive and one texture from a glTF file
-        [[nodiscard]] bool LoadGltf(const std::filesystem::path &path, VulkanAllocator &allocator, const VkPhysicalDeviceProperties &deviceProperties);
+        // Creates the texture descriptor layout/pool and the 1x1 white fallback texture.
+        [[nodiscard]] bool Initialize(VkDevice device, VulkanAllocator &allocator, const VkPhysicalDeviceProperties &deviceProperties);
         void Shutdown() noexcept;
+
+        // Return an invalid handle (and log why) if the data is invalid or upload fails.
+        [[nodiscard]] MeshHandle CreateMesh(const core::MeshData &data);
+        [[nodiscard]] TextureHandle CreateTexture(const core::TextureData &data);
+        // Swap new data in behind an existing handle; the old GPU data is retired.
+        // On failure the old data stays in place.
+        bool ReplaceMesh(MeshHandle handle, const core::MeshData &data);
+        bool ReplaceTexture(TextureHandle handle, const core::TextureData &data);
+        // The handle goes stale immediately; GPU memory is freed once no frame uses it.
+        bool DestroyMesh(MeshHandle handle);
+        bool DestroyTexture(TextureHandle handle);
+
+        // Call once after each submitted frame; frees retired resources the GPU has finished with.
+        void OnFrameSubmitted();
+        // Frees all retired resources. Only call while the device is idle.
+        void FlushRetired() { retired_.Flush(); }
 
         [[nodiscard]] const MeshResource *GetMesh(MeshHandle handle) const noexcept { return meshes_.Get(handle); }
         [[nodiscard]] const TextureResource *GetTexture(TextureHandle handle) const noexcept { return textures_.Get(handle); }
-        [[nodiscard]] MeshHandle GetSceneMesh() const noexcept { return sceneMesh_; }
-        [[nodiscard]] TextureHandle GetSceneTexture() const noexcept { return sceneTexture_; }
+        [[nodiscard]] TextureHandle GetFallbackTexture() const noexcept { return fallbackTexture_; }
         [[nodiscard]] std::size_t GetMeshCount() const noexcept { return meshes_.Size(); }
         [[nodiscard]] std::size_t GetTextureCount() const noexcept { return textures_.Size(); }
+        [[nodiscard]] std::size_t GetRetiredCount() const noexcept { return retired_.Size(); }
         [[nodiscard]] VkDescriptorSetLayout GetTextureSetLayout() const noexcept { return textureSetLayout_; }
 
     private:
-        [[nodiscard]] bool WriteTextureSet(TextureResource &texture);
+        [[nodiscard]] bool UploadMesh(const core::MeshData &data, MeshResource &mesh);
+        [[nodiscard]] bool UploadTexture(const core::TextureData &data, TextureResource &texture);
 
         VkDevice device_ = VK_NULL_HANDLE;
+        VulkanAllocator *allocator_ = nullptr;
+        float maxAnisotropy_ = 1.0F;
         VkDescriptorSetLayout textureSetLayout_ = VK_NULL_HANDLE;
         VkDescriptorPool texturePool_ = VK_NULL_HANDLE;
         core::SlotMap<MeshResource, core::MeshTag> meshes_;
         core::SlotMap<TextureResource, core::TextureTag> textures_;
-        MeshHandle sceneMesh_{};
-        TextureHandle sceneTexture_{};
+        core::RetireQueue<std::variant<MeshResource, TextureResource>> retired_;
+        std::uint64_t frameSerial_ = 0;
+        TextureHandle fallbackTexture_{};
     };
+
+    // Reads the first primitive and its base-color texture from a glTF file.
+    // Temporary: replaced by the Assets module in P3.5.
+    [[nodiscard]] bool ReadGltfPrimitive(const std::filesystem::path &path, core::MeshData &mesh, core::TextureData &texture);
 }

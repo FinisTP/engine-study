@@ -460,35 +460,44 @@ namespace umbra::render
         return true;
     }
 
-    TextureResource::~TextureResource()
+    TextureResource::~TextureResource() { Release(); }
+
+    void TextureResource::Release() noexcept
     {
+        if (device != VK_NULL_HANDLE && pool != VK_NULL_HANDLE && descriptorSet != VK_NULL_HANDLE)
+        {
+            vkFreeDescriptorSets(device, pool, 1, &descriptorSet);
+        }
         if (device != VK_NULL_HANDLE && sampler != VK_NULL_HANDLE)
         {
             vkDestroySampler(device, sampler, nullptr);
         }
+        descriptorSet = VK_NULL_HANDLE;
+        sampler = VK_NULL_HANDLE;
+        image.Reset();
     }
     TextureResource::TextureResource(TextureResource &&other) noexcept { *this = std::move(other); }
     TextureResource &TextureResource::operator=(TextureResource &&other) noexcept
     {
         if (this != &other)
         {
-            if (device != VK_NULL_HANDLE && sampler != VK_NULL_HANDLE)
-            {
-                vkDestroySampler(device, sampler, nullptr);
-            }
+            Release();
             image = std::move(other.image);
             sampler = std::exchange(other.sampler, VK_NULL_HANDLE);
             device = std::exchange(other.device, VK_NULL_HANDLE);
             descriptorSet = std::exchange(other.descriptorSet, VK_NULL_HANDLE);
+            pool = std::exchange(other.pool, VK_NULL_HANDLE);
         }
         return *this;
     }
 
     SceneResources::~SceneResources() { Shutdown(); }
 
-    bool SceneResources::Initialize(VkDevice device)
+    bool SceneResources::Initialize(VkDevice device, VulkanAllocator &allocator, const VkPhysicalDeviceProperties &deviceProperties)
     {
         device_ = device;
+        allocator_ = &allocator;
+        maxAnisotropy_ = std::min(8.0F, deviceProperties.limits.maxSamplerAnisotropy);
 
         // 1. Layout for set 1: one combined image sampler read by the fragment shader.
         const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
@@ -502,7 +511,7 @@ namespace umbra::render
             return false;
         }
 
-        // 2. Pool with one set per texture; FREE bit so single sets can be released later.
+        // 2. Pool with one set per texture; FREE bit so single sets can be released.
         constexpr std::uint32_t maxTextures = 256;
         const VkDescriptorPoolSize poolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, maxTextures};
         VkDescriptorPoolCreateInfo poolInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
@@ -516,25 +525,98 @@ namespace umbra::render
             LogVkFailure("Failed creating texture descriptor pool.", result);
             return false;
         }
+
+        // 3. A 1x1 white texture, drawn whenever an item has no (or a stale) texture.
+        fallbackTexture_ = CreateTexture(core::TextureData{1, 1, {255, 255, 255, 255}});
+        return static_cast<bool>(fallbackTexture_);
+    }
+
+    void SceneResources::Shutdown() noexcept
+    {
+        // Resources free their own descriptor sets, so they go before the pool.
+        retired_.Flush();
+        textures_.Clear();
+        meshes_.Clear();
+        fallbackTexture_ = {};
+        if (texturePool_ != VK_NULL_HANDLE)
+        {
+            vkDestroyDescriptorPool(device_, texturePool_, nullptr);
+            texturePool_ = VK_NULL_HANDLE;
+        }
+        if (textureSetLayout_ != VK_NULL_HANDLE)
+        {
+            vkDestroyDescriptorSetLayout(device_, textureSetLayout_, nullptr);
+            textureSetLayout_ = VK_NULL_HANDLE;
+        }
+    }
+
+    bool SceneResources::UploadMesh(const core::MeshData &data, MeshResource &mesh)
+    {
+        if (const std::string error = core::ValidateMesh(data); !error.empty())
+        {
+            diagnostics::Error("Rejected mesh: " + error + ".");
+            return false;
+        }
+        if (!allocator_->CreateDeviceBuffer(data.vertices.data(), data.vertices.size() * sizeof(Vertex),
+                                            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, mesh.vertexBuffer) ||
+            !allocator_->CreateDeviceBuffer(data.indices.data(), data.indices.size() * sizeof(std::uint32_t),
+                                            VK_BUFFER_USAGE_INDEX_BUFFER_BIT, mesh.indexBuffer))
+        {
+            return false;
+        }
+        mesh.indexCount = static_cast<std::uint32_t>(data.indices.size());
+        mesh.baseColor = data.baseColor;
         return true;
     }
 
-    bool SceneResources::WriteTextureSet(TextureResource &texture)
+    bool SceneResources::UploadTexture(const core::TextureData &data, TextureResource &texture)
     {
+        if (const std::string error = core::ValidateTexture(data); !error.empty())
+        {
+            diagnostics::Error("Rejected texture: " + error + ".");
+            return false;
+        }
+
+        // 1. Image + view.
+        if (!allocator_->CreateTexture(std::as_bytes(std::span{data.rgba}), data.width, data.height, texture.image))
+        {
+            return false;
+        }
+
+        // 2. Sampler.
+        texture.device = device_;
+        VkSamplerCreateInfo samplerInfo{VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
+        samplerInfo.magFilter = VK_FILTER_LINEAR;
+        samplerInfo.minFilter = VK_FILTER_LINEAR;
+        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.anisotropyEnable = VK_TRUE;
+        samplerInfo.maxAnisotropy = maxAnisotropy_;
+        samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        VkResult result = vkCreateSampler(device_, &samplerInfo, nullptr, &texture.sampler);
+        if (result != VK_SUCCESS)
+        {
+            LogVkFailure("Failed creating texture sampler.", result);
+            return false;
+        }
+
+        // 3. Descriptor set (set 1) pointing at the image and sampler.
         VkDescriptorSetAllocateInfo allocateInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
         allocateInfo.descriptorPool = texturePool_;
         allocateInfo.descriptorSetCount = 1;
         allocateInfo.pSetLayouts = &textureSetLayout_;
-        const VkResult result = vkAllocateDescriptorSets(device_, &allocateInfo, &texture.descriptorSet);
+        result = vkAllocateDescriptorSets(device_, &allocateInfo, &texture.descriptorSet);
         if (result != VK_SUCCESS)
         {
             LogVkFailure("Failed allocating texture descriptor set.", result);
             return false;
         }
+        texture.pool = texturePool_;
         const VkDescriptorImageInfo imageInfo{texture.sampler, texture.image.GetView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
         VkWriteDescriptorSet write{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
         write.dstSet = texture.descriptorSet;
-        write.dstBinding = 0;
         write.descriptorCount = 1;
         write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         write.pImageInfo = &imageInfo;
@@ -542,9 +624,76 @@ namespace umbra::render
         return true;
     }
 
-    bool SceneResources::LoadGltf(
-        const std::filesystem::path &path, VulkanAllocator &allocator,
-        const VkPhysicalDeviceProperties &deviceProperties)
+    MeshHandle SceneResources::CreateMesh(const core::MeshData &data)
+    {
+        MeshResource mesh;
+        return UploadMesh(data, mesh) ? meshes_.Insert(std::move(mesh)) : MeshHandle{};
+    }
+
+    TextureHandle SceneResources::CreateTexture(const core::TextureData &data)
+    {
+        TextureResource texture;
+        return UploadTexture(data, texture) ? textures_.Insert(std::move(texture)) : TextureHandle{};
+    }
+
+    bool SceneResources::ReplaceMesh(MeshHandle handle, const core::MeshData &data)
+    {
+        MeshResource *slot = meshes_.Get(handle);
+        MeshResource fresh;
+        if (slot == nullptr || !UploadMesh(data, fresh))
+        {
+            return false;
+        }
+        // Old buffers may still be read by in-flight frames: retire instead of destroying.
+        retired_.Retire(std::exchange(*slot, std::move(fresh)), frameSerial_);
+        return true;
+    }
+
+    bool SceneResources::ReplaceTexture(TextureHandle handle, const core::TextureData &data)
+    {
+        TextureResource *slot = textures_.Get(handle);
+        TextureResource fresh;
+        if (slot == nullptr || !UploadTexture(data, fresh))
+        {
+            return false;
+        }
+        retired_.Retire(std::exchange(*slot, std::move(fresh)), frameSerial_);
+        return true;
+    }
+
+    bool SceneResources::DestroyMesh(MeshHandle handle)
+    {
+        MeshResource *slot = meshes_.Get(handle);
+        if (slot == nullptr)
+        {
+            return false;
+        }
+        retired_.Retire(std::move(*slot), frameSerial_);
+        return meshes_.Remove(handle);
+    }
+
+    bool SceneResources::DestroyTexture(TextureHandle handle)
+    {
+        TextureResource *slot = textures_.Get(handle);
+        if (slot == nullptr || handle == fallbackTexture_)
+        {
+            return false;
+        }
+        retired_.Retire(std::move(*slot), frameSerial_);
+        return textures_.Remove(handle);
+    }
+
+    void SceneResources::OnFrameSubmitted()
+    {
+        // After frame N is submitted, frames up to N - framesInFlight are known finished.
+        ++frameSerial_;
+        if (frameSerial_ >= framesInFlight)
+        {
+            retired_.Collect(frameSerial_ - framesInFlight);
+        }
+    }
+
+    bool ReadGltfPrimitive(const std::filesystem::path &path, core::MeshData &meshData, core::TextureData &textureData)
     {
         tinygltf::TinyGLTF loader;
         tinygltf::Model model;
@@ -584,7 +733,8 @@ namespace umbra::render
         const unsigned char *positionData = AccessorData(model, positions, positionStride);
         if (positionData == nullptr)
             return false;
-        std::vector<Vertex> vertices(positions.count);
+        std::vector<Vertex> &vertices = meshData.vertices;
+        vertices.assign(positions.count, Vertex{});
         for (std::size_t index = 0; index < vertices.size(); ++index)
             std::memcpy(&vertices[index].position, positionData + index * positionStride, sizeof(glm::vec3));
 
@@ -613,22 +763,15 @@ namespace umbra::render
         const unsigned char *indexData = AccessorData(model, indices, indexStride);
         if (indexData == nullptr)
             return false;
-        std::vector<std::uint32_t> indexValues(indices.count);
-        for (std::size_t index = 0; index < indexValues.size(); ++index)
-            indexValues[index] = ReadScalar<std::uint32_t>(indexData + index * indexStride, indices.componentType);
+        meshData.indices.resize(indices.count);
+        for (std::size_t index = 0; index < meshData.indices.size(); ++index)
+            meshData.indices[index] = ReadScalar<std::uint32_t>(indexData + index * indexStride, indices.componentType);
 
-        MeshResource mesh;
-        if (!allocator.CreateDeviceBuffer(vertices.data(), vertices.size() * sizeof(Vertex),
-                                          VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, mesh.vertexBuffer) ||
-            !allocator.CreateDeviceBuffer(indexValues.data(), indexValues.size() * sizeof(std::uint32_t),
-                                          VK_BUFFER_USAGE_INDEX_BUFFER_BIT, mesh.indexBuffer))
-            return false;
-        mesh.indexCount = static_cast<std::uint32_t>(indexValues.size());
         if (primitive.material >= 0)
         {
             const auto &factor = model.materials[static_cast<std::size_t>(primitive.material)].pbrMetallicRoughness.baseColorFactor;
             if (factor.size() == 4)
-                mesh.baseColor = glm::vec4(factor[0], factor[1], factor[2], factor[3]);
+                meshData.baseColor = glm::vec4(factor[0], factor[1], factor[2], factor[3]);
         }
 
         const tinygltf::Image *sourceImage = model.images.empty() ? nullptr : &model.images.front();
@@ -648,66 +791,21 @@ namespace umbra::render
             diagnostics::Error("glTF scene requires one decoded texture.");
             return false;
         }
-        std::vector<unsigned char> rgba(static_cast<std::size_t>(sourceImage->width * sourceImage->height * 4));
+        textureData.width = static_cast<std::uint32_t>(sourceImage->width);
+        textureData.height = static_cast<std::uint32_t>(sourceImage->height);
+        textureData.rgba.resize(static_cast<std::size_t>(sourceImage->width * sourceImage->height * 4));
         for (int pixel = 0; pixel < sourceImage->width * sourceImage->height; ++pixel)
         {
             for (int channel = 0; channel < 4; ++channel)
             {
-                rgba[static_cast<std::size_t>(pixel * 4 + channel)] = channel < sourceImage->component
-                                                                          ? sourceImage->image[static_cast<std::size_t>(pixel * sourceImage->component + channel)]
-                                                                          : 255;
+                textureData.rgba[static_cast<std::size_t>(pixel * 4 + channel)] =
+                    channel < sourceImage->component
+                        ? sourceImage->image[static_cast<std::size_t>(pixel * sourceImage->component + channel)]
+                        : 255;
             }
         }
-        TextureResource texture;
-        if (!allocator.CreateTexture(
-                std::as_bytes(std::span{rgba}), static_cast<std::uint32_t>(sourceImage->width),
-                static_cast<std::uint32_t>(sourceImage->height), texture.image))
-            return false;
-        const VkDevice device = device_;
-        texture.device = device;
-        VkSamplerCreateInfo samplerInfo{VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
-        samplerInfo.magFilter = VK_FILTER_LINEAR;
-        samplerInfo.minFilter = VK_FILTER_LINEAR;
-        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.anisotropyEnable = VK_TRUE;
-        samplerInfo.maxAnisotropy = std::min(8.0F, deviceProperties.limits.maxSamplerAnisotropy);
-        samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-        samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-        const VkResult samplerResult = vkCreateSampler(device, &samplerInfo, nullptr, &texture.sampler);
-        if (samplerResult != VK_SUCCESS)
-        {
-            LogVkFailure("Failed creating texture sampler.", samplerResult);
-            return false;
-        }
-
-        if (!WriteTextureSet(texture))
-            return false;
-
-        sceneMesh_ = meshes_.Insert(std::move(mesh));
-        sceneTexture_ = textures_.Insert(std::move(texture));
         diagnostics::Info("Loaded glTF primitive: " + std::to_string(vertices.size()) + " vertices, " +
-                          std::to_string(indexValues.size()) + " indices, one texture.");
+                          std::to_string(meshData.indices.size()) + " indices, one texture.");
         return true;
-    }
-
-    void SceneResources::Shutdown() noexcept
-    {
-        // Samplers and images go first; destroying the pool frees every texture set.
-        textures_.Clear();
-        meshes_.Clear();
-        sceneMesh_ = {};
-        sceneTexture_ = {};
-        if (texturePool_ != VK_NULL_HANDLE)
-        {
-            vkDestroyDescriptorPool(device_, texturePool_, nullptr);
-            texturePool_ = VK_NULL_HANDLE;
-        }
-        if (textureSetLayout_ != VK_NULL_HANDLE)
-        {
-            vkDestroyDescriptorSetLayout(device_, textureSetLayout_, nullptr);
-            textureSetLayout_ = VK_NULL_HANDLE;
-        }
     }
 }

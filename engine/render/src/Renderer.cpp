@@ -58,6 +58,8 @@ namespace umbra::render
         VulkanVertexPipeline pipeline;
         VulkanFrameResources frameResources;
         DiagnosticsOverlay overlay;
+        MeshHandle sampleMesh{};
+        TextureHandle sampleTexture{};
         platform::Window *window = nullptr;
         bool resizeRequested = false;
         glm::vec3 cameraPosition{0.0F, 0.5F, 5.0F};
@@ -157,6 +159,8 @@ namespace umbra::render
                 // If the device is busy, we cannot destroy and recreate the swapchain.
                 return PresentationInitializationResult::FatalError;
             }
+            // The GPU is idle, so retired resources can all go now.
+            sceneResources.FlushRetired();
 
             // Clear all resources that depend on the swapchain before recreating it.
             overlay.Shutdown();
@@ -255,12 +259,23 @@ namespace umbra::render
             return false;
         }
 
+        if (!implementation->sceneResources.Initialize(implementation->device.GetHandle(),
+                                                       implementation->allocator,
+                                                       implementation->physicalDevice.GetProperties()))
+        {
+            return false;
+        }
+
         // load the built-in sample model
-        if (!implementation->sceneResources.Initialize(implementation->device.GetHandle()) ||
-            !implementation->sceneResources.LoadGltf(
-                std::filesystem::path{UMBRA_ASSET_DIRECTORY} / "scenes" / "phase2.gltf",
-                implementation->allocator,
-                implementation->physicalDevice.GetProperties()))
+        core::MeshData sampleMesh;
+        core::TextureData sampleTexture;
+        if (!ReadGltfPrimitive(std::filesystem::path{UMBRA_ASSET_DIRECTORY} / "scenes" / "phase2.gltf", sampleMesh, sampleTexture))
+        {
+            return false;
+        }
+        implementation->sampleMesh = implementation->sceneResources.CreateMesh(sampleMesh);
+        implementation->sampleTexture = implementation->sceneResources.CreateTexture(sampleTexture);
+        if (!implementation->sampleMesh || !implementation->sampleTexture)
         {
             return false;
         }
@@ -329,7 +344,7 @@ namespace umbra::render
             implementation_->pipeline,
             resources,
             drawList,
-            resources.GetSceneTexture(),
+            resources.GetFallbackTexture(),
             implementation_->BuildUniform(),
             implementation_->overlay);
 
@@ -338,18 +353,53 @@ namespace umbra::render
             implementation_->resizeRequested = true;
             return true;
         }
+        if (result != FrameResult::Presented)
+        {
+            return false;
+        }
 
-        return result == FrameResult::Presented;
+        implementation_->sceneResources.OnFrameSubmitted();
+        return true;
     }
 
     core::MeshHandle Renderer::GetSampleMesh() const noexcept
     {
-        return implementation_ ? implementation_->sceneResources.GetSceneMesh() : core::MeshHandle{};
+        return implementation_ ? implementation_->sampleMesh : core::MeshHandle{};
     }
 
     core::TextureHandle Renderer::GetSampleTexture() const noexcept
     {
-        return implementation_ ? implementation_->sceneResources.GetSceneTexture() : core::TextureHandle{};
+        return implementation_ ? implementation_->sampleTexture : core::TextureHandle{};
+    }
+
+    core::MeshHandle Renderer::CreateMesh(const core::MeshData &data)
+    {
+        return implementation_ ? implementation_->sceneResources.CreateMesh(data) : core::MeshHandle{};
+    }
+
+    core::TextureHandle Renderer::CreateTexture(const core::TextureData &data)
+    {
+        return implementation_ ? implementation_->sceneResources.CreateTexture(data) : core::TextureHandle{};
+    }
+
+    bool Renderer::ReplaceMesh(core::MeshHandle handle, const core::MeshData &data)
+    {
+        return implementation_ && implementation_->sceneResources.ReplaceMesh(handle, data);
+    }
+
+    bool Renderer::ReplaceTexture(core::TextureHandle handle, const core::TextureData &data)
+    {
+        return implementation_ && implementation_->sceneResources.ReplaceTexture(handle, data);
+    }
+
+    bool Renderer::DestroyMesh(core::MeshHandle handle)
+    {
+        return implementation_ && implementation_->sceneResources.DestroyMesh(handle);
+    }
+
+    bool Renderer::DestroyTexture(core::TextureHandle handle)
+    {
+        return implementation_ && implementation_->sceneResources.DestroyTexture(handle);
     }
 
     void Renderer::RequestResize() noexcept

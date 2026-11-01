@@ -9,6 +9,7 @@ target_sources(
         FrameClockTests.cpp
         FixedStepAccumulatorTests.cpp
         SlotMapTests.cpp
+        ResourceDataTests.cpp
 )
 
 target_compile_features(UmbraCoreTests PRIVATE cxx_std_20)
