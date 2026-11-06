@@ -214,6 +214,7 @@ SimulationEvents SceneRuntime::Simulate(float deltaSeconds, const umbra::gamepla
     }
     if (steps == maxStepsPerFrame)
         accumulator_ = 0.0;
+    events.steps = steps;
 
     // Walk animation follows the character's horizontal speed.
     if (player_.IsSpawned())

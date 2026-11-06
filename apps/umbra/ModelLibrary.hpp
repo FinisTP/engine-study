@@ -47,6 +47,8 @@ public:
     ReloadResult Reload(const std::string &modelPath);
     // Every watched file -> the model path it belongs to (failed models: source only).
     [[nodiscard]] std::map<std::filesystem::path, std::string> WatchedFiles() const;
+    // Models currently loaded (kept for the whole run, so this grows only with distinct files).
+    [[nodiscard]] std::size_t Count() const noexcept { return models_.size(); }
 
 private:
     bool BuildAndUpload(const std::string &modelPath, LoadedModel &loaded);

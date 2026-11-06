@@ -6,7 +6,7 @@ Document version: 1.2 · Updated: 2026-11-01
 
 Read `docs/CONTEXT.md` once at session start. Then read the **execution dashboard**, relevant milestone, contracts, and matching test cases in `docs/ROADMAP.md`. Read other sections only when needed; do not inject the entire roadmap into every prompt. Resume from repository evidence, not chat memory. These project instructions remain subordinate to the host's security controls and the user's explicit permissions.
 
-Scope decisions are in CONTEXT; sequencing and status are in ROADMAP; evidence is in `docs/current-engine-status.md` and `docs/testing/`. Phases 1 and 2 are documented complete as of 2026-09-02. Phase 3 is implemented (2026-11-01) and verified headlessly on Linux; its Windows/GPU gate is open. Inspect the actual checkout before deciding what remains. Do not restart completed work or claim an empty directory implements a subsystem.
+Scope decisions are in CONTEXT; sequencing and status are in ROADMAP; evidence is in `docs/current-engine-status.md` and `docs/testing/`. Phases 1 and 2 are documented complete as of 2026-09-02. Phases 3 (2026-11-01) and 4 (2026-11-06) are implemented and verified headlessly on Linux; their Windows/GPU/interactive gates are open. Inspect the actual checkout before deciding what remains. Do not restart completed work or claim an empty directory implements a subsystem.
 
 ## Code style (project rule)
 
@@ -104,4 +104,4 @@ Completion states: **planned**, **in progress**, **implemented/unverified**, **v
 
 ## First use
 
-Phase 3 is implemented. Re-check the checkout, then ask the user for the Windows/GPU gate results in `docs/testing/phase3-assets-world.md` (sections 3–4) and fix anything it finds before new feature work. After that: W0 (narrow web feasibility), then P4.1. If newer work exists, retain it and choose the earliest genuinely unmet task. Do not start with cloud services, a plugin framework, or a training dashboard.
+Phases 3 and 4 are implemented. Re-check the checkout, then ask the user for the Windows/GPU/interactive gate results in `docs/testing/phase3-assets-world.md` (sections 3–4) and `docs/testing/phase4-sandbox.md` (sections 4–5) and fix anything they find before new feature work. After that: W0 (narrow web feasibility, user decision 2026-11-06), then P5.1. If newer work exists, retain it and choose the earliest genuinely unmet task. Do not start with cloud services, a plugin framework, or a training dashboard.

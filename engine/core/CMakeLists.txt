@@ -23,6 +23,7 @@ target_sources(
             include/Diagnostic.hpp
             include/MeshData.hpp
             include/RetireQueue.hpp
+            include/Profiling.hpp
 )
 
 target_compile_features(UmbraCore PUBLIC cxx_std_20)

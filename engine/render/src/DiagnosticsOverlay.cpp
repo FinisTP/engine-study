@@ -282,6 +282,16 @@ namespace umbra::render
     {
         if (!initialized_)
             return;
+        // Gameplay timings and counters go into the same diagnostics window (Begin appends to it).
+        if (!hud.stats.empty())
+        {
+            ImGui::Begin("Umbra diagnostics");
+            ImGui::Separator();
+            for (const std::string &line : hud.stats)
+                ImGui::TextUnformatted(line.c_str());
+            ImGui::End();
+        }
+
         const ImVec2 size{static_cast<float>(extent.width), static_cast<float>(extent.height)};
         ImDrawList *draw = ImGui::GetForegroundDrawList();
 

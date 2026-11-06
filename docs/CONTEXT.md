@@ -98,29 +98,32 @@ Instance/device/surface/swapchain ownership; VMA buffers/images and staging uplo
 
 The importer handles the first primitive and one base-color texture of a controlled glTF asset. Textures have one mip level. Initialization uploads wait for the graphics queue. Existing stable resource handles are **not proof that general generational resource management is implemented**.
 
-Phase 3 (2026-11-01) added the general world, glTF hierarchy import, generational resource handles, derived asset cache and transactional reload, all still pending Windows/GPU verification. The source does not establish PBR/HDR/shadows/IBL, animation system, physics integration, RPG systems, editor, C# host, or AI integration. Do not infer completion from roadmap language or empty directories.
+Phase 3 (2026-11-01) added the general world, glTF hierarchy import, generational resource handles, derived asset cache and transactional reload, all still pending Windows/GPU verification. Phase 4 (2026-11-06) added the Jolt physics adapter, a third-person player, procedural walk animation, WAV audio, interactables, a pause menu, portals between two areas and development checkpoints, also pending Windows/GPU/interactive verification. The source does not establish PBR/HDR/shadows/IBL, a skeletal animation system, RPG systems, editor, C# host, or AI integration. Do not infer completion from roadmap language or empty directories.
 
-### Observed target graph (2026-11-01, after Phase 3)
+### Observed target graph (2026-11-06, after Phase 4)
 
 ```text
 Umbra (apps/umbra: Main, ModelLibrary, SceneRuntime)
-  ├─ Umbra::Scene   → World, Assets, nlohmann-json   (scene files, model instancing)
+  ├─ Umbra::Gameplay → World, Physics                (player, physics bridge, interaction, areas, pause menu)
+  ├─ Umbra::Physics → Core; Jolt private             (bodies, raycasts, character)
+  ├─ Umbra::Audio   → Core, Assets                   (WAV loader, mixer, sound bank)
+  ├─ Umbra::Scene   → World, Assets, nlohmann-json   (scene files, model instancing, checkpoints)
   ├─ Umbra::Assets  → Core, tinygltf                 (glTF import, .umodel cache, file watcher)
   ├─ Umbra::World   → Core                           (entities, hierarchy, renderables)
   ├─ Umbra::Render  → Core, Diagnostics, Platform, SDL3, Volk, VMA, glm, imgui; HLSL via DXC
-  ├─ Umbra::Platform → SDL3
+  ├─ Umbra::Platform → SDL3, Audio                  (window, events, input, audio device)
   ├─ Umbra::Diagnostics → spdlog
   └─ Umbra::Core    → glm                            (SlotMap, DrawList, MeshData, RetireQueue, Diagnostic, clocks)
 UmbraSceneCheck → Scene, Assets                      (headless validator CLI)
-Tests: Umbra.Core, .Platform, .Diagnostics.*, .Render, .World, .Assets, .Scene,
-       .SceneCheck.Sample/.Broken, .HeadlessDependencies
+Tests: Umbra.Core, .Platform, .Diagnostics.*, .Render, .World, .Assets, .Scene, .Physics,
+       .Gameplay, .Audio, .SceneCheck.Sample/.Settlement/.Dungeon/.Broken, .HeadlessDependencies
 ```
 
-Core, World, Assets, Scene and UmbraSceneCheck must stay headless; `Umbra.HeadlessDependencies` enforces it. App path: `/apps/umbra`, executable `Umbra`. Still-empty folders: `/apps/editor`, `/apps/game`, `/engine/physics`, `/engine/script`, `/engine/editor`, `/samples`. Do not rename the existing app to `/apps/game` because an illustrative tree used that name.
+Core, World, Assets, Scene, Physics, Gameplay, Audio and UmbraSceneCheck must stay headless; `Umbra.HeadlessDependencies` enforces it. App path: `/apps/umbra`, executable `Umbra`. Still-empty folders: `/apps/editor`, `/apps/game`, `/engine/script`, `/engine/editor`, `/samples`. Do not rename the existing app to `/apps/game` because an illustrative tree used that name.
 
-Commit messages follow `issue #UMBRA-<n> <summary>`. Phase 3 is `#UMBRA-13` … `#UMBRA-20`.
+Commit messages follow `issue #UMBRA-<n> <summary>`. Phase 3 is `#UMBRA-13` … `#UMBRA-20`; Phase 4 is `#UMBRA-21` … `#UMBRA-25`.
 
-**Current milestone:** Phase 3, Assets and World, is implemented and verified headlessly on Linux. The Windows build, GPU, validation-layer and live-reload checks are open (`docs/testing/phase3-assets-world.md`).
+**Current milestone:** Phase 4, Playable 3D sandbox, is implemented and verified headlessly on Linux. The Windows build, GPU, audio and interactive checks are open (`docs/testing/phase4-sandbox.md`), as are Phase 3's (`docs/testing/phase3-assets-world.md`). Next: W0, then P5.
 
 ## 5. Superseded directions and explicit exclusions
 
@@ -153,7 +156,7 @@ The roadmap uses these engineering defaults to remain executable. They may be re
 | D06 | ONNX Runtime as a candidate for a small feed-forward policy; CPU-first benchmark | A measured integration candidate, not a forced dependency or GPU commitment. |
 | D07 | Gymnasium-style adapter; MaskablePPO as one candidate algorithm | Reset/step and discrete legality offer a tractable first experiment. A different algorithm may win the spike. |
 | D08 | Local authoring provider/tool bridge; generated content becomes ordinary data | Keep authoring model size and service choices out of the game package. |
-| D09 | Retain proposed Jolt adapter; do not implement production physics from scratch | Original architectural direction, not a claim Jolt is integrated. Validate before adoption. |
+| D09 | Jolt behind the engine-owned `Umbra::Physics` adapter; do not implement production physics from scratch | Integrated in P4.1 (user-approved 2026-11-06); Jolt types never appear in engine headers. |
 | D10 | Human-readable, versioned source content; small explicit descriptors; derived runtime assets where useful | Supports editing, validation, inspection, and AI changes without a universal reflection framework. |
 | D11 | Future community contributions are consented experience records, centrally reviewed/retrained | Compatible with fixed shipped weights. The user has not approved this implementation or backend release. |
 | D12 | Preserve Vulkan PC renderer; run an early small browser/backend feasibility experiment | Web export must be tested without prematurely replacing working graphics code. |
@@ -188,7 +191,7 @@ None of these is a reason to halt basic Assets and World work.
 
 | Choice still open | Decide before |
 |---|---|
-| Camera, controls, art style, collision/animation complexity | P4 player sandbox |
+| Art style; skeletal animation (camera = third-person orbit, collision = Jolt, animation = procedural only: decided 2026-11-06) | When reference presentation needs it |
 | One enemy instance vs reusable archetype; encounter arrangement | P5/P6 reference content |
 | Turn order/AP rules, real-time attack/cost timing, effect clocks and mode-transition policy | P5 |
 | Skill-tree respec, inventory overflow, quest failure, save-point UX | P5/P6 |

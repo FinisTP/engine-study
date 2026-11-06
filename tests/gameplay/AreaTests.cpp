@@ -6,11 +6,13 @@
 #include <Interaction.hpp>
 #include <PhysicsBridge.hpp>
 #include <PlayerController.hpp>
+#include <Profiling.hpp>
 #include <SceneFile.hpp>
 
 #include <glm/gtc/constants.hpp>
 
 #include <map>
+#include <cmath>
 #include <memory>
 
 using Catch::Approx;
@@ -157,4 +159,26 @@ TEST_CASE("The dungeon chest is found from in front of it")
     area.physics->Step(step);
     const world::Entity chest = gameplay::FindInteractable(*area.world, *area.physics, area.player);
     REQUIRE(chest == area.world->Find("chest"));
+}
+
+// Not run by CTest (hidden tag). Baseline: UmbraGameplayTests "[benchmark]" in a Release build.
+TEST_CASE("Simulation cost of the settlement", "[.][benchmark]")
+{
+    Area area = Enter("scenes/settlement.scene.json", "player");
+    constexpr int steps = 600; // 10 simulated seconds
+    core::Stopwatch watch;
+    for (int i = 0; i < steps; ++i)
+    {
+        area.player.Update(*area.physics, {{std::sin(i * 0.01F), 1.0F}, true, i % 90 == 0}, step);
+        gameplay::PushKinematic(*area.world, *area.physics, step);
+        area.physics->Step(step);
+        gameplay::PullDynamic(*area.world, *area.physics);
+        area.world->UpdateTransforms();
+    }
+    const double perStep = watch.Milliseconds() / steps;
+    watch.Lap();
+    for (int i = 0; i < 20; ++i)
+        area = Enter(i % 2 ? "scenes/settlement.scene.json" : "scenes/dungeon.scene.json", i % 2 ? "player" : "entry");
+    const double perLoad = watch.Milliseconds() / 20;
+    WARN("fixed step (player + physics + transforms): " << perStep << " ms; area load: " << perLoad << " ms");
 }

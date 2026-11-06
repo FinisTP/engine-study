@@ -1,10 +1,28 @@
 # Umbra Engine - Current Development Status
 
-**Status date:** 2026-11-01 (Phase 1/2 records dated 2026-09-02)
-**Current milestone:** Phase 3 - Assets and world, implemented; Windows/GPU gate open
+**Status date:** 2026-11-06 (Phase 1/2 records dated 2026-09-02)
+**Current milestone:** Phase 4 - Playable 3D sandbox, implemented; Windows/GPU/interactive gate open
 **Phase 1 status:** Complete (interactive checklist unsigned)
 **Phase 2 status:** Complete
 **Phase 3 status:** Implemented. Headless tests verified on Linux; Windows build and GPU checks not run yet
+**Phase 4 status:** Implemented. Headless tests verified on Linux (18/18, GCC/Clang/ASan); Windows, GPU, audio and interactive checks not run yet
+
+## Update 2026-11-06
+
+- Phase 4 (P4.1–P4.5) implemented in commits `#UMBRA-21` … `#UMBRA-25`. Evidence and checklists: [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md).
+- User decisions: third-person orbit camera; Jolt behind `Umbra::Physics`; procedural animation only; W0 after P4.
+
+## Phase 4 completed work (implemented 2026-11-06)
+
+| Area | What exists | Explained in |
+|---|---|---|
+| Physics | `Umbra::Physics`: Jolt 5.6 adapter (bodies, raycasts, `CharacterVirtual`), fixed 60 Hz steps, collider scene field, debug outlines (F1) | `engine/physics/include/Physics.md`, `engine/render/src/DebugDraw.md` |
+| Player | `gameplay::PlayerController`: camera-relative movement, sprint, jump, wall-aware orbit camera, interaction ray; mouse capture | `engine/gameplay/include/PlayerController.md` |
+| Presentation | Procedural bob/lean (`StrideAnimator`), `Umbra::Audio` (WAV, mixer, sound bank) + SDL audio device, interactables, HUD, Esc pause menu, missing-asset warnings | `engine/audio/include/Audio.md`, `engine/gameplay/include/StrideAnimator.md` |
+| Areas | `portal` field and spawn markers, settlement ↔ dungeon, F5/F9 development checkpoint, R restart | `engine/scene/include/SceneFormat.md` |
+| Observability | Rolling CPU section timings and resource counters in the overlay | [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md) |
+
+The app now starts in `assets/scenes/settlement.scene.json` with a third-person player; a gate leads to `dungeon.scene.json`.
 
 ## Update 2026-11-01
 
@@ -62,20 +80,23 @@ The Phase 1 verification record remains in [`testing/phase1-smoke-test.md`](test
 
 ```text
 Umbra executable (apps/umbra: Main, ModelLibrary, SceneRuntime)
-|- Umbra::Scene      scene files, model instancing      -> World, Assets, nlohmann-json
+|- Umbra::Gameplay   player, physics bridge, interaction, areas, pause menu -> World, Physics
+|- Umbra::Physics    Jolt adapter (private dependency)  -> Core, Jolt
+|- Umbra::Audio      WAV loader, mixer, sound bank      -> Core, Assets
+|- Umbra::Scene      scene files, model instancing, checkpoints -> World, Assets, nlohmann-json
 |- Umbra::Assets     glTF import, .umodel cache, watcher -> Core, tinygltf
 |- Umbra::World      entities, hierarchy, renderables    -> Core
 |- Umbra::Render     Vulkan renderer, draws a DrawList   -> Core, Diagnostics, Platform, SDL3, Volk, VMA, ImGui
 |  |- SceneResources: generational mesh/texture handles, fallback texture, retire queue
 |  |- Indexed HLSL scene pipeline: set 0 camera, set 1 texture, push constants per draw
 |  `- Swapchain, depth, two frames in flight, ImGui diagnostics overlay
-|- Umbra::Platform   SDL3 window, events, input
+|- Umbra::Platform   SDL3 window, events, input, audio device -> Audio
 |- Umbra::Diagnostics logging, crash handling            -> spdlog
 `- Umbra::Core       SlotMap, DrawList, MeshData, RetireQueue, Diagnostic, clocks -> glm
 UmbraSceneCheck      headless scene/model validator      -> Scene, Assets
 ```
 
-Headless rule (checked by `Umbra.HeadlessDependencies`): Core, World, Assets, Scene and UmbraSceneCheck never link Render, Platform, SDL3, Vulkan or ImGui.
+Headless rule (checked by `Umbra.HeadlessDependencies`): Core, World, Assets, Scene, Physics, Gameplay, Audio and UmbraSceneCheck never link Render, Platform, SDL3, Vulkan or ImGui.
 
 Long-lived device and scene resources survive resize. Swapchain images, their views, depth images, framebuffers, compatible pipelines, per-frame submission resources, and overlay resources are recreated when presentation changes.
 
@@ -149,10 +170,10 @@ All seven items of the old Phase 3 entry point are implemented (see the table ab
 
 - Async uploads, mipmaps, texture compression, streaming. Uploads are synchronous; textures have one mip level.
 - Materials beyond base color factor + texture. No PBR, normal maps, skinning or animation (the importer warns and skips them).
-- Gameplay-state preservation across scene reloads (checkpoints are P4.4).
+- Gameplay-state preservation across scene reloads (done in P4.4: hot reload keeps the player; F5/F9 checkpoints).
 - Packaging: the app reads assets from the source tree (`UMBRA_ASSET_DIRECTORY`) and caches in the build tree. A relocatable package layout is a P6/P9 task (roadmap T43).
 
-Next: run the Windows/GPU gate in [`testing/phase3-assets-world.md`](testing/phase3-assets-world.md), then W0 (web feasibility) and P4 (playable sandbox).
+Next: run the Windows/GPU gates in [`testing/phase3-assets-world.md`](testing/phase3-assets-world.md) and [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md), then W0 (web feasibility), then P5.
 
 ## Local verification
 
@@ -168,5 +189,5 @@ ctest --preset windows-msvc-debug
 Additional clang-cl and AddressSanitizer verification remains available through `CMakePresets.json`. Validate scenes without the GPU:
 
 ```powershell
-& ".\out\build\windows-msvc\tools\scenecheck\Debug\UmbraSceneCheck.exe" assets\scenes\sample.scene.json --assets assets
+& ".\out\build\windows-msvc\tools\scenecheck\Debug\UmbraSceneCheck.exe" assets\scenes\settlement.scene.json --assets assets
 ```

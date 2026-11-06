@@ -5,6 +5,7 @@
 #include <Version.hpp>
 #include <FrameClock.hpp>
 #include <Log.hpp>
+#include <Profiling.hpp>
 
 #include <Platform.hpp>
 #include <Input.hpp>
@@ -24,6 +25,7 @@
 #include <glm/gtc/constants.hpp>
 
 #include <algorithm>
+#include <cstdio>
 #include <filesystem>
 
 namespace
@@ -116,6 +118,10 @@ int RunApplication(const std::string &scenePath)
 				std::string message; // shown after using an interactable
 				float messageSeconds = 0.0F;
 
+				// CPU time per frame section, shown in the diagnostics window (see docs/testing/phase4-sandbox.md).
+				umbra::core::RollingTimer frameTime, reloadTime, simulateTime, extractTime, renderTime;
+				int physicsSteps = 0;
+
 				bool isSuspended = false;
 
 				while (true)
@@ -188,9 +194,12 @@ int RunApplication(const std::string &scenePath)
 
 					clock.Tick();
 					const double deltaTime = clock.GetDeltaTimeSeconds();
+					frameTime.Add(deltaTime * 1000.0);
+					umbra::core::Stopwatch section;
 
 					// Pick up edited scene/model files.
 					scene.Update();
+					reloadTime.Add(section.Lap());
 					using umbra::platform::InputKey;
 
 					// Pause menu: Esc toggles; W/S or arrows move; Enter chooses.
@@ -250,7 +259,10 @@ int RunApplication(const std::string &scenePath)
 						constexpr float mouseSensitivity = 0.0025F; // radians per pixel
 						scene.Look(-input.GetMouseDeltaX() * mouseSensitivity, -input.GetMouseDeltaY() * mouseSensitivity);
 
+						umbra::core::Stopwatch simulateWatch;
 						const SimulationEvents events = scene.Simulate(static_cast<float>(deltaTime), playerInput);
+						simulateTime.Add(simulateWatch.Milliseconds());
+						physicsSteps = events.steps;
 						for (int i = 0; i < events.footsteps; ++i)
 							play("audio/footstep.wav", 0.5F, umbra::audio::Bus::Game);
 						if (events.jumped)
@@ -297,6 +309,7 @@ int RunApplication(const std::string &scenePath)
 					if (input.IsKeyPressed(InputKey::F1))
 						showColliders = !showColliders;
 
+					section.Lap(); // extraction starts here
 					drawList.Clear();
 					drawList.camera = scene.GetCamera();
 					scene.GetWorld().ExtractDrawList(drawList); // fetched now: restart/portal/checkpoint replace the world
@@ -311,6 +324,24 @@ int RunApplication(const std::string &scenePath)
 						hud.message = message;
 					AddWarnings(hud.warnings, scene.GetProblems(), 6);
 					AddWarnings(hud.warnings, soundProblems, 3);
+
+					// Timings (average / worst over ~2 s) and live resource counts.
+					const auto timing = [](const char *name, const umbra::core::RollingTimer &timer) {
+						char line[96];
+						std::snprintf(line, sizeof(line), "%-9s %6.2f ms avg %6.2f max", name, timer.Average(), timer.Max());
+						return std::string{line};
+					};
+					hud.stats = {timing("Frame", frameTime), timing("Reload", reloadTime), timing("Simulate", simulateTime),
+								 timing("Extract", extractTime), timing("Render", renderTime),
+								 "Physics steps: " + std::to_string(physicsSteps) +
+									 " | bodies " + std::to_string(scene.GetPhysics().BodyCount()) +
+									 " | characters " + std::to_string(scene.GetPhysics().CharacterCount()),
+								 "Entities: " + std::to_string(scene.GetWorld().Count()) +
+									 " | models " + std::to_string(models.Count()),
+								 "Sounds: " + std::to_string(mixer.VoiceCount()) + " playing | " +
+									 std::to_string(sounds.Count()) + " cached" + (audioDevice.IsOpen() ? "" : " (no device)"),
+								 "Area: " + scene.GetScenePath()};
+					extractTime.Add(section.Lap());
 					if (menu.IsOpen())
 					{
 						hud.menuTitle = "Paused";
@@ -322,6 +353,7 @@ int RunApplication(const std::string &scenePath)
 					{
 						return 1;
 					}
+					renderTime.Add(section.Lap()); // CPU side only; includes waiting for a free frame
 
 					std::this_thread::sleep_for(std::chrono::milliseconds{1});
 				}

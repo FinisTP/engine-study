@@ -47,6 +47,7 @@ namespace umbra::core
         std::string menuTitle;             // a centered menu is shown when menuItems is not empty
         std::vector<std::string> menuItems;
         int menuSelected = 0;
+        std::vector<std::string> stats;    // extra lines for the diagnostics window (timings, counters)
     };
 
     // Read-only presentation data the world hands to the renderer each frame.

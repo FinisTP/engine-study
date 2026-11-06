@@ -21,6 +21,7 @@
 // What happened during one Simulate call (for sounds).
 struct SimulationEvents final
 {
+    int steps = 0; // fixed physics steps run
     int footsteps = 0;
     bool jumped = false;
     std::optional<umbra::world::Portal> portal; // the player walked into this portal

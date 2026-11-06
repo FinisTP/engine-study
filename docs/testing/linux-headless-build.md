@@ -40,3 +40,12 @@ cmake --build build-gcc && ctest --test-dir build-gcc --output-on-failure
 Also run it with `-DCMAKE_CXX_COMPILER=clang++`, and with GCC plus `CXXFLAGS="-fsanitize=address,undefined -fno-sanitize=vptr" LDFLAGS=-fsanitize=address,undefined` set for the first configure. `-fno-sanitize=vptr` is needed because Jolt is built without RTTI (like the vcpkg port) and UBSan's vptr check requires it. Clang's ASan runtime may be missing, which is why GCC is used for the sanitizer run. `UMBRA_ENABLE_ASAN` only supports MSVC and Clang.
 
 GCC prints many `-Wmissing-field-initializers` warnings for the existing `VkXxxCreateInfo{sType}` pattern. They are pre-existing and harmless; filter them when looking for new warnings.
+
+## Optimized measurements
+
+Jolt is built Debug only, so an `NDEBUG` build of the engine against it crashes (Jolt's assert-dependent class layouts differ). For the `[benchmark]` test use a custom configuration that optimizes without `NDEBUG`:
+
+```bash
+cmake -S . -B build-rel -G Ninja -DCMAKE_BUILD_TYPE=Bench -DCMAKE_CXX_FLAGS_BENCH="-O2 -UNDEBUG" -DCMAKE_MAP_IMPORTED_CONFIG_BENCH="Debug;Release;" -DCMAKE_PREFIX_PATH=$HOME/prefix -DBUILD_TESTING=ON
+cmake --build build-rel --target UmbraGameplayTests && build-rel/tests/gameplay/UmbraGameplayTests "[benchmark]" -s
+```
