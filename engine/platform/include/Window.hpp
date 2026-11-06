@@ -20,6 +20,9 @@ namespace umbra::platform
         [[nodiscard]] bool Create(std::string_view title, int width, int height);
         void Destroy();
         [[nodiscard]] bool Resize(int width, int height);
+        // Captured: cursor hidden and locked, mouse motion stays relative (for camera control).
+        void SetMouseCaptured(bool captured) noexcept;
+
         [[nodiscard]] int GetWidth() const noexcept { return width_; }
         [[nodiscard]] int GetHeight() const noexcept { return height_; }
         void UpdateSizeFromEvent(int width, int height);

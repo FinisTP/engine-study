@@ -26,7 +26,11 @@ namespace umbra::platform
         RightShift,
         LeftCtrl,
         RightCtrl,
+        E,
+        R,
         F1,
+        F5,
+        F9,
         Count
     };
 
@@ -60,7 +64,17 @@ namespace umbra::platform
         [[nodiscard]] bool IsKeyHeld(InputKey key) const noexcept;
         [[nodiscard]] bool IsKeyReleased(InputKey key) const noexcept;
 
+        // Clears keys, mouse buttons and mouse motion (focus loss, suspend).
         void ClearKeyStates() noexcept;
+
+        // Mouse motion in pixels since the last BeginFrame (raw motion while the mouse is captured).
+        void HandleMouseMotion(float dx, float dy) noexcept;
+        // button: 0 = left, 1 = right, 2 = middle.
+        void HandleMouseButton(int button, bool down) noexcept;
+        [[nodiscard]] float GetMouseDeltaX() const noexcept { return mouseDeltaX_; }
+        [[nodiscard]] float GetMouseDeltaY() const noexcept { return mouseDeltaY_; }
+        [[nodiscard]] bool IsMouseButtonPressed(int button) const noexcept;
+        [[nodiscard]] bool IsMouseButtonHeld(int button) const noexcept;
 
     private:
         static constexpr std::size_t keyCount_ = static_cast<std::size_t>(InputKey::Count);
@@ -78,5 +92,9 @@ namespace umbra::platform
         std::array<bool, keyCount_> pressedKeys_{};
         std::array<bool, keyCount_> releasedKeys_{};
         std::array<bool, keyCount_> heldKeys_{};
+        std::array<bool, 3> mousePressed_{};
+        std::array<bool, 3> mouseHeld_{};
+        float mouseDeltaX_ = 0.0F;
+        float mouseDeltaY_ = 0.0F;
     };
 }

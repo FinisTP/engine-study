@@ -4,7 +4,6 @@
 
 #include <Version.hpp>
 #include <FrameClock.hpp>
-#include <FixedStepAccumulator.hpp>
 #include <Log.hpp>
 
 #include <Platform.hpp>
@@ -48,7 +47,6 @@ int RunApplication(const std::string &scenePath)
 
 		{
 			umbra::core::FrameClock clock;
-			umbra::core::FixedStepAccumulator accumulator(1.0 / 60.0); // Fixed step of 1/60 seconds
 			umbra::platform::Input input;
 			umbra::platform::ApplicationEvents applicationEvents;
 			umbra::platform::EventPump eventPump;
@@ -72,6 +70,10 @@ int RunApplication(const std::string &scenePath)
 				umbra::core::DrawList drawList;
 				bool showColliders = false;
 				scene.Load();
+
+				// The mouse steers the camera while captured; focus loss releases it, a click recaptures.
+				bool mouseCaptured = true;
+				window.SetMouseCaptured(true);
 
 				bool isSuspended = false;
 
@@ -111,6 +113,8 @@ int RunApplication(const std::string &scenePath)
 					{
 						// Handle window focus lost event
 						umbra::diagnostics::Info("Window focus lost.");
+						window.SetMouseCaptured(false);
+						mouseCaptured = false;
 					}
 
 					if (applicationEvents.IsEventRequested(umbra::platform::ApplicationEventType::WindowSuspended))
@@ -125,7 +129,6 @@ int RunApplication(const std::string &scenePath)
 						// Handle window resumed event
 						umbra::diagnostics::Info("Window resumed.");
 						clock.ResetClock();
-						accumulator.Reset();
 						renderer.RequestResize();
 						isSuspended = false;
 					}
@@ -146,31 +149,43 @@ int RunApplication(const std::string &scenePath)
 
 					clock.Tick();
 					const double deltaTime = clock.GetDeltaTimeSeconds();
-					accumulator.AddDeltaTime(deltaTime);
-
-					while (accumulator.MarkFixedStep())
-					{
-						// Perform fixed-step updates here (like physics)
-					}
-
-					const double interpolationFactor = accumulator.GetInterpolationFactor();
-					(void)interpolationFactor;
 
 					// Pick up edited scene/model files, then world -> draw list -> renderer.
 					scene.Update();
 					umbra::world::World &world = scene.GetWorld();
 					SpinEntity(world, "spinner", static_cast<float>(deltaTime) * glm::radians(45.0F));
 					world.UpdateTransforms();
-					scene.Simulate(static_cast<float>(deltaTime));
+
+					// Keyboard and mouse -> player intent (ignored while the mouse is released).
+					if (!mouseCaptured && input.IsMouseButtonPressed(0))
+					{
+						window.SetMouseCaptured(true);
+						mouseCaptured = true;
+					}
+					umbra::gameplay::PlayerInput playerInput;
+					if (mouseCaptured)
+					{
+						using umbra::platform::InputKey;
+						const auto axis = [&](InputKey plus, InputKey minus) {
+							return (input.IsKeyHeld(plus) ? 1.0F : 0.0F) - (input.IsKeyHeld(minus) ? 1.0F : 0.0F);
+						};
+						playerInput.move = {axis(InputKey::D, InputKey::A), axis(InputKey::W, InputKey::S)};
+						playerInput.sprint = input.IsKeyHeld(InputKey::LeftShift);
+						playerInput.jump = input.IsKeyPressed(InputKey::Space);
+						constexpr float mouseSensitivity = 0.0025F; // radians per pixel
+						scene.Look(-input.GetMouseDeltaX() * mouseSensitivity, -input.GetMouseDeltaY() * mouseSensitivity);
+					}
+					scene.Simulate(static_cast<float>(deltaTime), playerInput);
 					if (input.IsKeyPressed(umbra::platform::InputKey::F1))
 						showColliders = !showColliders;
 
 					drawList.Clear();
+					drawList.camera = scene.GetCamera();
 					world.ExtractDrawList(drawList);
 					if (showColliders)
 						scene.AddDebugLines(drawList);
 
-					if (!renderer.RenderFrame(input, static_cast<float>(deltaTime), drawList))
+					if (!renderer.RenderFrame(static_cast<float>(deltaTime), drawList))
 					{
 						return 1;
 					}
@@ -188,7 +203,7 @@ int RunApplication(const std::string &scenePath)
 int main(int argc, char **argv)
 {
 	// Optional first argument: scene path relative to the asset folder.
-	const std::string scenePath = argc > 1 ? argv[1] : "scenes/sample.scene.json";
+	const std::string scenePath = argc > 1 ? argv[1] : "scenes/settlement.scene.json";
 
 	umbra::diagnostics::Initialize();
 	umbra::diagnostics::InstallCrashHandlers();

@@ -5,11 +5,13 @@ target_sources(
     UmbraGameplay
     PRIVATE
         src/PhysicsBridge.cpp
+        src/PlayerController.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
         FILES
             include/PhysicsBridge.hpp
+            include/PlayerController.hpp
 )
 
 target_compile_features(UmbraGameplay PUBLIC cxx_std_20)

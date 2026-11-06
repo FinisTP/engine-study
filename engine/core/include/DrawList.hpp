@@ -27,9 +27,20 @@ namespace umbra::core
         glm::vec4 color{1.0F};
     };
 
+    // Where the frame is seen from. Gameplay decides; the renderer only draws.
+    struct Camera final
+    {
+        glm::vec3 position{0.0F, 1.0F, 5.0F};
+        glm::vec3 target{0.0F, 1.0F, 0.0F};
+        float fovYDegrees = 60.0F;
+        float nearPlane = 0.1F;
+        float farPlane = 200.0F;
+    };
+
     // Read-only presentation data the world hands to the renderer each frame.
     struct DrawList final
     {
+        Camera camera;
         std::vector<DrawItem> items;
         std::vector<DebugLine> lines;
 

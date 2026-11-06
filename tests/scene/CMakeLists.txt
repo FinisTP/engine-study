@@ -23,6 +23,11 @@ add_test(
     COMMAND UmbraSceneCheck ${PROJECT_SOURCE_DIR}/assets/scenes/sample.scene.json --assets ${PROJECT_SOURCE_DIR}/assets
 )
 
+add_test(
+    NAME Umbra.SceneCheck.Settlement
+    COMMAND UmbraSceneCheck ${PROJECT_SOURCE_DIR}/assets/scenes/settlement.scene.json --assets ${PROJECT_SOURCE_DIR}/assets
+)
+
 # A broken scene must make the validator exit with an error.
 add_test(
     NAME Umbra.SceneCheck.Broken

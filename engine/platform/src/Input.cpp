@@ -1,18 +1,14 @@
 #include <Input.hpp>
-#include <Log.hpp>
-#include <string>
 
 namespace umbra::platform
 {
     void Input::HandleKeyDown(InputKey key, bool isRepeat) noexcept
     {
+        // Unmapped keys arrive as Unknown and are ignored.
         if (!IsValidKey(key))
         {
-            diagnostics::Error("Invalid key pressed.");
             return;
         }
-
-        diagnostics::Info("Key pressed: " + std::to_string(static_cast<std::uint8_t>(key)) + (isRepeat ? " (repeat)" : ""));
 
         const std::size_t index = ToIndex(key);
         if (!isRepeat && !heldKeys_[index])
@@ -27,11 +23,8 @@ namespace umbra::platform
     {
         if (!IsValidKey(key))
         {
-            diagnostics::Error("Invalid key released.");
             return;
         }
-
-        diagnostics::Info("Key released: " + std::to_string(static_cast<std::uint8_t>(key)));
 
         const std::size_t index = ToIndex(key);
         heldKeys_[index] = false;
@@ -42,6 +35,39 @@ namespace umbra::platform
     {
         pressedKeys_.fill(false);
         releasedKeys_.fill(false);
+        mousePressed_.fill(false);
+        mouseDeltaX_ = 0.0F;
+        mouseDeltaY_ = 0.0F;
+    }
+
+    void Input::HandleMouseMotion(float dx, float dy) noexcept
+    {
+        mouseDeltaX_ += dx;
+        mouseDeltaY_ += dy;
+    }
+
+    void Input::HandleMouseButton(int button, bool down) noexcept
+    {
+        if (button < 0 || button >= static_cast<int>(mouseHeld_.size()))
+        {
+            return;
+        }
+        const auto index = static_cast<std::size_t>(button);
+        if (down && !mouseHeld_[index])
+        {
+            mousePressed_[index] = true;
+        }
+        mouseHeld_[index] = down;
+    }
+
+    bool Input::IsMouseButtonPressed(int button) const noexcept
+    {
+        return button >= 0 && button < static_cast<int>(mousePressed_.size()) && mousePressed_[static_cast<std::size_t>(button)];
+    }
+
+    bool Input::IsMouseButtonHeld(int button) const noexcept
+    {
+        return button >= 0 && button < static_cast<int>(mouseHeld_.size()) && mouseHeld_[static_cast<std::size_t>(button)];
     }
 
     InputKeyState Input::GetKeyState(InputKey key) const noexcept
@@ -89,5 +115,9 @@ namespace umbra::platform
         pressedKeys_.fill(false);
         releasedKeys_.fill(false);
         heldKeys_.fill(false);
+        mousePressed_.fill(false);
+        mouseHeld_.fill(false);
+        mouseDeltaX_ = 0.0F;
+        mouseDeltaY_ = 0.0F;
     }
 }

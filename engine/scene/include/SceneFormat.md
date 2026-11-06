@@ -49,6 +49,8 @@ Dynamic colliders must be on root entities, because the simulation owns their tr
 
 Asset paths are relative to the asset folder and may not contain `..`.
 
+**Reserved id:** the app treats the entity with id `player` as the player's spawn point and body (see `engine/gameplay/include/PlayerController.md`).
+
 ## Loading is all-or-nothing
 
 ```text

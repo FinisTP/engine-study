@@ -1,0 +1,395 @@
+{
+  "format": "umbra.scene",
+  "version": 1,
+  "entities": [
+    {
+      "id": "ground",
+      "name": "Ground",
+      "position": [
+        0.0,
+        -0.5,
+        -10.0
+      ],
+      "scale": [
+        25.0,
+        0.5,
+        25.0
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.42,
+        0.5,
+        0.38,
+        1
+      ],
+      "collider": {}
+    },
+    {
+      "id": "player",
+      "name": "Player",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.3,
+        0.9,
+        0.3
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.35,
+        0.55,
+        0.95,
+        1
+      ]
+    },
+    {
+      "id": "house_a",
+      "name": "House A",
+      "position": [
+        -6.0,
+        1.5,
+        -10.0
+      ],
+      "scale": [
+        2.5,
+        1.5,
+        3.0
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.85,
+        0.78,
+        0.62,
+        1
+      ],
+      "collider": {}
+    },
+    {
+      "id": "house_b",
+      "name": "House B",
+      "position": [
+        6.0,
+        1.5,
+        -14.0
+      ],
+      "scale": [
+        3.0,
+        1.5,
+        2.5
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.8,
+        0.7,
+        0.6,
+        1
+      ],
+      "collider": {}
+    },
+    {
+      "id": "low_wall",
+      "name": "Low wall (1 m, jump over)",
+      "position": [
+        0.0,
+        0.5,
+        -6.0
+      ],
+      "scale": [
+        2.0,
+        0.5,
+        0.15
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.6,
+        0.6,
+        0.62,
+        1
+      ],
+      "collider": {}
+    },
+    {
+      "id": "stair_0",
+      "name": "Stair 0",
+      "position": [
+        3.2,
+        0.1,
+        -4.0
+      ],
+      "scale": [
+        0.2,
+        0.1,
+        1.0
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.7,
+        0.65,
+        0.6,
+        1
+      ],
+      "collider": {}
+    },
+    {
+      "id": "stair_1",
+      "name": "Stair 1",
+      "position": [
+        3.6,
+        0.2,
+        -4.0
+      ],
+      "scale": [
+        0.2,
+        0.2,
+        1.0
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.7,
+        0.65,
+        0.6,
+        1
+      ],
+      "collider": {}
+    },
+    {
+      "id": "stair_2",
+      "name": "Stair 2",
+      "position": [
+        4.0,
+        0.3,
+        -4.0
+      ],
+      "scale": [
+        0.2,
+        0.3,
+        1.0
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.7,
+        0.65,
+        0.6,
+        1
+      ],
+      "collider": {}
+    },
+    {
+      "id": "stair_3",
+      "name": "Stair 3",
+      "position": [
+        4.4,
+        0.4,
+        -4.0
+      ],
+      "scale": [
+        0.2,
+        0.4,
+        1.0
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.7,
+        0.65,
+        0.6,
+        1
+      ],
+      "collider": {}
+    },
+    {
+      "id": "stair_4",
+      "name": "Stair 4",
+      "position": [
+        4.8,
+        0.5,
+        -4.0
+      ],
+      "scale": [
+        0.2,
+        0.5,
+        1.0
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.7,
+        0.65,
+        0.6,
+        1
+      ],
+      "collider": {}
+    },
+    {
+      "id": "stair_top",
+      "name": "Stair platform",
+      "position": [
+        6.1,
+        0.5,
+        -4.0
+      ],
+      "scale": [
+        0.9,
+        0.5,
+        1.0
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.7,
+        0.65,
+        0.6,
+        1
+      ],
+      "collider": {}
+    },
+    {
+      "id": "ramp",
+      "name": "Ramp (15 degrees)",
+      "position": [
+        -3.95,
+        0.45,
+        -3.0
+      ],
+      "scale": [
+        2.0,
+        0.1,
+        1.0
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.65,
+        0.6,
+        0.55,
+        1
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        -0.130526,
+        0.991445
+      ],
+      "collider": {}
+    },
+    {
+      "id": "ramp_top",
+      "name": "Ramp platform",
+      "position": [
+        -7.0,
+        0.55,
+        -3.0
+      ],
+      "scale": [
+        1.2,
+        0.55,
+        1.0
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.65,
+        0.6,
+        0.55,
+        1
+      ],
+      "collider": {}
+    },
+    {
+      "id": "crate_0",
+      "name": "Crate 0",
+      "position": [
+        2.0,
+        0.4,
+        -8.0
+      ],
+      "scale": [
+        0.4,
+        0.4,
+        0.4
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.8,
+        0.6,
+        0.35,
+        1
+      ],
+      "collider": {
+        "motion": "dynamic"
+      }
+    },
+    {
+      "id": "crate_1",
+      "name": "Crate 1",
+      "position": [
+        2.9,
+        0.4,
+        -8.2
+      ],
+      "scale": [
+        0.4,
+        0.4,
+        0.4
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.8,
+        0.6,
+        0.35,
+        1
+      ],
+      "collider": {
+        "motion": "dynamic"
+      }
+    },
+    {
+      "id": "crate_2",
+      "name": "Crate 2",
+      "position": [
+        2.4,
+        1.3,
+        -8.1
+      ],
+      "scale": [
+        0.4,
+        0.4,
+        0.4
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.8,
+        0.6,
+        0.35,
+        1
+      ],
+      "collider": {
+        "motion": "dynamic"
+      }
+    },
+    {
+      "id": "tower",
+      "name": "Tower",
+      "position": [
+        5,
+        0.5,
+        -10
+      ],
+      "instance": "models/tower.gltf"
+    }
+  ]
+}

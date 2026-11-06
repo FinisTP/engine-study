@@ -7,7 +7,6 @@
 
 namespace umbra::platform
 {
-    class Input;
     class Window;
 }
 
@@ -25,8 +24,8 @@ namespace umbra::render
         Renderer &operator=(Renderer &&) = delete;
 
         [[nodiscard]] bool Initialize(platform::Window &window);
-        // Draws every item in drawList. Items with stale mesh handles are skipped.
-        [[nodiscard]] bool RenderFrame(const platform::Input &input, float deltaSeconds, const core::DrawList &drawList);
+        // Draws every item in drawList from drawList.camera. Items with stale mesh handles are skipped.
+        [[nodiscard]] bool RenderFrame(float deltaSeconds, const core::DrawList &drawList);
         // GPU resources. Create* return an invalid handle if the data is invalid.
         // Replace* keep the handle and swap the data; Destroy* make the handle stale.
         // Old GPU memory is freed only after in-flight frames finish with it.

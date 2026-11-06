@@ -38,13 +38,24 @@ bool SceneRuntime::Load()
     //    The new world gets its own physics world, so old and new bodies never mix.
     if (loaded)
     {
+        // The player is a physics character, not a collider: drop a collider authored on it.
+        if (fresh->RemoveCollider(fresh->Find("player")))
+            umbra::diagnostics::Info("Warning: the 'player' entity's collider is ignored; the player is a character capsule.");
         auto freshPhysics = std::make_unique<umbra::physics::PhysicsWorld>();
         fresh->UpdateTransforms();
         if (const std::size_t failed = umbra::gameplay::CreateBodies(*fresh, *freshPhysics); failed > 0)
             umbra::diagnostics::Error(std::to_string(failed) + " collider(s) have unusable sizes and got no physics body.");
+        // Keep the player where it was on a hot reload; spawn at the marker otherwise.
+        const bool keepPlayer = player_.IsSpawned();
+        const glm::vec3 feet = keepPlayer ? player_.GetFeet(*physics_) : glm::vec3{0.0F};
         world_ = std::move(fresh);
         physics_ = std::move(freshPhysics);
         accumulator_ = 0.0;
+        player_.Reset(); // the old character died with the old physics world
+        if (keepPlayer)
+            player_.Spawn(*physics_, feet, player_.GetFacingYaw());
+        else
+            SpawnPlayer();
         Rebind();
         umbra::diagnostics::Info("Loaded scene " + scenePath_ + " with " + std::to_string(world_->Count()) + " entities.");
     }
@@ -94,8 +105,9 @@ void SceneRuntime::Update()
     RefreshWatchList();
 }
 
-void SceneRuntime::Simulate(float deltaSeconds)
+void SceneRuntime::Simulate(float deltaSeconds, const umbra::gameplay::PlayerInput &input)
 {
+    pendingJump_ |= input.jump;
     // Fixed steps keep physics stable and repeatable whatever the frame rate.
     // After a long stall (breakpoint, window drag) drop the backlog instead of
     // running hundreds of catch-up steps.
@@ -105,6 +117,10 @@ void SceneRuntime::Simulate(float deltaSeconds)
     int steps = 0;
     while (accumulator_ >= step && steps < maxStepsPerFrame)
     {
+        umbra::gameplay::PlayerInput stepInput = input;
+        stepInput.jump = pendingJump_;
+        pendingJump_ = false;
+        player_.Update(*physics_, stepInput, static_cast<float>(step));
         umbra::gameplay::PushKinematic(*world_, *physics_, static_cast<float>(step));
         physics_->Step(static_cast<float>(step));
         umbra::gameplay::PullDynamic(*world_, *physics_);
@@ -114,11 +130,50 @@ void SceneRuntime::Simulate(float deltaSeconds)
     }
     if (steps == maxStepsPerFrame)
         accumulator_ = 0.0;
+    SyncPlayerVisual();
+}
+
+void SceneRuntime::SpawnPlayer()
+{
+    // The 'player' entity marks the spawn: its position is the feet, its rotation the facing.
+    const umbra::world::Entity marker = world_->Find("player");
+    if (!marker)
+        return;
+    glm::vec3 position, scale;
+    glm::quat rotation;
+    umbra::gameplay::Decompose(*world_->GetWorldMatrix(marker), position, rotation, scale);
+    const glm::vec3 forward = rotation * glm::vec3{0.0F, 0.0F, -1.0F};
+    player_.Spawn(*physics_, position, std::atan2(-forward.x, -forward.z));
+}
+
+void SceneRuntime::SyncPlayerVisual()
+{
+    // The 'player' entity is drawn where the capsule is, turned to the facing direction.
+    const umbra::world::Entity entity = world_->Find("player");
+    if (!entity || !player_.IsSpawned() || world_->GetParent(entity))
+        return;
+    umbra::world::Transform transform = *world_->GetLocalTransform(entity);
+    const auto &settings = player_.GetSettings();
+    transform.position = player_.GetFeet(*physics_) + glm::vec3{0.0F, settings.radius + settings.halfHeight, 0.0F};
+    transform.rotation = glm::angleAxis(player_.GetFacingYaw(), glm::vec3{0.0F, 1.0F, 0.0F});
+    world_->SetLocalTransform(entity, transform);
+    world_->UpdateTransforms();
+}
+
+umbra::core::Camera SceneRuntime::GetCamera() const
+{
+    if (player_.IsSpawned())
+        return player_.GetCamera(*physics_);
+    umbra::core::Camera overview;
+    overview.position = {0.0F, 4.0F, 8.0F};
+    overview.target = {0.0F, 0.0F, -2.0F};
+    return overview;
 }
 
 void SceneRuntime::AddDebugLines(umbra::core::DrawList &drawList) const
 {
     umbra::gameplay::AddDebugLines(*physics_, drawList);
+    player_.AddDebugLines(*physics_, drawList);
 }
 
 void SceneRuntime::Rebind()

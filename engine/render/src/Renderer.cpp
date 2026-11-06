@@ -10,7 +10,6 @@
 #include "VulkanSwapchain.hpp"
 #include "VulkanVertexPipeline.hpp"
 
-#include <Input.hpp>
 #include <Log.hpp>
 #include <Window.hpp>
 
@@ -60,9 +59,6 @@ namespace umbra::render
         DiagnosticsOverlay overlay;
         platform::Window *window = nullptr;
         bool resizeRequested = false;
-        glm::vec3 cameraPosition{0.0F, 0.5F, 5.0F};
-        float cameraYaw = -90.0F;
-        float cameraPitch = -6.0F;
 
         ~Implementation() { (void)device.WaitIdle(); }
 
@@ -168,47 +164,14 @@ namespace umbra::render
             return InitializePresentationResources();
         }
 
-        [[nodiscard]] glm::vec3 Forward() const
-        {
-            return glm::normalize(glm::vec3{
-                glm::cos(glm::radians(cameraYaw)) * glm::cos(glm::radians(cameraPitch)),
-                glm::sin(glm::radians(cameraPitch)),
-                glm::sin(glm::radians(cameraYaw)) * glm::cos(glm::radians(cameraPitch))});
-        }
-
-        void UpdateCamera(const platform::Input &input, float deltaSeconds)
-        {
-            const float delta = std::clamp(deltaSeconds, 0.0F, 0.1F);
-            const float turn = 70.0F * delta;
-            if (input.IsKeyHeld(platform::InputKey::Left))
-                cameraYaw -= turn;
-            if (input.IsKeyHeld(platform::InputKey::Right))
-                cameraYaw += turn;
-            if (input.IsKeyHeld(platform::InputKey::Up))
-                cameraPitch += turn;
-            if (input.IsKeyHeld(platform::InputKey::Down))
-                cameraPitch -= turn;
-            cameraPitch = std::clamp(cameraPitch, -85.0F, 85.0F);
-            const glm::vec3 forward = Forward();
-            const glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3{0.0F, 1.0F, 0.0F}));
-            const float movement = 3.0F * delta;
-            if (input.IsKeyHeld(platform::InputKey::W))
-                cameraPosition += forward * movement;
-            if (input.IsKeyHeld(platform::InputKey::S))
-                cameraPosition -= forward * movement;
-            if (input.IsKeyHeld(platform::InputKey::A))
-                cameraPosition -= right * movement;
-            if (input.IsKeyHeld(platform::InputKey::D))
-                cameraPosition += right * movement;
-        }
-
-        [[nodiscard]] SceneUniform BuildUniform() const
+        [[nodiscard]] SceneUniform BuildUniform(const core::Camera &camera) const
         {
             SceneUniform uniform;
-            uniform.view = glm::lookAtRH(cameraPosition, cameraPosition + Forward(), glm::vec3{0.0F, 1.0F, 0.0F});
+            uniform.view = glm::lookAtRH(camera.position, camera.target, glm::vec3{0.0F, 1.0F, 0.0F});
             const VkExtent2D extent = swapchain.GetExtent();
-            uniform.projection = glm::perspectiveRH_ZO(glm::radians(60.0F),
-                                                       static_cast<float>(extent.width) / static_cast<float>(extent.height), 0.1F, 100.0F);
+            uniform.projection = glm::perspectiveRH_ZO(glm::radians(camera.fovYDegrees),
+                                                       static_cast<float>(extent.width) / static_cast<float>(extent.height),
+                                                       camera.nearPlane, camera.farPlane);
             uniform.projection[1][1] *= -1.0F;
             return uniform;
         }
@@ -278,7 +241,7 @@ namespace umbra::render
         return true;
     }
 
-    bool Renderer::RenderFrame(const platform::Input &input, float deltaSeconds, const core::DrawList &drawList)
+    bool Renderer::RenderFrame(float deltaSeconds, const core::DrawList &drawList)
     {
         if (implementation_ == nullptr)
         {
@@ -300,7 +263,6 @@ namespace umbra::render
             }
         }
 
-        implementation_->UpdateCamera(input, deltaSeconds);
 
         // Count what will actually be drawn (stale meshes are skipped).
         const SceneResources &resources = implementation_->sceneResources;
@@ -321,7 +283,7 @@ namespace umbra::render
                                             resources.GetTextureCount(),
                                             drawCount,
                                             indexCount);
-        const SceneUniform uniform = implementation_->BuildUniform();
+        const SceneUniform uniform = implementation_->BuildUniform(drawList.camera);
         implementation_->overlay.DrawLines(drawList.lines, uniform.projection * uniform.view, implementation_->swapchain.GetExtent());
         implementation_->overlay.EndFrame();
 

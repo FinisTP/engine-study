@@ -45,6 +45,14 @@ namespace
             return InputKey::RightCtrl;
         case SDL_SCANCODE_F1:
             return InputKey::F1;
+        case SDL_SCANCODE_E:
+            return InputKey::E;
+        case SDL_SCANCODE_R:
+            return InputKey::R;
+        case SDL_SCANCODE_F5:
+            return InputKey::F5;
+        case SDL_SCANCODE_F9:
+            return InputKey::F9;
         default:
             return InputKey::Unknown;
         }
@@ -100,6 +108,14 @@ namespace umbra::platform
                 break;
             case SDL_EVENT_KEY_UP:
                 input.HandleKeyUp(TranslateKeyCode(event.key.scancode));
+                break;
+            case SDL_EVENT_MOUSE_MOTION:
+                input.HandleMouseMotion(event.motion.xrel, event.motion.yrel);
+                break;
+            case SDL_EVENT_MOUSE_BUTTON_DOWN:
+            case SDL_EVENT_MOUSE_BUTTON_UP:
+                // SDL numbers buttons from 1 (left); Input from 0.
+                input.HandleMouseButton(static_cast<int>(event.button.button) - 1, event.type == SDL_EVENT_MOUSE_BUTTON_DOWN);
                 break;
             default:
                 break;

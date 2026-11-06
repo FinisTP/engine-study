@@ -246,7 +246,7 @@ namespace umbra::render
         ImGui::Text("Textures: %zu", textureCount);
         ImGui::Text("Draws: %zu", drawCount);
         ImGui::Text("Indices: %u", indexCount);
-        ImGui::TextDisabled("WASD move | Arrow keys look");
+        ImGui::TextDisabled("WASD move | mouse look | Space jump | F1 colliders");
         ImGui::End();
     }
 

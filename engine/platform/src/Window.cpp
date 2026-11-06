@@ -95,4 +95,12 @@ namespace umbra::platform
 
         diagnostics::Info("Window size updated from event to " + std::to_string(width) + "x" + std::to_string(height) + ".");
     }
+
+    void Window::SetMouseCaptured(bool captured) noexcept
+    {
+        if (window_ != nullptr)
+        {
+            SDL_SetWindowRelativeMouseMode(window_, captured);
+        }
+    }
 }

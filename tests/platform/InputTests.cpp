@@ -60,3 +60,35 @@ TEST_CASE("Input ignores unknown keys and clears all state")
 	REQUIRE_FALSE(input.IsKeyHeld(umbra::platform::InputKey::A));
 	REQUIRE_FALSE(input.IsKeyReleased(umbra::platform::InputKey::A));
 }
+
+TEST_CASE("Mouse motion accumulates within a frame and resets each frame")
+{
+    umbra::platform::Input input;
+    input.HandleMouseMotion(3.0F, -1.0F);
+    input.HandleMouseMotion(2.0F, -1.0F);
+    REQUIRE(input.GetMouseDeltaX() == 5.0F);
+    REQUIRE(input.GetMouseDeltaY() == -2.0F);
+    input.BeginFrame();
+    REQUIRE(input.GetMouseDeltaX() == 0.0F);
+}
+
+TEST_CASE("Mouse buttons report presses once and focus loss clears everything")
+{
+    umbra::platform::Input input;
+    input.HandleMouseButton(0, true);
+    REQUIRE(input.IsMouseButtonPressed(0));
+    REQUIRE(input.IsMouseButtonHeld(0));
+    input.BeginFrame();
+    REQUIRE_FALSE(input.IsMouseButtonPressed(0));
+    REQUIRE(input.IsMouseButtonHeld(0));
+
+    input.HandleKeyDown(umbra::platform::InputKey::W, false);
+    input.HandleMouseMotion(10.0F, 10.0F);
+    input.ClearKeyStates(); // what focus loss and suspend do
+    REQUIRE_FALSE(input.IsMouseButtonHeld(0));
+    REQUIRE_FALSE(input.IsKeyHeld(umbra::platform::InputKey::W));
+    REQUIRE(input.GetMouseDeltaX() == 0.0F);
+
+    input.HandleMouseButton(7, true); // out of range: ignored
+    REQUIRE_FALSE(input.IsMouseButtonHeld(7));
+}
