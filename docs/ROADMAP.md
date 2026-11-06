@@ -41,7 +41,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 | B0 Baseline reconciliation | Existing checkout | In progress | Source inspection and Linux test run done 2026-11-01. Open: Windows MSVC/clang-cl/ASan build + CTest, CI status, Phase 1 checklist sign-off. |
 | P3 Assets and World | B0; existing P1/P2 | Implemented 2026-11-01; headless verified on Linux; **Windows/GPU gate open** | All tasks P3.1–P3.8 implemented. Evidence and the remaining checklist: `testing/phase3-assets-world.md`. |
 | W0 Early web feasibility | P3 core contracts; minimal rendering sample | Planned experiment | Native-independent simulation, browser rendering/storage proof; policy experiment when available. |
-| P4 Playable 3D sandbox | P3 | Planned | Player movement, collision, interaction, minimal presentation and checkpoint restart. |
+| P4 Playable 3D sandbox | P3 | In progress (started 2026-11-06) | Player movement, collision, interaction, minimal presentation and checkpoint restart. Task status in the P4 section. |
 | P5 Shared rules and combat modes | P3; P4 for graphical integration | Planned | Common RPG rules; turn-only, real-time-only and integrated fixtures. |
 | P6 Complete offline reference game | P4/P5 | Planned | Conversation, quest, save/load, rewards, retry and complete offline journey. |
 | P7 Creator workflow | P3/P5/P6 contracts | Planned | Data editing, undo, validation, content reload, incremental rebuild and packaging workflow. |
@@ -433,6 +433,16 @@ Emscripten documents a WebGPU integration through Emdawnwebgpu [S8]. Investigate
 | P4.4 Scene transition/checkpoint | Small-area load/unload; development checkpoint/reset path over established state helpers | Repeated entry/exit/restart without stale entities/resources or unbounded memory growth |
 | P4.5 Observability | CPU frame/simulation timings, memory/resource counters, existing capture/validation workflow | Baseline measurements on available machine; not a final 60 FPS certification |
 
+<!-- P4-status -->
+| Task | Status | Evidence |
+|---|---|---|
+| P4.1 | Implemented: Jolt adapter, collider component + scene field, physics bridge, fixed 60 Hz stepping, debug outlines (F1); tests pass on Linux GCC/Clang/ASan; Windows not run | `tests/physics/PhysicsTests.cpp`, `tests/gameplay/PhysicsBridgeTests.cpp`; `engine/physics/include/Physics.md` |
+| P4.2 | Planned | |
+| P4.3 | Planned | |
+| P4.4 | Planned | |
+| P4.5 | Planned | |
+<!-- /P4-status -->
+
 **Exit gate:** walk, collide, interact and restart in a small area; graphical/physics state lifetimes are inspectable. Verify T05, T44, T56 and relevant P3 regressions.
 
 **Not required yet:** cinematic animation blending, complex navigation crowds, full PBR, open-world streaming or mobile packaging. Add lighting/animation quality only when the selected reference presentation needs it; record remaining original learning experiments as deferred, not silently completed.
@@ -745,8 +755,8 @@ These are bounded decisions, not a request to stop and ask the user all of them 
 |---|---|---|---|
 | O01 | World storage/ID encoding; simple generational ownership before a general ECS | P3.1 | Measured scale/query limitation |
 | O02 | Source format, serializer, descriptor approach, artifact version/hash design. **P3.5 (2026-11-01):** models stay glTF; derived `.umodel` is a custom versioned binary with FNV-1a source+dependency hash (see `engine/assets/include/AssetPipeline.md`). **P3.6:** scenes are versioned JSON (`*.scene.json`, nlohmann-json, already a tinygltf dependency) with string durable ids; see `engine/scene/include/SceneFormat.md`. | P3.5/P3.6 | Tool interop or measured pipeline issue |
-| O03 | Camera/controls/art and minimal animation approach | P4.2/P4.3 | User reference-game direction changes |
-| O04 | Jolt integration suitability; retain original intent pending spike | P4.1 | Platform/build/behavior mismatch |
+| O03 | Camera/controls/art and minimal animation approach. **User decision 2026-11-06:** third-person orbit camera; procedural animation only in P4 (no skeletal system yet). | P4.2/P4.3 | User reference-game direction changes |
+| O04 | Jolt integration suitability; retain original intent pending spike. **P4.1 (2026-11-06, user-approved):** Jolt 5.6 (vcpkg `joltphysics`) behind `Umbra::Physics`; single-threaded job system; boxes/spheres/capsules + `CharacterVirtual`; see `engine/physics/include/Physics.md`. | P4.1 | Platform/build/behavior mismatch |
 | O05 | Turn order/AP, real-time cost timing, effect clocks and mode integration | P5 controllers | A concrete mechanic requires another rule |
 | O06 | Enemy instance/archetype meaning; reference encounter arrangement | P5/P6 content | User content scope clarification |
 | O07 | Overflow, respec, quest failure, save/retry UX | P5/P6 | Reference walkthrough softlock or usability finding |
@@ -755,7 +765,7 @@ These are bounded decisions, not a request to stop and ask the user all of them 
 | O10 | Inference runtime/operators/device and budget; candidate CPU ONNX path | P8A.4 | Actual policy latency/resource/platform issue |
 | O11 | Local authoring provider/model/license and novice installation experience | P8B.1 | Model quality, resource or redistribution problem |
 | O12 | Reference PC/settings/workload and quantitative release budgets | Before P9 sign-off | Content or target tier changes |
-| O13 | Browser backend, shader path, capabilities/hosting support | W0; finalize P10 | Actual supported-browser failure |
+| O13 | Browser backend, shader path, capabilities/hosting support. **User decision 2026-11-06:** run W0 after P4. | W0; finalize P10 | Actual supported-browser failure |
 | O14 | First mobile OS/device tier | P11 planning | User target choice |
 | O15 | Community records versus model updates, consent, backend operations | F1 approval only | Explicit decision to fund/build service |
 

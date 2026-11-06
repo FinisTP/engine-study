@@ -70,6 +70,7 @@ int RunApplication(const std::string &scenePath)
 				ModelLibrary models(renderer, UMBRA_ASSET_DIRECTORY, UMBRA_CACHE_DIRECTORY);
 				SceneRuntime scene(models, UMBRA_ASSET_DIRECTORY, scenePath);
 				umbra::core::DrawList drawList;
+				bool showColliders = false;
 				scene.Load();
 
 				bool isSuspended = false;
@@ -160,8 +161,14 @@ int RunApplication(const std::string &scenePath)
 					umbra::world::World &world = scene.GetWorld();
 					SpinEntity(world, "spinner", static_cast<float>(deltaTime) * glm::radians(45.0F));
 					world.UpdateTransforms();
-					drawList.items.clear();
+					scene.Simulate(static_cast<float>(deltaTime));
+					if (input.IsKeyPressed(umbra::platform::InputKey::F1))
+						showColliders = !showColliders;
+
+					drawList.Clear();
 					world.ExtractDrawList(drawList);
+					if (showColliders)
+						scene.AddDebugLines(drawList);
 
 					if (!renderer.RenderFrame(input, static_cast<float>(deltaTime), drawList))
 					{

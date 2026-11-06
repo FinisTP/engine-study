@@ -2,13 +2,14 @@
 
 #include <Log.hpp>
 #include <ModelInstance.hpp>
+#include <PhysicsBridge.hpp>
 #include <SceneFile.hpp>
 
 #include <set>
 
 SceneRuntime::SceneRuntime(ModelLibrary &models, std::filesystem::path assetRoot, std::string scenePath)
     : models_(models), assetRoot_(std::move(assetRoot)), scenePath_(std::move(scenePath)),
-      world_(std::make_unique<umbra::world::World>())
+      world_(std::make_unique<umbra::world::World>()), physics_(std::make_unique<umbra::physics::PhysicsWorld>())
 {
 }
 
@@ -34,9 +35,16 @@ bool SceneRuntime::Load()
     }
 
     // 2. Swap only on success (the scene file is still watched either way, so a fix reloads).
+    //    The new world gets its own physics world, so old and new bodies never mix.
     if (loaded)
     {
+        auto freshPhysics = std::make_unique<umbra::physics::PhysicsWorld>();
+        fresh->UpdateTransforms();
+        if (const std::size_t failed = umbra::gameplay::CreateBodies(*fresh, *freshPhysics); failed > 0)
+            umbra::diagnostics::Error(std::to_string(failed) + " collider(s) have unusable sizes and got no physics body.");
         world_ = std::move(fresh);
+        physics_ = std::move(freshPhysics);
+        accumulator_ = 0.0;
         Rebind();
         umbra::diagnostics::Info("Loaded scene " + scenePath_ + " with " + std::to_string(world_->Count()) + " entities.");
     }
@@ -84,6 +92,33 @@ void SceneRuntime::Update()
     if (rebind)
         Rebind();
     RefreshWatchList();
+}
+
+void SceneRuntime::Simulate(float deltaSeconds)
+{
+    // Fixed steps keep physics stable and repeatable whatever the frame rate.
+    // After a long stall (breakpoint, window drag) drop the backlog instead of
+    // running hundreds of catch-up steps.
+    constexpr double step = 1.0 / 60.0;
+    constexpr int maxStepsPerFrame = 5;
+    accumulator_ += deltaSeconds;
+    int steps = 0;
+    while (accumulator_ >= step && steps < maxStepsPerFrame)
+    {
+        umbra::gameplay::PushKinematic(*world_, *physics_, static_cast<float>(step));
+        physics_->Step(static_cast<float>(step));
+        umbra::gameplay::PullDynamic(*world_, *physics_);
+        world_->UpdateTransforms();
+        accumulator_ -= step;
+        ++steps;
+    }
+    if (steps == maxStepsPerFrame)
+        accumulator_ = 0.0;
+}
+
+void SceneRuntime::AddDebugLines(umbra::core::DrawList &drawList) const
+{
+    umbra::gameplay::AddDebugLines(*physics_, drawList);
 }
 
 void SceneRuntime::Rebind()

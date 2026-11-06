@@ -29,6 +29,7 @@ target_link_libraries(
         Umbra::World
         Umbra::Assets
         Umbra::Scene
+        Umbra::Gameplay
         Umbra::Warnings
         Umbra::Sanitizers
 )

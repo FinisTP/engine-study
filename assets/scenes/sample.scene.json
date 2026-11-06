@@ -3,6 +3,29 @@
   "version": 1,
   "entities": [
     {
+      "id": "ground",
+      "name": "Ground",
+      "position": [
+        0,
+        -1.0,
+        -2
+      ],
+      "scale": [
+        8,
+        0.1,
+        8
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.45,
+        0.45,
+        0.5,
+        1
+      ],
+      "collider": {}
+    },
+    {
       "id": "ring_0",
       "name": "Ring 0",
       "position": [
@@ -22,7 +45,8 @@
         0.6,
         0.5,
         1
-      ]
+      ],
+      "collider": {}
     },
     {
       "id": "ring_1",
@@ -44,7 +68,8 @@
         0.6,
         0.933013,
         1
-      ]
+      ],
+      "collider": {}
     },
     {
       "id": "ring_2",
@@ -66,7 +91,8 @@
         0.6,
         0.933013,
         1
-      ]
+      ],
+      "collider": {}
     },
     {
       "id": "ring_3",
@@ -88,7 +114,8 @@
         0.6,
         0.5,
         1
-      ]
+      ],
+      "collider": {}
     },
     {
       "id": "ring_4",
@@ -110,7 +137,8 @@
         0.6,
         0.0669873,
         1
-      ]
+      ],
+      "collider": {}
     },
     {
       "id": "ring_5",
@@ -132,7 +160,8 @@
         0.6,
         0.0669873,
         1
-      ]
+      ],
+      "collider": {}
     },
     {
       "id": "spinner",
@@ -177,6 +206,81 @@
       "id": "tower",
       "name": "Tower",
       "instance": "models/tower.gltf"
+    },
+    {
+      "id": "crate_0",
+      "name": "Crate 0",
+      "position": [
+        -1.0,
+        2.0,
+        0.0
+      ],
+      "scale": [
+        0.3,
+        0.3,
+        0.3
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.8,
+        0.6,
+        0.35,
+        1
+      ],
+      "collider": {
+        "motion": "dynamic"
+      }
+    },
+    {
+      "id": "crate_1",
+      "name": "Crate 1",
+      "position": [
+        -0.8,
+        3.5,
+        0.2
+      ],
+      "scale": [
+        0.3,
+        0.3,
+        0.3
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.8,
+        0.6,
+        0.35,
+        1
+      ],
+      "collider": {
+        "motion": "dynamic"
+      }
+    },
+    {
+      "id": "crate_2",
+      "name": "Crate 2",
+      "position": [
+        -1.2,
+        5.0,
+        -0.1
+      ],
+      "scale": [
+        0.3,
+        0.3,
+        0.3
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.8,
+        0.6,
+        0.35,
+        1
+      ],
+      "collider": {
+        "motion": "dynamic"
+      }
     }
   ]
 }

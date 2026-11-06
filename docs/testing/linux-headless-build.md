@@ -19,6 +19,7 @@ vcpkg archive downloads may be blocked, but `git clone` usually works. Build eac
 | VulkanMemoryAllocator | v3.3.0 | |
 | imgui | v1.92.4 | no CMake of its own: a 10-line wrapper that builds the core `.cpp` files and exports `imgui::imgui` |
 | glslang | 15.4.0 | `-DENABLE_OPT=OFF`; stands in for DXC |
+| JoltPhysics | v5.6.0 | build from `Build/` in **Debug** (same config as the engine, so Jolt's feature defines match), with the vcpkg port's options: `-DTARGET_UNIT_TESTS=OFF -DTARGET_HELLO_WORLD=OFF -DTARGET_PERFORMANCE_TEST=OFF -DTARGET_SAMPLES=OFF -DTARGET_VIEWER=OFF -DCROSS_PLATFORM_DETERMINISTIC=OFF -DINTERPROCEDURAL_OPTIMIZATION=OFF -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DCPP_RTTI_ENABLED=OFF` |
 
 ## Fake Vulkan SDK
 
@@ -36,6 +37,6 @@ cmake -S . -B build-gcc -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=$H
 cmake --build build-gcc && ctest --test-dir build-gcc --output-on-failure
 ```
 
-Also run it with `-DCMAKE_CXX_COMPILER=clang++`, and with GCC plus `-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined`. Clang's ASan runtime may be missing, which is why GCC is used for the sanitizer run. `UMBRA_ENABLE_ASAN` only supports MSVC and Clang.
+Also run it with `-DCMAKE_CXX_COMPILER=clang++`, and with GCC plus `CXXFLAGS="-fsanitize=address,undefined -fno-sanitize=vptr" LDFLAGS=-fsanitize=address,undefined` set for the first configure. `-fno-sanitize=vptr` is needed because Jolt is built without RTTI (like the vcpkg port) and UBSan's vptr check requires it. Clang's ASan runtime may be missing, which is why GCC is used for the sanitizer run. `UMBRA_ENABLE_ASAN` only supports MSVC and Clang.
 
 GCC prints many `-Wmissing-field-initializers` warnings for the existing `VkXxxCreateInfo{sType}` pattern. They are pre-existing and harmless; filter them when looking for new warnings.

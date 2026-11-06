@@ -3,6 +3,9 @@
 #include <Log.hpp>
 #include <imgui.h>
 
+#include <glm/vec2.hpp>
+#include <glm/vec4.hpp>
+
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -245,7 +248,39 @@ namespace umbra::render
         ImGui::Text("Indices: %u", indexCount);
         ImGui::TextDisabled("WASD move | Arrow keys look");
         ImGui::End();
-        ImGui::Render();
+    }
+
+    void DiagnosticsOverlay::DrawLines(const std::vector<core::DebugLine> &lines, const glm::mat4 &viewProjection, VkExtent2D extent)
+    {
+        if (!initialized_ || lines.empty())
+            return;
+        ImDrawList *draw = ImGui::GetBackgroundDrawList();
+        const glm::vec2 size{static_cast<float>(extent.width), static_cast<float>(extent.height)};
+        constexpr float nearW = 0.001F;
+        for (const core::DebugLine &line : lines)
+        {
+            // 1. To clip space; drop the part of the line behind the camera (w <= nearW).
+            glm::vec4 a = viewProjection * glm::vec4(line.from, 1.0F);
+            glm::vec4 b = viewProjection * glm::vec4(line.to, 1.0F);
+            if (a.w <= nearW && b.w <= nearW)
+                continue;
+            if (a.w <= nearW)
+                a = a + (b - a) * ((nearW - a.w) / (b.w - a.w));
+            else if (b.w <= nearW)
+                b = b + (a - b) * ((nearW - b.w) / (a.w - b.w));
+
+            // 2. Perspective divide, then NDC (-1..1) to pixels.
+            const glm::vec2 pa = (glm::vec2(a) / a.w * 0.5F + 0.5F) * size;
+            const glm::vec2 pb = (glm::vec2(b) / b.w * 0.5F + 0.5F) * size;
+            const ImU32 color = ImGui::ColorConvertFloat4ToU32(ImVec4(line.color.r, line.color.g, line.color.b, line.color.a));
+            draw->AddLine(ImVec2(pa.x, pa.y), ImVec2(pb.x, pb.y), color, 1.5F);
+        }
+    }
+
+    void DiagnosticsOverlay::EndFrame()
+    {
+        if (initialized_)
+            ImGui::Render();
     }
 
     void DiagnosticsOverlay::Render(VkCommandBuffer commandBuffer, std::size_t frameIndex)

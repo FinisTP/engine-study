@@ -3,6 +3,7 @@
     "catch2",
     "glm",
     "imgui",
+    "joltphysics",
     "nlohmann-json",
     {
       "name": "sdl3",

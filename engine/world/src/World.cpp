@@ -200,6 +200,35 @@ namespace umbra::world
         return const_cast<Renderable *>(std::as_const(*this).GetRenderable(entity));
     }
 
+    bool World::SetCollider(Entity entity, Collider collider)
+    {
+        Record *record = Get(entity);
+        if (record == nullptr)
+            return false;
+        record->collider = collider;
+        return true;
+    }
+
+    bool World::RemoveCollider(Entity entity)
+    {
+        Record *record = Get(entity);
+        if (record == nullptr || !record->collider)
+            return false;
+        record->collider.reset();
+        return true;
+    }
+
+    const Collider *World::GetCollider(Entity entity) const noexcept
+    {
+        const Record *record = Get(entity);
+        return record && record->collider ? &*record->collider : nullptr;
+    }
+
+    Collider *World::GetCollider(Entity entity) noexcept
+    {
+        return const_cast<Collider *>(std::as_const(*this).GetCollider(entity));
+    }
+
     void World::ExtractDrawList(core::DrawList &drawList) const
     {
         entities_.ForEach([&](core::Handle<EntityTag>, const Record &record) {

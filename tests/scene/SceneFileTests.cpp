@@ -70,7 +70,7 @@ TEST_CASE("The sample scene loads with hierarchy, renderables and an expanded in
     REQUIRE(scene::LoadScene(assetDir / "scenes" / "sample.scene.json", Options(), world, diagnostics));
     REQUIRE(diagnostics.empty());
 
-    REQUIRE(world.Count() == 6 + 2 + 1 + 4); // ring, spinner+moon, tower anchor, 4 tower nodes
+    REQUIRE(world.Count() == 1 + 6 + 2 + 1 + 4 + 3); // ground, ring, spinner+moon, tower anchor, 4 tower nodes, crates
     REQUIRE(world.GetParent(world.Find("moon")) == world.Find("spinner"));
     REQUIRE(world.GetRenderable(world.Find("moon"))->color.g == Approx(0.8F));
     REQUIRE(world.GetParent(world.Find("tower/Tower")) == world.Find("tower"));
@@ -175,4 +175,34 @@ TEST_CASE("Loading refuses a non-empty world and validation creates nothing")
     diagnostics.clear();
     REQUIRE(scene::ValidateScene(assetDir / "scenes" / "sample.scene.json", Options(), diagnostics));
     REQUIRE(diagnostics.empty());
+}
+
+TEST_CASE("Colliders load, validate and survive save/load")
+{
+    const auto dir = test::TempDir("scene-collider");
+    test::WriteText(dir / "c.scene.json", R"({"format":"umbra.scene","version":1,"entities":[
+        {"id":"floor","scale":[10,1,10],"collider":{}},
+        {"id":"crate","collider":{"shape":"box","motion":"dynamic","halfExtents":[0.5,0.5,0.5]}},
+        {"id":"ball","collider":{"shape":"sphere","motion":"kinematic","radius":0.25}}]})");
+    world::World world;
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(scene::LoadScene(dir / "c.scene.json", Options(), world, diagnostics));
+    REQUIRE(world.GetCollider(world.Find("floor"))->motion == world::ColliderMotion::Static);
+    REQUIRE(world.GetCollider(world.Find("crate"))->halfExtents.y == Approx(0.5F));
+    REQUIRE(world.GetCollider(world.Find("ball"))->shape == world::ColliderShape::Sphere);
+
+    REQUIRE(scene::SaveScene(world, dir / "saved.scene.json", diagnostics));
+    world::World copy;
+    REQUIRE(scene::LoadScene(dir / "saved.scene.json", Options(), copy, diagnostics));
+    REQUIRE(copy.GetCollider(copy.Find("ball"))->radius == Approx(0.25F));
+    REQUIRE(copy.GetCollider(copy.Find("ball"))->motion == world::ColliderMotion::Kinematic);
+}
+
+TEST_CASE("Bad colliders are rejected")
+{
+    REQUIRE(LoadEntities("col-shape", R"({"id":"a","collider":{"shape":"cone"}})").Has("entity.collider.shape"));
+    REQUIRE(LoadEntities("col-motion", R"({"id":"a","collider":{"motion":"flying"}})").Has("entity.collider.motion"));
+    REQUIRE(LoadEntities("col-size", R"({"id":"a","collider":{"radius":-1}})").Has("entity.collider.size"));
+    REQUIRE(LoadEntities("col-type", R"({"id":"a","collider":{"shape":3}})").Has("entity.field.type"));
+    REQUIRE(LoadEntities("col-child", R"({"id":"p"},{"id":"c","parent":"p","collider":{"motion":"dynamic"}})").Has("entity.collider.dynamicchild"));
 }

@@ -18,6 +18,8 @@ add_subdirectory(engine/diagnostics)
 add_subdirectory(engine/platform)
 add_subdirectory(engine/render)
 add_subdirectory(engine/world)
+add_subdirectory(engine/physics)
+add_subdirectory(engine/gameplay)
 add_subdirectory(engine/assets)
 add_subdirectory(engine/scene)
 add_subdirectory(apps/umbra)
@@ -33,11 +35,13 @@ if(BUILD_TESTING)
     add_subdirectory(tests/world)
     add_subdirectory(tests/assets)
     add_subdirectory(tests/scene)
+    add_subdirectory(tests/physics)
+    add_subdirectory(tests/gameplay)
 
     # Simulation, assets and scene tools must build and run without a window, GPU, editor or model runtime.
     umbra_add_headless_check(
         Umbra.HeadlessDependencies
-        TARGETS Umbra::Core Umbra::World Umbra::Assets Umbra::Scene UmbraSceneCheck
+        TARGETS Umbra::Core Umbra::World Umbra::Assets Umbra::Scene Umbra::Physics Umbra::Gameplay UmbraSceneCheck
         FORBIDDEN "Umbra(Render|Platform)|SDL3|volk|Vulkan|imgui|onnx|python"
     )
 endif()

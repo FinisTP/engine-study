@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <fstream>
 #include <iterator>
+#include <optional>
 #include <set>
 #include <unordered_map>
 
@@ -35,6 +36,7 @@ namespace umbra::scene
             std::uint32_t mesh = 0;
             glm::vec4 color{1.0F};
             std::string instance;
+            std::optional<world::Collider> collider;
         };
 
         struct ParsedScene final
@@ -109,9 +111,64 @@ namespace umbra::scene
                 report.Error("asset.missing", field, "'" + path + "' does not exist in " + options.assetRoot.string());
         }
 
+        // "collider": { "shape": "box", "motion": "dynamic", "halfExtents": [..], "radius": r, "halfHeight": h }
+        std::optional<world::Collider> ParseCollider(const json &value, const std::string &where, Report &report)
+        {
+            if (!value.is_object())
+            {
+                report.Error("entity.field.type", where, "expected an object");
+                return std::nullopt;
+            }
+            static const std::set<std::string> knownKeys{"shape", "motion", "halfExtents", "radius", "halfHeight"};
+            for (const auto &[key, unused] : value.items())
+            {
+                if (!knownKeys.contains(key))
+                    report.Warning("entity.field.unknown", where + "." + key, "unknown field is ignored (typo?)");
+            }
+
+            world::Collider collider;
+            std::string shape = "box", motion = "static";
+            ReadString(value, "shape", shape, where, report);
+            ReadString(value, "motion", motion, where, report);
+            if (shape == "box")
+                collider.shape = world::ColliderShape::Box;
+            else if (shape == "sphere")
+                collider.shape = world::ColliderShape::Sphere;
+            else if (shape == "capsule")
+                collider.shape = world::ColliderShape::Capsule;
+            else
+                report.Error("entity.collider.shape", where + ".shape", "expected \"box\", \"sphere\" or \"capsule\"");
+            if (motion == "static")
+                collider.motion = world::ColliderMotion::Static;
+            else if (motion == "kinematic")
+                collider.motion = world::ColliderMotion::Kinematic;
+            else if (motion == "dynamic")
+                collider.motion = world::ColliderMotion::Dynamic;
+            else
+                report.Error("entity.collider.motion", where + ".motion", "expected \"static\", \"kinematic\" or \"dynamic\"");
+
+            // Sizes are optional (0 = from the entity's scale) but must be positive when given.
+            float half[3] = {0, 0, 0};
+            ReadFloats(value, "halfExtents", 3, half, where, report);
+            collider.halfExtents = {half[0], half[1], half[2]};
+            for (const char *key : {"radius", "halfHeight"})
+            {
+                const auto it = value.find(key);
+                if (it == value.end())
+                    continue;
+                if (!it->is_number() || !std::isfinite(it->get<double>()))
+                    report.Error("entity.field.nonfinite", where + "." + key, "expected a finite number");
+                else
+                    (std::string{key} == "radius" ? collider.radius : collider.halfHeight) = it->get<float>();
+            }
+            if (collider.halfExtents.x < 0 || collider.halfExtents.y < 0 || collider.halfExtents.z < 0 || collider.radius < 0 || collider.halfHeight < 0)
+                report.Error("entity.collider.size", where, "collider sizes must not be negative");
+            return collider;
+        }
+
         EntityDesc ParseEntity(const json &entity, const std::string &where, const SceneLoadOptions &options, Report &report)
         {
-            static const std::set<std::string> knownKeys{"id", "name", "parent", "position", "rotation", "scale", "model", "mesh", "color", "instance"};
+            static const std::set<std::string> knownKeys{"id", "name", "parent", "position", "rotation", "scale", "model", "mesh", "color", "instance", "collider"};
             EntityDesc desc;
             for (const auto &[key, value] : entity.items())
             {
@@ -156,6 +213,8 @@ namespace umbra::scene
             }
             if (ReadString(entity, "instance", desc.instance, where, report) && entity.contains("instance"))
                 CheckAssetPath(desc.instance, where + ".instance", options, report);
+            if (const auto it = entity.find("collider"); it != entity.end())
+                desc.collider = ParseCollider(*it, where + ".collider", report);
             return desc;
         }
 
@@ -286,6 +345,13 @@ namespace umbra::scene
                 scene.entities.push_back(std::move(desc));
             }
             CheckHierarchy(scene.entities, report); // run even after other errors: report everything at once
+            for (std::size_t i = 0; i < scene.entities.size(); ++i)
+            {
+                const EntityDesc &desc = scene.entities[i];
+                if (desc.collider && desc.collider->motion == world::ColliderMotion::Dynamic && !desc.parent.empty())
+                    report.Error("entity.collider.dynamicchild", "entities[" + std::to_string(i) + "].collider",
+                                 "dynamic colliders must be on root entities (the simulation owns their transform)");
+            }
 
             // 5. Models used by "instance" must load.
             for (std::size_t i = 0; i < scene.entities.size() && !report.failed; ++i)
@@ -333,6 +399,19 @@ namespace umbra::scene
                 if (r->color != glm::vec4{1.0F})
                     out["color"] = {Tidy(r->color.r), Tidy(r->color.g), Tidy(r->color.b), Tidy(r->color.a)};
             }
+            if (const world::Collider *c = world.GetCollider(entity))
+            {
+                static const char *shapes[] = {"box", "sphere", "capsule"};
+                static const char *motions[] = {"static", "kinematic", "dynamic"};
+                json collider{{"shape", shapes[static_cast<int>(c->shape)]}, {"motion", motions[static_cast<int>(c->motion)]}};
+                if (c->halfExtents != glm::vec3{0.0F})
+                    collider["halfExtents"] = {Tidy(c->halfExtents.x), Tidy(c->halfExtents.y), Tidy(c->halfExtents.z)};
+                if (c->radius != 0.0F)
+                    collider["radius"] = Tidy(c->radius);
+                if (c->halfHeight != 0.0F)
+                    collider["halfHeight"] = Tidy(c->halfHeight);
+                out["collider"] = collider;
+            }
             return out;
         }
 
@@ -371,6 +450,8 @@ namespace umbra::scene
             world.SetLocalTransform(entity, desc.transform);
             if (!desc.model.empty())
                 world.SetRenderable(entity, world::Renderable{desc.model, desc.mesh, desc.color});
+            if (desc.collider)
+                world.SetCollider(entity, *desc.collider);
             created.push_back(entity);
         }
         for (std::size_t i = 0; i < scene.entities.size(); ++i)

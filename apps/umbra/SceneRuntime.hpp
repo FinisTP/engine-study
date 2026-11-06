@@ -2,7 +2,9 @@
 
 #include "ModelLibrary.hpp"
 
+#include <DrawList.hpp>
 #include <FileWatcher.hpp>
+#include <Physics.hpp>
 #include <World.hpp>
 
 #include <filesystem>
@@ -21,8 +23,13 @@ public:
     bool Load();
     // Call once per frame, before extracting the draw list. Polls files every 250 ms.
     void Update();
+    // Advances physics in fixed 1/60 s steps and copies results into the world.
+    void Simulate(float deltaSeconds);
+    // Collider outlines for the debug view.
+    void AddDebugLines(umbra::core::DrawList &drawList) const;
 
     [[nodiscard]] umbra::world::World &GetWorld() noexcept { return *world_; }
+    [[nodiscard]] umbra::physics::PhysicsWorld &GetPhysics() noexcept { return *physics_; }
 
 private:
     void Rebind();
@@ -32,6 +39,8 @@ private:
     std::filesystem::path assetRoot_;
     std::string scenePath_;
     std::unique_ptr<umbra::world::World> world_;
+    std::unique_ptr<umbra::physics::PhysicsWorld> physics_; // bodies for world_'s colliders; replaced together
+    double accumulator_ = 0.0;
     umbra::assets::FileWatcher watcher_;
     std::map<std::filesystem::path, std::string> owners_; // watched file -> model path ("" = the scene file)
     umbra::assets::FileWatcher::Clock::time_point nextPoll_{};

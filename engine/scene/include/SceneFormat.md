@@ -30,6 +30,22 @@ A scene is a readable JSON file that people, tools and AI agents can edit. It st
 | `mesh` | integer ≥ 0 | `0` | Which mesh (primitive) of `model`, in import order. |
 | `color` | `[r, g, b, a]` | `[1,1,1,1]` | Tint multiplied with the material color. |
 | `instance` | asset path | none | At load, the whole node hierarchy of this glTF is created under this entity (ids `"<id>/<node name>"`). |
+| `collider` | object | none | Physics shape, see below. |
+
+### Collider
+
+```json
+"collider": { "shape": "box", "motion": "dynamic", "halfExtents": [0.5, 0.5, 0.5] }
+```
+
+| Field | Values | Default |
+|---|---|---|
+| `shape` | `"box"`, `"sphere"`, `"capsule"` (vertical) | `"box"` |
+| `motion` | `"static"` (level), `"kinematic"` (moved by code), `"dynamic"` (simulated) | `"static"` |
+| `halfExtents` | `[x, y, z]`, box only | the entity's world scale (the sample cube spans -1..1) |
+| `radius`, `halfHeight` | numbers, sphere/capsule | derived from the world scale |
+
+Dynamic colliders must be on root entities, because the simulation owns their transform. `"collider": {}` is a static box matching the entity's scale.
 
 Asset paths are relative to the asset folder and may not contain `..`.
 
@@ -58,6 +74,8 @@ Every problem is a `core::Diagnostic` (`engine/core/include/Diagnostic.hpp`) wit
 | `entity.field.type`, `entity.field.nonfinite`, `entity.rotation.zero`, `entity.mesh.nomodel` | error | Wrong type, NaN/Inf, zero quaternion, `mesh` without `model` |
 | `asset.path.unsafe`, `asset.missing` | error | Path escapes the asset folder, or the file doesn't exist |
 | `instance.failed` | error | An `instance` model couldn't be loaded |
+| `entity.collider.shape`, `entity.collider.motion`, `entity.collider.size` | error | Unknown shape/motion or negative size |
+| `entity.collider.dynamicchild` | error | Dynamic collider on an entity with a parent |
 | `entity.field.unknown` | warning | Unknown field (usually a typo) |
 
 ## Saving

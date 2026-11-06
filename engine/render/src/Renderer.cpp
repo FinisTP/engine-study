@@ -321,6 +321,9 @@ namespace umbra::render
                                             resources.GetTextureCount(),
                                             drawCount,
                                             indexCount);
+        const SceneUniform uniform = implementation_->BuildUniform();
+        implementation_->overlay.DrawLines(drawList.lines, uniform.projection * uniform.view, implementation_->swapchain.GetExtent());
+        implementation_->overlay.EndFrame();
 
         const FrameResult result = implementation_->frameResources.DrawFrame(
             implementation_->device.GetGraphicsQueue(),
@@ -330,7 +333,7 @@ namespace umbra::render
             resources,
             drawList,
             resources.GetFallbackTexture(),
-            implementation_->BuildUniform(),
+            uniform,
             implementation_->overlay);
 
         if (result == FrameResult::SwapchainOutOfDate)

@@ -26,6 +26,7 @@ namespace umbra::platform
         RightShift,
         LeftCtrl,
         RightCtrl,
+        F1,
         Count
     };
 

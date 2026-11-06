@@ -48,6 +48,32 @@ namespace umbra::world
         core::TextureHandle textureHandle;
     };
 
+    // Physics description of an entity. Pure data: the gameplay layer turns it into a body.
+    // Zero sizes mean "derive from the entity's world scale" (see Collider in SceneFormat.md).
+    enum class ColliderShape : std::uint8_t
+    {
+        Box,
+        Sphere,
+        Capsule
+    };
+
+    enum class ColliderMotion : std::uint8_t
+    {
+        Static,
+        Kinematic,
+        Dynamic
+    };
+
+    struct Collider final
+    {
+        ColliderShape shape = ColliderShape::Box;
+        ColliderMotion motion = ColliderMotion::Static;
+        glm::vec3 halfExtents{0.0F}; // Box
+        float radius = 0.0F;         // Sphere, Capsule
+        float halfHeight = 0.0F;     // Capsule
+        core::BodyHandle body;       // transient, set by the gameplay layer
+    };
+
     // Owns entities. Each entity has a durable string id (saved in files) and a
     // transient Entity handle (used at runtime). See World.md.
     class World final
@@ -91,6 +117,11 @@ namespace umbra::world
         bool RemoveRenderable(Entity entity);
         [[nodiscard]] const Renderable *GetRenderable(Entity entity) const noexcept;
         [[nodiscard]] Renderable *GetRenderable(Entity entity) noexcept;
+        bool SetCollider(Entity entity, Collider collider);
+        bool RemoveCollider(Entity entity);
+        [[nodiscard]] const Collider *GetCollider(Entity entity) const noexcept;
+        [[nodiscard]] Collider *GetCollider(Entity entity) noexcept;
+
         // Appends one item per renderable with a valid mesh handle. Call after UpdateTransforms().
         void ExtractDrawList(core::DrawList &drawList) const;
 
@@ -112,6 +143,7 @@ namespace umbra::world
             glm::mat4 worldMatrix{1.0F};
             bool dirty = true;
             std::optional<Renderable> renderable;
+            std::optional<Collider> collider;
         };
 
         [[nodiscard]] const Record *Get(Entity entity) const noexcept;

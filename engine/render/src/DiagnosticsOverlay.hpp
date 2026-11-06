@@ -2,11 +2,16 @@
 
 #include "RenderResources.hpp"
 
+#include <DrawList.hpp>
+
+#include <glm/mat4x4.hpp>
+
 #include <cstddef>
 #include <cstdint>
 #include <string>
 #include <filesystem>
 #include <array>
+#include <vector>
 
 namespace umbra::render
 {
@@ -31,7 +36,11 @@ namespace umbra::render
             const std::filesystem::path &vertexShader,
             const std::filesystem::path &fragmentShader);
 
+        // Frame order: BeginFrame (stats window) -> DrawLines / other ImGui calls -> EndFrame -> Render.
         void BeginFrame(VkExtent2D extent, float deltaSeconds, std::size_t meshCount, std::size_t textureCount, std::size_t drawCount, std::uint32_t indexCount);
+        // Projects world-space lines with viewProjection and draws them over the scene. See DebugDraw.md.
+        void DrawLines(const std::vector<core::DebugLine> &lines, const glm::mat4 &viewProjection, VkExtent2D extent);
+        void EndFrame();
 
         void Render(VkCommandBuffer commandBuffer, std::size_t frameIndex);
 

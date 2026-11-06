@@ -43,6 +43,8 @@ namespace
             return InputKey::LeftCtrl;
         case SDL_SCANCODE_RCTRL:
             return InputKey::RightCtrl;
+        case SDL_SCANCODE_F1:
+            return InputKey::F1;
         default:
             return InputKey::Unknown;
         }
