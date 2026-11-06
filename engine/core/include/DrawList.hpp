@@ -6,6 +6,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
+#include <string>
 #include <vector>
 
 namespace umbra::core
@@ -37,17 +38,30 @@ namespace umbra::core
         float farPlane = 200.0F;
     };
 
+    // Screen text for this frame. Gameplay fills it; the renderer only draws it.
+    struct Hud final
+    {
+        std::string prompt;                // bottom center, e.g. "[E] Read sign"
+        std::string message;               // above the prompt, after using something
+        std::vector<std::string> warnings; // top right, e.g. missing assets
+        std::string menuTitle;             // a centered menu is shown when menuItems is not empty
+        std::vector<std::string> menuItems;
+        int menuSelected = 0;
+    };
+
     // Read-only presentation data the world hands to the renderer each frame.
     struct DrawList final
     {
         Camera camera;
         std::vector<DrawItem> items;
         std::vector<DebugLine> lines;
+        Hud hud;
 
         void Clear()
         {
             items.clear();
             lines.clear();
+            hud = {};
         }
     };
 }

@@ -2,6 +2,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <GltfImporter.hpp>
+#include <Interaction.hpp>
 #include <PhysicsBridge.hpp>
 #include <PlayerController.hpp>
 #include <SceneFile.hpp>
@@ -100,4 +101,22 @@ TEST_CASE("The ramp leads up to its platform")
     const glm::vec3 feet = s.player.GetFeet(s.physics);
     REQUIRE(feet.x < -6.0F);
     REQUIRE(feet.y == Approx(1.1F).margin(0.1));
+}
+
+TEST_CASE("Facing the signpost within reach finds it; facing away or too far does not")
+{
+    Settlement s;
+    // The sign stands at z = 3 (front face z = 2.92). Walk toward it from the spawn.
+    REQUIRE(s.player.Spawn(s.physics, {0, 0, 0}, 0.0F));
+    REQUIRE_FALSE(gameplay::FindInteractable(s.world, s.physics, s.player)); // facing -Z, away from it
+
+    s.WalkUntil({0, -1}, [](glm::vec3 feet) { return feet.z > 1.0F; }, 3.0F); // walk backward = +Z
+    s.Walk({0, 0}, 0.5F); // stop and finish turning
+    const world::Entity found = gameplay::FindInteractable(s.world, s.physics, s.player);
+    REQUIRE(found == s.world.Find("signpost"));
+    REQUIRE(s.world.GetInteractable(found)->prompt == "Read sign");
+
+    // Out of reach: 2 m interact distance from the capsule front.
+    REQUIRE(s.player.Spawn(s.physics, {0, 0, -1}, glm::pi<float>()));
+    REQUIRE_FALSE(gameplay::FindInteractable(s.world, s.physics, s.player));
 }

@@ -7,6 +7,7 @@
 #include <glm/vec4.hpp>
 
 #include <algorithm>
+#include <cfloat>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -246,7 +247,7 @@ namespace umbra::render
         ImGui::Text("Textures: %zu", textureCount);
         ImGui::Text("Draws: %zu", drawCount);
         ImGui::Text("Indices: %u", indexCount);
-        ImGui::TextDisabled("WASD move | mouse look | Space jump | F1 colliders");
+        ImGui::TextDisabled("WASD move | mouse look | Space jump | E use | Esc pause | F1 colliders");
         ImGui::End();
     }
 
@@ -275,6 +276,53 @@ namespace umbra::render
             const ImU32 color = ImGui::ColorConvertFloat4ToU32(ImVec4(line.color.r, line.color.g, line.color.b, line.color.a));
             draw->AddLine(ImVec2(pa.x, pa.y), ImVec2(pb.x, pb.y), color, 1.5F);
         }
+    }
+
+    void DiagnosticsOverlay::DrawHud(const core::Hud &hud, VkExtent2D extent)
+    {
+        if (!initialized_)
+            return;
+        const ImVec2 size{static_cast<float>(extent.width), static_cast<float>(extent.height)};
+        ImDrawList *draw = ImGui::GetForegroundDrawList();
+
+        // Centered text with a dark shadow so it reads on any background.
+        const auto centered = [&](const std::string &text, float y, float scale, ImU32 color) {
+            ImFont *font = ImGui::GetFont();
+            const float fontSize = ImGui::GetFontSize() * scale;
+            const ImVec2 textSize = font->CalcTextSizeA(fontSize, FLT_MAX, 0.0F, text.c_str());
+            const ImVec2 at{(size.x - textSize.x) * 0.5F, y};
+            draw->AddText(font, fontSize, ImVec2(at.x + 2, at.y + 2), IM_COL32(0, 0, 0, 200), text.c_str());
+            draw->AddText(font, fontSize, at, color, text.c_str());
+        };
+        if (!hud.prompt.empty())
+            centered(hud.prompt, size.y * 0.78F, 1.6F, IM_COL32(255, 255, 255, 255));
+        if (!hud.message.empty())
+            centered(hud.message, size.y * 0.70F, 1.4F, IM_COL32(255, 225, 140, 255));
+
+        // Warnings stack down the top-right corner.
+        float y = 8.0F;
+        for (const std::string &warning : hud.warnings)
+        {
+            const ImVec2 textSize = ImGui::CalcTextSize(warning.c_str());
+            draw->AddText(ImVec2(size.x - textSize.x - 8.0F, y), IM_COL32(255, 120, 90, 255), warning.c_str());
+            y += textSize.y + 2.0F;
+        }
+
+        // Menu: a fixed window in the middle; the selected row is highlighted.
+        if (hud.menuItems.empty())
+            return;
+        draw = ImGui::GetBackgroundDrawList();
+        draw->AddRectFilled(ImVec2(0, 0), size, IM_COL32(0, 0, 0, 120)); // dim the scene
+        ImGui::SetNextWindowPos(ImVec2(size.x * 0.5F, size.y * 0.5F), ImGuiCond_Always, ImVec2(0.5F, 0.5F));
+        ImGui::SetNextWindowSize(ImVec2(260.0F, 0.0F));
+        ImGui::Begin(hud.menuTitle.empty() ? "Menu" : hud.menuTitle.c_str(), nullptr,
+                     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
+                         ImGuiWindowFlags_AlwaysAutoResize);
+        for (std::size_t i = 0; i < hud.menuItems.size(); ++i)
+            ImGui::Selectable(hud.menuItems[i].c_str(), static_cast<int>(i) == hud.menuSelected);
+        ImGui::Separator();
+        ImGui::TextDisabled("W/S or arrows, Enter to choose, Esc to resume");
+        ImGui::End();
     }
 
     void DiagnosticsOverlay::EndFrame()

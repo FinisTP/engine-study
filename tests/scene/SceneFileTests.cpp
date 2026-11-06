@@ -206,3 +206,37 @@ TEST_CASE("Bad colliders are rejected")
     REQUIRE(LoadEntities("col-type", R"({"id":"a","collider":{"shape":3}})").Has("entity.field.type"));
     REQUIRE(LoadEntities("col-child", R"({"id":"p"},{"id":"c","parent":"p","collider":{"motion":"dynamic"}})").Has("entity.collider.dynamicchild"));
 }
+
+TEST_CASE("Interactables load and survive save/load")
+{
+    const auto dir = test::TempDir("scene-interactable");
+    test::WriteText(dir / "i.scene.json", R"({"format":"umbra.scene","version":1,"entities":[
+        {"id":"sign","collider":{},"interactable":{"prompt":"Read sign","message":"Hello","sound":"audio/interact.wav"}},
+        {"id":"well","collider":{},"interactable":{"prompt":"Look"}}]})");
+    world::World world;
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(scene::LoadScene(dir / "i.scene.json", Options(), world, diagnostics));
+    REQUIRE(diagnostics.empty());
+    REQUIRE(world.GetInteractable(world.Find("sign"))->message == "Hello");
+    REQUIRE(world.GetInteractable(world.Find("well"))->sound.empty());
+
+    REQUIRE(scene::SaveScene(world, dir / "saved.scene.json", diagnostics));
+    world::World copy;
+    REQUIRE(scene::LoadScene(dir / "saved.scene.json", Options(), copy, diagnostics));
+    REQUIRE(copy.GetInteractable(copy.Find("sign"))->sound == "audio/interact.wav");
+    REQUIRE(copy.GetInteractable(copy.Find("well"))->prompt == "Look");
+}
+
+TEST_CASE("Interactable problems: missing prompt fails, missing sound or collider only warns")
+{
+    REQUIRE(LoadEntities("int-prompt", R"({"id":"a","collider":{},"interactable":{}})").Has("entity.interactable.prompt"));
+    REQUIRE(LoadEntities("int-unsafe", R"({"id":"a","collider":{},"interactable":{"prompt":"x","sound":"../x.wav"}})").Has("asset.path.unsafe"));
+
+    const Attempt silent = LoadEntities("int-sound", R"({"id":"a","collider":{},"interactable":{"prompt":"x","sound":"audio/missing.wav"}})");
+    REQUIRE(silent.loaded);
+    REQUIRE(silent.Has("entity.interactable.sound"));
+
+    const Attempt unreachable = LoadEntities("int-nocol", R"({"id":"a","interactable":{"prompt":"x"}})");
+    REQUIRE(unreachable.loaded);
+    REQUIRE(unreachable.Has("entity.interactable.nocollider"));
+}

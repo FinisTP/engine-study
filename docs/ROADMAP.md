@@ -438,7 +438,7 @@ Emscripten documents a WebGPU integration through Emdawnwebgpu [S8]. Investigate
 |---|---|---|
 | P4.1 | Implemented: Jolt adapter, collider component + scene field, physics bridge, fixed 60 Hz stepping, debug outlines (F1); tests pass on Linux GCC/Clang/ASan; Windows not run | `tests/physics/PhysicsTests.cpp`, `tests/gameplay/PhysicsBridgeTests.cpp`; `engine/physics/include/Physics.md` |
 | P4.2 | Implemented: third-person PlayerController (camera-relative movement, sprint, jump, turn, wall-aware orbit camera, interaction ray), mouse input + capture, camera moved out of the renderer, settlement test scene; walk-through tests pass on Linux GCC/Clang/ASan; Windows/interactive not run | `tests/gameplay/PlayerControllerTests.cpp`, `tests/gameplay/SettlementWalkTests.cpp`, `tests/platform/InputTests.cpp`; `engine/gameplay/include/PlayerController.md` |
-| P4.3 | Planned | |
+| P4.3 | Implemented: procedural walk bob/lean + footstep timing (`StrideAnimator`), WAV loader/mixer (`Umbra::Audio`, 48 kHz 16-bit PCM only) + SDL audio device, generated placeholder sounds, interactables (`interactable` scene field, E key, prompt/message HUD), Esc pause menu (resume/restart/quit, game audio paused, UI audio not), missing-asset warnings on screen and in `UmbraSceneCheck`; tests pass on Linux GCC/Clang/ASan; Windows/interactive/audible not checked | `tests/audio/AudioTests.cpp`, `tests/platform/AudioDeviceTests.cpp`, `tests/gameplay/PresentationTests.cpp`, `tests/gameplay/SettlementWalkTests.cpp`, `tests/scene/SceneFileTests.cpp`; `engine/audio/include/Audio.md`, `engine/gameplay/include/StrideAnimator.md` |
 | P4.4 | Planned | |
 | P4.5 | Planned | |
 <!-- /P4-status -->

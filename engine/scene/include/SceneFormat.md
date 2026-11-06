@@ -31,6 +31,7 @@ A scene is a readable JSON file that people, tools and AI agents can edit. It st
 | `color` | `[r, g, b, a]` | `[1,1,1,1]` | Tint multiplied with the material color. |
 | `instance` | asset path | none | At load, the whole node hierarchy of this glTF is created under this entity (ids `"<id>/<node name>"`). |
 | `collider` | object | none | Physics shape, see below. |
+| `interactable` | object | none | Something the player can use with **E**, see below. |
 
 ### Collider
 
@@ -46,6 +47,20 @@ A scene is a readable JSON file that people, tools and AI agents can edit. It st
 | `radius`, `halfHeight` | numbers, sphere/capsule | derived from the world scale |
 
 Dynamic colliders must be on root entities, because the simulation owns their transform. `"collider": {}` is a static box matching the entity's scale.
+
+### Interactable
+
+```json
+"interactable": { "prompt": "Read sign", "message": "Welcome to the settlement.", "sound": "audio/interact.wav" }
+```
+
+| Field | Meaning |
+|---|---|
+| `prompt` (required) | Shown as `[E] <prompt>` while the player looks at it within reach |
+| `message` | Shown for a few seconds after using it |
+| `sound` | WAV played on use (format rules: `engine/audio/include/Audio.md`) |
+
+The player finds interactables with a short ray from the waist, so the entity also needs a `collider`.
 
 Asset paths are relative to the asset folder and may not contain `..`.
 
@@ -78,6 +93,9 @@ Every problem is a `core::Diagnostic` (`engine/core/include/Diagnostic.hpp`) wit
 | `instance.failed` | error | An `instance` model couldn't be loaded |
 | `entity.collider.shape`, `entity.collider.motion`, `entity.collider.size` | error | Unknown shape/motion or negative size |
 | `entity.collider.dynamicchild` | error | Dynamic collider on an entity with a parent |
+| `entity.interactable.prompt` | error | `interactable` without a prompt |
+| `entity.interactable.sound` | warning | Sound file doesn't exist (the game plays nothing) |
+| `entity.interactable.nocollider` | warning | `interactable` without `collider` (the player can't reach it) |
 | `entity.field.unknown` | warning | Unknown field (usually a typo) |
 
 ## Saving

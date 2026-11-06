@@ -48,6 +48,61 @@
       ]
     },
     {
+      "id": "signpost",
+      "name": "Signpost",
+      "position": [
+        0,
+        0.75,
+        3
+      ],
+      "scale": [
+        0.6,
+        0.75,
+        0.08
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.55,
+        0.4,
+        0.25,
+        1
+      ],
+      "collider": {},
+      "interactable": {
+        "prompt": "Read sign",
+        "message": "Settlement test area: wall ahead, stairs right, ramp left.",
+        "sound": "audio/interact.wav"
+      }
+    },
+    {
+      "id": "well",
+      "name": "Well",
+      "position": [
+        -3,
+        0.5,
+        2
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.5,
+        0.5,
+        0.55,
+        1
+      ],
+      "collider": {},
+      "interactable": {
+        "prompt": "Look into the well",
+        "message": "It is very deep. Something glints at the bottom."
+      }
+    },
+    {
       "id": "house_a",
       "name": "House A",
       "position": [

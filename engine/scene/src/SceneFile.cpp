@@ -37,6 +37,7 @@ namespace umbra::scene
             glm::vec4 color{1.0F};
             std::string instance;
             std::optional<world::Collider> collider;
+            std::optional<world::Interactable> interactable;
         };
 
         struct ParsedScene final
@@ -166,9 +167,41 @@ namespace umbra::scene
             return collider;
         }
 
+        // "interactable": { "prompt": "Read sign", "message": "...", "sound": "audio/x.wav" }
+        // A missing sound file is only a warning: the game can run without it.
+        std::optional<world::Interactable> ParseInteractable(const json &value, const std::string &where,
+                                                             const SceneLoadOptions &options, Report &report)
+        {
+            if (!value.is_object())
+            {
+                report.Error("entity.field.type", where, "expected an object");
+                return std::nullopt;
+            }
+            static const std::set<std::string> knownKeys{"prompt", "message", "sound"};
+            for (const auto &[key, unused] : value.items())
+            {
+                if (!knownKeys.contains(key))
+                    report.Warning("entity.field.unknown", where + "." + key, "unknown field is ignored (typo?)");
+            }
+            world::Interactable interactable;
+            ReadString(value, "prompt", interactable.prompt, where, report);
+            ReadString(value, "message", interactable.message, where, report);
+            ReadString(value, "sound", interactable.sound, where, report);
+            if (interactable.prompt.empty())
+                report.Error("entity.interactable.prompt", where + ".prompt", "needs a non-empty prompt");
+            if (!interactable.sound.empty())
+            {
+                if (!assets::IsSafeAssetPath(interactable.sound))
+                    report.Error("asset.path.unsafe", where + ".sound", "'" + interactable.sound + "' must be relative to the asset folder and must not contain '..'");
+                else if (!options.assetRoot.empty() && !std::filesystem::is_regular_file(options.assetRoot / interactable.sound))
+                    report.Warning("entity.interactable.sound", where + ".sound", "'" + interactable.sound + "' does not exist; it will be silent");
+            }
+            return interactable;
+        }
+
         EntityDesc ParseEntity(const json &entity, const std::string &where, const SceneLoadOptions &options, Report &report)
         {
-            static const std::set<std::string> knownKeys{"id", "name", "parent", "position", "rotation", "scale", "model", "mesh", "color", "instance", "collider"};
+            static const std::set<std::string> knownKeys{"id", "name", "parent", "position", "rotation", "scale", "model", "mesh", "color", "instance", "collider", "interactable"};
             EntityDesc desc;
             for (const auto &[key, value] : entity.items())
             {
@@ -215,6 +248,8 @@ namespace umbra::scene
                 CheckAssetPath(desc.instance, where + ".instance", options, report);
             if (const auto it = entity.find("collider"); it != entity.end())
                 desc.collider = ParseCollider(*it, where + ".collider", report);
+            if (const auto it = entity.find("interactable"); it != entity.end())
+                desc.interactable = ParseInteractable(*it, where + ".interactable", options, report);
             return desc;
         }
 
@@ -351,6 +386,9 @@ namespace umbra::scene
                 if (desc.collider && desc.collider->motion == world::ColliderMotion::Dynamic && !desc.parent.empty())
                     report.Error("entity.collider.dynamicchild", "entities[" + std::to_string(i) + "].collider",
                                  "dynamic colliders must be on root entities (the simulation owns their transform)");
+                if (desc.interactable && !desc.collider)
+                    report.Warning("entity.interactable.nocollider", "entities[" + std::to_string(i) + "].interactable",
+                                   "the player finds interactables by ray, so this one needs a collider to be usable");
             }
 
             // 5. Models used by "instance" must load.
@@ -412,6 +450,15 @@ namespace umbra::scene
                     collider["halfHeight"] = Tidy(c->halfHeight);
                 out["collider"] = collider;
             }
+            if (const world::Interactable *i = world.GetInteractable(entity))
+            {
+                json interactable{{"prompt", i->prompt}};
+                if (!i->message.empty())
+                    interactable["message"] = i->message;
+                if (!i->sound.empty())
+                    interactable["sound"] = i->sound;
+                out["interactable"] = interactable;
+            }
             return out;
         }
 
@@ -452,6 +499,8 @@ namespace umbra::scene
                 world.SetRenderable(entity, world::Renderable{desc.model, desc.mesh, desc.color});
             if (desc.collider)
                 world.SetCollider(entity, *desc.collider);
+            if (desc.interactable)
+                world.SetInteractable(entity, *desc.interactable);
             created.push_back(entity);
         }
         for (std::size_t i = 0; i < scene.entities.size(); ++i)

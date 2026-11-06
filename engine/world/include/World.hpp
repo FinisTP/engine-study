@@ -74,6 +74,14 @@ namespace umbra::world
         core::BodyHandle body;       // transient, set by the gameplay layer
     };
 
+    // Something the player can use with the interact key. Needs a collider to be found.
+    struct Interactable final
+    {
+        std::string prompt;  // shown while in reach, e.g. "Read sign"
+        std::string message; // shown after using it
+        std::string sound;   // optional sound file played on use
+    };
+
     // Owns entities. Each entity has a durable string id (saved in files) and a
     // transient Entity handle (used at runtime). See World.md.
     class World final
@@ -121,6 +129,8 @@ namespace umbra::world
         bool RemoveCollider(Entity entity);
         [[nodiscard]] const Collider *GetCollider(Entity entity) const noexcept;
         [[nodiscard]] Collider *GetCollider(Entity entity) noexcept;
+        bool SetInteractable(Entity entity, Interactable interactable);
+        [[nodiscard]] const Interactable *GetInteractable(Entity entity) const noexcept;
 
         // Appends one item per renderable with a valid mesh handle. Call after UpdateTransforms().
         void ExtractDrawList(core::DrawList &drawList) const;
@@ -144,6 +154,7 @@ namespace umbra::world
             bool dirty = true;
             std::optional<Renderable> renderable;
             std::optional<Collider> collider;
+            std::optional<Interactable> interactable;
         };
 
         [[nodiscard]] const Record *Get(Entity entity) const noexcept;

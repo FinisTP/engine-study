@@ -12,15 +12,30 @@
 #include <Window.hpp>
 #include <ApplicationEvents.hpp>
 #include <CrashHandler.hpp>
+#include <AudioDevice.hpp>
+#include <Mixer.hpp>
+#include <PauseMenu.hpp>
 #include <Renderer.hpp>
+#include <SoundBank.hpp>
 #include <World.hpp>
 #include "ModelLibrary.hpp"
 #include "SceneRuntime.hpp"
 
 #include <glm/gtc/constants.hpp>
 
+#include <algorithm>
+
 namespace
 {
+	// Shows at most `limit` lines and a count of the rest.
+	void AddWarnings(std::vector<std::string> &out, const std::vector<std::string> &problems, std::size_t limit)
+	{
+		for (std::size_t i = 0; i < std::min(problems.size(), limit); ++i)
+			out.push_back(problems[i]);
+		if (problems.size() > limit)
+			out.push_back("... and " + std::to_string(problems.size() - limit) + " more (see the log)");
+	}
+
 	void SpinEntity(umbra::world::World &world, const char *id, float radians)
 	{
 		const umbra::world::Entity entity = world.Find(id);
@@ -65,15 +80,40 @@ int RunApplication(const std::string &scenePath)
 					return 1;
 				}
 
+				// Sound: the mixer outlives the device that pulls from it (declared first, destroyed last).
+				umbra::audio::Mixer mixer;
+				umbra::audio::SoundBank sounds(UMBRA_ASSET_DIRECTORY);
+				umbra::platform::AudioDevice audioDevice;
+				(void)audioDevice.Open(mixer); // without a device the game runs silently
+				std::vector<std::string> soundProblems;
+				const auto play = [&](const std::string &path, float volume, umbra::audio::Bus bus) {
+					mixer.Play(sounds.Get(path), volume, bus);
+					for (const umbra::core::Diagnostic &problem : sounds.TakeDiagnostics())
+					{
+						umbra::diagnostics::Error(umbra::core::Format(problem));
+						soundProblems.push_back("Warning: sound " + problem.file + ": " + problem.message);
+					}
+				};
+
 				ModelLibrary models(renderer, UMBRA_ASSET_DIRECTORY, UMBRA_CACHE_DIRECTORY);
 				SceneRuntime scene(models, UMBRA_ASSET_DIRECTORY, scenePath);
 				umbra::core::DrawList drawList;
 				bool showColliders = false;
 				scene.Load();
 
-				// The mouse steers the camera while captured; focus loss releases it, a click recaptures.
-				bool mouseCaptured = true;
-				window.SetMouseCaptured(true);
+				// Esc opens the pause menu; the mouse is captured (steers the camera) only while playing.
+				umbra::gameplay::PauseMenu menu;
+				const auto setPaused = [&](bool paused) {
+					if (paused)
+						menu.Open();
+					else
+						menu.Close();
+					window.SetMouseCaptured(!paused);
+					mixer.SetGamePaused(paused);
+				};
+				setPaused(false);
+				std::string message; // shown after using an interactable
+				float messageSeconds = 0.0F;
 
 				bool isSuspended = false;
 
@@ -84,8 +124,7 @@ int RunApplication(const std::string &scenePath)
 					eventPump.PumpEvents(input, applicationEvents);
 
 					if (applicationEvents.IsEventRequested(umbra::platform::ApplicationEventType::Quit) ||
-						applicationEvents.IsEventRequested(umbra::platform::ApplicationEventType::WindowClose) ||
-						input.IsKeyPressed(umbra::platform::InputKey::Escape))
+						applicationEvents.IsEventRequested(umbra::platform::ApplicationEventType::WindowClose))
 					{
 						break;
 					}
@@ -113,8 +152,7 @@ int RunApplication(const std::string &scenePath)
 					{
 						// Handle window focus lost event
 						umbra::diagnostics::Info("Window focus lost.");
-						window.SetMouseCaptured(false);
-						mouseCaptured = false;
+						setPaused(true); // releases the mouse; the player resumes from the menu
 					}
 
 					if (applicationEvents.IsEventRequested(umbra::platform::ApplicationEventType::WindowSuspended))
@@ -150,33 +188,85 @@ int RunApplication(const std::string &scenePath)
 					clock.Tick();
 					const double deltaTime = clock.GetDeltaTimeSeconds();
 
-					// Pick up edited scene/model files, then world -> draw list -> renderer.
+					// Pick up edited scene/model files.
 					scene.Update();
 					umbra::world::World &world = scene.GetWorld();
-					SpinEntity(world, "spinner", static_cast<float>(deltaTime) * glm::radians(45.0F));
-					world.UpdateTransforms();
+					using umbra::platform::InputKey;
 
-					// Keyboard and mouse -> player intent (ignored while the mouse is released).
-					if (!mouseCaptured && input.IsMouseButtonPressed(0))
+					// Pause menu: Esc toggles; W/S or arrows move; Enter chooses.
+					bool quit = false;
+					if (input.IsKeyPressed(InputKey::Escape))
 					{
-						window.SetMouseCaptured(true);
-						mouseCaptured = true;
+						setPaused(!menu.IsOpen());
+						play("audio/ui_click.wav", 0.6F, umbra::audio::Bus::Ui);
 					}
-					umbra::gameplay::PlayerInput playerInput;
-					if (mouseCaptured)
+					else if (menu.IsOpen())
 					{
-						using umbra::platform::InputKey;
+						const int move = (input.IsKeyPressed(InputKey::S) || input.IsKeyPressed(InputKey::Down) ? 1 : 0) -
+										 (input.IsKeyPressed(InputKey::W) || input.IsKeyPressed(InputKey::Up) ? 1 : 0);
+						if (move != 0)
+						{
+							menu.Move(move);
+							play("audio/ui_click.wav", 0.6F, umbra::audio::Bus::Ui);
+						}
+						if (input.IsKeyPressed(InputKey::Enter))
+						{
+							play("audio/ui_click.wav", 0.6F, umbra::audio::Bus::Ui);
+							switch (menu.Confirm())
+							{
+							case umbra::gameplay::MenuAction::Restart:
+								mixer.StopAll();
+								scene.Restart();
+								messageSeconds = 0.0F;
+								[[fallthrough]];
+							case umbra::gameplay::MenuAction::Resume:
+								setPaused(false);
+								break;
+							case umbra::gameplay::MenuAction::Quit:
+								quit = true;
+								break;
+							case umbra::gameplay::MenuAction::None:
+								break;
+							}
+						}
+					}
+					if (quit)
+						break;
+
+					// Playing: keyboard and mouse -> player intent -> fixed-step simulation.
+					const umbra::world::Interactable *focused = nullptr;
+					if (!menu.IsOpen())
+					{
+						SpinEntity(world, "spinner", static_cast<float>(deltaTime) * glm::radians(45.0F));
+						world.UpdateTransforms();
+
 						const auto axis = [&](InputKey plus, InputKey minus) {
 							return (input.IsKeyHeld(plus) ? 1.0F : 0.0F) - (input.IsKeyHeld(minus) ? 1.0F : 0.0F);
 						};
+						umbra::gameplay::PlayerInput playerInput;
 						playerInput.move = {axis(InputKey::D, InputKey::A), axis(InputKey::W, InputKey::S)};
 						playerInput.sprint = input.IsKeyHeld(InputKey::LeftShift);
 						playerInput.jump = input.IsKeyPressed(InputKey::Space);
 						constexpr float mouseSensitivity = 0.0025F; // radians per pixel
 						scene.Look(-input.GetMouseDeltaX() * mouseSensitivity, -input.GetMouseDeltaY() * mouseSensitivity);
+
+						const SimulationEvents events = scene.Simulate(static_cast<float>(deltaTime), playerInput);
+						for (int i = 0; i < events.footsteps; ++i)
+							play("audio/footstep.wav", 0.5F, umbra::audio::Bus::Game);
+						if (events.jumped)
+							play("audio/jump.wav", 0.5F, umbra::audio::Bus::Game);
+
+						// Interaction: E uses what the player faces; its message stays up for a few seconds.
+						focused = scene.FocusedInteractable();
+						if (focused != nullptr && input.IsKeyPressed(InputKey::E))
+						{
+							message = focused->message;
+							messageSeconds = 3.0F;
+							play(focused->sound.empty() ? "audio/interact.wav" : focused->sound, 0.8F, umbra::audio::Bus::Game);
+						}
+						messageSeconds = std::max(0.0F, messageSeconds - static_cast<float>(deltaTime));
 					}
-					scene.Simulate(static_cast<float>(deltaTime), playerInput);
-					if (input.IsKeyPressed(umbra::platform::InputKey::F1))
+					if (input.IsKeyPressed(InputKey::F1))
 						showColliders = !showColliders;
 
 					drawList.Clear();
@@ -184,6 +274,21 @@ int RunApplication(const std::string &scenePath)
 					world.ExtractDrawList(drawList);
 					if (showColliders)
 						scene.AddDebugLines(drawList);
+
+					// Screen text: prompt, message, asset problems, menu.
+					umbra::core::Hud &hud = drawList.hud;
+					if (focused != nullptr)
+						hud.prompt = "[E] " + focused->prompt;
+					if (messageSeconds > 0.0F)
+						hud.message = message;
+					AddWarnings(hud.warnings, scene.GetProblems(), 6);
+					AddWarnings(hud.warnings, soundProblems, 3);
+					if (menu.IsOpen())
+					{
+						hud.menuTitle = "Paused";
+						hud.menuItems.assign(umbra::gameplay::PauseMenu::items.begin(), umbra::gameplay::PauseMenu::items.end());
+						hud.menuSelected = menu.GetSelected();
+					}
 
 					if (!renderer.RenderFrame(static_cast<float>(deltaTime), drawList))
 					{

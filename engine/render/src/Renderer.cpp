@@ -285,6 +285,7 @@ namespace umbra::render
                                             indexCount);
         const SceneUniform uniform = implementation_->BuildUniform(drawList.camera);
         implementation_->overlay.DrawLines(drawList.lines, uniform.projection * uniform.view, implementation_->swapchain.GetExtent());
+        implementation_->overlay.DrawHud(drawList.hud, implementation_->swapchain.GetExtent());
         implementation_->overlay.EndFrame();
 
         const FrameResult result = implementation_->frameResources.DrawFrame(

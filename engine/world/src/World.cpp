@@ -229,6 +229,21 @@ namespace umbra::world
         return const_cast<Collider *>(std::as_const(*this).GetCollider(entity));
     }
 
+    bool World::SetInteractable(Entity entity, Interactable interactable)
+    {
+        Record *record = Get(entity);
+        if (record == nullptr)
+            return false;
+        record->interactable = std::move(interactable);
+        return true;
+    }
+
+    const Interactable *World::GetInteractable(Entity entity) const noexcept
+    {
+        const Record *record = Get(entity);
+        return record && record->interactable ? &*record->interactable : nullptr;
+    }
+
     void World::ExtractDrawList(core::DrawList &drawList) const
     {
         entities_.ForEach([&](core::Handle<EntityTag>, const Record &record) {

@@ -2,6 +2,7 @@
 
 #include <Log.hpp>
 #include <ModelInstance.hpp>
+#include <Interaction.hpp>
 #include <PhysicsBridge.hpp>
 #include <SceneFile.hpp>
 
@@ -13,7 +14,7 @@ SceneRuntime::SceneRuntime(ModelLibrary &models, std::filesystem::path assetRoot
 {
 }
 
-bool SceneRuntime::Load()
+bool SceneRuntime::Load(bool keepPlayer)
 {
     umbra::scene::SceneLoadOptions options;
     options.assetRoot = assetRoot_;
@@ -26,8 +27,11 @@ bool SceneRuntime::Load()
     auto fresh = std::make_unique<umbra::world::World>();
     std::vector<umbra::core::Diagnostic> diagnostics;
     const bool loaded = umbra::scene::LoadScene(assetRoot_ / scenePath_, options, *fresh, diagnostics);
+    problems_.clear();
     for (const umbra::core::Diagnostic &diagnostic : diagnostics)
     {
+        problems_.push_back((diagnostic.severity == umbra::core::Severity::Error ? "Error: " : "Warning: ") +
+                            diagnostic.field + " " + diagnostic.message);
         if (diagnostic.severity == umbra::core::Severity::Error)
             umbra::diagnostics::Error(umbra::core::Format(diagnostic));
         else
@@ -46,12 +50,14 @@ bool SceneRuntime::Load()
         if (const std::size_t failed = umbra::gameplay::CreateBodies(*fresh, *freshPhysics); failed > 0)
             umbra::diagnostics::Error(std::to_string(failed) + " collider(s) have unusable sizes and got no physics body.");
         // Keep the player where it was on a hot reload; spawn at the marker otherwise.
-        const bool keepPlayer = player_.IsSpawned();
+        keepPlayer = keepPlayer && player_.IsSpawned();
         const glm::vec3 feet = keepPlayer ? player_.GetFeet(*physics_) : glm::vec3{0.0F};
         world_ = std::move(fresh);
         physics_ = std::move(freshPhysics);
         accumulator_ = 0.0;
         player_.Reset(); // the old character died with the old physics world
+        stride_.Reset();
+        pendingJump_ = false;
         if (keepPlayer)
             player_.Spawn(*physics_, feet, player_.GetFacingYaw());
         else
@@ -105,8 +111,9 @@ void SceneRuntime::Update()
     RefreshWatchList();
 }
 
-void SceneRuntime::Simulate(float deltaSeconds, const umbra::gameplay::PlayerInput &input)
+SimulationEvents SceneRuntime::Simulate(float deltaSeconds, const umbra::gameplay::PlayerInput &input)
 {
+    SimulationEvents events;
     pendingJump_ |= input.jump;
     // Fixed steps keep physics stable and repeatable whatever the frame rate.
     // After a long stall (breakpoint, window drag) drop the backlog instead of
@@ -120,7 +127,10 @@ void SceneRuntime::Simulate(float deltaSeconds, const umbra::gameplay::PlayerInp
         umbra::gameplay::PlayerInput stepInput = input;
         stepInput.jump = pendingJump_;
         pendingJump_ = false;
+        const bool wasGrounded = player_.IsSpawned() && player_.IsGrounded(*physics_);
         player_.Update(*physics_, stepInput, static_cast<float>(step));
+        if (stepInput.jump && wasGrounded && player_.GetVelocity(*physics_).y > 0.1F)
+            events.jumped = true;
         umbra::gameplay::PushKinematic(*world_, *physics_, static_cast<float>(step));
         physics_->Step(static_cast<float>(step));
         umbra::gameplay::PullDynamic(*world_, *physics_);
@@ -130,7 +140,30 @@ void SceneRuntime::Simulate(float deltaSeconds, const umbra::gameplay::PlayerInp
     }
     if (steps == maxStepsPerFrame)
         accumulator_ = 0.0;
+
+    // Walk animation follows the character's horizontal speed.
+    if (player_.IsSpawned())
+    {
+        const glm::vec3 velocity = player_.GetVelocity(*physics_);
+        const float speed = glm::length(glm::vec2{velocity.x, velocity.z});
+        if (stride_.Update(speed, player_.IsGrounded(*physics_), deltaSeconds))
+            ++events.footsteps;
+    }
     SyncPlayerVisual();
+    return events;
+}
+
+std::vector<std::string> SceneRuntime::GetProblems() const
+{
+    std::vector<std::string> problems = problems_;
+    if (!bindProblem_.empty())
+        problems.push_back("Error: " + bindProblem_);
+    return problems;
+}
+
+const umbra::world::Interactable *SceneRuntime::FocusedInteractable() const
+{
+    return world_->GetInteractable(umbra::gameplay::FindInteractable(*world_, *physics_, player_));
 }
 
 void SceneRuntime::SpawnPlayer()
@@ -154,8 +187,11 @@ void SceneRuntime::SyncPlayerVisual()
         return;
     umbra::world::Transform transform = *world_->GetLocalTransform(entity);
     const auto &settings = player_.GetSettings();
-    transform.position = player_.GetFeet(*physics_) + glm::vec3{0.0F, settings.radius + settings.halfHeight, 0.0F};
-    transform.rotation = glm::angleAxis(player_.GetFacingYaw(), glm::vec3{0.0F, 1.0F, 0.0F});
+    // Procedural pose on top: bob up, then lean forward around the body's own right axis (-X turned by yaw).
+    const umbra::gameplay::BodyPose pose = stride_.GetPose();
+    transform.position = player_.GetFeet(*physics_) + glm::vec3{0.0F, settings.radius + settings.halfHeight + pose.bob, 0.0F};
+    transform.rotation = glm::angleAxis(player_.GetFacingYaw(), glm::vec3{0.0F, 1.0F, 0.0F}) *
+                         glm::angleAxis(pose.lean, glm::vec3{-1.0F, 0.0F, 0.0F});
     world_->SetLocalTransform(entity, transform);
     world_->UpdateTransforms();
 }
@@ -180,8 +216,12 @@ void SceneRuntime::Rebind()
 {
     const std::size_t unresolved = umbra::scene::BindRenderables(
         *world_, [&](const std::string &model, std::uint32_t mesh) { return models_.Resolve(model, mesh); });
+    bindProblem_.clear();
     if (unresolved > 0)
-        umbra::diagnostics::Error(std::to_string(unresolved) + " renderable(s) have no loaded mesh and are not drawn.");
+    {
+        bindProblem_ = std::to_string(unresolved) + " renderable(s) have no loaded mesh and are not drawn.";
+        umbra::diagnostics::Error(bindProblem_);
+    }
 }
 
 void SceneRuntime::RefreshWatchList()

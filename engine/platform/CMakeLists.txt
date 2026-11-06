@@ -11,6 +11,7 @@ target_sources(
         src/EventPump.cpp
         src/ApplicationEvents.cpp
         src/Window.cpp
+        src/AudioDevice.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
@@ -20,6 +21,7 @@ target_sources(
             include/EventPump.hpp
             include/ApplicationEvents.hpp
             include/Window.hpp
+            include/AudioDevice.hpp
 )
 
 target_compile_features(UmbraPlatform PUBLIC cxx_std_20)
@@ -28,6 +30,7 @@ target_link_libraries(
     UmbraPlatform
     PRIVATE
         Umbra::Diagnostics
+        Umbra::Audio
         SDL3::SDL3
         Umbra::Warnings
         Umbra::Sanitizers
