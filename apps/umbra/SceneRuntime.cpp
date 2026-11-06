@@ -2,8 +2,10 @@
 
 #include <Log.hpp>
 #include <ModelInstance.hpp>
+#include <Area.hpp>
 #include <Interaction.hpp>
 #include <PhysicsBridge.hpp>
+#include <Checkpoint.hpp>
 #include <SceneFile.hpp>
 
 #include <set>
@@ -14,7 +16,7 @@ SceneRuntime::SceneRuntime(ModelLibrary &models, std::filesystem::path assetRoot
 {
 }
 
-bool SceneRuntime::Load(bool keepPlayer)
+umbra::scene::SceneLoadOptions SceneRuntime::Options()
 {
     umbra::scene::SceneLoadOptions options;
     options.assetRoot = assetRoot_;
@@ -22,53 +24,125 @@ bool SceneRuntime::Load(bool keepPlayer)
         const LoadedModel *loaded = models_.Load(path);
         return loaded ? &loaded->model : nullptr;
     };
+    return options;
+}
 
-    // 1. Load into a fresh world; report everything that was found.
-    auto fresh = std::make_unique<umbra::world::World>();
-    std::vector<umbra::core::Diagnostic> diagnostics;
-    const bool loaded = umbra::scene::LoadScene(assetRoot_ / scenePath_, options, *fresh, diagnostics);
+void SceneRuntime::Report(const std::vector<umbra::core::Diagnostic> &diagnostics)
+{
     problems_.clear();
     for (const umbra::core::Diagnostic &diagnostic : diagnostics)
     {
-        problems_.push_back((diagnostic.severity == umbra::core::Severity::Error ? "Error: " : "Warning: ") +
-                            diagnostic.field + " " + diagnostic.message);
-        if (diagnostic.severity == umbra::core::Severity::Error)
+        const bool error = diagnostic.severity == umbra::core::Severity::Error;
+        problems_.push_back((error ? "Error: " : "Warning: ") + diagnostic.field + " " + diagnostic.message);
+        if (error)
             umbra::diagnostics::Error(umbra::core::Format(diagnostic));
         else
             umbra::diagnostics::Info(umbra::core::Format(diagnostic));
     }
+}
+
+bool SceneRuntime::Load(bool keepPlayer)
+{
+    // 1. Load into a fresh world; report everything that was found.
+    auto fresh = std::make_unique<umbra::world::World>();
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    const bool loaded = umbra::scene::LoadScene(assetRoot_ / scenePath_, Options(), *fresh, diagnostics);
+    Report(diagnostics);
 
     // 2. Swap only on success (the scene file is still watched either way, so a fix reloads).
-    //    The new world gets its own physics world, so old and new bodies never mix.
+    //    A hot reload keeps the player where it was; otherwise it starts at the 'player' marker.
     if (loaded)
     {
-        // The player is a physics character, not a collider: drop a collider authored on it.
-        if (fresh->RemoveCollider(fresh->Find("player")))
-            umbra::diagnostics::Info("Warning: the 'player' entity's collider is ignored; the player is a character capsule.");
-        auto freshPhysics = std::make_unique<umbra::physics::PhysicsWorld>();
-        fresh->UpdateTransforms();
-        if (const std::size_t failed = umbra::gameplay::CreateBodies(*fresh, *freshPhysics); failed > 0)
-            umbra::diagnostics::Error(std::to_string(failed) + " collider(s) have unusable sizes and got no physics body.");
-        // Keep the player where it was on a hot reload; spawn at the marker otherwise.
-        keepPlayer = keepPlayer && player_.IsSpawned();
-        const glm::vec3 feet = keepPlayer ? player_.GetFeet(*physics_) : glm::vec3{0.0F};
-        world_ = std::move(fresh);
-        physics_ = std::move(freshPhysics);
-        accumulator_ = 0.0;
-        player_.Reset(); // the old character died with the old physics world
-        stride_.Reset();
-        pendingJump_ = false;
-        if (keepPlayer)
-            player_.Spawn(*physics_, feet, player_.GetFacingYaw());
-        else
-            SpawnPlayer();
-        Rebind();
-        umbra::diagnostics::Info("Loaded scene " + scenePath_ + " with " + std::to_string(world_->Count()) + " entities.");
+        std::optional<umbra::gameplay::SpawnPoint> start;
+        if (keepPlayer && player_.IsSpawned())
+            start = umbra::gameplay::SpawnPoint{player_.GetFeet(*physics_), player_.GetFacingYaw()};
+        Install(std::move(fresh), start);
     }
     else
         umbra::diagnostics::Error("Scene " + scenePath_ + " was not loaded; keeping the current scene.");
     RefreshWatchList();
     return loaded;
+}
+
+bool SceneRuntime::ChangeScene(const std::string &scenePath, const std::string &spawnId)
+{
+    // Same all-or-nothing rule: a broken destination leaves the player where they are.
+    auto fresh = std::make_unique<umbra::world::World>();
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    const bool loaded = umbra::scene::LoadScene(assetRoot_ / scenePath, Options(), *fresh, diagnostics);
+    Report(diagnostics);
+    if (!loaded)
+    {
+        umbra::diagnostics::Error("Cannot enter " + scenePath + "; staying in " + scenePath_ + ".");
+        return false;
+    }
+    fresh->UpdateTransforms();
+    const std::optional<umbra::gameplay::SpawnPoint> start = umbra::gameplay::FindSpawnPoint(*fresh, spawnId);
+    if (!start)
+        problems_.push_back("Warning: " + scenePath + " has no spawn '" + spawnId + "'; using 'player'.");
+    scenePath_ = scenePath;
+    Install(std::move(fresh), start);
+    RefreshWatchList();
+    return true;
+}
+
+bool SceneRuntime::SaveCheckpoint(const std::filesystem::path &directory) const
+{
+    if (!player_.IsSpawned())
+        return false;
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    const umbra::scene::Checkpoint checkpoint{scenePath_, player_.GetFeet(*physics_), player_.GetFacingYaw()};
+    const bool saved = umbra::scene::SaveCheckpoint(*world_, checkpoint, directory, diagnostics);
+    for (const umbra::core::Diagnostic &diagnostic : diagnostics)
+        umbra::diagnostics::Error(umbra::core::Format(diagnostic));
+    return saved;
+}
+
+bool SceneRuntime::LoadCheckpoint(const std::filesystem::path &directory)
+{
+    auto fresh = std::make_unique<umbra::world::World>();
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    umbra::scene::Checkpoint checkpoint;
+    if (!umbra::scene::LoadCheckpoint(directory, Options(), *fresh, checkpoint, diagnostics))
+    {
+        for (const umbra::core::Diagnostic &diagnostic : diagnostics)
+            umbra::diagnostics::Error(umbra::core::Format(diagnostic));
+        return false;
+    }
+    Report(diagnostics);
+    scenePath_ = checkpoint.scene; // hot reload and portals continue from that area
+    Install(std::move(fresh), umbra::gameplay::SpawnPoint{checkpoint.feet, checkpoint.yaw});
+    RefreshWatchList();
+    return true;
+}
+
+void SceneRuntime::Install(std::unique_ptr<umbra::world::World> fresh, std::optional<umbra::gameplay::SpawnPoint> start)
+{
+    // 1. The player is a physics character, not a collider: drop a collider authored on it.
+    if (fresh->RemoveCollider(fresh->Find("player")))
+        umbra::diagnostics::Info("Warning: the 'player' entity's collider is ignored; the player is a character capsule.");
+
+    // 2. The new world gets its own physics world, so old and new bodies never mix.
+    //    Replacing physics_ destroys the old bodies and the old character with it.
+    auto freshPhysics = std::make_unique<umbra::physics::PhysicsWorld>();
+    fresh->UpdateTransforms();
+    if (const std::size_t failed = umbra::gameplay::CreateBodies(*fresh, *freshPhysics); failed > 0)
+        umbra::diagnostics::Error(std::to_string(failed) + " collider(s) have unusable sizes and got no physics body.");
+    world_ = std::move(fresh);
+    physics_ = std::move(freshPhysics);
+    accumulator_ = 0.0;
+    player_.Reset();
+    stride_.Reset();
+    pendingJump_ = false;
+    portalArmed_ = false; // don't bounce straight back if the spawn is inside a portal
+
+    // 3. Player at the given start, else at the 'player' marker (no marker: overview camera).
+    if (!start)
+        start = umbra::gameplay::FindSpawnPoint(*world_, "player");
+    if (start)
+        player_.Spawn(*physics_, start->feet, start->yaw);
+    Rebind();
+    umbra::diagnostics::Info("Loaded scene " + scenePath_ + " with " + std::to_string(world_->Count()) + " entities.");
 }
 
 void SceneRuntime::Update()
@@ -148,6 +222,14 @@ SimulationEvents SceneRuntime::Simulate(float deltaSeconds, const umbra::gamepla
         const float speed = glm::length(glm::vec2{velocity.x, velocity.z});
         if (stride_.Update(speed, player_.IsGrounded(*physics_), deltaSeconds))
             ++events.footsteps;
+
+        // Portals fire once the player has been outside every portal since arriving.
+        const auto &settings = player_.GetSettings();
+        const glm::vec3 center = player_.GetFeet(*physics_) + glm::vec3{0.0F, settings.radius + settings.halfHeight, 0.0F};
+        const umbra::world::Entity portal = umbra::gameplay::FindPortal(*world_, center);
+        if (portal && portalArmed_)
+            events.portal = *world_->GetPortal(portal);
+        portalArmed_ = !portal;
     }
     SyncPlayerVisual();
     return events;
@@ -164,19 +246,6 @@ std::vector<std::string> SceneRuntime::GetProblems() const
 const umbra::world::Interactable *SceneRuntime::FocusedInteractable() const
 {
     return world_->GetInteractable(umbra::gameplay::FindInteractable(*world_, *physics_, player_));
-}
-
-void SceneRuntime::SpawnPlayer()
-{
-    // The 'player' entity marks the spawn: its position is the feet, its rotation the facing.
-    const umbra::world::Entity marker = world_->Find("player");
-    if (!marker)
-        return;
-    glm::vec3 position, scale;
-    glm::quat rotation;
-    umbra::gameplay::Decompose(*world_->GetWorldMatrix(marker), position, rotation, scale);
-    const glm::vec3 forward = rotation * glm::vec3{0.0F, 0.0F, -1.0F};
-    player_.Spawn(*physics_, position, std::atan2(-forward.x, -forward.z));
 }
 
 void SceneRuntime::SyncPlayerVisual()

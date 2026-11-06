@@ -2,6 +2,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <GltfImporter.hpp>
+#include <Checkpoint.hpp>
 #include <SceneFile.hpp>
 
 #include "../assets/TestFiles.hpp"
@@ -239,4 +240,86 @@ TEST_CASE("Interactable problems: missing prompt fails, missing sound or collide
     const Attempt unreachable = LoadEntities("int-nocol", R"({"id":"a","interactable":{"prompt":"x"}})");
     REQUIRE(unreachable.loaded);
     REQUIRE(unreachable.Has("entity.interactable.nocollider"));
+}
+
+TEST_CASE("Portals load, validate and survive save/load")
+{
+    const auto dir = test::TempDir("scene-portal");
+    test::WriteText(dir / "p.scene.json", R"({"format":"umbra.scene","version":1,"entities":[
+        {"id":"gate","portal":{"scene":"scenes/dungeon.scene.json","spawn":"entry"}},
+        {"id":"back","portal":{"scene":"scenes/settlement.scene.json"}}]})");
+    world::World world;
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(scene::LoadScene(dir / "p.scene.json", Options(), world, diagnostics));
+    REQUIRE(world.GetPortal(world.Find("gate"))->spawn == "entry");
+    REQUIRE(world.GetPortal(world.Find("back"))->spawn == "player"); // default
+
+    REQUIRE(scene::SaveScene(world, dir / "saved.scene.json", diagnostics));
+    world::World copy;
+    REQUIRE(scene::LoadScene(dir / "saved.scene.json", Options(), copy, diagnostics));
+    REQUIRE(copy.GetPortal(copy.Find("gate"))->scene == "scenes/dungeon.scene.json");
+
+    REQUIRE(LoadEntities("portal-noscene", R"({"id":"a","portal":{}})").Has("entity.portal.scene"));
+    REQUIRE(LoadEntities("portal-missing", R"({"id":"a","portal":{"scene":"scenes/nowhere.scene.json"}})").Has("asset.missing"));
+    REQUIRE(LoadEntities("portal-spawn", R"({"id":"a","portal":{"scene":"scenes/dungeon.scene.json","spawn":""}})").Has("entity.portal.spawn"));
+}
+
+TEST_CASE("Both shipped areas load and link to each other")
+{
+    for (const char *name : {"settlement", "dungeon"})
+    {
+        world::World world;
+        std::vector<core::Diagnostic> diagnostics;
+        INFO(name);
+        REQUIRE(scene::LoadScene(assetDir / "scenes" / (std::string{name} + ".scene.json"), Options(), world, diagnostics));
+        REQUIRE(diagnostics.empty());
+    }
+}
+
+TEST_CASE("Checkpoints restore the world and player, and repeated round trips do not grow")
+{
+    const auto dir = test::TempDir("scene-checkpoint");
+    world::World original;
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(scene::LoadScene(assetDir / "scenes" / "settlement.scene.json", Options(), original, diagnostics));
+    // Move a crate as if physics had pushed it.
+    world::Transform moved = *original.GetLocalTransform(original.Find("crate_0"));
+    moved.position = {1.0F, 0.4F, -7.0F};
+    original.SetLocalTransform(original.Find("crate_0"), moved);
+    REQUIRE(scene::SaveCheckpoint(original, {"scenes/settlement.scene.json", {2.0F, 0.0F, -1.0F}, 1.5F}, dir, diagnostics));
+    const std::string firstSave = test::ReadText(dir / "world.scene.json");
+
+    // Load -> save -> load ... : same entities, same file, every time (no duplicated instances).
+    for (int i = 0; i < 10; ++i)
+    {
+        world::World restored;
+        scene::Checkpoint checkpoint;
+        REQUIRE(scene::LoadCheckpoint(dir, Options(), restored, checkpoint, diagnostics));
+        REQUIRE(restored.Count() == original.Count());
+        REQUIRE(restored.GetLocalTransform(restored.Find("crate_0"))->position.x == Approx(1.0F));
+        REQUIRE(checkpoint.scene == "scenes/settlement.scene.json");
+        REQUIRE(checkpoint.feet.z == Approx(-1.0F));
+        REQUIRE(checkpoint.yaw == Approx(1.5F));
+        REQUIRE(scene::SaveCheckpoint(restored, checkpoint, dir, diagnostics));
+        REQUIRE(test::ReadText(dir / "world.scene.json") == firstSave);
+    }
+    REQUIRE_FALSE(core::HasErrors(diagnostics));
+}
+
+TEST_CASE("Missing or broken checkpoints are reported and change nothing")
+{
+    const auto dir = test::TempDir("scene-checkpoint-bad");
+    world::World world;
+    scene::Checkpoint checkpoint{"keep", {}, 0.0F};
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE_FALSE(scene::LoadCheckpoint(dir, Options(), world, checkpoint, diagnostics));
+    REQUIRE(diagnostics.back().code == "checkpoint.read");
+
+    test::WriteText(dir / "checkpoint.json", R"({"format":"umbra.checkpoint","version":1,"scene":"x","feet":[0,"a",0],"yaw":0})");
+    REQUIRE_FALSE(scene::LoadCheckpoint(dir, Options(), world, checkpoint, diagnostics));
+
+    test::WriteText(dir / "checkpoint.json", R"({"format":"umbra.checkpoint","version":1,"scene":"x","feet":[0,0,0],"yaw":0})");
+    REQUIRE_FALSE(scene::LoadCheckpoint(dir, Options(), world, checkpoint, diagnostics)); // no world.scene.json
+    REQUIRE(world.Count() == 0);
+    REQUIRE(checkpoint.scene == "keep");
 }

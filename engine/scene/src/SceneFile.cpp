@@ -38,6 +38,7 @@ namespace umbra::scene
             std::string instance;
             std::optional<world::Collider> collider;
             std::optional<world::Interactable> interactable;
+            std::optional<world::Portal> portal;
         };
 
         struct ParsedScene final
@@ -199,9 +200,36 @@ namespace umbra::scene
             return interactable;
         }
 
+        // "portal": { "scene": "scenes/dungeon.scene.json", "spawn": "entry" }
+        std::optional<world::Portal> ParsePortal(const json &value, const std::string &where,
+                                                 const SceneLoadOptions &options, Report &report)
+        {
+            if (!value.is_object())
+            {
+                report.Error("entity.field.type", where, "expected an object");
+                return std::nullopt;
+            }
+            static const std::set<std::string> knownKeys{"scene", "spawn"};
+            for (const auto &[key, unused] : value.items())
+            {
+                if (!knownKeys.contains(key))
+                    report.Warning("entity.field.unknown", where + "." + key, "unknown field is ignored (typo?)");
+            }
+            world::Portal portal;
+            ReadString(value, "scene", portal.scene, where, report);
+            ReadString(value, "spawn", portal.spawn, where, report);
+            if (portal.scene.empty())
+                report.Error("entity.portal.scene", where + ".scene", "needs the destination scene path");
+            else
+                CheckAssetPath(portal.scene, where + ".scene", options, report);
+            if (portal.spawn.empty())
+                report.Error("entity.portal.spawn", where + ".spawn", "spawn id must not be empty (omit it to use \"player\")");
+            return portal;
+        }
+
         EntityDesc ParseEntity(const json &entity, const std::string &where, const SceneLoadOptions &options, Report &report)
         {
-            static const std::set<std::string> knownKeys{"id", "name", "parent", "position", "rotation", "scale", "model", "mesh", "color", "instance", "collider", "interactable"};
+            static const std::set<std::string> knownKeys{"id", "name", "parent", "position", "rotation", "scale", "model", "mesh", "color", "instance", "collider", "interactable", "portal"};
             EntityDesc desc;
             for (const auto &[key, value] : entity.items())
             {
@@ -250,6 +278,8 @@ namespace umbra::scene
                 desc.collider = ParseCollider(*it, where + ".collider", report);
             if (const auto it = entity.find("interactable"); it != entity.end())
                 desc.interactable = ParseInteractable(*it, where + ".interactable", options, report);
+            if (const auto it = entity.find("portal"); it != entity.end())
+                desc.portal = ParsePortal(*it, where + ".portal", options, report);
             return desc;
         }
 
@@ -459,6 +489,13 @@ namespace umbra::scene
                     interactable["sound"] = i->sound;
                 out["interactable"] = interactable;
             }
+            if (const world::Portal *p = world.GetPortal(entity))
+            {
+                json portal{{"scene", p->scene}};
+                if (p->spawn != "player")
+                    portal["spawn"] = p->spawn;
+                out["portal"] = portal;
+            }
             return out;
         }
 
@@ -501,6 +538,8 @@ namespace umbra::scene
                 world.SetCollider(entity, *desc.collider);
             if (desc.interactable)
                 world.SetInteractable(entity, *desc.interactable);
+            if (desc.portal)
+                world.SetPortal(entity, *desc.portal);
             created.push_back(entity);
         }
         for (std::size_t i = 0; i < scene.entities.size(); ++i)

@@ -5,13 +5,16 @@
 #include <DrawList.hpp>
 #include <FileWatcher.hpp>
 #include <Physics.hpp>
+#include <Area.hpp>
 #include <PlayerController.hpp>
+#include <SceneFile.hpp>
 #include <StrideAnimator.hpp>
 #include <World.hpp>
 
 #include <filesystem>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -20,6 +23,7 @@ struct SimulationEvents final
 {
     int footsteps = 0;
     bool jumped = false;
+    std::optional<umbra::world::Portal> portal; // the player walked into this portal
 };
 
 // Owns the live world for one scene file and keeps it in sync with the files on disk.
@@ -34,6 +38,13 @@ public:
     bool Load(bool keepPlayer = true);
     // Reloads the area from disk and puts the player back at the start.
     bool Restart() { return Load(false); }
+    // Loads another area and puts the player at the entity `spawnId` there (portals).
+    // On failure the current area stays.
+    bool ChangeScene(const std::string &scenePath, const std::string &spawnId);
+    // Development checkpoint of the whole world and the player (engine/scene/include/Checkpoint.hpp).
+    bool SaveCheckpoint(const std::filesystem::path &directory) const;
+    bool LoadCheckpoint(const std::filesystem::path &directory);
+    [[nodiscard]] const std::string &GetScenePath() const noexcept { return scenePath_; }
     // Call once per frame, before extracting the draw list. Polls files every 250 ms.
     void Update();
     // Advances player and physics in fixed 1/60 s steps and copies results into the world.
@@ -55,8 +66,11 @@ public:
     [[nodiscard]] umbra::gameplay::PlayerController &GetPlayer() noexcept { return player_; }
 
 private:
+    [[nodiscard]] umbra::scene::SceneLoadOptions Options();
+    void Report(const std::vector<umbra::core::Diagnostic> &diagnostics);
+    // Makes `fresh` the live world with new physics; the player starts at `start` or the 'player' marker.
+    void Install(std::unique_ptr<umbra::world::World> fresh, std::optional<umbra::gameplay::SpawnPoint> start);
     void Rebind();
-    void SpawnPlayer();
     void SyncPlayerVisual();
     void RefreshWatchList();
 
@@ -68,6 +82,7 @@ private:
     double accumulator_ = 0.0;
     umbra::gameplay::PlayerController player_;
     bool pendingJump_ = false;
+    bool portalArmed_ = false;
     umbra::gameplay::StrideAnimator stride_;
     std::vector<std::string> problems_; // from the last Load
     std::string bindProblem_;           // from the last Rebind

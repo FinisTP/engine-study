@@ -8,12 +8,14 @@ target_sources(
     PRIVATE
         src/ModelInstance.cpp
         src/SceneFile.cpp
+        src/Checkpoint.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
         FILES
             include/ModelInstance.hpp
             include/SceneFile.hpp
+            include/Checkpoint.hpp
 )
 
 target_compile_features(UmbraScene PUBLIC cxx_std_20)

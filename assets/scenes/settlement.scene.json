@@ -445,6 +445,47 @@
         -10
       ],
       "instance": "models/tower.gltf"
+    },
+    {
+      "id": "dungeon_gate",
+      "name": "Dungeon gate",
+      "position": [
+        9,
+        1.2,
+        0
+      ],
+      "scale": [
+        0.2,
+        1.2,
+        1.0
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.45,
+        0.2,
+        0.7,
+        1
+      ],
+      "portal": {
+        "scene": "scenes/dungeon.scene.json",
+        "spawn": "entry"
+      }
+    },
+    {
+      "id": "from_dungeon",
+      "name": "Arrival from the dungeon",
+      "position": [
+        7.5,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0.7071068,
+        0,
+        0.7071068
+      ]
     }
   ]
 }

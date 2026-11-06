@@ -32,6 +32,7 @@ A scene is a readable JSON file that people, tools and AI agents can edit. It st
 | `instance` | asset path | none | At load, the whole node hierarchy of this glTF is created under this entity (ids `"<id>/<node name>"`). |
 | `collider` | object | none | Physics shape, see below. |
 | `interactable` | object | none | Something the player can use with **E**, see below. |
+| `portal` | object | none | Walking into it loads another scene, see below. |
 
 ### Collider
 
@@ -61,6 +62,21 @@ Dynamic colliders must be on root entities, because the simulation owns their tr
 | `sound` | WAV played on use (format rules: `engine/audio/include/Audio.md`) |
 
 The player finds interactables with a short ray from the waist, so the entity also needs a `collider`.
+
+### Portal
+
+```json
+"portal": { "scene": "scenes/dungeon.scene.json", "spawn": "entry" }
+```
+
+The portal's area is its transform applied to the -1..1 cube (exactly the box the sample cube
+mesh draws), so give it a `model` to make it visible and **no** `collider` (the player has to be
+able to walk into it). When the player's center enters the box, the app loads `scene` and puts
+the player at the entity with id `spawn` (default `player`): its position is the feet, its
+rotation the facing. Any entity can be a spawn marker; it needs no model.
+
+A portal only fires after the player has been outside every portal since arriving, so a spawn
+placed inside a portal does not bounce straight back. Place spawns a little away from portals.
 
 Asset paths are relative to the asset folder and may not contain `..`.
 
@@ -96,11 +112,26 @@ Every problem is a `core::Diagnostic` (`engine/core/include/Diagnostic.hpp`) wit
 | `entity.interactable.prompt` | error | `interactable` without a prompt |
 | `entity.interactable.sound` | warning | Sound file doesn't exist (the game plays nothing) |
 | `entity.interactable.nocollider` | warning | `interactable` without `collider` (the player can't reach it) |
+| `entity.portal.scene`, `entity.portal.spawn` | error | Portal without a destination, or an empty spawn id |
 | `entity.field.unknown` | warning | Unknown field (usually a typo) |
 
 ## Saving
 
 `SaveScene` writes roots (in slot order), each followed by its subtree, so parents always come before children. Only non-default values are written, rounded to 6 significant digits for readability. The write is atomic (temp file + rename). Instances are written **expanded**: every generated node becomes an explicit entity, so save → load reproduces the same world exactly.
+
+## Checkpoints (development)
+
+`F5` saves, `F9` restores, `R` restarts the area from its file. A checkpoint
+(`engine/scene/include/Checkpoint.hpp`) is two files in the build's `asset-cache/checkpoint/`:
+
+| File | Content |
+|---|---|
+| `world.scene.json` | The live world written by `SaveScene` (crates where physics left them, instances expanded) |
+| `checkpoint.json` | `{"format":"umbra.checkpoint","version":1,"scene":<area path>,"feet":[x,y,z],"yaw":<radians>}` |
+
+Restoring validates both like any scene and replaces nothing on error. Because instances are
+saved expanded, a restored checkpoint saved again is byte-identical (tested), so repeated
+save/restore cannot grow the world.
 
 ## Versioning
 

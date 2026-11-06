@@ -82,6 +82,14 @@ namespace umbra::world
         std::string sound;   // optional sound file played on use
     };
 
+    // Walking into this entity's box (its transform applied to the -1..1 cube) moves the
+    // player to another scene, at the entity with id `spawn` there.
+    struct Portal final
+    {
+        std::string scene; // asset path of the destination scene
+        std::string spawn = "player";
+    };
+
     // Owns entities. Each entity has a durable string id (saved in files) and a
     // transient Entity handle (used at runtime). See World.md.
     class World final
@@ -131,6 +139,8 @@ namespace umbra::world
         [[nodiscard]] Collider *GetCollider(Entity entity) noexcept;
         bool SetInteractable(Entity entity, Interactable interactable);
         [[nodiscard]] const Interactable *GetInteractable(Entity entity) const noexcept;
+        bool SetPortal(Entity entity, Portal portal);
+        [[nodiscard]] const Portal *GetPortal(Entity entity) const noexcept;
 
         // Appends one item per renderable with a valid mesh handle. Call after UpdateTransforms().
         void ExtractDrawList(core::DrawList &drawList) const;
@@ -155,6 +165,7 @@ namespace umbra::world
             std::optional<Renderable> renderable;
             std::optional<Collider> collider;
             std::optional<Interactable> interactable;
+            std::optional<Portal> portal;
         };
 
         [[nodiscard]] const Record *Get(Entity entity) const noexcept;

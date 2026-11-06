@@ -9,6 +9,7 @@ target_sources(
         src/StrideAnimator.cpp
         src/PauseMenu.cpp
         src/Interaction.cpp
+        src/Area.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
@@ -18,6 +19,7 @@ target_sources(
             include/StrideAnimator.hpp
             include/PauseMenu.hpp
             include/Interaction.hpp
+            include/Area.hpp
 )
 
 target_compile_features(UmbraGameplay PUBLIC cxx_std_20)

@@ -24,6 +24,7 @@
 #include <glm/gtc/constants.hpp>
 
 #include <algorithm>
+#include <filesystem>
 
 namespace
 {
@@ -190,7 +191,6 @@ int RunApplication(const std::string &scenePath)
 
 					// Pick up edited scene/model files.
 					scene.Update();
-					umbra::world::World &world = scene.GetWorld();
 					using umbra::platform::InputKey;
 
 					// Pause menu: Esc toggles; W/S or arrows move; Enter chooses.
@@ -237,8 +237,8 @@ int RunApplication(const std::string &scenePath)
 					const umbra::world::Interactable *focused = nullptr;
 					if (!menu.IsOpen())
 					{
-						SpinEntity(world, "spinner", static_cast<float>(deltaTime) * glm::radians(45.0F));
-						world.UpdateTransforms();
+						SpinEntity(scene.GetWorld(), "spinner", static_cast<float>(deltaTime) * glm::radians(45.0F));
+						scene.GetWorld().UpdateTransforms();
 
 						const auto axis = [&](InputKey plus, InputKey minus) {
 							return (input.IsKeyHeld(plus) ? 1.0F : 0.0F) - (input.IsKeyHeld(minus) ? 1.0F : 0.0F);
@@ -256,6 +256,34 @@ int RunApplication(const std::string &scenePath)
 						if (events.jumped)
 							play("audio/jump.wav", 0.5F, umbra::audio::Bus::Game);
 
+						// Walking into a portal loads its area; the old one is released entirely.
+						const auto showMessage = [&](std::string text) {
+							message = std::move(text);
+							messageSeconds = 3.0F;
+						};
+						if (events.portal)
+						{
+							mixer.StopAll();
+							if (!scene.ChangeScene(events.portal->scene, events.portal->spawn))
+								showMessage("Cannot enter " + events.portal->scene + " (see warnings)");
+						}
+
+						// Development keys: F5 checkpoint, F9 back to it, R restarts the area.
+						const std::filesystem::path checkpointDirectory = std::filesystem::path{UMBRA_CACHE_DIRECTORY} / "checkpoint";
+						if (input.IsKeyPressed(InputKey::F5))
+							showMessage(scene.SaveCheckpoint(checkpointDirectory) ? "Checkpoint saved" : "Checkpoint failed (see log)");
+						if (input.IsKeyPressed(InputKey::F9))
+						{
+							mixer.StopAll();
+							showMessage(scene.LoadCheckpoint(checkpointDirectory) ? "Checkpoint loaded" : "No usable checkpoint (see log)");
+						}
+						if (input.IsKeyPressed(InputKey::R))
+						{
+							mixer.StopAll();
+							scene.Restart();
+							showMessage("Area restarted");
+						}
+
 						// Interaction: E uses what the player faces; its message stays up for a few seconds.
 						focused = scene.FocusedInteractable();
 						if (focused != nullptr && input.IsKeyPressed(InputKey::E))
@@ -271,7 +299,7 @@ int RunApplication(const std::string &scenePath)
 
 					drawList.Clear();
 					drawList.camera = scene.GetCamera();
-					world.ExtractDrawList(drawList);
+					scene.GetWorld().ExtractDrawList(drawList); // fetched now: restart/portal/checkpoint replace the world
 					if (showColliders)
 						scene.AddDebugLines(drawList);
 

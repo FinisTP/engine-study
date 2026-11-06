@@ -244,6 +244,21 @@ namespace umbra::world
         return record && record->interactable ? &*record->interactable : nullptr;
     }
 
+    bool World::SetPortal(Entity entity, Portal portal)
+    {
+        Record *record = Get(entity);
+        if (record == nullptr)
+            return false;
+        record->portal = std::move(portal);
+        return true;
+    }
+
+    const Portal *World::GetPortal(Entity entity) const noexcept
+    {
+        const Record *record = Get(entity);
+        return record && record->portal ? &*record->portal : nullptr;
+    }
+
     void World::ExtractDrawList(core::DrawList &drawList) const
     {
         entities_.ForEach([&](core::Handle<EntityTag>, const Record &record) {
