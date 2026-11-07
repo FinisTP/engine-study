@@ -1,0 +1,53 @@
+{
+  "format": "umbra.rpg",
+  "version": 1,
+  "statuses": [
+    { "id": "poison", "name": "Poisoned", "turns": 3, "seconds": 6, "damagePerTick": 3 },
+    { "id": "guarded", "name": "Guarded", "turns": 2, "seconds": 4,
+      "modifiers": [ { "stat": "defense", "percent": 100 } ] },
+    { "id": "weakened", "name": "Weakened", "turns": 3,
+      "modifiers": [ { "stat": "attack", "percent": -30 } ] }
+  ],
+  "skills": [
+    { "id": "strike", "name": "Strike", "effects": [ { "kind": "damage", "power": 8 } ],
+      "modes": [ "turn", "realtime" ],
+      "realtime": { "windup": 0.3, "active": 0.2, "recovery": 0.3, "cooldown": 0.4, "range": 1.8, "arc": 100 } },
+    { "id": "heavy_blow", "name": "Heavy Blow", "cost": 10, "effects": [ { "kind": "damage", "power": 18 } ],
+      "modes": [ "turn", "realtime" ], "points": 1, "requires": [ "strike" ],
+      "realtime": { "windup": 0.7, "active": 0.2, "recovery": 0.5, "cooldown": 2.0, "range": 2.0, "arc": 80 } },
+    { "id": "guard", "name": "Guard", "cost": 5, "target": "self", "effects": [ { "kind": "status", "status": "guarded" } ],
+      "modes": [ "turn", "realtime" ], "points": 1, "requires": [ "strike" ],
+      "realtime": { "windup": 0.1, "active": 0.1, "recovery": 0.2, "cooldown": 5.0, "range": 0.5, "arc": 360 } },
+    { "id": "venom_strike", "name": "Venom Strike", "cost": 8,
+      "effects": [ { "kind": "damage", "power": 4 }, { "kind": "status", "status": "poison" } ],
+      "modes": [ "turn", "realtime" ], "points": 2, "requires": [ "heavy_blow" ],
+      "realtime": { "windup": 0.4, "active": 0.2, "recovery": 0.4, "cooldown": 3.0, "range": 1.8, "arc": 90 } },
+    { "id": "weaken", "name": "Weaken", "cost": 6, "effects": [ { "kind": "status", "status": "weakened" } ],
+      "modes": [ "turn" ], "points": 1, "requires": [ "guard" ] },
+    { "id": "bite", "name": "Bite", "effects": [ { "kind": "damage", "power": 6 } ],
+      "modes": [ "turn", "realtime" ],
+      "realtime": { "windup": 0.4, "active": 0.2, "recovery": 0.4, "cooldown": 0.6, "range": 1.6, "arc": 90 } }
+  ],
+  "items": [
+    { "id": "rusty_sword", "name": "Rusty Sword", "slot": "weapon", "modifiers": [ { "stat": "attack", "add": 4 } ] },
+    { "id": "iron_sword", "name": "Iron Sword", "slot": "weapon", "modifiers": [ { "stat": "attack", "add": 8 } ] },
+    { "id": "leather_armor", "name": "Leather Armor", "slot": "armor",
+      "modifiers": [ { "stat": "defense", "add": 3 }, { "stat": "maxHealth", "add": 10 } ] },
+    { "id": "health_potion", "name": "Health Potion", "stack": 5, "use": [ { "kind": "heal", "power": 30 } ] },
+    { "id": "ether", "name": "Ether", "stack": 5, "use": [ { "kind": "energy", "power": 15 } ] }
+  ],
+  "actors": [
+    { "id": "hero", "name": "Hero",
+      "stats": { "maxHealth": 100, "maxEnergy": 30, "attack": 10, "defense": 5, "speed": 10 },
+      "skills": [ "strike" ], "equipment": [ "rusty_sword", "leather_armor" ],
+      "inventory": [ { "item": "health_potion", "count": 3 }, { "item": "ether", "count": 1 } ],
+      "inventorySlots": 12, "skillPoints": 3 },
+    { "id": "wolf", "name": "Wolf",
+      "stats": { "maxHealth": 45, "maxEnergy": 0, "attack": 8, "defense": 2, "speed": 12 },
+      "skills": [ "bite" ], "inventorySlots": 0 },
+    { "id": "bandit", "name": "Bandit",
+      "stats": { "maxHealth": 70, "maxEnergy": 20, "attack": 9, "defense": 4, "speed": 8 },
+      "skills": [ "strike", "heavy_blow" ], "equipment": [ "rusty_sword" ],
+      "inventory": [ { "item": "health_potion", "count": 1 } ], "inventorySlots": 4 }
+  ]
+}
