@@ -32,7 +32,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 
 **First action for a new agent:** finish B0 — the Windows-side checks are still open (see the B0 record). Re-inspect the checkout; if it has advanced past this dashboard, preserve completed work and select the earliest genuinely unmet task. Do not blindly implement P3.1 again.
 
-**Current next task:** P6.1. Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07), and opening `samples/web/umbra-web.html` in a WebGPU browser (ADR 0001). A document creation date does not update source-code completion dates.
+**Current next task:** P6.1. Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
 
 | Gate | Dependency | Status (updated 2026-11-07) | Evidence / exit summary |
 |---|---|---|---|
@@ -40,7 +40,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 | P2 Rendering | P1 | Documented complete, 2026-09-02 | `testing/phase2-rendering-smoke-test.md` records user-confirmed pass of the textured glTF primitive, validation, resize recovery and RenderDoc checks. Not re-run since. |
 | B0 Baseline reconciliation | Existing checkout | In progress | Source inspection and Linux test run done 2026-11-01. Open: Windows MSVC/clang-cl/ASan build + CTest, CI status, Phase 1 checklist sign-off. |
 | P3 Assets and World | B0; existing P1/P2 | Implemented 2026-11-01; headless verified on Linux; **Windows/GPU gate open** | All tasks P3.1–P3.8 implemented. Evidence and the remaining checklist: `testing/phase3-assets-world.md`. |
-| W0 Early web feasibility | P3 core contracts; minimal rendering sample | Done in part 2026-11-07: rules → WebAssembly verified (exact native parity); WebGPU + storage page written, **browser run pending** | `samples/web`, ADR `docs/adr/0001-web-backend.md`. Emscripten and HLSL→WGSL conversion untested (toolchain downloads blocked in the agent environment). |
+| W0 Early web feasibility | P3 core contracts; minimal rendering sample | Done 2026-11-07: rules → WebAssembly with exact native parity; WebGPU rendering of the settlement and localStorage persistence verified in Microsoft Edge (Windows, Intel GPU) | `samples/web`, ADR `docs/adr/0001-web-backend.md`. Still untested: other browsers, Emscripten, automatic HLSL→WGSL (toolchain downloads blocked in the agent environment). |
 | P4 Playable 3D sandbox | P3 | Implemented 2026-11-06; headless verified on Linux; **Windows/GPU/interactive gate open** | All tasks P4.1–P4.5 implemented. Evidence and checklists: `testing/phase4-sandbox.md`. |
 | P5 Shared rules and combat modes | P3; P4 for graphical integration | Implemented 2026-11-07; headless verified on Linux; Windows gate open | P5.1–P5.8 implemented; turn-only, real-time-only and combined fixtures pass. Not yet wired into the 3D game (P6). Evidence: `testing/phase5-rules-combat.md`. |
 | P6 Complete offline reference game | P4/P5 | Planned | Conversation, quest, save/load, rewards, retry and complete offline journey. |

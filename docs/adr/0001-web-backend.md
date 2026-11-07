@@ -1,6 +1,6 @@
 # ADR 0001: Web backend path (roadmap W0, decision O13)
 
-- Status: **accepted for now, partly unverified** (2026-11-07)
+- Status: **accepted** (2026-11-07); browser run done in Microsoft Edge, Emscripten and automatic shader conversion still untested
 - Context: W0 asks, before more platform code accumulates, whether Umbra can reach the browser
   (C01: playable web export after PC) and what that means for the architecture.
 - Sample: [`samples/web`](../../samples/web/README.md)
@@ -11,8 +11,9 @@
 |---|---|---|
 | Does the simulation build to WebAssembly? | The unmodified `Umbra::Rpg` and `Umbra::TurnCombat` sources plus a 90-line export file, wasi-sdk 25 (clang 19), `wasm32-wasip1`, `-O2`, no exceptions | **Yes.** 217 KB module, compiles without source changes or warnings. Imports only six WASI functions, all stubbable. |
 | Do the rules give the same results? | Reference turn fight (hero vs wolf + bandit, conventional AI) in Node 22 | **Yes, exactly:** 26 actions, round 12, hero at 32 health, same as Linux GCC/Clang and Windows MSVC (2026-11-07). The rules use integers only and no randomness. |
-| Can the scene be drawn in a browser? | WebGPU from JavaScript, WGSL port of `Scene.hlsl`, the 19 cubes of `settlement.scene.json`, orbit camera, depth buffer | **Written, not yet seen running.** No WebGPU browser was available to this session (headless environment; the desktop app's built-in browser was not signed in to open the private page). The page reports shader compile errors and missing WebGPU itself. |
-| Persistent storage? | `localStorage` write/read with try/catch, counted across reloads | **Written, not yet seen running** (same reason). |
+| Can the scene be drawn in a browser? | WebGPU from JavaScript, WGSL port of `Scene.hlsl`, the 19 cubes of `settlement.scene.json`, orbit camera, depth buffer | **Yes, in Microsoft Edge on Windows 11** (user's PC, Intel Xe "gen-12lp" adapter, page opened from `file://`): the WGSL compiled without messages and the settlement rendered with depth and the same lighting. First run failed with a bug of the sample (a 74-byte index upload; `writeBuffer` needs a multiple of 4), fixed. |
+| Persistent storage? | `localStorage` write/read with try/catch, counted across reloads | **Yes, in Edge:** the counter read back 1, 2, 3 over three loads of the page. |
+| Same rules in the browser? | The WebAssembly module in Edge | **Yes:** 26 actions, round 12, hero at 32 health, identical to native. |
 | Emscripten + Emdawnwebgpu (roadmap's candidate) | `emsdk install latest` | **Not tested:** this environment blocks the toolchain download (HTTP 403 from storage.googleapis.com). |
 | Automatic HLSL → WGSL | naga / Tint | **Not tested:** package registries were unreachable from this session. |
 
@@ -51,8 +52,11 @@
 
 ## Limitations and revisit triggers
 
-- Run `samples/web/umbra-web.html` in Chrome/Edge (WebGPU) and Firefox; record the three results in
-  this ADR. **Revisit** if WebGPU rendering fails on the target browsers.
+- Tested only in Edge (Chromium) on Windows with an Intel GPU. Run `samples/web/umbra-web.html` in
+  Chrome, Firefox and Safari before P10 and record the results here. **Revisit** if WebGPU rendering
+  fails on a target browser (WebGL 2 would then be the fallback to evaluate).
+- WebGPU's `writeBuffer` needs sizes that are multiples of 4 bytes: 16-bit index buffers with an odd
+  count need padding of the *buffer*, not of the data written.
 - Install emsdk on a machine with access to its downloads and build the sample with `emcc`; **revisit**
   the toolchain decision if Emscripten cannot build `Umbra::Rpg` unchanged.
 - Convert `Scene.hlsl` with DXC + Tint/naga; **revisit** the shader decision if the generated WGSL

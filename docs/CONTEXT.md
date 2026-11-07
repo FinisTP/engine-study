@@ -124,11 +124,11 @@ Tests: Umbra.Core, .Platform, .Diagnostics.*, .Render, .World, .Assets, .Scene, 
        .TurnOnlyDependencies, .RealtimeOnlyDependencies
 ```
 
-Core, World, Assets, Scene, Physics, Gameplay, Audio, Rpg, TurnCombat, RealtimeCombat, Encounter and UmbraSceneCheck must stay headless; each combat controller must build without the other; `Umbra.HeadlessDependencies` enforces it. App path: `/apps/umbra`, executable `Umbra`. Still-empty folders: `/apps/editor`, `/apps/game`, `/engine/script`, `/engine/editor`, `/samples`. Do not rename the existing app to `/apps/game` because an illustrative tree used that name.
+Core, World, Assets, Scene, Physics, Gameplay, Audio, Rpg, TurnCombat, RealtimeCombat, Encounter and UmbraSceneCheck must stay headless; each combat controller must build without the other; `Umbra.HeadlessDependencies` enforces it. App path: `/apps/umbra`, executable `Umbra`. Still-empty folders: `/apps/editor`, `/apps/game`, `/engine/script`, `/engine/editor` (`/samples` now holds the W0 web sample). Do not rename the existing app to `/apps/game` because an illustrative tree used that name.
 
 Commit messages follow `issue #UMBRA-<n> <summary>`. Phase 3 is `#UMBRA-13` … `#UMBRA-20`; Phase 4 is `#UMBRA-21` … `#UMBRA-25`; Phase 5 is `#UMBRA-26` … `#UMBRA-33`.
 
-**Current milestone:** Phase 5, shared RPG rules and two combat modes, is implemented and verified headlessly on Linux. Windows gates are open for P3 (`docs/testing/phase3-assets-world.md`), P4 (`docs/testing/phase4-sandbox.md`, including GPU/audio/interactive) and P5 (`docs/testing/phase5-rules-combat.md`, build and CTest). On 2026-11-07 the MSVC Release build compiled with no warnings and 24/25 tests passed on the user's PC (one test exe was blocked from starting by Windows). W0 (2026-11-07): the rules build to WebAssembly unchanged with identical results; the WebGPU page awaits a browser run (`docs/adr/0001-web-backend.md`). Next: P6.
+**Current milestone:** Phase 5, shared RPG rules and two combat modes, is implemented and verified headlessly on Linux. Windows gates are open for P3 (`docs/testing/phase3-assets-world.md`), P4 (`docs/testing/phase4-sandbox.md`, including GPU/audio/interactive) and P5 (`docs/testing/phase5-rules-combat.md`, build and CTest). On 2026-11-07 the MSVC Release build compiled with no warnings and 24/25 tests passed on the user's PC (one test exe was blocked from starting by Windows). W0 (2026-11-07): the rules build to WebAssembly unchanged with identical results, and WebGPU rendering plus localStorage worked in Microsoft Edge (`docs/adr/0001-web-backend.md`). Next: P6.
 
 ## 5. Superseded directions and explicit exclusions
 
@@ -204,7 +204,7 @@ None of these is a reason to halt basic Assets and World work.
 | Training hardware, dependency stack, algorithm, reward weights, policy thresholds and difficulty profile | P8A experiment |
 | Local authoring model, bridge, download size/license; optional cloud credential/cost UX | P8B |
 | Reference PC, resolution, workload, frame/resource/iteration budgets | Performance gate before P9 |
-| Browser support set (backend direction from W0: WebGPU, HLSL → SPIR-V → WGSL, Emscripten candidate; ADR 0001) | Browser run of the W0 page; finalize P10 |
+| Browser support set (W0: WebGPU works in Edge; HLSL → SPIR-V → WGSL and Emscripten still to test; ADR 0001) | Finalize P10 |
 | First mobile OS/device tier | P11 |
 | Community collection/retraining/update design and service operations | Separately approved post-release track |
 

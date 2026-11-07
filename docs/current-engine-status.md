@@ -11,7 +11,7 @@
 ## Update 2026-11-07 (afternoon)
 
 - Windows: Claude built the MSVC Release tree on the user's PC (`scripts/build-and-run.bat`): 0 compiler warnings, 24/25 CTest pass, `Umbra.Assets` was blocked from starting by Windows (not a test failure), the game started. Details in the phase 3–5 testing records.
-- W0 web experiment: the rules compile to WebAssembly unchanged and match native results exactly; a WebGPU/storage page exists but has not been opened in a browser yet. `samples/web`, `docs/adr/0001-web-backend.md`.
+- W0 web experiment: the rules compile to WebAssembly unchanged and match native results exactly; in Microsoft Edge on the user's PC the same page also rendered the settlement with WebGPU and kept a value in localStorage across reloads. `samples/web`, `docs/adr/0001-web-backend.md`.
 
 ## Update 2026-11-07
 
@@ -198,7 +198,7 @@ All seven items of the old Phase 3 entry point are implemented (see the table ab
 - Gameplay-state preservation across scene reloads (done in P4.4: hot reload keeps the player; F5/F9 checkpoints).
 - Packaging: the app reads assets from the source tree (`UMBRA_ASSET_DIRECTORY`) and caches in the build tree. A relocatable package layout is a P6/P9 task (roadmap T43).
 
-Next: P6 (complete offline reference game). Open in parallel: the interactive checklists in [`testing/phase3-assets-world.md`](testing/phase3-assets-world.md) and [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md), clang-cl/ASan presets, and the browser run of the W0 page.
+Next: P6 (complete offline reference game). Open in parallel: the interactive checklists in [`testing/phase3-assets-world.md`](testing/phase3-assets-world.md) and [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md) and the clang-cl/ASan presets.
 
 ## Local verification
 

@@ -125,7 +125,7 @@ async function render(sceneJson, shaderCode) {
         return b;
     };
     const vertexBuffer = buffer(mesh.vertices, GPUBufferUsage.VERTEX);
-    const indexBuffer = buffer(new Uint16Array([...mesh.indices, 0]), GPUBufferUsage.INDEX); // padded to 4 bytes
+    const indexBuffer = buffer(mesh.indices, GPUBufferUsage.INDEX); // 36 x 2 bytes: writeBuffer needs a multiple of 4
     const drawBuffer = buffer(drawData, GPUBufferUsage.UNIFORM);
     const sceneBuffer = device.createBuffer({ size: 128, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
 
