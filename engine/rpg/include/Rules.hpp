@@ -119,7 +119,9 @@ namespace umbra::rpg
     // Damage before clamping: max(1, power + attack - defense).
     [[nodiscard]] int DamageAmount(int power, int attack, int defense);
 
-    // The team still standing, or -1 while two or more teams have someone alive.
+    // The team still standing; -1 while two or more teams have someone alive;
+    // noSurvivors if everyone is dead (e.g. poison finished the last two fighters).
+    inline constexpr int noSurvivors = -2;
     [[nodiscard]] int WinningTeam(const Roster &roster);
 
     // Statuses end with the encounter (user decision 2026-11-07).

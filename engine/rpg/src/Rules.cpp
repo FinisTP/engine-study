@@ -232,12 +232,12 @@ namespace umbra::rpg
 
     int WinningTeam(const Roster &roster)
     {
-        int alive = -1;
+        int alive = noSurvivors;
         for (const Combatant &c : roster)
         {
             if (!c.character->IsAlive())
                 continue;
-            if (alive != -1 && alive != c.team)
+            if (alive != noSurvivors && alive != c.team)
                 return -1;
             alive = c.team;
         }
