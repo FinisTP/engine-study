@@ -21,12 +21,15 @@
 #include <World.hpp>
 #include "ModelLibrary.hpp"
 #include "SceneRuntime.hpp"
+#include "GameFlow.hpp"
+#include <RpgContent.hpp>
 
 #include <glm/gtc/constants.hpp>
 
 #include <algorithm>
 #include <cstdio>
 #include <filesystem>
+#include <optional>
 
 namespace
 {
@@ -103,6 +106,23 @@ int RunApplication(const std::string &scenePath)
 				umbra::core::DrawList drawList;
 				bool showColliders = false;
 				scene.Load();
+
+				// The RPG layer (story, fights, saves) needs the content file; without it the
+				// world is still explorable.
+				umbra::rpg::Content content;
+				std::optional<GameFlow> flow;
+				{
+					std::vector<umbra::core::Diagnostic> diagnostics;
+					if (umbra::rpg::LoadContent(std::filesystem::path{UMBRA_ASSET_DIRECTORY} / "rpg/reference.rpg.json", content, diagnostics))
+					{
+						std::filesystem::path saves = umbra::platform::Platform::PreferencesFolder();
+						saves = saves.empty() ? std::filesystem::path{UMBRA_CACHE_DIRECTORY} / "saves" : saves / "saves";
+						flow.emplace(content, scene, saves, scenePath);
+						umbra::diagnostics::Info("Saves go to " + saves.string());
+					}
+					for (const umbra::core::Diagnostic &diagnostic : diagnostics)
+						umbra::diagnostics::Error(umbra::core::Format(diagnostic));
+				}
 
 				// Esc opens the pause menu; the mouse is captured (steers the camera) only while playing.
 				umbra::gameplay::PauseMenu menu;
@@ -204,7 +224,11 @@ int RunApplication(const std::string &scenePath)
 
 					// Pause menu: Esc toggles; W/S or arrows move; Enter chooses.
 					bool quit = false;
-					if (input.IsKeyPressed(InputKey::Escape))
+					if (input.IsKeyPressed(InputKey::Escape) && !menu.IsOpen() && flow && flow->HandleEscape())
+					{
+						// used by the conversation or the death menu
+					}
+					else if (input.IsKeyPressed(InputKey::Escape))
 					{
 						setPaused(!menu.IsOpen());
 						play("audio/ui_click.wav", 0.6F, umbra::audio::Bus::Ui);
@@ -247,15 +271,21 @@ int RunApplication(const std::string &scenePath)
 					if (!menu.IsOpen())
 					{
 						SpinEntity(scene.GetWorld(), "spinner", static_cast<float>(deltaTime) * glm::radians(45.0F));
+						if (flow)
+							flow->Update(input, static_cast<float>(deltaTime));
+						const bool canMove = !flow || flow->PlayerCanMove();
 						scene.GetWorld().UpdateTransforms();
 
 						const auto axis = [&](InputKey plus, InputKey minus) {
 							return (input.IsKeyHeld(plus) ? 1.0F : 0.0F) - (input.IsKeyHeld(minus) ? 1.0F : 0.0F);
 						};
 						umbra::gameplay::PlayerInput playerInput;
-						playerInput.move = {axis(InputKey::D, InputKey::A), axis(InputKey::W, InputKey::S)};
-						playerInput.sprint = input.IsKeyHeld(InputKey::LeftShift);
-						playerInput.jump = input.IsKeyPressed(InputKey::Space);
+						if (canMove)
+						{
+							playerInput.move = {axis(InputKey::D, InputKey::A), axis(InputKey::W, InputKey::S)};
+							playerInput.sprint = input.IsKeyHeld(InputKey::LeftShift);
+							playerInput.jump = input.IsKeyPressed(InputKey::Space);
+						}
 						constexpr float mouseSensitivity = 0.0025F; // radians per pixel
 						scene.Look(-input.GetMouseDeltaX() * mouseSensitivity, -input.GetMouseDeltaY() * mouseSensitivity);
 
@@ -273,11 +303,13 @@ int RunApplication(const std::string &scenePath)
 							message = std::move(text);
 							messageSeconds = 3.0F;
 						};
-						if (events.portal)
+						if (events.portal && (!flow || flow->AllowsPortals()))
 						{
 							mixer.StopAll();
 							if (!scene.ChangeScene(events.portal->scene, events.portal->spawn))
 								showMessage("Cannot enter " + events.portal->scene + " (see warnings)");
+							else if (flow)
+								flow->OnAreaEntered(); // autosave at every area change
 						}
 
 						// Development keys: F5 checkpoint, F9 back to it, R restarts the area.
@@ -297,13 +329,20 @@ int RunApplication(const std::string &scenePath)
 						}
 
 						// Interaction: E uses what the player faces; its message stays up for a few seconds.
-						focused = scene.FocusedInteractable();
+						// Conversations and save stones go to the RPG layer, only while exploring.
+						focused = !flow || flow->IsExploring() ? scene.FocusedInteractable() : nullptr;
 						if (focused != nullptr && input.IsKeyPressed(InputKey::E))
 						{
-							message = focused->message;
-							messageSeconds = 3.0F;
 							play(focused->sound.empty() ? "audio/interact.wav" : focused->sound, 0.8F, umbra::audio::Bus::Game);
+							if (!flow || !flow->Interact(*focused))
+								showMessage(focused->message);
 						}
+						if (flow)
+							if (std::string news = flow->TakeMessage(); !news.empty())
+							{
+								message = std::move(news);
+								messageSeconds = 4.0F;
+							}
 						messageSeconds = std::max(0.0F, messageSeconds - static_cast<float>(deltaTime));
 					}
 					if (input.IsKeyPressed(InputKey::F1))
@@ -342,8 +381,13 @@ int RunApplication(const std::string &scenePath)
 									 std::to_string(sounds.Count()) + " cached" + (audioDevice.IsOpen() ? "" : " (no device)"),
 								 "Area: " + scene.GetScenePath()};
 					extractTime.Add(section.Lap());
+					if (flow)
+						flow->FillHud(hud); // status lines, conversation, fight and death menus
 					if (menu.IsOpen())
 					{
+						hud.menuText.clear();
+						hud.menuHint.clear();
+						hud.menuDim = true;
 						hud.menuTitle = "Paused";
 						hud.menuItems.assign(umbra::gameplay::PauseMenu::items.begin(), umbra::gameplay::PauseMenu::items.end());
 						hud.menuSelected = menu.GetSelected();

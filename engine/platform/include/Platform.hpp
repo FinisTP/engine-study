@@ -1,5 +1,7 @@
 #pragma once
 
+#include <filesystem>
+
 namespace umbra::platform
 {
 	class Platform
@@ -18,5 +20,8 @@ namespace umbra::platform
 
 		bool Initialize();
 		void Shutdown() noexcept;
+
+		// A folder the user may write to (saves, settings), created if missing; empty on failure.
+		[[nodiscard]] static std::filesystem::path PreferencesFolder();
 	};
 }

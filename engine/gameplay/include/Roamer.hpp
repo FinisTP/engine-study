@@ -32,6 +32,10 @@ namespace umbra::gameplay
         void Despawn(physics::PhysicsWorld &physics);
         // One fixed step: pick a direction, walk. `rng` makes wandering repeatable in tests.
         void Update(physics::PhysicsWorld &physics, glm::vec3 playerFeet, float dt, std::mt19937 &rng);
+        // One fixed step at a velocity someone else chose (real-time fights). Zero stands still.
+        void Walk(physics::PhysicsWorld &physics, glm::vec3 velocity, float dt);
+        // Forget the chase, e.g. after the player fled.
+        void Calm() noexcept { chasing_ = false; }
 
         [[nodiscard]] const std::string &Actor() const noexcept { return actor_; }
         [[nodiscard]] glm::vec3 GetFeet(const physics::PhysicsWorld &physics) const;

@@ -318,20 +318,37 @@ namespace umbra::render
             y += textSize.y + 2.0F;
         }
 
+        // Status lines (health, quest, combat log) stack down the top-left corner.
+        y = 8.0F;
+        for (const std::string &line : hud.status)
+        {
+            draw->AddText(ImVec2(10.0F, y + 1.0F), IM_COL32(0, 0, 0, 200), line.c_str());
+            draw->AddText(ImVec2(9.0F, y), IM_COL32(235, 235, 235, 255), line.c_str());
+            y += ImGui::GetTextLineHeight() + 2.0F;
+        }
+
         // Menu: a fixed window in the middle; the selected row is highlighted.
         if (hud.menuItems.empty())
             return;
         draw = ImGui::GetBackgroundDrawList();
-        draw->AddRectFilled(ImVec2(0, 0), size, IM_COL32(0, 0, 0, 120)); // dim the scene
-        ImGui::SetNextWindowPos(ImVec2(size.x * 0.5F, size.y * 0.5F), ImGuiCond_Always, ImVec2(0.5F, 0.5F));
-        ImGui::SetNextWindowSize(ImVec2(260.0F, 0.0F));
+        if (hud.menuDim)
+            draw->AddRectFilled(ImVec2(0, 0), size, IM_COL32(0, 0, 0, 120)); // dim the scene
+        // Undimmed menus (fights) sit low so the fighters stay visible; text menus are wider.
+        const float menuY = hud.menuDim ? 0.5F : 0.75F;
+        ImGui::SetNextWindowPos(ImVec2(size.x * 0.5F, size.y * menuY), ImGuiCond_Always, ImVec2(0.5F, 0.5F));
+        ImGui::SetNextWindowSize(ImVec2(hud.menuText.empty() ? 260.0F : 460.0F, 0.0F));
         ImGui::Begin(hud.menuTitle.empty() ? "Menu" : hud.menuTitle.c_str(), nullptr,
                      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
                          ImGuiWindowFlags_AlwaysAutoResize);
+        if (!hud.menuText.empty())
+        {
+            ImGui::TextWrapped("%s", hud.menuText.c_str());
+            ImGui::Separator();
+        }
         for (std::size_t i = 0; i < hud.menuItems.size(); ++i)
             ImGui::Selectable(hud.menuItems[i].c_str(), static_cast<int>(i) == hud.menuSelected);
         ImGui::Separator();
-        ImGui::TextDisabled("W/S or arrows, Enter to choose, Esc to resume");
+        ImGui::TextDisabled("%s", hud.menuHint.empty() ? "W/S or arrows, Enter to choose, Esc to resume" : hud.menuHint.c_str());
         ImGui::End();
     }
 

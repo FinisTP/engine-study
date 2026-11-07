@@ -48,3 +48,17 @@ namespace umbra::platform
 		}
 	}
 }
+
+namespace umbra::platform
+{
+	std::filesystem::path Platform::PreferencesFolder()
+	{
+		// SDL creates the folder (per user, per app) and returns it with a trailing separator.
+		char *path = SDL_GetPrefPath("Umbra", "UmbraEngine");
+		if (path == nullptr)
+			return {};
+		std::filesystem::path folder{reinterpret_cast<const char8_t *>(path)}; // SDL paths are UTF-8
+		SDL_free(path);
+		return folder;
+	}
+}

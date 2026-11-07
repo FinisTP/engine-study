@@ -47,6 +47,10 @@ namespace umbra::core
         std::string menuTitle;             // a centered menu is shown when menuItems is not empty
         std::vector<std::string> menuItems;
         int menuSelected = 0;
+        std::string menuText;              // wrapped text above the items, e.g. a line of dialogue
+        std::string menuHint;              // replaces the default key hint under the items
+        bool menuDim = true;               // darken the scene behind the menu
+        std::vector<std::string> status;   // top left: health, quest, combat log
         std::vector<std::string> stats;    // extra lines for the diagnostics window (timings, counters)
     };
 

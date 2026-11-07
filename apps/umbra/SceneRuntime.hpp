@@ -7,6 +7,7 @@
 #include <Physics.hpp>
 #include <Area.hpp>
 #include <PlayerController.hpp>
+#include <Roamer.hpp>
 #include <SceneFile.hpp>
 #include <StrideAnimator.hpp>
 #include <World.hpp>
@@ -15,6 +16,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -25,6 +27,18 @@ struct SimulationEvents final
     int footsteps = 0;
     bool jumped = false;
     std::optional<umbra::world::Portal> portal; // the player walked into this portal
+};
+
+// One dungeon enemy walking in the world, and the entity that draws it.
+struct RoamerSlot final
+{
+    umbra::gameplay::Roamer roamer;
+    umbra::world::Entity visual;
+    std::vector<std::string> pool; // its spawner's pool and group size, for the fight it starts
+    int group = 1;
+    bool alive = true;                  // false once removed (indices stay valid)
+    std::optional<glm::vec3> order;     // a velocity chosen by the fight; replaces wandering
+    float yaw = 0.0F;                   // facing, 0 faces -z
 };
 
 // Owns the live world for one scene file and keeps it in sync with the files on disk.
@@ -62,6 +76,22 @@ public:
     // Collider and player outlines for the debug view.
     void AddDebugLines(umbra::core::DrawList &drawList) const;
 
+    // --- Player and dungeon enemies (P6). Roamers are rebuilt from the spawners on every load. ---
+    [[nodiscard]] umbra::gameplay::SpawnPoint GetPlayerSpot() const;
+    // Loads an area and puts the player at an exact spot (loading a save).
+    bool ChangeSceneAt(const std::string &scenePath, umbra::gameplay::SpawnPoint spot);
+    // Wandering and chasing happen only while active (not in fights, menus or death).
+    void SetRoamersActive(bool active) noexcept { roamersActive_ = active; }
+    // A living roamer touching the player, if any.
+    [[nodiscard]] std::optional<std::size_t> TouchingRoamer() const;
+    [[nodiscard]] std::vector<RoamerSlot> &Roamers() noexcept { return roamers_; }
+    [[nodiscard]] glm::vec3 RoamerFeet(std::size_t index) const;
+    // A new roamer standing at `feet`, wandering within homeRadius of home. Returns its index.
+    std::size_t AddRoamer(const std::string &actor, glm::vec3 feet, glm::vec3 home, float homeRadius, bool chase);
+    void RemoveRoamer(std::size_t index);
+    // Changes whenever the world is replaced (load, restart, portal), so fights can tell.
+    [[nodiscard]] int Generation() const noexcept { return generation_; }
+
     [[nodiscard]] umbra::world::World &GetWorld() noexcept { return *world_; }
     [[nodiscard]] umbra::physics::PhysicsWorld &GetPhysics() noexcept { return *physics_; }
     [[nodiscard]] umbra::gameplay::PlayerController &GetPlayer() noexcept { return player_; }
@@ -74,6 +104,10 @@ private:
     void Rebind();
     void SyncPlayerVisual();
     void RefreshWatchList();
+    [[nodiscard]] std::unique_ptr<umbra::world::World> LoadFresh(const std::string &scenePath);
+    void SpawnRoamers();
+    void UpdateRoamers(float step);
+    void SyncRoamerVisuals();
 
     ModelLibrary &models_;
     std::filesystem::path assetRoot_;
@@ -90,4 +124,8 @@ private:
     umbra::assets::FileWatcher watcher_;
     std::map<std::filesystem::path, std::string> owners_; // watched file -> model path ("" = the scene file)
     umbra::assets::FileWatcher::Clock::time_point nextPoll_{};
+    std::vector<RoamerSlot> roamers_;
+    std::mt19937 roamerRandom_{7};
+    bool roamersActive_ = true;
+    int generation_ = 0;
 };

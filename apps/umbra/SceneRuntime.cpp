@@ -8,7 +8,25 @@
 #include <Checkpoint.hpp>
 #include <SceneFile.hpp>
 
+#include <glm/gtc/constants.hpp>
+
+#include <cmath>
 #include <set>
+
+namespace
+{
+    // Placeholder look for enemies: the sample cube, tinted per actor.
+    glm::vec4 RoamerColor(const std::string &actor)
+    {
+        if (actor == "wolf")
+            return {0.55F, 0.55F, 0.6F, 1.0F};
+        if (actor == "bandit")
+            return {0.75F, 0.25F, 0.2F, 1.0F};
+        if (actor == "bandit_leader")
+            return {0.5F, 0.2F, 0.65F, 1.0F};
+        return {0.9F, 0.5F, 0.1F, 1.0F};
+    }
+}
 
 SceneRuntime::SceneRuntime(ModelLibrary &models, std::filesystem::path assetRoot, std::string scenePath)
     : models_(models), assetRoot_(std::move(assetRoot)), scenePath_(std::move(scenePath)),
@@ -64,9 +82,9 @@ bool SceneRuntime::Load(bool keepPlayer)
     return loaded;
 }
 
-bool SceneRuntime::ChangeScene(const std::string &scenePath, const std::string &spawnId)
+std::unique_ptr<umbra::world::World> SceneRuntime::LoadFresh(const std::string &scenePath)
 {
-    // Same all-or-nothing rule: a broken destination leaves the player where they are.
+    // Same all-or-nothing rule as Load: a broken destination leaves the player where they are.
     auto fresh = std::make_unique<umbra::world::World>();
     std::vector<umbra::core::Diagnostic> diagnostics;
     const bool loaded = umbra::scene::LoadScene(assetRoot_ / scenePath, Options(), *fresh, diagnostics);
@@ -74,14 +92,33 @@ bool SceneRuntime::ChangeScene(const std::string &scenePath, const std::string &
     if (!loaded)
     {
         umbra::diagnostics::Error("Cannot enter " + scenePath + "; staying in " + scenePath_ + ".");
-        return false;
+        return nullptr;
     }
     fresh->UpdateTransforms();
+    return fresh;
+}
+
+bool SceneRuntime::ChangeScene(const std::string &scenePath, const std::string &spawnId)
+{
+    std::unique_ptr<umbra::world::World> fresh = LoadFresh(scenePath);
+    if (!fresh)
+        return false;
     const std::optional<umbra::gameplay::SpawnPoint> start = umbra::gameplay::FindSpawnPoint(*fresh, spawnId);
     if (!start)
         problems_.push_back("Warning: " + scenePath + " has no spawn '" + spawnId + "'; using 'player'.");
     scenePath_ = scenePath;
     Install(std::move(fresh), start);
+    RefreshWatchList();
+    return true;
+}
+
+bool SceneRuntime::ChangeSceneAt(const std::string &scenePath, umbra::gameplay::SpawnPoint spot)
+{
+    std::unique_ptr<umbra::world::World> fresh = LoadFresh(scenePath);
+    if (!fresh)
+        return false;
+    scenePath_ = scenePath;
+    Install(std::move(fresh), spot);
     RefreshWatchList();
     return true;
 }
@@ -110,6 +147,14 @@ bool SceneRuntime::LoadCheckpoint(const std::filesystem::path &directory)
         return false;
     }
     Report(diagnostics);
+    // Roamer cubes were saved with the world; drop them, the spawners make fresh ones.
+    std::vector<umbra::world::Entity> roamerVisuals;
+    fresh->ForEach([&](umbra::world::Entity entity) {
+        if (fresh->GetId(entity)->rfind("roamer_", 0) == 0)
+            roamerVisuals.push_back(entity);
+    });
+    for (umbra::world::Entity entity : roamerVisuals)
+        fresh->Destroy(entity);
     scenePath_ = checkpoint.scene; // hot reload and portals continue from that area
     Install(std::move(fresh), umbra::gameplay::SpawnPoint{checkpoint.feet, checkpoint.yaw});
     RefreshWatchList();
@@ -128,8 +173,10 @@ void SceneRuntime::Install(std::unique_ptr<umbra::world::World> fresh, std::opti
     fresh->UpdateTransforms();
     if (const std::size_t failed = umbra::gameplay::CreateBodies(*fresh, *freshPhysics); failed > 0)
         umbra::diagnostics::Error(std::to_string(failed) + " collider(s) have unusable sizes and got no physics body.");
+    roamers_.clear(); // their characters live in the old physics world, destroyed below
     world_ = std::move(fresh);
     physics_ = std::move(freshPhysics);
+    ++generation_;
     accumulator_ = 0.0;
     player_.Reset();
     stride_.Reset();
@@ -141,6 +188,7 @@ void SceneRuntime::Install(std::unique_ptr<umbra::world::World> fresh, std::opti
         start = umbra::gameplay::FindSpawnPoint(*world_, "player");
     if (start)
         player_.Spawn(*physics_, start->feet, start->yaw);
+    SpawnRoamers();
     Rebind();
     umbra::diagnostics::Info("Loaded scene " + scenePath_ + " with " + std::to_string(world_->Count()) + " entities.");
 }
@@ -205,6 +253,7 @@ SimulationEvents SceneRuntime::Simulate(float deltaSeconds, const umbra::gamepla
         player_.Update(*physics_, stepInput, static_cast<float>(step));
         if (stepInput.jump && wasGrounded && player_.GetVelocity(*physics_).y > 0.1F)
             events.jumped = true;
+        UpdateRoamers(static_cast<float>(step));
         umbra::gameplay::PushKinematic(*world_, *physics_, static_cast<float>(step));
         physics_->Step(static_cast<float>(step));
         umbra::gameplay::PullDynamic(*world_, *physics_);
@@ -233,6 +282,7 @@ SimulationEvents SceneRuntime::Simulate(float deltaSeconds, const umbra::gamepla
         portalArmed_ = !portal;
     }
     SyncPlayerVisual();
+    SyncRoamerVisuals();
     return events;
 }
 
@@ -302,4 +352,134 @@ void SceneRuntime::RefreshWatchList()
     for (const auto &[file, owner] : owners_)
         files.insert(file);
     watcher_.SetFiles(files);
+}
+
+// ---------------- Player spot and dungeon enemies ----------------
+
+umbra::gameplay::SpawnPoint SceneRuntime::GetPlayerSpot() const
+{
+    if (!player_.IsSpawned())
+        return {};
+    return {player_.GetFeet(*physics_), player_.GetFacingYaw()};
+}
+
+void SceneRuntime::SpawnRoamers()
+{
+    // 1. Collect the spawners first (creating entities while iterating the world is unsafe).
+    struct Found final
+    {
+        umbra::world::Spawner spawner;
+        glm::vec3 home;
+    };
+    std::vector<Found> found;
+    world_->ForEach([&](umbra::world::Entity entity) {
+        if (const umbra::world::Spawner *spawner = world_->GetSpawner(entity))
+            found.push_back({*spawner, glm::vec3{(*world_->GetWorldMatrix(entity))[3]}});
+    });
+
+    // 2. `count` roamers per spawner: a random actor from the pool at a random point near home.
+    for (const Found &f : found)
+    {
+        for (int i = 0; i < f.spawner.count && !f.spawner.pool.empty(); ++i)
+        {
+            std::uniform_real_distribution<float> unit(0.0F, 1.0F);
+            const std::string &actor = f.spawner.pool[static_cast<std::size_t>(unit(roamerRandom_) * 0.999F * f.spawner.pool.size())];
+            const float angle = unit(roamerRandom_) * glm::two_pi<float>();
+            const float distance = unit(roamerRandom_) * f.spawner.radius * 0.5F;
+            const glm::vec3 feet = f.home + glm::vec3{std::cos(angle) * distance, 0.0F, std::sin(angle) * distance};
+            const std::size_t index = AddRoamer(actor, feet, f.home, f.spawner.radius, f.spawner.chase);
+            roamers_[index].pool = f.spawner.pool;
+            roamers_[index].group = f.spawner.group;
+        }
+    }
+}
+
+std::size_t SceneRuntime::AddRoamer(const std::string &actor, glm::vec3 feet, glm::vec3 home, float homeRadius, bool chase)
+{
+    // 1. The physics character.
+    RoamerSlot slot{umbra::gameplay::Roamer(actor, home, homeRadius, chase), {}, {}, 1};
+    slot.roamer.Spawn(*physics_, feet);
+    // 2. A visual entity with a unique id; Rebind gives it its mesh.
+    static int counter = 0;
+    slot.visual = world_->Create("roamer_" + std::to_string(++counter), actor);
+    umbra::world::Renderable look;
+    look.model = "scenes/phase2.gltf";
+    look.mesh = 0;
+    look.color = RoamerColor(actor);
+    world_->SetRenderable(slot.visual, look);
+    roamers_.push_back(std::move(slot));
+    SyncRoamerVisuals();
+    Rebind();
+    return roamers_.size() - 1;
+}
+
+void SceneRuntime::RemoveRoamer(std::size_t index)
+{
+    if (index >= roamers_.size() || !roamers_[index].alive)
+        return;
+    RoamerSlot &slot = roamers_[index];
+    slot.roamer.Despawn(*physics_);
+    world_->Destroy(slot.visual);
+    slot.alive = false;
+}
+
+glm::vec3 SceneRuntime::RoamerFeet(std::size_t index) const
+{
+    return roamers_[index].roamer.GetFeet(*physics_);
+}
+
+std::optional<std::size_t> SceneRuntime::TouchingRoamer() const
+{
+    if (!player_.IsSpawned())
+        return std::nullopt;
+    // Touching: capsules (0.35 + 0.35 m) plus a small margin apart, at about the same height.
+    const glm::vec3 player = player_.GetFeet(*physics_);
+    for (std::size_t i = 0; i < roamers_.size(); ++i)
+    {
+        if (!roamers_[i].alive)
+            continue;
+        const glm::vec3 feet = RoamerFeet(i);
+        if (glm::length(glm::vec2{feet.x - player.x, feet.z - player.z}) < 1.0F && std::abs(feet.y - player.y) < 1.0F)
+            return i;
+    }
+    return std::nullopt;
+}
+
+void SceneRuntime::UpdateRoamers(float step)
+{
+    const glm::vec3 player = player_.IsSpawned() ? player_.GetFeet(*physics_) : glm::vec3{0.0F};
+    for (RoamerSlot &slot : roamers_)
+    {
+        if (!slot.alive)
+            continue;
+        // A fight's order wins; otherwise wander/chase while active; otherwise stand (gravity still applies).
+        const glm::vec3 before = slot.roamer.GetFeet(*physics_);
+        if (slot.order)
+            slot.roamer.Walk(*physics_, *slot.order, step);
+        else if (roamersActive_)
+            slot.roamer.Update(*physics_, player, step, roamerRandom_);
+        else
+            slot.roamer.Walk(*physics_, glm::vec3{0.0F}, step);
+        // Face the way it moved (yaw 0 faces -z, like the player).
+        const glm::vec3 moved = slot.roamer.GetFeet(*physics_) - before;
+        if (glm::length(glm::vec2{moved.x, moved.z}) > 1e-4F)
+            slot.yaw = std::atan2(-moved.x, -moved.z);
+    }
+}
+
+void SceneRuntime::SyncRoamerVisuals()
+{
+    // The cube (-1..1) scaled to the roamer's capsule, centred on it.
+    const umbra::gameplay::RoamerSettings settings;
+    for (std::size_t i = 0; i < roamers_.size(); ++i)
+    {
+        if (!roamers_[i].alive)
+            continue;
+        umbra::world::Transform transform;
+        transform.position = RoamerFeet(i) + glm::vec3{0.0F, settings.radius + settings.halfHeight, 0.0F};
+        transform.rotation = glm::angleAxis(roamers_[i].yaw, glm::vec3{0.0F, 1.0F, 0.0F});
+        transform.scale = {settings.radius, settings.radius + settings.halfHeight, settings.radius};
+        world_->SetLocalTransform(roamers_[i].visual, transform);
+    }
+    world_->UpdateTransforms();
 }

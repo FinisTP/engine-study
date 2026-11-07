@@ -77,4 +77,10 @@ namespace umbra::gameplay
         const glm::vec3 velocity = length > 0.2F ? direction / length * speed : glm::vec3{0.0F};
         physics.MoveCharacter(character_, velocity, false, dt);
     }
+
+    void Roamer::Walk(physics::PhysicsWorld &physics, glm::vec3 velocity, float dt)
+    {
+        if (character_)
+            physics.MoveCharacter(character_, glm::vec3{velocity.x, 0.0F, velocity.z}, false, dt);
+    }
 }

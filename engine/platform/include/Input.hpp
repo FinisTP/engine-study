@@ -31,6 +31,12 @@ namespace umbra::platform
         F1,
         F5,
         F9,
+        Q,
+        F,
+        Num1,
+        Num2,
+        Num3,
+        Num4,
         Count
     };
 

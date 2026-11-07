@@ -53,6 +53,18 @@ namespace
             return InputKey::F5;
         case SDL_SCANCODE_F9:
             return InputKey::F9;
+        case SDL_SCANCODE_Q:
+            return InputKey::Q;
+        case SDL_SCANCODE_F:
+            return InputKey::F;
+        case SDL_SCANCODE_1:
+            return InputKey::Num1;
+        case SDL_SCANCODE_2:
+            return InputKey::Num2;
+        case SDL_SCANCODE_3:
+            return InputKey::Num3;
+        case SDL_SCANCODE_4:
+            return InputKey::Num4;
         default:
             return InputKey::Unknown;
         }

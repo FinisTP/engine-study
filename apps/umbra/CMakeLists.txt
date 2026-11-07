@@ -3,6 +3,9 @@ add_executable(Umbra)
 target_sources(
     Umbra
     PRIVATE
+        GameFlow.cpp
+        GameFlow.hpp
+        GameFlow.md
         Main.cpp
         ModelLibrary.cpp
         ModelLibrary.hpp
@@ -31,6 +34,7 @@ target_link_libraries(
         Umbra::Scene
         Umbra::Gameplay
         Umbra::Audio
+        Umbra::Game
         Umbra::Warnings
         Umbra::Sanitizers
 )
