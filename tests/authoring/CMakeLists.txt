@@ -2,7 +2,7 @@ find_package(Catch2 3 CONFIG REQUIRED)
 
 # Shared content edits (editor, tool), headless.
 add_executable(UmbraAuthoringTests)
-target_sources(UmbraAuthoringTests PRIVATE DocumentTests.cpp QuestDraftTests.cpp ValidateTests.cpp)
+target_sources(UmbraAuthoringTests PRIVATE DocumentTests.cpp PackageTests.cpp QuestDraftTests.cpp ValidateTests.cpp)
 target_include_directories(UmbraAuthoringTests PRIVATE ${PROJECT_SOURCE_DIR}/tests)
 target_compile_definitions(UmbraAuthoringTests PRIVATE UMBRA_TEST_ASSET_DIRECTORY="${PROJECT_SOURCE_DIR}/assets" UMBRA_TEST_DATA_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/data")
 target_compile_features(UmbraAuthoringTests PRIVATE cxx_std_20)
@@ -79,3 +79,10 @@ add_test(
     COMMAND UmbraTool model --idea "barrel" --assets ${CMAKE_CURRENT_BINARY_DIR}/model-assets --workflow ${CMAKE_CURRENT_BINARY_DIR}/none.api.json
 )
 set_tests_properties(Umbra.Tool.ModelNeedsWorkflow PROPERTIES PASS_REGULAR_EXPRESSION "Export \\(API\\)")
+
+# The package check through the tool: a folder that isn't a package fails (P9).
+add_test(
+    NAME Umbra.Tool.PackageCheckRefusesNonPackage
+    COMMAND UmbraTool package-check ${CMAKE_CURRENT_SOURCE_DIR}/data
+)
+set_tests_properties(Umbra.Tool.PackageCheckRefusesNonPackage PROPERTIES PASS_REGULAR_EXPRESSION "package.program")

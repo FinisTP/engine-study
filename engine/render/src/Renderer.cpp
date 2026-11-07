@@ -361,6 +361,19 @@ namespace umbra::render
         }
     }
 
+    std::string Renderer::DeviceName() const
+    {
+        return implementation_ ? std::string{implementation_->physicalDevice.GetProperties().deviceName} : std::string{};
+    }
+
+    std::pair<std::uint32_t, std::uint32_t> Renderer::Extent() const
+    {
+        if (!implementation_)
+            return {0, 0};
+        const VkExtent2D extent = implementation_->swapchain.GetExtent();
+        return {extent.width, extent.height};
+    }
+
     void Renderer::Shutdown() noexcept
     {
         if (implementation_ == nullptr)

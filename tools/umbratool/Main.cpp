@@ -10,12 +10,14 @@
 //             [--model <name>] [--host <url>] [--scenes <folder>] [--fix <n>] [--save-draft <file>]
 //   UmbraTool texture "<idea>" --assets <folder> [--name <name>] [--count <n>] [--seed <n>] [--meters <m>]
 //             [--size <px>] [--model <checkpoint>] [--host <url>] [--json]
+//   UmbraTool package-check <package folder> [--source <project folder>] [--json]
 //   UmbraTool model (--idea "<text>" | --image <picture> | --resume <job>) --assets <folder> [--name <name>]
 //             [--faces <n>] [--seed <n>] [--workflow <api json>] [--model <checkpoint>] [--host <url>] [--json]
 //
 // Exit code: 0 = ok, 1 = errors found (or the fight couldn't run), 2 = bad usage.
 
 #include <Document.hpp>
+#include <Package.hpp>
 #include <PolicyModel.hpp>
 #include <QuestAssistant.hpp>
 #include <ModelAssistant.hpp>
@@ -60,6 +62,8 @@ namespace
         // model
         std::filesystem::path image, workflow;
         std::string resume; // a ComfyUI job id from an earlier, closed run
+        // package-check
+        std::filesystem::path source;
         int faces = 10000;
     };
 
@@ -75,6 +79,7 @@ namespace
                      "            [--model <name>] [--host <url>] [--scenes <folder>] [--fix <n>] [--save-draft <file>]\n"
                      "  UmbraTool texture \"<idea>\" --assets <folder> [--name <name>] [--count <n>] [--seed <n>] [--meters <m>]\n"
                      "            [--size <px>] [--model <checkpoint>] [--host <url>] [--json]\n"
+                     "  UmbraTool package-check <package folder> [--source <project folder>] [--json]\n"
                      "  UmbraTool model (--idea \"<text>\" | --image <picture> | --resume <job>) --assets <folder> [--name <name>]\n"
                      "            [--faces <n>] [--seed <n>] [--workflow <api json>] [--model <checkpoint>] [--host <url>] [--json]\n";
         return 2;
@@ -95,6 +100,16 @@ namespace
             std::cout << files << " file(s): " << errors << " error(s), " << warnings << " warning(s)\n";
         }
         return errors > 0 ? 1 : 0;
+    }
+
+    // Release gate (P9): what a packaged game folder may and must contain (Package.md).
+    int PackageCheck(const Arguments &args)
+    {
+        if (args.positional.size() != 1)
+            return Usage();
+        std::vector<Diagnostic> diagnostics;
+        umbra::authoring::CheckPackage(args.positional[0], args.source, diagnostics);
+        return Report(diagnostics, 1, args.json);
     }
 
     int Validate(const Arguments &args)
@@ -535,6 +550,8 @@ int main(int argc, char **argv)
             (arg == "--image" ? args.image : args.workflow) = argv[++i];
         else if (i + 1 < argc && arg == "--resume")
             args.resume = argv[++i];
+        else if (i + 1 < argc && arg == "--source")
+            args.source = argv[++i];
         else if (i + 1 < argc && arg == "--faces")
         {
             try
@@ -613,5 +630,7 @@ int main(int argc, char **argv)
         return Texture(args);
     if (command == "model")
         return Model(args);
+    if (command == "package-check")
+        return PackageCheck(args);
     return Usage();
 }

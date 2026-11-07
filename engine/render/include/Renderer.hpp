@@ -5,6 +5,8 @@
 
 #include <functional>
 #include <memory>
+#include <string>
+#include <utility>
 
 namespace umbra::platform
 {
@@ -38,6 +40,9 @@ namespace umbra::render
         bool DestroyMesh(core::MeshHandle handle);
         bool DestroyTexture(core::TextureHandle handle);
         void RequestResize() noexcept;
+        // The GPU in use and the size of the picture, for reports (benchmark, P9).
+        [[nodiscard]] std::string DeviceName() const;
+        [[nodiscard]] std::pair<std::uint32_t, std::uint32_t> Extent() const;
         void Shutdown() noexcept;
 
     private:

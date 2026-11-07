@@ -35,6 +35,16 @@ findstr /c:"material.license" %LOG%
 rem 3. A clean package folder from the install rules (component "game"), then the zip.
 "%CMAKE%" -E rm -rf out\package\Umbra out\package\Umbra.zip
 "%CMAKE%" --install out\build\windows-msvc --config Release --component game --prefix out\package\Umbra >> %LOG% 2>&1
+rem 4. Release check of the folder (P9): no editor or tools, licenses for every DLL, no secrets or
+rem    absolute paths, required content present (rules: engine\authoring\include\Package.md).
+out\build\windows-msvc\tools\umbratool\Release\UmbraTool.exe package-check out\package\Umbra --source "%CD%" >> %LOG% 2>&1
+if not "%errorlevel%"=="0" (
+    echo PACKAGE CHECK FAILED, no zip made >> %LOG%
+    type %LOG%
+    pause
+    exit /b 1
+)
+
 pushd out\package
 "%CMAKE%" -E tar cf Umbra.zip --format=zip Umbra >> ..\package.log 2>&1
 popd

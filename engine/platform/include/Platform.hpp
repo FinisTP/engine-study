@@ -25,5 +25,10 @@ namespace umbra::platform
 		[[nodiscard]] static std::filesystem::path PreferencesFolder();
 		// The folder the program file is in (empty if unknown).
 		[[nodiscard]] static std::filesystem::path ProgramFolder();
+		// Hardware facts for reports (benchmark, P9).
+		[[nodiscard]] static int CpuThreads();
+		[[nodiscard]] static int SystemRamMb();
+		// Most memory this process has used so far (peak working set / max resident size), 0 if unknown.
+		[[nodiscard]] static int PeakMemoryMb();
 	};
 }

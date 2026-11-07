@@ -34,3 +34,21 @@ TEST_CASE("Stopwatch laps restart the count")
     REQUIRE(first >= 0.0);
     REQUIRE(watch.Milliseconds() >= 0.0);
 }
+
+TEST_CASE("A run's frame times summarize into average and nearest-rank percentiles (P9)")
+{
+    using umbra::core::Summarize;
+    CHECK(Summarize({}).frames == 0);
+    std::vector<double> samples;
+    for (int i = 1; i <= 100; ++i)
+        samples.push_back(static_cast<double>(i)); // 1..100 ms, shuffled order doesn't matter
+    std::swap(samples[0], samples[99]);
+    const auto stats = Summarize(samples);
+    CHECK(stats.frames == 100);
+    CHECK(stats.average == Approx(50.5));
+    CHECK(stats.p50 == Approx(50.0));
+    CHECK(stats.p95 == Approx(95.0));
+    CHECK(stats.p99 == Approx(99.0));
+    CHECK(stats.max == Approx(100.0));
+    CHECK(Summarize({7.0}).p99 == Approx(7.0));
+}

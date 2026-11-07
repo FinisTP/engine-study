@@ -1,7 +1,7 @@
 # Umbra Engine - Current Development Status
 
 **Status date:** 2026-11-07 (Phase 1/2 records dated 2026-09-02)
-**Current milestone:** P8B/P8C/P8D (local AI quests, textures, 3D props) verified on Windows by the user 2026-11-08; P8D fixes `#UMBRA-62`; next: P6/P7/P8A Windows checklists, then P9
+**Current milestone:** P9 PC release gate in progress (tools done 2026-11-08; Windows gate runs open); P8B/P8C/P8D verified on Windows by the user 2026-11-08
 **Phase 1 status:** Complete (interactive checklist unsigned)
 **Phase 2 status:** Complete
 **Phase 3 status:** Implemented. Headless tests verified on Linux; Windows build and GPU checks not run yet
@@ -13,6 +13,10 @@
 **P8C status:** Implemented. Headless tests verified on Linux (42/42, GCC/Clang/ASan) against a stand-in ComfyUI; no real ComfyUI/SDXL or GPU run yet (P8C.0 open); editor window not opened
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
+
+## Update 2026-11-08 (P9 started, `#UMBRA-64`)
+
+- P9 (PC release gate) tools: `Umbra --benchmark` (frame-time percentiles, hardware, peak memory → `benchmark.json`), a 300-fight long-run test with save round trips and damaged-save rescue (T74), `UmbraTool package-check` run by `package.bat` (T75), `THIRD_PARTY_NOTICES.md` and vcpkg license texts in the package, and run-time asset lookup so the game no longer contains the source assets path. 44/44 CTest on GCC/Clang/ASan. The gate runs on Windows are open (`testing/p9-release-gate.md` §4); performance budget O18 proposed.
 
 ## Update 2026-11-08 (`#UMBRA-63`)
 
@@ -249,7 +253,7 @@ All seven items of the old Phase 3 entry point are implemented (see the table ab
 - Gameplay-state preservation across scene reloads (done in P4.4: hot reload keeps the player; F5/F9 checkpoints).
 - Packaging: the app reads assets from the source tree (`UMBRA_ASSET_DIRECTORY`) and caches in the build tree. A relocatable package layout is a P6/P9 task (roadmap T43).
 
-Next: re-check `#UMBRA-62` on Windows, the Windows checklists for P6/P7/P8A, then P9. Open: P8A recipe robustness. Open in parallel: the interactive checklists in [`testing/phase3-assets-world.md`](testing/phase3-assets-world.md) and [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md) and the clang-cl/ASan presets.
+Next: the P9 gate runs on Windows (`testing/p9-release-gate.md` §4), including the P6/P7/P8A checklists. Open: P8A recipe robustness. Open in parallel: the interactive checklists in [`testing/phase3-assets-world.md`](testing/phase3-assets-world.md) and [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md) and the clang-cl/ASan presets.
 
 ## Local verification
 

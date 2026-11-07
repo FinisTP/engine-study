@@ -32,7 +32,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 
 **First action for a new agent:** finish B0 — the Windows-side checks are still open (see the B0 record). Re-inspect the checkout; if it has advanced past this dashboard, preserve completed work and select the earliest genuinely unmet task. Do not blindly implement P3.1 again.
 
-**Current next task:** confirm the `#UMBRA-62` fixes on Windows (`testing/p8d-ai-models.md` §3c), the remaining Windows checklists for P6, P7 and P8A (`testing/phase6-reference-game.md` §4, `testing/phase7-creator-workflow.md` §4, `testing/p8a-learned-enemy.md` §5), then P9 (PC release gate). P8B, P8C and P8D were confirmed working on Windows by the user on 2026-11-08. Open in parallel: P8A recipe robustness (1 of 2 seeds). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
+**Current next task:** the P9 gate runs on Windows (`testing/p9-release-gate.md` §4: benchmark → O18, package check, clean install, journey on the package), and confirm the `#UMBRA-62`/`#UMBRA-63` fixes on Windows (`testing/p8d-ai-models.md` §3c), the remaining Windows checklists for P6, P7 and P8A (`testing/phase6-reference-game.md` §4, `testing/phase7-creator-workflow.md` §4, `testing/p8a-learned-enemy.md` §5), then P9 (PC release gate). P8B, P8C and P8D were confirmed working on Windows by the user on 2026-11-08. Open in parallel: P8A recipe robustness (1 of 2 seeds). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
 
 | Gate | Dependency | Status (updated 2026-11-07) | Evidence / exit summary |
 |---|---|---|---|
@@ -49,7 +49,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 | P8B AI authoring | P7 schema/patch/validation capability | Implemented 2026-11-07; verified on Linux, and **on Windows with a real Ollama model by the user (2026-11-08: works, with limitations)** | `Umbra::LocalAi` (local-only Ollama bridge, streamed, schema-constrained, cancel/limits), `authoring::PlanDraft` (additive scope, game loader, play-through with the real `GameSession`), editor "AI quest draft" window and `UmbraTool draft`. Evidence: `testing/p8b-ai-authoring.md`. |
 | P8C AI texture generation | P7 authoring, P8B local-AI bridge | Implemented 2026-11-07; verified on Linux, and **on Windows with ComfyUI/SDXL by the user (2026-11-08: works, with limitations)** | Materials with world-scale texturing and mipmaps; ComfyUI bridge; seamless step and seam score; provenance and license warnings; editor AI texture window with in-scene preview; `UmbraTool texture`. Plan `adr/0002-ai-texture-generation.md`, evidence `testing/p8c-ai-textures.md`. |
 | P8D AI 3D models | P8C ComfyUI bridge | Implemented 2026-11-07; **verified on Windows with TRELLIS.2 by the user (2026-11-08)**; the reported limitations fixed in `#UMBRA-62` (any workflow name, the textured GLB, survives closing the editor, no time limit) | Text → SDXL concept or own picture → the creator's exported TRELLIS.2 workflow (ComfyUI) → GLB with provenance → placed as an undoable scene edit; `UmbraTool model`. ADR `adr/0003-ai-model-generation.md`, evidence `testing/p8d-ai-models.md`. |
-| P9 PC release | P6/P7/P8A/P8B | Planned | Clean offline install, complete game, authoring workflow, measured reference-PC gate. |
+| P9 PC release | P6/P7/P8A/P8B | **In progress** (2026-11-08): release tools built and passing on Linux (benchmark, long-run test, package check, license notices); the Windows gate runs are open | Clean offline install, complete game, authoring workflow, measured reference-PC gate. Evidence `testing/p9-release-gate.md`. |
 | P10 Playable web export | P9; W0 decisions | Planned later port | Browser game and local policy, durable-save UX, offline installation readiness. |
 | P11 Mobile | P10; approved device target | Planned later port | Lifecycle, input, storage, thermal and performance gates on actual devices. |
 | F1 Community improvement | Separate product approval | Deferred proposal | Consent, records, validation, developer retraining, approved model delivery/rollback. |
@@ -640,6 +640,15 @@ Verify package composition: shipping game has no editor, training environment, a
 
 **Exit evidence:** creator walkthrough plus full player journey, independent-mode fixtures, accepted policy evaluation, saved-state recovery, graphical/physics checks, packaging/license inventory and measured performance report. All applicable P9-blocking tests in section 10 have evidence; deferred-platform/service cases are explicitly not P9 blockers.
 
+<!-- P9-status -->
+| Task | Status | Evidence |
+|---|---|---|
+| P9.1 Performance measurement | Implemented: `Umbra --benchmark`, frame-time percentiles, hardware and peak memory in `benchmark.json`; **not run** (no GPU here) | `ProfilingTests`, `BenchmarkTests`; `apps/umbra/Benchmark.md` |
+| P9.2 Long-run state | Implemented and passing: 300 fights, save round trips, damaged-save rescue | T74 |
+| P9.3 Package composition/licenses | Implemented: `UmbraTool package-check` in `package.bat`, run-time asset lookup (no build paths used), notices + `licenses/` | T75; `Package.md` |
+| P9.4 Gate runs | **Open:** benchmark on the reference PC (decides O18), package + clean install, journey on the package, P3/P4/P6/P7/P8A checklists | `testing/p9-release-gate.md` §4 |
+<!-- /P9-status -->
+
 ### P10 — Playable web export
 
 **Dependencies:** P9 and W0 findings. **Goal:** export the supported game, not the editor, with no required gameplay backend.
@@ -785,6 +794,8 @@ This is an initial **60-case register**, not an assertion that every possible fu
 | T69 | Picture upload, run and GLB download; missing model; non-local address | GLB downloaded intact; `ai.model` / `ai.host` named | P8D |
 | T71 | Exported workflow with switches, preview models and two save-able branches | Only the save node's dependencies run (switches resolved); the GLB comes from the save node, never a preview | P8D |
 | T72 | Editor closed during a model run; ComfyUI restarted; a run longer than 30 minutes | ComfyUI keeps working and the next start fetches the model; a forgotten job is named (`ai.lost`); no total time limit while ComfyUI has the job | P8D |
+| T74 | Long run: hundreds of fights in both modes with saves, loads and a damaged save | Every save round trip byte-identical; no fight state left over; backup rescues the damaged save; save size bounded | P9 |
+| T75 | Package with a development program, an unlisted DLL, a key, an absolute path, a dependency on the source assets folder, missing content/policy | `package-check` names each (secret values never printed); AI leftovers and non-commercial models are warnings; `package.bat` makes no zip on errors | P9 |
 | T73 | Placed generated model; collider added to a model entity | A static box fitted to the model's bounds at the entity scale (not the scale-derived default meant for the -1..1 cube) | P8D |
 | T70 | Generated GLB the importer refuses | Not kept (all files removed); a good one is saved with provenance and never overwrites | P8D |
 
@@ -880,6 +891,7 @@ These are bounded decisions, not a request to stop and ask the user all of them 
 | O13 | Browser backend, shader path, capabilities/hosting support. **User decision 2026-11-06:** run W0 after P4. **W0 (2026-11-07):** WebGPU for graphics (separate small backend behind `core::DrawList`), HLSL → SPIR-V → WGSL planned, Emscripten candidate for P10; rules already build to WebAssembly unchanged. See `docs/adr/0001-web-backend.md`. | W0; finalize P10 | Actual supported-browser failure |
 | O14 | First mobile OS/device tier | P11 planning | User target choice |
 | O15 | Community records versus model updates, consent, backend operations | F1 approval only | Explicit decision to fund/build service |
+| O18 | Reference workload and performance budget. **Proposed 2026-11-08 (Claude, awaiting the user's measurement and confirmation):** reference PC = the user's PC (8 GB GPU; exact parts from `benchmark.json`); 1920×1080, default settings; workload = `Umbra --benchmark` (settlement, dungeon, arena) plus a learned-enemy fight; budget average ≤ 16.67 ms (60 FPS) and p99 ≤ 33.3 ms per area. | Before P9 sign-off | Measurements far from the budget either way, or a different target PC |
 | O17 | AI 3D model generator, scope, budget. **Decided 2026-11-07 (user, ADR 0003):** ComfyUI image-to-3D with TRELLIS.2 (MIT) through the creator's exported workflow; props first (characters stay with Meshy); ~10 000 triangles; text → SDXL concept or own picture. | Before P8D.0 | Quality/VRAM unusable on the user's PC |
 | O16 | AI texture generator, default model, scope and timing. **Decided 2026-11-07 (user, ADR 0002 §7):** ComfyUI first behind an `ImageProvider` interface (Ollama later); tileable world surfaces first; SDXL base 1.0 at 1024 px for the user's 8 GB GPU; independent track before P9. | Before P8C.0 | Generator unusable on the user's PC, or Ollama image generation reaches Windows |
 
@@ -1013,6 +1025,8 @@ This reference list supports the limited factual technology statements, not a re
 Version 1.0, 2026-11-01: incorporates final answers 21–23; makes independent combat-mode use an explicit contract/test; selects turn-based learned policy; removes mandatory-threshold interpretation of aggression; preserves deferred modding and offline scope; expands milestone tasks/evidence; retains T01–T38 and adds T39–T60; establishes concise root instructions plus separate context/roadmap files.
 
 No implementation completion was advanced by preparing this pack. Further updates must record actual evidence, product changes and their source separately.
+
+2026-11-08: P9 started (`#UMBRA-64`): benchmark mode, long-run soak test (T74), package check with license notices (T75), run-time asset lookup (no build paths in the game), O18 proposed; evidence `testing/p9-release-gate.md`.
 
 2026-11-08: `#UMBRA-63` fitted colliders for models (user report: the collider of a generated object was far bigger than the object): placed models get a fitted static box; a new collider on a model entity fits it; collider sizes editable, **Fit to model**; the editor's selection box uses the mesh bounds and the collider is outlined; T73.
 

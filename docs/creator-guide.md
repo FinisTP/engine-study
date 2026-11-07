@@ -210,8 +210,15 @@ scripts\package.bat
 
 1. Builds Release.
 2. Validates the shipped content (it stops if anything is wrong).
-3. Writes `out\package\Umbra\` (game, DLLs, Visual C++ runtime, `assets\`, `shaders\`).
-4. Zips it to `out\package\Umbra.zip`.
+3. Writes `out\package\Umbra\` (game, DLLs, Visual C++ runtime, `assets\`, `shaders\`,
+   `licenses\` and `THIRD_PARTY_NOTICES.md`). AI concept pictures stay behind.
+4. Checks the folder (`UmbraTool package-check`): no editor or tools, a license notice for every
+   DLL, no keys or absolute paths, the content and enemy policy present. Errors stop it; warnings
+   (e.g. AI working files in `assets\models`) are listed in `out\package.log`.
+5. Zips it to `out\package\Umbra.zip`.
+
+How fast is it? `Umbra.exe --benchmark` walks through the three areas and writes
+`%APPDATA%\Umbra\UmbraEngine\benchmark.json` (`apps/umbra/Benchmark.md`).
 
 Copy the zip to another PC, unzip, run `Umbra.exe`. Saves go to `%APPDATA%\Umbra\UmbraEngine\saves`.
 

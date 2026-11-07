@@ -19,6 +19,7 @@
 #include <Renderer.hpp>
 #include <SoundBank.hpp>
 #include <World.hpp>
+#include "Benchmark.hpp"
 #include "ModelLibrary.hpp"
 #include "SceneRuntime.hpp"
 #include "GameFlow.hpp"
@@ -28,7 +29,10 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <optional>
 
 namespace
@@ -42,8 +46,10 @@ namespace
 			out.push_back("... and " + std::to_string(problems.size() - limit) + " more (see the log)");
 	}
 
-	// Where the game's files are. A package has assets/ next to the program and keeps its model
-	// cache there too; a development build uses the source tree and the build folder.
+	// Where the game's files are, found at run time (no build path is compiled in, P9). A package
+	// has assets/ next to the program and keeps its model cache there too. A development build
+	// looks upwards: the build folder (it has CMakeCache.txt) holds the cache, the source tree above
+	// it holds assets/.
 	struct GameFolders final
 	{
 		std::filesystem::path assets;
@@ -51,10 +57,27 @@ namespace
 	};
 	GameFolders FindFolders()
 	{
-		const std::filesystem::path program = umbra::platform::Platform::ProgramFolder();
-		if (!program.empty() && std::filesystem::exists(program / "assets" / "rpg" / "reference.rpg.json"))
+		std::filesystem::path program = umbra::platform::Platform::ProgramFolder().lexically_normal();
+		if (!program.has_filename())
+			program = program.parent_path(); // "C:/Game/" -> "C:/Game"
+		const auto hasAssets = [](const std::filesystem::path &dir) { return std::filesystem::exists(dir / "assets" / "rpg" / "reference.rpg.json"); };
+		if (hasAssets(program))
 			return {program / "assets", program / "asset-cache"};
-		return {UMBRA_ASSET_DIRECTORY, UMBRA_CACHE_DIRECTORY};
+		GameFolders found{program / "assets", program / "asset-cache"};
+		bool cacheFound = false;
+		for (std::filesystem::path dir = program; !dir.empty(); dir = dir.parent_path())
+		{
+			if (!cacheFound && std::filesystem::exists(dir / "CMakeCache.txt"))
+				found.cache = dir / "asset-cache", cacheFound = true;
+			if (hasAssets(dir))
+			{
+				found.assets = dir / "assets";
+				break;
+			}
+			if (dir == dir.parent_path())
+				break;
+		}
+		return found;
 	}
 
 	void SpinEntity(umbra::world::World &world, const char *id, float radians)
@@ -69,8 +92,15 @@ namespace
 	}
 }
 
-int RunApplication(const std::string &scenePath)
+int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds)
 {
+	// Benchmark (P9): a scripted walk through the reference areas, then a report; no RPG layer.
+	std::optional<Benchmark> benchmark;
+	if (benchmarkSeconds)
+	{
+		benchmark.emplace(*benchmarkSeconds);
+		scenePath = benchmark->Area();
+	}
 	umbra::platform::Platform platform;
 
 	umbra::diagnostics::Info(std::string{"Starting Umbra "} + std::string{umbra::core::Version()});
@@ -89,7 +119,7 @@ int RunApplication(const std::string &scenePath)
 
 			{
 				umbra::platform::Window window;
-				if (!window.Create("Umbra", 1280, 720))
+				if (!window.Create("Umbra", benchmark ? 1920 : 1280, benchmark ? 1080 : 720))
 				{
 					platform.Shutdown();
 					return 1;
@@ -129,7 +159,7 @@ int RunApplication(const std::string &scenePath)
 				{
 					std::vector<umbra::core::Diagnostic> diagnostics;
 					const std::filesystem::path contentFile = folders.assets / "rpg/reference.rpg.json";
-					if (umbra::rpg::LoadContent(contentFile, content, diagnostics))
+					if (!benchmark && umbra::rpg::LoadContent(contentFile, content, diagnostics))
 					{
 						std::filesystem::path saves = umbra::platform::Platform::PreferencesFolder();
 						saves = saves.empty() ? folders.cache / "saves" : saves / "saves";
@@ -196,7 +226,8 @@ int RunApplication(const std::string &scenePath)
 					{
 						// Handle window focus lost event
 						umbra::diagnostics::Info("Window focus lost.");
-						setPaused(true); // releases the mouse; the player resumes from the menu
+						if (!benchmark)
+							setPaused(true); // releases the mouse; the player resumes from the menu
 					}
 
 					if (applicationEvents.IsEventRequested(umbra::platform::ApplicationEventType::WindowSuspended))
@@ -230,6 +261,7 @@ int RunApplication(const std::string &scenePath)
 					}
 
 					clock.Tick();
+					const umbra::core::Stopwatch frameWork; // this frame's work, without the idle sleep
 					const double deltaTime = clock.GetDeltaTimeSeconds();
 					frameTime.Add(deltaTime * 1000.0);
 					umbra::core::Stopwatch section;
@@ -297,14 +329,20 @@ int RunApplication(const std::string &scenePath)
 							return (input.IsKeyHeld(plus) ? 1.0F : 0.0F) - (input.IsKeyHeld(minus) ? 1.0F : 0.0F);
 						};
 						umbra::gameplay::PlayerInput playerInput;
-						if (canMove)
+						if (benchmark)
+						{
+							playerInput = benchmark->Input();
+							scene.Look(Benchmark::TurnRadiansPerSecond() * static_cast<float>(deltaTime), 0.0F);
+						}
+						else if (canMove)
 						{
 							playerInput.move = {axis(InputKey::D, InputKey::A), axis(InputKey::W, InputKey::S)};
 							playerInput.sprint = input.IsKeyHeld(InputKey::LeftShift);
 							playerInput.jump = input.IsKeyPressed(InputKey::Space);
 						}
 						constexpr float mouseSensitivity = 0.0025F; // radians per pixel
-						scene.Look(-input.GetMouseDeltaX() * mouseSensitivity, -input.GetMouseDeltaY() * mouseSensitivity);
+						if (!benchmark)
+							scene.Look(-input.GetMouseDeltaX() * mouseSensitivity, -input.GetMouseDeltaY() * mouseSensitivity);
 
 						umbra::core::Stopwatch simulateWatch;
 						const SimulationEvents events = scene.Simulate(static_cast<float>(deltaTime), playerInput);
@@ -416,6 +454,28 @@ int RunApplication(const std::string &scenePath)
 					}
 					renderTime.Add(section.Lap()); // CPU side only; includes waiting for a free frame
 
+					// Benchmark: record the frame; next area or the report when its time is up.
+					if (benchmark && benchmark->AddFrame(static_cast<float>(deltaTime), deltaTime * 1000.0, frameWork.Milliseconds(), scene.GetWorld().Count()))
+					{
+						if (!benchmark->Finished())
+						{
+							scene.ChangeScene(benchmark->Area(), "player");
+							continue;
+						}
+						const auto [width, height] = renderer.Extent();
+						bool passed = false;
+						const std::string report = benchmark->Report({std::string{umbra::core::Version()}, renderer.DeviceName(), width, height,
+																	  umbra::platform::Platform::CpuThreads(), umbra::platform::Platform::SystemRamMb(),
+																	  umbra::platform::Platform::PeakMemoryMb()},
+																	 passed);
+						std::filesystem::path file = umbra::platform::Platform::PreferencesFolder();
+						file = (file.empty() ? folders.cache : file) / "benchmark.json";
+						std::ofstream(file) << report;
+						std::cout << report;
+						umbra::diagnostics::Info("Benchmark " + std::string{passed ? "within" : "OVER"} + " budget; report: " + file.string());
+						break;
+					}
+
 					std::this_thread::sleep_for(std::chrono::milliseconds{1});
 				}
 			}
@@ -428,13 +488,26 @@ int RunApplication(const std::string &scenePath)
 
 int main(int argc, char **argv)
 {
-	// Optional first argument: scene path relative to the asset folder.
-	const std::string scenePath = argc > 1 ? argv[1] : "scenes/settlement.scene.json";
+	// Optional: a scene path relative to the asset folder; --benchmark [seconds per area] (P9).
+	std::string scenePath = "scenes/settlement.scene.json";
+	std::optional<float> benchmarkSeconds;
+	for (int i = 1; i < argc; ++i)
+	{
+		const std::string arg = argv[i];
+		if (arg == "--benchmark")
+		{
+			benchmarkSeconds = 20.0F;
+			if (i + 1 < argc && std::atof(argv[i + 1]) > 0.0)
+				benchmarkSeconds = static_cast<float>(std::atof(argv[++i]));
+		}
+		else
+			scenePath = arg;
+	}
 
 	umbra::diagnostics::Initialize();
 	umbra::diagnostics::InstallCrashHandlers();
 
-	const int result = RunApplication(scenePath);
+	const int result = RunApplication(scenePath, benchmarkSeconds);
 
 	umbra::diagnostics::UninstallCrashHandlers();
 	umbra::diagnostics::Shutdown();

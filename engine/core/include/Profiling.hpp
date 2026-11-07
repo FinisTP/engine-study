@@ -3,7 +3,9 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <cmath>
 #include <cstddef>
+#include <vector>
 
 namespace umbra::core
 {
@@ -39,6 +41,36 @@ namespace umbra::core
         std::size_t next_ = 0;  // where the next sample goes (oldest is overwritten)
         std::size_t count_ = 0; // valid samples, up to window
     };
+
+    // Frame times of a whole run, for the benchmark report (P9). Percentiles are nearest-rank:
+    // p99 = the time 99 % of frames stay at or below.
+    struct FrameStats final
+    {
+        std::size_t frames = 0;
+        double average = 0.0, p50 = 0.0, p95 = 0.0, p99 = 0.0, max = 0.0;
+    };
+
+    [[nodiscard]] inline FrameStats Summarize(std::vector<double> samples)
+    {
+        FrameStats stats;
+        stats.frames = samples.size();
+        if (samples.empty())
+            return stats;
+        std::sort(samples.begin(), samples.end());
+        const auto rank = [&](double percent) {
+            const auto index = static_cast<std::size_t>(std::ceil(percent / 100.0 * static_cast<double>(samples.size())));
+            return samples[std::clamp<std::size_t>(index, 1, samples.size()) - 1];
+        };
+        double sum = 0.0;
+        for (const double sample : samples)
+            sum += sample;
+        stats.average = sum / static_cast<double>(samples.size());
+        stats.p50 = rank(50.0);
+        stats.p95 = rank(95.0);
+        stats.p99 = rank(99.0);
+        stats.max = samples.back();
+        return stats;
+    }
 
     // Milliseconds since construction or the last Restart().
     class Stopwatch final

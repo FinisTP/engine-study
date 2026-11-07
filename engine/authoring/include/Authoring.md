@@ -64,3 +64,7 @@ that uses it in one edit.
 | `draft.*` | AI quest drafts: field, limit, kind, next, scope, play-through codes (`QuestDraft.md`) |
 
 All loader codes (scene `entity.*`, RPG `ref.*`, etc.) come through unchanged.
+
+## Package check (P9)
+
+`CheckPackage` (`Package.hpp`) is the release-gate check of a packaged game folder; rules in `Package.md`.

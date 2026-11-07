@@ -6,6 +6,7 @@ layer as the editor (`engine/authoring`), so all three report the same diagnosti
 | Command | What it does |
 |---|---|
 | `UmbraTool validate <file>... [--assets <folder>] [--content <rpg>] [--json]` | Checks scenes (including every model they draw), RPG content and saves. A save needs `--content`. |
+| `UmbraTool package-check <package folder> [--source <project folder>] [--json]` | Release check of a packaged game (P9): program, content, shaders, policies and notices present; no editor/tools/scripts, secrets or absolute paths; a license notice for every DLL; the program doesn't depend on `<source>/assets`. Rules: `engine/authoring/include/Package.md`. `scripts\package.bat` runs it. |
 | `UmbraTool inspect <file> [--json]` | Lists what a scene or RPG file holds, by id. |
 | `UmbraTool schema [--json]` | Format versions this build reads, and the document describing each. |
 | `UmbraTool fight <rpg> <hero> <enemy>... [--json]` | A turn fight with the conventional AI on both sides, e.g. to check balance after editing stats. |
