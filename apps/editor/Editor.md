@@ -66,6 +66,26 @@ The rules are the same as for scenes:
 
 The game reads the file when it starts (P7.5 adds reloading it while the game runs).
 
+## AI quest draft (View → AI quest draft)
+
+Writes a side quest with a local AI model (Ollama, roadmap P8B). Nothing changes until you approve.
+
+1. Pick the **quest giver** (NPCs that own a conversation), describe the **idea**, press
+   **Write draft**. The request runs on a worker thread (`localai::ChatJob`); the window shows
+   seconds and characters received, and **Cancel** stops it at once.
+2. The answer is checked by `authoring::PlanDraft` (`engine/authoring/include/QuestDraft.md`):
+   what will be added (preview), a play-through with the real story rules (green/red lines), and
+   problems (red errors, yellow notes).
+3. **Approve and add** (only without errors) is one undoable edit named `AI draft: <name>`. The
+   RPG forms then open on the new quest for hand editing. Ctrl+Z undoes it; Ctrl+S saves it.
+   **Ask the AI to fix the problems** sends the model its answer plus the problem list.
+   **Write a new draft** starts over; **Discard** forgets the draft.
+4. If the RPG content changed after the check (a form edit, undo), approve turns into
+   **Check again**, so a draft never overwrites newer edits.
+
+Model name and address are under **Model**, saved in `ai-draft.json` in the preferences folder.
+Only addresses on this computer are accepted.
+
 ## Picking (mouse → entity)
 
 1. The mouse position becomes normalized device coordinates:

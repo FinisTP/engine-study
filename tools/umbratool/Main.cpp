@@ -6,11 +6,14 @@
 //   UmbraTool schema   [--json]
 //   UmbraTool fight    <rpg file> <hero actor> <enemy actor>... [--json]
 //   UmbraTool policy-check <policy file> --content <rpg file> [--json]
+//   UmbraTool draft <rpg file> --npc <npc> (--idea "<text>" | --from <draft file>) [--apply] [--json]
+//             [--model <name>] [--host <url>] [--scenes <folder>] [--fix <n>] [--save-draft <file>]
 //
 // Exit code: 0 = ok, 1 = errors found (or the fight couldn't run), 2 = bad usage.
 
 #include <Document.hpp>
 #include <PolicyModel.hpp>
+#include <QuestAssistant.hpp>
 #include <RpgContent.hpp>
 #include <SaveGame.hpp>
 #include <SceneFile.hpp>
@@ -20,6 +23,8 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <optional>
+#include <thread>
 #include <string>
 #include <vector>
 
@@ -35,6 +40,11 @@ namespace
         std::filesystem::path assets;
         std::filesystem::path content;
         bool json = false;
+        // draft
+        std::string npc, idea, model = "qwen2.5:7b", host = "http://localhost:11434";
+        std::filesystem::path from, scenes, saveDraft;
+        int fix = 1;
+        bool apply = false;
     };
 
     int Usage()
@@ -44,7 +54,9 @@ namespace
                      "  UmbraTool inspect  <file> [--json]\n"
                      "  UmbraTool schema   [--json]\n"
                      "  UmbraTool fight    <rpg file> <hero actor> <enemy actor>... [--json]\n"
-                     "  UmbraTool policy-check <policy file> --content <rpg file> [--json]\n";
+                     "  UmbraTool policy-check <policy file> --content <rpg file> [--json]\n"
+                     "  UmbraTool draft <rpg file> --npc <npc> (--idea \"<text>\" | --from <draft file>) [--apply] [--json]\n"
+                     "            [--model <name>] [--host <url>] [--scenes <folder>] [--fix <n>] [--save-draft <file>]\n";
         return 2;
     }
 
@@ -202,6 +214,100 @@ namespace
             umbra::policy::CheckCompatible(model, content, args.positional[0], diagnostics);
         return Report(diagnostics, 1, args.json);
     }
+
+    // Asks the local model, printing progress; false with diagnostics on failure.
+    bool Ask(const umbra::localai::ChatRequest &request, std::string &answer, std::vector<Diagnostic> &diagnostics, bool quiet)
+    {
+        umbra::localai::ChatJob job;
+        job.Start(request);
+        std::optional<umbra::localai::ChatResult> result;
+        while (!(result = job.Take()))
+        {
+            if (!quiet)
+                std::cerr << "\rAsking " << request.model << "... " << static_cast<int>(job.Seconds()) << " s, " << job.Received() << " characters   " << std::flush;
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        }
+        if (!quiet)
+            std::cerr << "\n";
+        diagnostics.insert(diagnostics.end(), result->diagnostics.begin(), result->diagnostics.end());
+        answer = result->text;
+        return result->ok;
+    }
+
+    // AI quest draft: idea -> local model -> validated, played-through additions -> (--apply) saved.
+    int Draft(const Arguments &args)
+    {
+        if (args.positional.size() != 1 || args.npc.empty() || args.idea.empty() == args.from.empty())
+            return Usage();
+        const std::filesystem::path file = args.positional[0];
+        umbra::authoring::Document doc(file, umbra::authoring::RpgValidator());
+        std::vector<Diagnostic> diagnostics;
+        if (!doc.Open(diagnostics))
+            return Report(diagnostics, 1, args.json);
+        const auto world = umbra::authoring::ScanScenes(args.scenes.empty() ? file.parent_path().parent_path() / "scenes" : args.scenes);
+
+        // 1. A draft: from a file, or from the model (asking it to fix problems up to --fix times).
+        umbra::authoring::DraftPlan plan;
+        std::string answer;
+        umbra::localai::ChatRequest request = umbra::localai::MakeDraftRequest(doc.Data(), args.npc, args.idea, args.model, args.host);
+        for (int attempt = 0; attempt <= args.fix; ++attempt)
+        {
+            diagnostics.clear();
+            if (!args.from.empty())
+            {
+                std::ifstream in(args.from);
+                answer.assign(std::istreambuf_iterator<char>(in), {});
+            }
+            else if (!Ask(request, answer, diagnostics, args.json))
+                break; // provider problems aren't fixed by asking again
+            umbra::authoring::Json draft;
+            if (umbra::localai::ParseDraft(answer, draft, diagnostics) && umbra::authoring::PlanDraft(doc.Data(), draft, args.npc, world, plan, diagnostics))
+                break;
+            if (!args.from.empty() || attempt == args.fix)
+                break;
+            if (!args.json)
+                std::cerr << "The draft has problems; asking the model to fix them.\n";
+            umbra::localai::AddFixRequest(request, answer, diagnostics);
+        }
+        if (!args.saveDraft.empty() && !answer.empty())
+            std::ofstream(args.saveDraft) << answer;
+
+        // 2. Apply only when asked and clean; keep the old file next to it for undo.
+        const bool clean = !plan.changes.empty() && !umbra::core::HasErrors(diagnostics);
+        bool applied = false;
+        if (args.apply && clean)
+        {
+            std::ifstream in(file, std::ios::binary);
+            const std::string before(std::istreambuf_iterator<char>(in), {});
+            applied = doc.Apply(plan.changes, plan.label, diagnostics, doc.Revision()) && doc.Save(diagnostics);
+            if (applied)
+                std::ofstream(file.string() + ".before-draft", std::ios::binary) << before; // the exact old bytes
+        }
+
+        // 3. Report: what would be added, the play-through, the problems.
+        if (args.json)
+        {
+            Json changes = Json::array();
+            for (const auto &c : plan.changes)
+                changes.push_back({{"op", c.op == umbra::authoring::Change::Op::Insert ? "insert" : "set"}, {"path", c.path}, {"value", Json::parse(c.value.dump())}});
+            std::cout << Json{{"quest", plan.quest}, {"conversation", plan.conversation}, {"preview", plan.preview}, {"play", plan.play},
+                              {"changes", changes}, {"applied", applied}, {"diagnostics", umbra::authoring::ToJson(diagnostics)}}.dump(2)
+                      << "\n";
+            return clean ? 0 : 1;
+        }
+        for (const std::string &line : plan.preview)
+            std::cout << line << "\n";
+        if (!plan.play.empty())
+            std::cout << "Play-through:\n";
+        for (const std::string &line : plan.play)
+            std::cout << "  " << line << "\n";
+        const int code = Report(diagnostics, 1, false);
+        if (applied)
+            std::cout << "Applied to " << file.string() << ". Undo: copy " << file.string() << ".before-draft back, or use the editor.\n";
+        else if (clean)
+            std::cout << "Nothing changed. Add --apply to add this quest.\n";
+        return code;
+    }
 }
 
 int main(int argc, char **argv)
@@ -220,6 +326,31 @@ int main(int argc, char **argv)
             args.content = argv[++i];
         else if (arg == "--json")
             args.json = true;
+        else if (arg == "--apply")
+            args.apply = true;
+        else if (i + 1 < argc && (arg == "--npc" || arg == "--idea" || arg == "--model" || arg == "--host" || arg == "--from" ||
+                                  arg == "--scenes" || arg == "--save-draft" || arg == "--fix"))
+        {
+            const std::string value = argv[++i];
+            if (arg == "--npc")
+                args.npc = value;
+            else if (arg == "--idea")
+                args.idea = value;
+            else if (arg == "--model")
+                args.model = value;
+            else if (arg == "--host")
+                args.host = value;
+            else if (arg == "--from")
+                args.from = value;
+            else if (arg == "--scenes")
+                args.scenes = value;
+            else if (arg == "--save-draft")
+                args.saveDraft = value;
+            else if (value.find_first_not_of("0123456789") != std::string::npos || value.empty() || value.size() > 1)
+                return Usage();
+            else
+                args.fix = std::stoi(value);
+        }
         else if (!arg.empty() && arg[0] != '-')
             args.positional.push_back(arg);
         else
@@ -237,5 +368,7 @@ int main(int argc, char **argv)
         return Fight(args);
     if (command == "policy-check")
         return PolicyCheck(args);
+    if (command == "draft")
+        return Draft(args);
     return Usage();
 }

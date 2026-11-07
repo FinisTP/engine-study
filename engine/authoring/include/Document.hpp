@@ -31,6 +31,10 @@ namespace umbra::authoring
         Json value;
     };
 
+    // Applies changes in order to a copy of `document` (no validation). False if a path is wrong.
+    bool ApplyChanges(const Json &document, const std::vector<Change> &changes, Json &result, std::vector<core::Diagnostic> &diagnostics,
+                      const std::string &name = "");
+
     // Checks a whole document; appends diagnostics, true if there are no errors.
     using Validator = std::function<bool(const Json &document, const std::string &name, std::vector<core::Diagnostic> &)>;
     // The game's own loaders, so the editor, the tool and the game always agree.

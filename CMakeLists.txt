@@ -35,6 +35,7 @@ add_subdirectory(engine/gameplay)
 add_subdirectory(engine/assets)
 add_subdirectory(engine/scene)
 add_subdirectory(engine/authoring)
+add_subdirectory(engine/localai)
 add_subdirectory(apps/umbra)
 add_subdirectory(apps/editor)
 add_subdirectory(tools/scenecheck)
@@ -62,11 +63,12 @@ if(BUILD_TESTING)
     add_subdirectory(tests/game)
     add_subdirectory(tests/authoring)
     add_subdirectory(tests/policy)
+    add_subdirectory(tests/localai)
 
     # Simulation, assets and scene tools must build and run without a window, GPU, editor or model runtime.
     umbra_add_headless_check(
         Umbra.HeadlessDependencies
-        TARGETS Umbra::Core Umbra::World Umbra::Assets Umbra::Scene Umbra::Physics Umbra::Gameplay Umbra::Audio Umbra::Rpg Umbra::TurnCombat Umbra::RealtimeCombat Umbra::Encounter Umbra::Story Umbra::Game Umbra::Authoring Umbra::Policy UmbraSceneCheck UmbraTool
+        TARGETS Umbra::Core Umbra::World Umbra::Assets Umbra::Scene Umbra::Physics Umbra::Gameplay Umbra::Audio Umbra::Rpg Umbra::TurnCombat Umbra::RealtimeCombat Umbra::Encounter Umbra::Story Umbra::Game Umbra::Authoring Umbra::Policy Umbra::LocalAi UmbraSceneCheck UmbraTool
         FORBIDDEN "Umbra(Render|Platform)|SDL3|volk|Vulkan|imgui|onnx|python"
     )
 
@@ -74,7 +76,15 @@ if(BUILD_TESTING)
     umbra_add_headless_check(
         Umbra.GameExcludesEditor
         TARGETS Umbra
-        FORBIDDEN "UmbraEditor|UmbraAuthoring|imguizmo|UmbraPolicyEnv"
+        FORBIDDEN "UmbraEditor|UmbraAuthoring|imguizmo|UmbraPolicyEnv|UmbraLocalAi|httplib"
+    )
+
+    # Engine modules, content checks included, never open network connections (roadmap T58):
+    # only the opt-in LocalAi module talks to a local Ollama.
+    umbra_add_headless_check(
+        Umbra.EngineOffline
+        TARGETS Umbra::Core Umbra::Rpg Umbra::Story Umbra::Game Umbra::Scene Umbra::Authoring Umbra::Policy UmbraSceneCheck
+        FORBIDDEN "httplib|UmbraLocalAi"
     )
 
     # The learned enemy is turn-only and runs without any ML runtime or Python (roadmap T52/T53).

@@ -61,4 +61,6 @@ that uses it in one edit.
 | `save.conflict` | The file changed on disk since it was opened |
 | `save.write` | Writing or replacing the file failed |
 
+| `draft.*` | AI quest drafts: field, limit, kind, next, scope, play-through codes (`QuestDraft.md`) |
+
 All loader codes (scene `entity.*`, RPG `ref.*`, etc.) come through unchanged.

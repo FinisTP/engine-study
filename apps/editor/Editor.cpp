@@ -136,6 +136,7 @@ Editor::Editor(ModelLibrary &models, std::filesystem::path assetRoot, std::files
     if (!rpg_->Open(diagnostics))
         Report(diagnostics, "RPG content did not open");
     ScanAssets();
+    LoadDraftSettings();
 }
 
 // ---------------- Edits ----------------
@@ -470,6 +471,7 @@ void Editor::DrawUi()
     AssetBrowser();
     DiagnosticsPanel();
     RpgForms();
+    AiDraft();
     StatusBar();
     Popups();
     DrawGizmo();
@@ -539,6 +541,7 @@ void Editor::MenuBar()
     if (ImGui::BeginMenu("View"))
     {
         ImGui::MenuItem("RPG content", nullptr, &showRpg_);
+        ImGui::MenuItem("AI quest draft", nullptr, &showDraft_);
         ImGui::EndMenu();
     }
     const char *names[] = {"Move (W)", "Rotate (E)", "Scale (R)"};

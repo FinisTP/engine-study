@@ -1,0 +1,89 @@
+{
+  "quest": {
+    "name": "Wolves at the Well",
+    "description": "Wolves keep the villagers away from the old well. Elder Mara asks you to drive them off.",
+    "objectives": [
+      {
+        "kind": "defeat",
+        "target": "wolf",
+        "count": 2,
+        "text": "Defeat two wolves"
+      },
+      {
+        "kind": "talk",
+        "target": "elder",
+        "count": 1,
+        "text": "Tell Elder Mara the well is safe"
+      }
+    ],
+    "reward": {
+      "xp": 60,
+      "skillPoints": 0,
+      "items": [
+        {
+          "item": "ether",
+          "count": 1
+        }
+      ]
+    }
+  },
+  "offer": "Is there anything else I can do?",
+  "start": "ask",
+  "nodes": [
+    {
+      "id": "ask",
+      "speaker": "Elder Mara",
+      "text": "Wolves prowl around the old well. Nobody dares to fetch water.",
+      "choices": [
+        {
+          "text": "I'll drive them off.",
+          "next": "accept",
+          "requires": [
+            {
+              "kind": "questNotStarted",
+              "item": "",
+              "count": 1
+            }
+          ],
+          "actions": []
+        },
+        {
+          "text": "The well is safe again.",
+          "next": "thanks",
+          "requires": [
+            {
+              "kind": "questActive",
+              "item": "",
+              "count": 1
+            }
+          ],
+          "actions": [
+            {
+              "kind": "talk",
+              "item": "",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "text": "Not now.",
+          "next": "",
+          "requires": [],
+          "actions": []
+        }
+      ]
+    },
+    {
+      "id": "accept",
+      "speaker": "Elder Mara",
+      "text": "Two of them, at least. Be careful.",
+      "choices": []
+    },
+    {
+      "id": "thanks",
+      "speaker": "Elder Mara",
+      "text": "Thank you. Take this ether for your trouble.",
+      "choices": []
+    }
+  ]
+}

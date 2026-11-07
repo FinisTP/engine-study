@@ -3,6 +3,7 @@
 #include "../umbra/ModelLibrary.hpp"
 
 #include <Document.hpp>
+#include <QuestAssistant.hpp>
 #include <DrawList.hpp>
 #include <World.hpp>
 
@@ -77,6 +78,11 @@ private:
     void RpgForms(); // RpgForms.cpp
     void RpgEntryForm(const std::string &at, const umbra::authoring::Json &entry, const std::vector<std::string> &npcs);
     bool RpgEdit(const std::vector<umbra::authoring::Change> &changes, const std::string &label, bool merge = false);
+    void AiDraft(); // AiDraft.cpp
+    void LoadDraftSettings();
+    void StartDraft(bool fix);
+    void PlanCurrentDraft();
+    void ApproveDraft();
 
     void ScanAssets();
     void AddEntity(const std::optional<std::string> &parent);
@@ -116,4 +122,14 @@ private:
     bool showRpg_ = false;
     std::string rpgSection_ = "items";
     int rpgSelected_ = 0;
+
+    // AI quest draft (P8B): the request runs on a worker; the plan is checked against draftBase_.
+    bool showDraft_ = false;
+    std::unique_ptr<umbra::localai::ChatJob> draftJob_ = std::make_unique<umbra::localai::ChatJob>();
+    std::string draftIdea_, draftNpc_, draftModel_ = "qwen2.5:7b", draftHost_ = "http://localhost:11434";
+    umbra::localai::ChatRequest draftRequest_;
+    std::string draftAnswer_;
+    umbra::authoring::DraftPlan draftPlan_;
+    std::vector<umbra::core::Diagnostic> draftProblems_;
+    std::uint64_t draftBase_ = 0; // RPG revision the plan was checked against
 };

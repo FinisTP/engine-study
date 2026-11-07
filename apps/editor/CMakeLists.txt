@@ -13,6 +13,7 @@ target_sources(
         Editor.hpp
         Editor.md
         RpgForms.cpp
+        AiDraft.cpp
         # Shared with the game: model files -> GPU meshes (one copy of the code, two programs).
         ../umbra/ModelLibrary.cpp
         ../umbra/ModelLibrary.hpp
@@ -39,6 +40,7 @@ target_link_libraries(
         Umbra::Assets
         Umbra::Scene
         Umbra::Authoring
+        Umbra::LocalAi
         imgui::imgui
         imguizmo::imguizmo
         SDL3::SDL3

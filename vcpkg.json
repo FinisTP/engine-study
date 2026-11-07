@@ -1,6 +1,10 @@
 {
   "dependencies": [
     "catch2",
+    {
+      "name": "cpp-httplib",
+      "default-features": false
+    },
     "glm",
     {
       "name": "imgui",

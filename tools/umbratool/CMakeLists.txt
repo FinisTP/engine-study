@@ -9,6 +9,7 @@ target_link_libraries(
         Umbra::Authoring
         Umbra::TurnCombat
         Umbra::Policy
+        Umbra::LocalAi
         nlohmann_json::nlohmann_json
         Umbra::Warnings
         Umbra::Sanitizers

@@ -1,7 +1,7 @@
 # Umbra Engine - Current Development Status
 
 **Status date:** 2026-11-07 (Phase 1/2 records dated 2026-09-02)
-**Current milestone:** P8A - Learned turn-based enemy, implemented (one accepted model); next P8B
+**Current milestone:** P8B - AI-assisted quest authoring with a local Ollama model, implemented; next: Windows checklists (first real model run), then P9
 **Phase 1 status:** Complete (interactive checklist unsigned)
 **Phase 2 status:** Complete
 **Phase 3 status:** Implemented. Headless tests verified on Linux; Windows build and GPU checks not run yet
@@ -9,7 +9,13 @@
 **Phase 5 status:** Implemented. Headless tests verified on Linux (24/24, GCC/Clang/ASan); Windows build/CTest not run yet; wired into the game in P6
 **Phase 6 status:** Implemented. Headless tests verified on Linux (27/27, GCC/Clang/ASan); Windows build 27/27 on 2026-11-07; first play test done (fixes in `#UMBRA-43`: save stone reach, separate battle arena, hit flash); full play-through open
 **P8A status:** Implemented. One model accepted under declared thresholds (seed 301); the same recipe failed for seed 300; competence equals the conventional AI; Windows/in-game run open
+**P8B status:** Implemented. Headless tests verified on Linux (40/40, GCC/Clang/ASan) against a stand-in Ollama server and saved drafts; no real model has run yet; the editor window compiles but has not been opened
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
+
+## Update 2026-11-07 (P8B)
+
+- P8B (`#UMBRA-55`): `Umbra::LocalAi` (local-only Ollama bridge: streamed, JSON-schema output, limits, instant cancel, background job), `authoring::PlanDraft` (draft → additive changes, game loader, play-through with the real `GameSession`), editor window View → AI quest draft, `UmbraTool draft`. New dependency: cpp-httplib (vcpkg, no default features). Evidence: [`testing/p8b-ai-authoring.md`](testing/p8b-ai-authoring.md).
+- User decisions: default model `qwen2.5:7b`; editor window + command line; drafts only add one quest and its conversation lines, using existing content.
 
 ## Update 2026-11-07 (late night)
 
@@ -118,6 +124,7 @@ The Phase 1 verification record remains in [`testing/phase1-smoke-test.md`](test
 | Shader source | HLSL compiled to SPIR-V with DXC and checked by `spirv-val` |
 | Scene interchange | glTF 2.0 through TinyGLTF (in Umbra::Assets); scenes as versioned JSON via nlohmann-json |
 | Diagnostics UI | Dear ImGui with an Umbra-owned Vulkan renderer |
+| AI authoring (editor/tool only) | Local Ollama over HTTP via cpp-httplib (`Umbra::LocalAi`); default model `qwen2.5:7b`, installed by the creator |
 
 ## Current architecture
 
@@ -220,7 +227,7 @@ All seven items of the old Phase 3 entry point are implemented (see the table ab
 - Gameplay-state preservation across scene reloads (done in P4.4: hot reload keeps the player; F5/F9 checkpoints).
 - Packaging: the app reads assets from the source tree (`UMBRA_ASSET_DIRECTORY`) and caches in the build tree. A relocatable package layout is a P6/P9 task (roadmap T43).
 
-Next: P8B (Ollama authoring). Open: Windows checklists for P6/P7/P8A, P8A recipe robustness. Open in parallel: the interactive checklists in [`testing/phase3-assets-world.md`](testing/phase3-assets-world.md) and [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md) and the clang-cl/ASan presets.
+Next: Windows checklists for P6/P7/P8A/P8B (P8B includes the first real Ollama run), then P9. Open: P8A recipe robustness. Open in parallel: the interactive checklists in [`testing/phase3-assets-world.md`](testing/phase3-assets-world.md) and [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md) and the clang-cl/ASan presets.
 
 ## Local verification
 

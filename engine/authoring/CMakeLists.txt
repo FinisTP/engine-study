@@ -7,6 +7,7 @@ target_sources(
     UmbraAuthoring
     PRIVATE
         src/Document.cpp
+        src/QuestDraft.cpp
         src/SceneEdits.cpp
         src/Validate.cpp
     PUBLIC
@@ -14,6 +15,7 @@ target_sources(
         BASE_DIRS include
         FILES
             include/Document.hpp
+            include/QuestDraft.hpp
             include/SceneEdits.hpp
             include/Validate.hpp
 )

@@ -32,7 +32,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 
 **First action for a new agent:** finish B0 — the Windows-side checks are still open (see the B0 record). Re-inspect the checkout; if it has advanced past this dashboard, preserve completed work and select the earliest genuinely unmet task. Do not blindly implement P3.1 again.
 
-**Current next task:** P8B (AI-assisted quest/dialogue authoring with Ollama). Open in parallel: the Windows checklists for P6, P7 and P8A (`testing/phase6-reference-game.md` §4, `testing/phase7-creator-workflow.md` §4, `testing/p8a-learned-enemy.md` §5) and P8A recipe robustness (1 of 2 seeds). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
+**Current next task:** the Windows checklists for P6, P7, P8A and P8B (`testing/phase6-reference-game.md` §4, `testing/phase7-creator-workflow.md` §4, `testing/p8a-learned-enemy.md` §5, `testing/p8b-ai-authoring.md` §4 — the first run of a real Ollama model), then P9 (PC release gate). Open in parallel: P8A recipe robustness (1 of 2 seeds). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
 
 | Gate | Dependency | Status (updated 2026-11-07) | Evidence / exit summary |
 |---|---|---|---|
@@ -45,9 +45,8 @@ The three formerly open decisions are resolved: the combat modes are independent
 | P5 Shared rules and combat modes | P3; P4 for graphical integration | Implemented 2026-11-07; headless verified on Linux; Windows gate open | P5.1–P5.8 implemented; turn-only, real-time-only and combined fixtures pass. Not yet wired into the 3D game (P6). Evidence: `testing/phase5-rules-combat.md`. |
 | P6 Complete offline reference game | P4/P5 | Implemented 2026-11-07; Linux and Windows CTest pass; first play test fixed (`#UMBRA-43`); full play-through open | P6.1–P6.5: conversation, quest with failure, XP/levels, save/autosave with backup, roaming enemies, in-place turn and real-time fights, death menu. Packaging from a clean install (T43/T45) remains for P9. Evidence: `testing/phase6-reference-game.md`. |
 | P7 Creator workflow | P3/P5/P6 contracts | Implemented 2026-11-07; headless parts verified on Linux; editor compiled, not yet run; Windows checklist open | P7.1–P7.6: shared validated documents with undo (`Umbra::Authoring`), `UmbraTool`, `UmbraEditor` (scenes + RPG forms, gizmo, Play), live RPG content reload, known-good build, package script, creator guide. Evidence: `testing/phase7-creator-workflow.md`. |
-| P8A Learned turn-based enemy | P5 turn rules; headless fixture | Planned independent track | Training → export → native evaluation → local inference with fallback. |
 | P8A Learned turn-based enemy | P5 rules, P7 tools | Implemented 2026-11-07; one model accepted under declared thresholds; recipe 1 of 2 seeds; Windows run open | Built-in C++ network (user decision), PPO trained on CPU through the native rules, matched-probe preference gap +0.25 vs control −0.13, competence equal to the conventional AI (content-limited). Evidence: `testing/p8a-learned-enemy.md`. |
-| P8B AI authoring | P7 schema/patch/validation capability | Planned independent track | Local quest/dialogue draft → preview → approval → reversible commit. |
+| P8B AI authoring | P7 schema/patch/validation capability | Implemented 2026-11-07; verified on Linux against a stand-in Ollama and saved drafts; **no real model run yet**; editor window compiled, not opened | `Umbra::LocalAi` (local-only Ollama bridge, streamed, schema-constrained, cancel/limits), `authoring::PlanDraft` (additive scope, game loader, play-through with the real `GameSession`), editor "AI quest draft" window and `UmbraTool draft`. Evidence: `testing/p8b-ai-authoring.md`. |
 | P9 PC release | P6/P7/P8A/P8B | Planned | Clean offline install, complete game, authoring workflow, measured reference-PC gate. |
 | P10 Playable web export | P9; W0 decisions | Planned later port | Browser game and local policy, durable-save UX, offline installation readiness. |
 | P11 Mobile | P10; approved device target | Planned later port | Lifecycle, input, storage, thermal and performance gates on actual devices. |
@@ -574,6 +573,15 @@ Do not replace a failed experiment with unreported heuristic behavior and call t
 
 **Exit gate:** a usable, testable, reversible authoring workflow with one selected local integration. A provider that only returns prose without a validated patch is not sufficient. Verify T20–T21, T42, T48, T51, T58 and the relevant content tests.
 
+<!-- P8B-status -->
+| Task | Status | Evidence |
+|---|---|---|
+| P8B.1 | Implemented: Ollama `/api/chat` bridge (`engine/localai`), local addresses only, streamed with JSON-schema `format`, 64 KiB / 600 s limits, instant cancel, background `ChatJob`; real model not run | `tests/localai/OllamaTests.cpp` (stand-in server); `LocalAi.md` |
+| P8B.2 | Implemented: draft → additive changes (one quest, NPC conversation lines + offer), scope check, game loader, base revision | `tests/authoring/QuestDraftTests.cpp`; `QuestDraft.md` |
+| P8B.3 | Implemented: preview, play-through (real `GameSession`, fights assumed won), approve = one undo step, conflict → check again, fix request; `UmbraTool draft --apply` with `.before-draft` | `QuestDraftTests`; `Umbra.Tool.Draft*`; editor not opened |
+| P8B.4 | Implemented: creator guide §2b, troubleshooting, actionable `ai.*`/`draft.*` diagnostics, RPG forms open on the new quest | `docs/creator-guide.md`; Windows checklist open |
+<!-- /P8B-status -->
+
 A cloud adapter can be a later optional task; credentials, data disclosure and spend controls require explicit design. It is not necessary to complete offline/local-first P8B.
 
 ### P9 — PC release gate
@@ -808,7 +816,7 @@ These are bounded decisions, not a request to stop and ask the user all of them 
 | O08 | Training tools/algorithm/hardware; external Python is proposed default. **Decided 2026-11-07:** Python + PyTorch on CPU, PPO with action masks, through a C bridge to the native rules (user: train in Claude's workspace). | P8A.2 | Inadequate results or workflow/deployment cost |
 | O09 | Reward/style objective and held-out evaluation thresholds | Before final P8A evaluation | Evidence shows confounding or reward exploit |
 | O10 | Inference runtime/operators/device and budget; candidate CPU ONNX path. **Decided 2026-11-07 (user):** built-in C++ MLP, no ONNX Runtime; 3.9 µs per decision. | P8A.4 | Actual policy latency/resource/platform issue |
-| O11 | Local authoring provider/model/license and novice installation experience | P8B.1 | Model quality, resource or redistribution problem |
+| O11 | Local authoring provider/model/license and novice installation experience. **Decided 2026-11-07 (user):** Ollama on the creator's PC, default `qwen2.5:7b` (4.7 GB, Apache-2.0), installed by the creator, not shipped; editor window + `UmbraTool draft`; drafts only add one quest and its conversation lines and only reference existing content. Model quality on real drafts is still unmeasured. | P8B.1 | Model quality, resource or redistribution problem |
 | O12 | Reference PC/settings/workload and quantitative release budgets | Before P9 sign-off | Content or target tier changes |
 | O13 | Browser backend, shader path, capabilities/hosting support. **User decision 2026-11-06:** run W0 after P4. **W0 (2026-11-07):** WebGPU for graphics (separate small backend behind `core::DrawList`), HLSL → SPIR-V → WGSL planned, Emscripten candidate for P10; rules already build to WebAssembly unchanged. See `docs/adr/0001-web-backend.md`. | W0; finalize P10 | Actual supported-browser failure |
 | O14 | First mobile OS/device tier | P11 planning | User target choice |
@@ -944,6 +952,8 @@ This reference list supports the limited factual technology statements, not a re
 Version 1.0, 2026-11-01: incorporates final answers 21–23; makes independent combat-mode use an explicit contract/test; selects turn-based learned policy; removes mandatory-threshold interpretation of aggression; preserves deferred modding and offline scope; expands milestone tasks/evidence; retains T01–T38 and adds T39–T60; establishes concise root instructions plus separate context/roadmap files.
 
 No implementation completion was advanced by preparing this pack. Further updates must record actual evidence, product changes and their source separately.
+
+2026-11-07: P8B implemented (`#UMBRA-55`); dashboard, P8B status, O11 updated; duplicate stale P8A dashboard row removed; evidence in `testing/p8b-ai-authoring.md`.
 
 Version 1.2, 2026-11-01: Phase 3 implemented (P3.1–P3.8); dashboard, task status, B0 findings and repository layout updated; evidence in `testing/phase3-assets-world.md`.
 

@@ -63,6 +63,43 @@ Rules worth knowing:
 - If you edit a file outside the editor while it is open, the status bar warns you. Saving then
   asks you to reload first, so neither change is lost silently.
 
+## 2b. Write a quest with AI
+
+Umbra can draft side quests with an AI model that runs on your own PC. The draft is checked like
+any edit, played through with the real rules, and only added when you approve it.
+
+**Once:** install Ollama from [ollama.com](https://ollama.com), then in a terminal:
+
+```text
+ollama pull qwen2.5:7b
+```
+
+(about 4.7 GB; a GPU with 6 GB or more makes it fast, a CPU works but slowly).
+
+**Each quest:**
+
+1. In the editor: View → **AI quest draft**.
+2. Quest giver: `elder`. Idea: `Wolves scare the villagers away from the old well.`
+   Press **Write draft**. The first answer can take a minute while the model loads.
+3. Read the preview. Each play-through line should be green. A red line says what's missing,
+   for example "no choice with action talk is shown while the quest is active".
+   Press **Ask the AI to fix the problems**, or **Write a new draft**.
+4. **Approve and add.** The RPG content window opens on the new quest: change any text, reward
+   or objective by hand. Ctrl+Z removes the whole quest again.
+5. Ctrl+S, then F5: talk to Elder Mara, pick the new line, play the quest.
+
+Rules worth knowing:
+
+- A draft only **adds**: one quest, its lines in the NPC's conversation, and one new choice that
+  opens them. It never changes or deletes what you wrote.
+- It may only use items, enemies and the NPC that already exist. Add new ones by hand first.
+- The play-through assumes you win every fight. Whether the fights are fair is up to you
+  (`UmbraTool fight` helps).
+- Nothing is sent to the internet: only an Ollama on this computer is accepted.
+
+Without the editor: `UmbraTool draft assets\rpg\reference.rpg.json --npc elder --idea "..."`,
+then the same command with `--apply` (see `tools/umbratool/README.md`).
+
 ## 3. Find a planted error
 
 Open `assets\rpg\reference.rpg.json` in a text editor. In the hero's `inventory`, change
@@ -123,4 +160,7 @@ Copy the zip to another PC, unzip, run `Umbra.exe`. Saves go to `%APPDATA%\Umbra
 | "Cannot open" a scene in the editor | Run `UmbraTool validate <scene> --assets assets`. The file has an error the game would refuse too. |
 | The game ignores RPG content changes | Look at the message on screen: either the file has errors, or your current game uses something the change removed (load a save or start a new game). |
 | Play does nothing | The scene couldn't be saved (see Diagnostics), or the game wasn't built. Build once with `build-and-run.bat`. |
+| AI draft: "Ollama is not running" | Start Ollama (it runs in the tray after install), or check the address under **Model**. |
+| AI draft: "model ... is not installed" | Run `ollama pull qwen2.5:7b` (or the model named under **Model**). |
+| AI draft keeps failing the play-through | Make the idea simpler (one or two objectives), press **Ask the AI to fix the problems**, or write the quest by hand in the RPG forms (*quests* and *conversations*). |
 | The package won't start on another PC | It needs a GPU with Vulkan 1.3 drivers. Start it from a `cmd` window to see the log messages. |

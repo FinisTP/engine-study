@@ -45,6 +45,26 @@ namespace umbra::authoring
         }
     }
 
+    bool ApplyChanges(const Json &document, const std::vector<Change> &changes, Json &result, std::vector<core::Diagnostic> &diagnostics,
+                      const std::string &name)
+    {
+        Json next = document;
+        for (const Change &change : changes)
+        {
+            try
+            {
+                next = next.patch(Json::array({ToPatch(next, change)}));
+            }
+            catch (const Json::exception &error)
+            {
+                Error(diagnostics, "edit.path", name, change.path, error.what());
+                return false;
+            }
+        }
+        result = std::move(next);
+        return true;
+    }
+
     Validator SceneValidator(scene::SceneLoadOptions options)
     {
         return [options](const Json &document, const std::string &name, std::vector<core::Diagnostic> &diagnostics) {
@@ -102,19 +122,9 @@ namespace umbra::authoring
         }
 
         // 1. Apply to a copy, one change after another (later changes see earlier ones).
-        Json next = data_;
-        for (const Change &change : changes)
-        {
-            try
-            {
-                next = next.patch(Json::array({ToPatch(next, change)}));
-            }
-            catch (const Json::exception &error)
-            {
-                Error(diagnostics, "edit.path", file_, change.path, error.what());
-                return false;
-            }
-        }
+        Json next;
+        if (!ApplyChanges(data_, changes, next, diagnostics, file_.string()))
+            return false;
         // 2. The result must pass the same checks as loading; otherwise nothing changes.
         if (!validator_(next, file_.string(), diagnostics))
             return false;
