@@ -84,6 +84,11 @@ for timeout and cancel.
   `PreferredModel`); requests send `"think": false` (qwen3.5 thinks by default), retried without
   it for models that refuse the field. Tests: 9 LocalAi test cases incl. the retry and the picker.
 
+- Next report: "Ollama is not running at http://localhost:11434". Likely cause: Windows resolves
+  `localhost` to `::1` first, Ollama listens on `127.0.0.1` only, and a refused connection on
+  Windows takes about 2 s, close to the connect limit. Fix (`#UMBRA-57`): `localhost` is dialed as
+  `127.0.0.1`; the message now names the low-level error. Not yet confirmed on the user's PC.
+
 ## 4. Windows checklist (open)
 
 | # | Do | Expect | Result |

@@ -35,7 +35,7 @@ first installed model.
 
 | Rule | Why |
 |---|---|
-| Only `http://localhost`, `127.0.0.1` or `[::1]` (`ParseLocalUrl`); anything else is refused before connecting (`ai.host`) | No hidden cloud fallback (roadmap T58). A cloud adapter would need its own consent and cost design |
+| Only `http://localhost`, `127.0.0.1` or `[::1]` (`ParseLocalUrl`; `localhost` is dialed as `127.0.0.1`, because Windows tries `::1` first and Ollama listens on IPv4 by default); anything else is refused before connecting (`ai.host`) | No hidden cloud fallback (roadmap T58). A cloud adapter would need its own consent and cost design |
 | Answer over `maxBytes` (64 KiB) is refused, not cut (`ai.limit`) | Model output is untrusted |
 | `timeoutSeconds` (600) covers the whole answer, model loading included (`ai.timeout`) | Big models load slowly the first time |
 | `CancelToken::Cancel` closes the socket from another thread, so a waiting read returns at once (`ai.cancel`) | The editor never waits for a model |

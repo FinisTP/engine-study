@@ -129,7 +129,7 @@ TEST_CASE("Only this computer is accepted as the Ollama address (T58)", "[locala
     std::string host;
     int port = 0;
     CHECK(localai::ParseLocalUrl("http://localhost:11434", host, port));
-    CHECK((host == "localhost" && port == 11434));
+    CHECK((host == "127.0.0.1" && port == 11434)); // IPv4, where Ollama listens
     CHECK(localai::ParseLocalUrl("http://127.0.0.1", host, port));
     CHECK(port == 11434);
     CHECK(localai::ParseLocalUrl("http://[::1]:8080/", host, port));
@@ -213,8 +213,9 @@ TEST_CASE("A model without a thinking switch is asked again without it", "[local
 
 TEST_CASE("Installed models are listed for the picker", "[localai]")
 {
-    FakeOllama ollama;
+    FakeOllama ollama; // listens on 127.0.0.1 only, like Ollama
     std::vector<core::Diagnostic> diagnostics;
+    CHECK(localai::ListModels("http://localhost:" + std::to_string(ollama.port), diagnostics).size() == 2);
     const std::vector<std::string> models = localai::ListModels("http://127.0.0.1:" + std::to_string(ollama.port), diagnostics);
     CHECK(models == std::vector<std::string>{"qwen3.5:9b", "qwen2.5:7b"});
     CHECK(diagnostics.empty());

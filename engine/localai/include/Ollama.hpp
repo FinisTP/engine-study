@@ -59,7 +59,7 @@ namespace umbra::localai
         std::function<void()> stop_;
     };
 
-    // True for http://localhost, 127.0.0.1 or [::1]; fills host and port.
+    // True for http://localhost, 127.0.0.1 or [::1]; fills host (localhost -> 127.0.0.1) and port.
     bool ParseLocalUrl(const std::string &url, std::string &host, int &port);
 
     // Names of the models installed in the local Ollama (GET /api/tags). Quick: 2 s at most.

@@ -104,7 +104,8 @@ namespace umbra::localai
             else if (malformed)
                 Err(result, "ai.answer", "Ollama's answer stream was malformed.");
             else if (!response && response.error() == httplib::Error::Connection)
-                Err(result, "ai.connect", "Ollama is not running at " + request.host + ". Start Ollama (install it from ollama.com), then try again.");
+                Err(result, "ai.connect", "Ollama is not running at " + request.host + " (" + httplib::to_string(response.error()) +
+                                              "). Start Ollama (install it from ollama.com), then try again.");
             else if (!response)
                 Err(result, "ai.http", std::string("Connection problem: ") + httplib::to_string(response.error()) + ".");
             else if (response->status != 200)
@@ -169,7 +170,9 @@ namespace umbra::localai
                 return false;
             port = std::stoi(rest.substr(1));
         }
-        return port > 0 && port < 65536 && (host == "localhost" || host == "127.0.0.1" || host == "::1");
+        if (host == "localhost")
+            host = "127.0.0.1"; // Windows tries ::1 first, but Ollama listens on IPv4 by default
+        return port > 0 && port < 65536 && (host == "127.0.0.1" || host == "::1");
     }
 
     ChatResult Chat(const ChatRequest &request, CancelToken &cancel, std::atomic<std::size_t> *received)
@@ -199,7 +202,9 @@ namespace umbra::localai
         const Json j = response && response->status == 200 ? Json::parse(response->body, nullptr, false) : Json();
         if (!j.is_object())
         {
-            diagnostics.push_back({core::Severity::Error, "ai.connect", "ollama", "", "Ollama is not running at " + url + ". Start Ollama (install it from ollama.com)."});
+            const std::string why = response ? "HTTP " + std::to_string(response->status) : httplib::to_string(response.error());
+            diagnostics.push_back({core::Severity::Error, "ai.connect", "ollama", "",
+                                   "Ollama is not running at " + url + " (" + why + "). Start Ollama (install it from ollama.com)."});
             return names;
         }
         for (const Json &model : j.value("models", Json::array()))
