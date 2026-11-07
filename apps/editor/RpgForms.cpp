@@ -333,6 +333,22 @@ void Editor::RpgEntryForm(const std::string &at, const Json &entry, const std::v
         intField("Inventory slots", entry.value("inventorySlots", Json()), "/inventorySlots", 12);
         intField("Skill points", entry.value("skillPoints", Json()), "/skillPoints", 0);
         intField("XP when defeated", entry.value("xp", Json()), "/xp", 0);
+        // Look in the world: model, tint and half-height (the game draws enemies with these).
+        if (ImGui::TreeNodeEx("Look", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            std::vector<std::string> models = assets_["Models"];
+            models.insert(models.begin(), "");
+            if (Combo("Model", entry.value("model", ""), models, text))
+                text.empty() ? remove("/model") : set("/model", text);
+            floatField("Size (half-height, m)", entry.value("size", Json()), "/size", 0.8F);
+            float color[4] = {1, 1, 1, 1};
+            if (const Json c = entry.value("color", Json()); c.is_array() && c.size() == 4)
+                for (int i = 0; i < 4; ++i)
+                    color[i] = c[static_cast<std::size_t>(i)].get<float>();
+            const bool changed = ImGui::ColorEdit4("Tint", color);
+            number(changed, "/color", Json::array({color[0], color[1], color[2], color[3]}));
+            ImGui::TreePop();
+        }
     }
     else if (rpgSection_ == "quests")
     {

@@ -40,6 +40,18 @@ GameFlow::GameFlow(rpg::Content &content, std::filesystem::path contentFile, Sce
       slots_{std::move(saveFolder)}, startScene_(std::move(startScene))
 {
     contentWatcher_.SetFiles({contentFile_});
+
+    // Enemies look like their actor's model (RPG content); without one, the tinted cube.
+    scene_.SetRoamerLook([this](const std::string &actor) -> std::optional<RoamerLook> {
+        const rpg::ActorDef *def = content_.FindActor(actor);
+        if (def == nullptr || def->model.empty())
+            return std::nullopt;
+        RoamerLook look;
+        look.model = def->model;
+        look.color = {def->color[0], def->color[1], def->color[2], def->color[3]};
+        look.scale = glm::vec3{def->size};
+        return look;
+    });
 }
 
 void GameFlow::ReloadContent()

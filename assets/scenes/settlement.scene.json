@@ -34,18 +34,12 @@
         0
       ],
       "scale": [
-        0.3,
         0.9,
-        0.3
+        0.9,
+        0.9
       ],
-      "model": "scenes/phase2.gltf",
-      "mesh": 0,
-      "color": [
-        0.35,
-        0.55,
-        0.95,
-        1
-      ]
+      "model": "models/hero.glb",
+      "mesh": 0
     },
     {
       "id": "signpost",
@@ -107,27 +101,33 @@
       "name": "Elder Mara",
       "position": [
         2.5,
-        0.9,
+        0.85,
         1.5
       ],
       "scale": [
-        0.3,
-        0.9,
-        0.3
+        0.85,
+        0.85,
+        0.85
       ],
-      "model": "scenes/phase2.gltf",
+      "model": "models/elder.glb",
       "mesh": 0,
-      "color": [
-        0.6,
-        0.35,
-        0.75,
-        1
-      ],
-      "collider": {},
+      "collider": {
+        "halfExtents": [
+          0.4,
+          0.85,
+          0.3
+        ]
+      },
       "interactable": {
         "prompt": "Talk to Elder Mara",
         "conversation": "elder_mara"
-      }
+      },
+      "rotation": [
+        0,
+        0.4927,
+        0,
+        0.8702
+      ]
     },
     {
       "id": "save_stone",

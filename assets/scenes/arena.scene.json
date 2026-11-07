@@ -218,18 +218,12 @@
         3
       ],
       "scale": [
-        0.3,
         0.9,
-        0.3
+        0.9,
+        0.9
       ],
-      "model": "scenes/phase2.gltf",
-      "mesh": 0,
-      "color": [
-        0.35,
-        0.55,
-        0.95,
-        1
-      ]
+      "model": "models/hero.glb",
+      "mesh": 0
     },
     {
       "id": "enemy_1",

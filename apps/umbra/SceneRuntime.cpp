@@ -404,14 +404,32 @@ std::size_t SceneRuntime::AddRoamer(const std::string &actor, glm::vec3 feet, gl
     // 1. The physics character.
     RoamerSlot slot{umbra::gameplay::Roamer(actor, home, homeRadius, chase), {}, {}, 1};
     slot.roamer.Spawn(*physics_, feet);
-    // 2. A visual entity with a unique id; Rebind gives it its mesh.
+
+    // 2. Its look: from the game (RPG content) or the tinted placeholder cube.
+    RoamerLook look;
+    look.color = RoamerColor(actor);
+    if (roamerLook_)
+        if (const std::optional<RoamerLook> chosen = roamerLook_(actor))
+            look = *chosen;
+    slot.scale = look.scale;
+    // The model's lowest point goes on the ground: lift = -(lowest y) * scale.
+    slot.lift = look.scale.y;
+    if (const LoadedModel *loaded = models_.Load(look.model); loaded && look.mesh < loaded->model.meshes.size())
+    {
+        float lowest = 0.0F;
+        for (const umbra::core::Vertex &v : loaded->model.meshes[look.mesh].data.vertices)
+            lowest = std::min(lowest, v.position.y);
+        slot.lift = -lowest * look.scale.y;
+    }
+
+    // 3. A visual entity with a unique id; Rebind gives it its mesh.
     static int counter = 0;
     slot.visual = world_->Create("roamer_" + std::to_string(++counter), actor);
-    umbra::world::Renderable look;
-    look.model = "scenes/phase2.gltf";
-    look.mesh = 0;
-    look.color = RoamerColor(actor);
-    world_->SetRenderable(slot.visual, look);
+    umbra::world::Renderable renderable;
+    renderable.model = look.model;
+    renderable.mesh = look.mesh;
+    renderable.color = look.color;
+    world_->SetRenderable(slot.visual, renderable);
     roamers_.push_back(std::move(slot));
     SyncRoamerVisuals();
     Rebind();
@@ -474,16 +492,15 @@ void SceneRuntime::UpdateRoamers(float step)
 
 void SceneRuntime::SyncRoamerVisuals()
 {
-    // The cube (-1..1) scaled to the roamer's capsule, centred on it.
-    const umbra::gameplay::RoamerSettings settings;
+    // The model stands on the roamer's feet, turned to its facing.
     for (std::size_t i = 0; i < roamers_.size(); ++i)
     {
         if (!roamers_[i].alive)
             continue;
         umbra::world::Transform transform;
-        transform.position = RoamerFeet(i) + glm::vec3{0.0F, settings.radius + settings.halfHeight, 0.0F};
+        transform.position = RoamerFeet(i) + glm::vec3{0.0F, roamers_[i].lift, 0.0F};
         transform.rotation = glm::angleAxis(roamers_[i].yaw, glm::vec3{0.0F, 1.0F, 0.0F});
-        transform.scale = {settings.radius, settings.radius + settings.halfHeight, settings.radius};
+        transform.scale = roamers_[i].scale;
         world_->SetLocalTransform(roamers_[i].visual, transform);
     }
     world_->UpdateTransforms();

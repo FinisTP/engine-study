@@ -283,7 +283,9 @@
         "maxEnergy": 3,
         "attack": 2,
         "defense": 1
-      }
+      },
+      "model": "models/hero.glb",
+      "size": 0.9
     },
     {
       "id": "wolf",
@@ -299,7 +301,9 @@
         "bite"
       ],
       "inventorySlots": 0,
-      "xp": 15
+      "xp": 15,
+      "model": "models/wolf.glb",
+      "size": 0.6
     },
     {
       "id": "bandit",
@@ -325,7 +329,9 @@
         }
       ],
       "inventorySlots": 4,
-      "xp": 25
+      "xp": 25,
+      "model": "models/bandit.glb",
+      "size": 0.9
     },
     {
       "id": "bandit_leader",
@@ -351,7 +357,15 @@
         }
       ],
       "inventorySlots": 4,
-      "xp": 60
+      "xp": 60,
+      "model": "models/bandit.glb",
+      "size": 1.0,
+      "color": [
+        0.8,
+        0.45,
+        1.0,
+        1.0
+      ]
     }
   ],
   "quests": [

@@ -153,7 +153,7 @@ namespace umbra::rpg
             });
 
             r.Objects(root, "actors", "", [&](const json &s, const std::string &at) {
-                r.Known(s, at, {"id", "name", "stats", "skills", "equipment", "inventory", "inventorySlots", "skillPoints", "xp", "growth"});
+                r.Known(s, at, {"id", "name", "stats", "skills", "equipment", "inventory", "inventorySlots", "skillPoints", "xp", "growth", "model", "color", "size"});
                 ActorDef def{r.String(s, "id", at), r.String(s, "name", at)};
                 const auto stats = s.find("stats");
                 if (stats == s.end() || !stats->is_object())
@@ -181,6 +181,17 @@ namespace umbra::rpg
                     for (std::size_t i = 0; i < std::size(statNames); ++i)
                         def.growth[i] = r.Int(*growth, statNames[i], 0, 0, 999, at + ".growth");
                 }
+                // How it looks in the world (optional): model file, tint, half-height in meters.
+                def.model = r.String(s, "model", at);
+                if (const auto color = s.find("color"); color != s.end())
+                {
+                    if (!color->is_array() || color->size() != 4)
+                        r.Error("field.type", at + ".color", "expected [r, g, b, a]");
+                    else
+                        for (std::size_t i = 0; i < 4; ++i)
+                            def.color[i] = (*color)[i].is_number() ? (*color)[i].get<float>() : 1.0F;
+                }
+                def.size = r.Float(s, "size", 0.8F, 0.05F, 20.0F, at);
                 Insert(r, c.actors, def, at);
             });
         }

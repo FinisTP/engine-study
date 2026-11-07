@@ -13,6 +13,7 @@
 #include <World.hpp>
 
 #include <filesystem>
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -29,6 +30,16 @@ struct SimulationEvents final
     std::optional<umbra::world::Portal> portal; // the player walked into this portal
 };
 
+// How a roamer is drawn: a model mesh, a tint and a size. The model is centered and its largest
+// half-extent is 1 (like the -1..1 sample cube), so `scale` is the half-size in meters.
+struct RoamerLook final
+{
+    std::string model = "scenes/phase2.gltf";
+    std::uint32_t mesh = 0;
+    glm::vec4 color{0.9F, 0.5F, 0.1F, 1.0F};
+    glm::vec3 scale{0.35F, 0.8F, 0.35F};
+};
+
 // One dungeon enemy walking in the world, and the entity that draws it.
 struct RoamerSlot final
 {
@@ -39,6 +50,8 @@ struct RoamerSlot final
     bool alive = true;                  // false once removed (indices stay valid)
     std::optional<glm::vec3> order;     // a velocity chosen by the fight; replaces wandering
     float yaw = 0.0F;                   // facing, 0 faces -z
+    glm::vec3 scale{1.0F};              // visual scale
+    float lift = 0.0F;                  // feet -> model center (so the model stands on the ground)
 };
 
 // Owns the live world for one scene file and keeps it in sync with the files on disk.
@@ -80,6 +93,8 @@ public:
     [[nodiscard]] umbra::gameplay::SpawnPoint GetPlayerSpot() const;
     // Loads an area and puts the player at an exact spot (loading a save).
     bool ChangeSceneAt(const std::string &scenePath, umbra::gameplay::SpawnPoint spot);
+    // Which model each enemy actor uses (the game sets this from the RPG content); nothing = the cube.
+    void SetRoamerLook(std::function<std::optional<RoamerLook>(const std::string &actor)> look) { roamerLook_ = std::move(look); }
     // Wandering and chasing happen only while active (not in fights, menus or death).
     void SetRoamersActive(bool active) noexcept { roamersActive_ = active; }
     // A living roamer touching the player, if any.
@@ -158,6 +173,7 @@ private:
     std::vector<FlashState> flashes_;
     void UpdateFlashes(float seconds);
     std::mt19937 roamerRandom_{7};
+    std::function<std::optional<RoamerLook>(const std::string &)> roamerLook_;
     bool roamersActive_ = true;
     int generation_ = 0;
 };

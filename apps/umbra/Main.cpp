@@ -122,8 +122,6 @@ int RunApplication(const std::string &scenePath)
 				SceneRuntime scene(models, folders.assets, scenePath);
 				umbra::core::DrawList drawList;
 				bool showColliders = false;
-				scene.Load();
-
 				// The RPG layer (story, fights, saves) needs the content file; without it the
 				// world is still explorable.
 				umbra::rpg::Content content;
@@ -141,6 +139,7 @@ int RunApplication(const std::string &scenePath)
 					for (const umbra::core::Diagnostic &diagnostic : diagnostics)
 						umbra::diagnostics::Error(umbra::core::Format(diagnostic));
 				}
+				scene.Load(); // after the RPG layer, so enemies already get their models
 
 				// Esc opens the pause menu; the mouse is captured (steers the camera) only while playing.
 				umbra::gameplay::PauseMenu menu;
