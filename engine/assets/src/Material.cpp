@@ -164,6 +164,7 @@ namespace umbra::assets
             {"flux.1-dev", "FLUX.1 [dev] Non-Commercial License", false},
             {"flux2-klein-9b", "FLUX.2 [klein] 9B Non-Commercial License", false},
             {"flux1-schnell", "Apache-2.0", true},
+            {"trellis_2", "MIT (TRELLIS.2)", true},
             {"flux2-klein-4b", "Apache-2.0", true},
             {"z_image", "Apache-2.0", true},
             {"z-image", "Apache-2.0", true},

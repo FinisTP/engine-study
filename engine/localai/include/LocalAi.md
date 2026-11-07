@@ -86,3 +86,11 @@ material with its `generated` block; temporary file + rename; free names only).
 
 Default model: SDXL base 1.0 at 1024 px (user decision 2026-11-07, 8 GB GPU; CreativeML
 OpenRAIL++-M, outputs may be sold). Not shipped with Umbra: creators install ComfyUI and the model.
+
+## 3D models (roadmap P8D)
+
+`GenerateModel` uploads a picture (`POST /upload/image`), runs the creator's exported image-to-3D
+workflow with the run's values filled in, and downloads the `.glb` its save node lists. Queue,
+wait, cancel and download are the same code as for pictures (`RunGraph`); `ModelJob` and
+`ImageJob` are one `BatchJob` template. Time limit 30 minutes, size limit 256 MiB; a workflow
+whose model files aren't installed gives `ai.model` with ComfyUI's message. Details in `ModelGen.md`.

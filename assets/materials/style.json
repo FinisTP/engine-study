@@ -1,4 +1,6 @@
 {
   "prompt": "seamless tileable texture, flat even lighting, top-down view, stylized hand-painted low-poly game art, muted natural colors",
-  "negative": "text, watermark, signature, frame, border, perspective, vanishing point, shadows, objects, people, blurry, photo"
+  "negative": "text, watermark, signature, frame, border, perspective, vanishing point, shadows, objects, people, blurry, photo",
+  "objectPrompt": "single game prop, centered, whole object in view, plain white background, soft even lighting, stylized hand-painted low-poly game art",
+  "objectNegative": "text, watermark, cropped, cut off, multiple objects, people, busy background, floor, shadow, blurry, photo"
 }

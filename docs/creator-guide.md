@@ -134,6 +134,34 @@ Rules worth knowing:
 
 Without the editor: `UmbraTool texture "mossy cobblestone" --assets assets --count 2`.
 
+## 2d. Make props with AI
+
+**Once** (needs ComfyUI from §2c):
+
+1. Follow `tools/comfyui/README.md`: open ComfyUI's template **Pixal3D & TRELLIS.2: Image to Model**,
+   download its models (about 10 GB), switch it to TRELLIS.2, run it once, then **Workflow → Export (API)**
+   to `tools/comfyui/image-to-3d.api.json` in this project.
+
+**Each prop:**
+
+1. In the editor: **AI model** (menu bar).
+2. Looks like: `wooden barrel with iron bands`. **Make concept pictures**; **View** opens each in your
+   image viewer. Pick one. (Or **Use my picture** and give a PNG/JPEG of one object on a plain background.)
+3. **Make 3D model**. This takes minutes. The model lands in `assets/models/` with its concept picture
+   and a `.source.json` saying how it was made.
+4. Set **Height in the scene** (meters), then **Place in scene**: it appears at the centre of the view,
+   standing on the ground. Ctrl+Z removes it; Ctrl+S saves the scene. Add a collider in the inspector if
+   the player should bump into it.
+
+Rules worth knowing:
+
+- About 10 000 triangles per prop by default (the **Triangles** slider), with a 1024 px texture.
+- The concept style (`objectPrompt`, `objectNegative` in `assets/materials/style.json`) asks for one object
+  on a plain background, which is what image-to-3D needs.
+- Characters still come from Meshy for now.
+
+Without the editor: `UmbraTool model --idea "stone lantern" --assets assets` (or `--image my.png`).
+
 ## 3. Find a planted error
 
 Open `assets\rpg\reference.rpg.json` in a text editor. In the hero's `inventory`, change
@@ -201,4 +229,6 @@ Copy the zip to another PC, unzip, run `Umbra.exe`. Saves go to `%APPDATA%\Umbra
 | AI texture: "ComfyUI is not running" | Start ComfyUI Desktop, then press **Find**. A command-line ComfyUI listens on 8188: that is tried too. |
 | AI texture: "ComfyUI has no model ..." | Put `sd_xl_base_1.0.safetensors` in ComfyUI's `models/checkpoints` folder and press **Find**. |
 | AI texture: "out of memory" | Close other GPU programs, use 1 variation, or a smaller model (SD 1.5). |
+| AI model: "no workflow file" / "UI workflow" | Export the TRELLIS.2 template with **Workflow → Export (API)** to `tools/comfyui/image-to-3d.api.json` (`tools/comfyui/README.md`). |
+| AI model: "A model the workflow needs isn't installed" | Download the file ComfyUI names into the folder the template's note lists, restart ComfyUI. |
 | The package won't start on another PC | It needs a GPU with Vulkan 1.3 drivers. Start it from a `cmd` window to see the log messages. |

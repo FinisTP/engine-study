@@ -72,3 +72,10 @@ add_test(
     NAME Umbra.Tool.ValidateMaterial
     COMMAND UmbraTool validate ${PROJECT_SOURCE_DIR}/assets/materials/sample_bricks.material.json --assets ${PROJECT_SOURCE_DIR}/assets
 )
+
+# AI models (P8D): without an exported workflow the tool says how to make one.
+add_test(
+    NAME Umbra.Tool.ModelNeedsWorkflow
+    COMMAND UmbraTool model --idea "barrel" --assets ${CMAKE_CURRENT_BINARY_DIR}/model-assets --workflow ${CMAKE_CURRENT_BINARY_DIR}/none.api.json
+)
+set_tests_properties(Umbra.Tool.ModelNeedsWorkflow PROPERTIES PASS_REGULAR_EXPRESSION "Export \\(API\\)")

@@ -1,4 +1,5 @@
 #include <ComfyUi.hpp>
+#include <ModelAssistant.hpp>
 #include <TextureAssistant.hpp>
 #include <TextureTools.hpp>
 
@@ -6,6 +7,7 @@
 #include <httplib.h>
 
 #include <fstream>
+#include <set>
 #include <thread>
 
 using namespace umbra;
@@ -38,10 +40,33 @@ namespace
                 const json input = oldFormat ? json::array({names}) : json::array({"COMBO", {{"options", names}}});
                 response.set_content(json{{"CheckpointLoaderSimple", {{"input", {{"required", {{"ckpt_name", input}}}}}}}}.dump(), "application/json");
             });
+            server_.Post("/upload/image", [this](const httplib::Request &request, httplib::Response &response) {
+                std::lock_guard lock(mutex_);
+                if (!request.form.has_file("image") || request.form.get_field("type") != "input")
+                {
+                    response.status = 400;
+                    return;
+                }
+                uploaded = request.form.get_file("image").content;
+                response.set_content(json{{"name", "umbra_model_input.png"}, {"subfolder", ""}, {"type", "input"}}.dump(), "application/json");
+            });
             server_.Post("/prompt", [this](const httplib::Request &request, httplib::Response &response) {
                 std::lock_guard lock(mutex_);
                 last = json::parse(request.body);
                 const json &graph = last["prompt"];
+                if (graph.contains("40")) // the image-to-3D workflow
+                {
+                    if (graph["40"]["inputs"]["unet_name"] == "missing.safetensors")
+                    {
+                        response.status = 400;
+                        response.set_content(R"({"error":{"message":"Prompt outputs failed validation"},"node_errors":{"40":{"errors":[{"message":"Value not in list","details":"unet_name: 'missing.safetensors' not in []"}]}}})",
+                                             "application/json");
+                        return;
+                    }
+                    polls_["m-1"] = 0;
+                    response.set_content(R"({"prompt_id":"m-1","number":1,"node_errors":{}})", "application/json");
+                    return;
+                }
                 const std::string text = graph["2"]["inputs"]["text"];
                 if (graph["1"]["inputs"]["ckpt_name"] == "missing.safetensors")
                 {
@@ -65,12 +90,21 @@ namespace
                 }
                 json entry = {{"status", {{"status_str", "success"}, {"completed", true}, {"messages", json::array()}}},
                               {"outputs", {{"7", {{"images", {{{"filename", "umbra_temp_00001_.png"}, {"subfolder", ""}, {"type", "temp"}}}}}}}}};
+                if (id == "m-1")
+                    entry["outputs"] = {{"322", {{"3d", {{{"filename", "ComfyUI_00001_.glb"}, {"subfolder", "3d"}, {"type", "output"}}}}, {"camera_info", {nullptr}}}}};
                 if (id == "p-error")
                     entry["status"] = {{"status_str", "error"}, {"completed", false},
                                        {"messages", json::array({json::array({"execution_error", {{"exception_message", "CUDA out of memory"}}})})}};
                 response.set_content(json{{id, entry}}.dump(), "application/json");
             });
             server_.Get("/view", [](const httplib::Request &request, httplib::Response &response) {
+                if (request.get_param_value("filename").ends_with(".glb"))
+                {
+                    // A real model from the repository stands in for TRELLIS.2's output.
+                    std::ifstream in(std::filesystem::path(UMBRA_TEST_ASSET_DIRECTORY) / "models/wolf.glb", std::ios::binary);
+                    response.set_content(std::string(std::istreambuf_iterator<char>(in), {}), "model/gltf-binary");
+                    return;
+                }
                 if (request.get_param_value("type") != "temp")
                     response.status = 404;
                 std::vector<std::uint8_t> png;
@@ -101,6 +135,7 @@ namespace
 
         int port = 0;
         json last;
+        std::string uploaded;
         bool oldFormat = false;
         std::atomic<int> interrupts = 0;
         int queued = 0;
@@ -305,4 +340,159 @@ TEST_CASE("The project style is added to every prompt", "[comfyui]")
     CHECK(requests[1].seed == 11);
     CHECK(localai::TextureName("  Old Oak Planks (dark) ") == "old_oak_planks_dark");
     CHECK(localai::TextureName("!!!") == "texture");
+}
+
+// ---------------- 3D models (P8D) ----------------
+
+namespace
+{
+    const std::filesystem::path testData = std::filesystem::path(UMBRA_TEST_ASSET_DIRECTORY).parent_path() / "tests/localai/data";
+
+    std::filesystem::path WriteTemp(const std::string &name, const std::string &text)
+    {
+        const auto file = std::filesystem::temp_directory_path() / ("umbra-tests-" + name);
+        std::ofstream(file) << text;
+        return file;
+    }
+}
+
+TEST_CASE("An exported image-to-3D workflow is checked before use", "[comfyui][model]")
+{
+    json graph;
+    std::vector<core::Diagnostic> diagnostics;
+    CHECK(localai::LoadModelWorkflow(testData / "image-to-3d.api.json", graph, diagnostics));
+    CHECK(diagnostics.empty());
+
+    SECTION("missing file")
+    {
+        CHECK_FALSE(localai::LoadModelWorkflow(testData / "none.json", graph, diagnostics));
+        CHECK(HasCode(diagnostics, "workflow.missing"));
+    }
+    SECTION("UI format instead of API format")
+    {
+        CHECK_FALSE(localai::LoadModelWorkflow(WriteTemp("ui.json", R"({"nodes":[{"id":1}],"links":[]})"), graph, diagnostics));
+        REQUIRE(HasCode(diagnostics, "workflow.format"));
+        CHECK(diagnostics.back().message.find("Export (API)") != std::string::npos);
+    }
+    SECTION("no picture input, or no 3D output")
+    {
+        CHECK_FALSE(localai::LoadModelWorkflow(WriteTemp("noimage.json", R"({"1":{"class_type":"SaveGLB","inputs":{}}})"), graph, diagnostics));
+        CHECK(HasCode(diagnostics, "workflow.image"));
+        CHECK_FALSE(localai::LoadModelWorkflow(WriteTemp("nosave.json", R"({"1":{"class_type":"LoadImage","inputs":{"image":"a.png"}}})"), graph, diagnostics));
+        CHECK(HasCode(diagnostics, "workflow.output"));
+    }
+}
+
+TEST_CASE("The workflow gets this run's picture, seeds, face count and texture size", "[comfyui][model]")
+{
+    localai::ModelRequest request;
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(localai::LoadModelWorkflow(testData / "image-to-3d.api.json", request.workflow, diagnostics));
+    request.seed = 1000;
+    const json graph = localai::PrepareModelWorkflow(request, "umbra_model_input.png");
+    CHECK(graph["122"]["inputs"]["image"] == "umbra_model_input.png");
+    CHECK(graph["186"]["inputs"]["target_face_count"] == 10000);  // decided budget
+    CHECK(graph["196"]["inputs"]["resolution"] == 1024);           // literal input
+    CHECK(graph["288"]["inputs"]["value"] == 1024);                // through the PrimitiveInt wired into texture_size
+    CHECK(graph["147"]["inputs"]["texture_size"] == json::array({"288", 0}));
+    std::set<long long> seeds{graph["3"]["inputs"]["seed"].get<long long>(), graph["18"]["inputs"]["seed"].get<long long>()};
+    CHECK(seeds == std::set<long long>{1000, 1001});
+    CHECK(request.workflow["186"]["inputs"]["target_face_count"] == 700000); // the loaded workflow is untouched
+}
+
+TEST_CASE("A picture is uploaded, turned into a model and downloaded", "[comfyui][model]")
+{
+    FakeComfyUi comfy;
+    localai::ModelRequest request;
+    request.host = comfy.Url();
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(localai::LoadModelWorkflow(testData / "image-to-3d.api.json", request.workflow, diagnostics));
+    request.picture = Ramp(64);
+    localai::CancelToken cancel;
+    const localai::ModelResult result = localai::GenerateModel(request, cancel);
+    INFO((result.diagnostics.empty() ? "" : core::Format(result.diagnostics[0])));
+    REQUIRE(result.ok);
+    CHECK(result.glb.size() == std::filesystem::file_size(std::filesystem::path(UMBRA_TEST_ASSET_DIRECTORY) / "models/wolf.glb"));
+    CHECK(comfy.uploaded.substr(1, 3) == "PNG");
+    CHECK(comfy.last["prompt"]["122"]["inputs"]["image"] == "umbra_model_input.png");
+    CHECK(comfy.last["prompt"]["186"]["inputs"]["target_face_count"] == 10000);
+
+    SECTION("a model the workflow needs is missing")
+    {
+        request.workflow["40"]["inputs"]["unet_name"] = "missing.safetensors";
+        const localai::ModelResult missing = localai::GenerateModel(request, cancel);
+        REQUIRE(HasCode(missing.diagnostics, "ai.model"));
+        CHECK(missing.diagnostics[0].message.find("unet_name") != std::string::npos);
+    }
+    SECTION("not this computer (T64)")
+    {
+        request.host = "http://models.example.com:8000";
+        CHECK(HasCode(localai::GenerateModel(request, cancel).diagnostics, "ai.host"));
+    }
+}
+
+TEST_CASE("A generated model is saved with its picture and provenance, and checked", "[comfyui][model]")
+{
+    const std::filesystem::path root = std::filesystem::temp_directory_path() / "umbra-tests-model-save";
+    std::filesystem::remove_all(root);
+    std::ifstream in(std::filesystem::path(UMBRA_TEST_ASSET_DIRECTORY) / "models/wolf.glb", std::ios::binary);
+    const std::vector<std::uint8_t> glb((std::istreambuf_iterator<char>(in)), {});
+    json workflow;
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(localai::LoadModelWorkflow(testData / "image-to-3d.api.json", workflow, diagnostics));
+    const localai::ModelSource source{"a mossy barrel", "image-to-3d.api.json", 7, 10000};
+
+    const std::string first = localai::SaveGeneratedModel(root, "Mossy Barrel", glb, Ramp(64), source, workflow, diagnostics);
+    const std::string second = localai::SaveGeneratedModel(root, "Mossy Barrel", glb, Ramp(64), source, workflow, diagnostics);
+    CHECK(first == "models/mossy_barrel.glb");
+    CHECK(second == "models/mossy_barrel_2.glb");
+    CHECK(std::filesystem::exists(root / "models/mossy_barrel.concept.png"));
+    std::ifstream provenanceFile(root / "models/mossy_barrel.source.json");
+    const json provenance = json::parse(provenanceFile);
+    CHECK(provenance["seed"] == 7);
+    CHECK(provenance["picture"] == "a mossy barrel");
+    REQUIRE(provenance["models"].size() == 2);
+    CHECK(provenance["models"][0]["license"] == "MIT (TRELLIS.2)");
+    CHECK(provenance["models"][0]["commercial"] == true);
+
+    localai::ModelInfo info;
+    REQUIRE(localai::InspectModel(root / first, info, diagnostics));
+    CHECK(info.triangles > 1000);
+    CHECK(info.max.y > info.min.y);
+
+    // Bytes the game can't read are not kept.
+    std::vector<core::Diagnostic> broken;
+    CHECK(localai::SaveGeneratedModel(root, "broken", {1, 2, 3}, Ramp(64), source, workflow, broken).empty());
+    CHECK(HasCode(broken, "model.import"));
+    CHECK_FALSE(std::filesystem::exists(root / "models/broken.glb"));
+    CHECK_FALSE(std::filesystem::exists(root / "models/broken.source.json"));
+}
+
+TEST_CASE("A placed model stands on the ground at the asked height with a free id", "[comfyui][model]")
+{
+    localai::ModelInfo info;
+    info.meshes = 1;
+    info.min = {-0.5F, -0.5F, -0.5F};
+    info.max = {0.5F, 0.5F, 0.5F};
+    const nlohmann::ordered_json scene = {{"entities", {{{"id", "barrel"}}}}};
+    const auto entity = localai::PlacedModelEntity(scene, "Barrel", "models/barrel.glb", info, {2.0F, 0.0F, -3.0F}, 2.0F);
+    CHECK(entity["id"] == "barrel_2");
+    CHECK(entity["scale"][0] == 2.0F);
+    CHECK(entity["position"][1] == 1.0F); // lowest point (-0.5 x 2) lifted to y = 0
+    CHECK(entity["position"][0] == 2.0F);
+    CHECK(entity["model"] == "models/barrel.glb");
+    info.meshes = 3;
+    CHECK(localai::PlacedModelEntity(scene, "Barrel", "models/barrel.glb", info, {}, 1.0F)["instance"] == "models/barrel.glb");
+}
+
+TEST_CASE("Concept pictures of props use the object style", "[comfyui][model]")
+{
+    const std::filesystem::path root = std::filesystem::temp_directory_path() / "umbra-tests-object-style";
+    std::filesystem::remove_all(root);
+    CHECK(localai::LoadObjectStyle(root).prompt.find("plain white background") != std::string::npos);
+    std::filesystem::create_directories(root / "materials");
+    std::ofstream(root / "materials/style.json") << R"({"prompt":"tiles","objectPrompt":"toy figure","objectNegative":"photo"})";
+    CHECK(localai::LoadObjectStyle(root).prompt == "toy figure");
+    CHECK(localai::LoadTextureStyle(root).prompt == "tiles");
+    CHECK(localai::DefaultModelWorkflow("E:/Projects/EngineStudy/assets") == std::filesystem::path("E:/Projects/EngineStudy/tools/comfyui/image-to-3d.api.json"));
 }

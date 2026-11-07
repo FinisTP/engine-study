@@ -12,6 +12,7 @@ target_sources(
         src/QuestAssistant.cpp
         src/ComfyUi.cpp
         src/TextureAssistant.cpp
+        src/ModelAssistant.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
@@ -20,6 +21,7 @@ target_sources(
             include/QuestAssistant.hpp
             include/ComfyUi.hpp
             include/TextureAssistant.hpp
+            include/ModelAssistant.hpp
 )
 
 target_compile_features(UmbraLocalAi PUBLIC cxx_std_20)

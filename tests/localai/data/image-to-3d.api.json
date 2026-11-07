@@ -1,0 +1,12 @@
+{
+  "122": { "class_type": "LoadImage", "inputs": { "image": "viking_wolf_rune_axe.png" } },
+  "40": { "class_type": "UNETLoader", "inputs": { "unet_name": "trellis_2_int8_convrot.safetensors", "weight_dtype": "default" } },
+  "117": { "class_type": "VAELoader", "inputs": { "vae_name": "trellis_2_shape_vae_bf16.safetensors" } },
+  "3": { "class_type": "KSampler", "inputs": { "seed": 56, "steps": 12, "cfg": 7.5, "sampler_name": "euler", "scheduler": "normal", "denoise": 1, "model": ["40", 0] } },
+  "18": { "class_type": "KSampler", "inputs": { "seed": 42, "steps": 20, "cfg": 7.5, "sampler_name": "euler", "scheduler": "normal", "denoise": 1, "model": ["40", 0] } },
+  "288": { "class_type": "PrimitiveInt", "inputs": { "value": 4096 } },
+  "147": { "class_type": "BakeTextureFromVoxel", "inputs": { "texture_size": ["288", 0], "mesh": ["186", 0] } },
+  "196": { "class_type": "UnwrapMesh", "inputs": { "segmenter": "pec", "resolution": 2048, "padding": 1, "weld_distance": 0.0002, "mesh": ["186", 0] } },
+  "186": { "class_type": "DecimateMesh", "inputs": { "target_face_count": 700000, "placement_mode": "midpoint", "mesh": ["4", 0] } },
+  "322": { "class_type": "Save3DAdvanced", "inputs": { "filename_prefix": "3d/ComfyUI", "width": 1024, "height": 1024, "model_3d": ["247", 0] } }
+}

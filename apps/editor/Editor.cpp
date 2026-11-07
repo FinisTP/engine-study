@@ -480,6 +480,7 @@ void Editor::DrawUi()
     RpgForms();
     AiDraft();
     AiTexture();
+    AiModel();
     StatusBar();
     Popups();
     DrawGizmo();
@@ -551,6 +552,7 @@ void Editor::MenuBar()
         ImGui::MenuItem("RPG content", nullptr, &showRpg_);
         ImGui::MenuItem("AI quest draft", nullptr, &showDraft_);
         ImGui::MenuItem("AI texture", nullptr, &showTexture_);
+        ImGui::MenuItem("AI model", nullptr, &showModel_);
         ImGui::EndMenu();
     }
     const char *names[] = {"Move (W)", "Rotate (E)", "Scale (R)"};
@@ -564,6 +566,8 @@ void Editor::MenuBar()
         showDraft_ = true;
     if (ImGui::Button("AI texture"))
         showTexture_ = true;
+    if (ImGui::Button("AI model"))
+        showModel_ = true;
     ImGui::EndMainMenuBar();
 }
 

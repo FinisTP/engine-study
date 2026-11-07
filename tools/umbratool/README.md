@@ -14,6 +14,8 @@ layer as the editor (`engine/authoring`), so all three report the same diagnosti
 
 | `UmbraTool texture "<idea>" --assets <folder> [--name] [--count] [--seed] [--meters] [--size] [--model] [--host] [--json]` | AI texture (P8C): a local ComfyUI makes `--count` pictures (default 1); each is made seamless and saved as `textures/<name>.png` + `materials/<name>.material.json` (never overwriting). Without `--host` it tries ports 8000 and 8188; without `--model` it picks an installed SDXL checkpoint. Warns about visible seams and non-commercial model licenses. |
 
+| `UmbraTool model (--idea "<text>" \| --image <picture>) --assets <folder> [--name] [--faces] [--seed] [--workflow] [--model] [--host] [--json]` | AI model (P8D): a concept picture from the idea (SDXL) or the given picture, through the exported image-to-3D workflow (default `<project>/tools/comfyui/image-to-3d.api.json`), saved as `models/<name>.glb` with its concept and provenance. Prints triangles and texture size; warns if the mesh wasn't reduced or a model license is unclear. |
+
 `validate` also checks material files (`*.material.json`: image size, license warning).
 
 Exit codes: 0 ok, 1 errors found (or the fight couldn't run, or the draft has errors), 2 bad usage.

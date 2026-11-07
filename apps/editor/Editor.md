@@ -110,6 +110,21 @@ goes back to the model's own texture. Materials and textures also show in the as
 
 Every prompt gets the project style from `assets/materials/style.json`.
 
+## AI model (menu bar button, or View → AI model; roadmap P8D)
+
+1. **Describe it** → **Make concept pictures** (1–4, SDXL with the object style from
+   `assets/materials/style.json`); **View** opens each in the system image viewer (saved under the
+   preferences folder, `ai-concepts/`). Pick one. Or **Use my picture** with a PNG/JPEG file.
+2. **Make 3D model** runs the exported workflow (`tools/comfyui/README.md`) on a worker thread with
+   the picture, a seed, the **Triangles** count (default 10 000) and 1024 px textures. **Cancel** stops
+   at once and interrupts ComfyUI.
+3. The GLB is saved to `assets/models/<name>.glb` with `<name>.concept.png` and `<name>.source.json`,
+   and checked by the importer (`engine/localai/include/ModelGen.md`).
+4. **Place in scene** adds an entity at the view's centre, scaled to **Height in the scene** and
+   standing on the ground: one undoable edit, selected afterwards. No collider is added.
+
+ComfyUI's address and checkpoint are shared with the AI texture window.
+
 ## Picking (mouse → entity)
 
 1. The mouse position becomes normalized device coordinates:

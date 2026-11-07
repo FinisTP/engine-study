@@ -4,6 +4,7 @@
 
 #include <Document.hpp>
 #include <QuestAssistant.hpp>
+#include <ModelAssistant.hpp>
 #include <TextureAssistant.hpp>
 #include <DrawList.hpp>
 #include <World.hpp>
@@ -93,6 +94,9 @@ private:
     void ClearTexturePreviews();
     void ApplyTexturePreview(umbra::core::DrawList &drawList) const;
     void ApplyTexture();
+    void AiModel(); // AiModel.cpp
+    void StartModel();
+    void PlaceModel();
 
     void ScanAssets();
     void AddEntity(const std::optional<std::string> &parent);
@@ -159,4 +163,24 @@ private:
     std::vector<umbra::core::TextureHandle> texturePreviews_; // GPU copies of the candidates
     int texturePick_ = -1;
     std::vector<umbra::core::Diagnostic> textureProblems_;
+
+    // AI model (P8D): concept pictures, then the creator's image-to-3D workflow. ComfyUI address and
+    // checkpoint are shared with the texture window.
+    bool showModel_ = false;
+    int modelSource_ = 0; // 0 = describe, 1 = picture file
+    std::string modelIdea_, modelPicturePath_, modelName_, modelWorkflow_, modelSourceText_, modelResult_;
+    int conceptCount_ = 4;
+    int modelFaces_ = 10000; // user decision 2026-11-07
+    float modelHeight_ = 1.0F;
+    long long modelSeed_ = 0;
+    std::unique_ptr<umbra::localai::ImageJob> conceptJob_ = std::make_unique<umbra::localai::ImageJob>();
+    std::unique_ptr<umbra::localai::ModelJob> modelJob_ = std::make_unique<umbra::localai::ModelJob>();
+    std::vector<umbra::localai::ImageRequest> conceptRequests_;
+    std::vector<umbra::localai::TextureCandidate> concepts_;
+    std::vector<std::filesystem::path> conceptFiles_;
+    int conceptPick_ = -1;
+    umbra::core::TextureData modelPicture_;
+    umbra::authoring::Json modelWorkflowData_;
+    umbra::localai::ModelInfo modelInfo_;
+    std::vector<umbra::core::Diagnostic> modelProblems_;
 };

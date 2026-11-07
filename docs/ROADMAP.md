@@ -32,7 +32,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 
 **First action for a new agent:** finish B0 — the Windows-side checks are still open (see the B0 record). Re-inspect the checkout; if it has advanced past this dashboard, preserve completed work and select the earliest genuinely unmet task. Do not blindly implement P3.1 again.
 
-**Current next task:** the Windows checklists for P6, P7, P8A and P8B (`testing/phase6-reference-game.md` §4, `testing/phase7-creator-workflow.md` §4, `testing/p8a-learned-enemy.md` §5, `testing/p8b-ai-authoring.md` §4 — the first run of a real Ollama model), and P8C (`testing/p8c-ai-textures.md` §4, including P8C.0: the first ComfyUI/SDXL run), then P9 (PC release gate). Open in parallel: P8A recipe robustness (1 of 2 seeds). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
+**Current next task:** the Windows checklists for P6, P7, P8A and P8B (`testing/phase6-reference-game.md` §4, `testing/phase7-creator-workflow.md` §4, `testing/p8a-learned-enemy.md` §5, `testing/p8b-ai-authoring.md` §4 — the first run of a real Ollama model), P8C (`testing/p8c-ai-textures.md` §4, including P8C.0: the first ComfyUI/SDXL run) and P8D (`testing/p8d-ai-models.md` §4: the first TRELLIS.2 run), then P9 (PC release gate). Open in parallel: P8A recipe robustness (1 of 2 seeds). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
 
 | Gate | Dependency | Status (updated 2026-11-07) | Evidence / exit summary |
 |---|---|---|---|
@@ -48,6 +48,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 | P8A Learned turn-based enemy | P5 rules, P7 tools | Implemented 2026-11-07; one model accepted under declared thresholds; recipe 1 of 2 seeds; Windows run open | Built-in C++ network (user decision), PPO trained on CPU through the native rules, matched-probe preference gap +0.25 vs control −0.13, competence equal to the conventional AI (content-limited). Evidence: `testing/p8a-learned-enemy.md`. |
 | P8B AI authoring | P7 schema/patch/validation capability | Implemented 2026-11-07; verified on Linux against a stand-in Ollama and saved drafts; **no real model run yet**; editor window compiled, not opened | `Umbra::LocalAi` (local-only Ollama bridge, streamed, schema-constrained, cancel/limits), `authoring::PlanDraft` (additive scope, game loader, play-through with the real `GameSession`), editor "AI quest draft" window and `UmbraTool draft`. Evidence: `testing/p8b-ai-authoring.md`. |
 | P8C AI texture generation | P7 authoring, P8B local-AI bridge | Implemented 2026-11-07; verified on Linux against a stand-in ComfyUI; **no real ComfyUI/SDXL or GPU run yet** (P8C.0 open) | Materials with world-scale texturing and mipmaps; ComfyUI bridge; seamless step and seam score; provenance and license warnings; editor AI texture window with in-scene preview; `UmbraTool texture`. Plan `adr/0002-ai-texture-generation.md`, evidence `testing/p8c-ai-textures.md`. |
+| P8D AI 3D models | P8C ComfyUI bridge | Implemented 2026-11-07; verified on Linux against a stand-in ComfyUI; **no real TRELLIS.2 run yet** | Text → SDXL concept or own picture → the creator's exported TRELLIS.2 workflow (ComfyUI) → GLB with provenance → placed as an undoable scene edit; `UmbraTool model`. ADR `adr/0003-ai-model-generation.md`, evidence `testing/p8d-ai-models.md`. |
 | P9 PC release | P6/P7/P8A/P8B | Planned | Clean offline install, complete game, authoring workflow, measured reference-PC gate. |
 | P10 Playable web export | P9; W0 decisions | Planned later port | Browser game and local policy, durable-save UX, offline installation readiness. |
 | P11 Mobile | P10; approved device target | Planned later port | Lifecycle, input, storage, thermal and performance gates on actual devices. |
@@ -614,6 +615,21 @@ locally; the game build contains no image-generation code (T66); no non-local ad
 | P8C.5 | Implemented: guide, docs, record | `testing/p8c-ai-textures.md` |
 <!-- /P8C-status -->
 
+### P8D — AI 3D models through ComfyUI
+
+**Dependency:** P8C ComfyUI bridge. **Goal:** props made locally from words or a picture, checked by
+the game's importer, placed with undo. Plan and decisions: [`adr/0003-ai-model-generation.md`](adr/0003-ai-model-generation.md).
+
+<!-- P8D-status -->
+| Task | Status | Evidence |
+|---|---|---|
+| P8D.0 | **Open:** export and run the TRELLIS.2 workflow on the user's PC | `testing/p8d-ai-models.md` §4 |
+| P8D.1 | Implemented: workflow load/check, run values, upload/run/download, shared `RunGraph`, `BatchJob` | T67–T69 |
+| P8D.2 | Implemented: concept style, save with provenance, importer check, placement, TRELLIS.2 license entry | T70 |
+| P8D.3 | Implemented: editor AI model window, `UmbraTool model`; editor not opened | Windows checklist open |
+| P8D.4 | Implemented: ADR 0003, ModelGen.md, workflow README, guide, record | docs |
+<!-- /P8D-status -->
+
 ### P9 — PC release gate
 
 **Dependencies:** complete reference game and creator workflow; accepted P8A and P8B features. **Goal:** a reproducible, distributable PC engine/reference-game package, not just developer-machine success.
@@ -764,6 +780,10 @@ This is an initial **60-case register**, not an assertion that every possible fu
 | T64 | Image generator address is not this computer | Refused before connecting; no cloud fallback | P8C |
 | T65 | Texture made with a non-commercial model is packaged | Packaging warns, naming the material and license | P8C/P9 |
 | T66 | Game build links image-generation code | Dependency check fails | P8C |
+| T67 | Image-to-3D workflow file missing, in UI format, or without one picture input / a 3D output | Refused with how to export it; nothing runs | P8D |
+| T68 | Run values in the creator's workflow | Picture, seeds, face count and texture size set (also through Primitive nodes); the loaded workflow unchanged | P8D |
+| T69 | Picture upload, run and GLB download; missing model; non-local address | GLB downloaded intact; `ai.model` / `ai.host` named | P8D |
+| T70 | Generated GLB the importer refuses | Not kept (all files removed); a good one is saved with provenance and never overwrites | P8D |
 
 ### Test layers
 
@@ -857,6 +877,7 @@ These are bounded decisions, not a request to stop and ask the user all of them 
 | O13 | Browser backend, shader path, capabilities/hosting support. **User decision 2026-11-06:** run W0 after P4. **W0 (2026-11-07):** WebGPU for graphics (separate small backend behind `core::DrawList`), HLSL → SPIR-V → WGSL planned, Emscripten candidate for P10; rules already build to WebAssembly unchanged. See `docs/adr/0001-web-backend.md`. | W0; finalize P10 | Actual supported-browser failure |
 | O14 | First mobile OS/device tier | P11 planning | User target choice |
 | O15 | Community records versus model updates, consent, backend operations | F1 approval only | Explicit decision to fund/build service |
+| O17 | AI 3D model generator, scope, budget. **Decided 2026-11-07 (user, ADR 0003):** ComfyUI image-to-3D with TRELLIS.2 (MIT) through the creator's exported workflow; props first (characters stay with Meshy); ~10 000 triangles; text → SDXL concept or own picture. | Before P8D.0 | Quality/VRAM unusable on the user's PC |
 | O16 | AI texture generator, default model, scope and timing. **Decided 2026-11-07 (user, ADR 0002 §7):** ComfyUI first behind an `ImageProvider` interface (Ollama later); tileable world surfaces first; SDXL base 1.0 at 1024 px for the user's 8 GB GPU; independent track before P9. | Before P8C.0 | Generator unusable on the user's PC, or Ollama image generation reaches Windows |
 
 ### 13.3 Initial risk register
@@ -989,6 +1010,8 @@ This reference list supports the limited factual technology statements, not a re
 Version 1.0, 2026-11-01: incorporates final answers 21–23; makes independent combat-mode use an explicit contract/test; selects turn-based learned policy; removes mandatory-threshold interpretation of aggression; preserves deferred modding and offline scope; expands milestone tasks/evidence; retains T01–T38 and adds T39–T60; establishes concise root instructions plus separate context/roadmap files.
 
 No implementation completion was advanced by preparing this pack. Further updates must record actual evidence, product changes and their source separately.
+
+2026-11-07: P8D (AI 3D models through ComfyUI) implemented at the user's request (`#UMBRA-61`): row, section, status, T67–T70, O17, ADR 0003; evidence `testing/p8d-ai-models.md`. `#UMBRA-60`: scripts treat any non-zero exit code as failure.
 
 2026-11-07: P8C implemented (`#UMBRA-59`), status block added; evidence `testing/p8c-ai-textures.md`.
 

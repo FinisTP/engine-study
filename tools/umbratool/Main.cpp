@@ -10,12 +10,15 @@
 //             [--model <name>] [--host <url>] [--scenes <folder>] [--fix <n>] [--save-draft <file>]
 //   UmbraTool texture "<idea>" --assets <folder> [--name <name>] [--count <n>] [--seed <n>] [--meters <m>]
 //             [--size <px>] [--model <checkpoint>] [--host <url>] [--json]
+//   UmbraTool model (--idea "<text>" | --image <picture>) --assets <folder> [--name <name>] [--faces <n>]
+//             [--seed <n>] [--workflow <api json>] [--model <checkpoint>] [--host <url>] [--json]
 //
 // Exit code: 0 = ok, 1 = errors found (or the fight couldn't run), 2 = bad usage.
 
 #include <Document.hpp>
 #include <PolicyModel.hpp>
 #include <QuestAssistant.hpp>
+#include <ModelAssistant.hpp>
 #include <TextureAssistant.hpp>
 #include <TextureTools.hpp>
 #include <RpgContent.hpp>
@@ -54,6 +57,9 @@ namespace
         int count = 1, size = 1024;
         long long seed = -1;
         float meters = 2.0F;
+        // model
+        std::filesystem::path image, workflow;
+        int faces = 10000;
     };
 
     int Usage()
@@ -67,7 +73,9 @@ namespace
                      "  UmbraTool draft <rpg file> --npc <npc> (--idea \"<text>\" | --from <draft file>) [--apply] [--json]\n"
                      "            [--model <name>] [--host <url>] [--scenes <folder>] [--fix <n>] [--save-draft <file>]\n"
                      "  UmbraTool texture \"<idea>\" --assets <folder> [--name <name>] [--count <n>] [--seed <n>] [--meters <m>]\n"
-                     "            [--size <px>] [--model <checkpoint>] [--host <url>] [--json]\n";
+                     "            [--size <px>] [--model <checkpoint>] [--host <url>] [--json]\n"
+                     "  UmbraTool model (--idea \"<text>\" | --image <picture>) --assets <folder> [--name <name>] [--faces <n>]\n"
+                     "            [--seed <n>] [--workflow <api json>] [--model <checkpoint>] [--host <url>] [--json]\n";
         return 2;
     }
 
@@ -401,6 +409,101 @@ namespace
     }
 }
 
+namespace
+{
+    // Waits for a background ComfyUI batch, printing progress.
+    template <class Job>
+    auto Wait(Job &job, const char *what, std::size_t count, bool quiet)
+    {
+        decltype(job.Take()) results;
+        while (!(results = job.Take()))
+        {
+            if (!quiet)
+                std::cerr << "\r" << what << "... " << job.Finished() << "/" << count << ", " << static_cast<int>(job.Seconds()) << " s   " << std::flush;
+            std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        }
+        if (!quiet)
+            std::cerr << "\n";
+        return *results;
+    }
+
+    // AI model: idea -> concept picture (SDXL) or a given picture -> exported image-to-3D workflow -> models/<name>.glb.
+    int Model(const Arguments &args)
+    {
+        if (args.assets.empty() || args.idea.empty() == args.image.empty() || args.faces < 100 || args.faces > 1000000)
+            return Usage();
+        std::vector<Diagnostic> diagnostics;
+        const std::filesystem::path workflowFile = args.workflow.empty() ? umbra::localai::DefaultModelWorkflow(args.assets) : args.workflow;
+        umbra::localai::ModelRequest request;
+        if (!umbra::localai::LoadModelWorkflow(workflowFile, request.workflow, diagnostics))
+            return Report(diagnostics, 0, args.json);
+
+        // 1. ComfyUI, and the picture: a concept from the idea, or the given file.
+        std::vector<std::string> checkpoints;
+        request.host = args.host.empty() ? umbra::localai::FindComfyUi(checkpoints) : args.host;
+        if (request.host.empty())
+        {
+            diagnostics.push_back({Severity::Error, "ai.connect", "comfyui", "", "ComfyUI is not running on port 8000 or 8188. Start ComfyUI."});
+            return Report(diagnostics, 0, args.json);
+        }
+        const long long seed = umbra::localai::TextureSeeds(1, args.seed)[0];
+        std::string what = "file: " + args.image.filename().string();
+        if (!args.idea.empty())
+        {
+            if (!args.host.empty())
+                checkpoints = umbra::localai::ListCheckpoints(request.host, diagnostics);
+            const std::string checkpoint = args.model.empty() ? umbra::localai::PreferredCheckpoint(checkpoints) : args.model;
+            umbra::localai::ImageJob concepts;
+            const auto requests = umbra::localai::MakeTextureRequests(args.idea, umbra::localai::LoadObjectStyle(args.assets), checkpoint, request.host, {seed});
+            concepts.Start(requests);
+            const auto results = Wait(concepts, "Concept picture", 1, args.json);
+            diagnostics.insert(diagnostics.end(), results[0].diagnostics.begin(), results[0].diagnostics.end());
+            if (!results[0].ok)
+                return Report(diagnostics, 0, args.json);
+            request.picture = results[0].image;
+            what = requests[0].prompt;
+        }
+        else
+        {
+            std::string error;
+            if (!umbra::assets::LoadImageFile(args.image, request.picture, error))
+            {
+                diagnostics.push_back({Severity::Error, "file.read", args.image.string(), "", error});
+                return Report(diagnostics, 0, args.json);
+            }
+        }
+
+        // 2. The 3D model, saved and checked.
+        request.seed = seed;
+        request.faces = args.faces;
+        umbra::localai::ModelJob job;
+        job.Start({request});
+        const auto results = Wait(job, "3D model", 1, args.json);
+        diagnostics.insert(diagnostics.end(), results[0].diagnostics.begin(), results[0].diagnostics.end());
+        std::string path;
+        umbra::localai::ModelInfo info;
+        if (results[0].ok)
+        {
+            const std::string name = !args.name.empty() ? args.name : !args.idea.empty() ? args.idea : args.image.stem().string();
+            path = umbra::localai::SaveGeneratedModel(args.assets, name, results[0].glb, request.picture,
+                                                      {what, workflowFile.filename().string(), seed, args.faces}, request.workflow, diagnostics);
+            if (!path.empty() && umbra::localai::InspectModel(args.assets / path, info, diagnostics) && info.triangles > 2 * static_cast<std::size_t>(args.faces))
+                diagnostics.push_back({Severity::Warning, "model.size", path, "", std::to_string(info.triangles) + " triangles: the workflow did not reduce the mesh (no DecimateMesh?)"});
+        }
+        if (args.json)
+        {
+            std::cout << Json{{"model", path}, {"triangles", info.triangles}, {"textureSize", info.textureSize}, {"seed", seed},
+                              {"diagnostics", umbra::authoring::ToJson(diagnostics)}}.dump(2) << "\n";
+            return path.empty() ? 1 : 0;
+        }
+        if (!path.empty())
+            std::cout << "Made " << path << ": " << info.triangles << " triangles, texture " << info.textureSize << " px, size "
+                      << info.max.x - info.min.x << " x " << info.max.y - info.min.y << " x " << info.max.z - info.min.z << " (model units)\n";
+        const int code = Report(diagnostics, path.empty() ? 0 : 1, false);
+        return path.empty() ? 1 : code;
+    }
+}
+
 int main(int argc, char **argv)
 {
     // 1. Command and options.
@@ -419,6 +522,19 @@ int main(int argc, char **argv)
             args.json = true;
         else if (arg == "--apply")
             args.apply = true;
+        else if (i + 1 < argc && (arg == "--image" || arg == "--workflow"))
+            (arg == "--image" ? args.image : args.workflow) = argv[++i];
+        else if (i + 1 < argc && arg == "--faces")
+        {
+            try
+            {
+                args.faces = std::stoi(argv[++i]);
+            }
+            catch (const std::exception &)
+            {
+                return Usage();
+            }
+        }
         else if (i + 1 < argc && (arg == "--name" || arg == "--count" || arg == "--seed" || arg == "--meters" || arg == "--size"))
         {
             const std::string value = argv[++i];
@@ -484,5 +600,7 @@ int main(int argc, char **argv)
         return Draft(args);
     if (command == "texture")
         return Texture(args);
+    if (command == "model")
+        return Model(args);
     return Usage();
 }
