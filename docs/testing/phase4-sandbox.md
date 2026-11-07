@@ -65,6 +65,8 @@ ctest --preset windows-msvc-debug          # or: ctest --test-dir out\build\wind
 
 `vcpkg.json` gained `joltphysics` in P4.1; expect vcpkg to build it once.
 
+**Run 2026-11-07 (Claude via `scripts/build-and-run.bat` on the user's PC, MSVC 14.51 / Visual Studio's existing `out/build/windows-msvc` tree, Release config, not the Debug preset):** build OK with **0 compiler warnings**; CTest 24 of 25 passed. `Umbra.Assets` did not run: Windows refused to start the freshly linked `UmbraAssetsTests.exe` ("Process not started ... operation not permitted"), most likely security software blocking a new executable, not a test failure. Re-run it after allowing the file. `Umbra.exe` started; nobody has looked at the window yet. DXC/`spirv-val` ran as part of the build without errors. Log: `out/build-and-run.log`.
+
 - [ ] Configure, build and all 18 CTest entries pass (MSVC Debug)
 - [ ] Same with `windows-clang` and `windows-msvc-asan`
 - [ ] Release benchmark numbers recorded in section 3

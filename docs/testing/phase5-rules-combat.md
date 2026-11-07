@@ -61,7 +61,10 @@ cmake --build --preset windows-msvc-debug
 ctest --preset windows-msvc-debug     # or: ctest --test-dir out\build\windows-msvc -C Debug
 ```
 
+**Run 2026-11-07 (Claude via `scripts/build-and-run.bat` on the user's PC, MSVC 14.51 / Visual Studio's existing `out/build/windows-msvc` tree, Release config, not the Debug preset):** build OK with **0 compiler warnings**; CTest 24 of 25 passed. `Umbra.Assets` did not run: Windows refused to start the freshly linked `UmbraAssetsTests.exe` ("Process not started ... operation not permitted"), most likely security software blocking a new executable, not a test failure. Re-run it after allowing the file. `Umbra.exe` started; nobody has looked at the window yet. DXC/`spirv-val` ran as part of the build without errors. Log: `out/build-and-run.log`.
+
 - [ ] MSVC Debug: all 24 CTest entries pass (the turn regression numbers must match exactly)
+- [x] MSVC Release (2026-11-07): `Umbra.Rpg`, `Umbra.TurnCombat` (exact turn regression numbers), `Umbra.RealtimeCombat`, `Umbra.Encounter` and both dependency checks pass
 - [ ] `windows-clang` and `windows-msvc-asan`: all pass
 
 ## 4. Known gaps (deliberately left for later)
