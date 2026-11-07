@@ -126,6 +126,98 @@ namespace umbra::rpg
         std::vector<ItemCount> inventory;
         int inventorySlots = 12;
         int skillPoints = 0;
+        int xp = 0;         // experience the winner gets for defeating one
+        StatBlock growth{}; // added to the base stats per level above 1
+    };
+
+    // --- Story: quests and conversations (P6). State lives in story::QuestLog. ---
+
+    enum class QuestState
+    {
+        NotStarted,
+        Active,
+        Completed,
+        Failed
+    };
+
+    enum class ObjectiveKind
+    {
+        Defeat, // defeat `count` actors with id `target`
+        Obtain, // hold `count` items `target`
+        Talk    // talk to the npc `target` (a conversation's "talk" action)
+    };
+
+    struct ObjectiveDef final
+    {
+        ObjectiveKind kind = ObjectiveKind::Talk;
+        std::string target;
+        int count = 1;
+        std::string text; // shown in the quest log
+    };
+
+    // Objectives are done in order: only the current one makes progress.
+    struct QuestDef final
+    {
+        std::string id;
+        std::string name;
+        std::string description;
+        std::vector<ObjectiveDef> objectives;
+        bool failOnDeath = false;
+        int xp = 0;
+        int skillPoints = 0;
+        std::vector<ItemCount> items;
+    };
+
+    // A choice is shown only when all its conditions hold.
+    struct Condition final
+    {
+        enum class Kind
+        {
+            QuestIs,
+            HasItem
+        };
+        Kind kind = Kind::QuestIs;
+        std::string id;
+        QuestState state = QuestState::NotStarted;
+        int count = 1;
+    };
+
+    // What picking a choice does. All of a choice's actions happen, or none (e.g. no room for an item).
+    struct StoryAction final
+    {
+        enum class Kind
+        {
+            StartQuest,
+            Talk, // counts for Talk objectives
+            Give, // the npc gives items to the player
+            Take  // the npc takes items from the player
+        };
+        Kind kind = Kind::Talk;
+        std::string id;
+        int count = 1;
+    };
+
+    struct DialogueChoice final
+    {
+        std::string text;
+        std::string next; // node id; empty ends the conversation
+        std::vector<Condition> conditions;
+        std::vector<StoryAction> actions;
+    };
+
+    struct DialogueNode final
+    {
+        std::string speaker;
+        std::string text;
+        std::vector<DialogueChoice> choices; // none: the conversation ends after this line
+    };
+
+    struct ConversationDef final
+    {
+        std::string id;
+        std::string npc; // who this conversation belongs to
+        std::string start;
+        std::map<std::string, DialogueNode> nodes;
     };
 
     struct Content final
@@ -134,14 +226,19 @@ namespace umbra::rpg
         std::map<std::string, SkillDef> skills;
         std::map<std::string, ItemDef> items;
         std::map<std::string, ActorDef> actors;
+        std::map<std::string, QuestDef> quests;
+        std::map<std::string, ConversationDef> conversations;
 
         [[nodiscard]] const StatusDef *FindStatus(const std::string &id) const;
         [[nodiscard]] const SkillDef *FindSkill(const std::string &id) const;
         [[nodiscard]] const ItemDef *FindItem(const std::string &id) const;
         [[nodiscard]] const ActorDef *FindActor(const std::string &id) const;
+        [[nodiscard]] const QuestDef *FindQuest(const std::string &id) const;
+        [[nodiscard]] const ConversationDef *FindConversation(const std::string &id) const;
     };
 
     [[nodiscard]] const char *StatName(Stat stat);
+    [[nodiscard]] const char *ToString(QuestState state);
 
     // Parses and validates everything; on any error `content` is left untouched.
     bool LoadContent(const std::filesystem::path &file, Content &content, std::vector<core::Diagnostic> &diagnostics);

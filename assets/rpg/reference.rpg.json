@@ -2,52 +2,501 @@
   "format": "umbra.rpg",
   "version": 1,
   "statuses": [
-    { "id": "poison", "name": "Poisoned", "turns": 3, "seconds": 6, "damagePerTick": 3 },
-    { "id": "guarded", "name": "Guarded", "turns": 2, "seconds": 4,
-      "modifiers": [ { "stat": "defense", "percent": 100 } ] },
-    { "id": "weakened", "name": "Weakened", "turns": 3,
-      "modifiers": [ { "stat": "attack", "percent": -30 } ] }
+    {
+      "id": "poison",
+      "name": "Poisoned",
+      "turns": 3,
+      "seconds": 6,
+      "damagePerTick": 3
+    },
+    {
+      "id": "guarded",
+      "name": "Guarded",
+      "turns": 2,
+      "seconds": 4,
+      "modifiers": [
+        {
+          "stat": "defense",
+          "percent": 100
+        }
+      ]
+    },
+    {
+      "id": "weakened",
+      "name": "Weakened",
+      "turns": 3,
+      "modifiers": [
+        {
+          "stat": "attack",
+          "percent": -30
+        }
+      ]
+    }
   ],
   "skills": [
-    { "id": "strike", "name": "Strike", "effects": [ { "kind": "damage", "power": 8 } ],
-      "modes": [ "turn", "realtime" ],
-      "realtime": { "windup": 0.3, "active": 0.2, "recovery": 0.3, "cooldown": 0.4, "range": 1.8, "arc": 100 } },
-    { "id": "heavy_blow", "name": "Heavy Blow", "cost": 10, "effects": [ { "kind": "damage", "power": 18 } ],
-      "modes": [ "turn", "realtime" ], "points": 1, "requires": [ "strike" ],
-      "realtime": { "windup": 0.7, "active": 0.2, "recovery": 0.5, "cooldown": 2.0, "range": 2.0, "arc": 80 } },
-    { "id": "guard", "name": "Guard", "cost": 5, "target": "self", "effects": [ { "kind": "status", "status": "guarded" } ],
-      "modes": [ "turn", "realtime" ], "points": 1, "requires": [ "strike" ],
-      "realtime": { "windup": 0.1, "active": 0.1, "recovery": 0.2, "cooldown": 5.0, "range": 0.5, "arc": 360 } },
-    { "id": "venom_strike", "name": "Venom Strike", "cost": 8,
-      "effects": [ { "kind": "damage", "power": 4 }, { "kind": "status", "status": "poison" } ],
-      "modes": [ "turn", "realtime" ], "points": 2, "requires": [ "heavy_blow" ],
-      "realtime": { "windup": 0.4, "active": 0.2, "recovery": 0.4, "cooldown": 3.0, "range": 1.8, "arc": 90 } },
-    { "id": "weaken", "name": "Weaken", "cost": 6, "effects": [ { "kind": "status", "status": "weakened" } ],
-      "modes": [ "turn" ], "points": 1, "requires": [ "guard" ] },
-    { "id": "bite", "name": "Bite", "effects": [ { "kind": "damage", "power": 6 } ],
-      "modes": [ "turn", "realtime" ],
-      "realtime": { "windup": 0.4, "active": 0.2, "recovery": 0.4, "cooldown": 0.6, "range": 1.6, "arc": 90 } }
+    {
+      "id": "strike",
+      "name": "Strike",
+      "effects": [
+        {
+          "kind": "damage",
+          "power": 8
+        }
+      ],
+      "modes": [
+        "turn",
+        "realtime"
+      ],
+      "realtime": {
+        "windup": 0.3,
+        "active": 0.2,
+        "recovery": 0.3,
+        "cooldown": 0.4,
+        "range": 1.8,
+        "arc": 100
+      }
+    },
+    {
+      "id": "heavy_blow",
+      "name": "Heavy Blow",
+      "cost": 10,
+      "effects": [
+        {
+          "kind": "damage",
+          "power": 18
+        }
+      ],
+      "modes": [
+        "turn",
+        "realtime"
+      ],
+      "points": 1,
+      "requires": [
+        "strike"
+      ],
+      "realtime": {
+        "windup": 0.7,
+        "active": 0.2,
+        "recovery": 0.5,
+        "cooldown": 2.0,
+        "range": 2.0,
+        "arc": 80
+      }
+    },
+    {
+      "id": "guard",
+      "name": "Guard",
+      "cost": 5,
+      "target": "self",
+      "effects": [
+        {
+          "kind": "status",
+          "status": "guarded"
+        }
+      ],
+      "modes": [
+        "turn",
+        "realtime"
+      ],
+      "points": 1,
+      "requires": [
+        "strike"
+      ],
+      "realtime": {
+        "windup": 0.1,
+        "active": 0.1,
+        "recovery": 0.2,
+        "cooldown": 5.0,
+        "range": 0.5,
+        "arc": 360
+      }
+    },
+    {
+      "id": "venom_strike",
+      "name": "Venom Strike",
+      "cost": 8,
+      "effects": [
+        {
+          "kind": "damage",
+          "power": 4
+        },
+        {
+          "kind": "status",
+          "status": "poison"
+        }
+      ],
+      "modes": [
+        "turn",
+        "realtime"
+      ],
+      "points": 2,
+      "requires": [
+        "heavy_blow"
+      ],
+      "realtime": {
+        "windup": 0.4,
+        "active": 0.2,
+        "recovery": 0.4,
+        "cooldown": 3.0,
+        "range": 1.8,
+        "arc": 90
+      }
+    },
+    {
+      "id": "weaken",
+      "name": "Weaken",
+      "cost": 6,
+      "effects": [
+        {
+          "kind": "status",
+          "status": "weakened"
+        }
+      ],
+      "modes": [
+        "turn"
+      ],
+      "points": 1,
+      "requires": [
+        "guard"
+      ]
+    },
+    {
+      "id": "bite",
+      "name": "Bite",
+      "effects": [
+        {
+          "kind": "damage",
+          "power": 6
+        }
+      ],
+      "modes": [
+        "turn",
+        "realtime"
+      ],
+      "realtime": {
+        "windup": 0.4,
+        "active": 0.2,
+        "recovery": 0.4,
+        "cooldown": 0.6,
+        "range": 1.6,
+        "arc": 90
+      }
+    }
   ],
   "items": [
-    { "id": "rusty_sword", "name": "Rusty Sword", "slot": "weapon", "modifiers": [ { "stat": "attack", "add": 4 } ] },
-    { "id": "iron_sword", "name": "Iron Sword", "slot": "weapon", "modifiers": [ { "stat": "attack", "add": 8 } ] },
-    { "id": "leather_armor", "name": "Leather Armor", "slot": "armor",
-      "modifiers": [ { "stat": "defense", "add": 3 }, { "stat": "maxHealth", "add": 10 } ] },
-    { "id": "health_potion", "name": "Health Potion", "stack": 5, "use": [ { "kind": "heal", "power": 30 } ] },
-    { "id": "ether", "name": "Ether", "stack": 5, "use": [ { "kind": "energy", "power": 15 } ] }
+    {
+      "id": "rusty_sword",
+      "name": "Rusty Sword",
+      "slot": "weapon",
+      "modifiers": [
+        {
+          "stat": "attack",
+          "add": 4
+        }
+      ]
+    },
+    {
+      "id": "iron_sword",
+      "name": "Iron Sword",
+      "slot": "weapon",
+      "modifiers": [
+        {
+          "stat": "attack",
+          "add": 8
+        }
+      ]
+    },
+    {
+      "id": "leather_armor",
+      "name": "Leather Armor",
+      "slot": "armor",
+      "modifiers": [
+        {
+          "stat": "defense",
+          "add": 3
+        },
+        {
+          "stat": "maxHealth",
+          "add": 10
+        }
+      ]
+    },
+    {
+      "id": "health_potion",
+      "name": "Health Potion",
+      "stack": 5,
+      "use": [
+        {
+          "kind": "heal",
+          "power": 30
+        }
+      ]
+    },
+    {
+      "id": "ether",
+      "name": "Ether",
+      "stack": 5,
+      "use": [
+        {
+          "kind": "energy",
+          "power": 15
+        }
+      ]
+    },
+    {
+      "id": "sun_relic",
+      "name": "Sun Relic"
+    }
   ],
   "actors": [
-    { "id": "hero", "name": "Hero",
-      "stats": { "maxHealth": 100, "maxEnergy": 30, "attack": 10, "defense": 5, "speed": 10 },
-      "skills": [ "strike" ], "equipment": [ "rusty_sword", "leather_armor" ],
-      "inventory": [ { "item": "health_potion", "count": 3 }, { "item": "ether", "count": 1 } ],
-      "inventorySlots": 12, "skillPoints": 3 },
-    { "id": "wolf", "name": "Wolf",
-      "stats": { "maxHealth": 45, "maxEnergy": 0, "attack": 8, "defense": 2, "speed": 12 },
-      "skills": [ "bite" ], "inventorySlots": 0 },
-    { "id": "bandit", "name": "Bandit",
-      "stats": { "maxHealth": 70, "maxEnergy": 20, "attack": 9, "defense": 4, "speed": 8 },
-      "skills": [ "strike", "heavy_blow" ], "equipment": [ "rusty_sword" ],
-      "inventory": [ { "item": "health_potion", "count": 1 } ], "inventorySlots": 4 }
+    {
+      "id": "hero",
+      "name": "Hero",
+      "stats": {
+        "maxHealth": 100,
+        "maxEnergy": 30,
+        "attack": 10,
+        "defense": 5,
+        "speed": 10
+      },
+      "skills": [
+        "strike"
+      ],
+      "equipment": [
+        "rusty_sword",
+        "leather_armor"
+      ],
+      "inventory": [
+        {
+          "item": "health_potion",
+          "count": 3
+        },
+        {
+          "item": "ether",
+          "count": 1
+        }
+      ],
+      "inventorySlots": 12,
+      "skillPoints": 3,
+      "growth": {
+        "maxHealth": 10,
+        "maxEnergy": 3,
+        "attack": 2,
+        "defense": 1
+      }
+    },
+    {
+      "id": "wolf",
+      "name": "Wolf",
+      "stats": {
+        "maxHealth": 45,
+        "maxEnergy": 0,
+        "attack": 8,
+        "defense": 2,
+        "speed": 12
+      },
+      "skills": [
+        "bite"
+      ],
+      "inventorySlots": 0,
+      "xp": 15
+    },
+    {
+      "id": "bandit",
+      "name": "Bandit",
+      "stats": {
+        "maxHealth": 70,
+        "maxEnergy": 20,
+        "attack": 9,
+        "defense": 4,
+        "speed": 8
+      },
+      "skills": [
+        "strike",
+        "heavy_blow"
+      ],
+      "equipment": [
+        "rusty_sword"
+      ],
+      "inventory": [
+        {
+          "item": "health_potion",
+          "count": 1
+        }
+      ],
+      "inventorySlots": 4,
+      "xp": 25
+    },
+    {
+      "id": "bandit_leader",
+      "name": "Bandit Leader",
+      "stats": {
+        "maxHealth": 120,
+        "maxEnergy": 30,
+        "attack": 12,
+        "defense": 6,
+        "speed": 9
+      },
+      "skills": [
+        "strike",
+        "heavy_blow"
+      ],
+      "equipment": [
+        "iron_sword"
+      ],
+      "inventory": [
+        {
+          "item": "sun_relic",
+          "count": 1
+        }
+      ],
+      "inventorySlots": 4,
+      "xp": 60
+    }
+  ],
+  "quests": [
+    {
+      "id": "sun_relic",
+      "name": "The Stolen Relic",
+      "description": "Bandits stole the Sun Relic from the village shrine. Elder Mara wants it back.",
+      "objectives": [
+        {
+          "defeat": "bandit_leader",
+          "text": "Defeat the bandit leader in the dungeon"
+        },
+        {
+          "obtain": "sun_relic",
+          "text": "Recover the Sun Relic"
+        },
+        {
+          "talk": "elder",
+          "text": "Return the relic to Elder Mara"
+        }
+      ],
+      "failOn": [
+        "death"
+      ],
+      "reward": {
+        "xp": 120,
+        "skillPoints": 1,
+        "items": [
+          {
+            "item": "iron_sword",
+            "count": 1
+          }
+        ]
+      }
+    }
+  ],
+  "conversations": [
+    {
+      "id": "elder_mara",
+      "npc": "elder",
+      "start": "hello",
+      "nodes": [
+        {
+          "id": "hello",
+          "speaker": "Elder Mara",
+          "text": "Traveler... bandits took the Sun Relic from our shrine.",
+          "choices": [
+            {
+              "text": "I'll get it back.",
+              "next": "accepted",
+              "if": [
+                {
+                  "quest": "sun_relic",
+                  "state": "notStarted"
+                }
+              ],
+              "do": [
+                {
+                  "startQuest": "sun_relic"
+                }
+              ]
+            },
+            {
+              "text": "I have the relic.",
+              "next": "thanks",
+              "if": [
+                {
+                  "quest": "sun_relic",
+                  "state": "active"
+                },
+                {
+                  "hasItem": "sun_relic"
+                }
+              ],
+              "do": [
+                {
+                  "take": "sun_relic"
+                },
+                {
+                  "talk": "elder"
+                }
+              ]
+            },
+            {
+              "text": "Where are the bandits again?",
+              "next": "waiting",
+              "if": [
+                {
+                  "quest": "sun_relic",
+                  "state": "active"
+                }
+              ]
+            },
+            {
+              "text": "How is the village?",
+              "next": "done",
+              "if": [
+                {
+                  "quest": "sun_relic",
+                  "state": "completed"
+                }
+              ]
+            },
+            {
+              "text": "About the relic...",
+              "next": "lost",
+              "if": [
+                {
+                  "quest": "sun_relic",
+                  "state": "failed"
+                }
+              ]
+            },
+            {
+              "text": "Goodbye.",
+              "next": ""
+            }
+          ]
+        },
+        {
+          "id": "accepted",
+          "speaker": "Elder Mara",
+          "text": "Their leader hides deep in the dungeon, through the purple gate east of here. Come back alive."
+        },
+        {
+          "id": "waiting",
+          "speaker": "Elder Mara",
+          "text": "East of the village, through the purple gate. Their leader keeps the relic close."
+        },
+        {
+          "id": "thanks",
+          "speaker": "Elder Mara",
+          "text": "The Sun Relic! You have our thanks. Take my old sword, it will serve you better than mine."
+        },
+        {
+          "id": "done",
+          "speaker": "Elder Mara",
+          "text": "Quiet, thanks to you. The shrine glows again."
+        },
+        {
+          "id": "lost",
+          "speaker": "Elder Mara",
+          "text": "We feared the worst when you fell. The relic is beyond our reach now."
+        }
+      ]
+    }
   ]
 }

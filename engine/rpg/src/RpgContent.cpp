@@ -1,5 +1,7 @@
 #include <RpgContent.hpp>
 
+#include "ContentReader.hpp"
+
 #include <nlohmann/json.hpp>
 
 #include <fstream>
@@ -11,133 +13,10 @@ namespace umbra::rpg
 {
     using nlohmann::json;
 
+    using namespace detail;
+
     namespace
     {
-        constexpr int maxValue = 9999; // stats, costs and powers stay small and readable
-        constexpr const char *statNames[] = {"maxHealth", "maxEnergy", "attack", "defense", "speed"};
-
-        // Collects diagnostics for one file and reads typed fields with bounds.
-        struct Reader final
-        {
-            std::string file;
-            std::vector<core::Diagnostic> &out;
-
-            void Error(const std::string &code, const std::string &field, const std::string &message)
-            {
-                out.push_back({core::Severity::Error, code, file, field, message});
-            }
-            void Warning(const std::string &code, const std::string &field, const std::string &message)
-            {
-                out.push_back({core::Severity::Warning, code, file, field, message});
-            }
-
-            // Warns about keys this format doesn't know (usually typos).
-            void Known(const json &object, const std::string &where, std::initializer_list<const char *> keys)
-            {
-                const std::set<std::string> known(keys.begin(), keys.end());
-                for (const auto &[key, unused] : object.items())
-                {
-                    if (!known.contains(key))
-                        Warning("field.unknown", where + "." + key, "unknown field is ignored (typo?)");
-                }
-            }
-
-            int Int(const json &object, const char *key, int fallback, int min, int max, const std::string &where)
-            {
-                const auto it = object.find(key);
-                if (it == object.end())
-                    return fallback;
-                if (!it->is_number_integer() || it->get<long long>() < min || it->get<long long>() > max)
-                {
-                    Error("field.range", where + "." + key, "expected a whole number from " + std::to_string(min) + " to " + std::to_string(max));
-                    return fallback;
-                }
-                return it->get<int>();
-            }
-
-            float Float(const json &object, const char *key, float fallback, float min, float max, const std::string &where)
-            {
-                const auto it = object.find(key);
-                if (it == object.end())
-                    return fallback;
-                if (!it->is_number() || it->get<double>() < min || it->get<double>() > max)
-                {
-                    Error("field.range", where + "." + key, "expected a number from " + std::to_string(min) + " to " + std::to_string(max));
-                    return fallback;
-                }
-                return it->get<float>();
-            }
-
-            std::string String(const json &object, const char *key, const std::string &where)
-            {
-                const auto it = object.find(key);
-                if (it == object.end())
-                    return {};
-                if (!it->is_string())
-                {
-                    Error("field.type", where + "." + key, "expected a string");
-                    return {};
-                }
-                return it->get<std::string>();
-            }
-
-            bool Bool(const json &object, const char *key, const std::string &where)
-            {
-                const auto it = object.find(key);
-                if (it == object.end())
-                    return false;
-                if (!it->is_boolean())
-                {
-                    Error("field.type", where + "." + key, "expected true or false");
-                    return false;
-                }
-                return it->get<bool>();
-            }
-
-            std::vector<std::string> Strings(const json &object, const char *key, const std::string &where)
-            {
-                std::vector<std::string> values;
-                const auto it = object.find(key);
-                if (it == object.end())
-                    return values;
-                if (!it->is_array())
-                {
-                    Error("field.type", where + "." + key, "expected a list of strings");
-                    return values;
-                }
-                for (std::size_t i = 0; i < it->size(); ++i)
-                {
-                    if ((*it)[i].is_string())
-                        values.push_back((*it)[i].get<std::string>());
-                    else
-                        Error("field.type", where + "." + key + "[" + std::to_string(i) + "]", "expected a string");
-                }
-                return values;
-            }
-
-            // Calls `each(object, where)` for every object in the list `key`.
-            template <typename Each>
-            void Objects(const json &object, const char *key, const std::string &where, Each each)
-            {
-                const auto it = object.find(key);
-                if (it == object.end())
-                    return;
-                if (!it->is_array())
-                {
-                    Error("field.type", where + key, "expected a list");
-                    return;
-                }
-                for (std::size_t i = 0; i < it->size(); ++i)
-                {
-                    const std::string at = where + key + "[" + std::to_string(i) + "]";
-                    if ((*it)[i].is_object())
-                        each((*it)[i], at);
-                    else
-                        Error("field.type", at, "expected an object");
-                }
-            }
-        };
-
         std::optional<Stat> ParseStat(const std::string &name)
         {
             for (std::size_t i = 0; i < std::size(statNames); ++i)
@@ -274,7 +153,7 @@ namespace umbra::rpg
             });
 
             r.Objects(root, "actors", "", [&](const json &s, const std::string &at) {
-                r.Known(s, at, {"id", "name", "stats", "skills", "equipment", "inventory", "inventorySlots", "skillPoints"});
+                r.Known(s, at, {"id", "name", "stats", "skills", "equipment", "inventory", "inventorySlots", "skillPoints", "xp", "growth"});
                 ActorDef def{r.String(s, "id", at), r.String(s, "name", at)};
                 const auto stats = s.find("stats");
                 if (stats == s.end() || !stats->is_object())
@@ -295,6 +174,13 @@ namespace umbra::rpg
                 });
                 def.inventorySlots = r.Int(s, "inventorySlots", 12, 0, 100, at);
                 def.skillPoints = r.Int(s, "skillPoints", 0, 0, 100, at);
+                def.xp = r.Int(s, "xp", 0, 0, maxValue, at);
+                if (const auto growth = s.find("growth"); growth != s.end() && growth->is_object())
+                {
+                    r.Known(*growth, at + ".growth", {"maxHealth", "maxEnergy", "attack", "defense", "speed"});
+                    for (std::size_t i = 0; i < std::size(statNames); ++i)
+                        def.growth[i] = r.Int(*growth, statNames[i], 0, 0, 999, at + ".growth");
+                }
                 Insert(r, c.actors, def, at);
             });
         }
@@ -412,7 +298,24 @@ namespace umbra::rpg
         return it == actors.end() ? nullptr : &it->second;
     }
 
+    const QuestDef *Content::FindQuest(const std::string &id) const
+    {
+        const auto it = quests.find(id);
+        return it == quests.end() ? nullptr : &it->second;
+    }
+    const ConversationDef *Content::FindConversation(const std::string &id) const
+    {
+        const auto it = conversations.find(id);
+        return it == conversations.end() ? nullptr : &it->second;
+    }
+
     const char *StatName(Stat stat) { return statNames[static_cast<std::size_t>(stat)]; }
+
+    const char *ToString(QuestState state)
+    {
+        constexpr const char *names[] = {"notStarted", "active", "completed", "failed"};
+        return names[static_cast<int>(state)];
+    }
 
     bool ParseContent(const std::string &text, const std::string &fileName, Content &content,
                       std::vector<core::Diagnostic> &diagnostics)
@@ -432,12 +335,14 @@ namespace umbra::rpg
             r.Error("format.version", "", "expected \"format\": \"umbra.rpg\" and \"version\": 1");
             return false;
         }
-        r.Known(root, "", {"format", "version", "statuses", "skills", "items", "actors"});
+        r.Known(root, "", {"format", "version", "statuses", "skills", "items", "actors", "quests", "conversations"});
 
         // 2. Sections, then cross-references. Nothing is handed back on any error.
         Content parsed;
         ReadSections(r, root, parsed);
+        ReadStorySections(r, root, parsed);
         CheckReferences(r, parsed);
+        CheckStoryReferences(r, parsed);
         const std::vector<core::Diagnostic> found(diagnostics.begin() + static_cast<std::ptrdiff_t>(firstNew), diagnostics.end());
         if (core::HasErrors(found))
             return false;

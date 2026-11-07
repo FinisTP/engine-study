@@ -7,6 +7,7 @@ target_sources(
     UmbraRpg
     PRIVATE
         src/RpgContent.cpp
+        src/StoryContent.cpp
         src/Character.cpp
         src/Inventory.cpp
         src/SkillTree.cpp

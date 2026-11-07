@@ -9,7 +9,7 @@ cd "$(dirname "$0")/../.."
 "$WASI_SDK_PATH/bin/clang++" --target=wasm32-wasip1 -std=c++20 -O2 \
     -mexec-model=reactor -fno-exceptions -DJSON_NOEXCEPTION \
     -Iengine/core/include -Iengine/rpg/include -Iengine/turncombat/include -isystem "$INCLUDE" \
-    engine/rpg/src/RpgContent.cpp engine/rpg/src/Character.cpp engine/rpg/src/Inventory.cpp \
+    engine/rpg/src/RpgContent.cpp engine/rpg/src/StoryContent.cpp engine/rpg/src/Character.cpp engine/rpg/src/Inventory.cpp \
     engine/rpg/src/SkillTree.cpp engine/rpg/src/Rules.cpp \
     engine/turncombat/src/TurnEncounter.cpp engine/turncombat/src/TurnEnvironment.cpp \
     samples/web/WebSim.cpp \
