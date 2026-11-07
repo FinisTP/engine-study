@@ -84,3 +84,17 @@ Conversations and fights keep references into the content, so it never happens d
 
 Scenes and models already reload by themselves (`engine/assets/include/Reload.md`). Together that
 means: edit in the editor, press Ctrl+S, and the running game changes within a second.
+
+## Learned enemies (P8A)
+
+An actor with `"policy"` in the RPG content (the bandit leader) uses its learned turn-combat AI
+when the model loads and still fits the content (`engine/policy/include/Policy.md`):
+
+- **Asking:** when that enemy's turn starts, an observation and mask snapshot goes to the
+  model's worker thread.
+- **Acting:** after the 0.7 s enemy pause (the deadline), the answer is used if it is for this
+  decision and legal. Otherwise the standard AI acts, and the log says so.
+- **Display:** the enemy's status line shows "(learned AI)" in turn mode.
+- **Refusal:** after a content reload that changes what it was trained on, the model is refused
+  with a message, and the standard AI plays that actor.
+- **Real time:** real-time fights always use the standard AI.

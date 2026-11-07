@@ -6,6 +6,10 @@
 #include <FileWatcher.hpp>
 #include <GameSession.hpp>
 #include <Input.hpp>
+#include <PolicyDecider.hpp>
+
+#include <map>
+#include <memory>
 
 #include <filesystem>
 #include <string>
@@ -47,6 +51,7 @@ private:
     void UpdateRealtimeFight(const umbra::platform::Input &input, float deltaSeconds);
     void UpdateDeath(const umbra::platform::Input &input);
     void ReloadContent();
+    void LoadPolicies();
 
     void StartFight(std::size_t roamer);
     void Flee();
@@ -82,4 +87,15 @@ private:
     float contactCooldown_ = 0.0F;     // after fleeing, touching an enemy does nothing for a moment
     std::vector<std::string> log_;     // recent fight lines
     std::string message_;
+
+    // Learned turn-combat AI per actor (engine/policy). Each has its own worker thread.
+    struct LearnedEnemy final
+    {
+        umbra::policy::PolicyModel model;
+        std::unique_ptr<umbra::policy::PolicyDecider> decider;
+    };
+    std::map<std::string, LearnedEnemy> learned_;
+    std::size_t policyFor_ = static_cast<std::size_t>(-1); // roster index whose decision is pending
+    std::uint64_t policyRequest_ = 0;
+    std::vector<std::uint8_t> policyMask_;
 };

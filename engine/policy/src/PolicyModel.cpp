@@ -52,7 +52,12 @@ namespace umbra::policy
             diagnostics.push_back({core::Severity::Error, code, file.string(), field, message});
             return false;
         };
-        // 1. JSON with the right header.
+        // 1. JSON with the right header, from a file of sane size (models are data, never code: T59).
+        constexpr std::uintmax_t maxBytes = 16u << 20;
+        constexpr std::size_t maxWidth = 1024;
+        std::error_code ec;
+        if (const std::uintmax_t size = std::filesystem::file_size(file, ec); !ec && size > maxBytes)
+            return fail("policy.limit", "", "file is larger than 16 MiB");
         std::ifstream in(file, std::ios::binary);
         if (!in)
             return fail("policy.read", "", "cannot open file");
@@ -79,6 +84,8 @@ namespace umbra::policy
         for (const json &l : root.value("layers", json::array()))
         {
             Layer layer{l.value("in", 0u), l.value("out", 0u), l.value("activation", "") == "tanh", {}, {}};
+            if (layer.out == 0 || layer.out > maxWidth)
+                return fail("policy.limit", "layers", "a layer must have 1 to 1024 outputs");
             try
             {
                 layer.weights = l.at("weights").get<std::vector<float>>();

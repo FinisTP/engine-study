@@ -2,6 +2,7 @@
 
 #include <Log.hpp>
 #include <Profiling.hpp>
+#include <PolicyContract.hpp>
 #include <RealtimeEncounter.hpp>
 #include <TurnEncounter.hpp>
 
@@ -52,6 +53,34 @@ GameFlow::GameFlow(rpg::Content &content, std::filesystem::path contentFile, Sce
         look.scale = glm::vec3{def->size};
         return look;
     });
+    LoadPolicies();
+}
+
+void GameFlow::LoadPolicies()
+{
+    // Each actor that names a learned policy gets it only if the file loads and still fits the
+    // content; otherwise the standard AI plays it, and the screen says so (roadmap P8A.6).
+    learned_.clear();
+    const std::filesystem::path assets = contentFile_.parent_path().parent_path(); // assets/rpg/x.rpg.json
+    for (const auto &[id, actor] : content_.actors)
+    {
+        if (actor.policy.empty())
+            continue;
+        LearnedEnemy learned;
+        std::vector<umbra::core::Diagnostic> diagnostics;
+        const std::filesystem::path file = assets / actor.policy;
+        if (umbra::policy::LoadPolicy(file, learned.model, diagnostics) &&
+            umbra::policy::CheckCompatible(learned.model, content_, file.string(), diagnostics))
+        {
+            learned.decider = std::make_unique<umbra::policy::PolicyDecider>(learned.model.network);
+            learned_.emplace(id, std::move(learned));
+            umbra::diagnostics::Info("Learned AI loaded for " + id + " from " + actor.policy);
+            continue;
+        }
+        for (const umbra::core::Diagnostic &d : diagnostics)
+            umbra::diagnostics::Error(umbra::core::Format(d));
+        Say("Learned AI for " + actor.name + " refused (" + (diagnostics.empty() ? "unknown" : diagnostics.back().message) + "); standard AI plays it");
+    }
 }
 
 void GameFlow::ReloadContent()
@@ -83,6 +112,7 @@ void GameFlow::ReloadContent()
 
     // 3. Swap in place (everything refers to this one object) and re-apply the state.
     content_ = std::move(fresh);
+    LoadPolicies(); // a changed skill may no longer fit a trained model
     session_.ApplySave(fitted);
     rpg::ClampResources(content_, session_.Hero()); // a lower maximum must not leave extra health
     char text[64];
@@ -267,6 +297,7 @@ void GameFlow::StartFight(std::size_t roamer)
     // 4. Fresh log; enemies wait a moment before their first turn.
     fightGeneration_ = scene_.Generation();
     log_ = {"A fight with " + std::to_string(group.size()) + (group.size() == 1 ? " enemy!" : " enemies!")};
+    policyFor_ = static_cast<std::size_t>(-1);
     selected_ = 0;
     enemyDelay_ = enemyTurnDelay;
 }
@@ -300,14 +331,36 @@ void GameFlow::UpdateTurnFight(const umbra::platform::Input &input, float deltaS
             enemyDelay_ = enemyTurnDelay;
         }
     }
-    // 2. An enemy's turn: it decides after a short pause, through the same rules.
+    // 2. An enemy's turn: it decides after a short pause, through the same rules. An enemy with a
+    //    learned policy asks it in the background when its turn starts; the pause is the deadline.
     else if (current)
     {
+        const auto learned = learned_.find(turn->GetRoster()[*current].character->actor);
+        if (learned != learned_.end() && policyFor_ != *current)
+        {
+            const umbra::policy::Contract &contract = learned->second.model.contract;
+            policyFor_ = *current;
+            policyRequest_ = session_.NextDecisionId();
+            policyMask_ = umbra::policy::Mask(*turn, contract, *current, 0);
+            if (!learned->second.decider->Request(policyRequest_, umbra::policy::Observe(session_.Content(), *turn, *current, 0, 30), policyMask_))
+                policyRequest_ = 0; // busy: this decision falls back
+        }
         enemyDelay_ -= deltaSeconds;
         if (enemyDelay_ <= 0.0F)
         {
-            Act(umbra::turn::ChooseTurnAction(session_.Content(), *turn), false);
+            rpg::ActionIntent intent = umbra::turn::ChooseTurnAction(session_.Content(), *turn);
+            if (learned != learned_.end())
+            {
+                // Use the answer only if it is for this decision, arrived in time and is legal.
+                const std::optional<int> slot = policyRequest_ ? learned->second.decider->Take(policyRequest_) : std::nullopt;
+                if (slot && *slot >= 0 && policyMask_[static_cast<std::size_t>(*slot)] != 0)
+                    intent = umbra::policy::ToIntent(session_.Content(), learned->second.model.contract, static_cast<std::size_t>(*slot), *current, 0);
+                else
+                    log_.push_back(FighterName(*current) + ": learned AI gave no usable answer, standard AI acts");
+            }
+            Act(intent, false);
             enemyDelay_ = enemyTurnDelay;
+            policyFor_ = static_cast<std::size_t>(-1);
         }
     }
     ReadEvents(turn->TakeEvents());
@@ -606,7 +659,8 @@ void GameFlow::FillHud(umbra::core::Hud &hud)
         if (const rpg::Roster *roster = FightRoster())
             for (std::size_t i = 1; i < roster->size(); ++i)
                 if ((*roster)[i].character->IsAlive())
-                    hud.status.push_back(FighterName(i) + ": " + std::to_string((*roster)[i].character->health) + " HP");
+                    hud.status.push_back(FighterName(i) + ": " + std::to_string((*roster)[i].character->health) + " HP" +
+                                         (learned_.contains((*roster)[i].character->actor) && session_.Mode() == game::CombatMode::Turn ? "  (learned AI)" : ""));
         hud.status.insert(hud.status.end(), log_.begin(), log_.end());
         if (umbra::turn::TurnEncounter *turn = session_.Combat().Turn())
         {

@@ -349,6 +349,11 @@ void Editor::RpgEntryForm(const std::string &at, const Json &entry, const std::v
             number(changed, "/color", Json::array({color[0], color[1], color[2], color[3]}));
             ImGui::TreePop();
         }
+        // Learned turn-combat AI (tools/policy). The game checks it still fits before using it.
+        std::vector<std::string> policies = assets_["Learned AI"];
+        policies.insert(policies.begin(), "");
+        if (Combo("Learned AI", entry.value("policy", ""), policies, text))
+            text.empty() ? remove("/policy") : set("/policy", text);
     }
     else if (rpgSection_ == "quests")
     {

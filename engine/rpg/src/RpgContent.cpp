@@ -153,7 +153,7 @@ namespace umbra::rpg
             });
 
             r.Objects(root, "actors", "", [&](const json &s, const std::string &at) {
-                r.Known(s, at, {"id", "name", "stats", "skills", "equipment", "inventory", "inventorySlots", "skillPoints", "xp", "growth", "model", "color", "size"});
+                r.Known(s, at, {"id", "name", "stats", "skills", "equipment", "inventory", "inventorySlots", "skillPoints", "xp", "growth", "model", "color", "size", "policy"});
                 ActorDef def{r.String(s, "id", at), r.String(s, "name", at)};
                 const auto stats = s.find("stats");
                 if (stats == s.end() || !stats->is_object())
@@ -192,6 +192,7 @@ namespace umbra::rpg
                             def.color[i] = (*color)[i].is_number() ? (*color)[i].get<float>() : 1.0F;
                 }
                 def.size = r.Float(s, "size", 0.8F, 0.05F, 20.0F, at);
+                def.policy = r.String(s, "policy", at); // learned turn-based AI (engine/policy)
                 Insert(r, c.actors, def, at);
             });
         }

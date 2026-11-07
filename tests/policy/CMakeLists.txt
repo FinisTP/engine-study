@@ -20,3 +20,9 @@ target_link_libraries(
 umbra_copy_asan_runtime(UmbraPolicyTests)
 
 add_test(NAME Umbra.Policy COMMAND UmbraPolicyTests)
+
+# The shipped model must still fit the shipped content (the same check the game runs).
+add_test(
+    NAME Umbra.Tool.PolicyCheck
+    COMMAND UmbraTool policy-check ${PROJECT_SOURCE_DIR}/assets/policies/bandit_leader.policy.json --content ${PROJECT_SOURCE_DIR}/assets/rpg/reference.rpg.json
+)

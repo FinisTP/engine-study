@@ -5,6 +5,8 @@
 #include <PolicyEnvironment.hpp>
 #include <PolicyModel.hpp>
 
+#include <algorithm>
+#include <cstdio>
 #include <memory>
 #include <string>
 

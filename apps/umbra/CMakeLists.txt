@@ -35,6 +35,7 @@ target_link_libraries(
         Umbra::Gameplay
         Umbra::Audio
         Umbra::Game
+        Umbra::Policy
         Umbra::Warnings
         Umbra::Sanitizers
 )

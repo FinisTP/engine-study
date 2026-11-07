@@ -937,6 +937,8 @@ void Editor::ScanAssets()
             assets_["Models"].push_back(path);
         else if (name.ends_with(".wav"))
             assets_["Sounds"].push_back(path);
+        else if (name.ends_with(".policy.json"))
+            assets_["Learned AI"].push_back(path);
     }
     for (auto &[group, files] : assets_)
         std::sort(files.begin(), files.end());

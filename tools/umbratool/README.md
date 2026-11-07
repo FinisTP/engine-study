@@ -9,6 +9,7 @@ layer as the editor (`engine/authoring`), so all three report the same diagnosti
 | `UmbraTool inspect <file> [--json]` | Lists what a scene or RPG file holds, by id. |
 | `UmbraTool schema [--json]` | Format versions this build reads, and the document describing each. |
 | `UmbraTool fight <rpg> <hero> <enemy>... [--json]` | A turn fight with the conventional AI on both sides, e.g. to check balance after editing stats. |
+| `UmbraTool policy-check <policy> --content <rpg> [--json]` | Is a learned enemy model readable, and does it still fit the content (same actions, same fingerprint)? The same check the game runs before using it. |
 
 Exit codes: 0 ok, 1 errors found or the fight could not run, 2 bad usage.
 

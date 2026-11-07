@@ -5,10 +5,12 @@
 //   UmbraTool inspect  <file> [--json]
 //   UmbraTool schema   [--json]
 //   UmbraTool fight    <rpg file> <hero actor> <enemy actor>... [--json]
+//   UmbraTool policy-check <policy file> --content <rpg file> [--json]
 //
 // Exit code: 0 = ok, 1 = errors found (or the fight couldn't run), 2 = bad usage.
 
 #include <Document.hpp>
+#include <PolicyModel.hpp>
 #include <RpgContent.hpp>
 #include <SaveGame.hpp>
 #include <SceneFile.hpp>
@@ -41,7 +43,8 @@ namespace
                      "  UmbraTool validate <file>... [--assets <folder>] [--content <rpg file>] [--json]\n"
                      "  UmbraTool inspect  <file> [--json]\n"
                      "  UmbraTool schema   [--json]\n"
-                     "  UmbraTool fight    <rpg file> <hero actor> <enemy actor>... [--json]\n";
+                     "  UmbraTool fight    <rpg file> <hero actor> <enemy actor>... [--json]\n"
+                     "  UmbraTool policy-check <policy file> --content <rpg file> [--json]\n";
         return 2;
     }
 
@@ -186,6 +189,19 @@ namespace
         }
         return step.done ? 0 : 1;
     }
+
+    // A learned enemy model: readable on its own, and still fitting this content (same checks as the game).
+    int PolicyCheck(const Arguments &args)
+    {
+        if (args.positional.size() != 1 || args.content.empty())
+            return Usage();
+        std::vector<Diagnostic> diagnostics;
+        umbra::rpg::Content content;
+        umbra::policy::PolicyModel model;
+        if (umbra::rpg::LoadContent(args.content, content, diagnostics) && umbra::policy::LoadPolicy(args.positional[0], model, diagnostics))
+            umbra::policy::CheckCompatible(model, content, args.positional[0], diagnostics);
+        return Report(diagnostics, 1, args.json);
+    }
 }
 
 int main(int argc, char **argv)
@@ -219,5 +235,7 @@ int main(int argc, char **argv)
         return Schema(args);
     if (command == "fight")
         return Fight(args);
+    if (command == "policy-check")
+        return PolicyCheck(args);
     return Usage();
 }

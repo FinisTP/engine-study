@@ -8,6 +8,7 @@ target_link_libraries(
     PRIVATE
         Umbra::Authoring
         Umbra::TurnCombat
+        Umbra::Policy
         nlohmann_json::nlohmann_json
         Umbra::Warnings
         Umbra::Sanitizers

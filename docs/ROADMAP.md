@@ -32,7 +32,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 
 **First action for a new agent:** finish B0 — the Windows-side checks are still open (see the B0 record). Re-inspect the checkout; if it has advanced past this dashboard, preserve completed work and select the earliest genuinely unmet task. Do not blindly implement P3.1 again.
 
-**Current next task:** the Windows build and checklists for P6 and P7 (`testing/phase6-reference-game.md` section 4, `testing/phase7-creator-workflow.md` section 4), then P8A (learned turn-based enemy) / P8B (AI authoring). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
+**Current next task:** P8B (AI-assisted quest/dialogue authoring with Ollama). Open in parallel: the Windows checklists for P6, P7 and P8A (`testing/phase6-reference-game.md` §4, `testing/phase7-creator-workflow.md` §4, `testing/p8a-learned-enemy.md` §5) and P8A recipe robustness (1 of 2 seeds). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
 
 | Gate | Dependency | Status (updated 2026-11-07) | Evidence / exit summary |
 |---|---|---|---|
@@ -46,6 +46,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 | P6 Complete offline reference game | P4/P5 | Implemented 2026-11-07; Linux and Windows CTest pass; first play test fixed (`#UMBRA-43`); full play-through open | P6.1–P6.5: conversation, quest with failure, XP/levels, save/autosave with backup, roaming enemies, in-place turn and real-time fights, death menu. Packaging from a clean install (T43/T45) remains for P9. Evidence: `testing/phase6-reference-game.md`. |
 | P7 Creator workflow | P3/P5/P6 contracts | Implemented 2026-11-07; headless parts verified on Linux; editor compiled, not yet run; Windows checklist open | P7.1–P7.6: shared validated documents with undo (`Umbra::Authoring`), `UmbraTool`, `UmbraEditor` (scenes + RPG forms, gizmo, Play), live RPG content reload, known-good build, package script, creator guide. Evidence: `testing/phase7-creator-workflow.md`. |
 | P8A Learned turn-based enemy | P5 turn rules; headless fixture | Planned independent track | Training → export → native evaluation → local inference with fallback. |
+| P8A Learned turn-based enemy | P5 rules, P7 tools | Implemented 2026-11-07; one model accepted under declared thresholds; recipe 1 of 2 seeds; Windows run open | Built-in C++ network (user decision), PPO trained on CPU through the native rules, matched-probe preference gap +0.25 vs control −0.13, competence equal to the conventional AI (content-limited). Evidence: `testing/p8a-learned-enemy.md`. |
 | P8B AI authoring | P7 schema/patch/validation capability | Planned independent track | Local quest/dialogue draft → preview → approval → reversible commit. |
 | P9 PC release | P6/P7/P8A/P8B | Planned | Clean offline install, complete game, authoring workflow, measured reference-PC gate. |
 | P10 Playable web export | P9; W0 decisions | Planned later port | Browser game and local policy, durable-save UX, offline installation readiness. |
@@ -545,6 +546,17 @@ Emscripten documents a WebGPU integration through Emdawnwebgpu [S8]. Investigate
 | P8A.5 Async integration | Immutable snapshots, bounded resources, deadlines, version checks and conventional fallback | Late, malformed, missing, incompatible, all-invalid and shutdown/overload paths controlled |
 | P8A.6 Accessible workflow | Enemy behavior/observation selection within supported contract, preset recipe, training/evaluation status, approve/package model | Developer follows sample without editing core engine; rejected model is visibly rejected; ordinary game still runs |
 
+<!-- P8A-status -->
+| Task | Status | Evidence |
+|---|---|---|
+| P8A.1 | Implemented: observation v1, catalogue, masks, fingerprint, 1v1 environment on the real TurnEncounter | `tests/policy/PolicyTests.cpp`; `engine/policy/include/Policy.md` |
+| P8A.2 | Implemented: C bridge + Python (numpy, PyTorch, CPU); PPO recipe; seeds, time and resources recorded in each model | `tools/policy/README.md`; models' `training` block |
+| P8A.3 | Implemented: soft preference reward, control model, matched probes, counterexamples, thresholds declared before final runs | `testing/p8a-learned-enemy.md` §2–3; `docs/testing/p8a/*.json` |
+| P8A.4 | Implemented: `umbra.policy` JSON, built-in C++ MLP; parity 6.6e-6, 200 native fights | `PolicyTests` (parity, native fights) |
+| P8A.5 | Implemented: async decider (tagged answers, deadline = enemy pause, one job, join on shutdown), conventional fallback | `PolicyTests` (decider); `apps/umbra/GameFlow.md` |
+| P8A.6 | Implemented: preset recipe, evaluate/approve (refusal visible), `UmbraTool policy-check`, editor field, game refusal message | `tools/policy/README.md`; Windows run open |
+<!-- /P8A-status -->
+
 **Exit gate:** one accepted turn-based policy executes offline and demonstrates the measured learned preference under declared tests, not a hidden forced branch. Full result must include failures, limitations and explicit acceptance thresholds. Verify T19, T23–T31, T41, T47, T52, T54–T55 and T59–T60.
 
 Do not replace a failed experiment with unreported heuristic behavior and call the learned feature complete. The game may still ship a development build with conventional fallback, but P8A remains open until its evidence passes.
@@ -793,9 +805,9 @@ These are bounded decisions, not a request to stop and ask the user all of them 
 | O05 | Turn order/AP, real-time cost timing, effect clocks and mode integration. **User decisions 2026-11-07:** speed-ordered rounds, one action per fighter; real-time cost paid at commit (end of wind-up), interruption during wind-up is free, no refund after commit; statuses and cooldowns end with the encounter and modes change only between encounters. | P5 controllers | A concrete mechanic requires another rule |
 | O06 | Enemy instance/archetype meaning; reference encounter arrangement. **P5 default:** an actor definition is a reusable archetype. **User decisions 2026-11-07:** dungeon areas have enemy pools; enemies roam (some chase on sight) and touching one starts a fight with it plus up to two more from the pool (1–3 enemies); defeated roamers return when the area is re-entered. Fights happen in place (superseded later on 2026-11-07 after the first play test: every fight, turn-based and real-time, moves to a separate battle arena scene and returns to the same dungeon spot). The player picks turn-based (default) or real-time outside combat; it can't change during a fight. Fleeing always works. | P5/P6 content | User content scope clarification |
 | O07 | Overflow, respec, quest failure, save/retry UX. **User decisions 2026-11-07:** a full inventory rejects the pickup; quests can fail (data-driven, e.g. on the player's death); saving at fixed save stones (E to interact, one manual slot with a backup) and automatically on area change (one autosave slot); on death the player picks "load save" or "load last autosave"; growth by XP and levels; placeholder quest written by Claude. Respec: none yet (default). | P5/P6 | Reference walkthrough softlock or usability finding |
-| O08 | Training tools/algorithm/hardware; external Python is proposed default | P8A.2 | Inadequate results or workflow/deployment cost |
+| O08 | Training tools/algorithm/hardware; external Python is proposed default. **Decided 2026-11-07:** Python + PyTorch on CPU, PPO with action masks, through a C bridge to the native rules (user: train in Claude's workspace). | P8A.2 | Inadequate results or workflow/deployment cost |
 | O09 | Reward/style objective and held-out evaluation thresholds | Before final P8A evaluation | Evidence shows confounding or reward exploit |
-| O10 | Inference runtime/operators/device and budget; candidate CPU ONNX path | P8A.4 | Actual policy latency/resource/platform issue |
+| O10 | Inference runtime/operators/device and budget; candidate CPU ONNX path. **Decided 2026-11-07 (user):** built-in C++ MLP, no ONNX Runtime; 3.9 µs per decision. | P8A.4 | Actual policy latency/resource/platform issue |
 | O11 | Local authoring provider/model/license and novice installation experience | P8B.1 | Model quality, resource or redistribution problem |
 | O12 | Reference PC/settings/workload and quantitative release budgets | Before P9 sign-off | Content or target tier changes |
 | O13 | Browser backend, shader path, capabilities/hosting support. **User decision 2026-11-06:** run W0 after P4. **W0 (2026-11-07):** WebGPU for graphics (separate small backend behind `core::DrawList`), HLSL → SPIR-V → WGSL planned, Emscripten candidate for P10; rules already build to WebAssembly unchanged. See `docs/adr/0001-web-backend.md`. | W0; finalize P10 | Actual supported-browser failure |

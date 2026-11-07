@@ -1,14 +1,21 @@
 # Umbra Engine - Current Development Status
 
 **Status date:** 2026-11-07 (Phase 1/2 records dated 2026-09-02)
-**Current milestone:** Phase 7 - Creator workflow, implemented; editor and package not yet run on Windows
+**Current milestone:** P8A - Learned turn-based enemy, implemented (one accepted model); next P8B
 **Phase 1 status:** Complete (interactive checklist unsigned)
 **Phase 2 status:** Complete
 **Phase 3 status:** Implemented. Headless tests verified on Linux; Windows build and GPU checks not run yet
 **Phase 4 status:** Implemented. Headless tests verified on Linux (18/18, GCC/Clang/ASan); Windows, GPU, audio and interactive checks not run yet
 **Phase 5 status:** Implemented. Headless tests verified on Linux (24/24, GCC/Clang/ASan); Windows build/CTest not run yet; wired into the game in P6
 **Phase 6 status:** Implemented. Headless tests verified on Linux (27/27, GCC/Clang/ASan); Windows build 27/27 on 2026-11-07; first play test done (fixes in `#UMBRA-43`: save stone reach, separate battle arena, hit flash); full play-through open
-**Phase 7 status:** Implemented. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
+**P8A status:** Implemented. One model accepted under declared thresholds (seed 301); the same recipe failed for seed 300; competence equals the conventional AI; Windows/in-game run open
+**Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
+
+## Update 2026-11-07 (late night)
+
+- Meshy characters (`#UMBRA-52`): hero, Elder Mara, wolf, bandit (bandit leader = tinted bandit); actors gained `model`, `size`, `color`.
+- P8A (`#UMBRA-53`, `#UMBRA-54`): `Umbra::Policy`, `tools/policy` (PPO through a C bridge), `assets/policies/bandit_leader.policy.json`, game integration with fallback. Evidence: [`testing/p8a-learned-enemy.md`](testing/p8a-learned-enemy.md).
+- User decisions: P8A first; built-in C++ network; training on CPU in Claude's workspace; P8B will use Ollama.
 
 ## Update 2026-11-07 (night)
 
@@ -213,7 +220,7 @@ All seven items of the old Phase 3 entry point are implemented (see the table ab
 - Gameplay-state preservation across scene reloads (done in P4.4: hot reload keeps the player; F5/F9 checkpoints).
 - Packaging: the app reads assets from the source tree (`UMBRA_ASSET_DIRECTORY`) and caches in the build tree. A relocatable package layout is a P6/P9 task (roadmap T43).
 
-Next: the Windows checklists for P6/P7, then P8A / P8B. Open in parallel: the interactive checklists in [`testing/phase3-assets-world.md`](testing/phase3-assets-world.md) and [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md) and the clang-cl/ASan presets.
+Next: P8B (Ollama authoring). Open: Windows checklists for P6/P7/P8A, P8A recipe robustness. Open in parallel: the interactive checklists in [`testing/phase3-assets-world.md`](testing/phase3-assets-world.md) and [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md) and the clang-cl/ASan presets.
 
 ## Local verification
 

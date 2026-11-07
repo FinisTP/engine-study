@@ -135,6 +135,7 @@ namespace umbra::rpg
         std::string model;                       // asset path, e.g. "models/wolf.glb"
         std::array<float, 4> color{1, 1, 1, 1};  // tint multiplied with the texture
         float size = 0.8F;                       // half-height in meters
+        std::string policy;                      // learned turn-combat AI file (empty = conventional AI)
     };
 
     // --- Story: quests and conversations (P6). State lives in story::QuestLog. ---
