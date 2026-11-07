@@ -32,7 +32,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 
 **First action for a new agent:** finish B0 — the Windows-side checks are still open (see the B0 record). Re-inspect the checkout; if it has advanced past this dashboard, preserve completed work and select the earliest genuinely unmet task. Do not blindly implement P3.1 again.
 
-**Current next task:** the P6 Windows build and play-through (`testing/phase6-reference-game.md` sections 3–4), then P7.1. Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
+**Current next task:** the Windows build and checklists for P6 and P7 (`testing/phase6-reference-game.md` section 4, `testing/phase7-creator-workflow.md` section 4), then P8A (learned turn-based enemy) / P8B (AI authoring). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
 
 | Gate | Dependency | Status (updated 2026-11-07) | Evidence / exit summary |
 |---|---|---|---|
@@ -44,7 +44,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 | P4 Playable 3D sandbox | P3 | Implemented 2026-11-06; headless verified on Linux; **Windows/GPU/interactive gate open** | All tasks P4.1–P4.5 implemented. Evidence and checklists: `testing/phase4-sandbox.md`. |
 | P5 Shared rules and combat modes | P3; P4 for graphical integration | Implemented 2026-11-07; headless verified on Linux; Windows gate open | P5.1–P5.8 implemented; turn-only, real-time-only and combined fixtures pass. Not yet wired into the 3D game (P6). Evidence: `testing/phase5-rules-combat.md`. |
 | P6 Complete offline reference game | P4/P5 | Implemented 2026-11-07; Linux and Windows CTest pass; first play test fixed (`#UMBRA-43`); full play-through open | P6.1–P6.5: conversation, quest with failure, XP/levels, save/autosave with backup, roaming enemies, in-place turn and real-time fights, death menu. Packaging from a clean install (T43/T45) remains for P9. Evidence: `testing/phase6-reference-game.md`. |
-| P7 Creator workflow | P3/P5/P6 contracts | Planned | Data editing, undo, validation, content reload, incremental rebuild and packaging workflow. |
+| P7 Creator workflow | P3/P5/P6 contracts | Implemented 2026-11-07; headless parts verified on Linux; editor compiled, not yet run; Windows checklist open | P7.1–P7.6: shared validated documents with undo (`Umbra::Authoring`), `UmbraTool`, `UmbraEditor` (scenes + RPG forms, gizmo, Play), live RPG content reload, known-good build, package script, creator guide. Evidence: `testing/phase7-creator-workflow.md`. |
 | P8A Learned turn-based enemy | P5 turn rules; headless fixture | Planned independent track | Training → export → native evaluation → local inference with fallback. |
 | P8B AI authoring | P7 schema/patch/validation capability | Planned independent track | Local quest/dialogue draft → preview → approval → reversible commit. |
 | P9 PC release | P6/P7/P8A/P8B | Planned | Clean offline install, complete game, authoring workflow, measured reference-PC gate. |
@@ -516,6 +516,17 @@ Emscripten documents a WebGPU integration through Emdawnwebgpu [S8]. Investigate
 | P7.4 Headless tool surface | Validate content, run scenario, inspect schema, build/package wrapper where useful; structured diagnostics | Same invalid input produces useful matching CLI/editor diagnostics; noninteractive test fixtures |
 | P7.5 Iteration workflow | Data safe reload; targeted C++ rebuild; play restart and compatible checkpoint restore; preserved known-good build/content | Measured representative edits; failed compile/reload does not lose the known-good pairing |
 | P7.6 Creator onboarding | Sample project/template, concise commands and troubleshooting, package operation | Fresh user follows the guide, changes data, diagnoses planted error, runs and packages the game |
+
+<!-- P7-status -->
+| Task | Status | Evidence |
+|---|---|---|
+| P7.1 | Implemented (compiled; not yet run): `apps/editor`, hierarchy, inspector, asset browser, diagnostics, ImGuizmo, picking, Play | `apps/editor/Editor.md`; `Umbra.GameExcludesEditor` |
+| P7.2 | Implemented: RPG forms for items, skills, statuses, actors, quests, conversations | `apps/editor/Editor.md`; `DocumentTests` (item + quest by data only) |
+| P7.3 | Implemented: `Umbra::Authoring` documents: validated all-or-nothing edits, undo/redo, merged drags, revision conflicts, atomic save with outside-change detection | `tests/authoring/DocumentTests.cpp` (T48); `engine/authoring/include/Authoring.md` |
+| P7.4 | Implemented: `UmbraTool validate / inspect / schema / fight`, JSON diagnostics shared with the editor | `tests/authoring/ValidateTests.cpp`, `Umbra.Tool.*`; `tools/umbratool/README.md` |
+| P7.5 | Implemented: live RPG content reload at safe moments (checked like a save), assets/shaders found next to the program, install rules, known-good build copy, measured rebuilds | `GameSessionTests` (reload check, T51); `apps/umbra/GameFlow.md`; measurements in the record |
+| P7.6 | Implemented: `scripts/package.bat` (folder + zip), `scripts/editor.bat`, `docs/creator-guide.md` with a planted-error exercise | Second-person walkthrough open |
+<!-- /P7-status -->
 
 **Exit gate:** a second person performs the creator walkthrough without undocumented manual fixes. Single-creator usability takes priority over collaboration servers, visual scripting or a full asset marketplace. Verify T22, T37, T42, T48, T51, T53 and T58.
 

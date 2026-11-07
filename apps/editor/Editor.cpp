@@ -26,6 +26,14 @@ namespace authoring = umbra::authoring;
 
 namespace
 {
+    // Paths as UTF-8 text and back. std::string paths would use the Windows code page (roadmap T37).
+    std::string Utf8(const std::filesystem::path &path)
+    {
+        const std::u8string text = path.generic_u8string();
+        return {text.begin(), text.end()};
+    }
+    std::filesystem::path FromUtf8(const std::string &text) { return std::u8string(text.begin(), text.end()); }
+
     // Reads [x, y, z] (or [x, y, z, w]) from an entity field, with a default.
     glm::vec3 Vec3(const Json &entity, const char *key, glm::vec3 fallback)
     {
@@ -212,7 +220,7 @@ void Editor::Play()
         Save();
     if (scene_->IsDirty())
         return;
-    const std::string game = gameExecutable_.string();
+    const std::string game = Utf8(gameExecutable_);
     const char *arguments[] = {game.c_str(), scenePath_.c_str(), nullptr};
     SDL_Process *process = SDL_CreateProcess(arguments, false);
     if (process == nullptr)
@@ -230,7 +238,7 @@ void Editor::Play()
 
 bool Editor::OpenScene(const std::string &scenePath)
 {
-    auto doc = std::make_unique<authoring::Document>(assetRoot_ / scenePath, authoring::SceneValidator({assetRoot_, {}}));
+    auto doc = std::make_unique<authoring::Document>(assetRoot_ / FromUtf8(scenePath), authoring::SceneValidator({assetRoot_, {}}));
     std::vector<umbra::core::Diagnostic> diagnostics;
     if (!doc->Open(diagnostics))
     {
@@ -873,7 +881,7 @@ void Editor::Popups()
         ImGui::InputText("File", name, sizeof(name));
         if (ImGui::Button("Create"))
         {
-            const std::filesystem::path file = assetRoot_ / name;
+            const std::filesystem::path file = assetRoot_ / FromUtf8(name);
             if (std::filesystem::exists(file))
                 message_ = std::string{name} + " already exists", messageSeconds_ = 4.0F;
             else
@@ -912,8 +920,8 @@ void Editor::ScanAssets()
     {
         if (ec || !it->is_regular_file())
             continue;
-        const std::string path = std::filesystem::relative(it->path(), assetRoot_).generic_string();
-        const std::string name = it->path().filename().string();
+        const std::string path = Utf8(std::filesystem::relative(it->path(), assetRoot_));
+        const std::string name = Utf8(it->path().filename());
         if (name.ends_with(".scene.json"))
             assets_["Scenes"].push_back(path);
         else if (name.ends_with(".rpg.json"))

@@ -196,3 +196,19 @@ TEST_CASE("A new item and a quest that uses it are added with data only")
     REQUIRE(content.FindItem("amulet") != nullptr);
     REQUIRE(content.FindQuest("lost_amulet")->objectives.size() == 1);
 }
+
+TEST_CASE("Non-ASCII names and folders survive editing and saving")
+{
+    // Roadmap T37: ids stay ASCII, display text and paths may be anything (UTF-8).
+    const auto dir = test::TempDir("authoring-utf8") / std::filesystem::path(u8"thư mục");
+    std::filesystem::create_directories(dir);
+    authoring::Document doc = OpenScene(dir);
+    std::vector<core::Diagnostic> diagnostics;
+    const std::string name = "B\xC3\xA1nh m\xC3\xAC \xE2\x80\x94 \xE5\xAE\x9D"; // "Bánh mì — 宝"
+    REQUIRE(doc.Apply({{Change::Op::Set, "/entities/0/name", name}}, "Name", diagnostics));
+    REQUIRE(doc.Save(diagnostics));
+
+    world::World world;
+    REQUIRE(scene::LoadScene(dir / "test.scene.json", {}, world, diagnostics));
+    REQUIRE(*world.GetName(world.Find("floor")) == name);
+}

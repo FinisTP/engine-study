@@ -1,13 +1,21 @@
 # Umbra Engine - Current Development Status
 
 **Status date:** 2026-11-07 (Phase 1/2 records dated 2026-09-02)
-**Current milestone:** Phase 6 - Complete offline reference RPG, implemented; Windows build and play-through open
+**Current milestone:** Phase 7 - Creator workflow, implemented; editor and package not yet run on Windows
 **Phase 1 status:** Complete (interactive checklist unsigned)
 **Phase 2 status:** Complete
 **Phase 3 status:** Implemented. Headless tests verified on Linux; Windows build and GPU checks not run yet
 **Phase 4 status:** Implemented. Headless tests verified on Linux (18/18, GCC/Clang/ASan); Windows, GPU, audio and interactive checks not run yet
 **Phase 5 status:** Implemented. Headless tests verified on Linux (24/24, GCC/Clang/ASan); Windows build/CTest not run yet; wired into the game in P6
 **Phase 6 status:** Implemented. Headless tests verified on Linux (27/27, GCC/Clang/ASan); Windows build 27/27 on 2026-11-07; first play test done (fixes in `#UMBRA-43`: save stone reach, separate battle arena, hit flash); full play-through open
+**Phase 7 status:** Implemented. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
+
+## Update 2026-11-07 (night)
+
+- Phase 7 (P7.1–P7.6) implemented in commits `#UMBRA-44` … `#UMBRA-49`. Evidence: [`testing/phase7-creator-workflow.md`](testing/phase7-creator-workflow.md). Guide: [`creator-guide.md`](creator-guide.md).
+- User decisions: separate editor program; number fields + ImGuizmo gizmo; forms for RPG content; package = folder + zip.
+- New: `Umbra::Authoring` (validated documents with undo), `UmbraTool`, `UmbraEditor`, live RPG content reload in the game, `scripts/package.bat`, `scripts/editor.bat`, known-good build copy in `build-and-run.bat`.
+- New dependencies: `imgui[sdl3-binding]`, `imguizmo` (vcpkg builds them on the next configure).
 
 ## Update 2026-11-07 (evening)
 
@@ -205,7 +213,7 @@ All seven items of the old Phase 3 entry point are implemented (see the table ab
 - Gameplay-state preservation across scene reloads (done in P4.4: hot reload keeps the player; F5/F9 checkpoints).
 - Packaging: the app reads assets from the source tree (`UMBRA_ASSET_DIRECTORY`) and caches in the build tree. A relocatable package layout is a P6/P9 task (roadmap T43).
 
-Next: the P6 Windows build and play-through, then P7 (creator workflow). Open in parallel: the interactive checklists in [`testing/phase3-assets-world.md`](testing/phase3-assets-world.md) and [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md) and the clang-cl/ASan presets.
+Next: the Windows checklists for P6/P7, then P8A / P8B. Open in parallel: the interactive checklists in [`testing/phase3-assets-world.md`](testing/phase3-assets-world.md) and [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md) and the clang-cl/ASan presets.
 
 ## Local verification
 
