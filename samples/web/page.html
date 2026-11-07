@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Umbra W0 web experiment</title>
+<style>
+  body { margin: 0; font: 14px system-ui, sans-serif; background: #10141a; color: #dde3ea; display: flex; flex-wrap: wrap; }
+  canvas { width: min(100vw, 900px); aspect-ratio: 16 / 9; display: block; }
+  section { padding: 12px 16px; max-width: 520px; }
+  h1 { font-size: 18px; margin: 0 0 8px; }
+  dt { font-weight: 600; margin-top: 10px; }
+  .ok { color: #7fd88a; } .fail { color: #ff8a7a; }
+  pre { font-size: 12px; max-height: 260px; overflow: auto; background: #0a0d11; padding: 8px; }
+</style>
+</head>
+<body>
+<canvas id="view" width="1280" height="720"></canvas>
+<section>
+  <h1>Umbra W0: can the engine run in a browser?</h1>
+  <dl>
+    <dt>Rules in WebAssembly (turn fight, conventional AI)</dt><dd id="sim">running...</dd>
+    <dt>WebGPU rendering (settlement scene)</dt><dd id="gpu">starting...</dd>
+    <dt>Persistent storage</dt><dd id="storage">testing...</dd>
+  </dl>
+  <pre id="sim-log"></pre>
+</section>
+<!--ASSETS-->
+</body>
+</html>

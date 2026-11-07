@@ -1,0 +1,3 @@
+# Build outputs (make them with build.sh and make-page.mjs)
+umbra_sim.wasm
+umbra-web.html

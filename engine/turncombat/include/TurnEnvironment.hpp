@@ -47,6 +47,8 @@ namespace umbra::turn
         // observation contract allows, which is decided in P8A).
         [[nodiscard]] const std::vector<rpg::Character> &Characters() const noexcept { return characters_; }
         [[nodiscard]] int Round() const { return encounter_ ? encounter_->Round() : 0; }
+        // The live encounter (e.g. for a conventional opponent: ChooseTurnAction); nullptr before Reset.
+        [[nodiscard]] const TurnEncounter *Encounter() const noexcept { return encounter_.get(); }
         [[nodiscard]] int Steps() const noexcept { return steps_; }
 
     private:
