@@ -172,3 +172,43 @@ TEST_CASE("Retrying after a load never pays a reward twice")
     REQUIRE(s.Hero().xp == xpAfter); // the same reward once, not twice
     REQUIRE(rpg::CountItem(s.Hero(), "sun_relic") == 1);
 }
+
+TEST_CASE("Loading mid-fight ends the fight; decisions made for it are refused")
+{
+    // T19: a decision that arrives after a load must not touch the loaded state.
+    game::GameSession s(C(), 6);
+    const auto save = *s.MakeSave("scenes/dungeon.scene.json", {}, 0.0F);
+    REQUIRE(s.StartFight({"wolf", "wolf"}));
+    const std::uint64_t oldFight = s.FightId();
+    turn::TurnEncounter &fight = *s.Combat().Turn();
+    rpg::ActionIntent late = turn::ChooseTurnAction(C(), fight);
+
+    s.ApplySave(save);
+    REQUIRE(s.GetPhase() == Phase::Exploring);
+    late.id = s.NextDecisionId();
+    REQUIRE(s.Combat().Submit(oldFight, late) != rpg::Rejection::None);
+    REQUIRE(s.Hero().health == save.hero.health);
+    REQUIRE_FALSE(s.CheckFightEnd()); // nothing left to resolve
+
+    // A new fight after the load starts cleanly.
+    REQUIRE(s.StartFight({"wolf"}));
+    REQUIRE(s.FightId() != oldFight);
+}
+
+TEST_CASE("New game after death starts over with a fresh hero")
+{
+    game::GameSession s(C(), 7);
+    s.Quests().Start("sun_relic");
+    s.Hero().health = 1;
+    REQUIRE(s.StartFight({"bandit_leader"}));
+    REQUIRE_FALSE(PlayTurnFight(s).won);
+    REQUIRE(s.GetPhase() == Phase::Dead);
+    REQUIRE_FALSE(s.ToggleMode()); // no mode change while dead
+    REQUIRE_FALSE(s.Talk("elder_mara"));
+
+    s.NewGame();
+    REQUIRE(s.GetPhase() == Phase::Exploring);
+    REQUIRE(s.Hero().level == 1);
+    REQUIRE(s.Hero().health == 110); // 100 base + leather armor
+    REQUIRE(s.Quests().GetState("sun_relic") == rpg::QuestState::NotStarted);
+}

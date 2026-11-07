@@ -32,7 +32,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 
 **First action for a new agent:** finish B0 — the Windows-side checks are still open (see the B0 record). Re-inspect the checkout; if it has advanced past this dashboard, preserve completed work and select the earliest genuinely unmet task. Do not blindly implement P3.1 again.
 
-**Current next task:** P6.1. Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
+**Current next task:** the P6 Windows build and play-through (`testing/phase6-reference-game.md` sections 3–4), then P7.1. Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
 
 | Gate | Dependency | Status (updated 2026-11-07) | Evidence / exit summary |
 |---|---|---|---|
@@ -43,7 +43,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 | W0 Early web feasibility | P3 core contracts; minimal rendering sample | Done 2026-11-07: rules → WebAssembly with exact native parity; WebGPU rendering of the settlement and localStorage persistence verified in Microsoft Edge (Windows, Intel GPU) | `samples/web`, ADR `docs/adr/0001-web-backend.md`. Still untested: other browsers, Emscripten, automatic HLSL→WGSL (toolchain downloads blocked in the agent environment). |
 | P4 Playable 3D sandbox | P3 | Implemented 2026-11-06; headless verified on Linux; **Windows/GPU/interactive gate open** | All tasks P4.1–P4.5 implemented. Evidence and checklists: `testing/phase4-sandbox.md`. |
 | P5 Shared rules and combat modes | P3; P4 for graphical integration | Implemented 2026-11-07; headless verified on Linux; Windows gate open | P5.1–P5.8 implemented; turn-only, real-time-only and combined fixtures pass. Not yet wired into the 3D game (P6). Evidence: `testing/phase5-rules-combat.md`. |
-| P6 Complete offline reference game | P4/P5 | Planned | Conversation, quest, save/load, rewards, retry and complete offline journey. |
+| P6 Complete offline reference game | P4/P5 | Implemented 2026-11-07; rules verified on Linux; Windows build and play-through open | P6.1–P6.5: conversation, quest with failure, XP/levels, save/autosave with backup, roaming enemies, in-place turn and real-time fights, death menu. Packaging from a clean install (T43/T45) remains for P9. Evidence: `testing/phase6-reference-game.md`. |
 | P7 Creator workflow | P3/P5/P6 contracts | Planned | Data editing, undo, validation, content reload, incremental rebuild and packaging workflow. |
 | P8A Learned turn-based enemy | P5 turn rules; headless fixture | Planned independent track | Training → export → native evaluation → local inference with fallback. |
 | P8B AI authoring | P7 schema/patch/validation capability | Planned independent track | Local quest/dialogue draft → preview → approval → reversible commit. |
@@ -489,6 +489,16 @@ Emscripten documents a WebGPU integration through Emdawnwebgpu [S8]. Investigate
 | P6.3 Save/load | Safe-boundary state snapshots, version/checksum or equivalent integrity checks, staged load, backup/migration policy | Save/exit/reload all required progression; corrupt/old/new/missing-content and disk-failure tests |
 | P6.4 Reference content | Settlement/dungeon, one player/NPC/enemy content scope, equipment/skill unlock and separate encounters | Complete the reference walkthrough; content arrangement respects recorded assumptions |
 | P6.5 Failure/retry/offline | Death/retry, pause, repeated transitions, clean shutdown, no network requirement | Play with network unavailable; retry/load do not duplicate rewards or retain pending work |
+
+<!-- P6-status -->
+| Task | Status | Evidence |
+|---|---|---|
+| P6.1 | Implemented: `Umbra::Story` conversations (conditions, all-or-nothing actions, walk away), quests/conversations in `umbra.rpg` | `tests/story/ConversationTests.cpp` (T15); `engine/story/include/Story.md` |
+| P6.2 | Implemented: ordered objectives, early events ignored, failure on death, reward once, XP and levels, overflow kept as pending | `tests/story/QuestTests.cpp`, `tests/rpg/ProgressionTests.cpp` (T13, T14) |
+| P6.3 | Implemented: `umbra.save` v1 with checksum, write-verify-backup-rename, full validation, backup fallback | `tests/game/SaveGameTests.cpp` (T16–T18, T49); `engine/game/include/SaveGame.md` |
+| P6.4 | Implemented: `GameSession`, roamers and spawners, Elder Mara, save stones, three dungeon zones; app wiring in `apps/umbra/GameFlow` (compile-checked only) | `tests/game/GameSessionTests.cpp`, `tests/gameplay/RoamerTests.cpp`; `apps/umbra/GameFlow.md` |
+| P6.5 | Implemented: death menu, load mid-fight ends it (T19), retry pays once, no network code | `tests/game/GameSessionTests.cpp`; play-through checklist open |
+<!-- /P6-status -->
 
 **Exit gate:** the full journey is playable from a clean package using conventional AI; state survives restart; failure does not destroy the last good save. Verify T13–T19, T43, T45, T49 and relevant system tests.
 

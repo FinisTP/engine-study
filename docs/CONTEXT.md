@@ -128,7 +128,7 @@ Core, World, Assets, Scene, Physics, Gameplay, Audio, Rpg, TurnCombat, RealtimeC
 
 Commit messages follow `issue #UMBRA-<n> <summary>`. Phase 3 is `#UMBRA-13` … `#UMBRA-20`; Phase 4 is `#UMBRA-21` … `#UMBRA-25`; Phase 5 is `#UMBRA-26` … `#UMBRA-33`.
 
-**Current milestone:** Phase 5, shared RPG rules and two combat modes, is implemented and verified headlessly on Linux. Windows gates are open for P3 (`docs/testing/phase3-assets-world.md`), P4 (`docs/testing/phase4-sandbox.md`, including GPU/audio/interactive) and P5 (`docs/testing/phase5-rules-combat.md`, build and CTest). On 2026-11-07 the MSVC Release build compiled with no warnings and 24/25 tests passed on the user's PC (one test exe was blocked from starting by Windows). W0 (2026-11-07): the rules build to WebAssembly unchanged with identical results, and WebGPU rendering plus localStorage worked in Microsoft Edge (`docs/adr/0001-web-backend.md`). Next: P6.
+**Current milestone:** Phase 6, the complete offline reference RPG, is implemented (2026-11-07): conversations, a failable quest, XP and levels, save stones plus autosave with backups, roaming enemies with in-place turn or real-time fights, and a death menu (`docs/testing/phase6-reference-game.md`). Its rules pass headlessly on Linux; the Windows build and play-through are open. Phase 5, shared RPG rules and two combat modes, is verified headlessly on Linux. Windows gates are open for P3 (`docs/testing/phase3-assets-world.md`), P4 (`docs/testing/phase4-sandbox.md`, including GPU/audio/interactive) and P5 (`docs/testing/phase5-rules-combat.md`, build and CTest). On 2026-11-07 the MSVC Release build compiled with no warnings and 24/25 tests passed on the user's PC (one test exe was blocked from starting by Windows). W0 (2026-11-07): the rules build to WebAssembly unchanged with identical results, and WebGPU rendering plus localStorage worked in Microsoft Edge (`docs/adr/0001-web-backend.md`). Next: the P6 Windows build and play-through, then P7.
 
 ## 5. Superseded directions and explicit exclusions
 
@@ -197,9 +197,9 @@ None of these is a reason to halt basic Assets and World work.
 | Choice still open | Decide before |
 |---|---|
 | Art style; skeletal animation (camera = third-person orbit, collision = Jolt, animation = procedural only: decided 2026-11-06) | When reference presentation needs it |
-| One enemy instance vs reusable archetype; encounter arrangement | P5/P6 reference content |
+| One enemy instance vs reusable archetype; encounter arrangement (decided 2026-11-07: area pools, roaming enemies, 1–3 per fight in place) | P5/P6 reference content |
 | ~~Turn order/AP, real-time cost timing, effect clocks, mode transitions~~ decided 2026-11-07: speed rounds with one action; cost paid at commit; statuses/cooldowns end with the encounter, modes change only between encounters | done |
-| Skill-tree respec, quest failure, save-point UX (inventory overflow decided 2026-11-07: a full inventory rejects the pickup) | P6 |
+| Skill-tree respec (quest failure, save stones/autosave and overflow decided 2026-11-07, see ROADMAP O07) | P7 |
 | Exact source schema/descriptor implementation, serialization library | Relevant P3/P5 data slice |
 | Training hardware, dependency stack, algorithm, reward weights, policy thresholds and difficulty profile | P8A experiment |
 | Local authoring model, bridge, download size/license; optional cloud credential/cost UX | P8B |

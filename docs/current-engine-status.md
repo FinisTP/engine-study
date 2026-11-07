@@ -1,12 +1,19 @@
 # Umbra Engine - Current Development Status
 
 **Status date:** 2026-11-07 (Phase 1/2 records dated 2026-09-02)
-**Current milestone:** Phase 5 - Shared RPG rules and two combat modes, implemented; Windows gates for P3-P5 open
+**Current milestone:** Phase 6 - Complete offline reference RPG, implemented; Windows build and play-through open
 **Phase 1 status:** Complete (interactive checklist unsigned)
 **Phase 2 status:** Complete
 **Phase 3 status:** Implemented. Headless tests verified on Linux; Windows build and GPU checks not run yet
 **Phase 4 status:** Implemented. Headless tests verified on Linux (18/18, GCC/Clang/ASan); Windows, GPU, audio and interactive checks not run yet
-**Phase 5 status:** Implemented. Headless tests verified on Linux (24/24, GCC/Clang/ASan); Windows build/CTest not run yet; not yet wired into the 3D game (P6)
+**Phase 5 status:** Implemented. Headless tests verified on Linux (24/24, GCC/Clang/ASan); Windows build/CTest not run yet; wired into the game in P6
+**Phase 6 status:** Implemented. Headless tests verified on Linux (26/26, GCC/Clang/ASan); the game app compiles; Windows build and play-through not run yet
+
+## Update 2026-11-07 (evening)
+
+- Phase 6 (P6.1–P6.5) implemented in commits `#UMBRA-37` … `#UMBRA-42`. Evidence: [`testing/phase6-reference-game.md`](testing/phase6-reference-game.md).
+- New modules: `Umbra::Story` (quests, conversations), `Umbra::Game` (saves, `GameSession`); `gameplay::Roamer`; app layer `apps/umbra/GameFlow`.
+- Play: talk to Elder Mara (E), save at save stones (E), enemies roam the dungeon and touching one starts a fight in place; Tab switches turn-based/real-time outside fights; real-time keys 1–4, Q, F; death menu loads the save or autosave.
 
 ## Update 2026-11-07 (afternoon)
 
@@ -198,7 +205,7 @@ All seven items of the old Phase 3 entry point are implemented (see the table ab
 - Gameplay-state preservation across scene reloads (done in P4.4: hot reload keeps the player; F5/F9 checkpoints).
 - Packaging: the app reads assets from the source tree (`UMBRA_ASSET_DIRECTORY`) and caches in the build tree. A relocatable package layout is a P6/P9 task (roadmap T43).
 
-Next: P6 (complete offline reference game). Open in parallel: the interactive checklists in [`testing/phase3-assets-world.md`](testing/phase3-assets-world.md) and [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md) and the clang-cl/ASan presets.
+Next: the P6 Windows build and play-through, then P7 (creator workflow). Open in parallel: the interactive checklists in [`testing/phase3-assets-world.md`](testing/phase3-assets-world.md) and [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md) and the clang-cl/ASan presets.
 
 ## Local verification
 
