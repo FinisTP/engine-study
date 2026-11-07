@@ -3,6 +3,7 @@
 #include <DrawList.hpp>
 #include <MeshData.hpp>
 
+#include <functional>
 #include <memory>
 
 namespace umbra::platform
@@ -25,7 +26,8 @@ namespace umbra::render
 
         [[nodiscard]] bool Initialize(platform::Window &window);
         // Draws every item in drawList from drawList.camera. Items with stale mesh handles are skipped.
-        [[nodiscard]] bool RenderFrame(float deltaSeconds, const core::DrawList &drawList);
+        // `ui`, if given, is called inside the frame's Dear ImGui frame to draw extra windows (editor).
+        [[nodiscard]] bool RenderFrame(float deltaSeconds, const core::DrawList &drawList, const std::function<void()> &ui = {});
         // GPU resources. Create* return an invalid handle if the data is invalid.
         // Replace* keep the handle and swap the data; Destroy* make the handle stale.
         // Old GPU memory is freed only after in-flight frames finish with it.

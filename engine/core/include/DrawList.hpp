@@ -51,6 +51,7 @@ namespace umbra::core
         std::string menuHint;              // replaces the default key hint under the items
         bool menuDim = true;               // darken the scene behind the menu
         std::vector<std::string> status;   // top left: health, quest, combat log
+        bool diagnosticsWindow = true;     // the "Umbra diagnostics" window (the editor hides it)
         std::vector<std::string> stats;    // extra lines for the diagnostics window (timings, counters)
     };
 

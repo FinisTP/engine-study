@@ -2,7 +2,13 @@
   "dependencies": [
     "catch2",
     "glm",
-    "imgui",
+    {
+      "name": "imgui",
+      "features": [
+        "sdl3-binding"
+      ]
+    },
+    "imguizmo",
     "joltphysics",
     "nlohmann-json",
     {

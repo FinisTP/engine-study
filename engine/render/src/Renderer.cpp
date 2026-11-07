@@ -241,7 +241,7 @@ namespace umbra::render
         return true;
     }
 
-    bool Renderer::RenderFrame(float deltaSeconds, const core::DrawList &drawList)
+    bool Renderer::RenderFrame(float deltaSeconds, const core::DrawList &drawList, const std::function<void()> &ui)
     {
         if (implementation_ == nullptr)
         {
@@ -282,10 +282,13 @@ namespace umbra::render
                                             resources.GetMeshCount(),
                                             resources.GetTextureCount(),
                                             drawCount,
-                                            indexCount);
+                                            indexCount,
+                                            drawList.hud.diagnosticsWindow);
         const SceneUniform uniform = implementation_->BuildUniform(drawList.camera);
         implementation_->overlay.DrawLines(drawList.lines, uniform.projection * uniform.view, implementation_->swapchain.GetExtent());
         implementation_->overlay.DrawHud(drawList.hud, implementation_->swapchain.GetExtent());
+        if (ui)
+            ui(); // the editor's windows, inside the same ImGui frame
         implementation_->overlay.EndFrame();
 
         const FrameResult result = implementation_->frameResources.DrawFrame(

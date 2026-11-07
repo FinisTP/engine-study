@@ -1,0 +1,75 @@
+# Umbra Editor
+
+`UmbraEditor [scene]` edits scenes and the RPG content of the reference game. It is a separate
+program; the game (`Umbra`) links none of it (`Umbra.GameExcludesEditor` checks this).
+
+## How it works
+
+- **Documents, not worlds.** The open scene and `assets/rpg/reference.rpg.json` are
+  `umbra::authoring::Document`s (`engine/authoring/include/Authoring.md`). Every change goes through
+  `Document::Apply`. It is checked by the same loader the game uses, so the editor cannot save a
+  file the game would refuse. A refused edit changes nothing, and the reason shows in
+  **Diagnostics** and the status bar.
+- **Preview.** After each change (edit, undo, redo) the preview world is rebuilt from the
+  document text with `scene::LoadSceneText` and drawn by the game's renderer. Scenes are small, so
+  a full rebuild is simpler than patching the world and takes well under a frame.
+- **Shared code.** `ModelLibrary` (model file → GPU meshes) is compiled from `apps/umbra` into
+  both programs, so there is one copy of it.
+
+## Windows and keys
+
+| Window | Use |
+|---|---|
+| Menu bar | File (New scene, Save, Reload, Quit), Edit (Undo, Redo, Add, Duplicate, Delete), View (RPG content), gizmo mode, **Play** |
+| Hierarchy | Entities by parent. Click to select. Add / Add child. |
+| Inspector | Id (renames children's references too), name, transform, model, collider, interactable, portal, enemy spawner. A checkbox adds or removes each optional part. |
+| Assets | Scenes, RPG content, models, sounds under `assets/`. Double-click a scene to open it. |
+| Diagnostics | The loader's messages for the last refused edit, open or save. |
+| Status bar | File, `*` when unsaved, a warning when the file changed outside the editor. |
+
+| Key / mouse | Action |
+|---|---|
+| Left click | Select what is under the mouse |
+| Right drag / middle drag / wheel | Turn / pan / zoom the camera |
+| W / E / R | Gizmo: move / rotate / scale |
+| F | Focus the camera on the selection |
+| Ctrl+Z / Ctrl+Y | Undo / redo. Undo follows the document you edited last. |
+| Ctrl+S | Save the scene and the RPG content |
+| Ctrl+D / Del | Duplicate / delete (with children) |
+| F5 | Play: saves, then starts `Umbra <scene>` |
+
+A whole gizmo drag, or a whole drag on a number field, is **one** undo step. The first change of a
+drag starts a step; later changes merge into it (`Document::Apply(..., merge)`).
+
+## Picking (mouse → entity)
+
+1. The mouse position becomes normalized device coordinates:
+   `x = 2·mx/width − 1`, `y = 1 − 2·my/height` (screen y grows downward, NDC y upward).
+2. With the inverse of `projection · view` (OpenGL-style projection, NDC z from −1 to 1), the
+   points `(x, y, −1)` and `(x, y, 1)` are carried back to world space. After the divide by `w`
+   they are points on the near and far planes. The ray runs from the near point toward the far one.
+3. For every drawn entity the ray is moved into the entity's own space with the inverse world
+   matrix. There the mesh's bounding box is axis-aligned, so a *slab test* is enough. Per axis,
+   compute where the ray enters and leaves the pair of planes. The box is hit if the latest entry
+   comes before the earliest exit. Because the direction is not normalized and both ends were
+   transformed by the same matrix, the hit parameter `t` is comparable across entities. The
+   smallest `t` wins.
+4. Model instances create entities that aren't in the file, so the selection walks up to the
+   nearest ancestor that is.
+
+The renderer itself uses a Vulkan projection (depth 0..1, Y flipped). The editor builds the
+OpenGL-style matrix only for ImGuizmo and picking, from the same camera.
+
+## Gizmo
+
+ImGuizmo edits the entity's **world** matrix. The editor turns the result back into the local
+transform the file stores: `local = inverse(parentWorld) · world`. It then splits the matrix into
+translation (column 3), scale (lengths of columns 0–2) and rotation (the columns divided by their
+scale). The scene format has no shear, so nothing is lost.
+
+## Limits
+
+- Model files are not reloaded while the editor runs (the game reloads them). Reopen the scene
+  after changing a model.
+- Euler angles in the inspector are converted from the stored quaternion each frame. Past ±90°
+  pitch they can jump to an equivalent rotation.

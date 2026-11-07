@@ -229,7 +229,7 @@ namespace umbra::render
 
     void DiagnosticsOverlay::BeginFrame(
         VkExtent2D extent, float deltaSeconds, std::size_t meshCount,
-        std::size_t textureCount, std::size_t drawCount, std::uint32_t indexCount)
+        std::size_t textureCount, std::size_t drawCount, std::uint32_t indexCount, bool showWindow)
     {
         if (!initialized_)
             return;
@@ -237,6 +237,8 @@ namespace umbra::render
         io.DisplaySize = ImVec2(static_cast<float>(extent.width), static_cast<float>(extent.height));
         io.DeltaTime = std::max(deltaSeconds, 0.0001F);
         ImGui::NewFrame();
+        if (!showWindow)
+            return;
         ImGui::SetNextWindowBgAlpha(0.82F);
         ImGui::Begin("Umbra diagnostics", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse);
         ImGui::Text("GPU: %s", gpuName_.c_str());
@@ -283,7 +285,7 @@ namespace umbra::render
         if (!initialized_)
             return;
         // Gameplay timings and counters go into the same diagnostics window (Begin appends to it).
-        if (!hud.stats.empty())
+        if (!hud.stats.empty() && hud.diagnosticsWindow)
         {
             ImGui::Begin("Umbra diagnostics");
             ImGui::Separator();

@@ -80,6 +80,8 @@ namespace umbra::platform
         // Implementation for pumping events
         while (SDL_PollEvent(&event))
         {
+            if (rawHandler_)
+                rawHandler_(&event);
             switch (event.type)
             {
             case SDL_EVENT_QUIT:

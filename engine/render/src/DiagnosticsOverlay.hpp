@@ -37,7 +37,7 @@ namespace umbra::render
             const std::filesystem::path &fragmentShader);
 
         // Frame order: BeginFrame (stats window) -> DrawLines / other ImGui calls -> EndFrame -> Render.
-        void BeginFrame(VkExtent2D extent, float deltaSeconds, std::size_t meshCount, std::size_t textureCount, std::size_t drawCount, std::uint32_t indexCount);
+        void BeginFrame(VkExtent2D extent, float deltaSeconds, std::size_t meshCount, std::size_t textureCount, std::size_t drawCount, std::uint32_t indexCount, bool showWindow = true);
         // Projects world-space lines with viewProjection and draws them over the scene. See DebugDraw.md.
         void DrawLines(const std::vector<core::DebugLine> &lines, const glm::mat4 &viewProjection, VkExtent2D extent);
         // Prompt, message, warnings and menu from gameplay (no input handling: gameplay owns that).

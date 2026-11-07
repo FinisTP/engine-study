@@ -31,6 +31,7 @@ add_subdirectory(engine/assets)
 add_subdirectory(engine/scene)
 add_subdirectory(engine/authoring)
 add_subdirectory(apps/umbra)
+add_subdirectory(apps/editor)
 add_subdirectory(tools/scenecheck)
 add_subdirectory(tools/umbratool)
 
@@ -60,6 +61,13 @@ if(BUILD_TESTING)
         Umbra.HeadlessDependencies
         TARGETS Umbra::Core Umbra::World Umbra::Assets Umbra::Scene Umbra::Physics Umbra::Gameplay Umbra::Audio Umbra::Rpg Umbra::TurnCombat Umbra::RealtimeCombat Umbra::Encounter Umbra::Story Umbra::Game Umbra::Authoring UmbraSceneCheck UmbraTool
         FORBIDDEN "Umbra(Render|Platform)|SDL3|volk|Vulkan|imgui|onnx|python"
+    )
+
+    # The game ships without editor code (roadmap P7.1).
+    umbra_add_headless_check(
+        Umbra.GameExcludesEditor
+        TARGETS Umbra
+        FORBIDDEN "UmbraEditor|UmbraAuthoring|imguizmo"
     )
 
     # Each combat mode works without the other (roadmap T39/T40) and without world/physics.
