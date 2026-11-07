@@ -17,7 +17,10 @@ namespace umbra::localai
     // The look for concept pictures of props: "objectPrompt"/"objectNegative" in assets/materials/style.json.
     [[nodiscard]] TextureStyle LoadObjectStyle(const std::filesystem::path &assetRoot);
 
-    // Where the creator's exported image-to-3D workflow lives: <project>/tools/comfyui/image-to-3d.api.json.
+    // Exported image-to-3D workflows (any name) in a folder that LoadModelWorkflow accepts, sorted.
+    [[nodiscard]] std::vector<std::filesystem::path> FindModelWorkflows(const std::filesystem::path &folder);
+    // The workflow to use when none was chosen: <project>/tools/comfyui/image-to-3d.api.json if it
+    // exists, else the first usable one there, else that path (so the error names where to put it).
     [[nodiscard]] std::filesystem::path DefaultModelWorkflow(const std::filesystem::path &assetRoot);
 
     // What a model file holds, measured by the game's own importer.

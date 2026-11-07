@@ -10,8 +10,8 @@
 //             [--model <name>] [--host <url>] [--scenes <folder>] [--fix <n>] [--save-draft <file>]
 //   UmbraTool texture "<idea>" --assets <folder> [--name <name>] [--count <n>] [--seed <n>] [--meters <m>]
 //             [--size <px>] [--model <checkpoint>] [--host <url>] [--json]
-//   UmbraTool model (--idea "<text>" | --image <picture>) --assets <folder> [--name <name>] [--faces <n>]
-//             [--seed <n>] [--workflow <api json>] [--model <checkpoint>] [--host <url>] [--json]
+//   UmbraTool model (--idea "<text>" | --image <picture> | --resume <job>) --assets <folder> [--name <name>]
+//             [--faces <n>] [--seed <n>] [--workflow <api json>] [--model <checkpoint>] [--host <url>] [--json]
 //
 // Exit code: 0 = ok, 1 = errors found (or the fight couldn't run), 2 = bad usage.
 
@@ -59,6 +59,7 @@ namespace
         float meters = 2.0F;
         // model
         std::filesystem::path image, workflow;
+        std::string resume; // a ComfyUI job id from an earlier, closed run
         int faces = 10000;
     };
 
@@ -74,8 +75,8 @@ namespace
                      "            [--model <name>] [--host <url>] [--scenes <folder>] [--fix <n>] [--save-draft <file>]\n"
                      "  UmbraTool texture \"<idea>\" --assets <folder> [--name <name>] [--count <n>] [--seed <n>] [--meters <m>]\n"
                      "            [--size <px>] [--model <checkpoint>] [--host <url>] [--json]\n"
-                     "  UmbraTool model (--idea \"<text>\" | --image <picture>) --assets <folder> [--name <name>] [--faces <n>]\n"
-                     "            [--seed <n>] [--workflow <api json>] [--model <checkpoint>] [--host <url>] [--json]\n";
+                     "  UmbraTool model (--idea \"<text>\" | --image <picture> | --resume <job>) --assets <folder> [--name <name>]\n"
+                     "            [--faces <n>] [--seed <n>] [--workflow <api json>] [--model <checkpoint>] [--host <url>] [--json]\n";
         return 2;
     }
 
@@ -430,7 +431,8 @@ namespace
     // AI model: idea -> concept picture (SDXL) or a given picture -> exported image-to-3D workflow -> models/<name>.glb.
     int Model(const Arguments &args)
     {
-        if (args.assets.empty() || args.idea.empty() == args.image.empty() || args.faces < 100 || args.faces > 1000000)
+        const int sources = !args.idea.empty() + !args.image.empty() + !args.resume.empty();
+        if (args.assets.empty() || sources != 1 || args.faces < 100 || args.faces > 1000000)
             return Usage();
         std::vector<Diagnostic> diagnostics;
         const std::filesystem::path workflowFile = args.workflow.empty() ? umbra::localai::DefaultModelWorkflow(args.assets) : args.workflow;
@@ -447,8 +449,10 @@ namespace
             return Report(diagnostics, 0, args.json);
         }
         const long long seed = umbra::localai::TextureSeeds(1, args.seed)[0];
-        std::string what = "file: " + args.image.filename().string();
-        if (!args.idea.empty())
+        std::string what = args.resume.empty() ? "file: " + args.image.filename().string() : "ComfyUI job " + args.resume;
+        if (!args.resume.empty())
+            request.resumeId = args.resume; // the picture is already in ComfyUI
+        else if (!args.idea.empty())
         {
             if (!args.host.empty())
                 checkpoints = umbra::localai::ListCheckpoints(request.host, diagnostics);
@@ -476,6 +480,11 @@ namespace
         // 2. The 3D model, saved and checked.
         request.seed = seed;
         request.faces = args.faces;
+        if (!args.json)
+            request.queued = [&args](const std::string &job) {
+                std::cerr << "ComfyUI job " << job << ". It keeps going if this tool is closed; then fetch it with\n  UmbraTool model --resume " << job
+                          << " --assets " << args.assets.string() << (args.name.empty() ? "" : " --name \"" + args.name + "\"") << "\n";
+            };
         umbra::localai::ModelJob job;
         job.Start({request});
         const auto results = Wait(job, "3D model", 1, args.json);
@@ -484,9 +493,9 @@ namespace
         umbra::localai::ModelInfo info;
         if (results[0].ok)
         {
-            const std::string name = !args.name.empty() ? args.name : !args.idea.empty() ? args.idea : args.image.stem().string();
+            const std::string name = !args.name.empty() ? args.name : !args.idea.empty() ? args.idea : !args.resume.empty() ? "model" : args.image.stem().string();
             path = umbra::localai::SaveGeneratedModel(args.assets, name, results[0].glb, request.picture,
-                                                      {what, workflowFile.filename().string(), seed, args.faces}, request.workflow, diagnostics);
+                                                      {what, workflowFile.filename().string(), seed, args.faces}, results[0].graph, diagnostics);
             if (!path.empty() && umbra::localai::InspectModel(args.assets / path, info, diagnostics) && info.triangles > 2 * static_cast<std::size_t>(args.faces))
                 diagnostics.push_back({Severity::Warning, "model.size", path, "", std::to_string(info.triangles) + " triangles: the workflow did not reduce the mesh (no DecimateMesh?)"});
         }
@@ -524,6 +533,8 @@ int main(int argc, char **argv)
             args.apply = true;
         else if (i + 1 < argc && (arg == "--image" || arg == "--workflow"))
             (arg == "--image" ? args.image : args.workflow) = argv[++i];
+        else if (i + 1 < argc && arg == "--resume")
+            args.resume = argv[++i];
         else if (i + 1 < argc && arg == "--faces")
         {
             try

@@ -73,7 +73,15 @@ provenance; style). CTests `Umbra.Tool.TextureLocalOnly`, `Umbra.Tool.ValidateMa
   TextureLocalOnly/ValidateMaterial = old UmbraTool). Fix `#UMBRA-60`: the scripts treat any exit
   code other than 0 as failure.
 
-## 4. Windows checklist (open)
+## 3c. Windows verification (2026-11-08, user)
+
+The user ran the checklist below on their PC and reported that **everything works properly, with
+some limitations** (P8B, P8C and P8D confirmed together). Item-by-item results were not reported, so
+the rows below are left blank; the milestone counts as verified on Windows by the user's report.
+
+First real texture: `an_old_water_well` (SDXL base 1.0, seed 47429632), in the user's working copy.
+
+## 4. Windows checklist (user: works, 2026-11-08)
 
 | # | Do | Expect | Result |
 |---|---|---|---|

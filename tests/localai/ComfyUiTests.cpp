@@ -64,6 +64,7 @@ namespace
                         return;
                     }
                     polls_["m-1"] = 0;
+                    modelGraph = graph;
                     response.set_content(R"({"prompt_id":"m-1","number":1,"node_errors":{}})", "application/json");
                     return;
                 }
@@ -75,29 +76,47 @@ namespace
                                          "application/json");
                     return;
                 }
-                const std::string id = text.find("crash") == 0 ? "p-error" : text.find("slow") == 0 ? "p-slow" : "p-" + std::to_string(++queued);
+                const std::string id = text.find("crash") == 0  ? "p-error"
+                                       : text.find("slow") == 0 ? "p-slow"
+                                       : text.find("lost") == 0 ? "p-lost"
+                                                                : "p-" + std::to_string(++queued);
                 polls_[id] = 0;
                 response.set_content(json{{"prompt_id", id}, {"number", queued}, {"node_errors", json::object()}}.dump(), "application/json");
             });
             server_.Get(R"(/history/(.+))", [this](const httplib::Request &request, httplib::Response &response) {
                 std::lock_guard lock(mutex_);
                 const std::string id = request.matches[1];
-                // Not finished for the first two polls (and never for "slow").
-                if (id == "p-slow" || ++polls_[id] <= 2)
+                // Not finished for the first two polls (and never for "slow" or "lost").
+                if (id == "p-slow" || id == "p-lost" || ++polls_[id] <= 2)
                 {
                     response.set_content("{}", "application/json");
                     return;
                 }
                 json entry = {{"status", {{"status_str", "success"}, {"completed", true}, {"messages", json::array()}}},
                               {"outputs", {{"7", {{"images", {{{"filename", "umbra_temp_00001_.png"}, {"subfolder", ""}, {"type", "temp"}}}}}}}}};
-                if (id == "m-1")
-                    entry["outputs"] = {{"322", {{"3d", {{{"filename", "ComfyUI_00001_.glb"}, {"subfolder", "3d"}, {"type", "output"}}}}, {"camera_info", {nullptr}}}}};
+                if (id == "m-1") // a preview GLB listed first, like the template's untextured voxel preview
+                    entry["outputs"] = {{"246", {{"3d", {{{"filename", "preview3d_white.glb"}, {"subfolder", ""}, {"type", "temp"}}}}}},
+                                        {"322", {{"3d", {{{"filename", "ComfyUI_00001_.glb"}, {"subfolder", "3d"}, {"type", "output"}}}}, {"camera_info", {nullptr}}}}};
                 if (id == "p-error")
                     entry["status"] = {{"status_str", "error"}, {"completed", false},
                                        {"messages", json::array({json::array({"execution_error", {{"exception_message", "CUDA out of memory"}}})})}};
                 response.set_content(json{{id, entry}}.dump(), "application/json");
             });
+            server_.Get("/queue", [this](const httplib::Request &, httplib::Response &response) {
+                // Unfinished jobs are running; "lost" is a job a restarted ComfyUI forgot.
+                std::lock_guard lock(mutex_);
+                json running = json::array();
+                for (const auto &[id, polls] : polls_)
+                    if (id != "p-lost" && (id == "p-slow" || polls <= 2))
+                        running.push_back(json::array({1, id, json::object(), json::object(), json::array()}));
+                response.set_content(json{{"queue_running", running}, {"queue_pending", json::array()}}.dump(), "application/json");
+            });
             server_.Get("/view", [](const httplib::Request &request, httplib::Response &response) {
+                if (request.get_param_value("filename").starts_with("preview"))
+                {
+                    response.set_content("not the finished model", "model/gltf-binary");
+                    return;
+                }
                 if (request.get_param_value("filename").ends_with(".glb"))
                 {
                     // A real model from the repository stands in for TRELLIS.2's output.
@@ -134,7 +153,7 @@ namespace
         [[nodiscard]] std::string Url() const { return "http://127.0.0.1:" + std::to_string(port); }
 
         int port = 0;
-        json last;
+        json last, modelGraph;
         std::string uploaded;
         bool oldFormat = false;
         std::atomic<int> interrupts = 0;
@@ -211,12 +230,11 @@ TEST_CASE("ComfyUI problems are named, never hidden", "[comfyui]")
         request.maxBytes = 1000;
         CHECK(HasCode(Send(request).diagnostics, "ai.limit"));
     }
-    SECTION("too slow: ComfyUI is told to stop")
+    SECTION("ComfyUI forgot the job (restarted)")
     {
-        localai::ImageRequest request = comfy.Request("slow stone");
-        request.timeoutSeconds = 1;
-        CHECK(HasCode(Send(request).diagnostics, "ai.timeout"));
-        CHECK(comfy.interrupts == 1);
+        const localai::ImageResult result = Send(comfy.Request("lost stone"));
+        REQUIRE(HasCode(result.diagnostics, "ai.lost"));
+        CHECK(comfy.interrupts == 0);
     }
     SECTION("not this computer (T64)")
     {
@@ -255,6 +273,23 @@ TEST_CASE("Cancel stops waiting at once and interrupts ComfyUI", "[comfyui]")
     CHECK(HasCode(result.diagnostics, "ai.cancel"));
     CHECK(std::chrono::steady_clock::now() - start < 3s);
     CHECK(comfy.interrupts == 1);
+}
+
+TEST_CASE("A long run has no time limit while ComfyUI still has it; leaving does not stop ComfyUI", "[comfyui]")
+{
+    FakeComfyUi comfy;
+    localai::CancelToken cancel;
+    std::thread leaver([&] {
+        std::this_thread::sleep_for(4s); // past the 1 s answer limit and two queue checks
+        cancel.Leave();
+    });
+    localai::ImageRequest request = comfy.Request("slow stone");
+    request.timeoutSeconds = 1;
+    const localai::ImageResult result = localai::GenerateImage(request, cancel);
+    leaver.join();
+    CHECK(HasCode(result.diagnostics, "ai.cancel")); // still waiting when left, not timed out or lost
+    CHECK(result.diagnostics.size() == 1);
+    CHECK(comfy.interrupts == 0); // ComfyUI keeps working (the editor closing)
 }
 
 TEST_CASE("Installed checkpoints are listed in both ComfyUI formats", "[comfyui]")
@@ -391,13 +426,25 @@ TEST_CASE("The workflow gets this run's picture, seeds, face count and texture s
     request.seed = 1000;
     const json graph = localai::PrepareModelWorkflow(request, "umbra_model_input.png");
     CHECK(graph["122"]["inputs"]["image"] == "umbra_model_input.png");
-    CHECK(graph["186"]["inputs"]["target_face_count"] == 10000);  // decided budget
-    CHECK(graph["196"]["inputs"]["resolution"] == 1024);           // literal input
-    CHECK(graph["288"]["inputs"]["value"] == 1024);                // through the PrimitiveInt wired into texture_size
+    CHECK(graph["186"]["inputs"]["target_face_count"] == 10000); // decided budget
+    CHECK(graph["288"]["inputs"]["value"] == 1024);              // through the PrimitiveInt wired into texture_size and resolution
     CHECK(graph["147"]["inputs"]["texture_size"] == json::array({"288", 0}));
-    std::set<long long> seeds{graph["3"]["inputs"]["seed"].get<long long>(), graph["18"]["inputs"]["seed"].get<long long>()};
-    CHECK(seeds == std::set<long long>{1000, 1001});
+    std::set<long long> seeds;
+    for (const char *sampler : {"3", "12", "18", "23"})
+        seeds.insert(graph[sampler]["inputs"]["seed"].get<long long>());
+    CHECK(seeds == std::set<long long>{1000, 1001, 1002, 1003});
     CHECK(request.workflow["186"]["inputs"]["target_face_count"] == 700000); // the loaded workflow is untouched
+
+    // Only what the save node needs (T71): the switch picks TRELLIS.2; previews and Pixal3D are gone.
+    CHECK(graph.contains("322"));
+    CHECK(graph.contains("40"));
+    for (const char *gone : {"246", "247", "4", "323", "282", "252", "261", "319", "298", "56", "316", "318", "314", "248"})
+        CHECK_FALSE(graph.contains(gone));
+    CHECK(graph["192"]["inputs"]["image"] == json::array({"122", 0})); // background removal kept (its switch was on)
+    request.workflow["316"]["inputs"]["value"] = false;               // the template switched to Pixal3D
+    const json pixal = localai::PrepareModelWorkflow(request, "x.png");
+    CHECK(pixal.contains("319"));
+    CHECK_FALSE(pixal.contains("40"));
 }
 
 TEST_CASE("A picture is uploaded, turned into a model and downloaded", "[comfyui][model]")
@@ -416,7 +463,26 @@ TEST_CASE("A picture is uploaded, turned into a model and downloaded", "[comfyui
     CHECK(comfy.uploaded.substr(1, 3) == "PNG");
     CHECK(comfy.last["prompt"]["122"]["inputs"]["image"] == "umbra_model_input.png");
     CHECK(comfy.last["prompt"]["186"]["inputs"]["target_face_count"] == 10000);
+    CHECK_FALSE(comfy.last["prompt"].contains("246")); // previews are not run
 
+    SECTION("an earlier job is fetched by its id, nothing queued again")
+    {
+        comfy.uploaded.clear();
+        comfy.last = nullptr;
+        request.resumeId = "m-1";
+        const localai::ModelResult resumed = localai::GenerateModel(request, cancel);
+        REQUIRE(resumed.ok);
+        CHECK(resumed.glb.size() == result.glb.size());
+        CHECK(comfy.uploaded.empty());
+        CHECK(comfy.last.is_null());
+    }
+    SECTION("the job id is told once queued")
+    {
+        std::string id;
+        request.queued = [&id](const std::string &queuedId) { id = queuedId; };
+        REQUIRE(localai::GenerateModel(request, cancel).ok);
+        CHECK(id == "m-1");
+    }
     SECTION("a model the workflow needs is missing")
     {
         request.workflow["40"]["inputs"]["unet_name"] = "missing.safetensors";
@@ -437,9 +503,10 @@ TEST_CASE("A generated model is saved with its picture and provenance, and check
     std::filesystem::remove_all(root);
     std::ifstream in(std::filesystem::path(UMBRA_TEST_ASSET_DIRECTORY) / "models/wolf.glb", std::ios::binary);
     const std::vector<std::uint8_t> glb((std::istreambuf_iterator<char>(in)), {});
-    json workflow;
+    localai::ModelRequest request;
     std::vector<core::Diagnostic> diagnostics;
-    REQUIRE(localai::LoadModelWorkflow(testData / "image-to-3d.api.json", workflow, diagnostics));
+    REQUIRE(localai::LoadModelWorkflow(testData / "image-to-3d.api.json", request.workflow, diagnostics));
+    const json workflow = localai::PrepareModelWorkflow(request, "x.png"); // what ran
     const localai::ModelSource source{"a mossy barrel", "image-to-3d.api.json", 7, 10000};
 
     const std::string first = localai::SaveGeneratedModel(root, "Mossy Barrel", glb, Ramp(64), source, workflow, diagnostics);
@@ -451,9 +518,18 @@ TEST_CASE("A generated model is saved with its picture and provenance, and check
     const json provenance = json::parse(provenanceFile);
     CHECK(provenance["seed"] == 7);
     CHECK(provenance["picture"] == "a mossy barrel");
-    REQUIRE(provenance["models"].size() == 2);
-    CHECK(provenance["models"][0]["license"] == "MIT (TRELLIS.2)");
-    CHECK(provenance["models"][0]["commercial"] == true);
+    int trellis = 0;
+    for (const json &model : provenance["models"])
+    {
+        CHECK(model["file"].get<std::string>().find("pixal3d") == std::string::npos); // the unused branch isn't listed
+        if (model["file"].get<std::string>().starts_with("trellis_2"))
+        {
+            ++trellis;
+            CHECK(model["license"] == "MIT (TRELLIS.2)");
+            CHECK(model["commercial"] == true);
+        }
+    }
+    CHECK(trellis == 3);
 
     localai::ModelInfo info;
     REQUIRE(localai::InspectModel(root / first, info, diagnostics));
@@ -495,4 +571,17 @@ TEST_CASE("Concept pictures of props use the object style", "[comfyui][model]")
     CHECK(localai::LoadObjectStyle(root).prompt == "toy figure");
     CHECK(localai::LoadTextureStyle(root).prompt == "tiles");
     CHECK(localai::DefaultModelWorkflow("E:/Projects/EngineStudy/assets") == std::filesystem::path("E:/Projects/EngineStudy/tools/comfyui/image-to-3d.api.json"));
+}
+
+TEST_CASE("An exported workflow is found whatever its name", "[comfyui][model]")
+{
+    const std::filesystem::path project = std::filesystem::temp_directory_path() / "umbra-tests-workflows";
+    std::filesystem::remove_all(project);
+    std::filesystem::create_directories(project / "tools/comfyui");
+    std::ofstream(project / "tools/comfyui/notes.json") << R"({"nodes":[]})"; // a UI workflow: not usable
+    std::filesystem::copy_file(testData / "image-to-3d.api.json", project / "tools/comfyui/my_trellis_export.json");
+    CHECK(localai::FindModelWorkflows(project / "tools/comfyui") == std::vector<std::filesystem::path>{project / "tools/comfyui/my_trellis_export.json"});
+    CHECK(localai::DefaultModelWorkflow(project / "assets") == project / "tools/comfyui/my_trellis_export.json");
+    std::filesystem::copy_file(testData / "image-to-3d.api.json", project / "tools/comfyui/image-to-3d.api.json");
+    CHECK(localai::DefaultModelWorkflow(project / "assets") == project / "tools/comfyui/image-to-3d.api.json");
 }

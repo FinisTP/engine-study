@@ -140,14 +140,16 @@ Without the editor: `UmbraTool texture "mossy cobblestone" --assets assets --cou
 
 1. Follow `tools/comfyui/README.md`: open ComfyUI's template **Pixal3D & TRELLIS.2: Image to Model**,
    download its models (about 10 GB), switch it to TRELLIS.2, run it once, then **Workflow → Export (API)**
-   to `tools/comfyui/image-to-3d.api.json` in this project.
+   into `tools/comfyui/` in this project (any file name; pick it under **ComfyUI 3D workflow** in the
+   AI model window if there are several).
 
 **Each prop:**
 
 1. In the editor: **AI model** (menu bar).
 2. Looks like: `wooden barrel with iron bands`. **Make concept pictures**; **View** opens each in your
    image viewer. Pick one. (Or **Use my picture** and give a PNG/JPEG of one object on a plain background.)
-3. **Make 3D model**. This takes minutes. The model lands in `assets/models/` with its concept picture
+3. **Make 3D model**. This takes minutes; you may close the window or even the editor (ComfyUI keeps
+   working, and the next start saves the model). The model lands in `assets/models/` with its concept picture
    and a `.source.json` saying how it was made.
 4. Set **Height in the scene** (meters), then **Place in scene**: it appears at the centre of the view,
    standing on the ground. Ctrl+Z removes it; Ctrl+S saves the scene. Add a collider in the inspector if
@@ -229,6 +231,8 @@ Copy the zip to another PC, unzip, run `Umbra.exe`. Saves go to `%APPDATA%\Umbra
 | AI texture: "ComfyUI is not running" | Start ComfyUI Desktop, then press **Find**. A command-line ComfyUI listens on 8188: that is tried too. |
 | AI texture: "ComfyUI has no model ..." | Put `sd_xl_base_1.0.safetensors` in ComfyUI's `models/checkpoints` folder and press **Find**. |
 | AI texture: "out of memory" | Close other GPU programs, use 1 variation, or a smaller model (SD 1.5). |
-| AI model: "no workflow file" / "UI workflow" | Export the TRELLIS.2 template with **Workflow → Export (API)** to `tools/comfyui/image-to-3d.api.json` (`tools/comfyui/README.md`). |
+| AI model: "no workflow file" / "UI workflow" | Export the TRELLIS.2 template with **Workflow → Export (API)** into `tools/comfyui/` (`tools/comfyui/README.md`), then **Refresh** in the AI model window. |
+| AI model takes very long | Normal for minutes on 8 GB. Lower the upsample resolution to 1024 in the workflow (`tools/comfyui/README.md`). You can close the editor: ComfyUI finishes and the next start saves the model. |
+| AI model: "ComfyUI no longer has this job" | ComfyUI was restarted or its queue cleared during the run. Make the model again. |
 | AI model: "A model the workflow needs isn't installed" | Download the file ComfyUI names into the folder the template's note lists, restart ComfyUI. |
 | The package won't start on another PC | It needs a GPU with Vulkan 1.3 drivers. Start it from a `cmd` window to see the log messages. |

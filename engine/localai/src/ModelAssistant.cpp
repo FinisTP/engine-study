@@ -52,9 +52,29 @@ namespace umbra::localai
         return style;
     }
 
+    std::vector<std::filesystem::path> FindModelWorkflows(const std::filesystem::path &folder)
+    {
+        std::vector<std::filesystem::path> found;
+        std::error_code error;
+        for (const auto &entry : std::filesystem::directory_iterator(folder, error))
+        {
+            nlohmann::json graph;
+            std::vector<core::Diagnostic> ignored;
+            if (entry.path().extension() == ".json" && LoadModelWorkflow(entry.path(), graph, ignored))
+                found.push_back(entry.path());
+        }
+        std::sort(found.begin(), found.end());
+        return found;
+    }
+
     std::filesystem::path DefaultModelWorkflow(const std::filesystem::path &assetRoot)
     {
-        return assetRoot.parent_path() / "tools/comfyui/image-to-3d.api.json";
+        const std::filesystem::path folder = assetRoot.parent_path() / "tools/comfyui";
+        const std::vector<std::filesystem::path> found = FindModelWorkflows(folder);
+        for (const auto &file : found)
+            if (file.filename() == "image-to-3d.api.json")
+                return file;
+        return found.empty() ? folder / "image-to-3d.api.json" : found.front();
     }
 
     bool InspectModel(const std::filesystem::path &file, ModelInfo &info, std::vector<core::Diagnostic> &diagnostics)
@@ -130,9 +150,9 @@ namespace umbra::localai
 
         // 3. Files, then the importer's verdict; a model the game can't read is removed again.
         std::vector<std::uint8_t> png;
-        assets::EncodePng(picture, png);
+        const bool havePicture = !picture.rgba.empty() && assets::EncodePng(picture, png); // none when fetched by job id
         if (!WriteBytes(assetRoot / modelPath, std::string(glb.begin(), glb.end())) ||
-            !WriteBytes(assetRoot / ("models/" + free + ".concept.png"), std::string(png.begin(), png.end())) ||
+            (havePicture && !WriteBytes(assetRoot / ("models/" + free + ".concept.png"), std::string(png.begin(), png.end()))) ||
             !WriteBytes(assetRoot / ("models/" + free + ".source.json"), provenance.dump(2) + "\n"))
         {
             diagnostics.push_back({core::Severity::Error, "save.write", (assetRoot / modelPath).string(), "", "couldn't write the model files"});

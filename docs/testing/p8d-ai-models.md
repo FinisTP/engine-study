@@ -5,7 +5,8 @@
 - Date: 2026-11-07
 - Commit: `issue #UMBRA-61` (P8D.1–P8D.4)
 - Tester: Claude (remote session), Linux cloud workspace.
-- State: **implemented. All automated checks pass against a stand-in ComfyUI (which serves the
+- Update 2026-11-08: **verified on Windows by the user (works, with limitations; fixed in `#UMBRA-62`, §3c).**
+- State (2026-11-07): **implemented. All automated checks pass against a stand-in ComfyUI (which serves the
   repository's `wolf.glb` as the "generated" model). No real TRELLIS.2 run yet; the editor window
   has not been opened.**
 
@@ -50,7 +51,28 @@ range-for) was found by a crash in the first test run and fixed before commit.
 - No collider is added on placement; facing direction is as generated.
 - Characters, rigging and animation are out of scope (ADR 0003).
 
-## 4. Windows checklist (open)
+## 3c. Windows verification and fixes (2026-11-07/08, user; `#UMBRA-62`)
+
+The user exported the template (as `3d_pixal3d_trellis2_image_to_model.json`, switch = TRELLIS.2),
+generated models on their 8 GB GPU and placed them; they report P8D **works, with limitations**:
+
+| Limitation reported | Cause | Fix (`#UMBRA-62`) |
+|---|---|---|
+| Only `image-to-3d.api.json` was looked for | fixed default name | Any usable export in `tools/comfyui` is found (`FindModelWorkflows`); the editor lists them and remembers the choice (`ai-model.json` in preferences) |
+| "Place in scene" gave a white model; the right GLB had to be taken from ComfyUI's zip | the first `.glb` in the history was downloaded: the template's untextured voxel preview (POSITION only), not the textured `Save 3D` output | the GLB is taken from the save node's output only; and the graph is reduced to what the save node needs (switches resolved, preview models and the unused Pixal3D branch not run, so faster) |
+| The job should survive closing windows/editor | windows were fine (jobs belong to the editor), but closing the editor sent `/interrupt` | closing the editor leaves ComfyUI working; the job id is written down and the next start fetches and saves the model; `UmbraTool model --resume <job>` |
+| "nothing produced after 1800 s" | a fixed 30-minute limit | no total limit: waiting stops only if ComfyUI loses the job (`ai.lost`, checked in `/queue`) or stops answering for 2 minutes |
+
+Timing from the user's first run (Pixal3D branch, upsample 1536): structure 18 s, shape 24 s,
+high-res shape **11 min 35 s** (58 s/step: VRAM spill on 8 GB). The user's export now uses
+upsample 1024 and remesh 512.
+
+Automated after the fixes: 43/43 CTest on GCC, Clang and GCC ASan/UBSan; the test workflow is now
+the user's real export. New: T71 (graph reduced to the save node; GLB from the save node), T72
+(leaving keeps ComfyUI working; resume by job id; no time limit while ComfyUI has the job; lost
+job named).
+
+## 4. Windows checklist (user: works, 2026-11-08)
 
 | # | Do | Expect | Result |
 |---|---|---|---|

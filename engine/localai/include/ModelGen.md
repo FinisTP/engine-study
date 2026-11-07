@@ -5,8 +5,9 @@ Roadmap P8D. A prop goes from words (or a picture) to a model in a scene in four
 ```text
 "mossy barrel" --(SDXL, object style)--> concept pictures --(pick one)--+
 my_drawing.png ----------------------------------------------------------+--> upload (/upload/image)
-   --> the creator's exported image-to-3D workflow (TRELLIS.2), with picture/seed/faces/texture size set
-   --> /history: the output listing a .glb --> /view: download
+   --> the creator's exported image-to-3D workflow (TRELLIS.2), reduced to what its save node needs,
+       with picture/seed/faces/texture size set
+   --> /history: the save node's .glb --> /view: download
    --> models/<name>.glb + <name>.concept.png + <name>.source.json --> importer check --> Place in scene
 ```
 
@@ -19,7 +20,38 @@ exports it once with **Export (API)** (`tools/comfyui/README.md`) and Umbra only
 things (`PrepareModelWorkflow`): the `LoadImage` picture, the sampler seeds (run seed +1 each), the
 `DecimateMesh` face count and the texture bake/unwrap size, also when these come from a Primitive
 node wired into the input. `LoadModelWorkflow` refuses a UI-format file (with how to export it),
-a workflow without exactly one `LoadImage`, and one that saves no 3D file.
+a workflow without exactly one `LoadImage`, and one that saves no 3D file. The file may have any
+name: `FindModelWorkflows` lists the usable exports in `tools/comfyui`; the editor remembers the
+choice.
+
+## Only what the save node needs
+
+ComfyUI runs every output node in a graph. The template has three: two **preview** models (an
+untextured voxel mesh and a vertex-painted 700 000-face mesh) and the **Save 3D** node with the
+finished, textured, decimated model. Before `#UMBRA-62` Umbra downloaded the first `.glb` in the
+history, which was the white voxel preview. Now `PrepareModelWorkflow`:
+
+1. **Resolves switches.** A `ComfySwitchNode` whose choice is fixed (a literal, or a Primitive
+   boolean such as "Switch to Trellis2") is removed and everything reading it reads the picked
+   input instead.
+2. **Keeps only the save node and what it reads**, directly or indirectly (a walk over the node
+   links). The previews, the UV-atlas preview and the unused branch (Pixal3D's model, MoGe, its
+   conditioning) are dropped, so ComfyUI does less work and the provenance lists only models that ran.
+3. Downloads the `.glb` listed under **the save node's** output.
+
+## Long runs and closing the editor
+
+A run can take many minutes on an 8 GB GPU. There is no total time limit: while ComfyUI still has
+the job (`/queue` lists it as running or waiting) Umbra keeps waiting. It stops with `ai.lost` if
+ComfyUI forgot the job (restarted, queue cleared), or `ai.connect` if ComfyUI stops answering for
+`timeoutSeconds` (2 minutes).
+
+Closing the editor uses `CancelToken::Leave`: Umbra stops waiting but does not send `/interrupt`, so
+ComfyUI finishes. The job id was written to `ai-model-pending.json` in the preferences folder
+(with the name, seed, workflow and the picture as `ai-model-pending.png`) as soon as ComfyUI accepted
+it; the next editor start fetches the result by id (`ModelRequest::resumeId`, nothing queued again)
+and saves it as usual. **Cancel** still interrupts ComfyUI. `UmbraTool model` prints the job id and
+`UmbraTool model --resume <job> --assets <folder>` fetches it later.
 
 TRELLIS.2 outputs about 700 000 faces by default; Umbra asks for 10 000 (user decision
 2026-11-07, like the ~8 000-triangle Meshy characters) and 1024 px textures.

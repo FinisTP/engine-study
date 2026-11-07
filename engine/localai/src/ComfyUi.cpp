@@ -61,9 +61,26 @@ namespace umbra::localai
             Diagnostics diagnostics;
         };
 
-        // Queue -> wait (twice a second) -> download one output file. Shared by pictures and models.
+        // True while ComfyUI still has the job: running, waiting in its queue, or finished.
+        enum class Known { yes, no, unreachable };
+        Known InQueue(httplib::Client &client, const std::string &id)
+        {
+            const httplib::Result queue = client.Get("/queue");
+            const Json q = queue && queue->status == 200 ? Json::parse(queue->body, nullptr, false) : Json();
+            if (!q.is_object())
+                return Known::unreachable;
+            for (const char *list : {"queue_running", "queue_pending"})
+                for (const Json &job : q.value(list, Json::array()))
+                    if (job.is_array() && job.size() > 1 && job[1] == id)
+                        return Known::yes;
+            return Known::no;
+        }
+
+        // Queue (or take an earlier job id) -> wait -> download one output file. Shared by pictures and
+        // models. A long run has no time limit; waiting stops when ComfyUI loses the job or stops answering.
         Run RunGraph(const std::string &url, const Json &graph, CancelToken &cancel, int timeoutSeconds, std::size_t maxBytes,
-                     const Pick &pick, const std::function<std::string(const std::string &)> &refusalMessage)
+                     const Pick &pick, const std::function<std::string(const std::string &)> &refusalMessage,
+                     const std::string &resumeId = "", const std::function<void(const std::string &)> &queued = nullptr)
         {
             Run run;
             std::string host;
@@ -81,55 +98,76 @@ namespace umbra::localai
                 Err(run.diagnostics, "ai.cancel", "Cancelled.");
                 return run;
             }
-            const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(timeoutSeconds);
             auto finish = [&] {
                 cancel.SetStop(nullptr);
                 if (cancel.Cancelled())
                 {
-                    httplib::Client(host, port).Post("/interrupt"); // stop ComfyUI working on it
+                    if (!cancel.LeftRunning())
+                        httplib::Client(host, port).Post("/interrupt"); // stop ComfyUI working on it
                     run.diagnostics = {{core::Severity::Error, "ai.cancel", "comfyui", "", "Cancelled."}};
                     run.ok = false;
                 }
                 return run;
             };
 
-            // 1. Queue.
-            const httplib::Result queued = client.Post("/prompt", Json{{"prompt", graph}, {"client_id", "umbra"}}.dump(), "application/json");
-            if (!queued)
+            // 1. Queue, unless the job was queued in an earlier session.
+            std::string id = resumeId;
+            if (id.empty())
             {
-                Err(run.diagnostics, "ai.connect", "ComfyUI is not running at " + url + " (" + httplib::to_string(queued.error()) +
-                                                       "). Start ComfyUI (Desktop: port 8000; command line: 8188).");
-                return finish();
-            }
-            const Json reply = Json::parse(queued->body, nullptr, false);
-            if (queued->status != 200 || !reply.is_object() || !reply.contains("prompt_id"))
-            {
-                const std::string why = reply.is_object() ? Refusal(reply) : "";
-                const std::string special = refusalMessage(why);
-                if (!special.empty())
-                    Err(run.diagnostics, "ai.model", special);
-                else
-                    Err(run.diagnostics, "ai.comfyui", "ComfyUI refused the request (HTTP " + std::to_string(queued->status) + "): " + why);
-                return finish();
-            }
-            const std::string id = reply["prompt_id"].get<std::string>();
-
-            // 2. Wait until the history has it.
-            Json entry;
-            while (!cancel.Cancelled())
-            {
-                if (std::chrono::steady_clock::now() > deadline)
+                const httplib::Result sent = client.Post("/prompt", Json{{"prompt", graph}, {"client_id", "umbra"}}.dump(), "application/json");
+                if (!sent)
                 {
-                    Err(run.diagnostics, "ai.timeout", "No result within " + std::to_string(timeoutSeconds) + " seconds.");
-                    httplib::Client(host, port).Post("/interrupt");
+                    Err(run.diagnostics, "ai.connect", "ComfyUI is not running at " + url + " (" + httplib::to_string(sent.error()) +
+                                                           "). Start ComfyUI (Desktop: port 8000; command line: 8188).");
                     return finish();
                 }
+                const Json reply = Json::parse(sent->body, nullptr, false);
+                if (sent->status != 200 || !reply.is_object() || !reply.contains("prompt_id"))
+                {
+                    const std::string why = reply.is_object() ? Refusal(reply) : "";
+                    const std::string special = refusalMessage(why);
+                    if (!special.empty())
+                        Err(run.diagnostics, "ai.model", special);
+                    else
+                        Err(run.diagnostics, "ai.comfyui", "ComfyUI refused the request (HTTP " + std::to_string(sent->status) + "): " + why);
+                    return finish();
+                }
+                id = reply["prompt_id"].get<std::string>();
+                if (queued)
+                    queued(id);
+            }
+
+            // 2. Wait until the history has it (twice a second); every few seconds check that ComfyUI
+            //    still has the job, so a restarted ComfyUI is noticed instead of waiting forever.
+            Json entry;
+            auto lastAnswer = std::chrono::steady_clock::now();
+            for (int poll = 1; !cancel.Cancelled(); ++poll)
+            {
                 const httplib::Result history = client.Get("/history/" + id);
                 const Json all = history && history->status == 200 ? Json::parse(history->body, nullptr, false) : Json();
                 if (all.is_object() && all.contains(id))
                 {
                     entry = all[id];
                     break;
+                }
+                if (history)
+                    lastAnswer = std::chrono::steady_clock::now();
+                if (poll % 6 == 0)
+                {
+                    const Known known = InQueue(client, id);
+                    const httplib::Result again = known == Known::no ? client.Get("/history/" + id) : httplib::Result();
+                    const bool finishedMeanwhile = again && again->status == 200 && Json::parse(again->body, nullptr, false).contains(id);
+                    if (known == Known::no && !finishedMeanwhile)
+                    {
+                        Err(run.diagnostics, "ai.lost", "ComfyUI no longer has this job (was it restarted or its queue cleared?). Start it again.");
+                        return finish();
+                    }
+                }
+                if (std::chrono::steady_clock::now() - lastAnswer > std::chrono::seconds(timeoutSeconds))
+                {
+                    Err(run.diagnostics, "ai.connect", "ComfyUI stopped answering at " + url + " for " + std::to_string(timeoutSeconds) +
+                                                           " seconds. If it is still working, the result can be fetched later.");
+                    return finish();
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(500));
             }
@@ -196,6 +234,78 @@ namespace umbra::localai
         }
     }
 
+    namespace
+    {
+        bool IsLink(const Json &v, const Json &graph)
+        {
+            return v.is_array() && v.size() == 2 && v[0].is_string() && v[1].is_number_integer() && graph.contains(v[0].get<std::string>());
+        }
+
+        bool IsSave3D(const Json &node)
+        {
+            const std::string type = node.value("class_type", "");
+            return type.starts_with("Save3D") || type == "SaveGLB";
+        }
+
+        // The node that writes the 3D file Umbra downloads: the first save node by id.
+        std::string SaveNode(const Json &graph)
+        {
+            for (const auto &[id, node] : graph.items())
+                if (IsSave3D(node))
+                    return id;
+            return "";
+        }
+
+        // A switch with a fixed choice (literal, or a Primitive) is replaced by the input it picks.
+        void ResolveSwitches(Json &graph)
+        {
+            for (bool changed = true; changed;)
+            {
+                changed = false;
+                for (const auto &[id, node] : graph.items())
+                {
+                    if (node.value("class_type", "") != "ComfySwitchNode")
+                        continue;
+                    Json choice = node["inputs"].value("switch", Json());
+                    if (IsLink(choice, graph))
+                        choice = graph[choice[0].get<std::string>()]["inputs"].value("value", Json());
+                    if (!choice.is_boolean())
+                        continue;
+                    const Json picked = node["inputs"].value(choice.get<bool>() ? "on_true" : "on_false", Json());
+                    const std::string switchId = id;
+                    // 1. Everything reading the switch reads the picked input instead.
+                    for (auto &[otherId, other] : graph.items())
+                        for (auto &[key, value] : other["inputs"].items())
+                            if (IsLink(value, graph) && value[0] == switchId)
+                                value = picked;
+                    // 2. The switch itself goes.
+                    graph.erase(switchId);
+                    changed = true;
+                    break;
+                }
+            }
+        }
+
+        // Keeps only `root` and the nodes it reads from, directly or indirectly.
+        Json OnlyNeeded(const Json &graph, const std::string &root)
+        {
+            Json kept = Json::object();
+            std::vector<std::string> todo{root};
+            while (!todo.empty())
+            {
+                const std::string id = todo.back();
+                todo.pop_back();
+                if (kept.contains(id) || !graph.contains(id))
+                    continue;
+                kept[id] = graph[id];
+                for (const auto &[key, value] : graph[id]["inputs"].items())
+                    if (IsLink(value, graph))
+                        todo.push_back(value[0].get<std::string>());
+            }
+            return kept;
+        }
+    }
+
     Json TextureWorkflow(const ImageRequest &r)
     {
         // Node ids are strings; an input [id, n] means "output n of node id".
@@ -250,11 +360,10 @@ namespace umbra::localai
         int images = 0, saves = 0;
         for (const auto &[id, node] : graph.items())
         {
-            if (!node.is_object() || !node.contains("class_type") || !node.contains("inputs"))
+            if (!node.is_object() || !node.contains("class_type") || !node.contains("inputs") || !node["inputs"].is_object())
                 return fail("workflow.format", "node " + id + " has no class_type/inputs: export with Workflow -> Export (API)");
-            const std::string type = node["class_type"].get<std::string>();
-            images += type == "LoadImage";
-            saves += type.starts_with("Save3D") || type == "SaveGLB";
+            images += node["class_type"] == "LoadImage";
+            saves += IsSave3D(node);
         }
         if (images != 1)
             return fail("workflow.image", "the workflow needs exactly one LoadImage node (it has " + std::to_string(images) + ")");
@@ -265,7 +374,14 @@ namespace umbra::localai
 
     Json PrepareModelWorkflow(const ModelRequest &request, const std::string &uploadedPicture)
     {
+        // 1. Only what the save node needs: no preview models, no unused model branch (faster, and the
+        //    downloaded GLB is the finished one).
         Json graph = request.workflow;
+        ResolveSwitches(graph);
+        if (const std::string save = SaveNode(graph); !save.empty())
+            graph = OnlyNeeded(graph, save);
+
+        // 2. This run's values.
         long long seed = request.seed;
         for (auto &[id, node] : graph.items())
         {
@@ -293,44 +409,50 @@ namespace umbra::localai
             return result;
         }
 
-        // 1. Upload the picture into ComfyUI's input folder.
-        std::vector<std::uint8_t> png;
-        if (!assets::EncodePng(request.picture, png))
+        // 1. Upload the picture into ComfyUI's input folder (not when fetching an earlier job).
+        std::string name = "umbra_model_input.png";
+        if (request.resumeId.empty())
         {
-            Err(result.diagnostics, "ai.answer", "Couldn't encode the picture.");
-            return result;
+            std::vector<std::uint8_t> png;
+            if (!assets::EncodePng(request.picture, png))
+            {
+                Err(result.diagnostics, "ai.answer", "Couldn't encode the picture.");
+                return result;
+            }
+            httplib::Client client(host, port);
+            client.set_connection_timeout(3);
+            client.set_read_timeout(60);
+            const httplib::UploadFormDataItems form{{"image", std::string(png.begin(), png.end()), name, "image/png"},
+                                                    {"overwrite", "true", "", ""},
+                                                    {"type", "input", "", ""}};
+            const httplib::Result uploaded = client.Post("/upload/image", form);
+            const Json reply = uploaded && uploaded->status == 200 ? Json::parse(uploaded->body, nullptr, false) : Json();
+            if (!reply.is_object() || !reply.contains("name"))
+            {
+                Err(result.diagnostics, uploaded ? "ai.comfyui" : "ai.connect",
+                    uploaded ? "ComfyUI refused the picture upload." : "ComfyUI is not running at " + request.host + ". Start ComfyUI (Desktop: port 8000; command line: 8188).");
+                return result;
+            }
+            const std::string subfolder = reply.value("subfolder", "");
+            name = (subfolder.empty() ? "" : subfolder + "/") + reply["name"].get<std::string>();
         }
-        httplib::Client client(host, port);
-        client.set_connection_timeout(3);
-        client.set_read_timeout(60);
-        const httplib::UploadFormDataItems form{{"image", std::string(png.begin(), png.end()), "umbra_model_input.png", "image/png"},
-                                                {"overwrite", "true", "", ""},
-                                                {"type", "input", "", ""}};
-        const httplib::Result uploaded = client.Post("/upload/image", form);
-        const Json reply = uploaded && uploaded->status == 200 ? Json::parse(uploaded->body, nullptr, false) : Json();
-        if (!reply.is_object() || !reply.contains("name"))
-        {
-            Err(result.diagnostics, uploaded ? "ai.comfyui" : "ai.connect",
-                uploaded ? "ComfyUI refused the picture upload." : "ComfyUI is not running at " + request.host + ". Start ComfyUI (Desktop: port 8000; command line: 8188).");
-            return result;
-        }
-        const std::string subfolder = reply.value("subfolder", "");
-        const std::string name = (subfolder.empty() ? "" : subfolder + "/") + reply["name"].get<std::string>();
 
-        // 2. Run the workflow and download the GLB it saved.
-        const Pick glb = [](const Json &outputs) {
-            for (const auto &[node, output] : outputs.items())
-                for (const auto &[key, list] : output.items())
-                    if (list.is_array())
-                        for (const Json &file : list)
-                            if (file.is_object() && EndsWithGlb(file.value("filename", "")))
-                                return file;
+        // 2. Run the workflow and download the GLB its save node wrote (other GLBs are previews).
+        result.graph = PrepareModelWorkflow(request, name);
+        const std::string save = SaveNode(result.graph);
+        const Pick glb = [&save](const Json &outputs) {
+            const Json saved = outputs.value(save, Json::object()); // a copy: items() must not outlive it
+            for (const auto &[key, list] : saved.items())
+                if (list.is_array())
+                    for (const Json &file : list)
+                        if (file.is_object() && EndsWithGlb(file.value("filename", "")))
+                            return file;
             return Json();
         };
         const auto missing = [](const std::string &why) {
             return why.find("not in") != std::string::npos ? "A model the workflow needs isn't installed in ComfyUI: " + why : std::string();
         };
-        Run run = RunGraph(request.host, PrepareModelWorkflow(request, name), cancel, request.timeoutSeconds, request.maxBytes, glb, missing);
+        Run run = RunGraph(request.host, result.graph, cancel, request.timeoutSeconds, request.maxBytes, glb, missing, request.resumeId, request.queued);
         result.diagnostics = run.diagnostics;
         result.ok = run.ok;
         result.glb.assign(run.bytes.begin(), run.bytes.end());

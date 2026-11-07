@@ -1,7 +1,7 @@
 # Umbra Engine - Current Development Status
 
 **Status date:** 2026-11-07 (Phase 1/2 records dated 2026-09-02)
-**Current milestone:** P8D - AI 3D models (TRELLIS.2 through ComfyUI), implemented, after P8C textures and P8B quests; next: Windows checklists (first real Ollama, SDXL and TRELLIS.2 runs), then P9
+**Current milestone:** P8B/P8C/P8D (local AI quests, textures, 3D props) verified on Windows by the user 2026-11-08; P8D fixes `#UMBRA-62`; next: P6/P7/P8A Windows checklists, then P9
 **Phase 1 status:** Complete (interactive checklist unsigned)
 **Phase 2 status:** Complete
 **Phase 3 status:** Implemented. Headless tests verified on Linux; Windows build and GPU checks not run yet
@@ -11,8 +11,13 @@
 **P8A status:** Implemented. One model accepted under declared thresholds (seed 301); the same recipe failed for seed 300; competence equals the conventional AI; Windows/in-game run open
 **P8B status:** Implemented. Headless tests verified on Linux (40/40, GCC/Clang/ASan) against a stand-in Ollama server and saved drafts; no real model has run yet; the editor window compiles but has not been opened
 **P8C status:** Implemented. Headless tests verified on Linux (42/42, GCC/Clang/ASan) against a stand-in ComfyUI; no real ComfyUI/SDXL or GPU run yet (P8C.0 open); editor window not opened
-**P8D status:** Implemented. Headless tests verified on Linux (43/43, GCC/Clang/ASan) against a stand-in ComfyUI; no real TRELLIS.2 run yet; editor window not opened
+**P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
+
+## Update 2026-11-08 (Windows verification, `#UMBRA-62`)
+
+- The user verified P8B (real Ollama), P8C (ComfyUI/SDXL) and P8D (TRELLIS.2 on an 8 GB GPU) on Windows: works, with limitations.
+- `#UMBRA-62` fixes the P8D limitations: any exported workflow name (listed and remembered); the textured GLB from the save node (the graph is reduced to what that node needs, so previews and the unused Pixal3D branch don't run); a model job survives closing the editor (fetched on the next start; `UmbraTool model --resume`); no total time limit while ComfyUI still has the job. 43/43 on GCC/Clang/ASan; evidence `testing/p8d-ai-models.md` §3c.
 
 ## Update 2026-11-07 (P8D)
 
@@ -240,7 +245,7 @@ All seven items of the old Phase 3 entry point are implemented (see the table ab
 - Gameplay-state preservation across scene reloads (done in P4.4: hot reload keeps the player; F5/F9 checkpoints).
 - Packaging: the app reads assets from the source tree (`UMBRA_ASSET_DIRECTORY`) and caches in the build tree. A relocatable package layout is a P6/P9 task (roadmap T43).
 
-Next: Windows checklists for P6/P7/P8A/P8B/P8C/P8D (first real Ollama, SDXL and TRELLIS.2 runs), then P9. Open: P8A recipe robustness. Open in parallel: the interactive checklists in [`testing/phase3-assets-world.md`](testing/phase3-assets-world.md) and [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md) and the clang-cl/ASan presets.
+Next: re-check `#UMBRA-62` on Windows, the Windows checklists for P6/P7/P8A, then P9. Open: P8A recipe robustness. Open in parallel: the interactive checklists in [`testing/phase3-assets-world.md`](testing/phase3-assets-world.md) and [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md) and the clang-cl/ASan presets.
 
 ## Local verification
 

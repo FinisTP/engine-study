@@ -37,7 +37,7 @@ first installed model.
 |---|---|
 | Only `http://localhost`, `127.0.0.1` or `[::1]` (`ParseLocalUrl`; `localhost` is dialed as `127.0.0.1`, because Windows tries `::1` first and Ollama listens on IPv4 by default); anything else is refused before connecting (`ai.host`) | No hidden cloud fallback (roadmap T58). A cloud adapter would need its own consent and cost design |
 | Answer over `maxBytes` (64 KiB) is refused, not cut (`ai.limit`) | Model output is untrusted |
-| `timeoutSeconds` (600) covers the whole answer, model loading included (`ai.timeout`) | Big models load slowly the first time |
+| Ollama: `timeoutSeconds` (600) covers the whole answer, model loading included (`ai.timeout`). ComfyUI: no total limit while ComfyUI has the job; `timeoutSeconds` (120) is how long it may stop answering | Big models load slowly; 3D runs take many minutes |
 | `CancelToken::Cancel` closes the socket from another thread, so a waiting read returns at once (`ai.cancel`) | The editor never waits for a model |
 
 Every failure is one diagnostic a creator can act on: `ai.connect` (Ollama not running),
@@ -75,8 +75,9 @@ seamlessness is done afterwards by `assets::MakeSeamless`.
 
 Failures: `ai.connect` (not running; names both ports), `ai.model` (the checkpoint isn't in
 `models/checkpoints`, from ComfyUI's validation error), `ai.comfyui` (refused graph or a failed
-run, with ComfyUI's message, e.g. out of GPU memory), `ai.timeout`, `ai.limit`, `ai.answer`,
-`ai.cancel` (also sends `/interrupt`). `ListCheckpoints` reads `/object_info/CheckpointLoaderSimple`
+run, with ComfyUI's message, e.g. out of GPU memory), `ai.lost` (ComfyUI no longer has the job:
+restarted or queue cleared; checked through `/queue` every 3 s), `ai.limit`, `ai.answer`,
+`ai.cancel` (also sends `/interrupt`, except `CancelToken::Leave`: the editor closing). `ListCheckpoints` reads `/object_info/CheckpointLoaderSimple`
 in both of ComfyUI's list formats; `FindComfyUi` tries port 8000 (Desktop), then 8188.
 
 `ImageJob` runs a batch (the variations) on one worker thread and stops at the first failure.
@@ -92,5 +93,6 @@ OpenRAIL++-M, outputs may be sold). Not shipped with Umbra: creators install Com
 `GenerateModel` uploads a picture (`POST /upload/image`), runs the creator's exported image-to-3D
 workflow with the run's values filled in, and downloads the `.glb` its save node lists. Queue,
 wait, cancel and download are the same code as for pictures (`RunGraph`); `ModelJob` and
-`ImageJob` are one `BatchJob` template. Time limit 30 minutes, size limit 256 MiB; a workflow
-whose model files aren't installed gives `ai.model` with ComfyUI's message. Details in `ModelGen.md`.
+`ImageJob` are one `BatchJob` template. No time limit while ComfyUI has the job, size limit 256 MiB;
+a workflow whose model files aren't installed gives `ai.model` with ComfyUI's message. Only what
+the save node needs is run, and a job survives the editor closing. Details in `ModelGen.md`.

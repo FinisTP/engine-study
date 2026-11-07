@@ -25,11 +25,87 @@ namespace
             value = buffer;
     }
 
+    std::filesystem::path Prefs(const char *name)
+    {
+        return umbra::platform::Platform::PreferencesFolder() / name;
+    }
+
     // Opens a file with the program Windows uses for it (the image viewer for PNGs).
     void OpenFile(const std::filesystem::path &file)
     {
         std::string url = "file:///" + file.generic_string();
         SDL_OpenURL(url.c_str());
+    }
+}
+
+void Editor::LoadModelSettings()
+{
+    // The workflow chosen last time, if it still exists; else whatever export tools/comfyui holds.
+    std::ifstream in(Prefs("ai-model.json"));
+    const umbra::authoring::Json settings = umbra::authoring::Json::parse(in, nullptr, false);
+    if (settings.is_object())
+        modelWorkflow_ = settings.value("workflow", "");
+    if (modelWorkflow_.empty() || !std::filesystem::exists(modelWorkflow_))
+        modelWorkflow_ = umbra::localai::DefaultModelWorkflow(assetRoot_).string();
+}
+
+void Editor::SaveModelSettings()
+{
+    std::filesystem::create_directories(umbra::platform::Platform::PreferencesFolder());
+    std::ofstream(Prefs("ai-model.json")) << umbra::authoring::Json{{"workflow", modelWorkflow_}}.dump(2);
+}
+
+void Editor::ResumeModel()
+{
+    // 1. A job ComfyUI kept working on after the editor closed (written by StartModel).
+    std::ifstream in(Prefs("ai-model-pending.json"));
+    const umbra::authoring::Json pending = umbra::authoring::Json::parse(in, nullptr, false);
+    if (!pending.is_object() || !pending.contains("job") || modelJob_->Running())
+        return;
+    umbra::localai::ModelRequest request;
+    if (!umbra::localai::LoadModelWorkflow(pending.value("workflow", ""), request.workflow, modelProblems_))
+        return;
+    // 2. Wait for it again; the result is saved like any other.
+    request.host = pending.value("host", "");
+    request.resumeId = pending["job"].get<std::string>();
+    request.seed = modelSeed_ = pending.value("seed", 0LL);
+    request.faces = modelFaces_ = pending.value("faces", modelFaces_);
+    modelSaveName_ = pending.value("name", "model");
+    modelSourceText_ = pending.value("source", "");
+    modelWorkflow_ = pending.value("workflow", "");
+    std::string ignored;
+    umbra::assets::LoadImageFile(Prefs("ai-model-pending.png"), modelPicture_, ignored);
+    modelJob_->Start({request});
+    message_ = "Fetching the 3D model ComfyUI made after the editor closed (" + modelSaveName_ + ")...";
+    messageSeconds_ = 8.0F;
+}
+
+void Editor::CollectModelResults()
+{
+    if (auto results = modelJob_->Take())
+    {
+        const auto &result = (*results)[0];
+        modelProblems_.insert(modelProblems_.end(), result.diagnostics.begin(), result.diagnostics.end());
+        // 1. Forget the pending job, unless ComfyUI only stopped answering (try again next start).
+        const bool tryLater = !result.diagnostics.empty() && result.diagnostics[0].code == "ai.connect";
+        std::error_code ignored;
+        if (!tryLater)
+            for (const char *name : {"ai-model-pending.json", "ai-model-pending.png"})
+                std::filesystem::remove(Prefs(name), ignored);
+        // 2. Save and check the model, then show it in the AI model window.
+        if (result.ok)
+        {
+            modelResult_ = umbra::localai::SaveGeneratedModel(assetRoot_, modelSaveName_, result.glb, modelPicture_,
+                                                              {modelSourceText_, std::filesystem::path(modelWorkflow_).filename().string(), modelSeed_, modelFaces_},
+                                                              result.graph, modelProblems_);
+            if (!modelResult_.empty() && umbra::localai::InspectModel(assetRoot_ / modelResult_, modelInfo_, modelProblems_))
+                ScanAssets();
+            else
+                modelResult_.clear();
+        }
+        message_ = modelResult_.empty() ? "AI model failed: see the AI model window" : "AI model ready: " + modelResult_;
+        messageSeconds_ = 8.0F;
+        showModel_ = true;
     }
 }
 
@@ -58,12 +134,24 @@ void Editor::StartModel()
         modelSourceText_ = conceptRequests_[static_cast<std::size_t>(conceptPick_)].prompt;
         modelSeed_ = conceptRequests_[static_cast<std::size_t>(conceptPick_)].seed;
     }
-    // 2. Run it in the background.
+    // 2. Run it in the background. Once ComfyUI has the job, it is written down: if the editor closes,
+    //    ComfyUI keeps working and the next start fetches the model (ResumeModel).
     request.host = textureHost_;
     request.seed = modelSeed_;
     request.faces = modelFaces_;
     modelPicture_ = request.picture;
-    modelWorkflowData_ = request.workflow;
+    modelSaveName_ = !modelName_.empty() ? modelName_ : modelSource_ == 0 ? modelIdea_ : std::filesystem::path(modelPicturePath_).stem().string();
+    modelResult_.clear();
+    SaveModelSettings();
+    std::vector<std::uint8_t> png;
+    umbra::assets::EncodePng(modelPicture_, png);
+    std::ofstream(Prefs("ai-model-pending.png"), std::ios::binary).write(reinterpret_cast<const char *>(png.data()), static_cast<std::streamsize>(png.size()));
+    umbra::authoring::Json pending{{"host", request.host}, {"workflow", modelWorkflow_}, {"name", modelSaveName_},
+                                   {"source", modelSourceText_}, {"seed", modelSeed_}, {"faces", modelFaces_}};
+    request.queued = [pending](const std::string &job) mutable {
+        pending["job"] = job;
+        std::ofstream(Prefs("ai-model-pending.json")) << pending.dump(2);
+    };
     modelJob_->Start({request});
 }
 
@@ -90,10 +178,13 @@ void Editor::AiModel()
     }
     if (!textureSearched_)
         FindComfyUi();
-    if (modelWorkflow_.empty())
-        modelWorkflow_ = umbra::localai::DefaultModelWorkflow(assetRoot_).string();
+    if (!modelWorkflowsScanned_)
+    {
+        modelWorkflows_ = umbra::localai::FindModelWorkflows(assetRoot_.parent_path() / "tools/comfyui");
+        modelWorkflowsScanned_ = true;
+    }
 
-    // 1. Finished jobs: concept pictures (saved for the image viewer) and models (saved as assets).
+    // 1. Finished concept pictures, saved for the image viewer (models: CollectModelResults).
     if (auto results = conceptJob_->Take())
     {
         const std::filesystem::path folder = umbra::platform::Platform::PreferencesFolder() / "ai-concepts";
@@ -113,22 +204,6 @@ void Editor::AiModel()
         }
         if (!concepts_.empty())
             conceptPick_ = 0;
-    }
-    if (auto results = modelJob_->Take())
-    {
-        const auto &result = (*results)[0];
-        modelProblems_.insert(modelProblems_.end(), result.diagnostics.begin(), result.diagnostics.end());
-        if (result.ok)
-        {
-            const std::string name = !modelName_.empty() ? modelName_ : modelSource_ == 0 ? modelIdea_ : std::filesystem::path(modelPicturePath_).stem().string();
-            modelResult_ = umbra::localai::SaveGeneratedModel(assetRoot_, name, result.glb, modelPicture_,
-                                                              {modelSourceText_, std::filesystem::path(modelWorkflow_).filename().string(), modelSeed_, modelFaces_},
-                                                              modelWorkflowData_, modelProblems_);
-            if (!modelResult_.empty() && umbra::localai::InspectModel(assetRoot_ / modelResult_, modelInfo_, modelProblems_))
-                ScanAssets();
-            else
-                modelResult_.clear();
-        }
     }
 
     // 2. Where the picture comes from.
@@ -177,10 +252,12 @@ void Editor::AiModel()
     if (ImGui::Button("Make 3D model"))
         StartModel();
     ImGui::EndDisabled();
+    ImGui::SameLine();
+    ImGui::TextDisabled("workflow: %s", std::filesystem::path(modelWorkflow_).filename().string().c_str());
     if (conceptJob_->Running() || modelJob_->Running())
     {
         const bool concepts = conceptJob_->Running();
-        ImGui::Text("%s... %d s", concepts ? "Making concept pictures" : "Making the 3D model (minutes)",
+        ImGui::Text("%s... %d s", concepts ? "Making concept pictures" : "Making the 3D model (minutes; keeps going if the editor closes)",
                     static_cast<int>(concepts ? conceptJob_->Seconds() : modelJob_->Seconds()));
         ImGui::SameLine();
         if (ImGui::Button("Cancel"))
@@ -201,11 +278,26 @@ void Editor::AiModel()
         ImGui::TextDisabled("(at the view's centre; Ctrl+Z removes it)");
     }
 
-    if (ImGui::CollapsingHeader("ComfyUI 3D workflow"))
+    if (ImGui::CollapsingHeader("ComfyUI 3D workflow", modelWorkflows_.empty() ? ImGuiTreeNodeFlags_DefaultOpen : 0))
     {
+        // Any exported workflow in tools/comfyui, whatever its name; the choice is remembered.
+        const std::string current = std::filesystem::path(modelWorkflow_).filename().string();
+        if (ImGui::BeginCombo("Exported workflow", current.c_str()))
+        {
+            for (const auto &file : modelWorkflows_)
+                if (ImGui::Selectable(file.filename().string().c_str(), file.string() == modelWorkflow_))
+                {
+                    modelWorkflow_ = file.string();
+                    SaveModelSettings();
+                }
+            ImGui::EndCombo();
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("Refresh"))
+            modelWorkflowsScanned_ = false;
         InputText("Workflow file", modelWorkflow_);
-        ImGui::TextWrapped("Once: in ComfyUI open Templates > \"Pixal3D & TRELLIS.2: Image to Model\", switch it to TRELLIS.2, run it once, "
-                           "then Workflow > Export (API) and save it as the file above.");
+        ImGui::TextWrapped("Once: in ComfyUI open Templates > \"Pixal3D & TRELLIS.2: Image to Model\", switch it to TRELLIS.2, "
+                           "then Workflow > Export (API) into the project's tools/comfyui folder (any name).");
     }
     for (const umbra::core::Diagnostic &d : modelProblems_)
         ImGui::TextColored(d.severity == umbra::core::Severity::Error ? ImVec4(1, 0.4F, 0.4F, 1) : ImVec4(1, 0.8F, 0.3F, 1), "%s", d.message.c_str());

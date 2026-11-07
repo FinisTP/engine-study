@@ -137,10 +137,13 @@ Editor::Editor(ModelLibrary &models, std::filesystem::path assetRoot, std::files
         Report(diagnostics, "RPG content did not open");
     ScanAssets();
     LoadDraftSettings();
+    LoadModelSettings();
+    ResumeModel();
 }
 
 Editor::~Editor()
 {
+    modelJob_->Leave(); // ComfyUI finishes the model; the next start fetches it (ResumeModel)
     ClearTexturePreviews();
 }
 
@@ -480,6 +483,7 @@ void Editor::DrawUi()
     RpgForms();
     AiDraft();
     AiTexture();
+    CollectModelResults();
     AiModel();
     StatusBar();
     Popups();
@@ -566,7 +570,7 @@ void Editor::MenuBar()
         showDraft_ = true;
     if (ImGui::Button("AI texture"))
         showTexture_ = true;
-    if (ImGui::Button("AI model"))
+    if (ImGui::Button(modelJob_->Running() ? "AI model (working)###AiModel" : "AI model###AiModel"))
         showModel_ = true;
     ImGui::EndMainMenuBar();
 }

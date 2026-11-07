@@ -97,6 +97,10 @@ private:
     void AiModel(); // AiModel.cpp
     void StartModel();
     void PlaceModel();
+    void CollectModelResults(); // every frame, window open or not
+    void LoadModelSettings();
+    void SaveModelSettings();
+    void ResumeModel(); // a job left running in ComfyUI when the editor closed
 
     void ScanAssets();
     void AddEntity(const std::optional<std::string> &parent);
@@ -168,7 +172,9 @@ private:
     // checkpoint are shared with the texture window.
     bool showModel_ = false;
     int modelSource_ = 0; // 0 = describe, 1 = picture file
-    std::string modelIdea_, modelPicturePath_, modelName_, modelWorkflow_, modelSourceText_, modelResult_;
+    std::string modelIdea_, modelPicturePath_, modelName_, modelWorkflow_, modelSourceText_, modelResult_, modelSaveName_;
+    std::vector<std::filesystem::path> modelWorkflows_; // usable exports in tools/comfyui
+    bool modelWorkflowsScanned_ = false;
     int conceptCount_ = 4;
     int modelFaces_ = 10000; // user decision 2026-11-07
     float modelHeight_ = 1.0F;
@@ -180,7 +186,6 @@ private:
     std::vector<std::filesystem::path> conceptFiles_;
     int conceptPick_ = -1;
     umbra::core::TextureData modelPicture_;
-    umbra::authoring::Json modelWorkflowData_;
     umbra::localai::ModelInfo modelInfo_;
     std::vector<umbra::core::Diagnostic> modelProblems_;
 };

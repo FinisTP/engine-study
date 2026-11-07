@@ -48,13 +48,21 @@ namespace umbra::localai
     {
     public:
         void Cancel();
-        void Reset() { cancelled_ = false; }
+        // Stops waiting but lets the server finish the work (the editor closing, P8D).
+        void Leave()
+        {
+            leave_ = true;
+            Cancel();
+        }
+        void Reset() { cancelled_ = leave_ = false; }
         // Registers how to stop the running request (nullptr clears it); false if already cancelled.
         bool SetStop(std::function<void()> stop);
         [[nodiscard]] bool Cancelled() const noexcept { return cancelled_; }
+        [[nodiscard]] bool LeftRunning() const noexcept { return leave_; }
 
     private:
         std::atomic<bool> cancelled_ = false;
+        std::atomic<bool> leave_ = false;
         std::mutex mutex_;
         std::function<void()> stop_;
     };

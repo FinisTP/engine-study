@@ -7,6 +7,7 @@
 #include <atomic>
 #include <chrono>
 #include <filesystem>
+#include <functional>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -28,7 +29,7 @@ namespace umbra::localai
         int height = 1024;
         int steps = 25;
         double cfg = 7.0;
-        int timeoutSeconds = 600;                   // model loading included
+        int timeoutSeconds = 120;                // how long ComfyUI may stop answering; a long run itself has no limit
         std::size_t maxBytes = 32 * 1024 * 1024; // a larger image is refused
     };
 
@@ -59,21 +60,25 @@ namespace umbra::localai
         long long seed = 0;
         int faces = 10000;         // DecimateMesh target (user decision 2026-11-07)
         int textureSize = 1024;    // texture bake and UV resolution
-        int timeoutSeconds = 1800; // several model loads and samplers
+        int timeoutSeconds = 120;  // how long ComfyUI may stop answering; a long run itself has no limit
         std::size_t maxBytes = 256 * 1024 * 1024;
+        std::string resumeId; // a ComfyUI job queued earlier (editor closed meanwhile): wait for it, queue nothing
+        std::function<void(const std::string &)> queued; // told the job id once ComfyUI has it (worker thread)
     };
 
     struct ModelResult final
     {
         bool ok = false;
         std::vector<std::uint8_t> glb;
+        nlohmann::json graph; // what ran (PrepareModelWorkflow), for the provenance
         std::vector<core::Diagnostic> diagnostics;
     };
 
-    // The workflow with this run's picture name, seed, face count and texture size filled in.
+    // The workflow with this run's picture name, seed, face count and texture size filled in, reduced to
+    // what the 3D save node needs: switches resolved, previews and the unused model branch dropped.
     [[nodiscard]] nlohmann::json PrepareModelWorkflow(const ModelRequest &request, const std::string &uploadedPicture);
 
-    // Blocking: uploads the picture, runs the workflow, downloads the GLB it saved.
+    // Blocking: uploads the picture, runs the workflow, downloads the GLB its save node wrote.
     ModelResult GenerateModel(const ModelRequest &request, CancelToken &cancel);
 
     // --- Discovery ---
@@ -128,6 +133,7 @@ namespace umbra::localai
             return true;
         }
         void Cancel() { cancel_.Cancel(); }
+        void Leave() { cancel_.Leave(); } // stop waiting; ComfyUI finishes the work anyway
         [[nodiscard]] bool Running() const noexcept { return running_; }
         [[nodiscard]] std::optional<std::vector<Result>> Take()
         {

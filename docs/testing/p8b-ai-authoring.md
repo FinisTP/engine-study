@@ -89,7 +89,13 @@ for timeout and cancel.
   Windows takes about 2 s, close to the connect limit. Fix (`#UMBRA-57`): `localhost` is dialed as
   `127.0.0.1`; the message now names the low-level error. Not yet confirmed on the user's PC.
 
-## 4. Windows checklist (open)
+## 3c. Windows verification (2026-11-08, user)
+
+The user ran the checklist below on their PC and reported that **everything works properly, with
+some limitations** (P8B, P8C and P8D confirmed together). Item-by-item results were not reported, so
+the rows below are left blank; the milestone counts as verified on Windows by the user's report.
+
+## 4. Windows checklist (user: works, 2026-11-08)
 
 | # | Do | Expect | Result |
 |---|---|---|---|
