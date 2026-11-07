@@ -8,12 +8,14 @@ target_sources(
     PRIVATE
         src/Document.cpp
         src/SceneEdits.cpp
+        src/Validate.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
         FILES
             include/Document.hpp
             include/SceneEdits.hpp
+            include/Validate.hpp
 )
 
 target_compile_features(UmbraAuthoring PUBLIC cxx_std_20)
@@ -25,6 +27,8 @@ target_link_libraries(
     PUBLIC
         Umbra::Scene
         Umbra::Rpg
+        Umbra::Game
+        Umbra::Assets
         nlohmann_json::nlohmann_json
     PRIVATE
         Umbra::Warnings

@@ -11,6 +11,9 @@
 
 namespace umbra::game
 {
+    // Save envelope version written by WriteSave ("format": "umbra.save").
+    inline constexpr int saveFormatVersion = 1;
+
     enum class CombatMode
     {
         Turn,    // default

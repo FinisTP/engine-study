@@ -15,7 +15,7 @@ namespace umbra::game
 
     namespace
     {
-        constexpr int version = 1;
+        constexpr int version = saveFormatVersion;
 
         // FNV-1a 64-bit over the payload text: catches truncation and accidental edits.
         std::string Checksum(const std::string &text)

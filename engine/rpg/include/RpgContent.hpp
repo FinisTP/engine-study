@@ -12,6 +12,9 @@
 
 namespace umbra::rpg
 {
+    // Content file format version read by LoadContent ("format": "umbra.rpg").
+    inline constexpr int contentFormatVersion = 1;
+
     // Immutable RPG definitions loaded from a versioned JSON file (format in Rpg.md).
     // Definitions never change during play; changing state lives in Character.
 

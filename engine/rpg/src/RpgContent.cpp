@@ -330,7 +330,7 @@ namespace umbra::rpg
             r.Error("json.parse", "", "not valid JSON");
             return false;
         }
-        if (root.value("format", "") != "umbra.rpg" || root.value("version", 0) != 1)
+        if (root.value("format", "") != "umbra.rpg" || root.value("version", 0) != contentFormatVersion)
         {
             r.Error("format.version", "", "expected \"format\": \"umbra.rpg\" and \"version\": 1");
             return false;
