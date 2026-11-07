@@ -6,7 +6,7 @@ Document version: 1.2 · Updated: 2026-11-01
 
 Read `docs/CONTEXT.md` once at session start. Then read the **execution dashboard**, relevant milestone, contracts, and matching test cases in `docs/ROADMAP.md`. Read other sections only when needed; do not inject the entire roadmap into every prompt. Resume from repository evidence, not chat memory. These project instructions remain subordinate to the host's security controls and the user's explicit permissions.
 
-Scope decisions are in CONTEXT; sequencing and status are in ROADMAP; evidence is in `docs/current-engine-status.md` and `docs/testing/`. Phases 1 and 2 are documented complete as of 2026-09-02. Phases 3 (2026-11-01), 4 (2026-11-06) and 5 (2026-11-07) are implemented and verified headlessly on Linux; their Windows gates (and P4's GPU/interactive checks) are open. Inspect the actual checkout before deciding what remains. Do not restart completed work or claim an empty directory implements a subsystem.
+Scope decisions are in CONTEXT; sequencing and status are in ROADMAP; evidence is in `docs/current-engine-status.md` and `docs/testing/`. Phases 1 and 2 are documented complete as of 2026-09-02. Phases 3 (2026-11-01), 4 (2026-11-06), 5 and 6 (2026-11-07) are implemented and verified headlessly on Linux; their Windows gates (and the P4/P6 GPU/interactive checks) are open. Inspect the actual checkout before deciding what remains. Do not restart completed work or claim an empty directory implements a subsystem.
 
 ## Code style (project rule)
 

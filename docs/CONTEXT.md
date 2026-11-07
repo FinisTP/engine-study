@@ -98,16 +98,18 @@ Instance/device/surface/swapchain ownership; VMA buffers/images and staging uplo
 
 The importer handles the first primitive and one base-color texture of a controlled glTF asset. Textures have one mip level. Initialization uploads wait for the graphics queue. Existing stable resource handles are **not proof that general generational resource management is implemented**.
 
-Phase 3 (2026-11-01) added the general world, glTF hierarchy import, generational resource handles, derived asset cache and transactional reload, all still pending Windows/GPU verification. Phase 4 (2026-11-06) added the Jolt physics adapter, a third-person player, procedural walk animation, WAV audio, interactables, a pause menu, portals between two areas and development checkpoints, also pending Windows/GPU/interactive verification. Phase 5 (2026-11-07) added headless RPG rules (content, stats, inventory, skill tree, shared resolver) and independent turn and real-time combat controllers with a coordinator, not yet wired into the 3D game. The source does not establish PBR/HDR/shadows/IBL, a skeletal animation system, quests/conversation/saves, editor, C# host, or AI integration. Do not infer completion from roadmap language or empty directories.
+Phase 3 (2026-11-01) added the general world, glTF hierarchy import, generational resource handles, derived asset cache and transactional reload, all still pending Windows/GPU verification. Phase 4 (2026-11-06) added the Jolt physics adapter, a third-person player, procedural walk animation, WAV audio, interactables, a pause menu, portals between two areas and development checkpoints, also pending Windows/GPU/interactive verification. Phase 5 (2026-11-07) added headless RPG rules (content, stats, inventory, skill tree, shared resolver) and independent turn and real-time combat controllers with a coordinator. Phase 6 (2026-11-07) added conversations, quests, XP/levels, saves and the playable reference game (roaming enemies, in-place fights, death menu), pending Windows/interactive verification. The source does not establish PBR/HDR/shadows/IBL, a skeletal animation system, editor, C# host, or AI integration. Do not infer completion from roadmap language or empty directories.
 
-### Observed target graph (2026-11-07, after Phase 5)
+### Observed target graph (2026-11-07, after Phase 6)
 
 ```text
-Umbra (apps/umbra: Main, ModelLibrary, SceneRuntime)
-  ├─ (not linked yet) Umbra::Encounter → TurnCombat, RealtimeCombat (combat coordinator)
+Umbra (apps/umbra: Main, ModelLibrary, SceneRuntime, GameFlow)
+  ├─ Umbra::Game → Story, Encounter, nlohmann-json   (saves, GameSession: story + fights + saves)
+  │     Umbra::Story → Rpg                            (quest log, conversations)
+  │     Umbra::Encounter → TurnCombat, RealtimeCombat (combat coordinator)
   │     Umbra::TurnCombat → Rpg      Umbra::RealtimeCombat → Rpg   (independent controllers)
   │     Umbra::Rpg → Core, nlohmann-json  (content, characters, inventory, skills, shared resolver)
-  ├─ Umbra::Gameplay → World, Physics                (player, physics bridge, interaction, areas, pause menu)
+  ├─ Umbra::Gameplay → World, Physics                (player, roamers, physics bridge, interaction, areas, pause menu)
   ├─ Umbra::Physics → Core; Jolt private             (bodies, raycasts, character)
   ├─ Umbra::Audio   → Core, Assets                   (WAV loader, mixer, sound bank)
   ├─ Umbra::Scene   → World, Assets, nlohmann-json   (scene files, model instancing, checkpoints)
@@ -119,14 +121,14 @@ Umbra (apps/umbra: Main, ModelLibrary, SceneRuntime)
   └─ Umbra::Core    → glm                            (SlotMap, DrawList, MeshData, RetireQueue, Diagnostic, clocks)
 UmbraSceneCheck → Scene, Assets                      (headless validator CLI)
 Tests: Umbra.Core, .Platform, .Diagnostics.*, .Render, .World, .Assets, .Scene, .Physics,
-       .Gameplay, .Audio, .Rpg, .TurnCombat, .RealtimeCombat, .Encounter,
+       .Gameplay, .Audio, .Rpg, .TurnCombat, .RealtimeCombat, .Encounter, .Story, .Game,
        .SceneCheck.Sample/.Settlement/.Dungeon/.Broken, .HeadlessDependencies,
        .TurnOnlyDependencies, .RealtimeOnlyDependencies
 ```
 
-Core, World, Assets, Scene, Physics, Gameplay, Audio, Rpg, TurnCombat, RealtimeCombat, Encounter and UmbraSceneCheck must stay headless; each combat controller must build without the other; `Umbra.HeadlessDependencies` enforces it. App path: `/apps/umbra`, executable `Umbra`. Still-empty folders: `/apps/editor`, `/apps/game`, `/engine/script`, `/engine/editor` (`/samples` now holds the W0 web sample). Do not rename the existing app to `/apps/game` because an illustrative tree used that name.
+Core, World, Assets, Scene, Physics, Gameplay, Audio, Rpg, TurnCombat, RealtimeCombat, Encounter, Story, Game and UmbraSceneCheck must stay headless; each combat controller must build without the other; `Umbra.HeadlessDependencies` enforces it. App path: `/apps/umbra`, executable `Umbra`. Still-empty folders: `/apps/editor`, `/apps/game`, `/engine/script`, `/engine/editor` (`/samples` now holds the W0 web sample). Do not rename the existing app to `/apps/game` because an illustrative tree used that name.
 
-Commit messages follow `issue #UMBRA-<n> <summary>`. Phase 3 is `#UMBRA-13` … `#UMBRA-20`; Phase 4 is `#UMBRA-21` … `#UMBRA-25`; Phase 5 is `#UMBRA-26` … `#UMBRA-33`.
+Commit messages follow `issue #UMBRA-<n> <summary>`. Phase 3 is `#UMBRA-13` … `#UMBRA-20`; Phase 4 is `#UMBRA-21` … `#UMBRA-25`; Phase 5 is `#UMBRA-26` … `#UMBRA-33`; Phase 6 is `#UMBRA-37` … `#UMBRA-42`.
 
 **Current milestone:** Phase 6, the complete offline reference RPG, is implemented (2026-11-07): conversations, a failable quest, XP and levels, save stones plus autosave with backups, roaming enemies with in-place turn or real-time fights, and a death menu (`docs/testing/phase6-reference-game.md`). Its rules pass headlessly on Linux; the Windows build and play-through are open. Phase 5, shared RPG rules and two combat modes, is verified headlessly on Linux. Windows gates are open for P3 (`docs/testing/phase3-assets-world.md`), P4 (`docs/testing/phase4-sandbox.md`, including GPU/audio/interactive) and P5 (`docs/testing/phase5-rules-combat.md`, build and CTest). On 2026-11-07 the MSVC Release build compiled with no warnings and 24/25 tests passed on the user's PC (one test exe was blocked from starting by Windows). W0 (2026-11-07): the rules build to WebAssembly unchanged with identical results, and WebGPU rendering plus localStorage worked in Microsoft Edge (`docs/adr/0001-web-backend.md`). Next: the P6 Windows build and play-through, then P7.
 
