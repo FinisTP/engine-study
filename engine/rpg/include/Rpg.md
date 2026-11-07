@@ -69,3 +69,19 @@ twice.
 
 When max health or max energy changes (equip, unequip, status), the current value is **clamped**
 into 0..max and otherwise kept. Raising the maximum never heals; lowering it cuts the excess.
+
+## Inventory and equipment
+
+The inventory is a list of stacks, one per slot (`inventorySlots`). Items are identified by
+definition id and count only; there are no per-item instance ids yet because nothing needs them
+(no durability or random rolls), which also makes saving trivial.
+
+| Operation | Rule |
+|---|---|
+| `AddItem` | Top up existing stacks to `stack`, then use free slots. If it doesn't all fit, **nothing** is added (user decision 2026-11-07: a full inventory rejects the pickup; the item stays in the world or reward) |
+| `RemoveItem` | Takes from the last stacks first; fails without change if there are fewer than asked |
+| `Equip` | Removes one item from the inventory into its slot. The old item goes back into the freed place, so equipping never overflows |
+| `Unequip` | Fails without change if the inventory is full |
+
+Every operation changes a copy and only replaces the character on success, so a failure can
+never leave half a transaction behind (roadmap T46).
