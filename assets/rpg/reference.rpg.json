@@ -345,12 +345,18 @@
       },
       "skills": [
         "strike",
-        "heavy_blow"
+        "heavy_blow",
+        "guard",
+        "weaken"
       ],
       "equipment": [
         "iron_sword"
       ],
       "inventory": [
+        {
+          "item": "health_potion",
+          "count": 2
+        },
         {
           "item": "sun_relic",
           "count": 1

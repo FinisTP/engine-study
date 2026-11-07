@@ -1,0 +1,87 @@
+{
+  "model": "final-pref-300.json",
+  "episodes": 4000,
+  "heldOutSeedsFrom": 10000000,
+  "opponentLevel": 5,
+  "learned": {
+    "winRate": 0.25675,
+    "meanTurns": 6.37175,
+    "fallbackRate": 0.0,
+    "illegal": 0,
+    "attackRates": {
+      "lowHealth": 0.6424251821987905,
+      "highHealth": 0.7220296249606051,
+      "lowDecisions": 6449,
+      "highDecisions": 19038
+    },
+    "probes": {
+      "attackAtLow": 0.6273573412601725,
+      "attackAtHigh": 0.6340334291701184,
+      "gap": -0.006676087909945894,
+      "pairs": 20521,
+      "healsWhenNearlyDeadVsHealthyOpponent": 1.0,
+      "attacksWhenBothNearlyDead": 0.0
+    }
+  },
+  "conventional": {
+    "winRate": 0.25675,
+    "meanTurns": 6.39325,
+    "fallbackRate": 0.0,
+    "illegal": 0
+  },
+  "random": {
+    "winRate": 0.014,
+    "meanTurns": 4.92475,
+    "fallbackRate": 0.0,
+    "illegal": 0
+  },
+  "control": {
+    "winRate": 0.25675,
+    "meanTurns": 6.472,
+    "fallbackRate": 0.0,
+    "illegal": 0,
+    "attackRates": {
+      "lowHealth": 0.833266291230893,
+      "highHealth": 0.6572002294893862,
+      "lowDecisions": 4972,
+      "highDecisions": 20916
+    },
+    "probes": {
+      "attackAtLow": 0.3185029969299742,
+      "attackAtHigh": 0.35485600116953364,
+      "gap": -0.03635300423955945,
+      "pairs": 20521,
+      "healsWhenNearlyDeadVsHealthyOpponent": 1.0,
+      "attacksWhenBothNearlyDead": 0.0
+    }
+  },
+  "parityMaxError": 5.99663074396517e-06,
+  "acceptance": {
+    "thresholds": {
+      "minWinRateOverConventional": -0.02,
+      "minPreferenceGap": 0.15,
+      "minGapOverControl": 0.15,
+      "maxIllegal": 0,
+      "maxFallbackRate": 0.0,
+      "maxParityError": 0.0001,
+      "declared": "2026-11-07, after the pilot sweep (preference 0.15 / 0.4 / 1.0, seeds 100 and 200), before the final runs (seeds 300 and 301) on held-out fights",
+      "meaning": {
+        "minWinRateOverConventional": "competence: held-out win rate at least the conventional enemy AI's minus 2 points",
+        "minPreferenceGap": "matched probes: attack rate with the player at 20% health minus at 80%, everything else equal",
+        "minGapOverControl": "the same gap must exceed the control model's (same recipe, preference 0) by this much: the preference comes from training",
+        "maxIllegal": "illegal actions chosen in held-out play",
+        "maxFallbackRate": "decisions where the model gave no usable answer",
+        "maxParityError": "largest difference between the engine's C++ scores and a NumPy forward pass from the file"
+      }
+    },
+    "checks": {
+      "competence": true,
+      "preference": false,
+      "fromTraining": false,
+      "noIllegal": true,
+      "noFallback": true,
+      "parity": true
+    },
+    "accepted": false
+  }
+}
