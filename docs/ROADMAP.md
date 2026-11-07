@@ -47,6 +47,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 | P7 Creator workflow | P3/P5/P6 contracts | Implemented 2026-11-07; headless parts verified on Linux; editor compiled, not yet run; Windows checklist open | P7.1–P7.6: shared validated documents with undo (`Umbra::Authoring`), `UmbraTool`, `UmbraEditor` (scenes + RPG forms, gizmo, Play), live RPG content reload, known-good build, package script, creator guide. Evidence: `testing/phase7-creator-workflow.md`. |
 | P8A Learned turn-based enemy | P5 rules, P7 tools | Implemented 2026-11-07; one model accepted under declared thresholds; recipe 1 of 2 seeds; Windows run open | Built-in C++ network (user decision), PPO trained on CPU through the native rules, matched-probe preference gap +0.25 vs control −0.13, competence equal to the conventional AI (content-limited). Evidence: `testing/p8a-learned-enemy.md`. |
 | P8B AI authoring | P7 schema/patch/validation capability | Implemented 2026-11-07; verified on Linux against a stand-in Ollama and saved drafts; **no real model run yet**; editor window compiled, not opened | `Umbra::LocalAi` (local-only Ollama bridge, streamed, schema-constrained, cancel/limits), `authoring::PlanDraft` (additive scope, game loader, play-through with the real `GameSession`), editor "AI quest draft" window and `UmbraTool draft`. Evidence: `testing/p8b-ai-authoring.md`. |
+| P8C AI texture generation | P7 authoring, P8B local-AI bridge | **Proposed** (user request 2026-11-07); choices open (ADR 0002 §7) | Local image generator (ComfyUI proposed) → seamless check → material file → apply/undo in the editor. Engine part: PNG import with mips, materials, world-scale projection. Plan: `adr/0002-ai-texture-generation.md`. |
 | P9 PC release | P6/P7/P8A/P8B | Planned | Clean offline install, complete game, authoring workflow, measured reference-PC gate. |
 | P10 Playable web export | P9; W0 decisions | Planned later port | Browser game and local policy, durable-save UX, offline installation readiness. |
 | P11 Mobile | P10; approved device target | Planned later port | Lifecycle, input, storage, thermal and performance gates on actual devices. |
@@ -584,6 +585,24 @@ Do not replace a failed experiment with unreported heuristic behavior and call t
 
 A cloud adapter can be a later optional task; credentials, data disclosure and spend controls require explicit design. It is not necessary to complete offline/local-first P8B.
 
+### P8C — AI texture generation (proposed)
+
+**Dependency:** P7 authoring documents, P8B `Umbra::LocalAi`. **Goal:** creators make tileable
+surface textures with an image model on their own PC and apply them like any other edit. Full
+plan, options and open choices: [`adr/0002-ai-texture-generation.md`](adr/0002-ai-texture-generation.md).
+
+| Task | Implement | Required evidence |
+|---|---|---|
+| P8C.0 Spike | Chosen generator on the user's PC; time, VRAM, tiling quality; recheck Ollama image generation on Windows | Recorded numbers and samples; default model chosen |
+| P8C.1 Engine textures | Standalone PNG import with mipmaps, `umbra.material`, scene `material` field (validated, reloadable), world-scale projection, editor picker | Asset/scene tests; tiled surfaces without stretching (Windows) |
+| P8C.2 Image provider | `ImageProvider` + ComfyUI adapter, local only, cancel/limits, installed-model list | Stand-in server tests; named failures |
+| P8C.3 Texture checks | Seamless step, seam score, size rules, provenance and license table | T61, T63, T65 |
+| P8C.4 Editor and tool | AI texture window (variations, tiled preview, apply/undo, style), `UmbraTool texture` | T62; Windows checklist |
+| P8C.5 Records | Creator guide, testing record | Docs |
+
+**Exit gate:** a creator generates, previews, applies, undoes and plays a tileable texture made
+locally; the game build contains no image-generation code (T66); no non-local address (T64).
+
 ### P9 — PC release gate
 
 **Dependencies:** complete reference game and creator workflow; accepted P8A and P8B features. **Goal:** a reproducible, distributable PC engine/reference-game package, not just developer-machine success.
@@ -728,6 +747,12 @@ This is an initial **60-case register**, not an assertion that every possible fu
 | T58 | Local authoring failure silently uses cloud | No upload/credential use without explicit configuration/consent; diagnostics avoid secret leakage | P7/P8B |
 | T59 | Untrusted or excessive-resource model package | Validate manifest/paths/operators/resources/provenance; safe test environment before acceptance; no automatic code execution | P8A/P9 |
 | T60 | Trainer decision step/opponent timing mismatch | Reward/action opportunity/terminal handling matches native encounter; no extra player/enemy turn or double step | P5/P8A |
+| T61 | Generated texture has a visible seam | Seam score flags it before apply; the creator sees the warning | P8C |
+| T62 | Apply/undo/redo of a generated texture | Files written before the scene edit; undo removes only the reference; redo restores it; nothing half-applied | P8C |
+| T63 | Material references a missing, oversized or non-power-of-two image | Loader/validator refuses with a named diagnostic; the last valid material stays | P8C |
+| T64 | Image generator address is not this computer | Refused before connecting; no cloud fallback | P8C |
+| T65 | Texture made with a non-commercial model is packaged | Packaging warns, naming the material and license | P8C/P9 |
+| T66 | Game build links image-generation code | Dependency check fails | P8C |
 
 ### Test layers
 
@@ -821,6 +846,7 @@ These are bounded decisions, not a request to stop and ask the user all of them 
 | O13 | Browser backend, shader path, capabilities/hosting support. **User decision 2026-11-06:** run W0 after P4. **W0 (2026-11-07):** WebGPU for graphics (separate small backend behind `core::DrawList`), HLSL → SPIR-V → WGSL planned, Emscripten candidate for P10; rules already build to WebAssembly unchanged. See `docs/adr/0001-web-backend.md`. | W0; finalize P10 | Actual supported-browser failure |
 | O14 | First mobile OS/device tier | P11 planning | User target choice |
 | O15 | Community records versus model updates, consent, backend operations | F1 approval only | Explicit decision to fund/build service |
+| O16 | AI texture generator, default model, scope and timing. **Proposed 2026-11-07 (ADR 0002):** ComfyUI first behind an `ImageProvider` interface, Ollama later; tileable world surfaces first; independent track before P9. Awaiting user answers. | Before P8C.0 | Generator unusable on the user's PC, or Ollama image generation reaches Windows |
 
 ### 13.3 Initial risk register
 
@@ -952,6 +978,8 @@ This reference list supports the limited factual technology statements, not a re
 Version 1.0, 2026-11-01: incorporates final answers 21–23; makes independent combat-mode use an explicit contract/test; selects turn-based learned policy; removes mandatory-threshold interpretation of aggression; preserves deferred modding and offline scope; expands milestone tasks/evidence; retains T01–T38 and adds T39–T60; establishes concise root instructions plus separate context/roadmap files.
 
 No implementation completion was advanced by preparing this pack. Further updates must record actual evidence, product changes and their source separately.
+
+2026-11-07: P8C (AI texture generation) proposed at the user's request: dashboard row, milestone section, T61–T66, O16, ADR 0002. Not confirmed scope until the user answers ADR 0002 §7.
 
 2026-11-07: P8B implemented (`#UMBRA-55`); dashboard, P8B status, O11 updated; duplicate stale P8A dashboard row removed; evidence in `testing/p8b-ai-authoring.md`.
 
