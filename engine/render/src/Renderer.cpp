@@ -164,7 +164,7 @@ namespace umbra::render
             sceneResources.FlushRetired();
 
             // Clear all resources that depend on the swapchain before recreating it.
-            overlay.Shutdown();
+            overlay.Shutdown(true); // keep the ImGui context (and the editor's input backend)
             frameResources.Shutdown();
             pipeline.Shutdown();
             swapchain.Shutdown();

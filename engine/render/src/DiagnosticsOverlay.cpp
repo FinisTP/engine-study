@@ -56,12 +56,16 @@ namespace umbra::render
             return false;
         }
         device_ = device;
-        IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
-        ImGui::StyleColorsDark();
+        // The context outlives swapchain rebuilds (see Shutdown); create it only the first time.
+        if (ImGui::GetCurrentContext() == nullptr)
+        {
+            IMGUI_CHECKVERSION();
+            ImGui::CreateContext();
+            ImGui::StyleColorsDark();
+            ImGui::GetIO().IniFilename = nullptr;
+        }
         ImGuiIO &io = ImGui::GetIO();
         io.BackendRendererName = "Umbra Vulkan overlay";
-        io.IniFilename = nullptr;
         io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
 
         unsigned char *pixels = nullptr;
@@ -430,7 +434,7 @@ namespace umbra::render
         }
     }
 
-    void DiagnosticsOverlay::Shutdown() noexcept
+    void DiagnosticsOverlay::Shutdown(bool keepContext) noexcept
     {
         if (device_ != VK_NULL_HANDLE)
         {
@@ -457,7 +461,7 @@ namespace umbra::render
             buffer.Reset();
         fontImage_.Reset();
         device_ = VK_NULL_HANDLE;
-        if (ImGui::GetCurrentContext() != nullptr)
+        if (!keepContext && ImGui::GetCurrentContext() != nullptr)
             ImGui::DestroyContext();
         initialized_ = false;
         gpuName_.clear();

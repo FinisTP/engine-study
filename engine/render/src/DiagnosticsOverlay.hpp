@@ -46,7 +46,9 @@ namespace umbra::render
 
         void Render(VkCommandBuffer commandBuffer, std::size_t frameIndex);
 
-        void Shutdown() noexcept;
+        // keepContext: only the GPU resources go (swapchain rebuild). The Dear ImGui context, its
+        // settings and any platform backend attached to it (the editor's SDL input) stay.
+        void Shutdown(bool keepContext = false) noexcept;
 
     private:
         bool initialized_ = false;
