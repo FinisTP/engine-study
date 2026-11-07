@@ -388,12 +388,10 @@ namespace umbra::scene
             }
         }
 
-        bool ParseScene(const std::filesystem::path &path, const SceneLoadOptions &options, ParsedScene &scene,
-                        std::vector<Diagnostic> &diagnostics)
+        // Reads a whole scene file (bounded). False with a diagnostic if it can't.
+        bool ReadSceneFile(const std::filesystem::path &path, std::string &text, std::vector<Diagnostic> &diagnostics)
         {
             Report report{path.string(), diagnostics};
-
-            // 1. Read the file (bounded).
             std::error_code ec;
             const std::uintmax_t size = std::filesystem::file_size(path, ec);
             if (ec)
@@ -407,9 +405,16 @@ namespace umbra::scene
                 return false;
             }
             std::ifstream file(path, std::ios::binary);
-            const std::string text{std::istreambuf_iterator<char>(file), {}};
+            text.assign(std::istreambuf_iterator<char>(file), {});
+            return true;
+        }
 
-            // 2. Parse JSON.
+        bool ParseScene(const std::string &text, const std::filesystem::path &path, const SceneLoadOptions &options,
+                        ParsedScene &scene, std::vector<Diagnostic> &diagnostics)
+        {
+            Report report{path.string(), diagnostics};
+
+            // 2. Parse JSON (1. reading the file happens in ReadSceneFile).
             json root;
             try
             {
@@ -574,12 +579,26 @@ namespace umbra::scene
 
     bool ValidateScene(const std::filesystem::path &path, const SceneLoadOptions &options, std::vector<core::Diagnostic> &diagnostics)
     {
+        std::string text;
+        return ReadSceneFile(path, text, diagnostics) && ValidateSceneText(text, path, options, diagnostics);
+    }
+
+    bool ValidateSceneText(const std::string &text, const std::filesystem::path &name, const SceneLoadOptions &options,
+                           std::vector<core::Diagnostic> &diagnostics)
+    {
         ParsedScene scene;
-        return ParseScene(path, options, scene, diagnostics);
+        return ParseScene(text, name, options, scene, diagnostics);
     }
 
     bool LoadScene(const std::filesystem::path &path, const SceneLoadOptions &options, world::World &world,
                    std::vector<core::Diagnostic> &diagnostics)
+    {
+        std::string text;
+        return ReadSceneFile(path, text, diagnostics) && LoadSceneText(text, path, options, world, diagnostics);
+    }
+
+    bool LoadSceneText(const std::string &text, const std::filesystem::path &path, const SceneLoadOptions &options,
+                       world::World &world, std::vector<core::Diagnostic> &diagnostics)
     {
         ParsedScene scene;
         if (world.Count() != 0)
@@ -587,7 +606,7 @@ namespace umbra::scene
             diagnostics.push_back({Severity::Error, "scene.target", path.string(), "", "LoadScene needs an empty world"});
             return false;
         }
-        if (!ParseScene(path, options, scene, diagnostics))
+        if (!ParseScene(text, path, options, scene, diagnostics))
             return false;
 
         // Validation passed, so nothing below can fail.

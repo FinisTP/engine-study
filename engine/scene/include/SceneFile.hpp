@@ -31,6 +31,13 @@ namespace umbra::scene
     bool LoadScene(const std::filesystem::path &path, const SceneLoadOptions &options, world::World &world,
                    std::vector<core::Diagnostic> &diagnostics);
 
+    // The same two, for scene text that is not (yet) in a file, e.g. a document being edited.
+    // `name` is only used in diagnostics.
+    bool ValidateSceneText(const std::string &text, const std::filesystem::path &name, const SceneLoadOptions &options,
+                           std::vector<core::Diagnostic> &diagnostics);
+    bool LoadSceneText(const std::string &text, const std::filesystem::path &name, const SceneLoadOptions &options,
+                       world::World &world, std::vector<core::Diagnostic> &diagnostics);
+
     // Writes every entity (parents before children) atomically. Instances are written expanded.
     bool SaveScene(const world::World &world, const std::filesystem::path &path, std::vector<core::Diagnostic> &diagnostics);
 }
