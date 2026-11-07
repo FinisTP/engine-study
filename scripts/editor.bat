@@ -12,7 +12,7 @@ if not exist "%EDITOR%" (
     exit /b 1
 )
 "%EDITOR%" "%SCENE:\=/%"
-if errorlevel 1 (
+if not "%errorlevel%"=="0" (
     echo.
     echo The editor stopped with exit code %errorlevel%. The log above says why.
     pause

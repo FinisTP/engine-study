@@ -196,7 +196,7 @@ Copy the zip to another PC, unzip, run `Umbra.exe`. Saves go to `%APPDATA%\Umbra
 | Play does nothing | The scene couldn't be saved (see Diagnostics), or the game wasn't built. Build once with `build-and-run.bat`. |
 | AI draft: "Ollama is not running" | Start Ollama (it runs in the tray after install), or check the address under **Model**. |
 | AI draft: "model ... is not installed" | Pick an installed model in the **Model** list (press **Refresh**), or run `ollama pull qwen3.5:9b`. |
-| A program in `out\build` vanishes, or a test says "operation not permitted" | Windows security removed or blocked it (programs that open network connections, even to this PC, can trigger this). Open Windows Security → Protection history, allow it, and build again. |
+| `LNK1104: cannot open file ...exe`, "CreateProcess: Access is denied", or a program in `out\build` vanishes | Windows security is scanning, blocking or removing freshly built programs. Run `build-and-run.bat` again; if it repeats, add a Windows Security exclusion for the project's `out` folder (Virus & threat protection → Manage settings → Exclusions). |
 | AI draft keeps failing the play-through | Make the idea simpler (one or two objectives), press **Ask the AI to fix the problems**, or write the quest by hand in the RPG forms (*quests* and *conversations*). |
 | AI texture: "ComfyUI is not running" | Start ComfyUI Desktop, then press **Find**. A command-line ComfyUI listens on 8188: that is tried too. |
 | AI texture: "ComfyUI has no model ..." | Put `sd_xl_base_1.0.safetensors` in ComfyUI's `models/checkpoints` folder and press **Find**. |

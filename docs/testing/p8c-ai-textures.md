@@ -62,6 +62,17 @@ provenance; style). CTests `Umbra.Tool.TextureLocalOnly`, `Umbra.Tool.ValidateMa
 - Mipmaps average sRGB values directly (slightly dark small levels on high-contrast images).
 - Only base-color textures: normal/roughness maps wait for a PBR renderer.
 
+## 3b. First Windows builds (2026-11-07, user)
+
+- Build 1: stopped after ~100 of 227 steps with "CreateProcess: Access is denied" for `cmake.exe`
+  (security software); all new P8C code compiled without errors up to there.
+- Build 2: `LNK1104: cannot open file UmbraSceneCheck.exe` (file locked) stopped ninja, but
+  `build-and-run.bat` printed BUILD OK because the failure exit code was -1 and the script used
+  `if errorlevel 1` (true only for codes >= 1). The tests then ran on the old UmbraTool/editor:
+  8 failures, none from new code (5 SceneCheck "Not Run", Gameplay blocked from starting,
+  TextureLocalOnly/ValidateMaterial = old UmbraTool). Fix `#UMBRA-60`: the scripts treat any exit
+  code other than 0 as failure.
+
 ## 4. Windows checklist (open)
 
 | # | Do | Expect | Result |
