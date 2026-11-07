@@ -32,7 +32,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 
 **First action for a new agent:** finish B0 — the Windows-side checks are still open (see the B0 record). Re-inspect the checkout; if it has advanced past this dashboard, preserve completed work and select the earliest genuinely unmet task. Do not blindly implement P3.1 again.
 
-**Current next task:** the Windows checklists for P6, P7, P8A and P8B (`testing/phase6-reference-game.md` §4, `testing/phase7-creator-workflow.md` §4, `testing/p8a-learned-enemy.md` §5, `testing/p8b-ai-authoring.md` §4 — the first run of a real Ollama model), then P9 (PC release gate). Open in parallel: P8A recipe robustness (1 of 2 seeds). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
+**Current next task:** the Windows checklists for P6, P7, P8A and P8B (`testing/phase6-reference-game.md` §4, `testing/phase7-creator-workflow.md` §4, `testing/p8a-learned-enemy.md` §5, `testing/p8b-ai-authoring.md` §4 — the first run of a real Ollama model), then P8C (AI texture generation, ADR 0002; P8C.1 engine textures needs no generator), then P9 (PC release gate). Open in parallel: P8A recipe robustness (1 of 2 seeds). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
 
 | Gate | Dependency | Status (updated 2026-11-07) | Evidence / exit summary |
 |---|---|---|---|
@@ -47,7 +47,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 | P7 Creator workflow | P3/P5/P6 contracts | Implemented 2026-11-07; headless parts verified on Linux; editor compiled, not yet run; Windows checklist open | P7.1–P7.6: shared validated documents with undo (`Umbra::Authoring`), `UmbraTool`, `UmbraEditor` (scenes + RPG forms, gizmo, Play), live RPG content reload, known-good build, package script, creator guide. Evidence: `testing/phase7-creator-workflow.md`. |
 | P8A Learned turn-based enemy | P5 rules, P7 tools | Implemented 2026-11-07; one model accepted under declared thresholds; recipe 1 of 2 seeds; Windows run open | Built-in C++ network (user decision), PPO trained on CPU through the native rules, matched-probe preference gap +0.25 vs control −0.13, competence equal to the conventional AI (content-limited). Evidence: `testing/p8a-learned-enemy.md`. |
 | P8B AI authoring | P7 schema/patch/validation capability | Implemented 2026-11-07; verified on Linux against a stand-in Ollama and saved drafts; **no real model run yet**; editor window compiled, not opened | `Umbra::LocalAi` (local-only Ollama bridge, streamed, schema-constrained, cancel/limits), `authoring::PlanDraft` (additive scope, game loader, play-through with the real `GameSession`), editor "AI quest draft" window and `UmbraTool draft`. Evidence: `testing/p8b-ai-authoring.md`. |
-| P8C AI texture generation | P7 authoring, P8B local-AI bridge | **Proposed** (user request 2026-11-07); choices open (ADR 0002 §7) | Local image generator (ComfyUI proposed) → seamless check → material file → apply/undo in the editor. Engine part: PNG import with mips, materials, world-scale projection. Plan: `adr/0002-ai-texture-generation.md`. |
+| P8C AI texture generation | P7 authoring, P8B local-AI bridge | **Planned** (user decisions 2026-11-07: ComfyUI, world surfaces, SDXL for an 8 GB GPU, before P9) | Local image generator (ComfyUI) → seamless check → material file → apply/undo in the editor. Engine part: PNG import with mips, materials, world-scale projection. Plan: `adr/0002-ai-texture-generation.md`. |
 | P9 PC release | P6/P7/P8A/P8B | Planned | Clean offline install, complete game, authoring workflow, measured reference-PC gate. |
 | P10 Playable web export | P9; W0 decisions | Planned later port | Browser game and local policy, durable-save UX, offline installation readiness. |
 | P11 Mobile | P10; approved device target | Planned later port | Lifecycle, input, storage, thermal and performance gates on actual devices. |
@@ -585,7 +585,7 @@ Do not replace a failed experiment with unreported heuristic behavior and call t
 
 A cloud adapter can be a later optional task; credentials, data disclosure and spend controls require explicit design. It is not necessary to complete offline/local-first P8B.
 
-### P8C — AI texture generation (proposed)
+### P8C — AI texture generation (planned)
 
 **Dependency:** P7 authoring documents, P8B `Umbra::LocalAi`. **Goal:** creators make tileable
 surface textures with an image model on their own PC and apply them like any other edit. Full
@@ -846,7 +846,7 @@ These are bounded decisions, not a request to stop and ask the user all of them 
 | O13 | Browser backend, shader path, capabilities/hosting support. **User decision 2026-11-06:** run W0 after P4. **W0 (2026-11-07):** WebGPU for graphics (separate small backend behind `core::DrawList`), HLSL → SPIR-V → WGSL planned, Emscripten candidate for P10; rules already build to WebAssembly unchanged. See `docs/adr/0001-web-backend.md`. | W0; finalize P10 | Actual supported-browser failure |
 | O14 | First mobile OS/device tier | P11 planning | User target choice |
 | O15 | Community records versus model updates, consent, backend operations | F1 approval only | Explicit decision to fund/build service |
-| O16 | AI texture generator, default model, scope and timing. **Proposed 2026-11-07 (ADR 0002):** ComfyUI first behind an `ImageProvider` interface, Ollama later; tileable world surfaces first; independent track before P9. Awaiting user answers. | Before P8C.0 | Generator unusable on the user's PC, or Ollama image generation reaches Windows |
+| O16 | AI texture generator, default model, scope and timing. **Decided 2026-11-07 (user, ADR 0002 §7):** ComfyUI first behind an `ImageProvider` interface (Ollama later); tileable world surfaces first; SDXL base 1.0 at 1024 px for the user's 8 GB GPU; independent track before P9. | Before P8C.0 | Generator unusable on the user's PC, or Ollama image generation reaches Windows |
 
 ### 13.3 Initial risk register
 
@@ -979,7 +979,7 @@ Version 1.0, 2026-11-01: incorporates final answers 21–23; makes independent c
 
 No implementation completion was advanced by preparing this pack. Further updates must record actual evidence, product changes and their source separately.
 
-2026-11-07: P8C (AI texture generation) proposed at the user's request: dashboard row, milestone section, T61–T66, O16, ADR 0002. Not confirmed scope until the user answers ADR 0002 §7.
+2026-11-07: P8C (AI texture generation) planned at the user's request: dashboard row, milestone section, T61–T66, O16, ADR 0002; user decisions: ComfyUI, world surfaces, SDXL (8 GB GPU), before P9.
 
 2026-11-07: P8B implemented (`#UMBRA-55`); dashboard, P8B status, O11 updated; duplicate stale P8A dashboard row removed; evidence in `testing/p8b-ai-authoring.md`.
 

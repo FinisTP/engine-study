@@ -1,7 +1,6 @@
 # ADR 0002: AI texture generation (roadmap P8C, decision O16)
 
-- Status: **proposed** (2026-11-07). The user asked for it; it isn't in the confirmed scope yet,
-  and the choices in §7 still need answers.
+- Status: **accepted as plan** (2026-11-07, user answers in §7). Nothing implemented yet.
 - Context: Umbra's AI content tools so far draft quests and dialogue (P8B), and the reference
   characters were made with Meshy (`#UMBRA-52`). The world itself still uses a 2×2 placeholder image
   stretched over cubes. Creators should be able to make surface textures (stone, wood, grass, roof,
@@ -103,10 +102,11 @@ license is warned about at packaging; **T66** the game build links no image-gene
 comes, a height-from-luminance → normal step can fill them), retexturing characters (Meshy's
 retexture or ComfyUI with the model's UVs), item icons, textures generated while playing.
 
-## 7. Choices for the user
+## 7. User decisions (2026-11-07)
 
-1. Generator program: ComfyUI (proposed), Forge, or wait for Ollama image generation on Windows.
-2. What first: tileable world surfaces only (proposed), or also item icons.
-3. GPU memory, which decides the default model: about 6 GB → SD 1.5 at 512 px; 8 GB → SDXL at
-   1024 px; 12–16 GB → FLUX.1 schnell or Z-Image-Turbo.
-4. When: an independent track before the P9 release gate (proposed), or after it.
+| Choice | Options offered | Decision |
+|---|---|---|
+| Generator program | ComfyUI, Forge, wait for Ollama on Windows | **ComfyUI** first (Ollama can be a second adapter later) |
+| What first | World surfaces only, or also item icons | **Tileable world surfaces** |
+| GPU memory → default model | ≤6 GB SD 1.5; 8 GB SDXL; 12+ GB FLUX.1 schnell / Z-Image-Turbo | **8 GB → SDXL base 1.0 at 1024 px** (CreativeML OpenRAIL++-M; outputs usable commercially). P8C.0 measures time and quality |
+| When | Before or after P9 | **Before P9**, as an independent track |
