@@ -10,7 +10,7 @@ cd "$(dirname "$0")/../.."
     -mexec-model=reactor -fno-exceptions -DJSON_NOEXCEPTION \
     -Iengine/core/include -Iengine/rpg/include -Iengine/turncombat/include -isystem "$INCLUDE" \
     engine/rpg/src/RpgContent.cpp engine/rpg/src/StoryContent.cpp engine/rpg/src/Character.cpp engine/rpg/src/Inventory.cpp \
-    engine/rpg/src/SkillTree.cpp engine/rpg/src/Rules.cpp \
+    engine/rpg/src/SkillTree.cpp engine/rpg/src/Rules.cpp engine/rpg/src/Progression.cpp \
     engine/turncombat/src/TurnEncounter.cpp engine/turncombat/src/TurnEnvironment.cpp \
     samples/web/WebSim.cpp \
     -Wl,--strip-all -o samples/web/umbra_sim.wasm

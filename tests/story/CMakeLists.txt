@@ -2,7 +2,7 @@ find_package(Catch2 3 CONFIG REQUIRED)
 
 # Quests and conversations, headless.
 add_executable(UmbraStoryTests)
-target_sources(UmbraStoryTests PRIVATE ConversationTests.cpp)
+target_sources(UmbraStoryTests PRIVATE ConversationTests.cpp QuestTests.cpp)
 target_include_directories(UmbraStoryTests PRIVATE ${PROJECT_SOURCE_DIR}/tests/rpg)
 target_compile_definitions(UmbraStoryTests PRIVATE UMBRA_TEST_ASSET_DIRECTORY="${PROJECT_SOURCE_DIR}/assets")
 target_compile_features(UmbraStoryTests PRIVATE cxx_std_20)

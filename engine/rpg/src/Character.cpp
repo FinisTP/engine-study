@@ -46,8 +46,12 @@ namespace umbra::rpg
         for (const ActiveStatus &status : character.statuses)
             apply(content.FindStatus(status.status)->modifiers);
 
-        // 2. (base + add) * (100 + percent) / 100, never below 0 (max health never below 1).
-        StatBlock result = content.FindActor(character.actor)->base;
+        // 2. Base grows with level, then (base + add) * (100 + percent) / 100, never below 0
+        //    (max health never below 1).
+        const ActorDef &actor = *content.FindActor(character.actor);
+        StatBlock result = actor.base;
+        for (std::size_t i = 0; i < result.size(); ++i)
+            result[i] += actor.growth[i] * (character.level - 1);
         for (std::size_t i = 0; i < result.size(); ++i)
         {
             const long long value = (static_cast<long long>(result[i]) + add[i]) * std::max(0, 100 + percent[i]) / 100;

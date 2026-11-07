@@ -142,3 +142,19 @@ After all effects of one action, every target that was alive and now has 0 healt
 `Death` event, in target order (T10), and loses its statuses. Effects skip dead targets, so
 hitting a corpse does nothing and a death is never reported twice. `WinningTeam` returns the only
 team with someone alive (or -1 while the fight goes on).
+
+## Progression (XP and levels, user decision 2026-11-07)
+
+```
+XpForLevel(L) = 25 * L * (L - 1)        level 1: 0, 2: 50, 3: 150, 4: 300, ... up to level 20
+stat at level L = base + growth * (L - 1)   (actor "growth" block), then modifiers as above
+```
+
+Each level gained gives 1 skill point and restores health and energy to the new maximum (a level up
+is a deliberate reward; the "never heal on max change" rule is about equipment and statuses).
+
+`AwardVictory` gives the winner the sum of the defeated actors' `xp` and **everything they carried**
+(their inventory is the loot, so the bandit leader drops the Sun Relic he holds). Items that don't fit
+go to `Character::pending`, which stands for loot left on the ground: nothing is lost, and
+`ClaimPending` moves them in once there is room. This keeps the full-inventory decision (a pickup that
+doesn't fit is rejected) without ever destroying a quest item.

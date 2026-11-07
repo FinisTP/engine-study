@@ -39,6 +39,9 @@ namespace umbra::rpg
         std::set<std::string> skills; // unlocked
         int skillPoints = 0;
         std::vector<ActiveStatus> statuses;
+        int level = 1;
+        int xp = 0;                     // total experience
+        std::vector<ItemStack> pending; // items won with no room yet (claimed by ClaimPending)
 
         [[nodiscard]] bool IsAlive() const noexcept { return health > 0; }
     };
