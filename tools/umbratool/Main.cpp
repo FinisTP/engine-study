@@ -41,7 +41,7 @@ namespace
         std::filesystem::path content;
         bool json = false;
         // draft
-        std::string npc, idea, model = "qwen2.5:7b", host = "http://localhost:11434";
+        std::string npc, idea, model, host = "http://localhost:11434"; // empty model: an installed one
         std::filesystem::path from, scenes, saveDraft;
         int fix = 1;
         bool apply = false;
@@ -249,7 +249,13 @@ namespace
         // 1. A draft: from a file, or from the model (asking it to fix problems up to --fix times).
         umbra::authoring::DraftPlan plan;
         std::string answer;
-        umbra::localai::ChatRequest request = umbra::localai::MakeDraftRequest(doc.Data(), args.npc, args.idea, args.model, args.host);
+        std::string model = args.model;
+        if (model.empty() && args.from.empty())
+        {
+            std::vector<Diagnostic> ignored; // a missing Ollama is reported by the request itself
+            model = umbra::localai::PreferredModel(umbra::localai::ListModels(args.host, ignored), "qwen2.5:7b");
+        }
+        umbra::localai::ChatRequest request = umbra::localai::MakeDraftRequest(doc.Data(), args.npc, args.idea, model, args.host);
         for (int attempt = 0; attempt <= args.fix; ++attempt)
         {
             diagnostics.clear();

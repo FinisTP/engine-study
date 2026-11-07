@@ -551,6 +551,8 @@ void Editor::MenuBar()
     ImGui::Separator();
     if (ImGui::Button("Play (F5)"))
         Play();
+    if (ImGui::Button("AI quest draft"))
+        showDraft_ = true;
     ImGui::EndMainMenuBar();
 }
 

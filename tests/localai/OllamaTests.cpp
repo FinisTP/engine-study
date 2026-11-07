@@ -30,7 +30,18 @@ namespace
         {
             server_.Post("/api/chat", [this](const httplib::Request &request, httplib::Response &response) {
                 last = json::parse(request.body);
-                const std::string model = last["model"];
+                std::string model = last["model"];
+                ++requests;
+                if (model == "nothink")
+                {
+                    if (last.contains("think"))
+                    {
+                        response.status = 400;
+                        response.set_content(R"({"error":"\"nothink\" does not support thinking"})", "application/json");
+                        return;
+                    }
+                    model = "good";
+                }
                 if (model == "missing" || model == "broken")
                 {
                     response.status = model == "missing" ? 404 : 500;
@@ -66,6 +77,9 @@ namespace
                     return true;
                 });
             });
+            server_.Get("/api/tags", [](const httplib::Request &, httplib::Response &response) {
+                response.set_content(R"({"models":[{"name":"qwen3.5:9b","size":1},{"name":"qwen2.5:7b","size":2}]})", "application/json");
+            });
             port = server_.bind_to_any_port("127.0.0.1");
             thread_ = std::thread([this] { server_.listen_after_bind(); });
             server_.wait_until_ready();
@@ -88,6 +102,7 @@ namespace
 
         int port = 0;
         json last;
+        int requests = 0;
 
     private:
         httplib::Server server_;
@@ -144,6 +159,7 @@ TEST_CASE("A streamed answer arrives whole, with the schema in the request", "[l
     CHECK(result.text == GoodDraft());
     CHECK(received == result.text.size());
     CHECK(ollama.last["stream"] == true);
+    CHECK(ollama.last["think"] == false); // reasoning models answer much faster
     CHECK(ollama.last["format"]["type"] == "object");
     CHECK(ollama.last["messages"][0]["content"] == "hello");
 }
@@ -186,6 +202,35 @@ TEST_CASE("Provider failures are named, never hidden (P8B.1)", "[localai]")
     }
 }
 
+TEST_CASE("A model without a thinking switch is asked again without it", "[localai]")
+{
+    FakeOllama ollama;
+    const localai::ChatResult result = Send(ollama.Request("nothink"));
+    CHECK(result.ok);
+    CHECK(ollama.requests == 2);
+    CHECK_FALSE(ollama.last.contains("think"));
+}
+
+TEST_CASE("Installed models are listed for the picker", "[localai]")
+{
+    FakeOllama ollama;
+    std::vector<core::Diagnostic> diagnostics;
+    const std::vector<std::string> models = localai::ListModels("http://127.0.0.1:" + std::to_string(ollama.port), diagnostics);
+    CHECK(models == std::vector<std::string>{"qwen3.5:9b", "qwen2.5:7b"});
+    CHECK(diagnostics.empty());
+    CHECK(localai::ListModels("http://api.example.com", diagnostics).empty());
+    CHECK(diagnostics.back().code == "ai.host");
+}
+
+TEST_CASE("The picker prefers the wanted model, then an installed Qwen", "[localai]")
+{
+    CHECK(localai::PreferredModel({"llama3.1:8b", "qwen3.5:9b"}, "qwen2.5:7b") == "qwen3.5:9b");
+    CHECK(localai::PreferredModel({"qwen3.5:9b", "qwen2.5:7b"}, "qwen2.5:7b") == "qwen2.5:7b");
+    CHECK(localai::PreferredModel({"mistral:latest"}, "mistral") == "mistral:latest");
+    CHECK(localai::PreferredModel({"gemma3:12b"}, "qwen2.5:7b") == "gemma3:12b");
+    CHECK(localai::PreferredModel({}, "qwen2.5:7b") == "qwen2.5:7b");
+}
+
 TEST_CASE("Nothing listening means 'Ollama is not running'", "[localai]")
 {
     int closedPort = 0;
@@ -200,6 +245,9 @@ TEST_CASE("Nothing listening means 'Ollama is not running'", "[localai]")
     const localai::ChatResult result = Send(request);
     REQUIRE(HasCode(result, "ai.connect"));
     CHECK(result.diagnostics[0].message.find("ollama.com") != std::string::npos);
+    std::vector<core::Diagnostic> diagnostics;
+    CHECK(localai::ListModels(request.host, diagnostics).empty());
+    CHECK(diagnostics.back().code == "ai.connect");
 }
 
 TEST_CASE("Cancel stops a waiting request at once", "[localai]")

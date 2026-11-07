@@ -19,6 +19,114 @@ namespace umbra::localai
             const Json j = Json::parse(text, nullptr, false);
             return j.is_object() && j.contains("error") ? (j["error"].is_string() ? j["error"].get<std::string>() : j["error"].dump()) : "";
         }
+
+        // One attempt; `sendThink` adds the "think" switch.
+        ChatResult ChatOnce(const ChatRequest &request, CancelToken &cancel, std::atomic<std::size_t> *received, bool sendThink)
+        {
+            ChatResult result;
+            std::string host;
+            int port = 0;
+            if (!ParseLocalUrl(request.host, host, port))
+            {
+                Err(result, "ai.host", "'" + request.host + "' is not this computer. Umbra only uses a local Ollama "
+                                       "(e.g. http://localhost:11434); there is no cloud fallback.");
+                return result;
+            }
+
+            httplib::Client client(host, port);
+            client.set_connection_timeout(3);
+            client.set_read_timeout(request.timeoutSeconds);
+            if (!cancel.SetStop([&client] { client.stop(); }))
+            {
+                Err(result, "ai.cancel", "Cancelled.");
+                return result;
+            }
+
+            // 1. The request: streamed, so progress shows and cancel works mid-answer.
+            Json messages = Json::array();
+            for (const ChatMessage &m : request.messages)
+                messages.push_back({{"role", m.role}, {"content", m.content}});
+            Json body = {{"model", request.model}, {"messages", messages}, {"stream", true}, {"options", {{"temperature", request.temperature}}}};
+            if (!request.format.is_null())
+                body["format"] = request.format;
+            if (sendThink)
+                body["think"] = request.think;
+
+            // 2. The answer arrives as one JSON object per line: {"message":{"content":"..."},"done":false}.
+            std::string buffer, text, error;
+            bool done = false, malformed = false, tooLong = false, timedOut = false;
+            const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(request.timeoutSeconds);
+            auto receive = [&](const char *data, std::size_t size) {
+                buffer.append(data, size);
+                for (std::size_t end; (end = buffer.find('\n')) != std::string::npos;)
+                {
+                    const std::string line = buffer.substr(0, end);
+                    buffer.erase(0, end + 1);
+                    if (line.empty())
+                        continue;
+                    const Json j = Json::parse(line, nullptr, false);
+                    if (!j.is_object())
+                    {
+                        malformed = true;
+                        return false;
+                    }
+                    if (!(error = ErrorIn(line)).empty())
+                        return false;
+                    if (j.contains("message") && j["message"].contains("content") && j["message"]["content"].is_string())
+                        text += j["message"]["content"].get<std::string>();
+                    done = done || j.value("done", false);
+                    if (received != nullptr)
+                        *received = text.size();
+                }
+                tooLong = text.size() > request.maxBytes || buffer.size() > request.maxBytes;
+                timedOut = std::chrono::steady_clock::now() > deadline;
+                return !tooLong && !timedOut && !cancel.Cancelled();
+            };
+            const httplib::Result response = client.Post("/api/chat", httplib::Headers{}, body.dump(), "application/json", receive);
+            cancel.SetStop(nullptr);
+            if (error.empty() && !buffer.empty())
+                error = ErrorIn(buffer); // an error reply without a final newline
+            if (error.empty() && response && response->status != 200)
+                error = ErrorIn(response->body);
+
+            // 3. Name the problem so a creator can fix it.
+            const std::string model = "'" + request.model + "'";
+            if (cancel.Cancelled())
+                Err(result, "ai.cancel", "Cancelled.");
+            else if (tooLong)
+                Err(result, "ai.limit", "The answer was longer than " + std::to_string(request.maxBytes / 1024) + " KiB and was refused.");
+            else if (timedOut || (!response && response.error() == httplib::Error::Read))
+                Err(result, "ai.timeout", "No complete answer within " + std::to_string(request.timeoutSeconds) + " seconds.");
+            else if (error.find("not found") != std::string::npos || (response && response->status == 404))
+                Err(result, "ai.model", "The model " + model + " is not installed. In a terminal run: ollama pull " + request.model);
+            else if (!error.empty())
+                Err(result, "ai.ollama", "Ollama: " + error);
+            else if (malformed)
+                Err(result, "ai.answer", "Ollama's answer stream was malformed.");
+            else if (!response && response.error() == httplib::Error::Connection)
+                Err(result, "ai.connect", "Ollama is not running at " + request.host + ". Start Ollama (install it from ollama.com), then try again.");
+            else if (!response)
+                Err(result, "ai.http", std::string("Connection problem: ") + httplib::to_string(response.error()) + ".");
+            else if (response->status != 200)
+                Err(result, "ai.http", "Ollama answered HTTP " + std::to_string(response->status) + ".");
+            else if (!done)
+                Err(result, "ai.answer", "Ollama's answer stream was cut off.");
+            else
+            {
+                result.ok = true;
+                result.text = std::move(text);
+            }
+            return result;
+        }
+    }
+
+    bool CancelToken::SetStop(std::function<void()> stop)
+    {
+        std::lock_guard lock(mutex_);
+        if (stop && cancelled_)
+            return false;
+        stop_ = std::move(stop);
+        return true;
     }
 
     void CancelToken::Cancel()
@@ -66,105 +174,40 @@ namespace umbra::localai
 
     ChatResult Chat(const ChatRequest &request, CancelToken &cancel, std::atomic<std::size_t> *received)
     {
-        ChatResult result;
+        // Models without a thinking switch may refuse the "think" field: ask once more without it.
+        ChatResult result = ChatOnce(request, cancel, received, true);
+        if (!result.ok && !result.diagnostics.empty() && result.diagnostics[0].code == "ai.ollama" &&
+            result.diagnostics[0].message.find("think") != std::string::npos)
+            result = ChatOnce(request, cancel, received, false);
+        return result;
+    }
+
+    std::vector<std::string> ListModels(const std::string &url, std::vector<core::Diagnostic> &diagnostics)
+    {
+        std::vector<std::string> names;
         std::string host;
         int port = 0;
-        if (!ParseLocalUrl(request.host, host, port))
+        if (!ParseLocalUrl(url, host, port))
         {
-            Err(result, "ai.host", "'" + request.host + "' is not this computer. Umbra only uses a local Ollama "
-                                   "(e.g. http://localhost:11434); there is no cloud fallback.");
-            return result;
+            diagnostics.push_back({core::Severity::Error, "ai.host", "ollama", "", "'" + url + "' is not this computer."});
+            return names;
         }
-
         httplib::Client client(host, port);
-        client.set_connection_timeout(3);
-        client.set_read_timeout(request.timeoutSeconds);
+        client.set_connection_timeout(2);
+        client.set_read_timeout(2);
+        const httplib::Result response = client.Get("/api/tags");
+        const Json j = response && response->status == 200 ? Json::parse(response->body, nullptr, false) : Json();
+        if (!j.is_object())
         {
-            std::lock_guard lock(cancel.mutex_);
-            if (cancel.Cancelled())
-            {
-                Err(result, "ai.cancel", "Cancelled.");
-                return result;
-            }
-            cancel.stop_ = [&client] { client.stop(); };
+            diagnostics.push_back({core::Severity::Error, "ai.connect", "ollama", "", "Ollama is not running at " + url + ". Start Ollama (install it from ollama.com)."});
+            return names;
         }
-
-        // 1. The request: streamed, so progress shows and cancel works mid-answer.
-        Json messages = Json::array();
-        for (const ChatMessage &m : request.messages)
-            messages.push_back({{"role", m.role}, {"content", m.content}});
-        Json body = {{"model", request.model}, {"messages", messages}, {"stream", true}, {"options", {{"temperature", request.temperature}}}};
-        if (!request.format.is_null())
-            body["format"] = request.format;
-
-        // 2. The answer arrives as one JSON object per line: {"message":{"content":"..."},"done":false}.
-        std::string buffer, text, error;
-        bool done = false, malformed = false, tooLong = false, timedOut = false;
-        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(request.timeoutSeconds);
-        auto receive = [&](const char *data, std::size_t size) {
-            buffer.append(data, size);
-            for (std::size_t end; (end = buffer.find('\n')) != std::string::npos;)
-            {
-                const std::string line = buffer.substr(0, end);
-                buffer.erase(0, end + 1);
-                if (line.empty())
-                    continue;
-                const Json j = Json::parse(line, nullptr, false);
-                if (!j.is_object())
-                {
-                    malformed = true;
-                    return false;
-                }
-                if (!(error = ErrorIn(line)).empty())
-                    return false;
-                if (j.contains("message") && j["message"].contains("content") && j["message"]["content"].is_string())
-                    text += j["message"]["content"].get<std::string>();
-                done = done || j.value("done", false);
-                if (received != nullptr)
-                    *received = text.size();
-            }
-            tooLong = text.size() > request.maxBytes || buffer.size() > request.maxBytes;
-            timedOut = std::chrono::steady_clock::now() > deadline;
-            return !tooLong && !timedOut && !cancel.Cancelled();
-        };
-        const httplib::Result response = client.Post("/api/chat", httplib::Headers{}, body.dump(), "application/json", receive);
-        {
-            std::lock_guard lock(cancel.mutex_);
-            cancel.stop_ = nullptr;
-        }
-        if (error.empty() && !buffer.empty())
-            error = ErrorIn(buffer); // an error reply without a final newline
-        if (error.empty() && response && response->status != 200)
-            error = ErrorIn(response->body);
-
-        // 3. Name the problem so a creator can fix it.
-        const std::string model = "'" + request.model + "'";
-        if (cancel.Cancelled())
-            Err(result, "ai.cancel", "Cancelled.");
-        else if (tooLong)
-            Err(result, "ai.limit", "The answer was longer than " + std::to_string(request.maxBytes / 1024) + " KiB and was refused.");
-        else if (timedOut || (!response && response.error() == httplib::Error::Read))
-            Err(result, "ai.timeout", "No complete answer within " + std::to_string(request.timeoutSeconds) + " seconds.");
-        else if (error.find("not found") != std::string::npos || (response && response->status == 404))
-            Err(result, "ai.model", "The model " + model + " is not installed. In a terminal run: ollama pull " + request.model);
-        else if (!error.empty())
-            Err(result, "ai.ollama", "Ollama: " + error);
-        else if (malformed)
-            Err(result, "ai.answer", "Ollama's answer stream was malformed.");
-        else if (!response && response.error() == httplib::Error::Connection)
-            Err(result, "ai.connect", "Ollama is not running at " + request.host + ". Start Ollama (install it from ollama.com), then try again.");
-        else if (!response)
-            Err(result, "ai.http", std::string("Connection problem: ") + httplib::to_string(response.error()) + ".");
-        else if (response->status != 200)
-            Err(result, "ai.http", "Ollama answered HTTP " + std::to_string(response->status) + ".");
-        else if (!done)
-            Err(result, "ai.answer", "Ollama's answer stream was cut off.");
-        else
-        {
-            result.ok = true;
-            result.text = std::move(text);
-        }
-        return result;
+        for (const Json &model : j.value("models", Json::array()))
+            if (model.contains("name") && model["name"].is_string())
+                names.push_back(model["name"].get<std::string>());
+        if (names.empty())
+            diagnostics.push_back({core::Severity::Error, "ai.model", "ollama", "", "Ollama has no models yet. In a terminal run: ollama pull qwen3.5:9b"});
+        return names;
     }
 
     ChatJob::~ChatJob()

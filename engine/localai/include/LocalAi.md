@@ -20,6 +20,17 @@ idea ──MakeDraftRequest──► ChatRequest ──Chat / ChatJob──► a
 structured outputs: the model can only produce JSON of that shape). The system message
 (`authoring::DraftInstructions`) lists the rules and the ids this content allows.
 
+Reasoning models (qwen3.5 and newer) think before answering by default, which costs minutes for a
+draft; the request sends `"think": false`. If a model refuses that field, `Chat` asks once more
+without it.
+
+## Installed models
+
+`ListModels` reads `GET /api/tags` (2 s limit). The editor fills its model picker from it when
+the window first opens (and on Refresh); `UmbraTool draft` without `--model` uses it too.
+`PreferredModel` keeps the wanted model if installed, else picks an installed Qwen, else the
+first installed model.
+
 ## Limits and failures
 
 | Rule | Why |
@@ -42,6 +53,7 @@ frame. The destructor cancels and joins, so closing the editor mid-answer is qui
 ## Why Ollama and qwen2.5:7b
 
 User decision 2026-11-07: Ollama on the creator's PC, default model `qwen2.5:7b` (about 4.7 GB,
-follows JSON schemas well; Apache-2.0 license). The model is not shipped with Umbra; creators
+follows JSON schemas well; Apache-2.0 license). Any installed model works; `qwen3.5:9b` (about
+6.6 GB, Apache-2.0) is the newer choice. The model is not shipped with Umbra; creators
 install it themselves (`ollama pull qwen2.5:7b`). The model name and address are editable in the
 editor (saved in `ai-draft.json` in the preferences folder) and on the command line.

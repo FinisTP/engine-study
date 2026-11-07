@@ -83,6 +83,7 @@ private:
     void StartDraft(bool fix);
     void PlanCurrentDraft();
     void ApproveDraft();
+    void RefreshDraftModels();
 
     void ScanAssets();
     void AddEntity(const std::optional<std::string> &parent);
@@ -132,4 +133,7 @@ private:
     umbra::authoring::DraftPlan draftPlan_;
     std::vector<umbra::core::Diagnostic> draftProblems_;
     std::uint64_t draftBase_ = 0; // RPG revision the plan was checked against
+    std::vector<std::string> draftModels_; // installed in Ollama
+    std::vector<umbra::core::Diagnostic> draftModelProblems_;
+    bool draftModelsChecked_ = false;
 };

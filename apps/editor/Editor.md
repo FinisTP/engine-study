@@ -66,7 +66,7 @@ The rules are the same as for scenes:
 
 The game reads the file when it starts (P7.5 adds reloading it while the game runs).
 
-## AI quest draft (View → AI quest draft)
+## AI quest draft (menu bar button, or View → AI quest draft)
 
 Writes a side quest with a local AI model (Ollama, roadmap P8B). Nothing changes until you approve.
 
@@ -83,8 +83,10 @@ Writes a side quest with a local AI model (Ollama, roadmap P8B). Nothing changes
 4. If the RPG content changed after the check (a form edit, undo), approve turns into
    **Check again**, so a draft never overwrites newer edits.
 
-Model name and address are under **Model**, saved in `ai-draft.json` in the preferences folder.
-Only addresses on this computer are accepted.
+**Model** lists the models installed in Ollama (asked when the window opens; **Refresh** asks
+again) and preselects the saved one, else an installed Qwen. Name and address can also be typed
+under **Ollama settings**; both are saved in `ai-draft.json` in the preferences folder. Only
+addresses on this computer are accepted.
 
 ## Picking (mouse → entity)
 

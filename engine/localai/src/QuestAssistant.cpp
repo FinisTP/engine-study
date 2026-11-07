@@ -25,6 +25,17 @@ namespace umbra::localai
                                                 "Return the whole corrected draft, keeping everything that was fine."});
     }
 
+    std::string PreferredModel(const std::vector<std::string> &installed, const std::string &wanted)
+    {
+        for (const std::string &name : installed)
+            if (name == wanted || name == wanted + ":latest")
+                return name;
+        for (const std::string &name : installed)
+            if (name.starts_with("qwen"))
+                return name;
+        return installed.empty() ? wanted : installed.front();
+    }
+
     bool ParseDraft(const std::string &text, authoring::Json &draft, std::vector<core::Diagnostic> &diagnostics)
     {
         draft = authoring::Json::parse(text, nullptr, false);

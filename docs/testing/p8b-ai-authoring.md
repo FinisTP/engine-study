@@ -72,13 +72,25 @@ for timeout and cancel.
   NPC by hand (warning `draft.play.npc`).
 - The editor window has not been opened (no GPU here).
 
+## 3b. First Windows run (2026-11-07, user)
+
+- Build: 39/41 passed. `Umbra.Tool.DraftUnplayable` and `Umbra.LocalAi` were "Not Run:
+  operation not permitted"; `UmbraTool.exe` had already passed four tests and then disappeared from
+  its folder. Windows security blocked and removed both programs during the run (same kind of
+  block as `Umbra.Assets` earlier). Not a code failure; needs allowing in Windows Security.
+- The user couldn't find the window (it was only under View) and had installed a qwen3.5 model
+  (there is no `qwen3.5:7b`; the sizes are 0.8b/2b/4b/9b). Fixes (`#UMBRA-56`): an "AI quest
+  draft" button in the menu bar; the model picker lists the installed models (`ListModels`,
+  `PreferredModel`); requests send `"think": false` (qwen3.5 thinks by default), retried without
+  it for models that refuse the field. Tests: 9 LocalAi test cases incl. the retry and the picker.
+
 ## 4. Windows checklist (open)
 
 | # | Do | Expect | Result |
 |---|---|---|---|
 | 1 | `scripts\build-and-run.bat` (vcpkg fetches cpp-httplib the first time) | 41 CTest entries pass (40 + the Windows-exception test) | |
-| 2 | Install Ollama, `ollama pull qwen2.5:7b` | `ollama list` shows it | |
-| 3 | Editor → View → AI quest draft; giver `elder`, idea "Wolves scare the villagers away from the old well", Write draft | Progress counts up; a preview appears; note the time and whether all play-through lines are green | |
+| 2 | Install Ollama, `ollama pull qwen3.5:9b` (or `qwen2.5:7b`) | `ollama list` shows it | |
+| 3 | Editor → **AI quest draft** button; the Model list shows your installed models; giver `elder`, idea "Wolves scare the villagers away from the old well", Write draft | Progress counts up; a preview appears; note the time and whether all play-through lines are green | |
 | 4 | If red: Ask the AI to fix the problems (up to 3 times) | Note how many tries until green, or what stays red | |
 | 5 | Approve and add, Ctrl+Z, Ctrl+Y | Quest appears in RPG content → quests, disappears, comes back | |
 | 6 | Ctrl+S, F5, talk to Elder Mara | The new line is offered; the quest can be accepted, done and handed in | |

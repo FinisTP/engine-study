@@ -17,6 +17,9 @@ namespace umbra::localai
     // Follow-up: shows the model its previous answer and the problems found, asks for a fixed draft.
     void AddFixRequest(ChatRequest &request, const std::string &previousAnswer, const std::vector<core::Diagnostic> &problems);
 
+    // `wanted` if it is installed, else an installed Qwen model, else the first installed one.
+    [[nodiscard]] std::string PreferredModel(const std::vector<std::string> &installed, const std::string &wanted);
+
     // The model's text -> draft JSON. Untrusted: only parsed, never run.
     bool ParseDraft(const std::string &text, authoring::Json &draft, std::vector<core::Diagnostic> &diagnostics);
 }

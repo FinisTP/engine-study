@@ -71,14 +71,15 @@ any edit, played through with the real rules, and only added when you approve it
 **Once:** install Ollama from [ollama.com](https://ollama.com), then in a terminal:
 
 ```text
-ollama pull qwen2.5:7b
+ollama pull qwen3.5:9b
 ```
 
-(about 4.7 GB; a GPU with 6 GB or more makes it fast, a CPU works but slowly).
+(about 6.6 GB; a GPU with 8 GB makes it fast, a CPU works but slowly. `qwen2.5:7b`, 4.7 GB, is
+the smaller alternative. Any installed model shows up in the window's **Model** list.)
 
 **Each quest:**
 
-1. In the editor: View → **AI quest draft**.
+1. In the editor: the **AI quest draft** button in the menu bar (or View → AI quest draft).
 2. Quest giver: `elder`. Idea: `Wolves scare the villagers away from the old well.`
    Press **Write draft**. The first answer can take a minute while the model loads.
 3. Read the preview. Each play-through line should be green. A red line says what's missing,
@@ -161,6 +162,7 @@ Copy the zip to another PC, unzip, run `Umbra.exe`. Saves go to `%APPDATA%\Umbra
 | The game ignores RPG content changes | Look at the message on screen: either the file has errors, or your current game uses something the change removed (load a save or start a new game). |
 | Play does nothing | The scene couldn't be saved (see Diagnostics), or the game wasn't built. Build once with `build-and-run.bat`. |
 | AI draft: "Ollama is not running" | Start Ollama (it runs in the tray after install), or check the address under **Model**. |
-| AI draft: "model ... is not installed" | Run `ollama pull qwen2.5:7b` (or the model named under **Model**). |
+| AI draft: "model ... is not installed" | Pick an installed model in the **Model** list (press **Refresh**), or run `ollama pull qwen3.5:9b`. |
+| A program in `out\build` vanishes, or a test says "operation not permitted" | Windows security removed or blocked it (programs that open network connections, even to this PC, can trigger this). Open Windows Security → Protection history, allow it, and build again. |
 | AI draft keeps failing the play-through | Make the idea simpler (one or two objectives), press **Ask the AI to fix the problems**, or write the quest by hand in the RPG forms (*quests* and *conversations*). |
 | The package won't start on another PC | It needs a GPU with Vulkan 1.3 drivers. Start it from a `cmd` window to see the log messages. |

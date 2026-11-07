@@ -31,6 +31,7 @@ namespace umbra::localai
         std::vector<ChatMessage> messages;
         nlohmann::json format;         // JSON schema the answer must follow (null = free text)
         double temperature = 0.7;
+        bool think = false;            // reasoning models (qwen3.5, ...) answer much faster without it
         int timeoutSeconds = 600;      // the whole answer, model loading included
         std::size_t maxBytes = 64 * 1024; // longer answers are refused, not cut
     };
@@ -48,10 +49,11 @@ namespace umbra::localai
     public:
         void Cancel();
         void Reset() { cancelled_ = false; }
+        // Registers how to stop the running request (nullptr clears it); false if already cancelled.
+        bool SetStop(std::function<void()> stop);
         [[nodiscard]] bool Cancelled() const noexcept { return cancelled_; }
 
     private:
-        friend ChatResult Chat(const ChatRequest &, CancelToken &, std::atomic<std::size_t> *);
         std::atomic<bool> cancelled_ = false;
         std::mutex mutex_;
         std::function<void()> stop_;
@@ -59,6 +61,9 @@ namespace umbra::localai
 
     // True for http://localhost, 127.0.0.1 or [::1]; fills host and port.
     bool ParseLocalUrl(const std::string &url, std::string &host, int &port);
+
+    // Names of the models installed in the local Ollama (GET /api/tags). Quick: 2 s at most.
+    std::vector<std::string> ListModels(const std::string &url, std::vector<core::Diagnostic> &diagnostics);
 
     // Blocking: sends the request and streams the answer. `received` counts answer characters.
     ChatResult Chat(const ChatRequest &request, CancelToken &cancel, std::atomic<std::size_t> *received = nullptr);

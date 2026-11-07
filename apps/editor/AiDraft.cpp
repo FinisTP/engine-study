@@ -53,6 +53,15 @@ void Editor::LoadDraftSettings()
     }
 }
 
+void Editor::RefreshDraftModels()
+{
+    // Asks Ollama which models are installed (local, answers in milliseconds).
+    draftModelProblems_.clear();
+    draftModels_ = umbra::localai::ListModels(draftHost_, draftModelProblems_);
+    draftModel_ = umbra::localai::PreferredModel(draftModels_, draftModel_);
+    draftModelsChecked_ = true;
+}
+
 void Editor::StartDraft(bool fix)
 {
     // 1. A new request, or the same conversation plus "please fix these problems".
@@ -118,6 +127,8 @@ void Editor::AiDraft()
     }
 
     // 2. The request.
+    if (!draftModelsChecked_)
+        RefreshDraftModels();
     ImGui::TextWrapped("Describe a side quest. A local AI model writes a draft; nothing changes until you approve it.");
     const std::vector<std::string> npcs = umbra::authoring::DraftNpcs(rpg_->Data());
     if (draftNpc_.empty() && !npcs.empty())
@@ -131,11 +142,23 @@ void Editor::AiDraft()
     }
     ImGui::TextUnformatted("Idea");
     InputString("##idea", draftIdea_, true);
-    if (ImGui::CollapsingHeader("Model"))
+    // The model: picked from what Ollama has installed.
+    if (ImGui::BeginCombo("Model", draftModel_.c_str()))
     {
-        InputString("Ollama model", draftModel_);
+        for (const std::string &model : draftModels_)
+            if (ImGui::Selectable(model.c_str(), model == draftModel_))
+                draftModel_ = model;
+        ImGui::EndCombo();
+    }
+    ImGui::SameLine();
+    if (ImGui::SmallButton("Refresh"))
+        RefreshDraftModels();
+    Lines(draftModelProblems_);
+    if (ImGui::CollapsingHeader("Ollama settings"))
+    {
+        InputString("Model name", draftModel_);
         InputString("Address", draftHost_);
-        ImGui::TextWrapped("First time: install Ollama from ollama.com, then in a terminal run: ollama pull %s", draftModel_.c_str());
+        ImGui::TextWrapped("First time: install Ollama from ollama.com, then in a terminal run: ollama pull qwen3.5:9b");
     }
 
     const bool running = draftJob_->Running();
