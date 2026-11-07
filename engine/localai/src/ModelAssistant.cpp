@@ -173,6 +173,14 @@ namespace umbra::localai
         return modelPath;
     }
 
+    nlohmann::ordered_json FittedCollider(const ModelInfo &info, glm::vec3 scale)
+    {
+        // A box around the model's bounds in meters: half its size times the entity's scale.
+        // The box is centered on the entity, so it fits models centered on their origin (TRELLIS.2 is).
+        const glm::vec3 half = (info.max - info.min) * 0.5F * glm::abs(scale);
+        return {{"shape", "box"}, {"motion", "static"}, {"halfExtents", {Round(half.x), Round(half.y), Round(half.z)}}};
+    }
+
     nlohmann::ordered_json PlacedModelEntity(const nlohmann::ordered_json &scene, const std::string &name, const std::string &modelPath,
                                              const ModelInfo &info, glm::vec3 at, float height)
     {
@@ -198,6 +206,7 @@ namespace umbra::localai
         }
         else
             entity["instance"] = modelPath;
+        entity["collider"] = FittedCollider(info, glm::vec3(scale));
         return entity;
     }
 }

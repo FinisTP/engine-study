@@ -152,8 +152,8 @@ Without the editor: `UmbraTool texture "mossy cobblestone" --assets assets --cou
    working, and the next start saves the model). The model lands in `assets/models/` with its concept picture
    and a `.source.json` saying how it was made.
 4. Set **Height in the scene** (meters), then **Place in scene**: it appears at the centre of the view,
-   standing on the ground. Ctrl+Z removes it; Ctrl+S saves the scene. Add a collider in the inspector if
-   the player should bump into it.
+   standing on the ground. Ctrl+Z removes it; Ctrl+S saves the scene. It gets a box collider fitted to its
+   size (green outline when selected); after scaling it, press **Fit to model** in the inspector.
 
 Rules worth knowing:
 

@@ -50,8 +50,11 @@ namespace umbra::localai
                                                  const core::TextureData &picture, const ModelSource &source, const nlohmann::json &workflow,
                                                  std::vector<core::Diagnostic> &diagnostics);
 
+    // A static box collider fitted to the model's bounds at this entity scale (sizes in meters).
+    [[nodiscard]] nlohmann::ordered_json FittedCollider(const ModelInfo &info, glm::vec3 scale);
+
     // A new scene entity for the model: standing on y = ground at `at`, scaled to `height` meters,
-    // with a free id. "model" for one mesh, "instance" for several.
+    // with a free id and a fitted collider. "model" for one mesh, "instance" for several.
     [[nodiscard]] nlohmann::ordered_json PlacedModelEntity(const nlohmann::ordered_json &scene, const std::string &name, const std::string &modelPath,
                                                            const ModelInfo &info, glm::vec3 at, float height);
 }

@@ -785,6 +785,7 @@ This is an initial **60-case register**, not an assertion that every possible fu
 | T69 | Picture upload, run and GLB download; missing model; non-local address | GLB downloaded intact; `ai.model` / `ai.host` named | P8D |
 | T71 | Exported workflow with switches, preview models and two save-able branches | Only the save node's dependencies run (switches resolved); the GLB comes from the save node, never a preview | P8D |
 | T72 | Editor closed during a model run; ComfyUI restarted; a run longer than 30 minutes | ComfyUI keeps working and the next start fetches the model; a forgotten job is named (`ai.lost`); no total time limit while ComfyUI has the job | P8D |
+| T73 | Placed generated model; collider added to a model entity | A static box fitted to the model's bounds at the entity scale (not the scale-derived default meant for the -1..1 cube) | P8D |
 | T70 | Generated GLB the importer refuses | Not kept (all files removed); a good one is saved with provenance and never overwrites | P8D |
 
 ### Test layers
@@ -1012,6 +1013,8 @@ This reference list supports the limited factual technology statements, not a re
 Version 1.0, 2026-11-01: incorporates final answers 21–23; makes independent combat-mode use an explicit contract/test; selects turn-based learned policy; removes mandatory-threshold interpretation of aggression; preserves deferred modding and offline scope; expands milestone tasks/evidence; retains T01–T38 and adds T39–T60; establishes concise root instructions plus separate context/roadmap files.
 
 No implementation completion was advanced by preparing this pack. Further updates must record actual evidence, product changes and their source separately.
+
+2026-11-08: `#UMBRA-63` fitted colliders for models (user report: the collider of a generated object was far bigger than the object): placed models get a fitted static box; a new collider on a model entity fits it; collider sizes editable, **Fit to model**; the editor's selection box uses the mesh bounds and the collider is outlined; T73.
 
 2026-11-08: the user verified P8B, P8C and P8D on Windows (works, with limitations). `#UMBRA-62` fixes the P8D limitations: any exported workflow name (remembered), the textured GLB from the save node (graph reduced to what it needs), jobs survive closing the editor (`--resume` in UmbraTool), no total time limit; T71, T72.
 

@@ -325,6 +325,7 @@ void Editor::Update(float deltaSeconds, umbra::core::DrawList &drawList)
         drawList.lines.push_back({{-20.0F, 0.0F, f}, {20.0F, 0.0F, f}, gridColor});
     }
     AddSelectionBox(drawList);
+    AddColliderLines(drawList);
 }
 
 glm::mat4 Editor::View() const
@@ -360,17 +361,8 @@ std::optional<std::string> Editor::Pick(float mouseX, float mouseY) const
         const glm::mat4 *matrix = world_->GetWorldMatrix(entity);
         if (look == nullptr || matrix == nullptr)
             return;
-        glm::vec3 min{-1.0F}, max{1.0F}; // the sample cube; real bounds below when the mesh is loaded
-        if (const LoadedModel *loaded = models_.Load(look->model); loaded && look->mesh < loaded->model.meshes.size())
-        {
-            const auto &vertices = loaded->model.meshes[look->mesh].data.vertices;
-            if (!vertices.empty())
-            {
-                min = max = vertices[0].position;
-                for (const auto &v : vertices)
-                    min = glm::min(min, v.position), max = glm::max(max, v.position);
-            }
-        }
+        glm::vec3 min, max;
+        MeshBounds(*look, min, max);
         const glm::mat4 toLocal = glm::inverse(*matrix);
         const std::optional<float> t = RayBox(glm::vec3(toLocal * glm::vec4(origin, 1.0F)), glm::vec3(toLocal * glm::vec4(direction, 0.0F)), min, max);
         if (t && (!best || *t < *best))
@@ -386,6 +378,79 @@ std::optional<std::string> Editor::Pick(float mouseX, float mouseY) const
     return std::nullopt;
 }
 
+bool Editor::MeshBounds(const umbra::world::Renderable &look, glm::vec3 &min, glm::vec3 &max) const
+{
+    // The mesh's own box (model units); the -1..1 sample cube until the mesh is loaded.
+    min = glm::vec3{-1.0F};
+    max = glm::vec3{1.0F};
+    const LoadedModel *loaded = models_.Load(look.model);
+    if (loaded == nullptr || look.mesh >= loaded->model.meshes.size() || loaded->model.meshes[look.mesh].data.vertices.empty())
+        return false;
+    const auto &vertices = loaded->model.meshes[look.mesh].data.vertices;
+    min = max = vertices[0].position;
+    for (const auto &v : vertices)
+        min = glm::min(min, v.position), max = glm::max(max, v.position);
+    return true;
+}
+
+void Editor::AddColliderLines(umbra::core::DrawList &drawList) const
+{
+    // Same size rules as the game (PhysicsBridge.cpp): 0 = from the world scale.
+    const auto index = scene_ ? authoring::FindEntity(scene_->Data(), selected_) : std::nullopt;
+    if (!world_ || !index)
+        return;
+    const auto &entity = scene_->Data()["entities"][*index];
+    const glm::mat4 *matrix = world_->GetWorldMatrix(world_->Find(selected_));
+    if (!entity.contains("collider") || matrix == nullptr)
+        return;
+    const auto &c = entity["collider"];
+    // 1. Position, rotation and scale of the entity.
+    const glm::vec3 p{(*matrix)[3]};
+    const glm::vec3 scale{glm::length(glm::vec3((*matrix)[0])), glm::length(glm::vec3((*matrix)[1])), glm::length(glm::vec3((*matrix)[2]))};
+    const glm::mat3 r{glm::vec3((*matrix)[0]) / scale.x, glm::vec3((*matrix)[1]) / scale.y, glm::vec3((*matrix)[2]) / scale.z};
+    // 2. The collider's box (spheres and capsules: the box around them).
+    glm::vec3 half = scale;
+    const std::string shape = c.value("shape", "box");
+    if (shape == "box" && c.contains("halfExtents"))
+        half = {c["halfExtents"][0].get<float>(), c["halfExtents"][1].get<float>(), c["halfExtents"][2].get<float>()};
+    if (half == glm::vec3{0.0F})
+        half = scale;
+    if (shape != "box")
+    {
+        const float radius = c.value("radius", 0.0F) > 0.0F ? c.value("radius", 0.0F) : shape == "sphere" ? std::max({scale.x, scale.y, scale.z}) : std::max(scale.x, scale.z);
+        const float straight = shape == "sphere" ? 0.0F : c.value("halfHeight", 0.0F) > 0.0F ? c.value("halfHeight", 0.0F) : std::max(scale.y - radius, 0.01F);
+        half = {radius, radius + straight, radius};
+    }
+    // 3. 12 edges in green.
+    const glm::vec4 color{0.3F, 1.0F, 0.3F, 1.0F};
+    glm::vec3 corner[8];
+    for (int i = 0; i < 8; ++i)
+        corner[i] = p + r * (half * glm::vec3(i & 1 ? 1.0F : -1.0F, i & 2 ? 1.0F : -1.0F, i & 4 ? 1.0F : -1.0F));
+    const int edges[12][2] = {{0, 1}, {2, 3}, {4, 5}, {6, 7}, {0, 2}, {1, 3}, {4, 6}, {5, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
+    for (const auto &edge : edges)
+        drawList.lines.push_back({corner[edge[0]], corner[edge[1]], color});
+}
+
+std::optional<authoring::Json> Editor::FitCollider(const authoring::Json &entity) const
+{
+    // Model bounds are read once per file (the inspector asks every frame).
+    const std::string model = entity.value("model", entity.value("instance", ""));
+    if (model.empty())
+        return std::nullopt;
+    if (!modelBounds_.contains(model))
+    {
+        umbra::localai::ModelInfo info;
+        std::vector<umbra::core::Diagnostic> ignored;
+        modelBounds_[model] = umbra::localai::InspectModel(assetRoot_ / model, info, ignored) ? std::optional(info) : std::nullopt;
+    }
+    const auto &info = modelBounds_[model];
+    if (!info)
+        return std::nullopt;
+    authoring::Json fitted = umbra::localai::FittedCollider(*info, Vec3(entity, "scale", glm::vec3{1.0F}));
+    fitted["motion"] = entity.contains("collider") ? entity["collider"].value("motion", "static") : "static";
+    return fitted;
+}
+
 void Editor::AddSelectionBox(umbra::core::DrawList &drawList) const
 {
     if (!world_ || selected_.empty())
@@ -394,11 +459,14 @@ void Editor::AddSelectionBox(umbra::core::DrawList &drawList) const
     const glm::mat4 *matrix = world_->GetWorldMatrix(entity);
     if (matrix == nullptr)
         return;
-    // The -1..1 box through the entity's transform: 12 edges.
+    // The mesh's box (or the -1..1 cube) through the entity's transform: 12 edges.
+    glm::vec3 min{-1.0F}, max{1.0F};
+    if (const umbra::world::Renderable *look = world_->GetRenderable(entity))
+        MeshBounds(*look, min, max);
     const glm::vec4 color{1.0F, 0.75F, 0.1F, 1.0F};
     glm::vec3 corner[8];
     for (int i = 0; i < 8; ++i)
-        corner[i] = glm::vec3(*matrix * glm::vec4(i & 1 ? 1.0F : -1.0F, i & 2 ? 1.0F : -1.0F, i & 4 ? 1.0F : -1.0F, 1.0F));
+        corner[i] = glm::vec3(*matrix * glm::vec4(i & 1 ? max.x : min.x, i & 2 ? max.y : min.y, i & 4 ? max.z : min.z, 1.0F));
     const int edges[12][2] = {{0, 1}, {2, 3}, {4, 5}, {6, 7}, {0, 2}, {1, 3}, {4, 6}, {5, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
     for (const auto &edge : edges)
         drawList.lines.push_back({corner[edge[0]], corner[edge[1]], color});
@@ -721,13 +789,37 @@ void Editor::Inspector()
         ImGui::PopID();
         return entity.contains(key) && has;
     };
-    if (part("collider", "Collider", Json::object()))
+    // A new collider on a model fits the model; on anything else its size follows the scale.
+    if (part("collider", "Collider", FitCollider(entity).value_or(Json::object())))
     {
         const Json &c = entity["collider"];
         if (Choose("Shape", c.value("shape", "box"), {"box", "sphere", "capsule"}, text))
             SetField(at + "/collider/shape", text, "Collider " + selected_);
         if (Choose("Motion", c.value("motion", "static"), {"static", "kinematic", "dynamic"}, text))
             SetField(at + "/collider/motion", text, "Collider " + selected_);
+        // Sizes in meters (green outline); 0 = from the entity's scale. One undo step per drag.
+        const auto size = [&](const char *key, const Json &value) {
+            if (ImGui::IsItemActivated())
+                newStep_ = true;
+            SetField(at + "/collider/" + key, value, "Collider size " + selected_, !newStep_);
+            newStep_ = false;
+        };
+        const std::string shape = c.value("shape", "box");
+        if (shape == "box")
+        {
+            glm::vec3 half = Vec3(c, "halfExtents", glm::vec3{0.0F});
+            if (ImGui::DragFloat3("Half size", &half.x, 0.01F, 0.0F, 1000.0F))
+                size("halfExtents", Json::array({half.x, half.y, half.z}));
+        }
+        float radius = c.value("radius", 0.0F), halfHeight = c.value("halfHeight", 0.0F);
+        if (shape != "box" && ImGui::DragFloat("Radius", &radius, 0.01F, 0.0F, 1000.0F))
+            size("radius", radius);
+        if (shape == "capsule" && ImGui::DragFloat("Half height", &halfHeight, 0.01F, 0.0F, 1000.0F))
+            size("halfHeight", halfHeight);
+        if (const auto fitted = FitCollider(entity); fitted && ImGui::Button("Fit to model"))
+            SetField(at + "/collider", *fitted, "Fit collider " + selected_);
+        ImGui::SameLine();
+        ImGui::TextDisabled("(fit again after scaling)");
     }
     if (part("interactable", "Interactable", Json{{"prompt", "Use"}}))
     {
@@ -956,6 +1048,7 @@ void Editor::ScanAssets()
 {
     // Every content file under the asset folder, grouped by kind, as forward-slash paths.
     assets_.clear();
+    modelBounds_.clear(); // a model file may have changed
     std::error_code ec;
     for (auto it = std::filesystem::recursive_directory_iterator(assetRoot_, ec); it != std::filesystem::recursive_directory_iterator(); it.increment(ec))
     {

@@ -22,7 +22,7 @@ program; the game (`Umbra`) links none of it (`Umbra.GameExcludesEditor` checks 
 |---|---|
 | Menu bar | File (New scene, Save, Reload, Quit), Edit (Undo, Redo, Add, Duplicate, Delete), View (RPG content), gizmo mode, **Play** |
 | Hierarchy | Entities by parent. Click to select. Add / Add child. |
-| Inspector | Id (renames children's references too), name, transform, model, collider, interactable, portal, enemy spawner. A checkbox adds or removes each optional part. |
+| Inspector | Id (renames children's references too), name, transform, model, collider, interactable, portal, enemy spawner. A checkbox adds or removes each optional part. A new collider on a model entity is a box fitted to the model's bounds; **Half size** / **Radius** / **Half height** edit it in meters, **Fit to model** refits it (again after scaling). The selected entity shows its mesh box in yellow and its collider in green. |
 | Assets | Scenes, RPG content, models, sounds under `assets/`. Double-click a scene to open it. |
 | Diagnostics | The loader's messages for the last refused edit, open or save. |
 | Status bar | File, `*` when unsaved, a warning when the file changed outside the editor. |
@@ -125,7 +125,7 @@ Every prompt gets the project style from `assets/materials/style.json`.
 3. The GLB is saved to `assets/models/<name>.glb` with `<name>.concept.png` and `<name>.source.json`,
    and checked by the importer (`engine/localai/include/ModelGen.md`).
 4. **Place in scene** adds an entity at the view's centre, scaled to **Height in the scene** and
-   standing on the ground: one undoable edit, selected afterwards. No collider is added.
+   standing on the ground, with a static box collider fitted to it: one undoable edit, selected afterwards.
 
 ComfyUI's address and checkpoint are shared with the AI texture window.
 

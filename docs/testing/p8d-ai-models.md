@@ -48,7 +48,7 @@ range-for) was found by a crash in the first test run and fixed before commit.
 
 - No real TRELLIS.2 run: quality, time (likely minutes) and whether it fits an 8 GB GPU are unknown.
 - Concept pictures open in the system image viewer, not inside the editor.
-- No collider is added on placement; facing direction is as generated.
+- Facing direction is as generated. Placed models get a fitted box collider (`#UMBRA-63`); colliders have no offset, so it fits centered models (TRELLIS.2's are).
 - Characters, rigging and animation are out of scope (ADR 0003).
 
 ## 3c. Windows verification and fixes (2026-11-07/08, user; `#UMBRA-62`)

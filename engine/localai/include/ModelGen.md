@@ -74,7 +74,13 @@ Then the game's own importer reads the GLB; if it can't, all three files are rem
 `PlacedModelEntity` makes a scene entity with a free id: scaled so the model is `height` meters
 tall (bounds from all mesh vertices through the node transforms, `InspectModel`), lifted so its
 lowest point touches the ground, `"model"` + `"mesh": 0` for one mesh or `"instance"` for several.
-No collider is added: generated shapes vary, so the creator adds one in the inspector.
+It gets a static box collider fitted to the model (`FittedCollider`): half the model's size on each
+axis times the entity scale, in meters. The box is centered on the entity origin, which fits
+TRELLIS.2 models (centered in a unit cube; the user's well: -0.475..0.476). A model whose origin
+is far from its middle (e.g. a character with its feet at the origin) would get a shifted box:
+colliders have no offset yet. Before `#UMBRA-63` creators had to add a collider by hand, and its default
+size came from the entity scale (meant for the -1..1 sample cube), so a 1 m model at scale 5 got a
+10 m box.
 
 ## Limits
 

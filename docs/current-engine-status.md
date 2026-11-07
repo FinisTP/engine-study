@@ -14,6 +14,10 @@
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
 
+## Update 2026-11-08 (`#UMBRA-63`)
+
+- Colliders for models: placed generated models get a static box fitted to their bounds; a collider added to a model entity in the inspector is fitted too (before, its size came from the entity scale: a 1 m model at scale 5 got a 10 m box); sizes are editable, **Fit to model** refits; the selection box shows the mesh bounds and the collider is outlined in green. 43/43 on GCC/Clang/ASan; editor not run.
+
 ## Update 2026-11-08 (Windows verification, `#UMBRA-62`)
 
 - The user verified P8B (real Ollama), P8C (ComfyUI/SDXL) and P8D (TRELLIS.2 on an 8 GB GPU) on Windows: works, with limitations.
