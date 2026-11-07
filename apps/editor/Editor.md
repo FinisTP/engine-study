@@ -41,6 +41,31 @@ program; the game (`Umbra`) links none of it (`Umbra.GameExcludesEditor` checks 
 A whole gizmo drag, or a whole drag on a number field, is **one** undo step. The first change of a
 drag starts a step; later changes merge into it (`Document::Apply(..., merge)`).
 
+## RPG content forms (View → RPG content)
+
+There is one tab per section: items, skills, statuses, actors, quests, conversations. Each tab
+has the entry list (Add, Duplicate, Delete) on the left and the selected entry's form on the right.
+
+| Section | Form |
+|---|---|
+| Items | slot, stack, modifiers while equipped, use effects |
+| Skills | energy cost, target, turn/real-time modes (turning on real-time adds default timing), effects, timing, skill points, required skills |
+| Statuses | turns, seconds, damage per tick, modifiers |
+| Actors | stats and per-level growth, starting skills / equipment / inventory, slots, skill points, XP when defeated |
+| Quests | description, ordered objectives (kind, target from the matching list, count, text), fail on death, reward |
+| Conversations | NPC id, start node, nodes (speaker, line, choices with next node). `if` / `do` are JSON lists (format in `engine/story/include/Story.md`). |
+
+The rules are the same as for scenes:
+
+- Every field change is a validated, undoable edit of `reference.rpg.json`.
+- Deleting or renaming something that other content still uses is refused, and the
+  Diagnostics window names the reference (`ref.item`, `ref.skill`, ...).
+- New entries start from a small template that already passes validation.
+- Holding a number's +/- is one undo step.
+- Ctrl+S saves the scene and the RPG content together.
+
+The game reads the file when it starts (P7.5 adds reloading it while the game runs).
+
 ## Picking (mouse → entity)
 
 1. The mouse position becomes normalized device coordinates:

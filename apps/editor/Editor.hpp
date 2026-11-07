@@ -75,6 +75,8 @@ private:
     void Popups();
     void Shortcuts();
     void RpgForms(); // RpgForms.cpp
+    void RpgEntryForm(const std::string &at, const umbra::authoring::Json &entry, const std::vector<std::string> &npcs);
+    bool RpgEdit(const std::vector<umbra::authoring::Change> &changes, const std::string &label, bool merge = false);
 
     void ScanAssets();
     void AddEntity(const std::optional<std::string> &parent);
