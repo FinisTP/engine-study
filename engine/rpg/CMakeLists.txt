@@ -10,6 +10,7 @@ target_sources(
         src/Character.cpp
         src/Inventory.cpp
         src/SkillTree.cpp
+        src/Rules.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
@@ -18,6 +19,7 @@ target_sources(
             include/Character.hpp
             include/Inventory.hpp
             include/SkillTree.hpp
+            include/Rules.hpp
 )
 
 target_compile_features(UmbraRpg PUBLIC cxx_std_20)

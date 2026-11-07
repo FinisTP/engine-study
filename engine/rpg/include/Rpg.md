@@ -97,3 +97,48 @@ The loader rejects requirement loops (`skill.requires.cycle`) with a depth-first
 is marked "on the current path" while its requirements are visited and "done" afterwards. Meeting a
 skill that is still on the path means the path came back to itself. Diamonds (two skills sharing a
 prerequisite) are fine because a "done" skill is not visited again.
+
+## Actions (the shared resolver)
+
+```
+ActionIntent {id, actor, skill | item, target}
+      |  CheckAction   (never changes anything)
+      v
+   PayCost         energy for a skill, one item for an item
+      |
+   ApplyEffects    effects on each target in order, then deaths in the same order
+      v
+   Events          CostPaid, Damage, Heal, StatusApplied, Death, ... (for UI, audio, quests, tests)
+```
+
+Both controllers call these same functions; they only differ in **when**. The turn controller
+pays and applies at once. The real-time controller pays when the wind-up ends ("commit") and
+applies when the hit window finds targets. Damage, costs, statuses and deaths therefore have one
+implementation (roadmap T55).
+
+`CheckAction` checks, in order: actor exists and is alive; exactly one of skill/item; the skill is
+known, unlocked, allowed in this mode, and affordable (or the item is owned and usable); in turn
+combat, the target is a living member of another team. A rejected action has no effect at all
+(roadmap T46). A target that died after the choice was made is rejected (`TargetDead`, T07); the
+caller picks again.
+
+Each decision has an `id`; controllers keep an `IntentLog` and reject an id they have already
+handled (`DuplicateIntent`), so a decision delivered twice applies once.
+
+### Formulas
+
+| Effect | Rule |
+|---|---|
+| damage | `max(1, power + attacker attack - target defense)`, then cut to the target's remaining health |
+| heal / energy | `power`, cut so the value doesn't pass its maximum |
+| status | Added with the duration of the current mode (`turns` or `seconds`). Re-applying the same status **refreshes** the duration; it never stacks |
+| status tick | `damagePerTick` ignores defense (negative heals). Turn combat: one tick at the start of the affected actor's turn, then one turn is used up. Real-time: one tick per full second active |
+
+There is no randomness: same state + same actions = same result.
+
+### Death
+
+After all effects of one action, every target that was alive and now has 0 health gets one
+`Death` event, in target order (T10), and loses its statuses. Effects skip dead targets, so
+hitting a corpse does nothing and a death is never reported twice. `WinningTeam` returns the only
+team with someone alive (or -1 while the fight goes on).
