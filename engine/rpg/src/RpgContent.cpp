@@ -3,6 +3,7 @@
 #include <nlohmann/json.hpp>
 
 #include <fstream>
+#include <functional>
 #include <iterator>
 #include <set>
 
@@ -298,6 +299,40 @@ namespace umbra::rpg
             });
         }
 
+        // A skill that (indirectly) requires itself could never be unlocked. Depth-first search:
+        // reaching a skill that is still on the current path means a cycle.
+        void CheckCycles(Reader &r, const Content &c)
+        {
+            enum class Mark { None, OnPath, Done };
+            std::map<std::string, Mark> marks;
+            std::function<bool(const std::string &)> visit = [&](const std::string &id) {
+                Mark &mark = marks[id];
+                if (mark == Mark::OnPath)
+                    return true;
+                if (mark == Mark::Done)
+                    return false;
+                mark = Mark::OnPath;
+                if (const SkillDef *skill = c.FindSkill(id))
+                {
+                    for (const std::string &required : skill->prerequisites)
+                    {
+                        if (visit(required))
+                            return true;
+                    }
+                }
+                marks[id] = Mark::Done;
+                return false;
+            };
+            for (const auto &[id, skill] : c.skills)
+            {
+                if (marks[id] == Mark::None && visit(id))
+                {
+                    r.Error("skill.requires.cycle", "skills." + id + ".requires", "skill requirements form a loop through '" + id + "'");
+                    return; // one report is enough; the loop has to be fixed by hand
+                }
+            }
+        }
+
         // Every id a definition mentions must exist, and statuses must have the clock of
         // every mode that can apply them (no silent turns <-> seconds reinterpretation).
         void CheckReferences(Reader &r, const Content &c)
@@ -325,6 +360,7 @@ namespace umbra::rpg
                         r.Error("ref.skill", "skills." + id + ".requires", "unknown skill '" + required + "'");
                 }
             }
+            CheckCycles(r, c);
             for (const auto &[id, item] : c.items)
                 checkEffects(item.use, true, true, "items." + id + ".use"); // items can be used in both modes
             for (const auto &[id, actor] : c.actors)

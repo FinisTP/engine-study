@@ -85,3 +85,15 @@ definition id and count only; there are no per-item instance ids yet because not
 
 Every operation changes a copy and only replaces the character on success, so a failure can
 never leave half a transaction behind (roadmap T46).
+
+## Skill tree
+
+A skill's `requires` list names skills that must be unlocked first, and `points` is what unlocking
+costs. `Unlock` checks, in order: known skill, not already unlocked, every prerequisite unlocked,
+enough points. Only when all pass are the points spent and the skill added, together, so a
+failed or repeated unlock never costs anything (roadmap T12).
+
+The loader rejects requirement loops (`skill.requires.cycle`) with a depth-first search: each skill
+is marked "on the current path" while its requirements are visited and "done" afterwards. Meeting a
+skill that is still on the path means the path came back to itself. Diamonds (two skills sharing a
+prerequisite) are fine because a "done" skill is not visited again.
