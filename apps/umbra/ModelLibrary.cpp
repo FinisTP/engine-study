@@ -1,7 +1,9 @@
 #include "ModelLibrary.hpp"
 
 #include <Log.hpp>
+#include <Material.hpp>
 #include <ModelCache.hpp>
+#include <TextureTools.hpp>
 
 ModelLibrary::ModelLibrary(umbra::render::Renderer &renderer, std::filesystem::path assetRoot, std::filesystem::path cacheRoot)
     : renderer_(renderer), assetRoot_(std::move(assetRoot)), cacheRoot_(std::move(cacheRoot))
@@ -12,6 +14,8 @@ ModelLibrary::~ModelLibrary()
 {
     for (auto &[path, loaded] : models_)
         Release(loaded);
+    for (auto &[path, loaded] : materials_)
+        renderer_.DestroyTexture(loaded.binding.texture);
 }
 
 const LoadedModel *ModelLibrary::Load(const std::string &modelPath)
@@ -39,8 +43,71 @@ std::pair<umbra::core::MeshHandle, umbra::core::TextureHandle> ModelLibrary::Res
     return {loaded->meshes[mesh], texture >= 0 ? loaded->textures[static_cast<std::size_t>(texture)] : umbra::core::TextureHandle{}};
 }
 
+std::optional<umbra::scene::MaterialBinding> ModelLibrary::ResolveMaterial(const std::string &materialPath)
+{
+    if (const auto it = materials_.find(materialPath); it != materials_.end())
+        return it->second.binding;
+    if (failed_.contains(materialPath))
+        return std::nullopt;
+    LoadedMaterial loaded;
+    if (!BuildMaterial(materialPath, loaded))
+    {
+        failed_.insert(materialPath);
+        return std::nullopt;
+    }
+    return materials_.emplace(materialPath, std::move(loaded)).first->second.binding;
+}
+
+bool ModelLibrary::BuildMaterial(const std::string &materialPath, LoadedMaterial &loaded)
+{
+    // 1. The material file and its image, with the same checks as the scene loader.
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    umbra::assets::Material material;
+    umbra::core::TextureData image;
+    std::string error;
+    if (!umbra::assets::LoadMaterial(assetRoot_ / materialPath, material, diagnostics) ||
+        !umbra::assets::CheckMaterialImage(assetRoot_, material, materialPath, diagnostics) ||
+        !umbra::assets::LoadImageFile(assetRoot_ / material.baseColor, image, error))
+    {
+        for (const umbra::core::Diagnostic &d : diagnostics)
+            umbra::diagnostics::Error(umbra::core::Format(d));
+        if (!error.empty())
+            umbra::diagnostics::Error(materialPath + ": " + error);
+        return false;
+    }
+    // 2. Upload (with mipmaps, see MipMaps.md).
+    loaded.binding.texture = renderer_.CreateTexture(image);
+    if (!loaded.binding.texture)
+    {
+        umbra::diagnostics::Error("Cannot upload " + material.baseColor + " to the GPU.");
+        return false;
+    }
+    loaded.binding.tint = material.tint;
+    loaded.binding.metersPerRepeat = material.worldProjection ? material.metersPerRepeat : 0.0F;
+    loaded.files = {assetRoot_ / materialPath, assetRoot_ / material.baseColor};
+    umbra::diagnostics::Info("Loaded material " + materialPath + " (" + std::to_string(image.width) + "x" + std::to_string(image.height) + ").");
+    return true;
+}
+
 ModelLibrary::ReloadResult ModelLibrary::Reload(const std::string &modelPath)
 {
+    // A material: new texture first, then swap; on failure the old one stays.
+    if (modelPath.ends_with(".material.json"))
+    {
+        LoadedMaterial fresh;
+        if (!BuildMaterial(modelPath, fresh))
+            return ReloadResult::Failed;
+        failed_.erase(modelPath);
+        if (const auto it = materials_.find(modelPath); it != materials_.end())
+        {
+            renderer_.DestroyTexture(it->second.binding.texture);
+            it->second = std::move(fresh);
+        }
+        else
+            materials_.emplace(modelPath, std::move(fresh));
+        return ReloadResult::Updated;
+    }
+
     // 1. Build and upload a complete new version next to the old one.
     LoadedModel fresh;
     if (!BuildAndUpload(modelPath, fresh))
@@ -69,6 +136,9 @@ std::map<std::filesystem::path, std::string> ModelLibrary::WatchedFiles() const
 {
     std::map<std::filesystem::path, std::string> files;
     for (const auto &[path, loaded] : models_)
+        for (const auto &file : loaded.files)
+            files.emplace(file, path);
+    for (const auto &[path, loaded] : materials_)
         for (const auto &file : loaded.files)
             files.emplace(file, path);
     for (const auto &path : failed_)

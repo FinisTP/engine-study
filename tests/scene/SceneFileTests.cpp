@@ -323,3 +323,105 @@ TEST_CASE("Missing or broken checkpoints are reported and change nothing")
     REQUIRE(world.Count() == 0);
     REQUIRE(checkpoint.scene == "keep");
 }
+
+#include <Material.hpp>
+#include <ModelInstance.hpp>
+#include <TextureTools.hpp>
+
+#include <fstream>
+
+namespace
+{
+    // An asset folder with the cube model and one material whose image is `size` pixels square.
+    std::filesystem::path MaterialAssets(const std::string &name, std::uint32_t size)
+    {
+        const auto root = test::TempDir("scene-material-" + name);
+        std::filesystem::create_directories(root / "scenes");
+        std::filesystem::copy_file(assetDir / "scenes/phase2.gltf", root / "scenes/phase2.gltf");
+        core::TextureData image{size, size, std::vector<std::uint8_t>(std::size_t{size} * size * 4, 200)};
+        std::vector<std::uint8_t> png;
+        REQUIRE(assets::EncodePng(image, png));
+        std::filesystem::create_directories(root / "textures");
+        std::ofstream(root / "textures/stone.png", std::ios::binary).write(reinterpret_cast<const char *>(png.data()), static_cast<std::streamsize>(png.size()));
+        assets::Material material;
+        material.baseColor = "textures/stone.png";
+        material.worldProjection = true;
+        std::filesystem::create_directories(root / "materials");
+        test::WriteText(root / "materials/stone.material.json", assets::MaterialText(material));
+        return root;
+    }
+
+    bool LoadIn(const std::filesystem::path &root, const std::string &entity, world::World &world, std::vector<core::Diagnostic> &diagnostics)
+    {
+        test::WriteText(root / "test.scene.json", R"({"format":"umbra.scene","version":1,"entities":[)" + entity + "]}");
+        scene::SceneLoadOptions options;
+        options.assetRoot = root;
+        return scene::LoadScene(root / "test.scene.json", options, world, diagnostics);
+    }
+
+    bool HasCode(const std::vector<core::Diagnostic> &diagnostics, const std::string &code)
+    {
+        for (const auto &d : diagnostics)
+            if (d.code == code)
+                return true;
+        return false;
+    }
+}
+
+TEST_CASE("An entity's material is loaded, checked and saved back (P8C.1)")
+{
+    const auto root = MaterialAssets("ok", 128);
+    world::World world;
+    std::vector<core::Diagnostic> diagnostics;
+    const bool loaded = LoadIn(root, R"({"id":"wall","model":"scenes/phase2.gltf","material":"materials/stone.material.json"})", world, diagnostics);
+    for (const auto &d : diagnostics)
+        UNSCOPED_INFO(core::Format(d));
+    REQUIRE(loaded);
+    const world::Renderable *renderable = world.GetRenderable(world.Find("wall"));
+    REQUIRE(renderable != nullptr);
+    CHECK(renderable->material == "materials/stone.material.json");
+
+    // Binding: the material's texture and scale replace the model's.
+    scene::BindRenderables(
+        world, [](const std::string &, std::uint32_t) { return std::pair{core::MeshHandle{1, 1}, core::TextureHandle{7, 1}}; },
+        [](const std::string &) { return std::optional<scene::MaterialBinding>{{core::TextureHandle{9, 1}, glm::vec4{1.0F}, 2.0F}}; });
+    CHECK(renderable->textureHandle == core::TextureHandle{9, 1});
+    CHECK(renderable->metersPerRepeat == 2.0F);
+    core::DrawList drawList;
+    world.ExtractDrawList(drawList);
+    REQUIRE(drawList.items.size() == 1);
+    CHECK(drawList.items[0].metersPerRepeat == 2.0F);
+
+    REQUIRE(scene::SaveScene(world, root / "saved.scene.json", diagnostics));
+    CHECK(test::ReadText(root / "saved.scene.json").find("\"material\": \"materials/stone.material.json\"") != std::string::npos);
+}
+
+TEST_CASE("Bad material references are refused with the material's own message (T63)")
+{
+    SECTION("missing file")
+    {
+        const auto root = MaterialAssets("missing", 128);
+        world::World world;
+        std::vector<core::Diagnostic> diagnostics;
+        CHECK_FALSE(LoadIn(root, R"({"id":"wall","model":"scenes/phase2.gltf","material":"materials/none.material.json"})", world, diagnostics));
+        CHECK(HasCode(diagnostics, "asset.missing"));
+        CHECK(world.Count() == 0);
+    }
+    SECTION("image not a power of two")
+    {
+        const auto root = MaterialAssets("odd", 100);
+        world::World world;
+        std::vector<core::Diagnostic> diagnostics;
+        CHECK_FALSE(LoadIn(root, R"({"id":"wall","model":"scenes/phase2.gltf","material":"materials/stone.material.json"})", world, diagnostics));
+        REQUIRE(HasCode(diagnostics, "material.image"));
+        CHECK(diagnostics.back().field == "entities[0].material");
+    }
+    SECTION("material without a model")
+    {
+        const auto root = MaterialAssets("nomodel", 128);
+        world::World world;
+        std::vector<core::Diagnostic> diagnostics;
+        CHECK_FALSE(LoadIn(root, R"({"id":"wall","material":"materials/stone.material.json"})", world, diagnostics));
+        CHECK(HasCode(diagnostics, "entity.material.nomodel"));
+    }
+}

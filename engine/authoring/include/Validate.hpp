@@ -14,7 +14,8 @@ namespace umbra::authoring
         Unknown,
         Scene, // "format": "umbra.scene"
         Rpg,   // "format": "umbra.rpg"
-        Save   // "format": "umbra.save"
+        Save,    // "format": "umbra.save"
+        Material // "format": "umbra.material"
     };
 
     // Reads the file's "format" field.

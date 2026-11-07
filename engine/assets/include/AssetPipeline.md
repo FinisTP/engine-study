@@ -60,3 +60,9 @@ Writing is atomic: write `file.umodel.tmp`, then rename it over `file.umodel`. A
 ## Asset paths
 
 Models are referenced by paths relative to the asset root (`"models/tower.gltf"`). `IsSafeAssetPath` rejects absolute paths and `..`, so content can't reach files outside the asset folder.
+
+## Materials and standalone images (P8C)
+
+Scene objects can also take a texture from a material file (`Material.md`): a PNG/JPEG loaded
+directly with stb_image at load time (no derived cache file; the images are small). Every texture,
+from glTF or a material, gets a full mip chain at upload (`engine/core/include/MipMaps.md`).

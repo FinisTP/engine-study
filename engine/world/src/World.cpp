@@ -280,7 +280,7 @@ namespace umbra::world
             if (record.renderable && record.renderable->meshHandle)
             {
                 const Renderable &r = *record.renderable;
-                drawList.items.push_back({r.meshHandle, r.textureHandle, record.worldMatrix, r.color});
+                drawList.items.push_back({r.meshHandle, r.textureHandle, record.worldMatrix, r.color * r.tint, r.metersPerRepeat});
             }
         });
     }

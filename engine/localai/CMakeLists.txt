@@ -1,3 +1,4 @@
+find_package(nlohmann_json CONFIG REQUIRED)
 find_package(httplib CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 
@@ -9,12 +10,16 @@ target_sources(
     PRIVATE
         src/Ollama.cpp
         src/QuestAssistant.cpp
+        src/ComfyUi.cpp
+        src/TextureAssistant.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
         FILES
             include/Ollama.hpp
             include/QuestAssistant.hpp
+            include/ComfyUi.hpp
+            include/TextureAssistant.hpp
 )
 
 target_compile_features(UmbraLocalAi PUBLIC cxx_std_20)
@@ -25,9 +30,11 @@ target_link_libraries(
     UmbraLocalAi
     PUBLIC
         Umbra::Authoring
+        Umbra::Assets
         Threads::Threads
     PRIVATE
         httplib::httplib
+        nlohmann_json::nlohmann_json
         Umbra::Warnings
         Umbra::Sanitizers
 )

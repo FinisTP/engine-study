@@ -38,8 +38,7 @@ namespace
     {
         VkBuffer staging;
         VkImage image;
-        std::uint32_t width;
-        std::uint32_t height;
+        std::vector<VkBufferImageCopy> copies; // one per mip level
     };
 
     void RecordTextureUpload(VkCommandBuffer commandBuffer, void *rawContext)
@@ -56,18 +55,14 @@ namespace
         toTransfer.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         toTransfer.image = context.image;
         toTransfer.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        toTransfer.subresourceRange.levelCount = 1;
+        toTransfer.subresourceRange.levelCount = static_cast<std::uint32_t>(context.copies.size());
         toTransfer.subresourceRange.layerCount = 1;
         vkCmdPipelineBarrier(
             commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
             0, 0, nullptr, 0, nullptr, 1, &toTransfer);
 
-        VkBufferImageCopy copy{};
-        copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        copy.imageSubresource.layerCount = 1;
-        copy.imageExtent = {context.width, context.height, 1};
-        vkCmdCopyBufferToImage(
-            commandBuffer, context.staging, context.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+        vkCmdCopyBufferToImage(commandBuffer, context.staging, context.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                               static_cast<std::uint32_t>(context.copies.size()), context.copies.data());
 
             // use SHADER_READ_ONLY_OPTIMAL layout for shader access
         VkImageMemoryBarrier toShader = toTransfer;
@@ -310,25 +305,42 @@ namespace umbra::render
         return SubmitImmediate(RecordCopy, &context);
     }
 
-    bool VulkanAllocator::CreateTexture(std::span<const std::byte> rgbaPixels, std::uint32_t width, std::uint32_t height, GpuImage &image)
+    bool VulkanAllocator::CreateTexture(const std::vector<core::TextureData> &levels, GpuImage &image)
     {
-        const VkDeviceSize byteSize = static_cast<VkDeviceSize>(width) * height * 4;
-        if (rgbaPixels.size_bytes() < byteSize || width == 0 || height == 0)
+        // 1. All mip levels one after another in one staging buffer, one copy region each.
+        if (levels.empty() || levels[0].width == 0 || levels[0].height == 0)
         {
             return false;
+        }
+        const std::uint32_t width = levels[0].width;
+        const std::uint32_t height = levels[0].height;
+        TextureUploadContext context{};
+        VkDeviceSize byteSize = 0;
+        for (std::uint32_t level = 0; level < levels.size(); ++level)
+        {
+            VkBufferImageCopy copy{};
+            copy.bufferOffset = byteSize;
+            copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            copy.imageSubresource.mipLevel = level;
+            copy.imageSubresource.layerCount = 1;
+            copy.imageExtent = {levels[level].width, levels[level].height, 1};
+            context.copies.push_back(copy);
+            byteSize += levels[level].rgba.size();
         }
         GpuBuffer staging;
         if (!CreateMappedBuffer(byteSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, staging))
         {
             return false;
         }
-        std::memcpy(staging.GetMappedData(), rgbaPixels.data(), static_cast<std::size_t>(byteSize));
+        for (std::size_t level = 0; level < levels.size(); ++level)
+            std::memcpy(static_cast<std::byte *>(staging.GetMappedData()) + context.copies[level].bufferOffset, levels[level].rgba.data(),
+                        levels[level].rgba.size());
         staging.Flush();
 
         VkImageCreateInfo imageInfo{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
         imageInfo.extent = {width, height, 1};
-        imageInfo.mipLevels = 1;
+        imageInfo.mipLevels = static_cast<std::uint32_t>(levels.size());
         imageInfo.arrayLayers = 1;
         imageInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
         imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -347,7 +359,8 @@ namespace umbra::render
         image.allocator_ = allocator_;
         image.device_ = device_;
         image.format_ = imageInfo.format;
-        TextureUploadContext context{staging.GetHandle(), image.GetHandle(), width, height};
+        context.staging = staging.GetHandle();
+        context.image = image.GetHandle();
         if (!SubmitImmediate(RecordTextureUpload, &context))
         {
             image.Reset();
@@ -359,7 +372,7 @@ namespace umbra::render
         viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
         viewInfo.format = imageInfo.format;
         viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.levelCount = imageInfo.mipLevels;
         viewInfo.subresourceRange.layerCount = 1;
         result = vkCreateImageView(device_, &viewInfo, nullptr, &image.view_);
         if (result != VK_SUCCESS)
@@ -534,7 +547,7 @@ namespace umbra::render
         }
 
         // 1. Image + view.
-        if (!allocator_->CreateTexture(std::as_bytes(std::span{data.rgba}), data.width, data.height, texture.image))
+        if (!allocator_->CreateTexture(core::MipChain(data), texture.image))
         {
             return false;
         }
@@ -551,6 +564,7 @@ namespace umbra::render
         samplerInfo.maxAnisotropy = maxAnisotropy_;
         samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
         samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        samplerInfo.maxLod = VK_LOD_CLAMP_NONE; // use every mip level (core::MipChain)
         VkResult result = vkCreateSampler(device_, &samplerInfo, nullptr, &texture.sampler);
         if (result != VK_SUCCESS)
         {

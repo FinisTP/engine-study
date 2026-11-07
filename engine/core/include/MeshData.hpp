@@ -38,4 +38,8 @@ namespace umbra::core
     // Return an empty string when valid, otherwise a short reason.
     [[nodiscard]] std::string ValidateMesh(const MeshData &mesh);
     [[nodiscard]] std::string ValidateTexture(const TextureData &texture);
+
+    // Level 0 (the texture itself) down to 1x1, each half the size of the one before (2x2 average).
+    // Far-away surfaces sample the small levels instead of shimmering. See MipMaps.md.
+    [[nodiscard]] std::vector<TextureData> MipChain(const TextureData &texture);
 }

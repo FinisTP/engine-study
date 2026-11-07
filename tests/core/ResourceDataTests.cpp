@@ -104,3 +104,23 @@ TEST_CASE("Flush destroys everything")
     REQUIRE(*destroyed == 2);
     REQUIRE(queue.Size() == 0);
 }
+
+TEST_CASE("A mip chain halves down to 1x1 and averages 2x2 blocks")
+{
+    // 4x2 texture: left half black, right half white (alpha 255).
+    umbra::core::TextureData texture{4, 2, {}};
+    for (int y = 0; y < 2; ++y)
+        for (int x = 0; x < 4; ++x)
+            for (int c = 0; c < 4; ++c)
+                texture.rgba.push_back(c == 3 ? 255 : (x >= 2 ? 255 : 0));
+    const auto levels = umbra::core::MipChain(texture);
+    REQUIRE(levels.size() == 3); // 4x2, 2x1, 1x1
+    CHECK((levels[1].width == 2 && levels[1].height == 1));
+    CHECK(levels[1].rgba[0] == 0);   // left block stays black
+    CHECK(levels[1].rgba[4] == 255); // right block stays white
+    CHECK((levels[2].width == 1 && levels[2].height == 1));
+    CHECK(levels[2].rgba[0] == 128); // average of black and white
+    CHECK(levels[2].rgba[3] == 255);
+    for (const auto &level : levels)
+        CHECK(umbra::core::ValidateTexture(level).empty());
+}

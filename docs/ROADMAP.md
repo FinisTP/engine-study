@@ -32,7 +32,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 
 **First action for a new agent:** finish B0 — the Windows-side checks are still open (see the B0 record). Re-inspect the checkout; if it has advanced past this dashboard, preserve completed work and select the earliest genuinely unmet task. Do not blindly implement P3.1 again.
 
-**Current next task:** the Windows checklists for P6, P7, P8A and P8B (`testing/phase6-reference-game.md` §4, `testing/phase7-creator-workflow.md` §4, `testing/p8a-learned-enemy.md` §5, `testing/p8b-ai-authoring.md` §4 — the first run of a real Ollama model), then P8C (AI texture generation, ADR 0002; P8C.1 engine textures needs no generator), then P9 (PC release gate). Open in parallel: P8A recipe robustness (1 of 2 seeds). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
+**Current next task:** the Windows checklists for P6, P7, P8A and P8B (`testing/phase6-reference-game.md` §4, `testing/phase7-creator-workflow.md` §4, `testing/p8a-learned-enemy.md` §5, `testing/p8b-ai-authoring.md` §4 — the first run of a real Ollama model), and P8C (`testing/p8c-ai-textures.md` §4, including P8C.0: the first ComfyUI/SDXL run), then P9 (PC release gate). Open in parallel: P8A recipe robustness (1 of 2 seeds). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
 
 | Gate | Dependency | Status (updated 2026-11-07) | Evidence / exit summary |
 |---|---|---|---|
@@ -47,7 +47,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 | P7 Creator workflow | P3/P5/P6 contracts | Implemented 2026-11-07; headless parts verified on Linux; editor compiled, not yet run; Windows checklist open | P7.1–P7.6: shared validated documents with undo (`Umbra::Authoring`), `UmbraTool`, `UmbraEditor` (scenes + RPG forms, gizmo, Play), live RPG content reload, known-good build, package script, creator guide. Evidence: `testing/phase7-creator-workflow.md`. |
 | P8A Learned turn-based enemy | P5 rules, P7 tools | Implemented 2026-11-07; one model accepted under declared thresholds; recipe 1 of 2 seeds; Windows run open | Built-in C++ network (user decision), PPO trained on CPU through the native rules, matched-probe preference gap +0.25 vs control −0.13, competence equal to the conventional AI (content-limited). Evidence: `testing/p8a-learned-enemy.md`. |
 | P8B AI authoring | P7 schema/patch/validation capability | Implemented 2026-11-07; verified on Linux against a stand-in Ollama and saved drafts; **no real model run yet**; editor window compiled, not opened | `Umbra::LocalAi` (local-only Ollama bridge, streamed, schema-constrained, cancel/limits), `authoring::PlanDraft` (additive scope, game loader, play-through with the real `GameSession`), editor "AI quest draft" window and `UmbraTool draft`. Evidence: `testing/p8b-ai-authoring.md`. |
-| P8C AI texture generation | P7 authoring, P8B local-AI bridge | **Planned** (user decisions 2026-11-07: ComfyUI, world surfaces, SDXL for an 8 GB GPU, before P9) | Local image generator (ComfyUI) → seamless check → material file → apply/undo in the editor. Engine part: PNG import with mips, materials, world-scale projection. Plan: `adr/0002-ai-texture-generation.md`. |
+| P8C AI texture generation | P7 authoring, P8B local-AI bridge | Implemented 2026-11-07; verified on Linux against a stand-in ComfyUI; **no real ComfyUI/SDXL or GPU run yet** (P8C.0 open) | Materials with world-scale texturing and mipmaps; ComfyUI bridge; seamless step and seam score; provenance and license warnings; editor AI texture window with in-scene preview; `UmbraTool texture`. Plan `adr/0002-ai-texture-generation.md`, evidence `testing/p8c-ai-textures.md`. |
 | P9 PC release | P6/P7/P8A/P8B | Planned | Clean offline install, complete game, authoring workflow, measured reference-PC gate. |
 | P10 Playable web export | P9; W0 decisions | Planned later port | Browser game and local policy, durable-save UX, offline installation readiness. |
 | P11 Mobile | P10; approved device target | Planned later port | Lifecycle, input, storage, thermal and performance gates on actual devices. |
@@ -585,7 +585,7 @@ Do not replace a failed experiment with unreported heuristic behavior and call t
 
 A cloud adapter can be a later optional task; credentials, data disclosure and spend controls require explicit design. It is not necessary to complete offline/local-first P8B.
 
-### P8C — AI texture generation (planned)
+### P8C — AI texture generation
 
 **Dependency:** P7 authoring documents, P8B `Umbra::LocalAi`. **Goal:** creators make tileable
 surface textures with an image model on their own PC and apply them like any other edit. Full
@@ -602,6 +602,17 @@ plan, options and open choices: [`adr/0002-ai-texture-generation.md`](adr/0002-a
 
 **Exit gate:** a creator generates, previews, applies, undoes and plays a tileable texture made
 locally; the game build contains no image-generation code (T66); no non-local address (T64).
+
+<!-- P8C-status -->
+| Task | Status | Evidence |
+|---|---|---|
+| P8C.0 | **Open:** needs ComfyUI + SDXL on the user's PC | `testing/p8c-ai-textures.md` §4 |
+| P8C.1 | Implemented: mip chains (all textures), world-space UVs, material files, scene `material`, hot reload, editor picker, sample bricks; GPU not run | `TextureToolsTests`, scene material tests |
+| P8C.2 | Implemented: ComfyUI bridge, checkpoints list, port discovery, `ImageJob` | `ComfyUiTests` (stand-in server) |
+| P8C.3 | Implemented: seamless step, seam score, size rule, provenance, license table, validate + package warnings | T61, T63, T65 |
+| P8C.4 | Implemented: editor AI texture window (in-scene preview, apply/undo), `UmbraTool texture`, style file; editor not opened | Windows checklist open |
+| P8C.5 | Implemented: guide, docs, record | `testing/p8c-ai-textures.md` |
+<!-- /P8C-status -->
 
 ### P9 — PC release gate
 
@@ -978,6 +989,8 @@ This reference list supports the limited factual technology statements, not a re
 Version 1.0, 2026-11-01: incorporates final answers 21–23; makes independent combat-mode use an explicit contract/test; selects turn-based learned policy; removes mandatory-threshold interpretation of aggression; preserves deferred modding and offline scope; expands milestone tasks/evidence; retains T01–T38 and adds T39–T60; establishes concise root instructions plus separate context/roadmap files.
 
 No implementation completion was advanced by preparing this pack. Further updates must record actual evidence, product changes and their source separately.
+
+2026-11-07: P8C implemented (`#UMBRA-59`), status block added; evidence `testing/p8c-ai-textures.md`.
 
 2026-11-07: P8C (AI texture generation) planned at the user's request: dashboard row, milestone section, T61–T66, O16, ADR 0002; user decisions: ComfyUI, world surfaces, SDXL (8 GB GPU), before P9.
 

@@ -19,13 +19,18 @@ if errorlevel 1 (
 )
 
 rem 2. Check the content the package will ship (same checks as the game and the editor).
-out\build\windows-msvc\tools\umbratool\Release\UmbraTool.exe validate assets\scenes\settlement.scene.json assets\scenes\dungeon.scene.json assets\scenes\arena.scene.json assets\rpg\reference.rpg.json --assets assets >> %LOG% 2>&1
+rem    Materials too: their images, and a warning for AI models whose license forbids selling.
+set MATERIALS=
+for %%f in (assets\materials\*.material.json) do call set MATERIALS=%%MATERIALS%% %%f
+out\build\windows-msvc\tools\umbratool\Release\UmbraTool.exe validate assets\scenes\settlement.scene.json assets\scenes\dungeon.scene.json assets\scenes\arena.scene.json assets\rpg\reference.rpg.json %MATERIALS% --assets assets >> %LOG% 2>&1
 if errorlevel 1 (
     echo CONTENT HAS ERRORS, nothing packaged >> %LOG%
     type %LOG%
     pause
     exit /b 1
 )
+
+findstr /c:"material.license" %LOG%
 
 rem 3. A clean package folder from the install rules (component "game"), then the zip.
 "%CMAKE%" -E rm -rf out\package\Umbra out\package\Umbra.zip

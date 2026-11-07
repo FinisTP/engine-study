@@ -4,6 +4,7 @@
 
 #include <Document.hpp>
 #include <QuestAssistant.hpp>
+#include <TextureAssistant.hpp>
 #include <DrawList.hpp>
 #include <World.hpp>
 
@@ -33,6 +34,9 @@ class Editor final
 {
 public:
     Editor(ModelLibrary &models, std::filesystem::path assetRoot, std::filesystem::path gameExecutable);
+    ~Editor();
+    Editor(const Editor &) = delete;
+    Editor &operator=(const Editor &) = delete;
 
     // Opens a scene by its path under the asset folder ("scenes/dungeon.scene.json").
     bool OpenScene(const std::string &scenePath);
@@ -84,6 +88,11 @@ private:
     void PlanCurrentDraft();
     void ApproveDraft();
     void RefreshDraftModels();
+    void AiTexture(); // AiTexture.cpp
+    void FindComfyUi();
+    void ClearTexturePreviews();
+    void ApplyTexturePreview(umbra::core::DrawList &drawList) const;
+    void ApplyTexture();
 
     void ScanAssets();
     void AddEntity(const std::optional<std::string> &parent);
@@ -136,4 +145,18 @@ private:
     std::vector<std::string> draftModels_; // installed in Ollama
     std::vector<umbra::core::Diagnostic> draftModelProblems_;
     bool draftModelsChecked_ = false;
+
+    // AI texture (P8C): variations from ComfyUI, previewed on the selected object.
+    bool showTexture_ = false;
+    std::unique_ptr<umbra::localai::ImageJob> imageJob_ = std::make_unique<umbra::localai::ImageJob>();
+    std::string textureIdea_, textureName_, textureHost_, textureModel_;
+    std::vector<std::string> textureModels_;
+    bool textureSearched_ = false;
+    float textureMeters_ = 2.0F;
+    int textureCount_ = 4;
+    std::vector<umbra::localai::ImageRequest> textureRequests_;
+    std::vector<umbra::localai::TextureCandidate> textureCandidates_;
+    std::vector<umbra::core::TextureHandle> texturePreviews_; // GPU copies of the candidates
+    int texturePick_ = -1;
+    std::vector<umbra::core::Diagnostic> textureProblems_;
 };

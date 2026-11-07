@@ -8,12 +8,16 @@
 //   UmbraTool policy-check <policy file> --content <rpg file> [--json]
 //   UmbraTool draft <rpg file> --npc <npc> (--idea "<text>" | --from <draft file>) [--apply] [--json]
 //             [--model <name>] [--host <url>] [--scenes <folder>] [--fix <n>] [--save-draft <file>]
+//   UmbraTool texture "<idea>" --assets <folder> [--name <name>] [--count <n>] [--seed <n>] [--meters <m>]
+//             [--size <px>] [--model <checkpoint>] [--host <url>] [--json]
 //
 // Exit code: 0 = ok, 1 = errors found (or the fight couldn't run), 2 = bad usage.
 
 #include <Document.hpp>
 #include <PolicyModel.hpp>
 #include <QuestAssistant.hpp>
+#include <TextureAssistant.hpp>
+#include <TextureTools.hpp>
 #include <RpgContent.hpp>
 #include <SaveGame.hpp>
 #include <SceneFile.hpp>
@@ -41,10 +45,15 @@ namespace
         std::filesystem::path content;
         bool json = false;
         // draft
-        std::string npc, idea, model, host = "http://localhost:11434"; // empty model: an installed one
+        std::string npc, idea, model, host; // empty: an installed model / the usual local address
         std::filesystem::path from, scenes, saveDraft;
         int fix = 1;
         bool apply = false;
+        // texture
+        std::string name;
+        int count = 1, size = 1024;
+        long long seed = -1;
+        float meters = 2.0F;
     };
 
     int Usage()
@@ -56,7 +65,9 @@ namespace
                      "  UmbraTool fight    <rpg file> <hero actor> <enemy actor>... [--json]\n"
                      "  UmbraTool policy-check <policy file> --content <rpg file> [--json]\n"
                      "  UmbraTool draft <rpg file> --npc <npc> (--idea \"<text>\" | --from <draft file>) [--apply] [--json]\n"
-                     "            [--model <name>] [--host <url>] [--scenes <folder>] [--fix <n>] [--save-draft <file>]\n";
+                     "            [--model <name>] [--host <url>] [--scenes <folder>] [--fix <n>] [--save-draft <file>]\n"
+                     "  UmbraTool texture \"<idea>\" --assets <folder> [--name <name>] [--count <n>] [--seed <n>] [--meters <m>]\n"
+                     "            [--size <px>] [--model <checkpoint>] [--host <url>] [--json]\n";
         return 2;
     }
 
@@ -249,13 +260,14 @@ namespace
         // 1. A draft: from a file, or from the model (asking it to fix problems up to --fix times).
         umbra::authoring::DraftPlan plan;
         std::string answer;
+        const std::string host = args.host.empty() ? "http://localhost:11434" : args.host;
         std::string model = args.model;
         if (model.empty() && args.from.empty())
         {
             std::vector<Diagnostic> ignored; // a missing Ollama is reported by the request itself
-            model = umbra::localai::PreferredModel(umbra::localai::ListModels(args.host, ignored), "qwen2.5:7b");
+            model = umbra::localai::PreferredModel(umbra::localai::ListModels(host, ignored), "qwen2.5:7b");
         }
-        umbra::localai::ChatRequest request = umbra::localai::MakeDraftRequest(doc.Data(), args.npc, args.idea, model, args.host);
+        umbra::localai::ChatRequest request = umbra::localai::MakeDraftRequest(doc.Data(), args.npc, args.idea, model, host);
         for (int attempt = 0; attempt <= args.fix; ++attempt)
         {
             diagnostics.clear();
@@ -316,6 +328,79 @@ namespace
     }
 }
 
+namespace
+{
+    // AI texture: idea -> local ComfyUI -> seamless texture + material file(s) in the asset folder.
+    int Texture(const Arguments &args)
+    {
+        if (args.positional.size() != 1 || args.assets.empty() || args.count < 1 || args.count > 8 || !umbra::assets::GoodTextureSize(args.size, args.size) ||
+            args.meters < 0.05F || args.meters > 100.0F)
+            return Usage();
+        std::vector<Diagnostic> diagnostics;
+
+        // 1. Where ComfyUI is and which model to use.
+        std::vector<std::string> checkpoints;
+        const std::string host = args.host.empty() ? umbra::localai::FindComfyUi(checkpoints) : args.host;
+        if (!args.host.empty())
+            checkpoints = umbra::localai::ListCheckpoints(host, diagnostics);
+        const std::string model = args.model.empty() ? umbra::localai::PreferredCheckpoint(checkpoints) : args.model;
+        if (host.empty() || model.empty())
+        {
+            if (diagnostics.empty())
+                diagnostics.push_back({Severity::Error, "ai.connect", "comfyui", "",
+                                       host.empty() ? "ComfyUI is not running on port 8000 or 8188. Start ComfyUI." : "ComfyUI has no models in models/checkpoints."});
+            return Report(diagnostics, 0, args.json);
+        }
+
+        // 2. Generate the variations, printing progress.
+        const auto style = umbra::localai::LoadTextureStyle(args.assets);
+        const auto requests = umbra::localai::MakeTextureRequests(args.positional[0], style, model, host, umbra::localai::TextureSeeds(args.count, args.seed));
+        umbra::localai::ImageJob job;
+        job.Start(requests);
+        std::optional<std::vector<umbra::localai::ImageResult>> results;
+        while (!(results = job.Take()))
+        {
+            if (!args.json)
+                std::cerr << "\rGenerating with " << model << "... " << job.Finished() << "/" << requests.size() << ", "
+                          << static_cast<int>(job.Seconds()) << " s   " << std::flush;
+            std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        }
+        if (!args.json)
+            std::cerr << "\n";
+
+        // 3. Each picture: seamless, saved as a new material; a warning if the seam still shows.
+        Json made = Json::array();
+        for (std::size_t i = 0; i < results->size(); ++i)
+        {
+            const auto &result = (*results)[i];
+            diagnostics.insert(diagnostics.end(), result.diagnostics.begin(), result.diagnostics.end());
+            if (!result.ok)
+                continue;
+            const auto candidate = umbra::localai::FinishTexture(result.image, requests[i], static_cast<std::uint32_t>(args.size));
+            const std::string path = umbra::localai::SaveTextureMaterial(args.assets, args.name.empty() ? args.positional[0] : args.name, candidate, args.meters, diagnostics);
+            if (path.empty())
+                continue;
+            if (candidate.seam > umbra::assets::visibleSeam)
+                diagnostics.push_back({Severity::Warning, "texture.seam", path, "", "the repeat seam may still show (score " + std::to_string(candidate.seam) + ")"});
+            const auto license = umbra::assets::ModelLicense(model);
+            if (!license.commercial)
+                diagnostics.push_back({Severity::Warning, "material.license", path, "generated.model",
+                                       license.known ? "made with " + model + " (" + license.name + "): not for a game you sell"
+                                                     : "license of " + model + " is unknown: check it before shipping"});
+            made.push_back({{"material", path}, {"seed", requests[i].seed}, {"seamBefore", candidate.seamBefore}, {"seam", candidate.seam}});
+            if (!args.json)
+                std::cout << "Made " << path << " (seed " << requests[i].seed << ", seam " << candidate.seamBefore << " -> " << candidate.seam << ")\n";
+        }
+        if (args.json)
+        {
+            std::cout << Json{{"model", model}, {"host", host}, {"made", made}, {"diagnostics", umbra::authoring::ToJson(diagnostics)}}.dump(2) << "\n";
+            return made.empty() ? 1 : 0;
+        }
+        const int code = Report(diagnostics, made.size(), false);
+        return made.empty() ? 1 : code;
+    }
+}
+
 int main(int argc, char **argv)
 {
     // 1. Command and options.
@@ -334,6 +419,27 @@ int main(int argc, char **argv)
             args.json = true;
         else if (arg == "--apply")
             args.apply = true;
+        else if (i + 1 < argc && (arg == "--name" || arg == "--count" || arg == "--seed" || arg == "--meters" || arg == "--size"))
+        {
+            const std::string value = argv[++i];
+            try
+            {
+                if (arg == "--name")
+                    args.name = value;
+                else if (arg == "--count")
+                    args.count = std::stoi(value);
+                else if (arg == "--seed")
+                    args.seed = std::stoll(value);
+                else if (arg == "--meters")
+                    args.meters = std::stof(value);
+                else
+                    args.size = std::stoi(value);
+            }
+            catch (const std::exception &)
+            {
+                return Usage();
+            }
+        }
         else if (i + 1 < argc && (arg == "--npc" || arg == "--idea" || arg == "--model" || arg == "--host" || arg == "--from" ||
                                   arg == "--scenes" || arg == "--save-draft" || arg == "--fix"))
         {
@@ -376,5 +482,7 @@ int main(int argc, char **argv)
         return PolicyCheck(args);
     if (command == "draft")
         return Draft(args);
+    if (command == "texture")
+        return Texture(args);
     return Usage();
 }

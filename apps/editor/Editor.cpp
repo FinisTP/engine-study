@@ -139,6 +139,11 @@ Editor::Editor(ModelLibrary &models, std::filesystem::path assetRoot, std::files
     LoadDraftSettings();
 }
 
+Editor::~Editor()
+{
+    ClearTexturePreviews();
+}
+
 // ---------------- Edits ----------------
 
 bool Editor::Edit(authoring::Document &doc, const std::vector<Change> &changes, const std::string &label, bool merge)
@@ -280,7 +285,8 @@ void Editor::RebuildWorld()
         return;
     }
     fresh->UpdateTransforms();
-    umbra::scene::BindRenderables(*fresh, [&](const std::string &model, std::uint32_t mesh) { return models_.Resolve(model, mesh); });
+    umbra::scene::BindRenderables(*fresh, [&](const std::string &model, std::uint32_t mesh) { return models_.Resolve(model, mesh); },
+                                  [&](const std::string &material) { return models_.ResolveMaterial(material); });
     world_ = std::move(fresh);
     builtRevision_ = scene_->Revision();
 }
@@ -307,6 +313,7 @@ void Editor::Update(float deltaSeconds, umbra::core::DrawList &drawList)
     drawList.hud.diagnosticsWindow = false;
     if (world_)
         world_->ExtractDrawList(drawList);
+    ApplyTexturePreview(drawList);
     const glm::vec4 gridColor{0.35F, 0.35F, 0.4F, 1.0F};
     for (int i = -20; i <= 20; ++i)
     {
@@ -472,6 +479,7 @@ void Editor::DrawUi()
     DiagnosticsPanel();
     RpgForms();
     AiDraft();
+    AiTexture();
     StatusBar();
     Popups();
     DrawGizmo();
@@ -542,6 +550,7 @@ void Editor::MenuBar()
     {
         ImGui::MenuItem("RPG content", nullptr, &showRpg_);
         ImGui::MenuItem("AI quest draft", nullptr, &showDraft_);
+        ImGui::MenuItem("AI texture", nullptr, &showTexture_);
         ImGui::EndMenu();
     }
     const char *names[] = {"Move (W)", "Rotate (E)", "Scale (R)"};
@@ -553,6 +562,8 @@ void Editor::MenuBar()
         Play();
     if (ImGui::Button("AI quest draft"))
         showDraft_ = true;
+    if (ImGui::Button("AI texture"))
+        showTexture_ = true;
     ImGui::EndMainMenuBar();
 }
 
@@ -652,7 +663,7 @@ void Editor::Inspector()
         else
         {
             std::vector<Change> changes{{Change::Op::Remove, at + "/model", {}}};
-            for (const char *key : {"mesh", "color"})
+            for (const char *key : {"mesh", "color", "material"})
                 if (entity.contains(key))
                     changes.push_back({Change::Op::Remove, at + "/" + key, {}});
             Edit(*scene_, changes, "Model " + selected_);
@@ -674,6 +685,16 @@ void Editor::Inspector()
                 newStep_ = true;
             SetField(at + "/color", Json::array({color.r, color.g, color.b, color.a}), "Color " + selected_, !newStep_);
             newStep_ = false;
+        }
+        // Material: "" = the model's own texture.
+        std::vector<std::string> materials{""};
+        materials.insert(materials.end(), assets_["Materials"].begin(), assets_["Materials"].end());
+        if (Choose("Material", entity.value("material", ""), materials, text))
+        {
+            if (text.empty() && entity.contains("material"))
+                Edit(*scene_, {{Change::Op::Remove, at + "/material", {}}}, "Material " + selected_);
+            else if (!text.empty())
+                SetField(at + "/material", text, "Material " + selected_);
         }
     }
 
@@ -944,6 +965,10 @@ void Editor::ScanAssets()
             assets_["Sounds"].push_back(path);
         else if (name.ends_with(".policy.json"))
             assets_["Learned AI"].push_back(path);
+        else if (name.ends_with(".material.json"))
+            assets_["Materials"].push_back(path);
+        else if (name.ends_with(".png") || name.ends_with(".jpg"))
+            assets_["Textures"].push_back(path);
     }
     for (auto &[group, files] : assets_)
         std::sort(files.begin(), files.end());

@@ -1,0 +1,7 @@
+{
+  "format": "umbra.material",
+  "version": 1,
+  "baseColor": "textures/sample_bricks.png",
+  "projection": "world",
+  "metersPerRepeat": 2.0
+}

@@ -171,6 +171,7 @@
         3.0
       ],
       "model": "scenes/phase2.gltf",
+      "material": "materials/sample_bricks.material.json",
       "mesh": 0,
       "color": [
         0.85,
@@ -217,6 +218,7 @@
         0.15
       ],
       "model": "scenes/phase2.gltf",
+      "material": "materials/sample_bricks.material.json",
       "mesh": 0,
       "color": [
         0.6,

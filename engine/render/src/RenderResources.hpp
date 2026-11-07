@@ -102,7 +102,8 @@ namespace umbra::render
         [[nodiscard]] bool CreateMappedBuffer(VkDeviceSize size, VkBufferUsageFlags usage, GpuBuffer &buffer);
 
         // Create a GPU-only texture from RGBA pixel data, and create a VkImageView for it.
-        [[nodiscard]] bool CreateTexture(std::span<const std::byte> rgbaPixels, std::uint32_t width, std::uint32_t height, GpuImage &image);
+        // Uploads all mip levels (level 0 first) into one sampled sRGB image.
+        [[nodiscard]] bool CreateTexture(const std::vector<core::TextureData> &levels, GpuImage &image);
 
         // Create a GPU-only depth image with the specified extent and format, and create a VkImageView for it.
         [[nodiscard]] bool CreateDepthImage(VkExtent2D extent, VkFormat format, GpuImage &image);

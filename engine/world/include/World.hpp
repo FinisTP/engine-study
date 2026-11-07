@@ -46,6 +46,9 @@ namespace umbra::world
         glm::vec4 color{1.0F};
         core::MeshHandle meshHandle;
         core::TextureHandle textureHandle;
+        std::string material;         // optional "materials/x.material.json": replaces the model's texture
+        glm::vec4 tint{1.0F};         // from the material, multiplied with color
+        float metersPerRepeat = 0.0F; // from the material: > 0 = world-space texture coordinates
     };
 
     // Physics description of an entity. Pure data: the gameplay layer turns it into a body.

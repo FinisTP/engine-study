@@ -1,6 +1,7 @@
 #include <Validate.hpp>
 
 #include <GltfImporter.hpp>
+#include <Material.hpp>
 #include <RpgContent.hpp>
 #include <SaveGame.hpp>
 #include <SceneFile.hpp>
@@ -69,6 +70,8 @@ namespace umbra::authoring
             return FileKind::Rpg;
         if (format == "umbra.save")
             return FileKind::Save;
+        if (format == "umbra.material")
+            return FileKind::Material;
         return FileKind::Unknown;
     }
 
@@ -82,6 +85,8 @@ namespace umbra::authoring
             return "rpg";
         case FileKind::Save:
             return "save";
+        case FileKind::Material:
+            return "material";
         case FileKind::Unknown:
             break;
         }
@@ -113,11 +118,21 @@ namespace umbra::authoring
             game::SaveData data;
             return game::ReadSave(file, content, data, diagnostics);
         }
+        case FileKind::Material:
+        {
+            // The image (under --assets, else two folders up: assets/materials/x -> assets) and the license.
+            assets::Material material;
+            const std::filesystem::path root = options.assetRoot.empty() ? file.parent_path().parent_path() : options.assetRoot;
+            if (!assets::LoadMaterial(file, material, diagnostics) || !assets::CheckMaterialImage(root, material, file.string(), diagnostics))
+                return false;
+            assets::CheckMaterialLicense(material, file.string(), diagnostics);
+            return true;
+        }
         case FileKind::Unknown:
             break;
         }
         diagnostics.push_back({Severity::Error, "file.format", file.string(), "format",
-                               "not an Umbra content file (expected \"format\": umbra.scene, umbra.rpg or umbra.save)"});
+                               "not an Umbra content file (expected \"format\": umbra.scene, umbra.rpg, umbra.save or umbra.material)"});
         return false;
     }
 

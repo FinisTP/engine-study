@@ -71,8 +71,9 @@ namespace umbra::render
         unsigned char *pixels = nullptr;
         int width = 0, height = 0;
         io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-        if (!allocator.CreateTexture(std::as_bytes(std::span{pixels, static_cast<std::size_t>(width * height * 4)}),
-                                     static_cast<std::uint32_t>(width), static_cast<std::uint32_t>(height), fontImage_) ||
+        core::TextureData font{static_cast<std::uint32_t>(width), static_cast<std::uint32_t>(height),
+                               {pixels, pixels + static_cast<std::size_t>(width) * height * 4}};
+        if (!allocator.CreateTexture({font}, fontImage_) ||
             !allocator.CreateMappedBuffer(overlayBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexBuffers_[0]) ||
             !allocator.CreateMappedBuffer(overlayBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexBuffers_[0]) ||
             !allocator.CreateMappedBuffer(overlayBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexBuffers_[1]) ||

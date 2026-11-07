@@ -18,6 +18,7 @@ namespace umbra::core
         TextureHandle texture; // invalid -> renderer uses its fallback texture
         glm::mat4 model{1.0F};
         glm::vec4 color{1.0F};
+        float metersPerRepeat = 0.0F; // > 0: texture repeats every N meters in world space (WorldUv.md)
     };
 
     // A world-space line for debugging (collider outlines, rays). Drawn on top, no depth test.

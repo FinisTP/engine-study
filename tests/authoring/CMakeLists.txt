@@ -60,3 +60,15 @@ add_test(
         --host http://api.example.com --json
 )
 set_tests_properties(Umbra.Tool.DraftLocalOnly PROPERTIES PASS_REGULAR_EXPRESSION "ai.host")
+
+# AI textures (P8C): a non-local image generator is refused before any connection (T64), and
+# shipped materials validate (image size, license warning).
+add_test(
+    NAME Umbra.Tool.TextureLocalOnly
+    COMMAND UmbraTool texture "mossy stone" --assets ${CMAKE_CURRENT_BINARY_DIR}/texture-assets --host http://images.example.com:8188 --json
+)
+set_tests_properties(Umbra.Tool.TextureLocalOnly PROPERTIES PASS_REGULAR_EXPRESSION "ai.host")
+add_test(
+    NAME Umbra.Tool.ValidateMaterial
+    COMMAND UmbraTool validate ${PROJECT_SOURCE_DIR}/assets/materials/sample_bricks.material.json --assets ${PROJECT_SOURCE_DIR}/assets
+)

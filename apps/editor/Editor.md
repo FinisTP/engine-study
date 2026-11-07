@@ -88,6 +88,28 @@ again) and preselects the saved one, else an installed Qwen. Name and address ca
 under **Ollama settings**; both are saved in `ai-draft.json` in the preferences folder. Only
 addresses on this computer are accepted.
 
+## Materials and AI textures
+
+The inspector's **Material** picker (under Model) lists `assets/materials/*.material.json`; the empty first entry
+goes back to the model's own texture. Materials and textures also show in the asset browser.
+
+**AI texture** (menu bar button, or View → AI texture; roadmap P8C):
+
+1. On first open the window looks for ComfyUI on this computer (port 8000 = Desktop, 8188 =
+   command line) and lists its checkpoints; an SDXL model is preselected. **Find** asks again.
+2. Type what the surface looks like, set **meters per repeat** and the number of **variations**
+   (1–4), press **Generate**. Pictures are made one after another on a worker thread
+   (`localai::ImageJob`); **Cancel** stops at once and tells ComfyUI to stop too.
+3. Each picture is resized to 1024 px, made seamless and scored (`TextureTools.md`). Picking a
+   variation shows it **on the selected object in the scene view**, repeating at its real size.
+   A seam score above 2 is marked "may show"; non-commercial or unknown model licenses are noted.
+4. **Apply to object** writes `textures/<name>.png` and `materials/<name>.material.json` (new
+   files, never overwritten: `_2`, `_3`...), then sets the object's `material` as one undoable
+   edit. Undo removes the reference and keeps the files, so redo works. Without a selection the
+   button is **Save material**. **Discard** forgets the variations.
+
+Every prompt gets the project style from `assets/materials/style.json`.
+
 ## Picking (mouse → entity)
 
 1. The mouse position becomes normalized device coordinates:

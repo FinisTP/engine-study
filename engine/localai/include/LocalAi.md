@@ -1,7 +1,7 @@
 # Local AI bridge (`Umbra::LocalAi`)
 
 Talks to an [Ollama](https://ollama.com) server **on this computer** for AI-assisted authoring
-(roadmap P8B). Used by the editor and `UmbraTool draft`; the game never links it
+(roadmap P8B), and to [ComfyUI](https://www.comfy.org) for textures (P8C, section at the end). Used by the editor and `UmbraTool draft`; the game never links it
 (`Umbra.GameExcludesEditor`), and no other engine module opens a network connection
 (`Umbra.EngineOffline`).
 
@@ -57,3 +57,32 @@ follows JSON schemas well; Apache-2.0 license). Any installed model works; `qwen
 6.6 GB, Apache-2.0) is the newer choice. The model is not shipped with Umbra; creators
 install it themselves (`ollama pull qwen2.5:7b`). The model name and address are editable in the
 editor (saved in `ai-draft.json` in the preferences folder) and on the command line.
+
+## ComfyUI (textures, roadmap P8C)
+
+`ComfyUi.hpp`, same rules as Ollama: local addresses only, every failure named, cancel at once.
+
+```text
+POST /prompt  {"prompt": TextureWorkflow(request), "client_id": "umbra"}  -> prompt_id
+GET  /history/<id>   twice a second until it has the id (or the time limit: POST /interrupt)
+GET  /view?filename=..&subfolder=..&type=temp   -> PNG bytes (at most 32 MiB) -> DecodeImage
+```
+
+`TextureWorkflow` is the plain text-to-image graph: CheckpointLoaderSimple → two CLIPTextEncode →
+EmptyLatentImage 1024² → KSampler (dpmpp_2m, karras, 25 steps, cfg 7) → VAEDecode → PreviewImage
+(a temporary file, so nothing piles up in ComfyUI's output folder). It needs no custom nodes;
+seamlessness is done afterwards by `assets::MakeSeamless`.
+
+Failures: `ai.connect` (not running; names both ports), `ai.model` (the checkpoint isn't in
+`models/checkpoints`, from ComfyUI's validation error), `ai.comfyui` (refused graph or a failed
+run, with ComfyUI's message, e.g. out of GPU memory), `ai.timeout`, `ai.limit`, `ai.answer`,
+`ai.cancel` (also sends `/interrupt`). `ListCheckpoints` reads `/object_info/CheckpointLoaderSimple`
+in both of ComfyUI's list formats; `FindComfyUi` tries port 8000 (Desktop), then 8188.
+
+`ImageJob` runs a batch (the variations) on one worker thread and stops at the first failure.
+`TextureAssistant.hpp` holds the shared steps: project style (`assets/materials/style.json`),
+seeds, `FinishTexture` (resize, seamless, seam score) and `SaveTextureMaterial` (image, then
+material with its `generated` block; temporary file + rename; free names only).
+
+Default model: SDXL base 1.0 at 1024 px (user decision 2026-11-07, 8 GB GPU; CreativeML
+OpenRAIL++-M, outputs may be sold). Not shipped with Umbra: creators install ComfyUI and the model.

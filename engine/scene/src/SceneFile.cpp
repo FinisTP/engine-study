@@ -1,5 +1,7 @@
 #include <SceneFile.hpp>
 
+#include <Material.hpp>
+
 #include <ModelCache.hpp>
 #include <ModelInstance.hpp>
 
@@ -35,6 +37,7 @@ namespace umbra::scene
             std::string model;
             std::uint32_t mesh = 0;
             glm::vec4 color{1.0F};
+            std::string material;
             std::string instance;
             std::optional<world::Collider> collider;
             std::optional<world::Interactable> interactable;
@@ -112,6 +115,29 @@ namespace umbra::scene
                 report.Error("asset.path.unsafe", field, "'" + path + "' must be relative to the asset folder and must not contain '..'");
             else if (!options.assetRoot.empty() && !std::filesystem::is_regular_file(options.assetRoot / path))
                 report.Error("asset.missing", field, "'" + path + "' does not exist in " + options.assetRoot.string());
+        }
+
+        // "material": a material file whose image replaces the model's texture (Material.md).
+        void CheckMaterial(const EntityDesc &desc, const std::string &field, const SceneLoadOptions &options, Report &report)
+        {
+            if (desc.model.empty())
+                report.Error("entity.material.nomodel", field, "'material' needs a 'model' to cover");
+            CheckAssetPath(desc.material, field, options, report);
+            if (options.assetRoot.empty() || !std::filesystem::is_regular_file(options.assetRoot / desc.material))
+                return;
+            // The file itself and its image, with the material's own messages under this field.
+            std::vector<core::Diagnostic> found;
+            assets::Material material;
+            if (assets::LoadMaterial(options.assetRoot / desc.material, material, found))
+                assets::CheckMaterialImage(options.assetRoot, material, desc.material, found);
+            for (const core::Diagnostic &d : found)
+            {
+                const std::string message = desc.material + (d.field.empty() ? "" : " (" + d.field + ")") + ": " + d.message;
+                if (d.severity == core::Severity::Error)
+                    report.Error(d.code, field, message);
+                else
+                    report.Warning(d.code, field, message);
+            }
         }
 
         // "collider": { "shape": "box", "motion": "dynamic", "halfExtents": [..], "radius": r, "halfHeight": h }
@@ -286,7 +312,7 @@ namespace umbra::scene
 
         EntityDesc ParseEntity(const json &entity, const std::string &where, const SceneLoadOptions &options, Report &report)
         {
-            static const std::set<std::string> knownKeys{"id", "name", "parent", "position", "rotation", "scale", "model", "mesh", "color", "instance", "collider", "interactable", "portal", "spawner"};
+            static const std::set<std::string> knownKeys{"id", "name", "parent", "position", "rotation", "scale", "model", "mesh", "color", "material", "instance", "collider", "interactable", "portal", "spawner"};
             EntityDesc desc;
             for (const auto &[key, value] : entity.items())
             {
@@ -329,6 +355,8 @@ namespace umbra::scene
                 else
                     desc.mesh = it->get<std::uint32_t>();
             }
+            if (ReadString(entity, "material", desc.material, where, report) && entity.contains("material"))
+                CheckMaterial(desc, where + ".material", options, report);
             if (ReadString(entity, "instance", desc.instance, where, report) && entity.contains("instance"))
                 CheckAssetPath(desc.instance, where + ".instance", options, report);
             if (const auto it = entity.find("collider"); it != entity.end())
@@ -530,6 +558,8 @@ namespace umbra::scene
                 out["mesh"] = r->mesh;
                 if (r->color != glm::vec4{1.0F})
                     out["color"] = {Tidy(r->color.r), Tidy(r->color.g), Tidy(r->color.b), Tidy(r->color.a)};
+                if (!r->material.empty())
+                    out["material"] = r->material;
             }
             if (const world::Collider *c = world.GetCollider(entity))
             {
@@ -617,7 +647,7 @@ namespace umbra::scene
             const world::Entity entity = world.Create(desc.id, desc.name);
             world.SetLocalTransform(entity, desc.transform);
             if (!desc.model.empty())
-                world.SetRenderable(entity, world::Renderable{desc.model, desc.mesh, desc.color});
+                world.SetRenderable(entity, world::Renderable{desc.model, desc.mesh, desc.color, {}, {}, desc.material});
             if (desc.collider)
                 world.SetCollider(entity, *desc.collider);
             if (desc.interactable)

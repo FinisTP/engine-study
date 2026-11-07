@@ -29,6 +29,7 @@ A scene is a readable JSON file that people, tools and AI agents can edit. It st
 | `model` | asset path | none | glTF file to draw from. Makes the entity renderable. |
 | `mesh` | integer ≥ 0 | `0` | Which mesh (primitive) of `model`, in import order. |
 | `color` | `[r, g, b, a]` | `[1,1,1,1]` | Tint multiplied with the material color. |
+| `material` | asset path | none | A `*.material.json` whose image replaces the model's texture, optionally repeating by meters (`engine/assets/include/Material.md`). Needs `model`. |
 | `instance` | asset path | none | At load, the whole node hierarchy of this glTF is created under this entity (ids `"<id>/<node name>"`). |
 | `collider` | object | none | Physics shape, see below. |
 | `interactable` | object | none | Something the player can use with **E**, see below. |
@@ -107,6 +108,7 @@ Every problem is a `core::Diagnostic` (`engine/core/include/Diagnostic.hpp`) wit
 | `entity.field.type`, `entity.field.nonfinite`, `entity.rotation.zero`, `entity.mesh.nomodel` | error | Wrong type, NaN/Inf, zero quaternion, `mesh` without `model` |
 | `asset.path.unsafe`, `asset.missing` | error | Path escapes the asset folder, or the file doesn't exist |
 | `instance.failed` | error | An `instance` model couldn't be loaded |
+| `entity.material.nomodel`, `material.*` | error | `material` without `model`; the material file or its image is invalid (message names the material file and its field) |
 | `entity.collider.shape`, `entity.collider.motion`, `entity.collider.size` | error | Unknown shape/motion or negative size |
 | `entity.collider.dynamicchild` | error | Dynamic collider on an entity with a parent |
 | `entity.interactable.prompt` | error | `interactable` without a prompt |

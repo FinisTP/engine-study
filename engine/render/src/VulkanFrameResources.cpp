@@ -69,7 +69,7 @@ namespace
 
             // 2. Bind this item's texture (set 1) and buffers, push its matrix and tint, draw.
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(), 1, 1, &texture->descriptorSet, 0, nullptr);
-            const umbra::render::DrawConstants constants{item.model, item.color * mesh->baseColor};
+            const umbra::render::DrawConstants constants{item.model, item.color * mesh->baseColor, {item.metersPerRepeat, 0.0F, 0.0F, 0.0F}};
             vkCmdPushConstants(commandBuffer, pipeline.GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(constants), &constants);
             const VkBuffer vertexBuffer = mesh->vertexBuffer.GetHandle();
             constexpr VkDeviceSize vertexOffset = 0;

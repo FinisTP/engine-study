@@ -340,7 +340,8 @@ void SceneRuntime::AddDebugLines(umbra::core::DrawList &drawList) const
 void SceneRuntime::Rebind()
 {
     const std::size_t unresolved = umbra::scene::BindRenderables(
-        *world_, [&](const std::string &model, std::uint32_t mesh) { return models_.Resolve(model, mesh); });
+        *world_, [&](const std::string &model, std::uint32_t mesh) { return models_.Resolve(model, mesh); },
+        [&](const std::string &material) { return models_.ResolveMaterial(material); });
     bindProblem_.clear();
     if (unresolved > 0)
     {

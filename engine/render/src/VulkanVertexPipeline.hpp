@@ -16,6 +16,7 @@ namespace umbra::render
     {
         glm::mat4 model{1.0F};
         glm::vec4 color{1.0F};
+        glm::vec4 texturing{0.0F}; // x = meters per repeat for world-space texture coordinates, 0 = mesh UVs
     };
 
     class VulkanVertexPipeline final

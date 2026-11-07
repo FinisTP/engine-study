@@ -45,7 +45,7 @@ namespace umbra::scene
         return entities;
     }
 
-    std::size_t BindRenderables(world::World &world, const MeshResolver &resolve)
+    std::size_t BindRenderables(world::World &world, const MeshResolver &resolve, const MaterialResolver &materials)
     {
         std::size_t unresolved = 0;
         world.ForEach([&](world::Entity entity) {
@@ -55,6 +55,15 @@ namespace umbra::scene
             const auto [mesh, texture] = resolve(renderable->model, renderable->mesh);
             renderable->meshHandle = mesh;
             renderable->textureHandle = texture;
+            renderable->tint = glm::vec4{1.0F};
+            renderable->metersPerRepeat = 0.0F;
+            if (!renderable->material.empty() && materials)
+                if (const std::optional<MaterialBinding> binding = materials(renderable->material))
+                {
+                    renderable->textureHandle = binding->texture;
+                    renderable->tint = binding->tint;
+                    renderable->metersPerRepeat = binding->metersPerRepeat;
+                }
             if (!mesh)
                 ++unresolved;
         });

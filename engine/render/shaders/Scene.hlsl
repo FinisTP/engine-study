@@ -10,6 +10,7 @@ struct DrawConstants
 {
     column_major float4x4 model;
     float4 color;
+    float4 texturing; // x = meters per repeat for world-space texture coordinates, 0 = mesh UVs
 };
 
 [[vk::binding(0, 0)]] ConstantBuffer<SceneUniform> scene;
@@ -47,6 +48,15 @@ VertexOutput VSMain(VertexInput input)
     // Correct for rotation and uniform scale; non-uniform scale would need the inverse-transpose.
     output.normal = normalize(mul((float3x3)perDraw.model, input.normal));
     output.uv = input.uv;
+    if (perDraw.texturing.x > 0.0F)
+    {
+        // World-space texture coordinates (WorldUv.md): project onto the plane facing the normal,
+        // so a wall 6 m long repeats the texture 6 / metersPerRepeat times instead of stretching it.
+        const float3 n = abs(output.normal);
+        const float3 p = worldPosition.xyz;
+        const float2 planar = (n.x >= n.y && n.x >= n.z) ? float2(p.z, -p.y) : (n.y >= n.z) ? float2(p.x, p.z) : float2(p.x, -p.y);
+        output.uv = planar / perDraw.texturing.x;
+    }
     output.baseColor = perDraw.color;
     return output;
 }

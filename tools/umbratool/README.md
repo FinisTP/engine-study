@@ -12,6 +12,10 @@ layer as the editor (`engine/authoring`), so all three report the same diagnosti
 | `UmbraTool policy-check <policy> --content <rpg> [--json]` | Is a learned enemy model readable, and does it still fit the content (same actions, same fingerprint)? The same check the game runs before using it. |
 | `UmbraTool draft <rpg> --npc <npc> (--idea "<text>" \| --from <draft>) [--apply] [--json]` | AI quest draft (P8B): asks the local Ollama model, or reads a saved draft, then prints what would be added, the play-through and problems. Changes the file only with `--apply` and no errors (old file kept as `<rpg>.before-draft`). Options: `--model` (default: `qwen2.5:7b` if installed, else an installed Qwen, else the first installed model), `--host` (default `http://localhost:11434`, local only), `--scenes` (default `<rpg folder>/../scenes`), `--fix <n>` (ask the model to fix problems up to n times, default 1), `--save-draft <file>`. |
 
+| `UmbraTool texture "<idea>" --assets <folder> [--name] [--count] [--seed] [--meters] [--size] [--model] [--host] [--json]` | AI texture (P8C): a local ComfyUI makes `--count` pictures (default 1); each is made seamless and saved as `textures/<name>.png` + `materials/<name>.material.json` (never overwriting). Without `--host` it tries ports 8000 and 8188; without `--model` it picks an installed SDXL checkpoint. Warns about visible seams and non-commercial model licenses. |
+
+`validate` also checks material files (`*.material.json`: image size, license warning).
+
 Exit codes: 0 ok, 1 errors found (or the fight couldn't run, or the draft has errors), 2 bad usage.
 
 `--json` prints `{"files", "errors", "warnings", "diagnostics": [{"severity", "code", "file",

@@ -101,6 +101,39 @@ Rules worth knowing:
 Without the editor: `UmbraTool draft assets\rpg\reference.rpg.json --npc elder --idea "..."`,
 then the same command with `--apply` (see `tools/umbratool/README.md`).
 
+## 2c. Make textures with AI
+
+**Once:**
+
+1. Install **ComfyUI Desktop** from [comfy.org](https://www.comfy.org) and start it.
+2. Download `sd_xl_base_1.0.safetensors` (Stability AI's SDXL base 1.0, about 7 GB) and put it in
+   ComfyUI's `models/checkpoints` folder. How long one texture takes on an 8 GB GPU is measured in the P8C.0 check (`docs/testing/p8c-ai-textures.md`).
+
+**Each texture:**
+
+1. In the editor, click the object to cover (a wall, the ground). Its texture should repeat, so
+   start with boxes like the settlement's walls.
+2. **AI texture** (menu bar). The window finds ComfyUI and selects the SDXL model.
+3. Looks like: `mossy cobblestone`. Meters per repeat: `2`. Variations: `4`. **Generate**.
+4. Click through the variations: each shows on the object in the scene view, repeating at its
+   real size. One marked "may show" has a visible seam.
+5. **Apply to object**. Ctrl+Z takes it off again; Ctrl+S saves the scene.
+
+What you get: `assets/textures/mossy_cobblestone.png` and `assets/materials/mossy_cobblestone.material.json`.
+The material records the model, prompt and seed, so the texture can be made again. The **Material**
+picker in the inspector puts the same material on other objects.
+
+Rules worth knowing:
+
+- Every prompt gets the project style from `assets/materials/style.json`. Change it once to change the
+  look of every new texture.
+- Hand-made textures work the same way: a PNG with power-of-two sides (64–2048) and a material file
+  (`engine/assets/include/Material.md`; `assets/materials/sample_bricks.material.json` is one).
+- Only a ComfyUI on this computer is used; nothing is uploaded.
+- `scripts\package.bat` warns about textures made with models whose license forbids selling.
+
+Without the editor: `UmbraTool texture "mossy cobblestone" --assets assets --count 2`.
+
 ## 3. Find a planted error
 
 Open `assets\rpg\reference.rpg.json` in a text editor. In the hero's `inventory`, change
@@ -165,4 +198,7 @@ Copy the zip to another PC, unzip, run `Umbra.exe`. Saves go to `%APPDATA%\Umbra
 | AI draft: "model ... is not installed" | Pick an installed model in the **Model** list (press **Refresh**), or run `ollama pull qwen3.5:9b`. |
 | A program in `out\build` vanishes, or a test says "operation not permitted" | Windows security removed or blocked it (programs that open network connections, even to this PC, can trigger this). Open Windows Security → Protection history, allow it, and build again. |
 | AI draft keeps failing the play-through | Make the idea simpler (one or two objectives), press **Ask the AI to fix the problems**, or write the quest by hand in the RPG forms (*quests* and *conversations*). |
+| AI texture: "ComfyUI is not running" | Start ComfyUI Desktop, then press **Find**. A command-line ComfyUI listens on 8188: that is tried too. |
+| AI texture: "ComfyUI has no model ..." | Put `sd_xl_base_1.0.safetensors` in ComfyUI's `models/checkpoints` folder and press **Find**. |
+| AI texture: "out of memory" | Close other GPU programs, use 1 variation, or a smaller model (SD 1.5). |
 | The package won't start on another PC | It needs a GPU with Vulkan 1.3 drivers. Start it from a `cmd` window to see the log messages. |

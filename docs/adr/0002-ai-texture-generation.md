@@ -1,6 +1,11 @@
 # ADR 0002: AI texture generation (roadmap P8C, decision O16)
 
-- Status: **accepted as plan** (2026-11-07, user answers in §7). Nothing implemented yet.
+- Status: **accepted; implemented** (2026-11-07, `#UMBRA-59`, evidence `../testing/p8c-ai-textures.md`).
+  P8C.0 (the real ComfyUI/SDXL run on the user's PC) is still open. Differences from the plan below:
+  the workflow is built in code (`localai::TextureWorkflow`), not a file in `tools/`; there is one
+  ComfyUI adapter rather than an abstract `ImageProvider` class (a second generator gets its own
+  functions next to it); textures are loaded straight from PNG (no derived cache file); the editor
+  previews variations on the selected object in the scene view instead of a 3×3 thumbnail.
 - Context: Umbra's AI content tools so far draft quests and dialogue (P8B), and the reference
   characters were made with Meshy (`#UMBRA-52`). The world itself still uses a 2×2 placeholder image
   stretched over cubes. Creators should be able to make surface textures (stone, wood, grass, roof,

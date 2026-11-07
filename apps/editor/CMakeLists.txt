@@ -14,6 +14,7 @@ target_sources(
         Editor.md
         RpgForms.cpp
         AiDraft.cpp
+        AiTexture.cpp
         # Shared with the game: model files -> GPU meshes (one copy of the code, two programs).
         ../umbra/ModelLibrary.cpp
         ../umbra/ModelLibrary.hpp
