@@ -5,11 +5,13 @@ target_sources(
     UmbraTurnCombat
     PRIVATE
         src/TurnEncounter.cpp
+        src/TurnEnvironment.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
         FILES
             include/TurnEncounter.hpp
+            include/TurnEnvironment.hpp
 )
 
 target_compile_features(UmbraTurnCombat PUBLIC cxx_std_20)

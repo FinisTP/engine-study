@@ -1,11 +1,27 @@
 # Umbra Engine - Current Development Status
 
-**Status date:** 2026-11-06 (Phase 1/2 records dated 2026-09-02)
-**Current milestone:** Phase 4 - Playable 3D sandbox, implemented; Windows/GPU/interactive gate open
+**Status date:** 2026-11-07 (Phase 1/2 records dated 2026-09-02)
+**Current milestone:** Phase 5 - Shared RPG rules and two combat modes, implemented; Windows gates for P3-P5 open
 **Phase 1 status:** Complete (interactive checklist unsigned)
 **Phase 2 status:** Complete
 **Phase 3 status:** Implemented. Headless tests verified on Linux; Windows build and GPU checks not run yet
 **Phase 4 status:** Implemented. Headless tests verified on Linux (18/18, GCC/Clang/ASan); Windows, GPU, audio and interactive checks not run yet
+**Phase 5 status:** Implemented. Headless tests verified on Linux (24/24, GCC/Clang/ASan); Windows build/CTest not run yet; not yet wired into the 3D game (P6)
+
+## Update 2026-11-07
+
+- Phase 5 (P5.1–P5.8) implemented in commits `#UMBRA-26` … `#UMBRA-33`. Evidence: [`testing/phase5-rules-combat.md`](testing/phase5-rules-combat.md).
+- User decisions: speed-ordered rounds, one action each; real-time cost paid at commit; statuses/cooldowns end with the encounter; full inventory rejects pickups. W0 moved after P5.
+
+## Phase 5 completed work (implemented 2026-11-07)
+
+| Area | What exists | Explained in |
+|---|---|---|
+| Content | `Umbra::Rpg`: versioned `umbra.rpg` JSON (statuses, skills, items, actor archetypes), validation, `assets/rpg/reference.rpg.json` | `engine/rpg/include/Rpg.md` |
+| State and rules | Characters (ids/counts), derived stats, inventory/equipment transactions, skill tree, shared action resolver | `engine/rpg/include/Rpg.md` |
+| Turn combat | `Umbra::TurnCombat`: speed rounds, conventional enemy, `TurnEnvironment` (reset/legal actions/step) | `engine/turncombat/include/TurnCombat.md` |
+| Real-time combat | `Umbra::RealtimeCombat`: wind-up/commit/active/recovery, cone hits, cooldowns, conventional enemy | `engine/realtimecombat/include/RealtimeCombat.md` |
+| Integration | `Umbra::Encounter`: one fight at a time, stale-decision rejection, shared progression | `engine/encounter/include/Encounter.md` |
 
 ## Update 2026-11-06
 
@@ -80,6 +96,10 @@ The Phase 1 verification record remains in [`testing/phase1-smoke-test.md`](test
 
 ```text
 Umbra executable (apps/umbra: Main, ModelLibrary, SceneRuntime)
+|- Umbra::Encounter  coordinator for both combat modes   -> TurnCombat, RealtimeCombat   (not linked by the app yet)
+|- Umbra::TurnCombat turn controller, TurnEnvironment    -> Rpg
+|- Umbra::RealtimeCombat real-time controller           -> Rpg
+|- Umbra::Rpg        content, characters, inventory, skills, shared resolver -> Core, nlohmann-json
 |- Umbra::Gameplay   player, physics bridge, interaction, areas, pause menu -> World, Physics
 |- Umbra::Physics    Jolt adapter (private dependency)  -> Core, Jolt
 |- Umbra::Audio      WAV loader, mixer, sound bank      -> Core, Assets
@@ -96,7 +116,7 @@ Umbra executable (apps/umbra: Main, ModelLibrary, SceneRuntime)
 UmbraSceneCheck      headless scene/model validator      -> Scene, Assets
 ```
 
-Headless rule (checked by `Umbra.HeadlessDependencies`): Core, World, Assets, Scene, Physics, Gameplay, Audio and UmbraSceneCheck never link Render, Platform, SDL3, Vulkan or ImGui.
+Headless rule (checked by `Umbra.HeadlessDependencies`): Core, World, Assets, Scene, Physics, Gameplay, Audio, Rpg, TurnCombat, RealtimeCombat, Encounter and UmbraSceneCheck never link Render, Platform, SDL3, Vulkan or ImGui. `Umbra.TurnOnlyDependencies` / `Umbra.RealtimeOnlyDependencies` check that each combat mode builds without the other.
 
 Long-lived device and scene resources survive resize. Swapchain images, their views, depth images, framebuffers, compatible pipelines, per-frame submission resources, and overlay resources are recreated when presentation changes.
 
@@ -173,7 +193,7 @@ All seven items of the old Phase 3 entry point are implemented (see the table ab
 - Gameplay-state preservation across scene reloads (done in P4.4: hot reload keeps the player; F5/F9 checkpoints).
 - Packaging: the app reads assets from the source tree (`UMBRA_ASSET_DIRECTORY`) and caches in the build tree. A relocatable package layout is a P6/P9 task (roadmap T43).
 
-Next: run the Windows/GPU gates in [`testing/phase3-assets-world.md`](testing/phase3-assets-world.md) and [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md), then W0 (web feasibility), then P5.
+Next: run the Windows gates in [`testing/phase3-assets-world.md`](testing/phase3-assets-world.md), [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md) and [`testing/phase5-rules-combat.md`](testing/phase5-rules-combat.md), then W0 (web feasibility), then P6.
 
 ## Local verification
 

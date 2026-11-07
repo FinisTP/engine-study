@@ -98,12 +98,15 @@ Instance/device/surface/swapchain ownership; VMA buffers/images and staging uplo
 
 The importer handles the first primitive and one base-color texture of a controlled glTF asset. Textures have one mip level. Initialization uploads wait for the graphics queue. Existing stable resource handles are **not proof that general generational resource management is implemented**.
 
-Phase 3 (2026-11-01) added the general world, glTF hierarchy import, generational resource handles, derived asset cache and transactional reload, all still pending Windows/GPU verification. Phase 4 (2026-11-06) added the Jolt physics adapter, a third-person player, procedural walk animation, WAV audio, interactables, a pause menu, portals between two areas and development checkpoints, also pending Windows/GPU/interactive verification. The source does not establish PBR/HDR/shadows/IBL, a skeletal animation system, RPG systems, editor, C# host, or AI integration. Do not infer completion from roadmap language or empty directories.
+Phase 3 (2026-11-01) added the general world, glTF hierarchy import, generational resource handles, derived asset cache and transactional reload, all still pending Windows/GPU verification. Phase 4 (2026-11-06) added the Jolt physics adapter, a third-person player, procedural walk animation, WAV audio, interactables, a pause menu, portals between two areas and development checkpoints, also pending Windows/GPU/interactive verification. Phase 5 (2026-11-07) added headless RPG rules (content, stats, inventory, skill tree, shared resolver) and independent turn and real-time combat controllers with a coordinator, not yet wired into the 3D game. The source does not establish PBR/HDR/shadows/IBL, a skeletal animation system, quests/conversation/saves, editor, C# host, or AI integration. Do not infer completion from roadmap language or empty directories.
 
-### Observed target graph (2026-11-06, after Phase 4)
+### Observed target graph (2026-11-07, after Phase 5)
 
 ```text
 Umbra (apps/umbra: Main, ModelLibrary, SceneRuntime)
+  ├─ (not linked yet) Umbra::Encounter → TurnCombat, RealtimeCombat (combat coordinator)
+  │     Umbra::TurnCombat → Rpg      Umbra::RealtimeCombat → Rpg   (independent controllers)
+  │     Umbra::Rpg → Core, nlohmann-json  (content, characters, inventory, skills, shared resolver)
   ├─ Umbra::Gameplay → World, Physics                (player, physics bridge, interaction, areas, pause menu)
   ├─ Umbra::Physics → Core; Jolt private             (bodies, raycasts, character)
   ├─ Umbra::Audio   → Core, Assets                   (WAV loader, mixer, sound bank)
@@ -116,14 +119,16 @@ Umbra (apps/umbra: Main, ModelLibrary, SceneRuntime)
   └─ Umbra::Core    → glm                            (SlotMap, DrawList, MeshData, RetireQueue, Diagnostic, clocks)
 UmbraSceneCheck → Scene, Assets                      (headless validator CLI)
 Tests: Umbra.Core, .Platform, .Diagnostics.*, .Render, .World, .Assets, .Scene, .Physics,
-       .Gameplay, .Audio, .SceneCheck.Sample/.Settlement/.Dungeon/.Broken, .HeadlessDependencies
+       .Gameplay, .Audio, .Rpg, .TurnCombat, .RealtimeCombat, .Encounter,
+       .SceneCheck.Sample/.Settlement/.Dungeon/.Broken, .HeadlessDependencies,
+       .TurnOnlyDependencies, .RealtimeOnlyDependencies
 ```
 
-Core, World, Assets, Scene, Physics, Gameplay, Audio and UmbraSceneCheck must stay headless; `Umbra.HeadlessDependencies` enforces it. App path: `/apps/umbra`, executable `Umbra`. Still-empty folders: `/apps/editor`, `/apps/game`, `/engine/script`, `/engine/editor`, `/samples`. Do not rename the existing app to `/apps/game` because an illustrative tree used that name.
+Core, World, Assets, Scene, Physics, Gameplay, Audio, Rpg, TurnCombat, RealtimeCombat, Encounter and UmbraSceneCheck must stay headless; each combat controller must build without the other; `Umbra.HeadlessDependencies` enforces it. App path: `/apps/umbra`, executable `Umbra`. Still-empty folders: `/apps/editor`, `/apps/game`, `/engine/script`, `/engine/editor`, `/samples`. Do not rename the existing app to `/apps/game` because an illustrative tree used that name.
 
-Commit messages follow `issue #UMBRA-<n> <summary>`. Phase 3 is `#UMBRA-13` … `#UMBRA-20`; Phase 4 is `#UMBRA-21` … `#UMBRA-25`.
+Commit messages follow `issue #UMBRA-<n> <summary>`. Phase 3 is `#UMBRA-13` … `#UMBRA-20`; Phase 4 is `#UMBRA-21` … `#UMBRA-25`; Phase 5 is `#UMBRA-26` … `#UMBRA-33`.
 
-**Current milestone:** Phase 4, Playable 3D sandbox, is implemented and verified headlessly on Linux. The Windows build, GPU, audio and interactive checks are open (`docs/testing/phase4-sandbox.md`), as are Phase 3's (`docs/testing/phase3-assets-world.md`). Next: W0, then P5.
+**Current milestone:** Phase 5, shared RPG rules and two combat modes, is implemented and verified headlessly on Linux. Windows gates are open for P3 (`docs/testing/phase3-assets-world.md`), P4 (`docs/testing/phase4-sandbox.md`, including GPU/audio/interactive) and P5 (`docs/testing/phase5-rules-combat.md`, build and CTest). Next: W0 (moved after P5 by the user on 2026-11-07), then P6.
 
 ## 5. Superseded directions and explicit exclusions
 
@@ -193,8 +198,8 @@ None of these is a reason to halt basic Assets and World work.
 |---|---|
 | Art style; skeletal animation (camera = third-person orbit, collision = Jolt, animation = procedural only: decided 2026-11-06) | When reference presentation needs it |
 | One enemy instance vs reusable archetype; encounter arrangement | P5/P6 reference content |
-| Turn order/AP rules, real-time attack/cost timing, effect clocks and mode-transition policy | P5 |
-| Skill-tree respec, inventory overflow, quest failure, save-point UX | P5/P6 |
+| ~~Turn order/AP, real-time cost timing, effect clocks, mode transitions~~ decided 2026-11-07: speed rounds with one action; cost paid at commit; statuses/cooldowns end with the encounter, modes change only between encounters | done |
+| Skill-tree respec, quest failure, save-point UX (inventory overflow decided 2026-11-07: a full inventory rejects the pickup) | P6 |
 | Exact source schema/descriptor implementation, serialization library | Relevant P3/P5 data slice |
 | Training hardware, dependency stack, algorithm, reward weights, policy thresholds and difficulty profile | P8A experiment |
 | Local authoring model, bridge, download size/license; optional cloud credential/cost UX | P8B |

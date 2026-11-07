@@ -2,7 +2,7 @@ find_package(Catch2 3 CONFIG REQUIRED)
 
 # Turn-only fixture: links the turn controller and the shared rules, nothing real-time (T39).
 add_executable(UmbraTurnCombatTests)
-target_sources(UmbraTurnCombatTests PRIVATE TurnEncounterTests.cpp)
+target_sources(UmbraTurnCombatTests PRIVATE TurnEncounterTests.cpp TurnEnvironmentTests.cpp)
 target_include_directories(UmbraTurnCombatTests PRIVATE ${PROJECT_SOURCE_DIR}/tests/rpg)
 target_compile_definitions(UmbraTurnCombatTests PRIVATE UMBRA_TEST_ASSET_DIRECTORY="${PROJECT_SOURCE_DIR}/assets")
 target_compile_features(UmbraTurnCombatTests PRIVATE cxx_std_20)

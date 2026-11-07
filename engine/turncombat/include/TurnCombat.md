@@ -46,3 +46,25 @@ picks from (roadmap P5.8).
 3. Nothing to attack with: wait.
 
 It submits through `Submit` like the player, so it can never do anything the rules forbid.
+
+## Headless environment (P5.8)
+
+`TurnEnvironment` is the seam a training tool or scripted test drives, with no training framework
+inside the engine:
+
+| Call | Meaning |
+|---|---|
+| `Reset()` | Rebuild every fighter from its archetype (`ScenarioSlot{actor, id, team}`), new encounter: round 1, empty decision log, no statuses, step counter 0 |
+| `Current()` | Who must decide now (nothing when done) |
+| `LegalActions()` | The exact set `Step` accepts |
+| `Step(intent)` | One decision; the environment numbers it. Returns the rejection (if any), the events it caused, `done`, `winner` |
+
+It wraps the same `TurnEncounter` the game uses, so there is no second copy of the rules to drift
+(roadmap T55): a test replays a recorded episode through a plain `TurnEncounter` and gets identical
+fighters. One accepted step is one fighter's turn; a rejected step uses nothing (T60). Reset destroys
+the old encounter before rebuilding characters, so no counter, status or log survives into the next
+episode.
+
+Not here yet, on purpose: observation encoding, action masks as tensors, rewards and seeds. Those
+belong to the P8A observation/action contract. There is no randomness in the rules, so an episode
+is fully determined by its decisions.

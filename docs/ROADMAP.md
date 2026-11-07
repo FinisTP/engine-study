@@ -32,17 +32,17 @@ The three formerly open decisions are resolved: the combat modes are independent
 
 **First action for a new agent:** finish B0 — the Windows-side checks are still open (see the B0 record). Re-inspect the checkout; if it has advanced past this dashboard, preserve completed work and select the earliest genuinely unmet task. Do not blindly implement P3.1 again.
 
-**Current next task:** run the Phase 3 Windows/GPU gate (`testing/phase3-assets-world.md`, sections 3–4) and close B0. Then W0 (narrow web feasibility) and P4.1. A document creation date does not update source-code completion dates.
+**Current next task:** run the open Windows/GPU/interactive gates (`testing/phase3-assets-world.md` sections 3–4, `testing/phase4-sandbox.md` sections 4–5, `testing/phase5-rules-combat.md` section 3) and close B0. Then W0 (narrow web feasibility; the user moved it after P5 on 2026-11-07) and P6. A document creation date does not update source-code completion dates.
 
-| Gate | Dependency | Status (updated 2026-11-01) | Evidence / exit summary |
+| Gate | Dependency | Status (updated 2026-11-07) | Evidence / exit summary |
 |---|---|---|---|
 | P1 Foundation | — | Documented complete, 2026-09-02; interactive checklist unsigned | Status doc reports tests, lifecycle, diagnostics, CI and ownership checks. But `testing/phase1-smoke-test.md` is still "Partial" with every checklist item unticked. Core/Diagnostics/Platform tests re-run on Linux/GCC 2026-11-01 (pass). |
 | P2 Rendering | P1 | Documented complete, 2026-09-02 | `testing/phase2-rendering-smoke-test.md` records user-confirmed pass of the textured glTF primitive, validation, resize recovery and RenderDoc checks. Not re-run since. |
 | B0 Baseline reconciliation | Existing checkout | In progress | Source inspection and Linux test run done 2026-11-01. Open: Windows MSVC/clang-cl/ASan build + CTest, CI status, Phase 1 checklist sign-off. |
 | P3 Assets and World | B0; existing P1/P2 | Implemented 2026-11-01; headless verified on Linux; **Windows/GPU gate open** | All tasks P3.1–P3.8 implemented. Evidence and the remaining checklist: `testing/phase3-assets-world.md`. |
-| W0 Early web feasibility | P3 core contracts; minimal rendering sample | Planned experiment | Native-independent simulation, browser rendering/storage proof; policy experiment when available. |
-| P4 Playable 3D sandbox | P3 | In progress (started 2026-11-06) | Player movement, collision, interaction, minimal presentation and checkpoint restart. Task status in the P4 section. |
-| P5 Shared rules and combat modes | P3; P4 for graphical integration | Planned | Common RPG rules; turn-only, real-time-only and integrated fixtures. |
+| W0 Early web feasibility | P3 core contracts; minimal rendering sample | Planned experiment; user scheduled it after P5 (2026-11-07) | Native-independent simulation, browser rendering/storage proof; policy experiment when available. |
+| P4 Playable 3D sandbox | P3 | Implemented 2026-11-06; headless verified on Linux; **Windows/GPU/interactive gate open** | All tasks P4.1–P4.5 implemented. Evidence and checklists: `testing/phase4-sandbox.md`. |
+| P5 Shared rules and combat modes | P3; P4 for graphical integration | Implemented 2026-11-07; headless verified on Linux; Windows gate open | P5.1–P5.8 implemented; turn-only, real-time-only and combined fixtures pass. Not yet wired into the 3D game (P6). Evidence: `testing/phase5-rules-combat.md`. |
 | P6 Complete offline reference game | P4/P5 | Planned | Conversation, quest, save/load, rewards, retry and complete offline journey. |
 | P7 Creator workflow | P3/P5/P6 contracts | Planned | Data editing, undo, validation, content reload, incremental rebuild and packaging workflow. |
 | P8A Learned turn-based enemy | P5 turn rules; headless fixture | Planned independent track | Training → export → native evaluation → local inference with fallback. |
@@ -466,6 +466,18 @@ Emscripten documents a WebGPU integration through Emdawnwebgpu [S8]. Investigate
 
 **Important:** “independent” does not require dynamic loading or a plugin SDK. It requires that either mode can function without the other. Use the simplest compile/registration separation demonstrating this property.
 
+<!-- P5-status -->
+| Task | Status | Evidence |
+|---|---|---|
+| P5.1 | Implemented: `Umbra::Rpg`, versioned `umbra.rpg` JSON content (statuses with separate turn/second clocks, skills, items, actor archetypes), all-or-nothing validation, character state by ids/counts, derived stats | `tests/rpg/ContentTests.cpp`; `engine/rpg/include/Rpg.md` |
+| P5.2 | Implemented: all-or-nothing add/remove/equip/unequip; full inventory rejects the pickup (user decision); maxima clamp, never heal | `tests/rpg/InventoryTests.cpp` (T11, T46) |
+| P5.3 | Implemented: unlock with prerequisites and points; requirement loops rejected on load | `tests/rpg/SkillTreeTests.cpp` (T12) |
+| P5.4 | Implemented: shared resolver (check, pay, apply, deaths, events), decision-id log | `tests/rpg/RulesTests.cpp` (T07, T10, T46) |
+| P5.5 | Implemented: `Umbra::TurnCombat`, speed rounds with one action (user decision), wait, status ticks, conventional enemy, fixed regression | `tests/turncombat/TurnEncounterTests.cpp`, `Umbra.TurnOnlyDependencies` (T39); `engine/turncombat/include/TurnCombat.md` |
+| P5.6 | Implemented: `Umbra::RealtimeCombat`, wind-up/commit/active/recovery, pay at commit (user decision), range+cone hits once per activation, interruption, cooldowns, conventional enemy | `tests/realtimecombat/RealtimeEncounterTests.cpp`, `Umbra.RealtimeOnlyDependencies` (T06, T08, T40); `engine/realtimecombat/include/RealtimeCombat.md` |
+| P5.7 | Implemented: `Umbra::Encounter`, one controller at a time, modes change only between fights, statuses/cooldowns end with the encounter (user decision), stale decisions rejected | `tests/encounter/EncounterTests.cpp` (T09, T47); `engine/encounter/include/Encounter.md` |
+| P5.8 | Implemented: `TurnEnvironment` reset / legal actions / step over the real turn controller; reset isolation and game-path parity | `tests/turncombat/TurnEnvironmentTests.cpp` (T49, T55, T60) |
+
 ### P6 — Complete offline reference RPG
 
 **Dependency:** P4/P5. **Goal:** finish the game with conventional AI before AI experiments become release dependencies.
@@ -757,9 +769,9 @@ These are bounded decisions, not a request to stop and ask the user all of them 
 | O02 | Source format, serializer, descriptor approach, artifact version/hash design. **P3.5 (2026-11-01):** models stay glTF; derived `.umodel` is a custom versioned binary with FNV-1a source+dependency hash (see `engine/assets/include/AssetPipeline.md`). **P3.6:** scenes are versioned JSON (`*.scene.json`, nlohmann-json, already a tinygltf dependency) with string durable ids; see `engine/scene/include/SceneFormat.md`. | P3.5/P3.6 | Tool interop or measured pipeline issue |
 | O03 | Camera/controls/art and minimal animation approach. **User decision 2026-11-06:** third-person orbit camera; procedural animation only in P4 (no skeletal system yet). | P4.2/P4.3 | User reference-game direction changes |
 | O04 | Jolt integration suitability; retain original intent pending spike. **P4.1 (2026-11-06, user-approved):** Jolt 5.6 (vcpkg `joltphysics`) behind `Umbra::Physics`; single-threaded job system; boxes/spheres/capsules + `CharacterVirtual`; see `engine/physics/include/Physics.md`. | P4.1 | Platform/build/behavior mismatch |
-| O05 | Turn order/AP, real-time cost timing, effect clocks and mode integration | P5 controllers | A concrete mechanic requires another rule |
-| O06 | Enemy instance/archetype meaning; reference encounter arrangement | P5/P6 content | User content scope clarification |
-| O07 | Overflow, respec, quest failure, save/retry UX | P5/P6 | Reference walkthrough softlock or usability finding |
+| O05 | Turn order/AP, real-time cost timing, effect clocks and mode integration. **User decisions 2026-11-07:** speed-ordered rounds, one action per fighter; real-time cost paid at commit (end of wind-up), interruption during wind-up is free, no refund after commit; statuses and cooldowns end with the encounter and modes change only between encounters. | P5 controllers | A concrete mechanic requires another rule |
+| O06 | Enemy instance/archetype meaning; reference encounter arrangement. **P5 default:** an actor definition is a reusable archetype; each placement is a separate character. Encounter arrangement still P6. | P5/P6 content | User content scope clarification |
+| O07 | Overflow, respec, quest failure, save/retry UX. **User decision 2026-11-07:** a full inventory rejects the pickup and the item stays where it was. Respec: none yet (default). Quest failure and save/retry: P6. | P5/P6 | Reference walkthrough softlock or usability finding |
 | O08 | Training tools/algorithm/hardware; external Python is proposed default | P8A.2 | Inadequate results or workflow/deployment cost |
 | O09 | Reward/style objective and held-out evaluation thresholds | Before final P8A evaluation | Evidence shows confounding or reward exploit |
 | O10 | Inference runtime/operators/device and budget; candidate CPU ONNX path | P8A.4 | Actual policy latency/resource/platform issue |
