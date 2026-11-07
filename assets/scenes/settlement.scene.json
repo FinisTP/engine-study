@@ -103,6 +103,61 @@
       }
     },
     {
+      "id": "elder",
+      "name": "Elder Mara",
+      "position": [
+        2.5,
+        0.9,
+        1.5
+      ],
+      "scale": [
+        0.3,
+        0.9,
+        0.3
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.6,
+        0.35,
+        0.75,
+        1
+      ],
+      "collider": {},
+      "interactable": {
+        "prompt": "Talk to Elder Mara",
+        "conversation": "elder_mara"
+      }
+    },
+    {
+      "id": "save_stone",
+      "name": "Save stone",
+      "position": [
+        -1.5,
+        0.4,
+        -2
+      ],
+      "scale": [
+        0.3,
+        0.4,
+        0.3
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.3,
+        0.9,
+        1.0,
+        1
+      ],
+      "collider": {},
+      "interactable": {
+        "prompt": "Save at the stone",
+        "save": true,
+        "sound": "audio/interact.wav"
+      }
+    },
+    {
       "id": "house_a",
       "name": "House A",
       "position": [

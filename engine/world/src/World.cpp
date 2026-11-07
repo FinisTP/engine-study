@@ -244,6 +244,21 @@ namespace umbra::world
         return record && record->interactable ? &*record->interactable : nullptr;
     }
 
+    bool World::SetSpawner(Entity entity, Spawner spawner)
+    {
+        Record *record = Get(entity);
+        if (record == nullptr)
+            return false;
+        record->spawner = std::move(spawner);
+        return true;
+    }
+
+    const Spawner *World::GetSpawner(Entity entity) const noexcept
+    {
+        const Record *record = Get(entity);
+        return record && record->spawner ? &*record->spawner : nullptr;
+    }
+
     bool World::SetPortal(Entity entity, Portal portal)
     {
         Record *record = Get(entity);

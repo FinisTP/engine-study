@@ -80,6 +80,19 @@ namespace umbra::world
         std::string prompt;  // shown while in reach, e.g. "Read sign"
         std::string message; // shown after using it
         std::string sound;   // optional sound file played on use
+        std::string conversation; // starts this conversation (rpg content id) instead of a message
+        bool save = false;        // a save stone: writes the manual save
+    };
+
+    // An enemy area: `count` roamers of random actors from `pool` wander within `radius` of the
+    // entity; touching one starts a fight with up to `group` enemies from the pool.
+    struct Spawner final
+    {
+        std::vector<std::string> pool;
+        int count = 1;
+        float radius = 3.0F;
+        bool chase = false; // roamers chase the player on sight
+        int group = 3;
     };
 
     // Walking into this entity's box (its transform applied to the -1..1 cube) moves the
@@ -139,6 +152,8 @@ namespace umbra::world
         [[nodiscard]] Collider *GetCollider(Entity entity) noexcept;
         bool SetInteractable(Entity entity, Interactable interactable);
         [[nodiscard]] const Interactable *GetInteractable(Entity entity) const noexcept;
+        bool SetSpawner(Entity entity, Spawner spawner);
+        [[nodiscard]] const Spawner *GetSpawner(Entity entity) const noexcept;
         bool SetPortal(Entity entity, Portal portal);
         [[nodiscard]] const Portal *GetPortal(Entity entity) const noexcept;
 
@@ -166,6 +181,7 @@ namespace umbra::world
             std::optional<Collider> collider;
             std::optional<Interactable> interactable;
             std::optional<Portal> portal;
+            std::optional<Spawner> spawner;
         };
 
         [[nodiscard]] const Record *Get(Entity entity) const noexcept;

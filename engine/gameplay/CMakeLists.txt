@@ -10,6 +10,7 @@ target_sources(
         src/PauseMenu.cpp
         src/Interaction.cpp
         src/Area.cpp
+        src/Roamer.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
@@ -20,6 +21,7 @@ target_sources(
             include/PauseMenu.hpp
             include/Interaction.hpp
             include/Area.hpp
+            include/Roamer.hpp
 )
 
 target_compile_features(UmbraGameplay PUBLIC cxx_std_20)

@@ -39,6 +39,7 @@ namespace umbra::scene
             std::optional<world::Collider> collider;
             std::optional<world::Interactable> interactable;
             std::optional<world::Portal> portal;
+            std::optional<world::Spawner> spawner;
         };
 
         struct ParsedScene final
@@ -178,7 +179,7 @@ namespace umbra::scene
                 report.Error("entity.field.type", where, "expected an object");
                 return std::nullopt;
             }
-            static const std::set<std::string> knownKeys{"prompt", "message", "sound"};
+            static const std::set<std::string> knownKeys{"prompt", "message", "sound", "conversation", "save"};
             for (const auto &[key, unused] : value.items())
             {
                 if (!knownKeys.contains(key))
@@ -188,6 +189,14 @@ namespace umbra::scene
             ReadString(value, "prompt", interactable.prompt, where, report);
             ReadString(value, "message", interactable.message, where, report);
             ReadString(value, "sound", interactable.sound, where, report);
+            ReadString(value, "conversation", interactable.conversation, where, report);
+            if (const auto save = value.find("save"); save != value.end())
+            {
+                if (save->is_boolean())
+                    interactable.save = save->get<bool>();
+                else
+                    report.Error("entity.field.type", where + ".save", "expected true or false");
+            }
             if (interactable.prompt.empty())
                 report.Error("entity.interactable.prompt", where + ".prompt", "needs a non-empty prompt");
             if (!interactable.sound.empty())
@@ -198,6 +207,54 @@ namespace umbra::scene
                     report.Warning("entity.interactable.sound", where + ".sound", "'" + interactable.sound + "' does not exist; it will be silent");
             }
             return interactable;
+        }
+
+        // "spawner": { "pool": ["wolf", "bandit"], "count": 3, "radius": 4, "chase": true, "group": 3 }
+        // Actor ids are checked against the rpg content by the game when the area loads.
+        std::optional<world::Spawner> ParseSpawner(const json &value, const std::string &where, Report &report)
+        {
+            if (!value.is_object())
+            {
+                report.Error("entity.field.type", where, "expected an object");
+                return std::nullopt;
+            }
+            static const std::set<std::string> knownKeys{"pool", "count", "radius", "chase", "group"};
+            for (const auto &[key, unused] : value.items())
+            {
+                if (!knownKeys.contains(key))
+                    report.Warning("entity.field.unknown", where + "." + key, "unknown field is ignored (typo?)");
+            }
+            world::Spawner spawner;
+            const auto pool = value.find("pool");
+            if (pool != value.end() && pool->is_array())
+            {
+                for (const json &actor : *pool)
+                {
+                    if (actor.is_string() && !actor.get<std::string>().empty())
+                        spawner.pool.push_back(actor.get<std::string>());
+                    else
+                        report.Error("entity.spawner.pool", where + ".pool", "pool entries must be actor ids");
+                }
+            }
+            if (spawner.pool.empty())
+                report.Error("entity.spawner.pool", where + ".pool", "needs at least one actor id");
+            const auto number = [&](const char *key, double min, double max, double fallback) {
+                const auto it = value.find(key);
+                if (it == value.end())
+                    return fallback;
+                if (!it->is_number() || it->get<double>() < min || it->get<double>() > max)
+                {
+                    report.Error("entity.spawner.range", where + "." + key, "out of range");
+                    return fallback;
+                }
+                return it->get<double>();
+            };
+            spawner.count = static_cast<int>(number("count", 0, 20, 1));
+            spawner.radius = static_cast<float>(number("radius", 0, 50, 3));
+            spawner.group = static_cast<int>(number("group", 1, 3, 3));
+            if (const auto chase = value.find("chase"); chase != value.end())
+                spawner.chase = chase->is_boolean() && chase->get<bool>();
+            return spawner;
         }
 
         // "portal": { "scene": "scenes/dungeon.scene.json", "spawn": "entry" }
@@ -229,7 +286,7 @@ namespace umbra::scene
 
         EntityDesc ParseEntity(const json &entity, const std::string &where, const SceneLoadOptions &options, Report &report)
         {
-            static const std::set<std::string> knownKeys{"id", "name", "parent", "position", "rotation", "scale", "model", "mesh", "color", "instance", "collider", "interactable", "portal"};
+            static const std::set<std::string> knownKeys{"id", "name", "parent", "position", "rotation", "scale", "model", "mesh", "color", "instance", "collider", "interactable", "portal", "spawner"};
             EntityDesc desc;
             for (const auto &[key, value] : entity.items())
             {
@@ -280,6 +337,8 @@ namespace umbra::scene
                 desc.interactable = ParseInteractable(*it, where + ".interactable", options, report);
             if (const auto it = entity.find("portal"); it != entity.end())
                 desc.portal = ParsePortal(*it, where + ".portal", options, report);
+            if (const auto it = entity.find("spawner"); it != entity.end())
+                desc.spawner = ParseSpawner(*it, where + ".spawner", report);
             return desc;
         }
 
@@ -487,6 +546,10 @@ namespace umbra::scene
                     interactable["message"] = i->message;
                 if (!i->sound.empty())
                     interactable["sound"] = i->sound;
+                if (!i->conversation.empty())
+                    interactable["conversation"] = i->conversation;
+                if (i->save)
+                    interactable["save"] = true;
                 out["interactable"] = interactable;
             }
             if (const world::Portal *p = world.GetPortal(entity))
@@ -496,6 +559,8 @@ namespace umbra::scene
                     portal["spawn"] = p->spawn;
                 out["portal"] = portal;
             }
+            if (const world::Spawner *sp = world.GetSpawner(entity))
+                out["spawner"] = {{"pool", sp->pool}, {"count", sp->count}, {"radius", sp->radius}, {"chase", sp->chase}, {"group", sp->group}};
             return out;
         }
 
@@ -540,6 +605,8 @@ namespace umbra::scene
                 world.SetInteractable(entity, *desc.interactable);
             if (desc.portal)
                 world.SetPortal(entity, *desc.portal);
+            if (desc.spawner)
+                world.SetSpawner(entity, *desc.spawner);
             created.push_back(entity);
         }
         for (std::size_t i = 0; i < scene.entities.size(); ++i)

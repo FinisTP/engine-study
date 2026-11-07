@@ -343,6 +343,89 @@
         "scene": "scenes/settlement.scene.json",
         "spawn": "from_dungeon"
       }
+    },
+    {
+      "id": "save_stone",
+      "name": "Save stone",
+      "position": [
+        3,
+        0.4,
+        9
+      ],
+      "scale": [
+        0.3,
+        0.4,
+        0.3
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.3,
+        0.9,
+        1.0,
+        1
+      ],
+      "collider": {},
+      "interactable": {
+        "prompt": "Save at the stone",
+        "save": true,
+        "sound": "audio/interact.wav"
+      }
+    },
+    {
+      "id": "zone_entrance",
+      "name": "Wolf den",
+      "position": [
+        0,
+        0,
+        3
+      ],
+      "spawner": {
+        "pool": [
+          "wolf"
+        ],
+        "count": 2,
+        "radius": 3,
+        "chase": false,
+        "group": 2
+      }
+    },
+    {
+      "id": "zone_hall",
+      "name": "Bandit hall",
+      "position": [
+        0,
+        0,
+        -4
+      ],
+      "spawner": {
+        "pool": [
+          "wolf",
+          "bandit"
+        ],
+        "count": 2,
+        "radius": 3.5,
+        "chase": true,
+        "group": 3
+      }
+    },
+    {
+      "id": "zone_leader",
+      "name": "Leader's corner",
+      "position": [
+        0,
+        0,
+        -8.5
+      ],
+      "spawner": {
+        "pool": [
+          "bandit_leader"
+        ],
+        "count": 1,
+        "radius": 1,
+        "chase": true,
+        "group": 1
+      }
     }
   ]
 }

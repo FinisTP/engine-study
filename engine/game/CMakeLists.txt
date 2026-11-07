@@ -7,11 +7,13 @@ target_sources(
     UmbraGame
     PRIVATE
         src/SaveGame.cpp
+        src/GameSession.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
         FILES
             include/SaveGame.hpp
+            include/GameSession.hpp
 )
 
 target_compile_features(UmbraGame PUBLIC cxx_std_20)
