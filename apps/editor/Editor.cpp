@@ -238,7 +238,14 @@ void Editor::Play()
 
 bool Editor::OpenScene(const std::string &scenePath)
 {
-    auto doc = std::make_unique<authoring::Document>(assetRoot_ / FromUtf8(scenePath), authoring::SceneValidator({assetRoot_, {}}));
+    // Scenes can place whole models ("instance"), so the check needs to load them like the game does.
+    umbra::scene::SceneLoadOptions options;
+    options.assetRoot = assetRoot_;
+    options.models = [this](const std::string &path) -> const umbra::assets::Model * {
+        const LoadedModel *loaded = models_.Load(path);
+        return loaded ? &loaded->model : nullptr;
+    };
+    auto doc = std::make_unique<authoring::Document>(assetRoot_ / FromUtf8(scenePath), authoring::SceneValidator(options));
     std::vector<umbra::core::Diagnostic> diagnostics;
     if (!doc->Open(diagnostics))
     {

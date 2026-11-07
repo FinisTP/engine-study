@@ -17,23 +17,38 @@
 #include <imgui.h>
 #include <imgui_impl_sdl3.h>
 
+#include <SDL3/SDL.h>
+
 #include <chrono>
+#include <exception>
+#include <string>
 #include <thread>
 
 namespace
 {
+    // Startup problems are shown in a message box too: started by double-click or editor.bat the
+    // console closes with the program, so the log alone would never be seen.
+    int Fail(const std::string &message)
+    {
+        umbra::diagnostics::Critical(message);
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Umbra Editor", message.c_str(), nullptr);
+        return 1;
+    }
+
     int Run(const std::string &scenePath)
     {
         using umbra::platform::ApplicationEventType;
         umbra::platform::Platform platform;
         if (!platform.Initialize())
-            return 1;
+            return Fail("SDL could not start (see the console log).");
         int result = 0;
         {
             umbra::platform::Window window;
             umbra::render::Renderer renderer;
-            if (!window.Create("Umbra Editor", 1600, 900) || !renderer.Initialize(window))
-                return 1;
+            if (!window.Create("Umbra Editor", 1600, 900))
+                return Fail("The editor window could not be created.");
+            if (!renderer.Initialize(window))
+                return Fail("The Vulkan renderer could not start (see the console log).");
 
             // 1. Dear ImGui gets real mouse and keyboard input through its SDL backend.
             ImGui_ImplSDL3_InitForVulkan(window.GetNativeHandle());
@@ -90,7 +105,15 @@ int main(int argc, char **argv)
 {
     umbra::diagnostics::Initialize();
     umbra::diagnostics::InstallCrashHandlers();
-    const int result = Run(argc > 1 ? argv[1] : "scenes/settlement.scene.json");
+    int result = 1;
+    try
+    {
+        result = Run(argc > 1 ? argv[1] : "scenes/settlement.scene.json");
+    }
+    catch (const std::exception &error)
+    {
+        result = Fail(std::string{"The editor stopped: "} + error.what());
+    }
     umbra::diagnostics::UninstallCrashHandlers();
     umbra::diagnostics::Shutdown();
     return result;
