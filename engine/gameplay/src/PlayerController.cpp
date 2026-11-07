@@ -107,13 +107,16 @@ namespace umbra::gameplay
         return camera;
     }
 
-    std::optional<physics::RayHit> PlayerController::InteractionQuery(const physics::PhysicsWorld &physics) const
+    std::optional<physics::RayHit> PlayerController::InteractionQuery(const physics::PhysicsWorld &physics, bool low) const
     {
         if (!IsSpawned())
             return std::nullopt;
-        // Waist height (capsule center), starting at the capsule's front edge.
+        // Waist height (capsule center) or knee height (0.3 m above the feet), from the capsule's front edge.
         const glm::vec3 forward = YawForward(facingYaw_);
-        return physics.Raycast(Center(physics) + forward * settings_.radius, forward, settings_.interactDistance);
+        glm::vec3 origin = Center(physics) + forward * settings_.radius;
+        if (low)
+            origin.y = GetFeet(physics).y + 0.3F;
+        return physics.Raycast(origin, forward, settings_.interactDistance);
     }
 
     void PlayerController::AddDebugLines(const physics::PhysicsWorld &physics, core::DrawList &drawList) const

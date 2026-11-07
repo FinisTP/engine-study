@@ -7,13 +7,13 @@
 **Phase 3 status:** Implemented. Headless tests verified on Linux; Windows build and GPU checks not run yet
 **Phase 4 status:** Implemented. Headless tests verified on Linux (18/18, GCC/Clang/ASan); Windows, GPU, audio and interactive checks not run yet
 **Phase 5 status:** Implemented. Headless tests verified on Linux (24/24, GCC/Clang/ASan); Windows build/CTest not run yet; wired into the game in P6
-**Phase 6 status:** Implemented. Headless tests verified on Linux (26/26, GCC/Clang/ASan); the game app compiles; Windows build and play-through not run yet
+**Phase 6 status:** Implemented. Headless tests verified on Linux (27/27, GCC/Clang/ASan); Windows build 27/27 on 2026-11-07; first play test done (fixes in `#UMBRA-43`: save stone reach, separate battle arena, hit flash); full play-through open
 
 ## Update 2026-11-07 (evening)
 
 - Phase 6 (P6.1–P6.5) implemented in commits `#UMBRA-37` … `#UMBRA-42`. Evidence: [`testing/phase6-reference-game.md`](testing/phase6-reference-game.md).
 - New modules: `Umbra::Story` (quests, conversations), `Umbra::Game` (saves, `GameSession`); `gameplay::Roamer`; app layer `apps/umbra/GameFlow`.
-- Play: talk to Elder Mara (E), save at save stones (E), enemies roam the dungeon and touching one starts a fight in place; Tab switches turn-based/real-time outside fights; real-time keys 1–4, Q, F; death menu loads the save or autosave.
+- Play: talk to Elder Mara (E), save at save stones (E), enemies roam the dungeon and touching one starts a fight in a separate battle arena, then returns to the same spot; Tab switches turn-based/real-time outside fights; real-time keys 1–4, Q, F; death menu loads the save or autosave.
 
 ## Update 2026-11-07 (afternoon)
 

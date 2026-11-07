@@ -10,7 +10,7 @@ about input, placement and the screen.
 |-----------|--------------------------|----------------------------------------------|--------------------------------|
 | Exploring | yes                      | E use, Tab switch combat mode                | status lines, quest            |
 | Talking   | no                       | W/S + Enter answer, Esc walk away            | dialogue window                |
-| Fighting (turn) | no (fight in place) | W/S + Enter pick an action, F flee          | action menu, enemy HP, log     |
+| Fighting (turn) | no (stands on its arena marker) | W/S + Enter pick an action, F flee          | action menu, enemy HP, log     |
 | Fighting (real time) | yes             | 1-4 skills, Q potion, F flee                 | key help, enemy HP, log        |
 | Dead      | no                       | W/S + Enter                                  | Load save / Load autosave / New game |
 
@@ -22,13 +22,20 @@ The combat mode can only be switched while exploring (user decision, 2026-11-07)
   from its `pool`. Roamers wander near the spawner; `chase` roamers run at a player they can see
   (`engine/gameplay/include/Roamer.md`).
 - Touching a roamer (capsules less than 1 m apart) starts a fight with that enemy plus 0 to
-  `group - 1` random companions from the same pool. Companions appear next to it, on the side
-  away from the player. Nobody is teleported: the fight happens where it started.
-- Defeated enemies are removed from the world and stay gone until the area is loaded again.
-- Fleeing always works. Companions vanish; the touched enemy stays and cannot start a new
-  fight for 3 seconds, so the player can get away.
-- If the world is replaced mid-fight (restart, hot reload, checkpoint), the fight is abandoned
-  like a flee.
+  `group - 1` random companions from the same pool.
+- Every fight, turn-based or real-time, happens in the battle arena
+  (`assets/scenes/arena.scene.json`; user decision 2026-11-07, replacing "fights in place").
+  The player starts on the `player` marker, enemies on `enemy_1` .. `enemy_3`, facing the player.
+- The dungeon is not reloaded: `SceneRuntime::EnterArena` keeps its world, physics and roamers
+  aside, untouched, and `LeaveArena` puts them back, player at the exact spot they left.
+- After a win the touched enemy is removed from the dungeon and stays gone until the area is
+  loaded again. After a defeat the death menu shows over the arena.
+- Fleeing (F, or Flee in the turn menu) always works: back to the dungeon. The touched enemy
+  calms down and cannot start a new fight for 3 seconds, so the player can walk away.
+- If the arena is replaced mid-fight (restart, hot reload), the fight ends like a flee.
+  Loading a save or a new game drops the kept dungeon (the save decides the area).
+- Feedback: whoever takes damage flashes red for 0.2 s (`SceneRuntime::Flash`). Animation
+  comes later.
 
 ## Turn fights
 
@@ -47,7 +54,6 @@ Each frame:
 3. Each living enemy asks `ChooseRealtimeAction`; its `move` becomes the roamer's velocity
    order (2.5 m/s), its `act` is submitted.
 4. `Update(seconds)` advances wind-ups, hits and cooldowns.
-5. If every living enemy is more than 12 m away, the player has fled.
 
 ## Saves
 

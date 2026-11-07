@@ -107,6 +107,7 @@ bool SceneRuntime::ChangeScene(const std::string &scenePath, const std::string &
     if (!start)
         problems_.push_back("Warning: " + scenePath + " has no spawn '" + spawnId + "'; using 'player'.");
     scenePath_ = scenePath;
+    kept_.reset(); // leaving for another area: an open arena's kept area is dropped
     Install(std::move(fresh), start);
     RefreshWatchList();
     return true;
@@ -118,6 +119,7 @@ bool SceneRuntime::ChangeSceneAt(const std::string &scenePath, umbra::gameplay::
     if (!fresh)
         return false;
     scenePath_ = scenePath;
+    kept_.reset();
     Install(std::move(fresh), spot);
     RefreshWatchList();
     return true;
@@ -156,6 +158,7 @@ bool SceneRuntime::LoadCheckpoint(const std::filesystem::path &directory)
     for (umbra::world::Entity entity : roamerVisuals)
         fresh->Destroy(entity);
     scenePath_ = checkpoint.scene; // hot reload and portals continue from that area
+    kept_.reset();
     Install(std::move(fresh), umbra::gameplay::SpawnPoint{checkpoint.feet, checkpoint.yaw});
     RefreshWatchList();
     return true;
@@ -174,6 +177,7 @@ void SceneRuntime::Install(std::unique_ptr<umbra::world::World> fresh, std::opti
     if (const std::size_t failed = umbra::gameplay::CreateBodies(*fresh, *freshPhysics); failed > 0)
         umbra::diagnostics::Error(std::to_string(failed) + " collider(s) have unusable sizes and got no physics body.");
     roamers_.clear(); // their characters live in the old physics world, destroyed below
+    flashes_.clear();
     world_ = std::move(fresh);
     physics_ = std::move(freshPhysics);
     ++generation_;
@@ -283,6 +287,7 @@ SimulationEvents SceneRuntime::Simulate(float deltaSeconds, const umbra::gamepla
     }
     SyncPlayerVisual();
     SyncRoamerVisuals();
+    UpdateFlashes(deltaSeconds);
     return events;
 }
 
@@ -482,4 +487,84 @@ void SceneRuntime::SyncRoamerVisuals()
         world_->SetLocalTransform(roamers_[i].visual, transform);
     }
     world_->UpdateTransforms();
+}
+
+// ---------------- Battle arena and hit feedback ----------------
+
+bool SceneRuntime::EnterArena(const std::string &arenaScene)
+{
+    if (kept_)
+        return false;
+    std::unique_ptr<umbra::world::World> fresh = LoadFresh(arenaScene);
+    if (!fresh)
+        return false;
+    // 1. Keep the current area as it is. The player's character leaves its physics world,
+    //    so it doesn't stand there as an invisible obstacle when we come back.
+    auto kept = std::make_unique<KeptArea>();
+    kept->player = GetPlayerSpot();
+    player_.Despawn(*physics_);
+    kept->world = std::move(world_);
+    kept->physics = std::move(physics_);
+    kept->roamers = std::move(roamers_);
+    kept->scenePath = scenePath_;
+    kept_ = std::move(kept);
+    // 2. The arena becomes the live world; the player starts at its 'player' marker.
+    scenePath_ = arenaScene;
+    Install(std::move(fresh), std::nullopt);
+    RefreshWatchList();
+    return true;
+}
+
+bool SceneRuntime::LeaveArena()
+{
+    if (!kept_)
+        return false;
+    // 1. The kept area becomes live again (the arena and its physics are destroyed here).
+    world_ = std::move(kept_->world);
+    physics_ = std::move(kept_->physics);
+    roamers_ = std::move(kept_->roamers);
+    scenePath_ = kept_->scenePath;
+    const umbra::gameplay::SpawnPoint spot = kept_->player;
+    kept_.reset();
+    // 2. Fresh per-world state, the player back where they were.
+    flashes_.clear();
+    accumulator_ = 0.0;
+    player_.Reset();
+    stride_.Reset();
+    pendingJump_ = false;
+    portalArmed_ = false;
+    player_.Spawn(*physics_, spot.feet, spot.yaw);
+    ++generation_;
+    Rebind(); // models may have been reloaded while away
+    RefreshWatchList();
+    return true;
+}
+
+void SceneRuntime::Flash(umbra::world::Entity entity)
+{
+    constexpr float seconds = 0.2F;
+    umbra::world::Renderable *look = world_->GetRenderable(entity);
+    if (look == nullptr)
+        return;
+    for (FlashState &flash : flashes_)
+        if (flash.entity == entity)
+        {
+            flash.secondsLeft = seconds; // already red: just keep it red longer
+            return;
+        }
+    flashes_.push_back({entity, look->color, seconds});
+    look->color = {1.0F, 0.15F, 0.1F, 1.0F};
+}
+
+void SceneRuntime::UpdateFlashes(float seconds)
+{
+    // Count down; when done put the original color back (if the entity still exists).
+    for (FlashState &flash : flashes_)
+    {
+        flash.secondsLeft -= seconds;
+        if (flash.secondsLeft <= 0.0F)
+            if (umbra::world::Renderable *look = world_->GetRenderable(flash.entity))
+                look->color = flash.color;
+    }
+    std::erase_if(flashes_, [](const FlashState &flash) { return flash.secondsLeft <= 0.0F; });
 }

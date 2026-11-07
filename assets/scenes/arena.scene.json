@@ -1,0 +1,262 @@
+{
+  "format": "umbra.scene",
+  "version": 1,
+  "entities": [
+    {
+      "id": "floor",
+      "name": "Arena floor",
+      "position": [
+        0,
+        -0.5,
+        0
+      ],
+      "scale": [
+        7,
+        0.5,
+        7
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.32,
+        0.27,
+        0.22,
+        1
+      ],
+      "collider": {}
+    },
+    {
+      "id": "wall_north",
+      "name": "North wall",
+      "position": [
+        0,
+        1.5,
+        -7.25
+      ],
+      "scale": [
+        7.5,
+        1.5,
+        0.25
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.3,
+        0.28,
+        0.3,
+        1
+      ],
+      "collider": {}
+    },
+    {
+      "id": "wall_south",
+      "name": "South wall",
+      "position": [
+        0,
+        1.5,
+        7.25
+      ],
+      "scale": [
+        7.5,
+        1.5,
+        0.25
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.3,
+        0.28,
+        0.3,
+        1
+      ],
+      "collider": {}
+    },
+    {
+      "id": "wall_west",
+      "name": "West wall",
+      "position": [
+        -7.25,
+        1.5,
+        0
+      ],
+      "scale": [
+        0.25,
+        1.5,
+        7
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.3,
+        0.28,
+        0.3,
+        1
+      ],
+      "collider": {}
+    },
+    {
+      "id": "wall_east",
+      "name": "East wall",
+      "position": [
+        7.25,
+        1.5,
+        0
+      ],
+      "scale": [
+        0.25,
+        1.5,
+        7
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.3,
+        0.28,
+        0.3,
+        1
+      ],
+      "collider": {}
+    },
+    {
+      "id": "pillar_nw",
+      "name": "Pillar",
+      "position": [
+        -5,
+        1.5,
+        -5
+      ],
+      "scale": [
+        0.4,
+        1.5,
+        0.4
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.3,
+        0.28,
+        0.3,
+        1
+      ],
+      "collider": {}
+    },
+    {
+      "id": "pillar_ne",
+      "name": "Pillar",
+      "position": [
+        5,
+        1.5,
+        -5
+      ],
+      "scale": [
+        0.4,
+        1.5,
+        0.4
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.3,
+        0.28,
+        0.3,
+        1
+      ],
+      "collider": {}
+    },
+    {
+      "id": "pillar_sw",
+      "name": "Pillar",
+      "position": [
+        -5,
+        1.5,
+        5
+      ],
+      "scale": [
+        0.4,
+        1.5,
+        0.4
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.3,
+        0.28,
+        0.3,
+        1
+      ],
+      "collider": {}
+    },
+    {
+      "id": "pillar_se",
+      "name": "Pillar",
+      "position": [
+        5,
+        1.5,
+        5
+      ],
+      "scale": [
+        0.4,
+        1.5,
+        0.4
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.3,
+        0.28,
+        0.3,
+        1
+      ],
+      "collider": {}
+    },
+    {
+      "id": "player",
+      "name": "Player",
+      "position": [
+        0,
+        0,
+        3
+      ],
+      "scale": [
+        0.3,
+        0.9,
+        0.3
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.35,
+        0.55,
+        0.95,
+        1
+      ]
+    },
+    {
+      "id": "enemy_1",
+      "name": "Enemy spot 1",
+      "position": [
+        0,
+        0,
+        -2
+      ]
+    },
+    {
+      "id": "enemy_2",
+      "name": "Enemy spot 2",
+      "position": [
+        -2,
+        0,
+        -2.5
+      ]
+    },
+    {
+      "id": "enemy_3",
+      "name": "Enemy spot 3",
+      "position": [
+        2,
+        0,
+        -2.5
+      ]
+    }
+  ]
+}

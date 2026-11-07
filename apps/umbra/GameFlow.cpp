@@ -7,6 +7,7 @@
 #include <glm/geometric.hpp>
 
 #include <algorithm>
+#include <cmath>
 
 using umbra::platform::InputKey;
 namespace rpg = umbra::rpg;
@@ -16,8 +17,8 @@ namespace
 {
     constexpr float enemyTurnDelay = 0.7F; // seconds, so the player can follow enemy turns
     constexpr float enemyFightSpeed = 2.5F; // m/s while fighting in real time
-    constexpr float escapeDistance = 12.0F; // real time: this far from every enemy ends the fight
     constexpr std::size_t logLines = 5;
+    const std::string arenaScene = "scenes/arena.scene.json"; // every fight happens here
 
     std::string ItemList(const rpg::Content &content, const std::vector<rpg::ItemStack> &items)
     {
@@ -44,10 +45,7 @@ void GameFlow::Update(const umbra::platform::Input &input, float deltaSeconds)
 
     // The world was replaced mid-fight (restart, hot reload, checkpoint): its enemies are gone.
     if (session_.GetPhase() == game::Phase::Fighting && scene_.Generation() != fightGeneration_)
-    {
-        session_.Flee();
-        fighters_.clear();
-    }
+        Flee();
 
     switch (session_.GetPhase())
     {
@@ -178,27 +176,38 @@ void GameFlow::UpdateTalking(const umbra::platform::Input &input)
 void GameFlow::StartFight(std::size_t roamer)
 {
     // 1. Who fights: the touched enemy plus random companions from its area's pool.
-    const RoamerSlot touched = scene_.Roamers()[roamer]; // copy: AddRoamer below grows the list
+    const RoamerSlot &touched = scene_.Roamers()[roamer];
     const std::vector<std::string> group = session_.PickGroup(touched.roamer.Actor(), touched.pool, touched.group);
-    if (!session_.StartFight(group))
-        return;
-    fighters_ = {roamer};
-    fightGeneration_ = scene_.Generation();
+    touched_ = roamer;
 
-    // 2. Companions appear beside the touched enemy, on the side away from the player (fights happen in place).
-    const glm::vec3 base = scene_.RoamerFeet(roamer);
-    const glm::vec3 player = scene_.GetPlayerSpot().feet;
-    glm::vec3 away{base.x - player.x, 0.0F, base.z - player.z};
-    away = glm::length(away) > 0.01F ? glm::normalize(away) : glm::vec3{0.0F, 0.0F, -1.0F};
-    const glm::vec3 side{-away.z, 0.0F, away.x};
-    for (std::size_t i = 1; i < group.size(); ++i)
+    // 2. Go to the battle arena; the dungeon waits, unchanged, until the fight is over.
+    if (!scene_.EnterArena(arenaScene))
     {
-        const glm::vec3 feet = base + away * 0.9F + side * (i % 2 == 1 ? 1.1F : -1.1F);
-        fighters_.push_back(scene_.AddRoamer(group[i], feet, feet, 0.0F, false));
+        Say("Cannot load the battle arena (see warnings)");
+        contactCooldown_ = 3.0F;
+        return;
+    }
+    if (!session_.StartFight(group))
+    {
+        scene_.LeaveArena();
+        return;
     }
 
-    // 3. Fresh log; enemies wait a moment before their first turn.
-    log_ = {"A fight with " + std::to_string(group.size()) + " enemies!"};
+    // 3. Enemies stand on the arena's enemy markers, facing the player.
+    const glm::vec3 player = scene_.GetPlayerSpot().feet;
+    fighters_.clear();
+    for (std::size_t i = 0; i < group.size(); ++i)
+    {
+        const std::optional<umbra::gameplay::SpawnPoint> marker = scene_.FindMarker("enemy_" + std::to_string(i + 1));
+        const glm::vec3 feet = marker ? marker->feet : player + glm::vec3{2.0F * static_cast<float>(i) - 2.0F, 0.0F, -5.0F};
+        const std::size_t index = scene_.AddRoamer(group[i], feet, feet, 0.0F, false);
+        scene_.Roamers()[index].yaw = std::atan2(-(player.x - feet.x), -(player.z - feet.z));
+        fighters_.push_back(index);
+    }
+
+    // 4. Fresh log; enemies wait a moment before their first turn.
+    fightGeneration_ = scene_.Generation();
+    log_ = {"A fight with " + std::to_string(group.size()) + (group.size() == 1 ? " enemy!" : " enemies!")};
     selected_ = 0;
     enemyDelay_ = enemyTurnDelay;
 }
@@ -261,7 +270,7 @@ void GameFlow::UpdateRealtimeFight(const umbra::platform::Input &input, float de
         fight->SetPlacement(i + 1, {feet.x, feet.z}, roamers[fighters_[i]].yaw);
     }
 
-    // 2. The player: 1-4 use skills, Q drinks a potion, F (or running far away) flees.
+    // 2. The player: 1-4 use skills, Q drinks a potion, F flees.
     const std::vector<std::string> skills = RealtimeSkills();
     const InputKey keys[] = {InputKey::Num1, InputKey::Num2, InputKey::Num3, InputKey::Num4};
     for (std::size_t i = 0; i < 4 && i < skills.size(); ++i)
@@ -279,7 +288,6 @@ void GameFlow::UpdateRealtimeFight(const umbra::platform::Input &input, float de
         return Flee();
 
     // 3. Enemies: walk and attack as the conventional real-time AI decides.
-    bool anyoneNear = false;
     const rpg::Roster &roster = fight->GetRoster();
     for (std::size_t i = 0; i < fighters_.size(); ++i)
     {
@@ -291,15 +299,11 @@ void GameFlow::UpdateRealtimeFight(const umbra::platform::Input &input, float de
         slot.yaw = decision.yaw;
         if (decision.act)
             Act(*decision.act, false);
-        const glm::vec3 feet = scene_.RoamerFeet(fighters_[i]);
-        anyoneNear |= glm::length(glm::vec2{feet.x - player.feet.x, feet.z - player.feet.z}) < escapeDistance;
     }
 
     // 4. Time passes; then see what happened.
     session_.Combat().Update(deltaSeconds);
     ReadEvents(fight->TakeEvents());
-    if (!anyoneNear && session_.Combat().GetState() == umbra::encounter::State::Realtime)
-        Flee();
 }
 
 void GameFlow::ReadEvents(const rpg::Events &events)
@@ -312,6 +316,11 @@ void GameFlow::ReadEvents(const rpg::Events &events)
         {
         case rpg::EventKind::Damage:
             line = FighterName(e.actor) + " hit " + FighterName(e.target) + " for " + std::to_string(e.amount);
+            // Feedback: whoever was hit flashes red.
+            if (e.target == 0)
+                scene_.Flash(scene_.GetWorld().Find("player"));
+            else if (e.target <= fighters_.size() && scene_.Roamers()[fighters_[e.target - 1]].alive)
+                scene_.Flash(scene_.Roamers()[fighters_[e.target - 1]].visual);
             break;
         case rpg::EventKind::Heal:
             line = FighterName(e.target) + " healed " + std::to_string(e.amount);
@@ -339,34 +348,29 @@ void GameFlow::ReadEvents(const rpg::Events &events)
 
 void GameFlow::Flee()
 {
-    // Fleeing always works. Companions vanish; the touched enemy stays, calm, and can't
-    // start a new fight for a few seconds.
+    // Fleeing always works: back to the dungeon spot. The touched enemy calms down and
+    // can't start a new fight for a few seconds, so the player can get away.
     session_.Flee();
-    for (std::size_t i = 1; i < fighters_.size(); ++i)
-        scene_.RemoveRoamer(fighters_[i]);
-    if (!fighters_.empty() && fighters_[0] < scene_.Roamers().size())
-    {
-        RoamerSlot &touched = scene_.Roamers()[fighters_[0]];
-        touched.order.reset();
-        touched.roamer.Calm();
-    }
     fighters_.clear();
+    if (scene_.LeaveArena() && touched_ < scene_.Roamers().size())
+        scene_.Roamers()[touched_].roamer.Calm();
     contactCooldown_ = 3.0F;
     Say("You got away");
 }
 
 void GameFlow::EndFight(const game::FightResult &result)
 {
-    // Victory: every enemy of the fight is gone until the area is entered again.
-    for (std::size_t roamer : fighters_)
-        scene_.RemoveRoamer(roamer);
     fighters_.clear();
     selected_ = 0;
+    // Defeat: stay in the arena with the death menu (loading replaces everything).
     if (!result.won)
     {
         Say("You died");
         return;
     }
+    // Victory: back to the dungeon; the touched enemy is gone until the area is entered again.
+    if (scene_.LeaveArena())
+        scene_.RemoveRoamer(touched_);
     std::string text = "Victory! +" + std::to_string(result.victory.xp) + " XP";
     if (result.victory.levels > 0)
         text += ", level " + std::to_string(session_.Hero().level) + "!";

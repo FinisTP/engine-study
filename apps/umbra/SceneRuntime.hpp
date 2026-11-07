@@ -92,6 +92,20 @@ public:
     // Changes whenever the world is replaced (load, restart, portal), so fights can tell.
     [[nodiscard]] int Generation() const noexcept { return generation_; }
 
+    // --- Battle arena: fights happen in their own scene (user decision 2026-11-07) ---
+    // Loads the arena and keeps the current area, untouched, to come back to.
+    // False if the arena doesn't load (nothing changes) or an arena is already open.
+    bool EnterArena(const std::string &arenaScene);
+    // Back to the kept area exactly as it was: player spot, enemies, physics. False if none is kept.
+    bool LeaveArena();
+    [[nodiscard]] bool InArena() const noexcept { return kept_ != nullptr; }
+    [[nodiscard]] std::optional<umbra::gameplay::SpawnPoint> FindMarker(const std::string &id) const
+    {
+        return umbra::gameplay::FindSpawnPoint(*world_, id);
+    }
+    // Hit feedback: the entity turns red for a moment.
+    void Flash(umbra::world::Entity entity);
+
     [[nodiscard]] umbra::world::World &GetWorld() noexcept { return *world_; }
     [[nodiscard]] umbra::physics::PhysicsWorld &GetPhysics() noexcept { return *physics_; }
     [[nodiscard]] umbra::gameplay::PlayerController &GetPlayer() noexcept { return player_; }
@@ -125,6 +139,24 @@ private:
     std::map<std::filesystem::path, std::string> owners_; // watched file -> model path ("" = the scene file)
     umbra::assets::FileWatcher::Clock::time_point nextPoll_{};
     std::vector<RoamerSlot> roamers_;
+    // The area waiting while a fight runs in the arena.
+    struct KeptArea final
+    {
+        std::unique_ptr<umbra::world::World> world;
+        std::unique_ptr<umbra::physics::PhysicsWorld> physics;
+        std::vector<RoamerSlot> roamers;
+        std::string scenePath;
+        umbra::gameplay::SpawnPoint player;
+    };
+    std::unique_ptr<KeptArea> kept_;
+    struct FlashState final
+    {
+        umbra::world::Entity entity;
+        glm::vec4 color; // to restore
+        float secondsLeft = 0.0F;
+    };
+    std::vector<FlashState> flashes_;
+    void UpdateFlashes(float seconds);
     std::mt19937 roamerRandom_{7};
     bool roamersActive_ = true;
     int generation_ = 0;

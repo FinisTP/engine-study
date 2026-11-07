@@ -17,13 +17,18 @@ namespace umbra::gameplay
     world::Entity FindInteractable(const world::World &world, const physics::PhysicsWorld &physics,
                                    const PlayerController &player)
     {
-        const std::optional<physics::RayHit> hit = player.InteractionQuery(physics);
-        if (!hit)
-            return {};
-        for (world::Entity entity = FindEntityByBody(world, hit->body); entity; entity = world.GetParent(entity))
+        // 1. Waist height first, then knee height, so short things (stones, chests) work too.
+        for (const bool low : {false, true})
         {
-            if (world.GetInteractable(entity) != nullptr)
-                return entity;
+            const std::optional<physics::RayHit> hit = player.InteractionQuery(physics, low);
+            if (!hit)
+                continue;
+            // 2. The hit body's entity, or the nearest ancestor that is interactable.
+            for (world::Entity entity = FindEntityByBody(world, hit->body); entity; entity = world.GetParent(entity))
+            {
+                if (world.GetInteractable(entity) != nullptr)
+                    return entity;
+            }
         }
         return {};
     }

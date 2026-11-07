@@ -53,8 +53,9 @@ namespace umbra::gameplay
 
         // Orbit camera behind the player, pulled closer when something is in the way.
         [[nodiscard]] core::Camera GetCamera(const physics::PhysicsWorld &physics) const;
-        // What the player is facing within interactDistance (ray from waist height).
-        [[nodiscard]] std::optional<physics::RayHit> InteractionQuery(const physics::PhysicsWorld &physics) const;
+        // What the player is facing within interactDistance: a ray from waist height, or from
+        // knee height (`low`) for short things like save stones and chests.
+        [[nodiscard]] std::optional<physics::RayHit> InteractionQuery(const physics::PhysicsWorld &physics, bool low = false) const;
 
         [[nodiscard]] glm::vec3 GetFeet(const physics::PhysicsWorld &physics) const;
         [[nodiscard]] glm::vec3 GetVelocity(const physics::PhysicsWorld &physics) const;

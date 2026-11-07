@@ -145,3 +145,19 @@ TEST_CASE("Despawn removes the character and stops updates")
     player.Update(physics, {{0, 1}}, step); // harmless
     REQUIRE_FALSE(player.InteractionQuery(physics));
 }
+
+TEST_CASE("A short object below waist height is found by the knee-height ray")
+{
+    physics::PhysicsWorld physics;
+    AddFloor(physics);
+    const physics::BodyHandle stone = AddBox(physics, {0, 0.2F, -1.2F}, {0.3F, 0.2F, 0.3F}); // top at 0.4 m
+    physics.Step(step);
+    gameplay::PlayerController player;
+    player.Spawn(physics, {0, 0, 0}, 0.0F);
+    Run(player, physics, {}, 10);
+
+    REQUIRE_FALSE(player.InteractionQuery(physics)); // the waist ray passes over it
+    const auto hit = player.InteractionQuery(physics, true);
+    REQUIRE(hit);
+    REQUIRE(hit->body == stone);
+}

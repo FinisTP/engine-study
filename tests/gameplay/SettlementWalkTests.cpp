@@ -120,3 +120,14 @@ TEST_CASE("Facing the signpost within reach finds it; facing away or too far doe
     REQUIRE(s.player.Spawn(s.physics, {0, 0, -1}, glm::pi<float>()));
     REQUIRE_FALSE(gameplay::FindInteractable(s.world, s.physics, s.player));
 }
+
+TEST_CASE("Facing the save stone finds it")
+{
+    Settlement s;
+    // The stone stands at (-1.5, z -2); face it from 1.5 m away.
+    REQUIRE(s.player.Spawn(s.physics, {-1.5F, 0, -0.5F}, 0.0F));
+    s.Walk({0, 0}, 0.2F);
+    const world::Entity found = gameplay::FindInteractable(s.world, s.physics, s.player);
+    REQUIRE(found == s.world.Find("save_stone"));
+    REQUIRE(s.world.GetInteractable(found)->save);
+}

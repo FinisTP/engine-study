@@ -67,7 +67,8 @@ private:
     umbra::game::SaveSlots slots_;
     std::string startScene_;
     int selected_ = 0;                 // menu cursor
-    std::vector<std::size_t> fighters_; // roamer index of each enemy (roster index - 1)
+    std::size_t touched_ = 0;          // the dungeon roamer that started the fight
+    std::vector<std::size_t> fighters_; // arena roamer index of each enemy (roster index - 1)
     int fightGeneration_ = 0;          // the world the fight started in
     float enemyDelay_ = 0.0F;          // turn fights: pause before an enemy acts
     float contactCooldown_ = 0.0F;     // after fleeing, touching an enemy does nothing for a moment
