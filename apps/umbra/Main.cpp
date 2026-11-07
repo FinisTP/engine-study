@@ -42,6 +42,21 @@ namespace
 			out.push_back("... and " + std::to_string(problems.size() - limit) + " more (see the log)");
 	}
 
+	// Where the game's files are. A package has assets/ next to the program and keeps its model
+	// cache there too; a development build uses the source tree and the build folder.
+	struct GameFolders final
+	{
+		std::filesystem::path assets;
+		std::filesystem::path cache;
+	};
+	GameFolders FindFolders()
+	{
+		const std::filesystem::path program = umbra::platform::Platform::ProgramFolder();
+		if (!program.empty() && std::filesystem::exists(program / "assets" / "rpg" / "reference.rpg.json"))
+			return {program / "assets", program / "asset-cache"};
+		return {UMBRA_ASSET_DIRECTORY, UMBRA_CACHE_DIRECTORY};
+	}
+
 	void SpinEntity(umbra::world::World &world, const char *id, float radians)
 	{
 		const umbra::world::Entity entity = world.Find(id);
@@ -88,7 +103,9 @@ int RunApplication(const std::string &scenePath)
 
 				// Sound: the mixer outlives the device that pulls from it (declared first, destroyed last).
 				umbra::audio::Mixer mixer;
-				umbra::audio::SoundBank sounds(UMBRA_ASSET_DIRECTORY);
+				const GameFolders folders = FindFolders();
+				umbra::diagnostics::Info("Assets: " + folders.assets.string());
+				umbra::audio::SoundBank sounds(folders.assets);
 				umbra::platform::AudioDevice audioDevice;
 				(void)audioDevice.Open(mixer); // without a device the game runs silently
 				std::vector<std::string> soundProblems;
@@ -101,8 +118,8 @@ int RunApplication(const std::string &scenePath)
 					}
 				};
 
-				ModelLibrary models(renderer, UMBRA_ASSET_DIRECTORY, UMBRA_CACHE_DIRECTORY);
-				SceneRuntime scene(models, UMBRA_ASSET_DIRECTORY, scenePath);
+				ModelLibrary models(renderer, folders.assets, folders.cache);
+				SceneRuntime scene(models, folders.assets, scenePath);
 				umbra::core::DrawList drawList;
 				bool showColliders = false;
 				scene.Load();
@@ -113,11 +130,12 @@ int RunApplication(const std::string &scenePath)
 				std::optional<GameFlow> flow;
 				{
 					std::vector<umbra::core::Diagnostic> diagnostics;
-					if (umbra::rpg::LoadContent(std::filesystem::path{UMBRA_ASSET_DIRECTORY} / "rpg/reference.rpg.json", content, diagnostics))
+					const std::filesystem::path contentFile = folders.assets / "rpg/reference.rpg.json";
+					if (umbra::rpg::LoadContent(contentFile, content, diagnostics))
 					{
 						std::filesystem::path saves = umbra::platform::Platform::PreferencesFolder();
-						saves = saves.empty() ? std::filesystem::path{UMBRA_CACHE_DIRECTORY} / "saves" : saves / "saves";
-						flow.emplace(content, scene, saves, scenePath);
+						saves = saves.empty() ? folders.cache / "saves" : saves / "saves";
+						flow.emplace(content, contentFile, scene, saves, scenePath);
 						umbra::diagnostics::Info("Saves go to " + saves.string());
 					}
 					for (const umbra::core::Diagnostic &diagnostic : diagnostics)
@@ -313,7 +331,7 @@ int RunApplication(const std::string &scenePath)
 						}
 
 						// Development keys: F5 checkpoint, F9 back to it, R restarts the area.
-						const std::filesystem::path checkpointDirectory = std::filesystem::path{UMBRA_CACHE_DIRECTORY} / "checkpoint";
+						const std::filesystem::path checkpointDirectory = folders.cache / "checkpoint";
 						if (input.IsKeyPressed(InputKey::F5))
 							showMessage(scene.SaveCheckpoint(checkpointDirectory) ? "Checkpoint saved" : "Checkpoint failed (see log)");
 						if (input.IsKeyPressed(InputKey::F9))

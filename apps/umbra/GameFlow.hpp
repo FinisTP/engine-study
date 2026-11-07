@@ -3,6 +3,7 @@
 #include "SceneRuntime.hpp"
 
 #include <DrawList.hpp>
+#include <FileWatcher.hpp>
 #include <GameSession.hpp>
 #include <Input.hpp>
 
@@ -17,8 +18,10 @@
 class GameFlow final
 {
 public:
-    GameFlow(const umbra::rpg::Content &content, SceneRuntime &scene, std::filesystem::path saveFolder,
-             std::string startScene);
+    // `content` is the live RPG content loaded from `contentFile`; it is replaced in place when
+    // the file changes and the new version fits the running game (see GameFlow.md, "Reloading").
+    GameFlow(umbra::rpg::Content &content, std::filesystem::path contentFile, SceneRuntime &scene,
+             std::filesystem::path saveFolder, std::string startScene);
 
     // Once per frame, before Simulate: menus, fights and touching an enemy.
     void Update(const umbra::platform::Input &input, float deltaSeconds);
@@ -43,6 +46,7 @@ private:
     void UpdateTurnFight(const umbra::platform::Input &input, float deltaSeconds);
     void UpdateRealtimeFight(const umbra::platform::Input &input, float deltaSeconds);
     void UpdateDeath(const umbra::platform::Input &input);
+    void ReloadContent();
 
     void StartFight(std::size_t roamer);
     void Flee();
@@ -62,6 +66,10 @@ private:
     [[nodiscard]] std::string PotionItem();
     void Say(const std::string &text);
 
+    umbra::rpg::Content &content_;
+    std::filesystem::path contentFile_;
+    umbra::assets::FileWatcher contentWatcher_;
+    bool reloadPending_ = false;
     umbra::game::GameSession session_;
     SceneRuntime &scene_;
     umbra::game::SaveSlots slots_;

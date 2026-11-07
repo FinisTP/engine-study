@@ -23,5 +23,7 @@ namespace umbra::platform
 
 		// A folder the user may write to (saves, settings), created if missing; empty on failure.
 		[[nodiscard]] static std::filesystem::path PreferencesFolder();
+		// The folder the program file is in (empty if unknown).
+		[[nodiscard]] static std::filesystem::path ProgramFolder();
 	};
 }

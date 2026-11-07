@@ -125,3 +125,10 @@ target_link_libraries(
         Umbra::Warnings
         Umbra::Sanitizers
 )
+
+# Package layout: compiled shaders in shaders/ next to the program (Renderer looks there first).
+install(
+    FILES "${UMBRA_VERTEX_SHADER}" "${UMBRA_FRAGMENT_SHADER}" "${UMBRA_OVERLAY_VERTEX_SHADER}" "${UMBRA_OVERLAY_FRAGMENT_SHADER}"
+    DESTINATION shaders
+    COMPONENT game
+)

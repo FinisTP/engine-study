@@ -1,6 +1,7 @@
 #include "GameFlow.hpp"
 
 #include <Log.hpp>
+#include <Profiling.hpp>
 #include <RealtimeEncounter.hpp>
 #include <TurnEncounter.hpp>
 
@@ -8,6 +9,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 
 using umbra::platform::InputKey;
 namespace rpg = umbra::rpg;
@@ -32,9 +34,48 @@ namespace
     }
 }
 
-GameFlow::GameFlow(const rpg::Content &content, SceneRuntime &scene, std::filesystem::path saveFolder, std::string startScene)
-    : session_(content, 20261107U), scene_(scene), slots_{std::move(saveFolder)}, startScene_(std::move(startScene))
+GameFlow::GameFlow(rpg::Content &content, std::filesystem::path contentFile, SceneRuntime &scene, std::filesystem::path saveFolder,
+                   std::string startScene)
+    : content_(content), contentFile_(std::move(contentFile)), session_(content, 20261107U), scene_(scene),
+      slots_{std::move(saveFolder)}, startScene_(std::move(startScene))
 {
+    contentWatcher_.SetFiles({contentFile_});
+}
+
+void GameFlow::ReloadContent()
+{
+    // Only between fights and conversations: those hold references into the content.
+    if (session_.GetPhase() != game::Phase::Exploring)
+        return;
+    reloadPending_ = false;
+    umbra::core::Stopwatch watch;
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    const auto refuse = [&](const std::string &why) {
+        for (const umbra::core::Diagnostic &d : diagnostics)
+            umbra::diagnostics::Error(umbra::core::Format(d));
+        Say("RPG content not reloaded: " + why + (diagnostics.empty() ? "" : " (" + diagnostics.front().message + ")"));
+    };
+
+    // 1. The new file must load on its own...
+    rpg::Content fresh;
+    if (!rpg::LoadContent(contentFile_, fresh, diagnostics))
+        return refuse("the file has errors");
+
+    // 2. ...and the running game must fit it: the same check as loading a save made right now.
+    const umbra::gameplay::SpawnPoint spot = scene_.GetPlayerSpot();
+    const std::optional<game::SaveData> now = session_.MakeSave(scene_.GetScenePath(), spot.feet, spot.yaw);
+    const std::filesystem::path check = slots_.directory / "reload-check.sav";
+    game::SaveData fitted;
+    if (!now || !game::WriteSave(check, *now, diagnostics) || !game::ReadSave(check, fresh, fitted, diagnostics))
+        return refuse("the current game uses something it removed");
+
+    // 3. Swap in place (everything refers to this one object) and re-apply the state.
+    content_ = std::move(fresh);
+    session_.ApplySave(fitted);
+    rpg::ClampResources(content_, session_.Hero()); // a lower maximum must not leave extra health
+    char text[64];
+    std::snprintf(text, sizeof(text), "RPG content reloaded (%.0f ms)", watch.Milliseconds());
+    Say(text);
 }
 
 // ---------------- Per frame ----------------
@@ -42,6 +83,12 @@ GameFlow::GameFlow(const rpg::Content &content, SceneRuntime &scene, std::filesy
 void GameFlow::Update(const umbra::platform::Input &input, float deltaSeconds)
 {
     contactCooldown_ = std::max(0.0F, contactCooldown_ - deltaSeconds);
+
+    // Edited RPG content (e.g. saved from the editor) is picked up at the next safe moment.
+    if (!contentWatcher_.Poll(umbra::assets::FileWatcher::Clock::now()).empty())
+        reloadPending_ = true;
+    if (reloadPending_)
+        ReloadContent();
 
     // The world was replaced mid-fight (restart, hot reload, checkpoint): its enemies are gone.
     if (session_.GetPhase() == game::Phase::Fighting && scene_.Generation() != fightGeneration_)

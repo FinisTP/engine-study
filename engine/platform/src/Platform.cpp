@@ -61,4 +61,10 @@ namespace umbra::platform
 		SDL_free(path);
 		return folder;
 	}
+
+	std::filesystem::path Platform::ProgramFolder()
+	{
+		const char *base = SDL_GetBasePath(); // owned by SDL, UTF-8, ends with a separator
+		return base ? std::filesystem::path{reinterpret_cast<const char8_t *>(base)} : std::filesystem::path{};
+	}
 }

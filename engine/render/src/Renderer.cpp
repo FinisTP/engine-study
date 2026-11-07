@@ -1,5 +1,7 @@
 #include <Renderer.hpp>
 
+#include <SDL3/SDL.h>
+
 #include "DiagnosticsOverlay.hpp"
 #include "RenderResources.hpp"
 #include "VulkanDevice.hpp"
@@ -94,7 +96,12 @@ namespace umbra::render
                 return PresentationInitializationResult::FatalError;
             }
 
-            const std::filesystem::path shaderDirectory{UMBRA_SHADER_DIRECTORY};
+            // A packaged game has its shaders next to the program; a build uses the build folder.
+            std::filesystem::path shaderDirectory{UMBRA_SHADER_DIRECTORY};
+            if (const char *base = SDL_GetBasePath())
+                if (const std::filesystem::path packaged = std::filesystem::path{reinterpret_cast<const char8_t *>(base)} / "shaders";
+                    std::filesystem::exists(packaged / "Scene.vert.spv"))
+                    shaderDirectory = packaged;
 
             if (!pipeline.Initialize(physicalDevice.GetHandle(),
                                      device.GetHandle(),

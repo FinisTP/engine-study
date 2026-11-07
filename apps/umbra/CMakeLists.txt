@@ -40,3 +40,14 @@ target_link_libraries(
 )
 
 umbra_copy_asan_runtime(Umbra)
+
+# Package layout (roadmap P7.5/P7.6): the game, its DLLs, the MSVC runtime, assets/ and shaders/
+# side by side. The game finds assets/ next to itself first (Main.cpp, FindFolders).
+install(TARGETS Umbra RUNTIME DESTINATION . COMPONENT game)
+if(WIN32)
+    install(FILES $<TARGET_RUNTIME_DLLS:Umbra> DESTINATION . COMPONENT game)
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION .)
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_COMPONENT game)
+    include(InstallRequiredSystemLibraries)
+endif()
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/assets/ DESTINATION assets COMPONENT game)

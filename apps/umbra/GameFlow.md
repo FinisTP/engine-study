@@ -65,3 +65,22 @@ Each frame:
   to the build's asset cache).
 - Loading reads and checks the whole file first (falls back to the backup), then loads the area,
   and only then replaces the RPG state. A failure at any step leaves the game as it was.
+
+## Reloading the RPG content while playing (P7.5)
+
+The game watches `assets/rpg/reference.rpg.json` (`assets::FileWatcher`, which waits until the
+file has been stable for 250 ms). A change is applied at the next moment the player is exploring.
+Conversations and fights keep references into the content, so it never happens during them.
+
+1. The new file must load on its own (`rpg::LoadContent`). If it has errors, the old content stays
+   and the screen says why.
+2. The running game must fit the new file. It is saved right now to `saves/reload-check.sav` and
+   read back against the new content: the same checks as loading a save. If the hero holds an item
+   the new file removed, for example, the old content stays.
+3. The content object is replaced **in place**. The session, quest log and combat coordinator all
+   refer to that one object, so they see the new definitions at once. The checked state is then
+   re-applied and health/energy are clamped to new maximums. The hero keeps their current health,
+   level and items: content edits change definitions, not the save.
+
+Scenes and models already reload by themselves (`engine/assets/include/Reload.md`). Together that
+means: edit in the editor, press Ctrl+S, and the running game changes within a second.

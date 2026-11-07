@@ -212,3 +212,31 @@ TEST_CASE("New game after death starts over with a fresh hero")
     REQUIRE(s.Hero().health == 110); // 100 base + leather armor
     REQUIRE(s.Quests().GetState("sun_relic") == rpg::QuestState::NotStarted);
 }
+
+TEST_CASE("Reloaded content is checked against the running game like a save")
+{
+    // The game's live content reload (P7.5): save the state now, read it back with the new content.
+    const auto dir = test::TempDir("session-reload");
+    rpg::Content live = C(); // a copy we can replace, like the app's content object
+    game::GameSession s(live, 8);
+    s.Quests().Start("sun_relic");
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(game::WriteSave(dir / "check.sav", *s.MakeSave("scenes/dungeon.scene.json", {}, 0.0F), diagnostics));
+
+    // 1. New content without the health potion the hero carries: refused, nothing changes.
+    rpg::Content withoutPotion = C();
+    withoutPotion.items.erase("health_potion");
+    game::SaveData fitted;
+    REQUIRE_FALSE(game::ReadSave(dir / "check.sav", withoutPotion, fitted, diagnostics));
+
+    // 2. New content with a weaker hero archetype fits; the hero keeps its state, clamped to the new maximum.
+    rpg::Content weaker = C();
+    weaker.actors["hero"].base[static_cast<std::size_t>(rpg::Stat::MaxHealth)] = 50;
+    diagnostics.clear();
+    REQUIRE(game::ReadSave(dir / "check.sav", weaker, fitted, diagnostics));
+    live = weaker; // swapped in place: the session still refers to `live`
+    s.ApplySave(fitted);
+    rpg::ClampResources(live, s.Hero());
+    REQUIRE(s.Hero().health == 60); // 50 base + 10 leather armor
+    REQUIRE(s.Quests().GetState("sun_relic") == rpg::QuestState::Active);
+}
