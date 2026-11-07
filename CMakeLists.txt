@@ -20,6 +20,7 @@ add_subdirectory(engine/turncombat)
 add_subdirectory(engine/realtimecombat)
 add_subdirectory(engine/encounter)
 add_subdirectory(engine/story)
+add_subdirectory(engine/game)
 add_subdirectory(engine/audio)
 add_subdirectory(engine/platform)
 add_subdirectory(engine/render)
@@ -49,11 +50,12 @@ if(BUILD_TESTING)
     add_subdirectory(tests/realtimecombat)
     add_subdirectory(tests/encounter)
     add_subdirectory(tests/story)
+    add_subdirectory(tests/game)
 
     # Simulation, assets and scene tools must build and run without a window, GPU, editor or model runtime.
     umbra_add_headless_check(
         Umbra.HeadlessDependencies
-        TARGETS Umbra::Core Umbra::World Umbra::Assets Umbra::Scene Umbra::Physics Umbra::Gameplay Umbra::Audio Umbra::Rpg Umbra::TurnCombat Umbra::RealtimeCombat Umbra::Encounter Umbra::Story UmbraSceneCheck
+        TARGETS Umbra::Core Umbra::World Umbra::Assets Umbra::Scene Umbra::Physics Umbra::Gameplay Umbra::Audio Umbra::Rpg Umbra::TurnCombat Umbra::RealtimeCombat Umbra::Encounter Umbra::Story Umbra::Game UmbraSceneCheck
         FORBIDDEN "Umbra(Render|Platform)|SDL3|volk|Vulkan|imgui|onnx|python"
     )
 
