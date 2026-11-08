@@ -10,7 +10,8 @@ turns them on in `projects/<name>/project.json`; required plugins are added auto
 | `turn-combat` | Turn-based combat; `UmbraTool fight` |
 | `realtime-combat` | Real-time combat |
 | `rpg-session` | Encounters, the game session and saves (needs one combat mode or both) |
-| `third-person` | Player, roaming enemies, physics bridge, interaction, areas, pause menu; default sounds |
+| `third-person` | Player, roaming enemies, physics bridge, interaction, areas; default sounds |
+| `rpg-ui` | The game's screens (HUD, menus, conversation, fight, inventory, skills, quests), skin and fonts; assets only (`engine/ui/include/UI.md`) |
 | `learned-ai` | Learned turn-based enemy; `UmbraTool policy-check`; Python training |
 | `ai-authoring` | Editor/tool only: local AI quest drafts, textures and 3D models |
 | `web-export` | The browser build's page and scripts |

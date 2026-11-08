@@ -16,6 +16,7 @@ target_sources(
         EditorPanel.hpp
         Components.cpp
         CodePanel.cpp
+        UiPanel.cpp
         Widgets.hpp
         # Shared with the game: model files -> GPU meshes (one copy of the code, two programs).
         ../umbra/ModelLibrary.cpp
@@ -54,6 +55,7 @@ target_link_libraries(
         Umbra::Assets
         Umbra::Scene
         Umbra::Authoring
+        Umbra::Ui
         imgui::imgui
         imguizmo::imguizmo
         SDL3::SDL3

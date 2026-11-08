@@ -1,0 +1,11 @@
+{
+  "format": "umbra.ui", "version": 1, "modal": true, "back": "leave",
+  "root": { "type": "stack", "anchor": "bottom", "offset": [0, -36], "style": "panel", "size": [760, 0], "align": "stretch", "gap": 10, "children": [
+    { "type": "text", "style": "heading", "text": "{talk.speaker}" },
+    { "type": "text", "text": "{talk.text}", "wrap": true },
+    { "type": "list", "items": "{talk.choices}", "as": "choice", "gap": 2, "action": "answer", "arg": "{index}",
+      "entry": { "type": "text", "style": "entry", "text": "{choice}", "wrap": true } },
+    { "type": "button", "text": "(Leave)", "action": "leave", "visible": "{talk.leaveOnly}" },
+    { "type": "text", "style": "muted", "text": "Choose with W/S, the mouse or the d-pad.  Esc walks away." }
+  ] }
+}

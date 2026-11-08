@@ -1,7 +1,7 @@
 # Umbra Engine - Current Development Status
 
 **Status date:** 2026-11-08 (Phase 1/2 records dated 2026-09-02)
-**Current milestone:** S1 project structure and components implemented (2026-11-08, ADR 0004; headless 44/44 GCC/Clang/ASan, Windows editor check open); P10 web export renders on the user's PC; P9 PC release gate: benchmark passed, remaining Windows runs open
+**Current milestone:** S3 gameplay UI framework implemented (2026-11-08, ADR 0006; headless 47/47 GCC/Clang/ASan, Windows check open); S1/S2 implemented (Windows checks open); P10 web export renders on the user's PC; P9 PC release gate: benchmark passed, remaining Windows runs open
 **Layout:** `engine/` base engine, `game/` base game, `projects/reference/{assets,engine,game}` (content moved from `assets/`)
 **Phase 1 status:** Complete (interactive checklist unsigned)
 **Phase 2 status:** Complete
@@ -14,6 +14,10 @@
 **P8C status:** Implemented. Headless tests verified on Linux (42/42, GCC/Clang/ASan) against a stand-in ComfyUI; no real ComfyUI/SDXL or GPU run yet (P8C.0 open); editor window not opened
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
+
+## Update 2026-11-08 (S3 gameplay UI framework, `#UMBRA-75`)
+
+- The game draws its own UI (`engine/ui`, ADR 0006): screens are `ui/*.ui.json` files with a skin and TTF fonts, bound to one JSON data object from `GameFlow`, drawn by Vulkan and WebGPU alike. All game UI is replaced (HUD, start, pause, death, conversation, fight) and inventory/equipment, skills and quest log are new; they live in the `rpg-ui` plugin. Keyboard, mouse and gamepad focus. Editor **Game UI** window and `UmbraTool ui-preview` (CPU-rendered PNG). 47/47 GCC/Clang/ASan, 14/14 WebAssembly suites, check-web 13/13. GPU, gamepad and editor checks on Windows open (`testing/s3-game-ui.md`).
 
 ## Update 2026-11-08 (P10 web export, `#UMBRA-66`)
 
@@ -102,7 +106,7 @@
 |---|---|---|
 | Physics | `Umbra::Physics`: Jolt 5.6 adapter (bodies, raycasts, `CharacterVirtual`), fixed 60 Hz steps, collider scene field, debug outlines (F1) | `engine/physics/include/Physics.md`, `engine/render/src/DebugDraw.md` |
 | Player | `gameplay::PlayerController`: camera-relative movement, sprint, jump, wall-aware orbit camera, interaction ray; mouse capture | `game/gameplay/include/PlayerController.md` |
-| Presentation | Procedural bob/lean (`StrideAnimator`), `Umbra::Audio` (WAV, mixer, sound bank) + SDL audio device, interactables, HUD, Esc pause menu, missing-asset warnings | `engine/audio/include/Audio.md`, `game/gameplay/include/StrideAnimator.md` |
+| Presentation | Procedural bob/lean (`StrideAnimator`), `Umbra::Audio` (WAV, mixer, sound bank) + SDL audio device, interactables, missing-asset warnings; HUD and menus are game UI screens since S3 (`engine/ui/include/UI.md`) | `engine/audio/include/Audio.md`, `game/gameplay/include/StrideAnimator.md` |
 | Areas | `portal` field and spawn markers, settlement ↔ dungeon, F5/F9 development checkpoint, R restart | `engine/scene/include/SceneFormat.md` |
 | Observability | Rolling CPU section timings and resource counters in the overlay | [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md) |
 
@@ -170,7 +174,8 @@ Umbra executable (apps/umbra: Main, ModelLibrary, SceneRuntime)
 |- Umbra::TurnCombat turn controller, TurnEnvironment    -> Rpg
 |- Umbra::RealtimeCombat real-time controller           -> Rpg
 |- Umbra::Rpg        content, characters, inventory, skills, shared resolver -> Core, nlohmann-json
-|- Umbra::Gameplay   player, physics bridge, interaction, areas, pause menu -> World, Physics
+|- Umbra::Gameplay   player, physics bridge, interaction, areas -> World, Physics
+|- Umbra::Ui         game screens: skin, fonts, layout, bindings, focus -> Core, Assets
 |- Umbra::Physics    Jolt adapter (private dependency)  -> Core, Jolt
 |- Umbra::Audio      WAV loader, mixer, sound bank      -> Core, Assets
 |- Umbra::Scene      scene files, model instancing, checkpoints -> World, Assets, nlohmann-json

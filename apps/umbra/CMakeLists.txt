@@ -16,6 +16,8 @@ target_sources(
         SceneRuntime.hpp
         GameComponents.cpp
         GameComponents.hpp
+        GameUi.cpp
+        GameUi.hpp
 )
 
 # The project's own code (projects/<name>/engine and game) is compiled into the program itself,
@@ -29,7 +31,7 @@ target_compile_definitions(Umbra PRIVATE UMBRA_PROJECT_NAME="${UMBRA_PROJECT}" "
 
 # Plugins: the game needs the RPG ones and third-person gameplay; combat modes and the learned
 # enemy are optional (UMBRA_PLUGIN_* guards). Each plugin's game/ folder compiles in.
-umbra_require_plugins("The game" rpg story rpg-session third-person)
+umbra_require_plugins("The game" rpg story rpg-session third-person rpg-ui)
 umbra_add_plugin_sources(Umbra game)
 
 target_compile_features(Umbra PRIVATE cxx_std_20)
@@ -50,6 +52,7 @@ target_link_libraries(
         Umbra::World
         Umbra::Assets
         Umbra::Scene
+        Umbra::Ui
         Umbra::Gameplay
         Umbra::Audio
         Umbra::Game

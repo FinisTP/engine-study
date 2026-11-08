@@ -1,0 +1,20 @@
+{
+  "format": "umbra.ui", "version": 1, "modal": true, "dim": true, "back": "close",
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [720, 0], "align": "stretch", "gap": 12, "children": [
+    { "type": "text", "style": "title", "text": "Inventory" },
+    { "type": "text", "style": "small", "text": "Attack {hero.stats.attack}   Defense {hero.stats.defense}   Speed {hero.stats.speed}   Max HP {hero.maxHealth}" },
+    { "type": "text", "style": "heading", "text": "Equipped" },
+    { "type": "list", "items": "{equipment}", "as": "slot", "direction": "horizontal", "gap": 10, "action": "unequip", "arg": "{slot.slot}",
+      "entry": { "type": "stack", "style": "slot", "size": [200, 0], "children": [
+        { "type": "text", "style": "muted", "text": "{slot.label}" },
+        { "type": "text", "style": "text", "text": "{slot.name}" }
+      ] } },
+    { "type": "text", "style": "heading", "text": "Bag ({bagUsed}/{bagSize})" },
+    { "type": "list", "items": "{inventory}", "as": "item", "columns": 3, "gap": 8, "action": "equip", "arg": "{item.id}",
+      "entry": { "type": "stack", "style": "slot", "size": [216, 0], "disabled": "{item.cannotEquip}", "children": [
+        { "type": "text", "text": "{item.name}  x{item.count}" },
+        { "type": "text", "style": "muted", "text": "{item.hint}" }
+      ] } },
+    { "type": "text", "style": "muted", "text": "Choose an item to equip it, or an equipped item to take it off.  Esc closes." }
+  ] }
+}

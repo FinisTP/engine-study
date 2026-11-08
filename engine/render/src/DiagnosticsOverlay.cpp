@@ -285,6 +285,39 @@ namespace umbra::render
         }
     }
 
+    void DiagnosticsOverlay::DrawUi(const core::UiDrawList &ui, const SceneResources &resources)
+    {
+        if (!initialized_ || ui.batches.empty())
+            return;
+        // Into the background draw list (drawn before ImGui's windows): one command per batch,
+        // with its clip rectangle and texture. core::UiVertex has ImDrawVert's layout.
+        static_assert(sizeof(core::UiVertex) == sizeof(ImDrawVert) && sizeof(ImDrawIdx) == sizeof(std::uint16_t));
+        ImDrawList *list = ImGui::GetBackgroundDrawList();
+        for (std::size_t b = 0; b < ui.batches.size(); ++b)
+        {
+            const core::UiBatch &batch = ui.batches[b];
+            const TextureResource *texture = resources.GetTexture(batch.texture);
+            if (texture == nullptr)
+                texture = resources.GetTexture(resources.GetFallbackTexture());
+            if (texture == nullptr || batch.indexCount == 0)
+                continue;
+            const std::uint32_t vertexEnd = b + 1 == ui.batches.size() ? static_cast<std::uint32_t>(ui.vertices.size()) : ui.batches[b + 1].firstVertex;
+            const int vertexCount = static_cast<int>(vertexEnd - batch.firstVertex);
+            list->PushClipRect({batch.clip.x, batch.clip.y}, {batch.clip.z, batch.clip.w}, true);
+            list->PushTexture(ImTextureRef(static_cast<ImTextureID>(reinterpret_cast<std::uintptr_t>(texture->descriptorSet))));
+            list->PrimReserve(static_cast<int>(batch.indexCount), vertexCount);
+            const auto base = static_cast<ImDrawIdx>(list->_VtxCurrentIdx);
+            std::memcpy(static_cast<void *>(list->_VtxWritePtr), &ui.vertices[batch.firstVertex], static_cast<std::size_t>(vertexCount) * sizeof(ImDrawVert));
+            for (std::uint32_t i = 0; i < batch.indexCount; ++i)
+                list->_IdxWritePtr[i] = static_cast<ImDrawIdx>(base + ui.indices[batch.firstIndex + i]);
+            list->_VtxWritePtr += vertexCount;
+            list->_IdxWritePtr += batch.indexCount;
+            list->_VtxCurrentIdx += static_cast<unsigned int>(vertexCount);
+            list->PopTexture();
+            list->PopClipRect();
+        }
+    }
+
     void DiagnosticsOverlay::DrawHud(const core::Hud &hud, VkExtent2D extent)
     {
         if (!initialized_)
@@ -302,20 +335,6 @@ namespace umbra::render
         const ImVec2 size{static_cast<float>(extent.width), static_cast<float>(extent.height)};
         ImDrawList *draw = ImGui::GetForegroundDrawList();
 
-        // Centered text with a dark shadow so it reads on any background.
-        const auto centered = [&](const std::string &text, float y, float scale, ImU32 color) {
-            ImFont *font = ImGui::GetFont();
-            const float fontSize = ImGui::GetFontSize() * scale;
-            const ImVec2 textSize = font->CalcTextSizeA(fontSize, FLT_MAX, 0.0F, text.c_str());
-            const ImVec2 at{(size.x - textSize.x) * 0.5F, y};
-            draw->AddText(font, fontSize, ImVec2(at.x + 2, at.y + 2), IM_COL32(0, 0, 0, 200), text.c_str());
-            draw->AddText(font, fontSize, at, color, text.c_str());
-        };
-        if (!hud.prompt.empty())
-            centered(hud.prompt, size.y * 0.78F, 1.6F, IM_COL32(255, 255, 255, 255));
-        if (!hud.message.empty())
-            centered(hud.message, size.y * 0.70F, 1.4F, IM_COL32(255, 225, 140, 255));
-
         // Warnings stack down the top-right corner.
         float y = 8.0F;
         for (const std::string &warning : hud.warnings)
@@ -324,39 +343,6 @@ namespace umbra::render
             draw->AddText(ImVec2(size.x - textSize.x - 8.0F, y), IM_COL32(255, 120, 90, 255), warning.c_str());
             y += textSize.y + 2.0F;
         }
-
-        // Status lines (health, quest, combat log) stack down the top-left corner.
-        y = 8.0F;
-        for (const std::string &line : hud.status)
-        {
-            draw->AddText(ImVec2(10.0F, y + 1.0F), IM_COL32(0, 0, 0, 200), line.c_str());
-            draw->AddText(ImVec2(9.0F, y), IM_COL32(235, 235, 235, 255), line.c_str());
-            y += ImGui::GetTextLineHeight() + 2.0F;
-        }
-
-        // Menu: a fixed window in the middle; the selected row is highlighted.
-        if (hud.menuItems.empty())
-            return;
-        draw = ImGui::GetBackgroundDrawList();
-        if (hud.menuDim)
-            draw->AddRectFilled(ImVec2(0, 0), size, IM_COL32(0, 0, 0, 120)); // dim the scene
-        // Undimmed menus (fights) sit low so the fighters stay visible; text menus are wider.
-        const float menuY = hud.menuDim ? 0.5F : 0.75F;
-        ImGui::SetNextWindowPos(ImVec2(size.x * 0.5F, size.y * menuY), ImGuiCond_Always, ImVec2(0.5F, 0.5F));
-        ImGui::SetNextWindowSize(ImVec2(hud.menuText.empty() ? 260.0F : 460.0F, 0.0F));
-        ImGui::Begin(hud.menuTitle.empty() ? "Menu" : hud.menuTitle.c_str(), nullptr,
-                     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
-                         ImGuiWindowFlags_AlwaysAutoResize);
-        if (!hud.menuText.empty())
-        {
-            ImGui::TextWrapped("%s", hud.menuText.c_str());
-            ImGui::Separator();
-        }
-        for (std::size_t i = 0; i < hud.menuItems.size(); ++i)
-            ImGui::Selectable(hud.menuItems[i].c_str(), static_cast<int>(i) == hud.menuSelected);
-        ImGui::Separator();
-        ImGui::TextDisabled("%s", hud.menuHint.empty() ? "W/S or arrows, Enter to choose, Esc to resume" : hud.menuHint.c_str());
-        ImGui::End();
     }
 
     void DiagnosticsOverlay::EndFrame()
@@ -407,6 +393,7 @@ namespace umbra::render
         vkCmdPushConstants(commandBuffer, pipelineLayout_, VK_SHADER_STAGE_VERTEX_BIT, 0,
                            sizeof(pushConstants), pushConstants.data());
         std::uint32_t globalIndex = 0, globalVertex = 0;
+        VkDescriptorSet boundSet = descriptorSet_;
         for (const ImDrawList *list : drawData->CmdLists)
         {
             for (const ImDrawCmd &command : list->CmdBuffer)
@@ -427,6 +414,13 @@ namespace umbra::render
                 scissor.extent = {static_cast<std::uint32_t>(clipMax.x - scissor.offset.x),
                                   static_cast<std::uint32_t>(clipMax.y - scissor.offset.y)};
                 vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+                // The command's texture: ImGui's own font, or a game UI texture (DrawUi).
+                const auto set = reinterpret_cast<VkDescriptorSet>(static_cast<std::uintptr_t>(command.GetTexID()));
+                if (set != boundSet)
+                {
+                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout_, 0, 1, &set, 0, nullptr);
+                    boundSet = set;
+                }
                 vkCmdDrawIndexed(commandBuffer, command.ElemCount, 1,
                                  globalIndex + command.IdxOffset, static_cast<std::int32_t>(globalVertex + command.VtxOffset), 0);
             }

@@ -1,5 +1,5 @@
-// The page around the browser build (roadmap P10, README.md): starts the game, draws its HUD as
-// HTML, keeps saves in IndexedDB with export/import, and installs it for offline play.
+// The page around the browser build (roadmap P10, README.md): starts the game, shows asset warnings,
+// keeps saves in IndexedDB with export/import, and installs it for offline play.
 'use strict';
 
 const $ = (id) => document.getElementById(id);
@@ -17,32 +17,17 @@ const Page = {
   stopped: false,
 
   // 2. HUD from core::Hud (JSON from RendererWeb.cpp); only touch the page when it changed ------
+  // The game draws its own screens (engine/ui); the page shows asset warnings and timings, and keeps
+  // `state` (open screens, hero) in Module.uiState for tests.
   lastHud: '',
   hud(json) {
     if (json === Page.lastHud) return;
     Page.lastHud = json;
     const h = JSON.parse(json);
-    $('status').textContent = h.status.join('\n');
+    Module.uiState = h.state;
     $('warnings').textContent = h.warnings.join('\n');
-    $('message').textContent = h.message;
-    $('prompt').textContent = h.prompt;
     $('stats').textContent = h.stats.join('\n');
     $('stats').style.display = h.diagnostics && Page.showStats ? 'block' : 'none';
-    const menu = h.menuItems.length > 0;
-    $('menu').style.display = menu ? 'block' : 'none';
-    $('dim').style.display = menu && h.menuDim ? 'block' : 'none';
-    if (menu) {
-      $('menu-title').textContent = h.menuTitle;
-      $('menu-text').textContent = h.menuText;
-      $('menu-hint').textContent = h.menuHint || 'W/S choose, Enter';
-      const list = $('menu-items');
-      list.replaceChildren(...h.menuItems.map((item, i) => {
-        const li = document.createElement('li');
-        li.textContent = item;
-        if (i === h.menuSelected) li.className = 'selected';
-        return li;
-      }));
-    }
   },
   showStats: false,
 

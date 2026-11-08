@@ -3,6 +3,8 @@
 #include <Log.hpp>
 #include <Platform.hpp>
 #include <Profiling.hpp>
+#include <Inventory.hpp>
+#include <SkillTree.hpp>
 // Optional plugins (UMBRA_PLUGIN_* from the build): each combat mode and the learned enemy.
 #if UMBRA_PLUGIN_LEARNED_AI
 #include <PolicyContract.hpp>
@@ -149,8 +151,7 @@ void GameFlow::Update(const umbra::platform::Input &input, float deltaSeconds)
 
     if (startMenu_)
     {
-        UpdateStartMenu(input);
-        scene_.SetRoamersActive(false);
+        scene_.SetRoamersActive(false); // the start screen waits for a choice (HandleUi)
         return;
     }
     switch (session_.GetPhase())
@@ -159,8 +160,7 @@ void GameFlow::Update(const umbra::platform::Input &input, float deltaSeconds)
         UpdateExploring(input);
         break;
     case game::Phase::Talking:
-        UpdateTalking(input);
-        break;
+        break; // answers come from the conversation screen (HandleUi)
     case game::Phase::Fighting:
 #if UMBRA_PLUGIN_TURN_COMBAT
         if (session_.Mode() == game::CombatMode::Turn)
@@ -174,8 +174,7 @@ void GameFlow::Update(const umbra::platform::Input &input, float deltaSeconds)
             EndFight(*result);
         break;
     case game::Phase::Dead:
-        UpdateDeath(input);
-        break;
+        break; // the death screen (HandleUi)
     }
     scene_.SetRoamersActive(session_.GetPhase() == game::Phase::Exploring);
 
@@ -205,28 +204,7 @@ bool GameFlow::AllowsPortals() const
     return !startMenu_ && (session_.GetPhase() == game::Phase::Exploring || session_.GetPhase() == game::Phase::Talking);
 }
 
-bool GameFlow::HandleEscape()
-{
-    if (startMenu_)
-        return true; // the start menu stays until a choice is made
-    if (session_.GetPhase() == game::Phase::Talking)
-    {
-        session_.EndTalk(); // walking away changes nothing
-        return true;
-    }
-    return session_.GetPhase() == game::Phase::Dead;
-}
 
-bool GameFlow::MenuInput(const umbra::platform::Input &input, std::size_t count)
-{
-    if (count == 0)
-        return false;
-    const int move = (input.IsKeyPressed(InputKey::S) || input.IsKeyPressed(InputKey::Down) ? 1 : 0) -
-                     (input.IsKeyPressed(InputKey::W) || input.IsKeyPressed(InputKey::Up) ? 1 : 0);
-    // Wrap around, and keep the cursor valid when the list got shorter.
-    selected_ = (selected_ + move + static_cast<int>(count)) % static_cast<int>(count);
-    return input.IsKeyPressed(InputKey::Enter);
-}
 
 void GameFlow::Say(const std::string &text)
 {
@@ -248,9 +226,7 @@ bool GameFlow::Interact(const umbra::world::Interactable &interactable)
 {
     if (!interactable.conversation.empty())
     {
-        if (session_.Talk(interactable.conversation))
-            selected_ = 0;
-        else
+        if (!session_.Talk(interactable.conversation))
             Say("Nothing to say (unknown conversation " + interactable.conversation + ")");
         return true;
     }
@@ -262,23 +238,18 @@ bool GameFlow::Interact(const umbra::world::Interactable &interactable)
     return false;
 }
 
-void GameFlow::UpdateTalking(const umbra::platform::Input &input)
+void GameFlow::Answer(std::size_t visibleIndex)
 {
+    // The conversation screen's choice: the n-th visible answer (none visible: the line ends it).
     umbra::story::Conversation *talk = session_.CurrentConversation();
     if (talk == nullptr)
         return;
     const std::vector<std::size_t> visible = talk->VisibleChoices(session_.Quests(), session_.Hero());
-    // A line without answers: Enter ends the conversation.
     if (visible.empty())
-    {
-        if (MenuInput(input, 1))
-            session_.EndTalk();
+        return session_.EndTalk();
+    if (visibleIndex >= visible.size())
         return;
-    }
-    if (!MenuInput(input, visible.size()))
-        return;
-    const umbra::story::ChoiceResult result = session_.Choose(visible[static_cast<std::size_t>(selected_)]);
-    selected_ = 0;
+    const umbra::story::ChoiceResult result = session_.Choose(visible[visibleIndex]);
     if (result == umbra::story::ChoiceResult::NoRoom)
         Say("Your bags are full");
     else if (result == umbra::story::ChoiceResult::MissingItem)
@@ -323,7 +294,6 @@ void GameFlow::StartFight(std::size_t roamer)
     fightGeneration_ = scene_.Generation();
     log_ = {"A fight with " + std::to_string(group.size()) + (group.size() == 1 ? " enemy!" : " enemies!")};
     policyFor_ = static_cast<std::size_t>(-1);
-    selected_ = 0;
     enemyDelay_ = enemyTurnDelay;
 }
 
@@ -344,22 +314,11 @@ void GameFlow::UpdateTurnFight(const umbra::platform::Input &input, float deltaS
     if (input.IsKeyPressed(InputKey::F))
         return Flee();
 
-    // 1. The hero's turn: pick an action from the menu (the last item is Flee).
+    // The hero's turn comes from the fight screen (HandleUi). An enemy's turn: it decides after a
+    // short pause, through the same rules. An enemy with a learned policy asks it in the background
+    // when its turn starts; the pause is the deadline.
     const std::optional<std::size_t> current = turn->Current();
-    if (current && *current == 0)
-    {
-        const std::vector<rpg::ActionIntent> legal = turn->LegalActions();
-        if (MenuInput(input, legal.size() + 1))
-        {
-            if (static_cast<std::size_t>(selected_) == legal.size())
-                return Flee();
-            Act(legal[static_cast<std::size_t>(selected_)], true);
-            enemyDelay_ = enemyTurnDelay;
-        }
-    }
-    // 2. An enemy's turn: it decides after a short pause, through the same rules. An enemy with a
-    //    learned policy asks it in the background when its turn starts; the pause is the deadline.
-    else if (current)
+    if (current && *current != 0)
     {
 #if UMBRA_PLUGIN_LEARNED_AI
         const auto learned = learned_.find(turn->GetRoster()[*current].character->actor);
@@ -506,7 +465,6 @@ void GameFlow::Flee()
 void GameFlow::EndFight(const game::FightResult &result)
 {
     fighters_.clear();
-    selected_ = 0;
     // Defeat: stay in the arena with the death menu (loading replaces everything).
     if (!result.won)
     {
@@ -528,56 +486,25 @@ void GameFlow::EndFight(const game::FightResult &result)
 
 // ---------------- Death and saves ----------------
 
-void GameFlow::UpdateDeath(const umbra::platform::Input &input)
+void GameFlow::Restart()
 {
-    if (!MenuInput(input, 3))
-        return;
-    switch (selected_)
-    {
-    case 0:
-        (void)Load(slots_.Manual());
-        break;
-    case 1:
-        (void)Load(slots_.Autosave());
-        break;
-    default:
-        // A fresh start in the first area.
-        session_.NewGame();
-        if (!scene_.ChangeScene(startScene_, "player"))
-            Say("Cannot load " + startScene_);
-        break;
-    }
+    // A fresh start in the first area.
+    session_.NewGame();
+    if (!scene_.ChangeScene(startScene_, "player"))
+        Say("Cannot load " + startScene_);
 }
 
-std::vector<std::string> GameFlow::StartMenuItems() const
+void GameFlow::StartChoice(const std::string &action)
 {
-    // "Continue" = the newer of the save-stone save and the autosave; the other one by name.
-    std::vector<std::string> items{"Continue"};
-    if (std::filesystem::exists(slots_.Manual()) && std::filesystem::exists(slots_.Autosave()))
-        items.push_back("Load the other save");
-    items.push_back("New game");
-    return items;
-}
-
-void GameFlow::UpdateStartMenu(const umbra::platform::Input &input)
-{
-    const std::vector<std::string> items = StartMenuItems();
-    if (!MenuInput(input, items.size()))
-        return;
-    // 1. Which save is newer (a missing file counts as oldest).
+    // "continue" = the newer of the save-stone save and the autosave; "other" = the other one.
     std::error_code ignored;
     const auto time = [&](const std::filesystem::path &file) { return std::filesystem::last_write_time(file, ignored); };
     const bool haveManual = std::filesystem::exists(slots_.Manual()), haveAuto = std::filesystem::exists(slots_.Autosave());
     const bool manualNewer = haveManual && (!haveAuto || time(slots_.Manual()) >= time(slots_.Autosave()));
     const std::filesystem::path newest = manualNewer ? slots_.Manual() : slots_.Autosave();
     const std::filesystem::path other = manualNewer ? slots_.Autosave() : slots_.Manual();
-    // 2. Load it, or start fresh where the game opened.
-    const std::string &picked = items[static_cast<std::size_t>(selected_)];
-    if (picked == "New game" || Load(picked == "Continue" ? newest : other))
-    {
+    if (action == "new" || Load(action == "continue" ? newest : other))
         startMenu_ = false;
-        selected_ = 0;
-    }
 }
 
 void GameFlow::OnAreaEntered()
@@ -694,78 +621,188 @@ std::string GameFlow::PotionItem()
     return {};
 }
 
-void GameFlow::FillHud(umbra::core::Hud &hud)
+std::string GameFlow::Screen() const
 {
+    // The game screen this moment needs (the rpg-ui plugin's screens; ui/README.md there).
     if (startMenu_)
+        return "start";
+    switch (session_.GetPhase())
     {
-        hud.menuTitle = "Umbra";
-        hud.menuItems = StartMenuItems();
-        hud.menuSelected = selected_;
-        hud.menuHint = "W/S choose, Enter";
-        return;
+    case game::Phase::Talking:
+        return "conversation";
+    case game::Phase::Dead:
+        return "death";
+    case game::Phase::Fighting:
+#if UMBRA_PLUGIN_TURN_COMBAT
+        if (umbra::turn::TurnEncounter *turn = const_cast<game::GameSession &>(session_).Combat().Turn())
+            if (turn->Current() && *turn->Current() == 0)
+                return "fight";
+#endif
+        return {};
+    case game::Phase::Exploring:
+        return {};
     }
+    return {};
+}
+
+bool GameFlow::HandleUi(const std::string &screen, const std::string &action, const std::string &arg)
+{
+    // What the player chose on a game screen. Numbers in `arg` are list positions.
+    const auto number = [&] { return arg.empty() ? std::size_t{0} : static_cast<std::size_t>(std::stoul(arg)); };
+    if (screen == "start")
+        StartChoice(action);
+    else if (screen == "conversation")
+        action == "leave" ? session_.EndTalk() : Answer(number());
+    else if (screen == "death")
+    {
+        if (action == "load-manual")
+            (void)Load(slots_.Manual());
+        else if (action == "load-auto")
+            (void)Load(slots_.Autosave());
+        else
+            Restart();
+    }
+#if UMBRA_PLUGIN_TURN_COMBAT
+    else if (screen == "fight")
+    {
+        umbra::turn::TurnEncounter *turn = session_.Combat().Turn();
+        if (action == "flee" || turn == nullptr)
+            Flee();
+        else if (const std::vector<rpg::ActionIntent> legal = turn->LegalActions(); number() < legal.size())
+        {
+            Act(legal[number()], true);
+            enemyDelay_ = enemyTurnDelay;
+        }
+    }
+#endif
+    else if (screen == "inventory" && session_.GetPhase() == game::Phase::Exploring)
+    {
+        rpg::Character &hero = session_.Hero();
+        if (action == "equip" && !rpg::Equip(session_.Content(), hero, arg))
+            Say("That can't be equipped");
+        if (action == "unequip" && !rpg::Unequip(session_.Content(), hero, arg == "weapon" ? rpg::Slot::Weapon : rpg::Slot::Armor))
+            Say("Your bags are full");
+    }
+    else if (screen == "skills" && action == "unlock" && session_.GetPhase() == game::Phase::Exploring)
+    {
+        const rpg::UnlockResult result = rpg::Unlock(session_.Content(), session_.Hero(), arg);
+        const rpg::SkillDef *skill = session_.Content().FindSkill(arg);
+        Say(result == rpg::UnlockResult::Unlocked ? "Learned " + (skill ? skill->name : arg) : std::string{"Can't learn it: "} + rpg::ToString(result));
+    }
+    else
+        return false;
+    return true;
+}
+
+nlohmann::json GameFlow::UiData()
+{
+    // Everything the screens show, as one JSON object (bindings like {hero.health}).
+    using nlohmann::json;
     const rpg::Content &content = session_.Content();
     rpg::Character &hero = session_.Hero();
     const rpg::StatBlock stats = rpg::DerivedStats(content, hero);
+    json data;
+    const rpg::ActorDef *heroDef = content.FindActor(hero.actor);
 
-    // 1. Status lines: the hero, the combat mode, active quests.
-    hud.status.push_back("Level " + std::to_string(hero.level) + "   HP " + std::to_string(hero.health) + "/" +
-                         std::to_string(rpg::Get(stats, rpg::Stat::MaxHealth)) + "   EN " + std::to_string(hero.energy) +
-                         "/" + std::to_string(rpg::Get(stats, rpg::Stat::MaxEnergy)) + "   XP " + std::to_string(hero.xp) +
-                         "/" + std::to_string(rpg::XpForLevel(hero.level + 1)));
-    hud.status.push_back(std::string{"Combat: "} + (session_.Mode() == game::CombatMode::Turn ? "turn-based" : "real-time") +
-                         (session_.GetPhase() == game::Phase::Exploring && game::hasTurnMode && game::hasRealtimeMode ? "  [Tab] switch" : ""));
+    // 1. The hero, the combat mode.
+    data["hero"] = {{"name", heroDef ? heroDef->name : "Hero"}, {"level", hero.level}, {"health", hero.health}, {"maxHealth", rpg::Get(stats, rpg::Stat::MaxHealth)},
+                    {"energy", hero.energy}, {"maxEnergy", rpg::Get(stats, rpg::Stat::MaxEnergy)}, {"xp", hero.xp}, {"nextXp", rpg::XpForLevel(hero.level + 1)},
+                    {"skillPoints", hero.skillPoints},
+                    {"stats", {{"attack", rpg::Get(stats, rpg::Stat::Attack)}, {"defense", rpg::Get(stats, rpg::Stat::Defense)}, {"speed", rpg::Get(stats, rpg::Stat::Speed)}}}};
+    data["mode"] = session_.Mode() == game::CombatMode::Turn ? "turn-based" : "real-time";
+    const bool exploring = !startMenu_ && session_.GetPhase() == game::Phase::Exploring;
+    data["switchHint"] = exploring && game::hasTurnMode && game::hasRealtimeMode ? "   [Tab] switch" : "";
+    data["exploring"] = exploring;
+    data["canManage"] = exploring;
+
+    // 2. Quests: the journal and the tracker.
+    data["quests"] = json::array();
+    data["activeQuests"] = json::array();
     for (const auto &[id, progress] : session_.Quests().All())
     {
         const rpg::QuestDef *quest = content.FindQuest(id);
-        if (quest == nullptr || progress.state != rpg::QuestState::Active || progress.objective >= quest->objectives.size())
+        if (quest == nullptr || progress.state == rpg::QuestState::NotStarted)
             continue;
-        hud.status.push_back("Quest: " + quest->name + " - " + quest->objectives[progress.objective].text);
+        const bool active = progress.state == rpg::QuestState::Active && progress.objective < quest->objectives.size();
+        const std::string objective = active ? quest->objectives[progress.objective].text : "";
+        const char *state = progress.state == rpg::QuestState::Completed ? "Completed" : progress.state == rpg::QuestState::Failed ? "Failed" : "Active";
+        data["quests"].push_back({{"name", quest->name}, {"description", quest->description}, {"state", state}, {"objective", objective}});
+        if (active)
+            data["activeQuests"].push_back({{"name", quest->name}, {"objective", objective}});
+    }
+    data["noQuests"] = data["quests"].empty();
+
+    // 3. Bag and equipment.
+    data["inventory"] = json::array();
+    int used = 0;
+    for (const rpg::ItemStack &stack : hero.inventory)
+    {
+        const rpg::ItemDef *item = content.FindItem(stack.item);
+        ++used;
+        const bool equippable = item && item->slot != rpg::Slot::None;
+        data["inventory"].push_back({{"id", stack.item}, {"name", item ? item->name : stack.item}, {"count", stack.count},
+                                     {"cannotEquip", !equippable},
+                                     {"hint", equippable ? (item->slot == rpg::Slot::Weapon ? "Weapon - choose to equip" : "Armor - choose to equip")
+                                              : item && !item->use.empty() ? "Use it in fights" : "Item"}});
+    }
+    data["bagUsed"] = used;
+    data["bagSize"] = hero.inventorySlots;
+    data["equipment"] = json::array();
+    for (const auto &[slot, label] : {std::pair{rpg::Slot::Weapon, "Weapon"}, std::pair{rpg::Slot::Armor, "Armor"}})
+    {
+        const auto it = hero.equipment.find(slot);
+        const rpg::ItemDef *item = it == hero.equipment.end() ? nullptr : content.FindItem(it->second);
+        data["equipment"].push_back({{"slot", slot == rpg::Slot::Weapon ? "weapon" : "armor"}, {"label", label},
+                                     {"name", item ? item->name : it == hero.equipment.end() ? "(nothing)" : it->second}});
     }
 
-    switch (session_.GetPhase())
+    // 4. Skills: unlocked, unlockable, or what is missing.
+    data["skills"] = json::array();
+    for (const auto &[id, skill] : content.skills)
     {
-    case game::Phase::Exploring:
-        break;
-
-    // 2. Talking: the line and the answers.
-    case game::Phase::Talking:
-        if (umbra::story::Conversation *talk = session_.CurrentConversation())
+        const bool unlocked = std::find(hero.skills.begin(), hero.skills.end(), id) != hero.skills.end();
+        const bool can = !unlocked && rpg::CanUnlock(content, hero, id);
+        std::string detail = std::to_string(skill.energyCost) + " EN";
+        detail += skill.turn && skill.realtime ? ", both modes" : skill.turn ? ", turn-based" : ", real-time";
+        if (!skill.prerequisites.empty())
         {
-            hud.menuTitle = talk->Node().speaker.empty() ? "..." : talk->Node().speaker;
-            hud.menuText = talk->Node().text;
-            for (std::size_t choice : talk->VisibleChoices(session_.Quests(), hero))
-                hud.menuItems.push_back(talk->Node().choices[choice].text);
-            if (hud.menuItems.empty())
-                hud.menuItems.push_back("(Leave)");
-            hud.menuSelected = selected_;
-            hud.menuHint = "W/S choose, Enter answer, Esc walk away";
+            detail += ", needs";
+            for (const std::string &p : skill.prerequisites)
+                detail += " " + (content.FindSkill(p) ? content.FindSkill(p)->name : p);
         }
-        break;
+        data["skills"].push_back({{"id", id}, {"name", skill.name}, {"unlocked", unlocked}, {"locked", !unlocked && !can},
+                                  {"state", unlocked ? "Learned" : can ? "Unlock for " + std::to_string(skill.pointCost) + " point(s)"
+                                                                       : "Needs " + std::to_string(skill.pointCost) + " point(s) and its requirements"},
+                                  {"detail", detail}});
+    }
 
-    // 3. Fighting: enemy health and the log; a menu on the hero's turn, key help in real time.
-    case game::Phase::Fighting:
+    // 5. A conversation.
+    if (umbra::story::Conversation *talk = session_.CurrentConversation(); talk && session_.GetPhase() == game::Phase::Talking)
+    {
+        json choices = json::array();
+        for (std::size_t choice : talk->VisibleChoices(session_.Quests(), hero))
+            choices.push_back(talk->Node().choices[choice].text);
+        data["talk"] = {{"speaker", talk->Node().speaker.empty() ? "..." : talk->Node().speaker}, {"text", talk->Node().text},
+                        {"choices", choices}, {"leaveOnly", choices.empty()}};
+    }
+
+    // 6. A fight: enemies, the log, the hero's turn menu or the real-time keys.
+    if (session_.GetPhase() == game::Phase::Fighting)
+    {
+        json fight{{"log", log_}, {"enemies", json::array()}, {"actions", json::array()}, {"keys", ""}};
         if (const rpg::Roster *roster = FightRoster())
             for (std::size_t i = 1; i < roster->size(); ++i)
-                if ((*roster)[i].character->IsAlive())
-                    hud.status.push_back(FighterName(i) + ": " + std::to_string((*roster)[i].character->health) + " HP" + LearnedTag(i));
-        hud.status.insert(hud.status.end(), log_.begin(), log_.end());
+                if (const rpg::Character &c = *(*roster)[i].character; c.IsAlive())
+                    fight["enemies"].push_back({{"name", FighterName(i)}, {"health", c.health},
+                                                {"maxHealth", rpg::Get(rpg::DerivedStats(content, c), rpg::Stat::MaxHealth)}, {"tag", LearnedTag(i)}});
 #if UMBRA_PLUGIN_TURN_COMBAT
         if (umbra::turn::TurnEncounter *turn = session_.Combat().Turn())
         {
-            const std::optional<std::size_t> current = turn->Current();
-            hud.menuDim = false;
-            if (current && *current == 0)
-            {
-                hud.menuTitle = "Round " + std::to_string(turn->Round()) + " - your turn";
-                for (const rpg::ActionIntent &intent : turn->LegalActions())
-                    hud.menuItems.push_back(ActionName(intent));
-                hud.menuItems.push_back("Flee");
-                hud.menuSelected = selected_;
-                hud.menuHint = "W/S choose, Enter act, F flee";
-            }
-            else if (current)
-                hud.prompt = FighterName(*current) + " is acting...";
+            fight["round"] = turn->Round();
+            for (const rpg::ActionIntent &intent : turn->LegalActions())
+                fight["actions"].push_back(ActionName(intent));
+            if (const std::optional<std::size_t> current = turn->Current(); current && *current != 0)
+                data["prompt"] = FighterName(*current) + " is acting...";
         }
         else
 #endif
@@ -775,18 +812,17 @@ void GameFlow::FillHud(umbra::core::Hud &hud)
             for (std::size_t i = 0; i < 4 && i < skills.size(); ++i)
             {
                 const rpg::SkillDef *skill = content.FindSkill(skills[i]);
-                keys += "[" + std::to_string(i + 1) + "] " + (skill ? skill->name : skills[i]) + "  ";
+                keys += "[" + std::to_string(i + 1) + "] " + (skill ? skill->name : skills[i]) + "   ";
             }
-            hud.prompt = keys + "[Q] potion  [F] flee";
+            fight["keys"] = keys + "[Q] potion   [F] flee";
         }
-        break;
-
-    // 4. Dead: how to go on.
-    case game::Phase::Dead:
-        hud.menuTitle = "You died";
-        hud.menuItems = {"Load save", "Load last autosave", "New game"};
-        hud.menuSelected = selected_;
-        hud.menuHint = "W/S choose, Enter";
-        break;
+        data["fight"] = fight;
     }
+
+    // 7. The start menu: Continue (newest save), the other save if both exist, New game.
+    data["start"]["items"] = json::array({{{"label", "Continue"}, {"action", "continue"}}});
+    if (std::filesystem::exists(slots_.Manual()) && std::filesystem::exists(slots_.Autosave()))
+        data["start"]["items"].push_back({{"label", "Load the other save"}, {"action", "other"}});
+    data["start"]["items"].push_back({{"label", "New game"}, {"action", "new"}});
+    return data;
 }

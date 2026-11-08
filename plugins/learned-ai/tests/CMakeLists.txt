@@ -21,8 +21,10 @@ umbra_copy_asan_runtime(UmbraPolicyTests)
 
 add_test(NAME Umbra.Policy COMMAND UmbraPolicyTests)
 
-# The shipped model must still fit the shipped content (the same check the game runs).
-add_test(
-    NAME Umbra.Tool.PolicyCheck
-    COMMAND UmbraTool policy-check ${UMBRA_REFERENCE_ASSETS}/policies/bandit_leader.policy.json --content ${UMBRA_REFERENCE_ASSETS}/rpg/reference.rpg.json
-)
+if(TARGET UmbraTool) # tools are not built for the browser
+    # The shipped model must still fit the shipped content (the same check the game runs).
+    add_test(
+        NAME Umbra.Tool.PolicyCheck
+        COMMAND UmbraTool policy-check ${UMBRA_REFERENCE_ASSETS}/policies/bandit_leader.policy.json --content ${UMBRA_REFERENCE_ASSETS}/rpg/reference.rpg.json
+    )
+endif()

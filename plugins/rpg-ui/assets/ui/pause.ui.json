@@ -1,0 +1,13 @@
+{
+  "format": "umbra.ui", "version": 1, "modal": true, "dim": true, "back": "resume",
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [340, 0], "align": "stretch", "gap": 8, "children": [
+    { "type": "text", "style": "title", "text": "Paused", "textAlign": "center" },
+    { "type": "spacer", "size": [1, 6] },
+    { "type": "button", "text": "Resume", "action": "resume", "textAlign": "center" },
+    { "type": "button", "text": "Inventory", "action": "open:inventory", "textAlign": "center", "visible": "{canManage}" },
+    { "type": "button", "text": "Skills", "action": "open:skills", "textAlign": "center", "visible": "{canManage}" },
+    { "type": "button", "text": "Quests", "action": "open:quests", "textAlign": "center", "visible": "{canManage}" },
+    { "type": "button", "text": "Restart area", "action": "restart", "textAlign": "center" },
+    { "type": "button", "text": "Quit", "action": "quit", "textAlign": "center" }
+  ] }
+}

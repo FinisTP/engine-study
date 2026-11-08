@@ -1,0 +1,15 @@
+{
+  "format": "umbra.ui", "version": 1, "modal": true, "dim": true, "back": "close",
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [700, 0], "align": "stretch", "gap": 12, "children": [
+    { "type": "text", "style": "title", "text": "Quests" },
+    { "type": "text", "style": "muted", "text": "No quests yet. Talk to people.", "visible": "{noQuests}" },
+    { "type": "list", "items": "{quests}", "as": "quest", "gap": 10,
+      "entry": { "type": "stack", "style": "slot", "gap": 2, "children": [
+        { "type": "text", "style": "heading", "text": "{quest.name}" },
+        { "type": "text", "style": "small", "text": "{quest.state}" },
+        { "type": "text", "text": "{quest.description}", "wrap": true, "size": [640, 0] },
+        { "type": "text", "style": "good", "text": "{quest.objective}", "wrap": true, "size": [640, 0], "visible": "{quest.objective}" }
+      ] } },
+    { "type": "button", "text": "Close", "action": "close" }
+  ] }
+}

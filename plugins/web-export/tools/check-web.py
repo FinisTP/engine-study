@@ -16,6 +16,9 @@ async def ready(page):
         await page.wait_for_timeout(500)
     return False
 
+async def ui(page):  # core::Hud::state: open screens, hero, combat mode (Main.cpp)
+    return await page.evaluate('Module.uiState || {}')
+
 async def main():
     async with async_playwright() as p:
         browser = await p.chromium.launch(executable_path='/usr/bin/google-chrome', headless=True, args=GPU)
@@ -25,16 +28,22 @@ async def main():
         page.on('pageerror', lambda e: errors.append(str(e)))
         await page.goto(URL)
         check('game starts and draws frames', await ready(page))
-        check('HUD shows the hero', 'HP 110/110' in await page.inner_text('#status'))
+        state = await ui(page)
+        check('screens show the hero', state.get('hero', {}).get('maxHealth') == 110 and 'hud' in state.get('screens', []), state)
         check('no HUD warnings (scene and content loaded)', (await page.inner_text('#warnings')).strip() == '', await page.inner_text('#warnings'))
         # (this container loses the WebGPU device, which shows the 'device lost' screen: hide it)
         await page.evaluate("document.getElementById('start').style.display='none'; document.getElementById('canvas').focus()")
-        # Input: Tab switches the combat mode (GameFlow), shown in the HUD.
+        # Input: Tab switches the combat mode (GameFlow), shown on the HUD screen.
         await page.keyboard.press('Tab'); await page.wait_for_timeout(500)
-        check('keyboard reaches the game (Tab -> real time)', 'real-time' in await page.inner_text('#status'), await page.inner_text('#status'))
-        # Escape opens the pause menu (HTML menu from core::Hud).
+        mode = (await ui(page)).get('mode', '')
+        check('keyboard reaches the game (Tab -> real time)', 'real-time' in mode, mode)
+        # Escape opens the pause screen and closes it again; I opens the inventory.
         await page.keyboard.press('Escape'); await page.wait_for_timeout(500)
-        check('pause menu as HTML', await page.is_visible('#menu') and 'Paused' in await page.inner_text('#menu-title'))
+        check('Esc opens the pause screen', 'pause' in (await ui(page)).get('screens', []), await ui(page))
+        await page.keyboard.press('Escape'); await page.wait_for_timeout(500)
+        check('Esc closes it', 'pause' not in (await ui(page)).get('screens', []), await ui(page))
+        await page.keyboard.press('i'); await page.wait_for_timeout(500)
+        check('I opens the inventory', 'inventory' in (await ui(page)).get('screens', []), await ui(page))
         await page.keyboard.press('Escape'); await page.wait_for_timeout(300)
         # Saves: a file in the saves folder survives a reload (IndexedDB through IDBFS).
         await page.evaluate("FS.mkdirTree('/libsdl/Umbra/UmbraEngine/saves'); FS.writeFile('/libsdl/Umbra/UmbraEngine/saves/probe.txt', 'kept'); Module.persistSaves();")
@@ -66,8 +75,8 @@ async def main():
             ctx3 = await browser.new_context()
             page3 = await ctx3.new_page()
             await page3.goto(EDITED); await ready(page3)
-            status = await page3.inner_text('#status')
-            check('repacked assets show up (no rebuild)', 'HP 999/999' in status, status)
+            hero = (await ui(page3)).get('hero', {})
+            check('repacked assets show up (no rebuild)', hero.get('maxHealth') == 999, hero)
         await browser.close()
         # No WebGPU: a clear message, the game is not loaded.
         browser = await p.chromium.launch(executable_path='/usr/bin/google-chrome', headless=True, args=['--disable-features=WebGPU', '--disable-gpu', '--no-sandbox'])

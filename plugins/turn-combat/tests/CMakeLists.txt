@@ -19,9 +19,11 @@ umbra_copy_asan_runtime(UmbraTurnCombatTests)
 
 add_test(NAME Umbra.TurnCombat COMMAND UmbraTurnCombatTests)
 
-# UmbraTool fight (this plugin's tool command): the AI plays both sides of a quick fight.
-add_test(
-    NAME Umbra.Tool.Fight
-    COMMAND UmbraTool fight ${UMBRA_REFERENCE_ASSETS}/rpg/reference.rpg.json hero wolf
-)
-set_tests_properties(Umbra.Tool.Fight PROPERTIES PASS_REGULAR_EXPRESSION "Hero side wins")
+if(TARGET UmbraTool) # tools are not built for the browser
+    # UmbraTool fight (this plugin's tool command): the AI plays both sides of a quick fight.
+    add_test(
+        NAME Umbra.Tool.Fight
+        COMMAND UmbraTool fight ${UMBRA_REFERENCE_ASSETS}/rpg/reference.rpg.json hero wolf
+    )
+    set_tests_properties(Umbra.Tool.Fight PROPERTIES PASS_REGULAR_EXPRESSION "Hero side wins")
+endif()

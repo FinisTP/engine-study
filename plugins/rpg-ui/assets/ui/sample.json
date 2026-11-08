@@ -1,0 +1,39 @@
+{
+  "hero": {"name": "Hero", "level": 3, "health": 84, "maxHealth": 130, "energy": 22, "maxEnergy": 40, "xp": 180, "nextXp": 250,
+           "skillPoints": 2, "stats": {"attack": 18, "defense": 11, "speed": 12}},
+  "mode": "turn-based",
+  "switchHint": "   [Tab] switch",
+  "exploring": true,
+  "canManage": true,
+  "prompt": "[E] Talk to the elder",
+  "message": "Picked up a healing potion.",
+  "warnings": [],
+  "quests": [
+    {"name": "The Old Well", "description": "Something stirs below the village well.", "state": "Active", "objective": "Look inside the well"},
+    {"name": "First Steps", "description": "Learn the ways of the settlement.", "state": "Completed", "objective": ""}
+  ],
+  "activeQuests": [{"name": "The Old Well", "objective": "Look inside the well"}],
+  "noQuests": false,
+  "inventory": [
+    {"id": "iron_sword", "name": "Iron Sword", "count": 1, "cannotEquip": false, "hint": "Weapon - choose to equip"},
+    {"id": "leather_armor", "name": "Leather Armor", "count": 1, "cannotEquip": false, "hint": "Armor - choose to equip"},
+    {"id": "healing_potion", "name": "Healing Potion", "count": 3, "cannotEquip": true, "hint": "Use it in fights"}
+  ],
+  "bagUsed": 3,
+  "bagSize": 12,
+  "equipment": [
+    {"slot": "weapon", "label": "Weapon", "name": "Rusty Dagger"},
+    {"slot": "armor", "label": "Armor", "name": "(nothing)"}
+  ],
+  "skills": [
+    {"id": "strike", "name": "Strike", "unlocked": true, "locked": false, "state": "Learned", "detail": "0 EN, both modes"},
+    {"id": "fireball", "name": "Fireball", "unlocked": false, "locked": false, "state": "Unlock for 1 point(s)", "detail": "8 EN, both modes"},
+    {"id": "meteor", "name": "Meteor", "unlocked": false, "locked": true, "state": "Needs 3 point(s) and its requirements", "detail": "20 EN, turn-based, needs Fireball"}
+  ],
+  "talk": {"speaker": "Elder", "text": "The well has been quiet for years. Lately, at night, we hear scratching from below.",
+           "choices": ["I will look into it.", "What is down there?"], "leaveOnly": false},
+  "fight": {"log": ["Hero hits Wolf for 12.", "Wolf bites Hero for 6."],
+            "enemies": [{"name": "Wolf", "health": 18, "maxHealth": 40, "tag": ""}, {"name": "Wolf 2", "health": 40, "maxHealth": 40, "tag": "  (learned AI)"}],
+            "actions": ["Attack Wolf", "Attack Wolf 2", "Fireball (8 EN)", "Healing Potion"], "round": 2, "keys": ""},
+  "start": {"items": [{"label": "Continue", "action": "continue"}, {"label": "New game", "action": "new"}]}
+}

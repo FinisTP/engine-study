@@ -1,19 +1,19 @@
 # GameFlow: the reference RPG in the running game
 
 `GameFlow` connects `umbra::game::GameSession` (the headless rules: story, fights, saves) to the
-3D world in `SceneRuntime` and to the keyboard. It adds no rules. Everything it decides is
-about input, placement and the screen.
+3D world in `SceneRuntime`, to the keyboard and to the game's screens. It adds no rules.
+Everything it decides is about input, placement and what the screens show.
 
 ## Phases
 
-| Phase     | Player moves?            | Keys                                         | Screen                         |
+| Phase     | Player moves?            | Keys                                         | Screen (`ui/*.ui.json`)        |
 |-----------|--------------------------|----------------------------------------------|--------------------------------|
-| Exploring | yes                      | E use, Tab switch combat mode                | status lines, quest            |
-| Talking   | no                       | W/S + Enter answer, Esc walk away            | dialogue window                |
-| Fighting (turn) | no (stands on its arena marker) | W/S + Enter pick an action, F flee          | action menu, enemy HP, log     |
-| Fighting (real time) | yes             | 1-4 skills, Q potion, F flee                 | key help, enemy HP, log        |
-| Dead      | no                       | W/S + Enter                                  | Load save / Load autosave / New game |
-| Start menu (launch, a save exists) | no      | W/S + Enter                                  | Continue / Load the other save / New game |
+| Exploring | yes                      | E use, Tab switch combat mode, I/K/J inventory/skills/quests, Esc pause | `hud`         |
+| Talking   | no                       | W/S (or mouse, d-pad) + Enter answer, Esc walk away | `conversation`          |
+| Fighting (turn) | no (stands on its arena marker) | W/S + Enter pick an action, Flee       | `fight`, enemy HP on `hud`     |
+| Fighting (real time) | yes             | 1-4 skills, Q potion, F flee                 | key help, enemy HP on `hud`    |
+| Dead      | no                       | W/S + Enter                                  | `death`                        |
+| Start menu (launch, a save exists) | no      | W/S + Enter                                  | `start`                        |
 
 At launch, when the saves folder has a save-stone save or an autosave, a start menu comes first
 (`#UMBRA-65`; before, the game always began fresh in the settlement, so a save made in the dungeon
@@ -22,6 +22,25 @@ one (only when both exist), **New game** plays on in the start area. Not shown w
 on the command line (the editor's Play) or in `--benchmark`.
 
 The combat mode can only be switched while exploring (user decision, 2026-11-07).
+
+## Screens (S3)
+
+The game draws its UI with `engine/ui` (`engine/ui/include/UI.md`); the screen files come from
+the `rpg-ui` plugin (a project's own `ui/` files win). Each frame, in `Main.cpp`:
+
+1. `GameFlow::UiData()` gives one JSON object with everything the screens bind to (hero, quests,
+   bag, equipment, skills, the conversation, the fight, the start menu). `Main.cpp` adds the
+   `[E]` prompt (only while exploring), the latest message and asset warnings.
+2. `GameFlow::Screen()` names the one game screen this phase needs; `GameUi::ShowGameScreen`
+   closes the previous one. The `hud` is always open underneath.
+3. `UiSystem::Update` draws every open screen and returns what the player chose.
+   `GameFlow::HandleUi` takes the game screens' actions (answers, fight actions, equip, unlock,
+   death and start choices); `Main.cpp` takes the pause screen's (resume, restart, quit).
+
+The pause, inventory, skills and quests screens stop the game (no simulation, game sounds
+paused). The mouse steers the camera only while no screen takes the input. Inventory, skills and
+quests open with I, K and J while exploring, or from the pause screen. The action names are in
+`plugins/rpg-ui/assets/ui/README.md`.
 
 ## Enemies in the world
 
@@ -101,7 +120,7 @@ when the model loads and still fits the content (`game/policy/include/Policy.md`
   model's worker thread.
 - **Acting:** after the 0.7 s enemy pause (the deadline), the answer is used if it is for this
   decision and legal. Otherwise the standard AI acts, and the log says so.
-- **Display:** the enemy's status line shows "(learned AI)" in turn mode.
+- **Display:** the enemy's box on the HUD shows "(learned AI)" in turn mode.
 - **Refusal:** after a content reload that changes what it was trained on, the model is refused
   with a message, and the standard AI plays that actor.
 - **Real time:** real-time fights always use the standard AI.

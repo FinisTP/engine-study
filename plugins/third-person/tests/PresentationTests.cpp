@@ -1,7 +1,6 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
-#include <PauseMenu.hpp>
 #include <StrideAnimator.hpp>
 
 using Catch::Approx;
@@ -48,24 +47,4 @@ TEST_CASE("Bob and lean stay within their limits and grow with speed")
     REQUIRE(maxBob > settings.bobHeight * 0.9F);
     REQUIRE(fast.GetPose().lean == Approx(settings.maxLean).margin(1e-3));
     REQUIRE(slow.GetPose().lean < fast.GetPose().lean);
-}
-
-TEST_CASE("Pause menu: wrap-around selection and actions")
-{
-    PauseMenu menu;
-    REQUIRE(menu.Confirm() == MenuAction::None); // closed menus do nothing
-    menu.Open();
-    REQUIRE(menu.GetSelected() == 0);
-    menu.Move(-1);
-    REQUIRE(menu.GetSelected() == 2); // wrapped to Quit
-    REQUIRE(menu.Confirm() == MenuAction::Quit);
-    REQUIRE(menu.IsOpen()); // quitting doesn't need to close it
-
-    menu.Move(-1);
-    REQUIRE(menu.Confirm() == MenuAction::Restart);
-    REQUIRE_FALSE(menu.IsOpen());
-
-    menu.Open(); // reopening starts at Resume
-    REQUIRE(menu.Confirm() == MenuAction::Resume);
-    REQUIRE_FALSE(menu.IsOpen());
 }

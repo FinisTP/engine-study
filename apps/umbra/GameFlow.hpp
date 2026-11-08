@@ -10,6 +10,8 @@
 #include <PolicyDecider.hpp>
 #endif
 
+#include <nlohmann/json.hpp>
+
 #include <map>
 #include <memory>
 
@@ -38,24 +40,25 @@ public:
     [[nodiscard]] bool PlayerCanMove() const;
     // Portals work while exploring or talking, never in a fight or after death.
     [[nodiscard]] bool AllowsPortals() const;
-    // Esc: walks away from a conversation, does nothing on the death menu. False = open the pause menu.
-    bool HandleEscape();
     // E on something: true if it was a conversation or a save stone (handled here).
     bool Interact(const umbra::world::Interactable &interactable);
     // A portal brought the player to a new area: autosave there.
     void OnAreaEntered();
-    void FillHud(umbra::core::Hud &hud);
+    // The game screen this moment needs ("start", "conversation", "fight", "death" or ""), the
+    // data every screen binds to, and what the player chose on one (true if it was a game screen).
+    [[nodiscard]] std::string Screen() const;
+    [[nodiscard]] nlohmann::json UiData();
+    bool HandleUi(const std::string &screen, const std::string &action, const std::string &arg);
     // News for the screen (quest changes, saves, fight results); empty when nothing new.
     std::string TakeMessage() { return std::exchange(message_, {}); }
 
 private:
     void UpdateExploring(const umbra::platform::Input &input);
-    void UpdateTalking(const umbra::platform::Input &input);
+    void Answer(std::size_t visibleIndex);
     void UpdateTurnFight(const umbra::platform::Input &input, float deltaSeconds);
     void UpdateRealtimeFight(const umbra::platform::Input &input, float deltaSeconds);
-    void UpdateDeath(const umbra::platform::Input &input);
-    void UpdateStartMenu(const umbra::platform::Input &input);
-    [[nodiscard]] std::vector<std::string> StartMenuItems() const;
+    void Restart();
+    void StartChoice(const std::string &action);
     void ReloadContent();
     void LoadPolicies();
 
@@ -67,8 +70,6 @@ private:
 
     bool Save(const std::filesystem::path &file);
     bool Load(const std::filesystem::path &file);
-    // W/S or arrows move the cursor over `count` items; true when Enter picks one.
-    bool MenuInput(const umbra::platform::Input &input, std::size_t count);
 
     [[nodiscard]] const umbra::rpg::Roster *FightRoster();
     [[nodiscard]] std::string FighterName(std::size_t index);
@@ -87,7 +88,6 @@ private:
     umbra::game::SaveSlots slots_;
     std::string startScene_;
     bool startMenu_ = false;           // "Continue / New game" shown at launch when a save exists
-    int selected_ = 0;                 // menu cursor
     std::size_t touched_ = 0;          // the dungeon roamer that started the fight
     std::vector<std::size_t> fighters_; // arena roamer index of each enemy (roster index - 1)
     int fightGeneration_ = 0;          // the world the fight started in

@@ -15,7 +15,6 @@
 #include <CrashHandler.hpp>
 #include <AudioDevice.hpp>
 #include <Mixer.hpp>
-#include <PauseMenu.hpp>
 #include <Renderer.hpp>
 #include <SoundBank.hpp>
 #include <World.hpp>
@@ -23,6 +22,7 @@
 #include "ModelLibrary.hpp"
 #include "SceneRuntime.hpp"
 #include "GameFlow.hpp"
+#include "GameUi.hpp"
 #include <RpgContent.hpp>
 
 #include <glm/gtc/constants.hpp>
@@ -181,17 +181,24 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 				}
 				scene.Load(); // after the RPG layer, so enemies already get their models
 
-				// Esc opens the pause menu; the mouse is captured (steers the camera) only while playing.
-				umbra::gameplay::PauseMenu menu;
+				// Menus and the HUD are screens (engine/ui, the rpg-ui plugin; GameFlow.md "Screens").
+				// The pause, inventory, skills and quests screens stop the game; the mouse steers the
+				// camera only while no screen takes the input.
+				GameUi gameUi(renderer, folders.assets);
 				const auto setPaused = [&](bool paused) {
 					if (paused)
-						menu.Open();
+						gameUi.Screens().Open("pause");
 					else
-						menu.Close();
-					window.SetMouseCaptured(!paused);
-					mixer.SetGamePaused(paused);
+						gameUi.Screens().Close("pause");
 				};
-				setPaused(false);
+				const auto frozen = [&] {
+					for (const char *screen : {"pause", "inventory", "skills", "quests"})
+						if (gameUi.Screens().IsOpen(screen))
+							return true;
+					return false;
+				};
+				bool mouseCaptured = true;
+				window.SetMouseCaptured(true);
 				std::string message; // shown after using an interactable
 				float messageSeconds = 0.0F;
 
@@ -281,53 +288,35 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 					reloadTime.Add(section.Lap());
 					using umbra::platform::InputKey;
 
-					// Pause menu: Esc toggles; W/S or arrows move; Enter chooses.
+					// Screens: Esc / Start opens the pause screen while none takes the input (on an open
+					// screen Esc / B is its "back"); I, K, J open the inventory, skills and quests.
 					bool quit = false;
-					if (input.IsKeyPressed(InputKey::Escape) && !menu.IsOpen() && flow && flow->HandleEscape())
+					const auto [pixelWidth, pixelHeight] = renderer.Extent();
+					umbra::ui::UiInput uiInput = GameUi::MapInput(input, {static_cast<float>(window.GetWidth()), static_cast<float>(window.GetHeight())},
+																  {static_cast<float>(pixelWidth), static_cast<float>(pixelHeight)});
+					if (!gameUi.Screens().TakesInput() && !benchmark)
 					{
-						// used by the conversation or the death menu
-					}
-					else if (input.IsKeyPressed(InputKey::Escape))
-					{
-						setPaused(!menu.IsOpen());
-						play("audio/ui_click.wav", 0.6F, umbra::audio::Bus::Ui);
-					}
-					else if (menu.IsOpen())
-					{
-						const int move = (input.IsKeyPressed(InputKey::S) || input.IsKeyPressed(InputKey::Down) ? 1 : 0) -
-										 (input.IsKeyPressed(InputKey::W) || input.IsKeyPressed(InputKey::Up) ? 1 : 0);
-						if (move != 0)
+						if (input.IsKeyPressed(InputKey::Escape) || input.IsKeyPressed(InputKey::PadStart))
 						{
-							menu.Move(move);
+							setPaused(true);
+							uiInput.back = false; // the same press must not close it again
 							play("audio/ui_click.wav", 0.6F, umbra::audio::Bus::Ui);
 						}
-						if (input.IsKeyPressed(InputKey::Enter))
-						{
-							play("audio/ui_click.wav", 0.6F, umbra::audio::Bus::Ui);
-							switch (menu.Confirm())
-							{
-							case umbra::gameplay::MenuAction::Restart:
-								mixer.StopAll();
-								scene.Restart();
-								messageSeconds = 0.0F;
-								[[fallthrough]];
-							case umbra::gameplay::MenuAction::Resume:
-								setPaused(false);
-								break;
-							case umbra::gameplay::MenuAction::Quit:
-								quit = true;
-								break;
-							case umbra::gameplay::MenuAction::None:
-								break;
-							}
-						}
+						else if (flow && flow->IsExploring())
+							for (const auto &[key, screen] : {std::pair{InputKey::I, "inventory"}, std::pair{InputKey::K, "skills"}, std::pair{InputKey::J, "quests"}})
+								if (input.IsKeyPressed(key))
+								{
+									gameUi.Screens().Open(screen);
+									gameUi.Screens().ResetFocus(screen);
+									play("audio/ui_click.wav", 0.6F, umbra::audio::Bus::Ui);
+								}
 					}
-					if (quit)
-						break;
+					else if (uiInput.up || uiInput.down || uiInput.left || uiInput.right)
+						play("audio/ui_click.wav", 0.3F, umbra::audio::Bus::Ui);
 
 					// Playing: keyboard and mouse -> player intent -> fixed-step simulation.
 					const umbra::world::Interactable *focused = nullptr;
-					if (!menu.IsOpen())
+					if (!frozen())
 					{
 						SpinEntity(scene.GetWorld(), "spinner", static_cast<float>(deltaTime) * glm::radians(45.0F));
 						if (flow)
@@ -420,14 +409,7 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 					if (showColliders)
 						scene.AddDebugLines(drawList);
 
-					// Screen text: prompt, message, asset problems, menu.
 					umbra::core::Hud &hud = drawList.hud;
-					if (focused != nullptr)
-						hud.prompt = "[E] " + focused->prompt;
-					if (messageSeconds > 0.0F)
-						hud.message = message;
-					AddWarnings(hud.warnings, scene.GetProblems(), 6);
-					AddWarnings(hud.warnings, soundProblems, 3);
 
 					// Timings (average / worst over ~2 s) and live resource counts.
 					const auto timing = [](const char *name, const umbra::core::RollingTimer &timer) {
@@ -446,17 +428,49 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 									 std::to_string(sounds.Count()) + " cached" + (audioDevice.IsOpen() ? "" : " (no device)"),
 								 "Area: " + scene.GetScenePath()};
 					extractTime.Add(section.Lap());
-					if (flow)
-						flow->FillHud(hud); // status lines, conversation, fight and death menus
-					if (menu.IsOpen())
+					// The screens: the RPG's data plus the prompt, news and asset problems; then what was chosen.
+					nlohmann::json uiData = flow ? flow->UiData() : nlohmann::json::object();
+					if (focused != nullptr && !uiData.contains("prompt") && (!flow || flow->IsExploring()))
+						uiData["prompt"] = "[E] " + focused->prompt;
+					if (messageSeconds > 0.0F)
+						uiData["message"] = message;
+					std::vector<std::string> warnings;
+					AddWarnings(warnings, scene.GetProblems(), 6);
+					AddWarnings(warnings, soundProblems, 3);
+					AddWarnings(warnings, gameUi.Problems(), 3);
+					uiData["warnings"] = warnings;
+					if (!gameUi.Ready())
+						hud.warnings = warnings; // without screens, at least say why
+					for (const umbra::ui::UiAction &action : gameUi.Screens().Update(uiData, {static_cast<float>(pixelWidth), static_cast<float>(pixelHeight)}, uiInput, drawList.ui))
 					{
-						hud.menuText.clear();
-						hud.menuHint.clear();
-						hud.menuDim = true;
-						hud.menuTitle = "Paused";
-						hud.menuItems.assign(umbra::gameplay::PauseMenu::items.begin(), umbra::gameplay::PauseMenu::items.end());
-						hud.menuSelected = menu.GetSelected();
+						play("audio/ui_click.wav", 0.6F, umbra::audio::Bus::Ui);
+						if (flow && flow->HandleUi(action.screen, action.action, action.arg))
+							continue;
+						if (action.action == "resume")
+							setPaused(false);
+						else if (action.action == "restart")
+						{
+							mixer.StopAll();
+							scene.Restart();
+							messageSeconds = 0.0F;
+							setPaused(false);
+						}
+						else if (action.action == "quit")
+							quit = true;
 					}
+					if (quit)
+						break;
+					gameUi.ShowGameScreen(flow ? flow->Screen() : "");
+					// Mouse and game sound follow the screens.
+					if (const bool capture = !gameUi.Screens().TakesInput() && !frozen(); capture != mouseCaptured)
+					{
+						window.SetMouseCaptured(capture);
+						mouseCaptured = capture;
+					}
+					mixer.SetGamePaused(frozen());
+					hud.state = nlohmann::json{{"screens", gameUi.Screens().OpenScreens()}, {"hero", uiData.value("hero", nlohmann::json::object())},
+										   {"mode", uiData.value("mode", "")}}
+									 .dump();
 
 					if (!renderer.RenderFrame(static_cast<float>(deltaTime), drawList))
 					{

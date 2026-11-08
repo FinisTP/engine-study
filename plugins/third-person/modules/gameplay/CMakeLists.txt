@@ -7,7 +7,6 @@ target_sources(
         src/PhysicsBridge.cpp
         src/PlayerController.cpp
         src/StrideAnimator.cpp
-        src/PauseMenu.cpp
         src/Interaction.cpp
         src/Area.cpp
         src/Roamer.cpp
@@ -18,7 +17,6 @@ target_sources(
             include/PhysicsBridge.hpp
             include/PlayerController.hpp
             include/StrideAnimator.hpp
-            include/PauseMenu.hpp
             include/Interaction.hpp
             include/Area.hpp
             include/Roamer.hpp

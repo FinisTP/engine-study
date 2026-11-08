@@ -40,10 +40,12 @@ namespace umbra::platform
         mouseDeltaY_ = 0.0F;
     }
 
-    void Input::HandleMouseMotion(float dx, float dy) noexcept
+    void Input::HandleMouseMotion(float dx, float dy, float x, float y) noexcept
     {
         mouseDeltaX_ += dx;
         mouseDeltaY_ += dy;
+        if (x >= 0.0F)
+            mouseX_ = x, mouseY_ = y;
     }
 
     void Input::HandleMouseButton(int button, bool down) noexcept

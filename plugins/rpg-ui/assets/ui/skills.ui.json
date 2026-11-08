@@ -1,0 +1,14 @@
+{
+  "format": "umbra.ui", "version": 1, "modal": true, "dim": true, "back": "close",
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [700, 0], "align": "stretch", "gap": 12, "children": [
+    { "type": "text", "style": "title", "text": "Skills" },
+    { "type": "text", "style": "strong", "text": "Skill points: {hero.skillPoints}" },
+    { "type": "list", "items": "{skills}", "as": "skill", "columns": 2, "gap": 8, "action": "unlock", "arg": "{skill.id}",
+      "entry": { "type": "stack", "style": "slot", "size": [320, 0], "selected": "{skill.unlocked}", "disabled": "{skill.locked}", "children": [
+        { "type": "text", "style": "strong", "text": "{skill.name}" },
+        { "type": "text", "style": "small", "text": "{skill.state}" },
+        { "type": "text", "style": "muted", "text": "{skill.detail}", "wrap": true, "size": [300, 0] }
+      ] } },
+    { "type": "text", "style": "muted", "text": "Choose a skill to unlock it with skill points.  Esc closes." }
+  ] }
+}

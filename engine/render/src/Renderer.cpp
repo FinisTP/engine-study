@@ -293,6 +293,7 @@ namespace umbra::render
                                             drawList.hud.diagnosticsWindow);
         const SceneUniform uniform = implementation_->BuildUniform(drawList.camera);
         implementation_->overlay.DrawLines(drawList.lines, uniform.projection * uniform.view, implementation_->swapchain.GetExtent());
+        implementation_->overlay.DrawUi(drawList.ui, resources);
         implementation_->overlay.DrawHud(drawList.hud, implementation_->swapchain.GetExtent());
         if (ui)
             ui(); // the editor's windows, inside the same ImGui frame

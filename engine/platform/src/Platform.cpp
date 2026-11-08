@@ -38,7 +38,7 @@ namespace umbra::platform
 			return false;
 		}
 
-		if (!SDL_Init(SDL_INIT_VIDEO))
+		if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD))
 		{
 			diagnostics::Error(std::string{"SDL initialization failed: "} + SDL_GetError());
 			return false;

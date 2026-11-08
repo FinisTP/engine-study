@@ -1,0 +1,10 @@
+{
+  "format": "umbra.ui", "version": 1, "modal": true, "dim": true,
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [360, 0], "align": "stretch", "gap": 8, "children": [
+    { "type": "text", "style": "title", "text": "You died", "textAlign": "center" },
+    { "type": "spacer", "size": [1, 6] },
+    { "type": "button", "text": "Load save", "action": "load-manual", "textAlign": "center" },
+    { "type": "button", "text": "Load last autosave", "action": "load-auto", "textAlign": "center" },
+    { "type": "button", "text": "New game", "action": "new", "textAlign": "center" }
+  ] }
+}

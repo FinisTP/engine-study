@@ -9,15 +9,10 @@
 <body>
 <canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
 
-<!-- The game's HUD (filled from core::Hud every frame it changes) -->
+<!-- Asset warnings and timings (the game draws its own screens on the canvas) -->
 <div id="hud">
-  <div id="status"></div>
   <div id="warnings"></div>
   <div id="stats"></div>
-  <div id="message"></div>
-  <div id="prompt"></div>
-  <div id="dim"></div>
-  <div id="menu"><h2 id="menu-title"></h2><p id="menu-text"></p><ol id="menu-items"></ol><p id="menu-hint"></p></div>
 </div>
 
 <!-- Before the game runs: loading, "click to play", or why it can't run -->
@@ -25,7 +20,7 @@
   <h1>Umbra</h1>
   <p id="start-text">Loading...</p>
   <button id="play" hidden>Click to play</button>
-  <p class="small">Keys: WASD move, mouse look, E use, Tab turn/real-time combat, Esc menu. Chrome or Edge with WebGPU.</p>
+  <p class="small">Keys: WASD move, mouse look, E use, Tab turn/real-time combat, I/K/J inventory/skills/quests, Esc menu. Chrome or Edge with WebGPU.</p>
 </div>
 
 <!-- Saves and offline install -->

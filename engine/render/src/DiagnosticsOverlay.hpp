@@ -42,6 +42,9 @@ namespace umbra::render
         void DrawLines(const std::vector<core::DebugLine> &lines, const glm::mat4 &viewProjection, VkExtent2D extent);
         // Prompt, message, warnings and menu from gameplay (no input handling: gameplay owns that).
         void DrawHud(const core::Hud &hud, VkExtent2D extent);
+        // The game's UI triangles (core::UiDrawList), under every ImGui window. Each batch samples
+        // the renderer texture it names (its descriptor set), so text and pictures share one pipeline.
+        void DrawUi(const core::UiDrawList &ui, const SceneResources &resources);
         void EndFrame();
 
         void Render(VkCommandBuffer commandBuffer, std::size_t frameIndex);

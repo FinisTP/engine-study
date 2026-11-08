@@ -3,9 +3,11 @@
 #include <Handles.hpp>
 
 #include <glm/mat4x4.hpp>
+#include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -42,18 +44,42 @@ namespace umbra::core
     // Screen text for this frame. Gameplay fills it; the renderer only draws it.
     struct Hud final
     {
-        std::string prompt;                // bottom center, e.g. "[E] Read sign"
-        std::string message;               // above the prompt, after using something
-        std::vector<std::string> warnings; // top right, e.g. missing assets
-        std::string menuTitle;             // a centered menu is shown when menuItems is not empty
-        std::vector<std::string> menuItems;
-        int menuSelected = 0;
-        std::string menuText;              // wrapped text above the items, e.g. a line of dialogue
-        std::string menuHint;              // replaces the default key hint under the items
-        bool menuDim = true;               // darken the scene behind the menu
-        std::vector<std::string> status;   // top left: health, quest, combat log
+        std::vector<std::string> warnings; // top right, e.g. missing assets (game screens are in `ui`)
         bool diagnosticsWindow = true;     // the "Umbra diagnostics" window (the editor hides it)
         std::vector<std::string> stats;    // extra lines for the diagnostics window (timings, counters)
+        std::string state;                 // JSON for tests and the web page: open screens, hero
+    };
+
+    // Game UI (S3, engine/ui): screen-space triangles in pixels (0,0 = top left), drawn after the
+    // scene in batch order. Vertices match Dear ImGui's layout, so one pipeline draws both.
+    struct UiVertex final
+    {
+        glm::vec2 position{0.0F};
+        glm::vec2 uv{0.0F};
+        std::uint32_t color = 0xFFFFFFFFu; // RGBA8, red in the low byte
+    };
+
+    struct UiBatch final
+    {
+        TextureHandle texture;
+        glm::vec4 clip{0.0F, 0.0F, 1e9F, 1e9F}; // x0, y0, x1, y1 in pixels
+        std::uint32_t firstVertex = 0;          // indices count from here (fewer than 65536 vertices per batch)
+        std::uint32_t firstIndex = 0;
+        std::uint32_t indexCount = 0;
+    };
+
+    struct UiDrawList final
+    {
+        std::vector<UiVertex> vertices;
+        std::vector<std::uint16_t> indices; // relative to the batch's firstVertex
+        std::vector<UiBatch> batches;
+
+        void Clear()
+        {
+            vertices.clear();
+            indices.clear();
+            batches.clear();
+        }
     };
 
     // Read-only presentation data the world hands to the renderer each frame.
@@ -63,12 +89,14 @@ namespace umbra::core
         std::vector<DrawItem> items;
         std::vector<DebugLine> lines;
         Hud hud;
+        UiDrawList ui; // the game's own UI; drawn under the diagnostics window
 
         void Clear()
         {
             items.clear();
             lines.clear();
             hud = {};
+            ui.Clear();
         }
     };
 }

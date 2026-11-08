@@ -166,6 +166,21 @@ Rules worth knowing:
 
 Without the editor: `UmbraTool model --idea "stone lantern" --assets projects\reference\assets` (or `--image my.png`).
 
+## 2e. Change the game's screens
+
+The HUD and every menu are files in `ui/` (the `rpg-ui` plugin has the reference game's).
+
+1. In the editor: **View → Game UI**. Pick a screen; it is drawn over the scene view with
+   example data.
+2. Click a widget in the tree and change its fields (text, anchor, size, style...). A mistake is
+   shown in red with the field it is in.
+3. **Save**. The file goes into your project's `assets/ui/` and the game uses it from now on.
+4. Colors and fonts are in `ui/skin.json` (copy it into your project to change it; then
+   **Reload** in the window). Format: `engine/ui/include/UI.md`.
+
+Without the editor: `UmbraTool ui-preview hud inventory --assets projects/reference/assets --out
+inventory.png` draws screens into a picture.
+
 ## 3. Find a planted error
 
 Open `projects\reference\assets\rpg\reference.rpg.json` in a text editor. In the hero's `inventory`, change

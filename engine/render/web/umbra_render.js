@@ -43,6 +43,21 @@ struct LineOut { @builtin(position) position: vec4f, @location(0) color: vec4f }
 }
 @fragment fn lineFs(i: LineOut) -> @location(0) vec4f { return i.color; }`,
 
+    uiShader: `
+struct Ui { size: vec2f };
+@group(0) @binding(0) var<uniform> ui: Ui;
+@group(1) @binding(0) var uiSampler: sampler;
+@group(1) @binding(1) var uiTexture: texture_2d<f32>;
+struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @location(1) color: vec4f };
+@vertex fn vs(@location(0) p: vec2f, @location(1) uv: vec2f, @location(2) color: vec4f) -> Out {
+  var o: Out;
+  o.position = vec4f(p.x / ui.size.x * 2.0 - 1.0, 1.0 - p.y / ui.size.y * 2.0, 0.0, 1.0);
+  o.uv = uv;
+  o.color = color;
+  return o;
+}
+@fragment fn fs(i: Out) -> @location(0) vec4f { return i.color * textureSample(uiTexture, uiSampler, i.uv); }`,
+
     // A free slot in a list (index 0 is never used: it means "none").
     put: function (list, value) {
       for (var i = 1; i < list.length; ++i) if (list[i] === null) { list[i] = value; return i; }
@@ -107,6 +122,19 @@ struct LineOut { @builtin(position) position: vec4f, @location(0) color: vec4f }
         fragment: { module: module, entryPoint: 'lineFs', targets: [{ format: UG.format }] },
         primitive: { topology: 'line-list' },
         depthStencil: { format: 'depth24plus', depthWriteEnabled: false, depthCompare: 'always' } });
+      // The game UI: 2D triangles in pixels, textured and tinted, no depth (core::UiDrawList).
+      var uiModule = device.createShaderModule({ code: UG.uiShader });
+      UG.uiLayout = device.createBindGroupLayout({ entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: 'uniform' } }] });
+      UG.uiPipeline = device.createRenderPipeline({
+        layout: device.createPipelineLayout({ bindGroupLayouts: [UG.uiLayout, textureLayout] }),
+        vertex: { module: uiModule, entryPoint: 'vs', buffers: [{ arrayStride: 20, attributes: [
+          { shaderLocation: 0, offset: 0, format: 'float32x2' }, { shaderLocation: 1, offset: 8, format: 'float32x2' },
+          { shaderLocation: 2, offset: 16, format: 'unorm8x4' }] }] },
+        fragment: { module: uiModule, entryPoint: 'fs', targets: [{ format: UG.format, blend: {
+          color: { srcFactor: 'src-alpha', dstFactor: 'one-minus-src-alpha' }, alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' } } }] },
+        primitive: { topology: 'triangle-list', cullMode: 'none' } });
+      UG.uiBuffer = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+      UG.uiGroup = device.createBindGroup({ layout: UG.uiLayout, entries: [{ binding: 0, resource: { buffer: UG.uiBuffer } }] });
       UG.frameLayout = frameLayout;
       UG.frameBuffer = device.createBuffer({ size: 64, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
       UG.drawCapacity = 0;
@@ -212,6 +240,34 @@ struct LineOut { @builtin(position) position: vec4f, @location(0) color: vec4f }
     pass.end();
     device.queue.submit([encoder.finish()]);
     if (vb) vb.destroy(); // freed once the submitted work is done
+  },
+
+  umbra_gpu_ui__deps: ['$UG'],
+  umbra_gpu_ui: function (vertices, vertexCount, indices, indexCount, batches, batchCount) {
+    // A second pass over the frame just drawn (loadOp 'load'), one draw per batch with its clip and texture.
+    var device = UG.device, canvas = Module.canvas;
+    device.queue.writeBuffer(UG.uiBuffer, 0, new Float32Array([canvas.width, canvas.height, 0, 0]));
+    var vb = UG.buffer(GPUBufferUsage.VERTEX, HEAPU8.subarray(vertices, vertices + vertexCount * 20));
+    var ib = UG.buffer(GPUBufferUsage.INDEX, HEAPU16.subarray(indices >> 1, (indices >> 1) + indexCount + (indexCount & 1)));
+    var b = HEAPF32.subarray(batches >> 2, (batches >> 2) + batchCount * 8);
+    var encoder = device.createCommandEncoder();
+    var pass = encoder.beginRenderPass({ colorAttachments: [{ view: UG.context.getCurrentTexture().createView(), loadOp: 'load', storeOp: 'store' }] });
+    pass.setPipeline(UG.uiPipeline);
+    pass.setBindGroup(0, UG.uiGroup);
+    pass.setVertexBuffer(0, vb);
+    pass.setIndexBuffer(ib, 'uint16');
+    for (var i = 0; i < batchCount; ++i) {
+      var o = i * 8, texture = b[o];
+      var x0 = Math.max(0, Math.floor(b[o + 1])), y0 = Math.max(0, Math.floor(b[o + 2]));
+      var x1 = Math.min(canvas.width, Math.ceil(b[o + 3])), y1 = Math.min(canvas.height, Math.ceil(b[o + 4]));
+      if (x1 <= x0 || y1 <= y0 || b[o + 7] <= 0) continue;
+      pass.setScissorRect(x0, y0, x1 - x0, y1 - y0);
+      pass.setBindGroup(1, (texture > 0 && UG.groups[texture]) || UG.whiteGroup);
+      pass.drawIndexed(b[o + 7], 1, b[o + 6], b[o + 5]);
+    }
+    pass.end();
+    device.queue.submit([encoder.finish()]);
+    vb.destroy(); ib.destroy(); // freed once the submitted work is done
   },
 
   umbra_wait_frame__async: true,

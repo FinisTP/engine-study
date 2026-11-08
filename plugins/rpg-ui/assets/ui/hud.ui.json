@@ -1,0 +1,35 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "root": { "type": "panel", "anchor": "fill", "style": "layer", "children": [
+    { "type": "stack", "anchor": "top-left", "offset": [16, 16], "gap": 8, "children": [
+      { "type": "stack", "style": "hud", "gap": 5, "children": [
+        { "type": "text", "style": "strong", "text": "{hero.name}   Level {hero.level}" },
+        { "type": "bar", "size": [230, 18], "value": "{hero.health}", "max": "{hero.maxHealth}", "text": "HP {hero.health} / {hero.maxHealth}" },
+        { "type": "bar", "style": "energy", "size": [230, 14], "value": "{hero.energy}", "max": "{hero.maxEnergy}", "text": "EN {hero.energy} / {hero.maxEnergy}" },
+        { "type": "bar", "style": "xp", "size": [230, 8], "value": "{hero.xp}", "max": "{hero.nextXp}" },
+        { "type": "text", "style": "muted", "text": "Combat: {mode}{switchHint}" }
+      ] },
+      { "type": "list", "style": "hud", "items": "{activeQuests}", "as": "quest", "visible": "{activeQuests}", "gap": 4,
+        "entry": { "type": "stack", "size": [290, 0], "children": [
+          { "type": "text", "style": "heading", "text": "{quest.name}" },
+          { "type": "text", "style": "small", "text": "{quest.objective}", "wrap": true, "size": [290, 0] }
+        ] } },
+      { "type": "list", "items": "{fight.log}", "as": "line", "visible": "{fight.log}",
+        "entry": { "type": "text", "style": "small", "text": "{line}" } }
+    ] },
+    { "type": "list", "anchor": "top-right", "offset": [-16, 16], "items": "{warnings}", "as": "w", "visible": "{warnings}",
+      "entry": { "type": "text", "style": "warning", "text": "{w}", "wrap": true, "size": [460, 0] } },
+    { "type": "list", "anchor": "top", "offset": [0, 16], "direction": "horizontal", "gap": 12, "items": "{fight.enemies}", "as": "enemy", "visible": "{fight.enemies}",
+      "entry": { "type": "stack", "style": "hud", "gap": 4, "children": [
+        { "type": "text", "style": "small", "text": "{enemy.name}{enemy.tag}" },
+        { "type": "bar", "style": "enemy", "size": [170, 12], "value": "{enemy.health}", "max": "{enemy.maxHealth}" }
+      ] } },
+    { "type": "stack", "anchor": "bottom", "offset": [0, -40], "align": "center", "gap": 10, "children": [
+      { "type": "text", "style": "strong", "text": "{message}", "visible": "{message}", "wrap": true, "size": [720, 0], "textAlign": "center" },
+      { "type": "text", "style": "prompt", "text": "{prompt}", "visible": "{prompt}" },
+      { "type": "text", "style": "prompt", "text": "{fight.keys}", "visible": "{fight.keys}" },
+      { "type": "text", "style": "muted", "text": "[I] Inventory   [K] Skills   [J] Quests   [Esc] Menu", "visible": "{exploring}" }
+    ] }
+  ] }
+}

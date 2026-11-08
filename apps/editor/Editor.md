@@ -129,6 +129,27 @@ Every prompt gets the project style from `assets/materials/style.json`.
 
 ComfyUI's address and checkpoint are shared with the AI texture window.
 
+## Game UI (View → Game UI; roadmap S3.6)
+
+Screen files (`ui/*.ui.json`, format in `engine/ui/include/UI.md`) are edited here with a live
+preview:
+
+1. Pick a **Screen**. It is drawn over the scene view the way the game draws it, filled with
+   `ui/sample.json` (the HUD underneath unless turned off). The preview has no input: what is
+   focused shows its hover style.
+2. The **Widgets** tree shows the screen's widgets; click one to select it.
+3. **Selected widget** lists its fields with a fitting control (lists of values for `anchor`,
+   `style`, `type`...). A field changes when you finish editing it. **Add field** adds one,
+   **x** removes one; **Add child**, **Delete**, **Up**, **Down** change the tree.
+4. Each change is checked by the same parser the game uses. A problem (with the field path) is
+   shown in red and the preview keeps the last good version. **Undo** goes back one change,
+   **Revert** reloads the file.
+5. **Save** writes the file into the project's `assets/ui/`. A screen that came from a plugin
+   becomes a project copy, which the game then uses instead (`AssetFolders`: project first).
+   **Reload** reads the skin, fonts and screens again (after editing `skin.json` by hand).
+
+Screen edits have their own Undo button; Ctrl+Z in the editor undoes scene and RPG edits only.
+
 ## Picking (mouse → entity)
 
 1. The mouse position becomes normalized device coordinates:

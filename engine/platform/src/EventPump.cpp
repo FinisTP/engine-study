@@ -3,6 +3,36 @@
 
 namespace
 {
+    umbra::platform::InputKey TranslateButton(Uint8 button)
+    {
+        using umbra::platform::InputKey;
+        switch (button)
+        {
+        case SDL_GAMEPAD_BUTTON_SOUTH:
+            return InputKey::PadA;
+        case SDL_GAMEPAD_BUTTON_EAST:
+            return InputKey::PadB;
+        case SDL_GAMEPAD_BUTTON_WEST:
+            return InputKey::PadX;
+        case SDL_GAMEPAD_BUTTON_NORTH:
+            return InputKey::PadY;
+        case SDL_GAMEPAD_BUTTON_DPAD_UP:
+            return InputKey::PadUp;
+        case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
+            return InputKey::PadDown;
+        case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
+            return InputKey::PadLeft;
+        case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
+            return InputKey::PadRight;
+        case SDL_GAMEPAD_BUTTON_START:
+            return InputKey::PadStart;
+        case SDL_GAMEPAD_BUTTON_BACK:
+            return InputKey::PadBack;
+        default:
+            return InputKey::Unknown;
+        }
+    }
+
     umbra::platform::InputKey TranslateKeyCode(SDL_Scancode sdlKeyCode)
     {
         using umbra::platform::InputKey;
@@ -65,6 +95,12 @@ namespace
             return InputKey::Num3;
         case SDL_SCANCODE_4:
             return InputKey::Num4;
+        case SDL_SCANCODE_I:
+            return InputKey::I;
+        case SDL_SCANCODE_K:
+            return InputKey::K;
+        case SDL_SCANCODE_J:
+            return InputKey::J;
         default:
             return InputKey::Unknown;
         }
@@ -123,8 +159,18 @@ namespace umbra::platform
             case SDL_EVENT_KEY_UP:
                 input.HandleKeyUp(TranslateKeyCode(event.key.scancode));
                 break;
+            // Gamepads: opened when plugged in; their buttons act like keys.
+            case SDL_EVENT_GAMEPAD_ADDED:
+                SDL_OpenGamepad(event.gdevice.which);
+                break;
+            case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+                input.HandleKeyDown(TranslateButton(event.gbutton.button), false);
+                break;
+            case SDL_EVENT_GAMEPAD_BUTTON_UP:
+                input.HandleKeyUp(TranslateButton(event.gbutton.button));
+                break;
             case SDL_EVENT_MOUSE_MOTION:
-                input.HandleMouseMotion(event.motion.xrel, event.motion.yrel);
+                input.HandleMouseMotion(event.motion.xrel, event.motion.yrel, event.motion.x, event.motion.y);
                 break;
             case SDL_EVENT_MOUSE_BUTTON_DOWN:
             case SDL_EVENT_MOUSE_BUTTON_UP:

@@ -22,6 +22,9 @@ extern "C"
     void umbra_gpu_destroy_mesh(int id);
     void umbra_gpu_destroy_texture(int id);
     void umbra_gpu_frame(const float *viewProjection, const float *draws, int drawCount, const float *lines, int lineCount, const char *hud);
+    // The game UI (core::UiDrawList), drawn on top of the frame just sent: 20-byte vertices,
+    // uint16 indices, and per batch 8 floats: texture id, clip x0 y0 x1 y1, first vertex, first index, index count.
+    void umbra_gpu_ui(const void *vertices, int vertexCount, const unsigned short *indices, int indexCount, const float *batches, int batchCount);
     void umbra_wait_frame();                                            // async: next animation frame
     int umbra_gpu_width();
     int umbra_gpu_height();
@@ -67,11 +70,8 @@ namespace umbra::render
         // The HUD as JSON for the HTML overlay; JavaScript only touches the page when it changed.
         std::string HudJson(const core::Hud &h)
         {
-            return "{\"prompt\":\"" + Escape(h.prompt) + "\",\"message\":\"" + Escape(h.message) + "\",\"warnings\":" + List(h.warnings) +
-                   ",\"menuTitle\":\"" + Escape(h.menuTitle) + "\",\"menuItems\":" + List(h.menuItems) + ",\"menuSelected\":" +
-                   std::to_string(h.menuSelected) + ",\"menuText\":\"" + Escape(h.menuText) + "\",\"menuHint\":\"" + Escape(h.menuHint) +
-                   "\",\"menuDim\":" + (h.menuDim ? "true" : "false") + ",\"status\":" + List(h.status) +
-                   ",\"diagnostics\":" + (h.diagnosticsWindow ? "true" : "false") + ",\"stats\":" + List(h.stats) + "}";
+            return "{\"warnings\":" + List(h.warnings) + ",\"diagnostics\":" + (h.diagnosticsWindow ? "true" : "false") +
+                   ",\"stats\":" + List(h.stats) + ",\"state\":" + (h.state.empty() ? std::string("{}") : h.state) + "}";
         }
     }
 
@@ -198,6 +198,18 @@ namespace umbra::render
         const std::string hud = HudJson(drawList.hud);
         umbra_gpu_frame(glm::value_ptr(viewProjection), i.draws.data(), static_cast<int>(i.draws.size() / drawFloats), i.lines.data(),
                         static_cast<int>(i.lines.size() / 10), hud.c_str());
+        if (!drawList.ui.batches.empty())
+        {
+            std::vector<float> batches;
+            for (const core::UiBatch &b : drawList.ui.batches)
+            {
+                const int *texture = i.textures.Get(b.texture);
+                batches.insert(batches.end(), {static_cast<float>(texture ? *texture : -1), b.clip.x, b.clip.y, b.clip.z, b.clip.w,
+                                               static_cast<float>(b.firstVertex), static_cast<float>(b.firstIndex), static_cast<float>(b.indexCount)});
+            }
+            umbra_gpu_ui(drawList.ui.vertices.data(), static_cast<int>(drawList.ui.vertices.size()), drawList.ui.indices.data(),
+                         static_cast<int>(drawList.ui.indices.size()), batches.data(), static_cast<int>(drawList.ui.batches.size()));
+        }
         umbra_wait_frame();
         return true;
     }

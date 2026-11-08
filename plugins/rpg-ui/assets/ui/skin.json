@@ -1,0 +1,47 @@
+{
+  "format": "umbra.ui-skin",
+  "version": 1,
+  "fonts": {
+    "body": { "file": "ui/fonts/Poppins-Regular.ttf", "size": 18 },
+    "small": { "file": "ui/fonts/Poppins-Regular.ttf", "size": 15 },
+    "strong": { "file": "ui/fonts/Poppins-Medium.ttf", "size": 18 },
+    "title": { "file": "ui/fonts/Lora.ttf", "size": 30 },
+    "heading": { "file": "ui/fonts/Lora.ttf", "size": 22 }
+  },
+  "dim": [0.02, 0.02, 0.05, 0.6],
+  "styles": {
+    "text": { "font": "body", "color": "#ece6d6" },
+    "small": { "base": "text", "font": "small", "color": "#c9c1ad" },
+    "muted": { "base": "small", "color": "#8f8a7c" },
+    "strong": { "base": "text", "font": "strong" },
+    "title": { "base": "text", "font": "title", "color": "#f2d58a" },
+    "heading": { "base": "text", "font": "heading", "color": "#f2d58a" },
+    "good": { "base": "small", "color": "#8fd48a" },
+    "bad": { "base": "small", "color": "#f08a7a" },
+    "warning": { "base": "small", "color": "#ffcf66" },
+    "layer": {},
+    "panel": { "background": "#15151ce6", "border": "#a8874a", "borderWidth": 2, "padding": 18 },
+    "hud": { "background": "#0d0d12b0", "padding": [12, 10] },
+    "prompt": { "base": "strong", "background": "#0d0d12c8", "border": "#a8874a", "borderWidth": 1, "padding": [16, 8] },
+    "button": {
+      "base": "text", "background": "#25252f", "border": "#4a4636", "borderWidth": 1, "padding": [16, 8],
+      "hover": { "background": "#3a3428", "border": "#f2d58a", "color": "#fff4d0" },
+      "disabled": { "color": "#6c6860", "background": "#1c1c22" }
+    },
+    "entry": {
+      "base": "text", "padding": [12, 6], "background": "#00000000",
+      "hover": { "background": "#3a3428", "color": "#fff4d0" },
+      "selected": { "background": "#2a2a35", "color": "#f2d58a" },
+      "disabled": { "color": "#6c6860" }
+    },
+    "slot": {
+      "base": "small", "background": "#1d1d25", "border": "#3d3a30", "borderWidth": 1, "padding": 8,
+      "hover": { "border": "#f2d58a", "background": "#2c2a22" },
+      "selected": { "border": "#8fd48a" }
+    },
+    "bar": { "font": "small", "color": "#ffffff", "background": "#2a1414", "border": "#000000a0", "borderWidth": 1, "padding": 1, "fill": "#c0392b" },
+    "energy": { "base": "bar", "background": "#121a2a", "fill": "#3a7bd5" },
+    "xp": { "base": "bar", "background": "#1f1d10", "fill": "#d4b13a" },
+    "enemy": { "base": "bar", "background": "#241010", "fill": "#a83232" }
+  }
+}

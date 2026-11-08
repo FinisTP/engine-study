@@ -37,6 +37,20 @@ namespace umbra::platform
         Num2,
         Num3,
         Num4,
+        I, // inventory
+        K, // skills
+        J, // journal (quests)
+        // Gamepad buttons (SDL gamepad, Xbox names): they act like keys.
+        PadA,
+        PadB,
+        PadX,
+        PadY,
+        PadUp,
+        PadDown,
+        PadLeft,
+        PadRight,
+        PadStart,
+        PadBack,
         Count
     };
 
@@ -73,8 +87,12 @@ namespace umbra::platform
         // Clears keys, mouse buttons and mouse motion (focus loss, suspend).
         void ClearKeyStates() noexcept;
 
-        // Mouse motion in pixels since the last BeginFrame (raw motion while the mouse is captured).
-        void HandleMouseMotion(float dx, float dy) noexcept;
+        // Mouse motion in pixels since the last BeginFrame (raw motion while the mouse is captured),
+        // and where the pointer is in the window (window coordinates, not render pixels).
+        void HandleMouseMotion(float dx, float dy, float x = -1.0F, float y = -1.0F) noexcept;
+        [[nodiscard]] float GetMouseX() const noexcept { return mouseX_; }
+        [[nodiscard]] float GetMouseY() const noexcept { return mouseY_; }
+        [[nodiscard]] bool MouseMoved() const noexcept { return mouseDeltaX_ != 0.0F || mouseDeltaY_ != 0.0F; }
         // button: 0 = left, 1 = right, 2 = middle.
         void HandleMouseButton(int button, bool down) noexcept;
         [[nodiscard]] float GetMouseDeltaX() const noexcept { return mouseDeltaX_; }
@@ -102,5 +120,6 @@ namespace umbra::platform
         std::array<bool, 3> mouseHeld_{};
         float mouseDeltaX_ = 0.0F;
         float mouseDeltaY_ = 0.0F;
+        float mouseX_ = -1.0F, mouseY_ = -1.0F;
     };
 }

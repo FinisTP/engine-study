@@ -17,6 +17,8 @@ layer as the editor (`engine/authoring`), so all three report the same diagnosti
 
 | `UmbraTool model (--idea "<text>" \| --image <picture> \| --resume <job>) --assets <folder> [--name] [--faces] [--seed] [--workflow] [--model] [--host] [--json]` | AI model (P8D): a concept picture from the idea (SDXL) or the given picture, through the exported image-to-3D workflow (default: `<project>/tools/comfyui/image-to-3d.api.json`, else the first usable export there), saved as `models/<name>.glb` with its concept and provenance. Prints the ComfyUI job id: if the tool is closed, ComfyUI finishes and `--resume <job>` fetches the model. Prints triangles and texture size; warns if the mesh wasn't reduced or a model license is unclear. |
 
+| `UmbraTool ui-preview <screen>... --assets <folder> --out <png> [--data <json>] [--width 1280] [--height 720] [--json]` | Draws game screens (S3) into a picture without a window: the screens are opened in order (the last on top) and filled from `--data`, else `ui/sample.json`. Reports skin, font and screen-file problems. For checking a screen's layout, by a person or an AI agent (`engine/ui/include/UI.md`, "Raster"). |
+
 `validate` also checks material files (`*.material.json`: image size, license warning).
 
 Exit codes: 0 ok, 1 errors found (or the fight couldn't run, or the draft has errors), 2 bad usage.

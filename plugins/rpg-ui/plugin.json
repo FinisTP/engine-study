@@ -1,0 +1,11 @@
+{
+  "format": "umbra.plugin",
+  "version": 1,
+  "name": "rpg-ui",
+  "label": "RPG game UI",
+  "description": "The reference RPG's screens (HUD, start/pause/death menus, conversations, fights, inventory and equipment, skill tree, quest log), its skin and fonts (OFL). A project overrides any file by putting its own at the same path.",
+  "kind": "game",
+  "requires": ["rpg-session"],
+  "modules": [],
+  "links": []
+}

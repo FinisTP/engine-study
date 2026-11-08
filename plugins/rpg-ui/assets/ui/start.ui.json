@@ -1,0 +1,10 @@
+{
+  "format": "umbra.ui", "version": 1, "modal": true, "dim": true,
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [380, 0], "align": "stretch", "gap": 10, "children": [
+    { "type": "text", "style": "title", "text": "Umbra", "textAlign": "center" },
+    { "type": "text", "style": "muted", "text": "A small offline RPG", "textAlign": "center" },
+    { "type": "spacer", "size": [1, 8] },
+    { "type": "list", "items": "{start.items}", "as": "entry", "gap": 6, "action": "{entry.action}",
+      "entry": { "type": "text", "style": "button", "text": "{entry.label}", "textAlign": "center" } }
+  ] }
+}
