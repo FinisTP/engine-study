@@ -1,6 +1,6 @@
-# Writes sw.js into DIR from TEMPLATE: the version is a hash of every file the page needs, so a
-# new build is a new offline version (roadmap P10.4).
-set(files index.html umbra-page.js umbra-page.css umbra.js umbra.wasm umbra.data)
+# Writes sw.js into DIR from TEMPLATE: the version is a hash of the program files, so a new build
+# is a new offline version (roadmap P10.4). "UmbraTool web-pack" appends the assets' hash.
+set(files index.html umbra-page.js umbra-page.css umbra.js umbra.wasm)
 set(all "")
 set(list "")
 foreach(f ${files})
@@ -8,7 +8,7 @@ foreach(f ${files})
     string(APPEND all "${hash}")
     string(APPEND list "'${f}', ")
 endforeach()
-string(APPEND list "'./'")
+string(APPEND list "'assets.json', 'assets.bin', './'")
 string(SHA256 version "${all}")
 string(SUBSTRING "${version}" 0 12 version)
 file(READ "${TEMPLATE}" text)

@@ -4,6 +4,7 @@
 import asyncio, sys
 from playwright.async_api import async_playwright
 URL = 'http://localhost:8765/index.html'
+EDITED = sys.argv[1] if len(sys.argv) > 1 else '' # optional: the same build with edited assets (see p10 record)
 GPU = ['--enable-unsafe-webgpu', '--enable-features=Vulkan,WebGPU', '--use-webgpu-adapter=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox']
 results = []
 def check(name, ok, detail=''):
@@ -52,13 +53,21 @@ async def main():
         check('starts with the network off', started)
         await ctx.set_offline(False)
         check('no script errors', not errors, errors[:3])
-        # Mismatched files: umbra.data from another build -> a clear message, the game doesn't run.
+        # Damaged assets: assets.bin shorter than assets.json says -> a clear message, the game doesn't run.
         ctx2 = await browser.new_context()  # no service worker from the first context
         page2 = await ctx2.new_page()
-        await page2.route('**/umbra.data', lambda route: route.fulfill(body=b'RIFF' + b'\0' * 3259776, content_type='application/octet-stream'))
+        await page2.route('**/assets.bin', lambda route: route.fulfill(body=b'\0' * 1000, content_type='application/octet-stream'))
         await page2.goto(URL); await page2.wait_for_timeout(5000)
         text = await page2.inner_text('#start-text')
-        check('mismatched umbra.data: clear message', 'do not belong together' in text, text)
+        check('damaged assets.bin: clear message', 'does not match' in text, text)
+        await ctx2.close()
+        # Edited content shows up without a rebuild: web-pack changed the hero's health in a copy.
+        if EDITED:
+            ctx3 = await browser.new_context()
+            page3 = await ctx3.new_page()
+            await page3.goto(EDITED); await ready(page3)
+            status = await page3.inner_text('#status')
+            check('repacked assets show up (no rebuild)', 'HP 999/999' in status, status)
         await browser.close()
         # No WebGPU: a clear message, the game is not loaded.
         browser = await p.chromium.launch(executable_path='/usr/bin/google-chrome', headless=True, args=['--disable-features=WebGPU', '--disable-gpu', '--no-sandbox'])

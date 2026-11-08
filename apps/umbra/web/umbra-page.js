@@ -40,6 +40,25 @@ const Page = {
   },
   showStats: false,
 
+  // 3a. Assets: assets.json says where each file sits in assets.bin ("UmbraTool web-pack") ------
+  async loadAssets() {
+    const get = async (name) => {
+      const response = await fetch(name);
+      if (!response.ok) throw new Error(name + ': ' + response.status);
+      return response;
+    };
+    const index = await (await get('assets.json')).json();
+    const bin = new Uint8Array(await (await get('assets.bin')).arrayBuffer());
+    if (index.format !== 'umbra.web-assets' || bin.length !== index.size)
+      throw new Error('assets.bin does not match assets.json (copy both again, or run serve-web.bat)');
+    for (const f of index.files) {
+      const path = '/assets/' + f.path;
+      FS.mkdirTree(path.substring(0, path.lastIndexOf('/')));
+      FS.writeFile(path, bin.subarray(f.offset, f.offset + f.size));
+    }
+    return index.files.length;
+  },
+
   // 3. Saves: IndexedDB through Emscripten's IDBFS, plus export/import as a file --------------
   persist() {
     FS.syncfs(false, (err) => {
@@ -106,9 +125,11 @@ const Page = {
 // 5. The Emscripten module: canvas, saves mounted before main, callbacks from C++ -----------------
 var Module = {
   canvas: $('canvas'),
-  // A host that can't serve ".data" files may rename the asset package (set window.umbraDataFile).
-  locateFile: (path, prefix) => prefix + (path === 'umbra.data' && window.umbraDataFile ? window.umbraDataFile : path),
   preRun: [() => {
+    addRunDependency('assets');
+    Page.loadAssets()
+      .then(() => removeRunDependency('assets'))
+      .catch((e) => Page.fatal('Could not load the game assets: ' + e.message));
     FS.mkdir('/libsdl');
     FS.mount(IDBFS, {}, '/libsdl');
     addRunDependency('saves');
@@ -117,13 +138,13 @@ var Module = {
       removeRunDependency('saves');
     });
   }],
-  // umbra.data must come from the same build as umbra.js (it holds the file offsets); a mixed copy
-  // would hand the game garbage, so stop with a clear message instead (seen 2026-11-08).
+  // A damaged copy of the assets would hand the game garbage, so stop with a clear message
+  // instead (seen 2026-11-08, when a file transfer rewrote the asset package).
   onRuntimeInitialized: () => {
     const starts = (file) => { try { return FS.readFile(file, { encoding: 'utf8' }).trimStart()[0] === '{'; } catch (e) { return false; } };
     if (!starts('/assets/rpg/reference.rpg.json') || !starts('/assets/scenes/settlement.scene.json')) {
-      Page.fatal('The game files do not belong together (umbra.data is from a different build than umbra.js). Copy all files of one build again.');
-      throw new Error('umbra.data does not match umbra.js');
+      Page.fatal('The game assets are damaged (assets.bin). Run serve-web.bat again, or copy assets.bin and assets.json again.');
+      throw new Error('assets.bin is damaged');
     }
   },
   setStatus: (text) => { if (text) $('start-text').textContent = text; },

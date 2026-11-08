@@ -4,6 +4,18 @@
 param([string]$Folder = "$PSScriptRoot\..\out\web", [int]$Port = 8080)
 
 $root = (Resolve-Path $Folder).Path
+
+# 0. Pack the project's current assets next to the page, so editor changes show up without a
+#    rebuild (C++ changes still need one). Uses the editor build's UmbraTool when there is one.
+$tool = @("$PSScriptRoot\..\out\build\windows-msvc\tools\umbratool\Debug\UmbraTool.exe",
+          "$PSScriptRoot\..\out\build\windows-msvc\tools\umbratool\Release\UmbraTool.exe") |
+        Where-Object { Test-Path $_ } | Sort-Object { (Get-Item $_).LastWriteTime } | Select-Object -Last 1
+if ($tool) {
+    & $tool web-pack "$PSScriptRoot\..\assets" $root
+    if ($LASTEXITCODE -ne 0) { Write-Host "web-pack failed: the page keeps the assets it had"; }
+} else {
+    Write-Host "UmbraTool not built yet (build the editor once): serving the assets from the last web build"
+}
 $types = @{ ".html" = "text/html"; ".js" = "text/javascript"; ".css" = "text/css"; ".wasm" = "application/wasm"; ".data" = "application/octet-stream"; ".json" = "application/json" }
 $listener = [System.Net.HttpListener]::new()
 $listener.Prefixes.Add("http://localhost:$Port/")

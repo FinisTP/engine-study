@@ -11,6 +11,7 @@
 //   UmbraTool texture "<idea>" --assets <folder> [--name <name>] [--count <n>] [--seed <n>] [--meters <m>]
 //             [--size <px>] [--model <checkpoint>] [--host <url>] [--json]
 //   UmbraTool package-check <package folder> [--source <project folder>] [--json]
+//   UmbraTool web-pack <assets folder> <web build folder>
 //   UmbraTool model (--idea "<text>" | --image <picture> | --resume <job>) --assets <folder> [--name <name>]
 //             [--faces <n>] [--seed <n>] [--workflow <api json>] [--model <checkpoint>] [--host <url>] [--json]
 //
@@ -28,6 +29,7 @@
 #include <SceneFile.hpp>
 #include <TurnEnvironment.hpp>
 #include <Validate.hpp>
+#include <WebPack.hpp>
 
 #include <fstream>
 #include <iostream>
@@ -80,6 +82,7 @@ namespace
                      "  UmbraTool texture \"<idea>\" --assets <folder> [--name <name>] [--count <n>] [--seed <n>] [--meters <m>]\n"
                      "            [--size <px>] [--model <checkpoint>] [--host <url>] [--json]\n"
                      "  UmbraTool package-check <package folder> [--source <project folder>] [--json]\n"
+                     "  UmbraTool web-pack <assets folder> <web build folder>\n"
                      "  UmbraTool model (--idea \"<text>\" | --image <picture> | --resume <job>) --assets <folder> [--name <name>]\n"
                      "            [--faces <n>] [--seed <n>] [--workflow <api json>] [--model <checkpoint>] [--host <url>] [--json]\n";
         return 2;
@@ -109,6 +112,18 @@ namespace
             return Usage();
         std::vector<Diagnostic> diagnostics;
         umbra::authoring::CheckPackage(args.positional[0], args.source, diagnostics);
+        return Report(diagnostics, 1, args.json);
+    }
+
+    // Browser build: the page loads assets.bin/assets.json, so edited content needs no rebuild.
+    int WebPack(const Arguments &args)
+    {
+        if (args.positional.size() != 2)
+            return Usage();
+        std::vector<Diagnostic> diagnostics;
+        const std::string version = umbra::authoring::PackWebAssets(args.positional[0], args.positional[1], diagnostics);
+        if (!version.empty())
+            std::cout << "assets packed into " << args.positional[1] << " (version " << version << ")\n";
         return Report(diagnostics, 1, args.json);
     }
 
@@ -632,5 +647,7 @@ int main(int argc, char **argv)
         return Model(args);
     if (command == "package-check")
         return PackageCheck(args);
+    if (command == "web-pack")
+        return WebPack(args);
     return Usage();
 }

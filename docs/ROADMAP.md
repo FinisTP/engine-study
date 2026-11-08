@@ -806,6 +806,7 @@ This is an initial **60-case register**, not an assertion that every possible fu
 | T72 | Editor closed during a model run; ComfyUI restarted; a run longer than 30 minutes | ComfyUI keeps working and the next start fetches the model; a forgotten job is named (`ai.lost`); no total time limit while ComfyUI has the job | P8D |
 | T74 | Long run: hundreds of fights in both modes with saves, loads and a damaged save | Every save round trip byte-identical; no fight state left over; backup rescues the damaged save; save size bounded | P9 |
 | T75 | Package with a development program, an unlisted DLL, a key, an absolute path, a dependency on the source assets folder, missing content/policy | `package-check` names each (secret values never printed); AI leftovers and non-commercial models are warnings; `package.bat` makes no zip on errors | P9 |
+| T76 | Assets edited after a web build; damaged `assets.bin` | `UmbraTool web-pack` (run by `serve-web.bat`) packs them next to the page with a new offline version; the page shows the edit without a rebuild; AI working files left out; a short `assets.bin` is refused with a clear message | P10 |
 | T73 | Placed generated model; collider added to a model entity | A static box fitted to the model's bounds at the entity scale (not the scale-derived default meant for the -1..1 cube) | P8D |
 | T70 | Generated GLB the importer refuses | Not kept (all files removed); a good one is saved with provenance and never overwrites | P8D |
 

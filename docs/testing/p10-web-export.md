@@ -30,7 +30,7 @@
 |---|---|
 | Native (GCC, Clang, ASan) | 44/44 CTest each (nothing native changed behaviour) |
 | WebAssembly in Node: 13 headless suites (core, rpg, turn, real-time, encounter, story, game incl. the 300-fight run T74, policy incl. NumPy parity of the shipped model T29, world, assets, scene, physics, gameplay) | **13/13 pass** |
-| Headless Chrome (`tools/web/check-web.py`) | **11/11** (after 3b): no HUD warnings; mismatched `umbra.data` refused; game starts and draws frames; HUD; keyboard (Tab → real time); pause menu as HTML; a saved file survives a reload (IndexedDB); "Ready offline"; starts with the network off; no script errors; no WebGPU → clear message, game not loaded |
+| Headless Chrome (`tools/web/check-web.py`) | **12/12** (after 3c): no HUD warnings; damaged `assets.bin` refused; repacked assets (hero HP 999) show up without a rebuild; game starts and draws frames; HUD; keyboard (Tab → real time); pause menu as HTML; a saved file survives a reload (IndexedDB); "Ready offline"; starts with the network off; no script errors; no WebGPU → clear message, game not loaded |
 
 Sizes: `umbra.wasm` 5.8 MB, `umbra.data` 3.3 MB, `umbra.js` 0.25 MB.
 
@@ -73,6 +73,14 @@ After the fix, in the Claude desktop app's built-in browser on the user's PC (RT
 as HTML, no warnings, ~60 FPS frame count. P10.1 rendering confirmed on real hardware. The service
 worker failed to register there ("unknown error when fetching the script"); `serve-web.ps1` now
 sends a content length and `no-cache`. Offline install still to confirm in Chrome/Edge (§4 item 4).
+
+## 3c. Editor changes in the web build (2026-11-08, `#UMBRA-70`)
+
+The user saved a scene in the editor and `serve-web.bat` still showed the old one: the assets
+were linked into `umbra.data` at build time. Now the page loads `assets.bin` + `assets.json`,
+written by `UmbraTool web-pack` (`engine/authoring/include/WebPack.md`), and `serve-web.ps1`
+repacks the project's `assets` folder before serving. The offline version is `program+assets`,
+and the service worker asks the server first. T76 (unit test) and `check-web.py` 12/12.
 
 ## 4. User checklist (Chrome or Edge on the user's PC)
 

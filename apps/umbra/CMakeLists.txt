@@ -44,8 +44,9 @@ target_link_libraries(
 
 umbra_copy_asan_runtime(Umbra)
 
-# Browser build (roadmap P10, web/README.md): umbra.js/.wasm/.data plus the page, the offline
-# service worker and its version stamp. Single-threaded; the frame loop yields to the browser
+# Browser build (roadmap P10, web/README.md): umbra.js/.wasm plus the page, the offline service
+# worker and its version stamp. The assets are not linked in: "UmbraTool web-pack" writes
+# assets.bin/assets.json next to the page (tools/web/build-web.sh, scripts/serve-web.ps1). Single-threaded; the frame loop yields to the browser
 # through Asyncify (RenderFrame waits for the next animation frame).
 if(EMSCRIPTEN)
     set_target_properties(Umbra PROPERTIES OUTPUT_NAME umbra SUFFIX ".js")
@@ -54,12 +55,9 @@ if(EMSCRIPTEN)
         -sASYNCIFY -sASYNCIFY_STACK_SIZE=131072 -sSTACK_SIZE=1048576
         -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=134217728
         -sFORCE_FILESYSTEM=1 -lidbfs.js -sEXPORTED_RUNTIME_METHODS=FS,IDBFS -sENVIRONMENT=web -sDYNCALLS=1 # SDL audio calls back through dynCall
-        "--preload-file=${PROJECT_SOURCE_DIR}/assets@/assets"
-        "--exclude-file=*.concept.png" "--exclude-file=*comfy-export*" "--exclude-file=*.api.json"
     )
-    # Relink when the JavaScript renderer or any preloaded asset changes.
-    file(GLOB_RECURSE UMBRA_WEB_ASSETS CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/assets/*")
-    set_property(TARGET Umbra APPEND PROPERTY LINK_DEPENDS "${PROJECT_SOURCE_DIR}/engine/render/web/umbra_render.js" ${UMBRA_WEB_ASSETS})
+    # Relink when the JavaScript renderer changes.
+    set_property(TARGET Umbra APPEND PROPERTY LINK_DEPENDS "${PROJECT_SOURCE_DIR}/engine/render/web/umbra_render.js")
     set(UMBRA_WEB_PAGE "${CMAKE_CURRENT_SOURCE_DIR}/web")
     add_custom_target(
         UmbraWebPage ALL

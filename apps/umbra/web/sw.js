@@ -1,6 +1,6 @@
 // Offline install (roadmap P10.4). stamp.cmake writes the version (a hash of the build) and the
-// file list. One complete version at a time: cache.addAll is all-or-nothing, so a partial
-// download is never reported ready, and an update only takes over after a reload.
+// file list; "UmbraTool web-pack" adds the assets' hash to the version. One complete version at
+// a time: cache.addAll is all-or-nothing, so a partial download is never reported ready.
 const VERSION = '@UMBRA_VERSION@';
 const FILES = [@UMBRA_FILES@];
 
@@ -14,8 +14,11 @@ self.addEventListener('activate', (event) => {
     .then(() => self.clients.claim()));
 });
 
+// Network first: a freshly packed assets.bin (editor changes) shows up on the next load; the
+// cached version is only used when the server can't be reached.
 self.addEventListener('fetch', (event) => {
-  event.respondWith(caches.match(event.request, { ignoreSearch: true }).then((hit) => hit || fetch(event.request)));
+  event.respondWith(fetch(event.request).catch(() => caches.match(event.request, { ignoreSearch: true })
+    .then((hit) => hit || Response.error())));
 });
 
 self.addEventListener('message', async (event) => {

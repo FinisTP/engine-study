@@ -8,5 +8,9 @@ SRC=$(cd "$(dirname "$0")/../.." && pwd)
 OUT=${OUT:-$SRC/out/web-build}
 emcmake cmake -S "$SRC" -B "$OUT" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$WEB_PREFIX" -DCMAKE_FIND_ROOT_PATH="$WEB_PREFIX" -DUMBRA_WEB_TESTS=${TESTS:-ON}
 cmake --build "$OUT"
+# The page loads its assets from assets.bin/assets.json: pack them with a native UmbraTool.
+TOOL=${UMBRA_TOOL:-$(ls "$SRC"/build*/tools/umbratool/UmbraTool 2>/dev/null | head -1)}
+[ -x "$TOOL" ] || { echo "Set UMBRA_TOOL to a native UmbraTool (needed for web-pack)"; exit 1; }
+"$TOOL" web-pack "$SRC/assets" "$OUT/apps/umbra"
 [ "${TESTS:-ON}" = ON ] && ctest --test-dir "$OUT" -E "Tool|SceneCheck" --output-on-failure
-echo "Page: $OUT/apps/umbra (index.html, umbra.js/.wasm/.data, sw.js). Serve it, e.g. python3 -m http.server -d $OUT/apps/umbra"
+echo "Page: $OUT/apps/umbra (index.html, umbra.js/.wasm, assets.bin/.json, sw.js). Serve it, e.g. python3 -m http.server -d $OUT/apps/umbra"
