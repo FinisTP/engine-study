@@ -49,7 +49,7 @@ TEST_CASE("Fonts are packed into one atlas with a white block; text is measured 
     const ui::Face *body = atlas.Find("body");
     REQUIRE(body != nullptr);
     CHECK(body->Find(U'A') != nullptr);
-    CHECK(body->Find(U'ạ') != nullptr); // Vietnamese
+    CHECK(body->Find(U'\u1EA1') != nullptr); // Vietnamese
     const glm::vec2 white = atlas.WhiteUv();
     const auto x = static_cast<std::size_t>(white.x * static_cast<float>(atlas.Image().width));
     const auto y = static_cast<std::size_t>(white.y * static_cast<float>(atlas.Image().height));
