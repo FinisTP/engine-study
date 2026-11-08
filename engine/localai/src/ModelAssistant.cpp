@@ -206,7 +206,7 @@ namespace umbra::localai
         }
         else
             entity["instance"] = modelPath;
-        entity["collider"] = FittedCollider(info, glm::vec3(scale));
+        entity["components"]["collider"] = FittedCollider(info, glm::vec3(scale));
         return entity;
     }
 }

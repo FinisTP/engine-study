@@ -1,4 +1,5 @@
 #include "Editor.hpp"
+#include "Widgets.hpp"
 
 #include <Log.hpp>
 #include <ModelInstance.hpp>
@@ -23,6 +24,9 @@
 using umbra::authoring::Change;
 using umbra::authoring::Json;
 namespace authoring = umbra::authoring;
+using widgets::Choose;
+using widgets::EditText;
+using widgets::Vec3;
 
 namespace
 {
@@ -33,15 +37,6 @@ namespace
         return {text.begin(), text.end()};
     }
     std::filesystem::path FromUtf8(const std::string &text) { return std::u8string(text.begin(), text.end()); }
-
-    // Reads [x, y, z] (or [x, y, z, w]) from an entity field, with a default.
-    glm::vec3 Vec3(const Json &entity, const char *key, glm::vec3 fallback)
-    {
-        const auto it = entity.find(key);
-        if (it == entity.end() || !it->is_array() || it->size() < 3)
-            return fallback;
-        return {(*it)[0].get<float>(), (*it)[1].get<float>(), (*it)[2].get<float>()};
-    }
 
     glm::quat Rotation(const Json &entity)
     {
@@ -58,35 +53,6 @@ namespace
         scale = {glm::length(glm::vec3(m[0])), glm::length(glm::vec3(m[1])), glm::length(glm::vec3(m[2]))};
         const glm::mat3 r{glm::vec3(m[0]) / scale.x, glm::vec3(m[1]) / scale.y, glm::vec3(m[2]) / scale.z};
         rotation = glm::normalize(glm::quat_cast(r));
-    }
-
-    // A text field that reports a change once, when the user finishes editing it.
-    bool EditText(const char *label, const std::string &current, std::string &result)
-    {
-        char buffer[512];
-        std::snprintf(buffer, sizeof(buffer), "%s", current.c_str());
-        ImGui::InputText(label, buffer, sizeof(buffer));
-        if (!ImGui::IsItemDeactivatedAfterEdit())
-            return false;
-        result = buffer;
-        return true;
-    }
-
-    // A combo over `options`; returns true and sets `result` when the user picks one.
-    bool Choose(const char *label, const std::string &current, const std::vector<std::string> &options, std::string &result)
-    {
-        bool picked = false;
-        if (ImGui::BeginCombo(label, current.c_str()))
-        {
-            for (const std::string &option : options)
-                if (ImGui::Selectable(option.c_str(), option == current))
-                {
-                    result = option;
-                    picked = true;
-                }
-            ImGui::EndCombo();
-        }
-        return picked;
     }
 
     // Slab test: the ray hits the box [min, max] at distance t (in ray-parameter units).
@@ -269,6 +235,7 @@ bool Editor::OpenScene(const std::string &scenePath)
     builtRevision_ = 0;
     changedOnDisk_ = false;
     problems_.clear();
+    MoveLegacyParts();
     RebuildWorld();
     return true;
 }
@@ -421,9 +388,10 @@ void Editor::AddColliderLines(umbra::core::DrawList &drawList) const
         return;
     const auto &entity = scene_->Data()["entities"][*index];
     const glm::mat4 *matrix = world_->GetWorldMatrix(world_->Find(selected_));
-    if (!entity.contains("collider") || matrix == nullptr)
+    const Json *collider = ComponentOf(entity, "collider");
+    if (collider == nullptr || matrix == nullptr)
         return;
-    const auto &c = entity["collider"];
+    const auto &c = *collider;
     // 1. Position, rotation and scale of the entity.
     const glm::vec3 p{(*matrix)[3]};
     const glm::vec3 scale{glm::length(glm::vec3((*matrix)[0])), glm::length(glm::vec3((*matrix)[1])), glm::length(glm::vec3((*matrix)[2]))};
@@ -467,7 +435,8 @@ std::optional<authoring::Json> Editor::FitCollider(const authoring::Json &entity
     if (!info)
         return std::nullopt;
     authoring::Json fitted = umbra::localai::FittedCollider(*info, Vec3(entity, "scale", glm::vec3{1.0F}));
-    fitted["motion"] = entity.contains("collider") ? entity["collider"].value("motion", "static") : "static";
+    const Json *collider = ComponentOf(entity, "collider");
+    fitted["motion"] = collider ? collider->value("motion", "static") : "static";
     return fitted;
 }
 
@@ -794,114 +763,8 @@ void Editor::Inspector()
         }
     }
 
-    // 4. Optional parts: a checkbox adds the default, the fields edit it.
-    const auto part = [&](const char *key, const char *label, const Json &defaults) {
-        bool has = entity.contains(key);
-        ImGui::SeparatorText(label);
-        ImGui::PushID(key);
-        if (ImGui::Checkbox("Enabled", &has))
-        {
-            if (has)
-                SetField(at + "/" + key, defaults, std::string{label} + " " + selected_);
-            else
-                Edit(*scene_, {{Change::Op::Remove, at + "/" + key, {}}}, std::string{label} + " " + selected_);
-        }
-        ImGui::PopID();
-        return entity.contains(key) && has;
-    };
-    // A new collider on a model fits the model; on anything else its size follows the scale.
-    if (part("collider", "Collider", FitCollider(entity).value_or(Json::object())))
-    {
-        const Json &c = entity["collider"];
-        if (Choose("Shape", c.value("shape", "box"), {"box", "sphere", "capsule"}, text))
-            SetField(at + "/collider/shape", text, "Collider " + selected_);
-        if (Choose("Motion", c.value("motion", "static"), {"static", "kinematic", "dynamic"}, text))
-            SetField(at + "/collider/motion", text, "Collider " + selected_);
-        // Sizes in meters (green outline); 0 = from the entity's scale. One undo step per drag.
-        const auto size = [&](const char *key, const Json &value) {
-            if (ImGui::IsItemActivated())
-                newStep_ = true;
-            SetField(at + "/collider/" + key, value, "Collider size " + selected_, !newStep_);
-            newStep_ = false;
-        };
-        const std::string shape = c.value("shape", "box");
-        if (shape == "box")
-        {
-            glm::vec3 half = Vec3(c, "halfExtents", glm::vec3{0.0F});
-            if (ImGui::DragFloat3("Half size", &half.x, 0.01F, 0.0F, 1000.0F))
-                size("halfExtents", Json::array({half.x, half.y, half.z}));
-        }
-        float radius = c.value("radius", 0.0F), halfHeight = c.value("halfHeight", 0.0F);
-        if (shape != "box" && ImGui::DragFloat("Radius", &radius, 0.01F, 0.0F, 1000.0F))
-            size("radius", radius);
-        if (shape == "capsule" && ImGui::DragFloat("Half height", &halfHeight, 0.01F, 0.0F, 1000.0F))
-            size("halfHeight", halfHeight);
-        if (const auto fitted = FitCollider(entity); fitted && ImGui::Button("Fit to model"))
-            SetField(at + "/collider", *fitted, "Fit collider " + selected_);
-        ImGui::SameLine();
-        ImGui::TextDisabled("(fit again after scaling)");
-    }
-    if (part("interactable", "Interactable", Json{{"prompt", "Use"}}))
-    {
-        const Json &i = entity["interactable"];
-        if (EditText("Prompt", i.value("prompt", ""), text))
-            SetField(at + "/interactable/prompt", text, "Interactable " + selected_);
-        if (EditText("Message", i.value("message", ""), text))
-            SetField(at + "/interactable/message", text, "Interactable " + selected_);
-        std::vector<std::string> sounds = assets_["Sounds"];
-        if (Choose("Sound", i.value("sound", ""), sounds, text))
-            SetField(at + "/interactable/sound", text, "Interactable " + selected_);
-        std::vector<std::string> talks = RpgIds("conversations");
-        talks.insert(talks.begin(), "");
-        if (Choose("Conversation", i.value("conversation", ""), talks, text))
-        {
-            if (text.empty())
-                Edit(*scene_, {{Change::Op::Remove, at + "/interactable/conversation", {}}}, "Interactable " + selected_);
-            else
-                SetField(at + "/interactable/conversation", text, "Interactable " + selected_);
-        }
-        bool save = i.value("save", false);
-        if (ImGui::Checkbox("Save stone", &save))
-            SetField(at + "/interactable/save", save, "Interactable " + selected_);
-    }
-    if (part("portal", "Portal", Json{{"scene", "scenes/settlement.scene.json"}, {"spawn", "player"}}))
-    {
-        const Json &p = entity["portal"];
-        if (Choose("Scene", p.value("scene", ""), assets_["Scenes"], text))
-            SetField(at + "/portal/scene", text, "Portal " + selected_);
-        if (EditText("Spawn", p.value("spawn", ""), text))
-            SetField(at + "/portal/spawn", text, "Portal " + selected_);
-    }
-    const std::vector<std::string> actors = RpgIds("actors");
-    if (part("spawner", "Enemy spawner", Json{{"pool", Json::array({actors.empty() ? "wolf" : actors.back()})}, {"count", 1}}))
-    {
-        const Json &s = entity["spawner"];
-        // The pool: one checkbox per actor in the RPG content.
-        Json pool = s.value("pool", Json::array());
-        for (const std::string &actor : actors)
-        {
-            bool in = std::find(pool.begin(), pool.end(), actor) != pool.end();
-            if (ImGui::Checkbox(actor.c_str(), &in))
-            {
-                Json next = Json::array();
-                for (const std::string &a : actors)
-                    if (a == actor ? in : std::find(pool.begin(), pool.end(), a) != pool.end())
-                        next.push_back(a);
-                SetField(at + "/spawner/pool", next, "Spawner " + selected_);
-            }
-        }
-        int count = s.value("count", 1), group = s.value("group", 3);
-        float radius = s.value("radius", 3.0F);
-        bool chase = s.value("chase", false);
-        if (ImGui::InputInt("Count", &count))
-            SetField(at + "/spawner/count", count, "Spawner " + selected_);
-        if (ImGui::InputInt("Group", &group))
-            SetField(at + "/spawner/group", group, "Spawner " + selected_);
-        if (ImGui::InputFloat("Radius", &radius, 0.5F))
-            SetField(at + "/spawner/radius", radius, "Spawner " + selected_);
-        if (ImGui::Checkbox("Chases on sight", &chase))
-            SetField(at + "/spawner/chase", chase, "Spawner " + selected_);
-    }
+    // 4. Components (Components.cpp).
+    ComponentsPanel(entity, at);
     ImGui::End();
 }
 
@@ -1069,6 +932,10 @@ void Editor::ScanAssets()
     // Every content file under the asset folder, grouped by kind, as forward-slash paths.
     assets_.clear();
     modelBounds_.clear(); // a model file may have changed
+    std::vector<umbra::core::Diagnostic> schemaProblems;
+    schemas_ = umbra::scene::LoadComponentSchemas(assetRoot_ / "components", schemaProblems);
+    if (!schemaProblems.empty())
+        Report(schemaProblems, "Component schema problems");
     std::error_code ec;
     for (auto it = std::filesystem::recursive_directory_iterator(assetRoot_, ec); it != std::filesystem::recursive_directory_iterator(); it.increment(ec))
     {

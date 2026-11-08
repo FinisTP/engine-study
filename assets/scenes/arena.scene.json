@@ -23,7 +23,9 @@
         0.22,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "wall_north",
@@ -46,7 +48,9 @@
         0.3,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "wall_south",
@@ -69,7 +73,9 @@
         0.3,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "wall_west",
@@ -92,7 +98,9 @@
         0.3,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "wall_east",
@@ -115,7 +123,9 @@
         0.3,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "pillar_nw",
@@ -138,7 +148,9 @@
         0.3,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "pillar_ne",
@@ -161,7 +173,9 @@
         0.3,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "pillar_sw",
@@ -184,7 +198,9 @@
         0.3,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "pillar_se",
@@ -207,7 +223,9 @@
         0.3,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "player",

@@ -31,9 +31,11 @@ A scene is a readable JSON file that people, tools and AI agents can edit. It st
 | `color` | `[r, g, b, a]` | `[1,1,1,1]` | Tint multiplied with the material color. |
 | `material` | asset path | none | A `*.material.json` whose image replaces the model's texture, optionally repeating by meters (`engine/assets/include/Material.md`). Needs `model`. |
 | `instance` | asset path | none | At load, the whole node hierarchy of this glTF is created under this entity (ids `"<id>/<node name>"`). |
-| `collider` | object | none | Physics shape, see below. |
-| `interactable` | object | none | Something the player can use with **E**, see below. |
-| `portal` | object | none | Walking into it loads another scene, see below. |
+| `components` | object | none | `{"<type>": {fields}}`, one of each type: the built-in `collider`, `interactable`, `portal`, `spawner` (below) and the project's own (`Components.md`). |
+
+Older files put the four built-in components directly on the entity (`"collider": {}`). They
+still load; the editor moves them into `components` when it opens the file, and `SaveScene`
+always writes `components`. Having the same type in both places is an error.
 
 ### Collider
 
@@ -115,6 +117,10 @@ Every problem is a `core::Diagnostic` (`engine/core/include/Diagnostic.hpp`) wit
 | `entity.interactable.sound` | warning | Sound file doesn't exist (the game plays nothing) |
 | `entity.interactable.nocollider` | warning | `interactable` without `collider` (the player can't reach it) |
 | `entity.portal.scene`, `entity.portal.spawn` | error | Portal without a destination, or an empty spawn id |
+| `entity.component.twice` | error | A built-in component both on the entity and in `components` |
+| `entity.component.field` | error | A project component's field has the wrong kind or is out of range (its schema) |
+| `entity.component.unknown`, `entity.component.unknown-field` | warning | No `components/<type>.component.json` in the project; a field its schema doesn't list |
+| `component.schema` | warning | A `*.component.json` is invalid; its components are not checked |
 | `entity.field.unknown` | warning | Unknown field (usually a typo) |
 
 ## Saving

@@ -1,5 +1,7 @@
 #include <SceneFile.hpp>
 
+#include <ComponentSchema.hpp>
+
 #include <Material.hpp>
 
 #include <ModelCache.hpp>
@@ -11,6 +13,7 @@
 #include <cstdio>
 #include <fstream>
 #include <iterator>
+#include <map>
 #include <optional>
 #include <set>
 #include <unordered_map>
@@ -43,6 +46,7 @@ namespace umbra::scene
             std::optional<world::Interactable> interactable;
             std::optional<world::Portal> portal;
             std::optional<world::Spawner> spawner;
+            std::vector<world::CustomComponent> customs;
         };
 
         struct ParsedScene final
@@ -310,9 +314,11 @@ namespace umbra::scene
             return portal;
         }
 
-        EntityDesc ParseEntity(const json &entity, const std::string &where, const SceneLoadOptions &options, Report &report)
+        EntityDesc ParseEntity(const json &entity, const std::string &where, const SceneLoadOptions &options,
+                               const std::map<std::string, ComponentSchema> &schemas, Report &report)
         {
-            static const std::set<std::string> knownKeys{"id", "name", "parent", "position", "rotation", "scale", "model", "mesh", "color", "material", "instance", "collider", "interactable", "portal", "spawner"};
+            static const std::set<std::string> knownKeys{"id", "name", "parent", "position", "rotation", "scale", "model", "mesh", "color", "material", "instance", "components",
+                                                         "collider", "interactable", "portal", "spawner"}; // the last four: before components (still read)
             EntityDesc desc;
             for (const auto &[key, value] : entity.items())
             {
@@ -359,14 +365,51 @@ namespace umbra::scene
                 CheckMaterial(desc, where + ".material", options, report);
             if (ReadString(entity, "instance", desc.instance, where, report) && entity.contains("instance"))
                 CheckAssetPath(desc.instance, where + ".instance", options, report);
-            if (const auto it = entity.find("collider"); it != entity.end())
-                desc.collider = ParseCollider(*it, where + ".collider", report);
-            if (const auto it = entity.find("interactable"); it != entity.end())
-                desc.interactable = ParseInteractable(*it, where + ".interactable", options, report);
-            if (const auto it = entity.find("portal"); it != entity.end())
-                desc.portal = ParsePortal(*it, where + ".portal", options, report);
-            if (const auto it = entity.find("spawner"); it != entity.end())
-                desc.spawner = ParseSpawner(*it, where + ".spawner", report);
+
+            // Components: "components": {"collider": {...}, "spin": {...}} (Components.md). Older
+            // files have the built-in ones directly on the entity; they are read the same way.
+            std::vector<std::pair<std::string, std::pair<const json *, std::string>>> parts; // type -> value, where
+            if (const auto it = entity.find("components"); it != entity.end())
+            {
+                if (!it->is_object())
+                    report.Error("entity.field.type", where + ".components", "expected an object: {\"<type>\": {fields}}");
+                else
+                    for (const auto &[type, value] : it->items())
+                        parts.push_back({type, {&value, where + ".components." + type}});
+            }
+            for (const std::string &type : builtInComponents)
+                if (const auto it = entity.find(type); it != entity.end())
+                {
+                    if (entity.contains("components") && entity["components"].contains(type))
+                        report.Error("entity.component.twice", where + "." + type, "'" + type + "' is both on the entity and in its components");
+                    parts.push_back({type, {&*it, where + "." + type}});
+                }
+            for (const auto &[type, part] : parts)
+            {
+                const auto &[value, at] = part;
+                if (type == "collider")
+                    desc.collider = ParseCollider(*value, at, report);
+                else if (type == "interactable")
+                    desc.interactable = ParseInteractable(*value, at, options, report);
+                else if (type == "portal")
+                    desc.portal = ParsePortal(*value, at, options, report);
+                else if (type == "spawner")
+                    desc.spawner = ParseSpawner(*value, at, report);
+                else
+                {
+                    // A project component: checked against its schema when the project has one.
+                    if (const auto schema = schemas.find(type); schema != schemas.end())
+                    {
+                        const std::size_t before = report.out.size();
+                        CheckComponent(schema->second, *value, report.file, at, report.out);
+                        for (std::size_t i = before; i < report.out.size(); ++i)
+                            report.failed |= report.out[i].severity == Severity::Error;
+                    }
+                    else if (!options.assetRoot.empty())
+                        report.Warning("entity.component.unknown", at, "no components/" + type + ".component.json in the project; the game ignores it unless C++ registers it");
+                    desc.customs.push_back({type, value->dump()});
+                }
+            }
             return desc;
         }
 
@@ -485,7 +528,10 @@ namespace umbra::scene
                 return false;
             }
 
-            // 4. Entities, duplicate ids, hierarchy.
+            // 4. Entities, duplicate ids, hierarchy. Project components are checked against
+            //    "<assets>/components/*.component.json".
+            const std::map<std::string, ComponentSchema> schemas =
+                options.assetRoot.empty() ? std::map<std::string, ComponentSchema>{} : LoadComponentSchemas(options.assetRoot / "components", diagnostics);
             std::unordered_map<std::string, std::size_t> firstUse;
             for (std::size_t i = 0; i < entities->size(); ++i)
             {
@@ -495,7 +541,7 @@ namespace umbra::scene
                     report.Error("entity.type", where, "expected an object");
                     continue;
                 }
-                EntityDesc desc = ParseEntity((*entities)[i], where, options, report);
+                EntityDesc desc = ParseEntity((*entities)[i], where, options, schemas, report);
                 if (!desc.id.empty() && !firstUse.emplace(desc.id, i).second)
                     report.Error("entity.id.duplicate", where + ".id",
                                  "id '" + desc.id + "' is already used by entities[" + std::to_string(firstUse[desc.id]) + "]");
@@ -572,7 +618,7 @@ namespace umbra::scene
                     collider["radius"] = Tidy(c->radius);
                 if (c->halfHeight != 0.0F)
                     collider["halfHeight"] = Tidy(c->halfHeight);
-                out["collider"] = collider;
+                out["components"]["collider"] = collider;
             }
             if (const world::Interactable *i = world.GetInteractable(entity))
             {
@@ -585,17 +631,19 @@ namespace umbra::scene
                     interactable["conversation"] = i->conversation;
                 if (i->save)
                     interactable["save"] = true;
-                out["interactable"] = interactable;
+                out["components"]["interactable"] = interactable;
             }
             if (const world::Portal *p = world.GetPortal(entity))
             {
                 json portal{{"scene", p->scene}};
                 if (p->spawn != "player")
                     portal["spawn"] = p->spawn;
-                out["portal"] = portal;
+                out["components"]["portal"] = portal;
             }
             if (const world::Spawner *sp = world.GetSpawner(entity))
-                out["spawner"] = {{"pool", sp->pool}, {"count", sp->count}, {"radius", sp->radius}, {"chase", sp->chase}, {"group", sp->group}};
+                out["components"]["spawner"] = {{"pool", sp->pool}, {"count", sp->count}, {"radius", sp->radius}, {"chase", sp->chase}, {"group", sp->group}};
+            for (const world::CustomComponent &custom : *world.GetCustoms(entity))
+                out["components"][custom.type] = json::parse(custom.data);
             return out;
         }
 
@@ -656,6 +704,8 @@ namespace umbra::scene
                 world.SetPortal(entity, *desc.portal);
             if (desc.spawner)
                 world.SetSpawner(entity, *desc.spawner);
+            for (const world::CustomComponent &custom : desc.customs)
+                world.SetCustom(entity, custom);
             created.push_back(entity);
         }
         for (std::size_t i = 0; i < scene.entities.size(); ++i)

@@ -106,6 +106,14 @@ namespace umbra::world
         std::string spawn = "player";
     };
 
+    // A project's own component (see Components.md): its type name and its fields as JSON text.
+    // The world only stores it; the game creates the C++ behaviour registered for the type.
+    struct CustomComponent final
+    {
+        std::string type; // e.g. "spin"
+        std::string data; // e.g. {"speed":45}
+    };
+
     // Owns entities. Each entity has a durable string id (saved in files) and a
     // transient Entity handle (used at runtime). See World.md.
     class World final
@@ -159,6 +167,9 @@ namespace umbra::world
         [[nodiscard]] const Spawner *GetSpawner(Entity entity) const noexcept;
         bool SetPortal(Entity entity, Portal portal);
         [[nodiscard]] const Portal *GetPortal(Entity entity) const noexcept;
+        // Replaces a custom component of the same type, or adds it.
+        bool SetCustom(Entity entity, CustomComponent component);
+        [[nodiscard]] const std::vector<CustomComponent> *GetCustoms(Entity entity) const noexcept;
 
         // Appends one item per renderable with a valid mesh handle. Call after UpdateTransforms().
         void ExtractDrawList(core::DrawList &drawList) const;
@@ -185,6 +196,7 @@ namespace umbra::world
             std::optional<Interactable> interactable;
             std::optional<Portal> portal;
             std::optional<Spawner> spawner;
+            std::vector<CustomComponent> customs;
         };
 
         [[nodiscard]] const Record *Get(Entity entity) const noexcept;

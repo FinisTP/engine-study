@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GameComponents.hpp"
 #include "ModelLibrary.hpp"
 
 #include <DrawList.hpp>
@@ -154,12 +155,14 @@ private:
     std::map<std::filesystem::path, std::string> owners_; // watched file -> model path ("" = the scene file)
     umbra::assets::FileWatcher::Clock::time_point nextPoll_{};
     std::vector<RoamerSlot> roamers_;
+    umbra::game::ComponentSet components_; // project components of world_ (GameComponents.hpp)
     // The area waiting while a fight runs in the arena.
     struct KeptArea final
     {
         std::unique_ptr<umbra::world::World> world;
         std::unique_ptr<umbra::physics::PhysicsWorld> physics;
         std::vector<RoamerSlot> roamers;
+        umbra::game::ComponentSet components;
         std::string scenePath;
         umbra::gameplay::SpawnPoint player;
     };

@@ -193,6 +193,10 @@ void SceneRuntime::Install(std::unique_ptr<umbra::world::World> fresh, std::opti
     if (start)
         player_.Spawn(*physics_, start->feet, start->yaw);
     SpawnRoamers();
+    // 4. Project components get their C++ behaviour (a type without one is only data).
+    for (const std::string &type : components_.Create(*world_))
+        umbra::diagnostics::Info("Warning: component '" + type + "' has no C++ behaviour in this build; it does nothing.");
+    world_->UpdateTransforms();
     Rebind();
     umbra::diagnostics::Info("Loaded scene " + scenePath_ + " with " + std::to_string(world_->Count()) + " entities.");
 }
@@ -285,6 +289,8 @@ SimulationEvents SceneRuntime::Simulate(float deltaSeconds, const umbra::gamepla
             events.portal = *world_->GetPortal(portal);
         portalArmed_ = !portal;
     }
+    components_.Update(*world_, static_cast<float>(deltaSeconds));
+    world_->UpdateTransforms();
     SyncPlayerVisual();
     SyncRoamerVisuals();
     UpdateFlashes(deltaSeconds);
@@ -524,6 +530,7 @@ bool SceneRuntime::EnterArena(const std::string &arenaScene)
     kept->world = std::move(world_);
     kept->physics = std::move(physics_);
     kept->roamers = std::move(roamers_);
+    kept->components = std::move(components_);
     kept->scenePath = scenePath_;
     kept_ = std::move(kept);
     // 2. The arena becomes the live world; the player starts at its 'player' marker.
@@ -541,6 +548,7 @@ bool SceneRuntime::LeaveArena()
     world_ = std::move(kept_->world);
     physics_ = std::move(kept_->physics);
     roamers_ = std::move(kept_->roamers);
+    components_ = std::move(kept_->components);
     scenePath_ = kept_->scenePath;
     const umbra::gameplay::SpawnPoint spot = kept_->player;
     kept_.reset();

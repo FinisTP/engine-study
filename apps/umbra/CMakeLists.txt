@@ -14,7 +14,16 @@ target_sources(
         ModelLibrary.hpp
         SceneRuntime.cpp
         SceneRuntime.hpp
+        GameComponents.cpp
+        GameComponents.hpp
 )
+
+# The project's own game code (its components) is compiled into the program itself, so their
+# UMBRA_COMPONENT registrations are never dropped by the linker.
+set(UMBRA_PROJECT "reference" CACHE STRING "Project folder under projects/ built into the game")
+file(GLOB_RECURSE UMBRA_PROJECT_GAME CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/projects/${UMBRA_PROJECT}/game/*.cpp" "${PROJECT_SOURCE_DIR}/projects/${UMBRA_PROJECT}/game/*.hpp")
+target_sources(Umbra PRIVATE ${UMBRA_PROJECT_GAME})
+target_include_directories(Umbra PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_compile_features(Umbra PRIVATE cxx_std_20)
 

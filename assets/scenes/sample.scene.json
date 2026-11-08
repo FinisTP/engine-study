@@ -23,7 +23,9 @@
         0.5,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "ring_0",
@@ -46,7 +48,9 @@
         0.5,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "ring_1",
@@ -69,7 +73,9 @@
         0.933013,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "ring_2",
@@ -92,7 +98,9 @@
         0.933013,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "ring_3",
@@ -115,7 +123,9 @@
         0.5,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "ring_4",
@@ -138,7 +148,9 @@
         0.0669873,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "ring_5",
@@ -161,7 +173,9 @@
         0.0669873,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "spinner",
@@ -228,8 +242,10 @@
         0.35,
         1
       ],
-      "collider": {
-        "motion": "dynamic"
+      "components": {
+        "collider": {
+          "motion": "dynamic"
+        }
       }
     },
     {
@@ -253,8 +269,10 @@
         0.35,
         1
       ],
-      "collider": {
-        "motion": "dynamic"
+      "components": {
+        "collider": {
+          "motion": "dynamic"
+        }
       }
     },
     {
@@ -278,8 +296,10 @@
         0.35,
         1
       ],
-      "collider": {
-        "motion": "dynamic"
+      "components": {
+        "collider": {
+          "motion": "dynamic"
+        }
       }
     }
   ]

@@ -23,7 +23,9 @@
         0.28,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "player",
@@ -71,7 +73,9 @@
         0.4,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "wall_right",
@@ -94,7 +98,9 @@
         0.4,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "wall_back",
@@ -117,7 +123,9 @@
         0.4,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "wall_front",
@@ -140,7 +148,9 @@
         0.4,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "pillar_0",
@@ -163,7 +173,9 @@
         0.4,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "pillar_1",
@@ -186,7 +198,9 @@
         0.4,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "pillar_2",
@@ -209,7 +223,9 @@
         0.4,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "pillar_3",
@@ -232,7 +248,9 @@
         0.4,
         1
       ],
-      "collider": {}
+      "components": {
+        "collider": {}
+      }
     },
     {
       "id": "crate_0",
@@ -255,8 +273,10 @@
         0.25,
         1
       ],
-      "collider": {
-        "motion": "dynamic"
+      "components": {
+        "collider": {
+          "motion": "dynamic"
+        }
       }
     },
     {
@@ -280,8 +300,10 @@
         0.25,
         1
       ],
-      "collider": {
-        "motion": "dynamic"
+      "components": {
+        "collider": {
+          "motion": "dynamic"
+        }
       }
     },
     {
@@ -305,11 +327,13 @@
         0.15,
         1
       ],
-      "collider": {},
-      "interactable": {
-        "prompt": "Open chest",
-        "message": "Empty. Someone got here first.",
-        "sound": "audio/interact.wav"
+      "components": {
+        "collider": {},
+        "interactable": {
+          "prompt": "Open chest",
+          "message": "Empty. Someone got here first.",
+          "sound": "audio/interact.wav"
+        }
       }
     },
     {
@@ -333,9 +357,11 @@
         0.7,
         1
       ],
-      "portal": {
-        "scene": "scenes/settlement.scene.json",
-        "spawn": "from_dungeon"
+      "components": {
+        "portal": {
+          "scene": "scenes/settlement.scene.json",
+          "spawn": "from_dungeon"
+        }
       }
     },
     {
@@ -359,11 +385,16 @@
         1.0,
         1
       ],
-      "collider": {},
-      "interactable": {
-        "prompt": "Save at the stone",
-        "save": true,
-        "sound": "audio/interact.wav"
+      "components": {
+        "collider": {},
+        "interactable": {
+          "prompt": "Save at the stone",
+          "save": true,
+          "sound": "audio/interact.wav"
+        },
+        "spin": {
+          "speed": 30
+        }
       }
     },
     {
@@ -374,14 +405,16 @@
         0,
         3
       ],
-      "spawner": {
-        "pool": [
-          "wolf"
-        ],
-        "count": 2,
-        "radius": 3,
-        "chase": false,
-        "group": 2
+      "components": {
+        "spawner": {
+          "pool": [
+            "wolf"
+          ],
+          "count": 2,
+          "radius": 3,
+          "chase": false,
+          "group": 2
+        }
       }
     },
     {
@@ -392,15 +425,17 @@
         0,
         -4
       ],
-      "spawner": {
-        "pool": [
-          "wolf",
-          "bandit"
-        ],
-        "count": 2,
-        "radius": 3.5,
-        "chase": true,
-        "group": 3
+      "components": {
+        "spawner": {
+          "pool": [
+            "wolf",
+            "bandit"
+          ],
+          "count": 2,
+          "radius": 3.5,
+          "chase": true,
+          "group": 3
+        }
       }
     },
     {
@@ -411,14 +446,16 @@
         0,
         -8.5
       ],
-      "spawner": {
-        "pool": [
-          "bandit_leader"
-        ],
-        "count": 1,
-        "radius": 1,
-        "chase": true,
-        "group": 1
+      "components": {
+        "spawner": {
+          "pool": [
+            "bandit_leader"
+          ],
+          "count": 1,
+          "radius": 1,
+          "chase": true,
+          "group": 1
+        }
       }
     }
   ]

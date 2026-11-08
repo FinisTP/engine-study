@@ -1,0 +1,10 @@
+{
+  "format": "umbra.component",
+  "version": 1,
+  "type": "spin",
+  "label": "Spin",
+  "description": "Turns the entity around the up axis (C++: projects/reference/game/Spin.cpp).",
+  "fields": {
+    "speed": { "kind": "number", "label": "Degrees per second", "default": 45, "min": -720, "max": 720 }
+  }
+}

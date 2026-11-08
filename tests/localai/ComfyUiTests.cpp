@@ -558,9 +558,9 @@ TEST_CASE("A placed model stands on the ground at the asked height with a free i
     CHECK(entity["position"][0] == 2.0F);
     CHECK(entity["model"] == "models/barrel.glb");
     // A static box fitted to the model at its scale: 1 m model x 2 = 1 m half size (T73).
-    CHECK(entity["collider"]["shape"] == "box");
-    CHECK(entity["collider"]["motion"] == "static");
-    CHECK(entity["collider"]["halfExtents"] == nlohmann::ordered_json::array({1.0F, 1.0F, 1.0F}));
+    CHECK(entity["components"]["collider"]["shape"] == "box");
+    CHECK(entity["components"]["collider"]["motion"] == "static");
+    CHECK(entity["components"]["collider"]["halfExtents"] == nlohmann::ordered_json::array({1.0F, 1.0F, 1.0F}));
     info.max.y = 1.5F; // taller than wide: the box follows each axis
     CHECK(localai::FittedCollider(info, {2.0F, 2.0F, 2.0F})["halfExtents"][1] == 2.0F);
     info.max.y = 0.5F;

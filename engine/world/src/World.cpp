@@ -274,6 +274,27 @@ namespace umbra::world
         return record && record->portal ? &*record->portal : nullptr;
     }
 
+    bool World::SetCustom(Entity entity, CustomComponent component)
+    {
+        Record *record = Get(entity);
+        if (record == nullptr || component.type.empty())
+            return false;
+        for (CustomComponent &existing : record->customs)
+            if (existing.type == component.type)
+            {
+                existing = std::move(component);
+                return true;
+            }
+        record->customs.push_back(std::move(component));
+        return true;
+    }
+
+    const std::vector<CustomComponent> *World::GetCustoms(Entity entity) const noexcept
+    {
+        const Record *record = Get(entity);
+        return record ? &record->customs : nullptr;
+    }
+
     void World::ExtractDrawList(core::DrawList &drawList) const
     {
         entities_.ForEach([&](core::Handle<EntityTag>, const Record &record) {

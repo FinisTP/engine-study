@@ -9,6 +9,7 @@ target_sources(
         src/ModelInstance.cpp
         src/SceneFile.cpp
         src/Checkpoint.cpp
+        src/ComponentSchema.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
@@ -16,6 +17,7 @@ target_sources(
             include/ModelInstance.hpp
             include/SceneFile.hpp
             include/Checkpoint.hpp
+            include/ComponentSchema.hpp
 )
 
 target_compile_features(UmbraScene PUBLIC cxx_std_20)
@@ -25,8 +27,8 @@ target_link_libraries(
     PUBLIC
         Umbra::World
         Umbra::Assets
-    PRIVATE
         nlohmann_json::nlohmann_json
+    PRIVATE
         Umbra::Warnings
         Umbra::Sanitizers
 )

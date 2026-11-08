@@ -2,6 +2,7 @@
 
 #include "../umbra/ModelLibrary.hpp"
 
+#include <ComponentSchema.hpp>
 #include <Document.hpp>
 #include <QuestAssistant.hpp>
 #include <ModelAssistant.hpp>
@@ -106,6 +107,12 @@ private:
     void SaveModelSettings();
     void ResumeModel(); // a job left running in ComfyUI when the editor closed
 
+    // Components.cpp
+    [[nodiscard]] static const umbra::authoring::Json *ComponentOf(const umbra::authoring::Json &entity, const std::string &type);
+    void MoveLegacyParts();
+    void ComponentsPanel(const umbra::authoring::Json &entity, const std::string &at);
+    void ComponentFields(const std::string &type, const umbra::authoring::Json &component, const std::string &at, const umbra::authoring::Json &entity);
+
     void ScanAssets();
     void AddEntity(const std::optional<std::string> &parent);
     void DuplicateSelected();
@@ -133,6 +140,7 @@ private:
     bool openNewScene_ = false;
 
     std::map<std::string, std::vector<std::string>> assets_; // "Scenes", "Models", ... -> paths
+    std::map<std::string, umbra::scene::ComponentSchema> schemas_; // project components (assets/components)
     std::vector<umbra::core::Diagnostic> problems_;
     std::string message_;
     float messageSeconds_ = 0.0F;

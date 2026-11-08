@@ -8,7 +8,13 @@ const savesDir = '/libsdl/Umbra/UmbraEngine/saves'; // SDL_GetPrefPath in the br
 const Page = {
   // 1. Messages ---------------------------------------------------------------------------------
   notice(text) { const n = $('notice'); n.textContent = text; n.hidden = false; },
-  fatal(text) { $('start').style.display = 'flex'; $('play').hidden = true; $('start-text').textContent = text; },
+  // The first reason the game can't run is the one shown (a later 'device lost' is only a symptom).
+  fatal(text) {
+    if (Page.stopped) return;
+    Page.stopped = true;
+    $('start').style.display = 'flex'; $('play').hidden = true; $('start-text').textContent = text;
+  },
+  stopped: false,
 
   // 2. HUD from core::Hud (JSON from RendererWeb.cpp); only touch the page when it changed ------
   lastHud: '',

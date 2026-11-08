@@ -162,9 +162,12 @@ namespace
             for (const Json &entity : root.value("entities", Json::array()))
             {
                 Json line{{"id", entity.value("id", "")}};
-                for (const char *part : {"model", "instance", "collider", "interactable", "portal", "spawner", "parent"})
+                for (const char *part : {"model", "instance", "parent", "collider", "interactable", "portal", "spawner"})
                     if (entity.contains(part))
                         line["has"].push_back(part);
+                const Json components = entity.value("components", Json::object());
+                for (const auto &[type, value] : components.items())
+                    line["has"].push_back(type);
                 summary["entities"].push_back(line);
             }
         }
