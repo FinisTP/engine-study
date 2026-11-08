@@ -32,7 +32,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 
 **First action for a new agent:** finish B0 — the Windows-side checks are still open (see the B0 record). Re-inspect the checkout; if it has advanced past this dashboard, preserve completed work and select the earliest genuinely unmet task. Do not blindly implement P3.1 again.
 
-**Current next task:** the user's P10 browser check (`testing/p10-web-export.md` §4: does the scene render in Chrome/Edge), the P9 gate runs on Windows (`testing/p9-release-gate.md` §4: benchmark → O18, package check, clean install, journey on the package), and confirm the `#UMBRA-62`/`#UMBRA-63` fixes on Windows (`testing/p8d-ai-models.md` §3c), the remaining Windows checklists for P6, P7 and P8A (`testing/phase6-reference-game.md` §4, `testing/phase7-creator-workflow.md` §4, `testing/p8a-learned-enemy.md` §5), then P9 (PC release gate). P8B, P8C and P8D were confirmed working on Windows by the user on 2026-11-08. Open in parallel: P8A recipe robustness (1 of 2 seeds). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
+**Current next task:** the user's S1 check on Windows (rebuild after the folder move; editor: Add component, Spin in the dungeon, Code window opens Visual Studio 2022, New component builds), then the user's P10 browser check (`testing/p10-web-export.md` §4: does the scene render in Chrome/Edge), the P9 gate runs on Windows (`testing/p9-release-gate.md` §4: benchmark → O18, package check, clean install, journey on the package), and confirm the `#UMBRA-62`/`#UMBRA-63` fixes on Windows (`testing/p8d-ai-models.md` §3c), the remaining Windows checklists for P6, P7 and P8A (`testing/phase6-reference-game.md` §4, `testing/phase7-creator-workflow.md` §4, `testing/p8a-learned-enemy.md` §5), then P9 (PC release gate). P8B, P8C and P8D were confirmed working on Windows by the user on 2026-11-08. Open in parallel: P8A recipe robustness (1 of 2 seeds). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
 
 | Gate | Dependency | Status (updated 2026-11-07) | Evidence / exit summary |
 |---|---|---|---|
@@ -51,6 +51,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 | P8D AI 3D models | P8C ComfyUI bridge | Implemented 2026-11-07; **verified on Windows with TRELLIS.2 by the user (2026-11-08)**; the reported limitations fixed in `#UMBRA-62` (any workflow name, the textured GLB, survives closing the editor, no time limit) | Text → SDXL concept or own picture → the creator's exported TRELLIS.2 workflow (ComfyUI) → GLB with provenance → placed as an undoable scene edit; `UmbraTool model`. ADR `adr/0003-ai-model-generation.md`, evidence `testing/p8d-ai-models.md`. |
 | P9 PC release | P6/P7/P8A/P8B | **In progress** (2026-11-08): release tools built and passing on Linux (benchmark, long-run test, package check, license notices); the Windows gate runs are open | Clean offline install, complete game, authoring workflow, measured reference-PC gate. Evidence `testing/p9-release-gate.md`. |
 | P10 Playable web export | P9; W0 decisions | **Implemented 2026-11-08** (started before the P9 Windows runs finished, at the user's request); verified headlessly (13/13 suites in WebAssembly, 11/11 browser checks) and **renders on the user's GPU**; Chrome/Edge play-through and offline install to confirm | Browser game and local policy, durable-save UX, offline installation readiness. Evidence `testing/p10-web-export.md`. |
+| S1 Project structure and components | P10 | **Implemented 2026-11-08** (user request after P10): `engine/` / `game/` / `projects/<name>/{assets,engine,game}`, entity components with project C++ components, editor Code window (VS 2022) and Add component; verified headlessly (T77, all suites); editor use on Windows to confirm | ADR 0004; `projects/README.md`; `engine/scene/include/Components.md`. |
 | P11 Mobile | P10; approved device target | Planned later port | Lifecycle, input, storage, thermal and performance gates on actual devices. |
 | F1 Community improvement | Separate product approval | Deferred proposal | Consent, records, validation, developer retraining, approved model delivery/rollback. |
 
@@ -439,8 +440,8 @@ Emscripten documents a WebGPU integration through Emdawnwebgpu [S8]. Investigate
 | Task | Status | Evidence |
 |---|---|---|
 | P4.1 | Implemented: Jolt adapter, collider component + scene field, physics bridge, fixed 60 Hz stepping, debug outlines (F1); tests pass on Linux GCC/Clang/ASan; Windows not run | `tests/physics/PhysicsTests.cpp`, `tests/gameplay/PhysicsBridgeTests.cpp`; `engine/physics/include/Physics.md` |
-| P4.2 | Implemented: third-person PlayerController (camera-relative movement, sprint, jump, turn, wall-aware orbit camera, interaction ray), mouse input + capture, camera moved out of the renderer, settlement test scene; walk-through tests pass on Linux GCC/Clang/ASan; Windows/interactive not run | `tests/gameplay/PlayerControllerTests.cpp`, `tests/gameplay/SettlementWalkTests.cpp`, `tests/platform/InputTests.cpp`; `engine/gameplay/include/PlayerController.md` |
-| P4.3 | Implemented: procedural walk bob/lean + footstep timing (`StrideAnimator`), WAV loader/mixer (`Umbra::Audio`, 48 kHz 16-bit PCM only) + SDL audio device, generated placeholder sounds, interactables (`interactable` scene field, E key, prompt/message HUD), Esc pause menu (resume/restart/quit, game audio paused, UI audio not), missing-asset warnings on screen and in `UmbraSceneCheck`; tests pass on Linux GCC/Clang/ASan; Windows/interactive/audible not checked | `tests/audio/AudioTests.cpp`, `tests/platform/AudioDeviceTests.cpp`, `tests/gameplay/PresentationTests.cpp`, `tests/gameplay/SettlementWalkTests.cpp`, `tests/scene/SceneFileTests.cpp`; `engine/audio/include/Audio.md`, `engine/gameplay/include/StrideAnimator.md` |
+| P4.2 | Implemented: third-person PlayerController (camera-relative movement, sprint, jump, turn, wall-aware orbit camera, interaction ray), mouse input + capture, camera moved out of the renderer, settlement test scene; walk-through tests pass on Linux GCC/Clang/ASan; Windows/interactive not run | `tests/gameplay/PlayerControllerTests.cpp`, `tests/gameplay/SettlementWalkTests.cpp`, `tests/platform/InputTests.cpp`; `game/gameplay/include/PlayerController.md` |
+| P4.3 | Implemented: procedural walk bob/lean + footstep timing (`StrideAnimator`), WAV loader/mixer (`Umbra::Audio`, 48 kHz 16-bit PCM only) + SDL audio device, generated placeholder sounds, interactables (`interactable` scene field, E key, prompt/message HUD), Esc pause menu (resume/restart/quit, game audio paused, UI audio not), missing-asset warnings on screen and in `UmbraSceneCheck`; tests pass on Linux GCC/Clang/ASan; Windows/interactive/audible not checked | `tests/audio/AudioTests.cpp`, `tests/platform/AudioDeviceTests.cpp`, `tests/gameplay/PresentationTests.cpp`, `tests/gameplay/SettlementWalkTests.cpp`, `tests/scene/SceneFileTests.cpp`; `engine/audio/include/Audio.md`, `game/gameplay/include/StrideAnimator.md` |
 | P4.4 | Implemented: `portal` scene field + spawn markers, settlement ↔ dungeon areas (each load gets a fresh world and physics world), development checkpoint F5/F9 over `SaveScene`/`LoadScene`, R restart; repeated trips keep body/character/entity counts constant and checkpoint round trips are byte-identical; LSan (GCC ASan build) clean; Windows/interactive not run | `tests/gameplay/AreaTests.cpp`, `tests/scene/SceneFileTests.cpp` (portal, checkpoint cases), `Umbra.SceneCheck.Dungeon`; `engine/scene/include/SceneFormat.md` |
 | P4.5 | Implemented: CPU section timings (rolling avg/max) and live counters (physics steps, bodies, characters, entities, models, sounds, area) in the diagnostics overlay; hidden `[benchmark]` test; Linux smoke baseline recorded; Windows/GPU numbers pending | `tests/core/ProfilingTests.cpp`; [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md) |
 <!-- /P4-status -->
@@ -471,13 +472,13 @@ Emscripten documents a WebGPU integration through Emdawnwebgpu [S8]. Investigate
 <!-- P5-status -->
 | Task | Status | Evidence |
 |---|---|---|
-| P5.1 | Implemented: `Umbra::Rpg`, versioned `umbra.rpg` JSON content (statuses with separate turn/second clocks, skills, items, actor archetypes), all-or-nothing validation, character state by ids/counts, derived stats | `tests/rpg/ContentTests.cpp`; `engine/rpg/include/Rpg.md` |
+| P5.1 | Implemented: `Umbra::Rpg`, versioned `umbra.rpg` JSON content (statuses with separate turn/second clocks, skills, items, actor archetypes), all-or-nothing validation, character state by ids/counts, derived stats | `tests/rpg/ContentTests.cpp`; `game/rpg/include/Rpg.md` |
 | P5.2 | Implemented: all-or-nothing add/remove/equip/unequip; full inventory rejects the pickup (user decision); maxima clamp, never heal | `tests/rpg/InventoryTests.cpp` (T11, T46) |
 | P5.3 | Implemented: unlock with prerequisites and points; requirement loops rejected on load | `tests/rpg/SkillTreeTests.cpp` (T12) |
 | P5.4 | Implemented: shared resolver (check, pay, apply, deaths, events), decision-id log | `tests/rpg/RulesTests.cpp` (T07, T10, T46) |
-| P5.5 | Implemented: `Umbra::TurnCombat`, speed rounds with one action (user decision), wait, status ticks, conventional enemy, fixed regression | `tests/turncombat/TurnEncounterTests.cpp`, `Umbra.TurnOnlyDependencies` (T39); `engine/turncombat/include/TurnCombat.md` |
-| P5.6 | Implemented: `Umbra::RealtimeCombat`, wind-up/commit/active/recovery, pay at commit (user decision), range+cone hits once per activation, interruption, cooldowns, conventional enemy | `tests/realtimecombat/RealtimeEncounterTests.cpp`, `Umbra.RealtimeOnlyDependencies` (T06, T08, T40); `engine/realtimecombat/include/RealtimeCombat.md` |
-| P5.7 | Implemented: `Umbra::Encounter`, one controller at a time, modes change only between fights, statuses/cooldowns end with the encounter (user decision), stale decisions rejected | `tests/encounter/EncounterTests.cpp` (T09, T47); `engine/encounter/include/Encounter.md` |
+| P5.5 | Implemented: `Umbra::TurnCombat`, speed rounds with one action (user decision), wait, status ticks, conventional enemy, fixed regression | `tests/turncombat/TurnEncounterTests.cpp`, `Umbra.TurnOnlyDependencies` (T39); `game/turncombat/include/TurnCombat.md` |
+| P5.6 | Implemented: `Umbra::RealtimeCombat`, wind-up/commit/active/recovery, pay at commit (user decision), range+cone hits once per activation, interruption, cooldowns, conventional enemy | `tests/realtimecombat/RealtimeEncounterTests.cpp`, `Umbra.RealtimeOnlyDependencies` (T06, T08, T40); `game/realtimecombat/include/RealtimeCombat.md` |
+| P5.7 | Implemented: `Umbra::Encounter`, one controller at a time, modes change only between fights, statuses/cooldowns end with the encounter (user decision), stale decisions rejected | `tests/encounter/EncounterTests.cpp` (T09, T47); `game/encounter/include/Encounter.md` |
 | P5.8 | Implemented: `TurnEnvironment` reset / legal actions / step over the real turn controller; reset isolation and game-path parity | `tests/turncombat/TurnEnvironmentTests.cpp` (T49, T55, T60) |
 
 ### P6 — Complete offline reference RPG
@@ -495,9 +496,9 @@ Emscripten documents a WebGPU integration through Emdawnwebgpu [S8]. Investigate
 <!-- P6-status -->
 | Task | Status | Evidence |
 |---|---|---|
-| P6.1 | Implemented: `Umbra::Story` conversations (conditions, all-or-nothing actions, walk away), quests/conversations in `umbra.rpg` | `tests/story/ConversationTests.cpp` (T15); `engine/story/include/Story.md` |
+| P6.1 | Implemented: `Umbra::Story` conversations (conditions, all-or-nothing actions, walk away), quests/conversations in `umbra.rpg` | `tests/story/ConversationTests.cpp` (T15); `game/story/include/Story.md` |
 | P6.2 | Implemented: ordered objectives, early events ignored, failure on death, reward once, XP and levels, overflow kept as pending | `tests/story/QuestTests.cpp`, `tests/rpg/ProgressionTests.cpp` (T13, T14) |
-| P6.3 | Implemented: `umbra.save` v1 with checksum, write-verify-backup-rename, full validation, backup fallback | `tests/game/SaveGameTests.cpp` (T16–T18, T49); `engine/game/include/SaveGame.md` |
+| P6.3 | Implemented: `umbra.save` v1 with checksum, write-verify-backup-rename, full validation, backup fallback | `tests/game/SaveGameTests.cpp` (T16–T18, T49); `game/game/include/SaveGame.md` |
 | P6.4 | Implemented: `GameSession`, roamers and spawners, Elder Mara, save stones, three dungeon zones; app wiring in `apps/umbra/GameFlow`; fights in a separate arena scene after the first play test (`#UMBRA-43`) | `tests/game/GameSessionTests.cpp`, `tests/gameplay/RoamerTests.cpp`; `apps/umbra/GameFlow.md` |
 | P6.5 | Implemented: death menu, load mid-fight ends it (T19), retry pays once, no network code | `tests/game/GameSessionTests.cpp`; play-through checklist open |
 <!-- /P6-status -->
@@ -550,7 +551,7 @@ Emscripten documents a WebGPU integration through Emdawnwebgpu [S8]. Investigate
 <!-- P8A-status -->
 | Task | Status | Evidence |
 |---|---|---|
-| P8A.1 | Implemented: observation v1, catalogue, masks, fingerprint, 1v1 environment on the real TurnEncounter | `tests/policy/PolicyTests.cpp`; `engine/policy/include/Policy.md` |
+| P8A.1 | Implemented: observation v1, catalogue, masks, fingerprint, 1v1 environment on the real TurnEncounter | `tests/policy/PolicyTests.cpp`; `game/policy/include/Policy.md` |
 | P8A.2 | Implemented: C bridge + Python (numpy, PyTorch, CPU); PPO recipe; seeds, time and resources recorded in each model | `tools/policy/README.md`; models' `training` block |
 | P8A.3 | Implemented: soft preference reward, control model, matched probes, counterexamples, thresholds declared before final runs | `testing/p8a-learned-enemy.md` §2–3; `docs/testing/p8a/*.json` |
 | P8A.4 | Implemented: `umbra.policy` JSON, built-in C++ MLP; parity 6.6e-6, 200 native fights | `PolicyTests` (parity, native fights) |
@@ -679,6 +680,15 @@ If worker/thread deployment needs special headers or capabilities, test the actu
 
 **Exit:** supported full game loop and learned turn policy work in declared browsers after offline installation; failures have visible recovery. Verify T35–T38, T43–T45, T52 and T56 with platform-specific evidence.
 
+### S1 — Project structure and components (user request, 2026-11-08)
+
+| Item | Status | Evidence |
+|---|---|---|
+| S1.1 Layers: `engine/`, `game/`, `projects/<name>/` with one CMake build; run-time asset lookup by project name | Implemented (`#UMBRA-72`) | all suites; package check refuses a project assets path (T75) |
+| S1.2 Components: built-in four under `components`, project schemas + `UMBRA_COMPONENT` C++, older scenes migrate | Implemented (`#UMBRA-71`) | T77 |
+| S1.3 Editor: Add component / remove, schema fields, Code window opening VS 2022, New component template | Implemented; Windows check open | ADR 0004 |
+| S1.4 Web build picks up editor changes (`UmbraTool web-pack`, run by `serve-web.bat`) | Implemented (`#UMBRA-70`) | T76; check-web |
+
 ### P11 — Mobile
 
 Select the initial OS/device tier before implementation. Earlier Android ARM64 intent is historical context, not a newly confirmed permanent API-level requirement. Reuse platform-neutral rules/assets and choose appropriate graphics/inference backends, lifecycle/storage and packaging adapters.
@@ -806,7 +816,7 @@ This is an initial **60-case register**, not an assertion that every possible fu
 | T72 | Editor closed during a model run; ComfyUI restarted; a run longer than 30 minutes | ComfyUI keeps working and the next start fetches the model; a forgotten job is named (`ai.lost`); no total time limit while ComfyUI has the job | P8D |
 | T74 | Long run: hundreds of fights in both modes with saves, loads and a damaged save | Every save round trip byte-identical; no fight state left over; backup rescues the damaged save; save size bounded | P9 |
 | T75 | Package with a development program, an unlisted DLL, a key, an absolute path, a dependency on the source assets folder, missing content/policy | `package-check` names each (secret values never printed); AI leftovers and non-commercial models are warnings; `package.bat` makes no zip on errors | P9 |
-| T77 | Entity with built-in and project components; older top-level parts; a project component with wrong or out-of-range fields; a type with no schema or no C++ | Both forms load the same; saving writes `components`; schema errors named; unknown type is a warning and only data; registered C++ behaviour starts and updates (Spin turns 90° in 1 s at 90°/s) | P11 |
+| T77 | Entity with built-in and project components; older top-level parts; a project component with wrong or out-of-range fields; a type with no schema or no C++ | Both forms load the same; saving writes `components`; schema errors named; unknown type is a warning and only data; registered C++ behaviour starts and updates (Spin turns 90° in 1 s at 90°/s) | S1 |
 | T76 | Assets edited after a web build; damaged `assets.bin` | `UmbraTool web-pack` (run by `serve-web.bat`) packs them next to the page with a new offline version; the page shows the edit without a rebuild; AI working files left out; a short `assets.bin` is refused with a clear message | P10 |
 | T73 | Placed generated model; collider added to a model entity | A static box fitted to the model's bounds at the entity scale (not the scale-derived default meant for the -1..1 cube) | P8D |
 | T70 | Generated GLB the importer refuses | Not kept (all files removed); a good one is saved with provenance and never overwrites | P8D |

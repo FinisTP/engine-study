@@ -45,7 +45,7 @@ also covers Rpg, TurnCombat, RealtimeCombat and Encounter.
 | T55 training rules drift | `TurnEnvironment` replay through a plain `TurnEncounter` gives identical fighters | Passed |
 | T60 step/turn mismatch | One accepted step = one turn; rejected steps use nothing | Passed |
 
-Exit gate items: shared damage/cost/death rules exist once (`engine/rpg/src/Rules.cpp`); a status
+Exit gate items: shared damage/cost/death rules exist once (`game/rpg/src/Rules.cpp`); a status
 used by a mode it has no clock for fails validation (`status.clock.unsupported`).
 
 **Regression values:** turn AI-vs-AI (hero vs wolf + bandit) ends after 26 actions in round 12 with

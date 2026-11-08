@@ -114,7 +114,7 @@ def probes(env, native, states):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--library")
-    ap.add_argument("--content", default="../../assets/rpg/reference.rpg.json")
+    ap.add_argument("--content", default="../../projects/reference/assets/rpg/reference.rpg.json")
     ap.add_argument("--model", required=True)
     ap.add_argument("--control", help="same recipe trained with --preference 0")
     ap.add_argument("--acceptance", required=True)

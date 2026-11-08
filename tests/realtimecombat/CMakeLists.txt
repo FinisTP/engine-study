@@ -4,7 +4,7 @@ find_package(Catch2 3 CONFIG REQUIRED)
 add_executable(UmbraRealtimeCombatTests)
 target_sources(UmbraRealtimeCombatTests PRIVATE RealtimeEncounterTests.cpp)
 target_include_directories(UmbraRealtimeCombatTests PRIVATE ${PROJECT_SOURCE_DIR}/tests/rpg)
-target_compile_definitions(UmbraRealtimeCombatTests PRIVATE UMBRA_TEST_ASSET_DIRECTORY="${PROJECT_SOURCE_DIR}/assets")
+target_compile_definitions(UmbraRealtimeCombatTests PRIVATE UMBRA_TEST_ASSET_DIRECTORY="${UMBRA_REFERENCE_ASSETS}")
 target_compile_features(UmbraRealtimeCombatTests PRIVATE cxx_std_20)
 target_link_libraries(
     UmbraRealtimeCombatTests

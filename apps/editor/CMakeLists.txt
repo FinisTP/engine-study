@@ -17,6 +17,7 @@ target_sources(
         AiTexture.cpp
         AiModel.cpp
         Components.cpp
+        CodePanel.cpp
         Widgets.hpp
         # Shared with the game: model files -> GPU meshes (one copy of the code, two programs).
         ../umbra/ModelLibrary.cpp
@@ -28,7 +29,9 @@ target_compile_features(UmbraEditor PRIVATE cxx_std_20)
 target_compile_definitions(
     UmbraEditor
     PRIVATE
-        UMBRA_ASSET_DIRECTORY="${PROJECT_SOURCE_DIR}/assets"
+        UMBRA_ASSET_DIRECTORY="${UMBRA_ASSETS}"
+        UMBRA_SOURCE_DIRECTORY="${PROJECT_SOURCE_DIR}"
+        UMBRA_PROJECT_NAME="${UMBRA_PROJECT}"
         UMBRA_CACHE_DIRECTORY="${CMAKE_BINARY_DIR}/asset-cache"
         UMBRA_GAME_EXECUTABLE="$<TARGET_FILE:Umbra>"
 )

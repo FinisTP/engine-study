@@ -18,12 +18,14 @@ target_sources(
         GameComponents.hpp
 )
 
-# The project's own game code (its components) is compiled into the program itself, so their
-# UMBRA_COMPONENT registrations are never dropped by the linker.
-set(UMBRA_PROJECT "reference" CACHE STRING "Project folder under projects/ built into the game")
-file(GLOB_RECURSE UMBRA_PROJECT_GAME CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/projects/${UMBRA_PROJECT}/game/*.cpp" "${PROJECT_SOURCE_DIR}/projects/${UMBRA_PROJECT}/game/*.hpp")
-target_sources(Umbra PRIVATE ${UMBRA_PROJECT_GAME})
-target_include_directories(Umbra PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+# The project's own code (projects/<name>/engine and game) is compiled into the program itself,
+# so UMBRA_COMPONENT registrations are never dropped by the linker. Only the project name goes in
+# (the game finds projects/<name>/assets at run time), never a build path.
+file(GLOB_RECURSE UMBRA_PROJECT_CODE CONFIGURE_DEPENDS
+     "${UMBRA_PROJECT_DIR}/engine/*.cpp" "${UMBRA_PROJECT_DIR}/engine/*.hpp" "${UMBRA_PROJECT_DIR}/game/*.cpp" "${UMBRA_PROJECT_DIR}/game/*.hpp")
+target_sources(Umbra PRIVATE ${UMBRA_PROJECT_CODE})
+target_include_directories(Umbra PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} "${UMBRA_PROJECT_DIR}/engine")
+target_compile_definitions(Umbra PRIVATE UMBRA_PROJECT_NAME="${UMBRA_PROJECT}")
 
 target_compile_features(Umbra PRIVATE cxx_std_20)
 
@@ -55,7 +57,8 @@ umbra_copy_asan_runtime(Umbra)
 
 # Browser build (roadmap P10, web/README.md): umbra.js/.wasm plus the page, the offline service
 # worker and its version stamp. The assets are not linked in: "UmbraTool web-pack" writes
-# assets.bin/assets.json next to the page (tools/web/build-web.sh, scripts/serve-web.ps1). Single-threaded; the frame loop yields to the browser
+# assets.bin/assets.json next to the page (tools/web/build-web.sh, scripts/serve-web.ps1).
+# Single-threaded; the frame loop yields to the browser
 # through Asyncify (RenderFrame waits for the next animation frame).
 if(EMSCRIPTEN)
     set_target_properties(Umbra PROPERTIES OUTPUT_NAME umbra SUFFIX ".js")
@@ -79,7 +82,8 @@ if(EMSCRIPTEN)
 endif()
 
 # Package layout (roadmap P7.5/P7.6): the game, its DLLs, the MSVC runtime, assets/ and shaders/
-# side by side. The game finds assets/ next to itself first (Main.cpp, FindFolders).
+# side by side (the project's assets folder becomes assets/). The game finds assets/ next to
+# itself first (Main.cpp, FindFolders).
 install(TARGETS Umbra RUNTIME DESTINATION . COMPONENT game)
 if(WIN32)
     install(FILES $<TARGET_RUNTIME_DLLS:Umbra> DESTINATION . COMPONENT game)
@@ -88,7 +92,7 @@ if(WIN32)
     include(InstallRequiredSystemLibraries)
 endif()
 # AI concept pictures stay in the project; provenance files (.source.json) ship with their models.
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/assets/ DESTINATION assets COMPONENT game PATTERN "*.concept.png" EXCLUDE)
+install(DIRECTORY ${UMBRA_ASSETS}/ DESTINATION assets COMPONENT game PATTERN "*.concept.png" EXCLUDE)
 
 # Licenses (P9): the notices file plus the full license text of each library the game links,
 # taken from vcpkg (every port installs share/<port>/copyright).

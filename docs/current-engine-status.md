@@ -84,11 +84,11 @@
 
 | Area | What exists | Explained in |
 |---|---|---|
-| Content | `Umbra::Rpg`: versioned `umbra.rpg` JSON (statuses, skills, items, actor archetypes), validation, `assets/rpg/reference.rpg.json` | `engine/rpg/include/Rpg.md` |
-| State and rules | Characters (ids/counts), derived stats, inventory/equipment transactions, skill tree, shared action resolver | `engine/rpg/include/Rpg.md` |
-| Turn combat | `Umbra::TurnCombat`: speed rounds, conventional enemy, `TurnEnvironment` (reset/legal actions/step) | `engine/turncombat/include/TurnCombat.md` |
-| Real-time combat | `Umbra::RealtimeCombat`: wind-up/commit/active/recovery, cone hits, cooldowns, conventional enemy | `engine/realtimecombat/include/RealtimeCombat.md` |
-| Integration | `Umbra::Encounter`: one fight at a time, stale-decision rejection, shared progression | `engine/encounter/include/Encounter.md` |
+| Content | `Umbra::Rpg`: versioned `umbra.rpg` JSON (statuses, skills, items, actor archetypes), validation, `assets/rpg/reference.rpg.json` | `game/rpg/include/Rpg.md` |
+| State and rules | Characters (ids/counts), derived stats, inventory/equipment transactions, skill tree, shared action resolver | `game/rpg/include/Rpg.md` |
+| Turn combat | `Umbra::TurnCombat`: speed rounds, conventional enemy, `TurnEnvironment` (reset/legal actions/step) | `game/turncombat/include/TurnCombat.md` |
+| Real-time combat | `Umbra::RealtimeCombat`: wind-up/commit/active/recovery, cone hits, cooldowns, conventional enemy | `game/realtimecombat/include/RealtimeCombat.md` |
+| Integration | `Umbra::Encounter`: one fight at a time, stale-decision rejection, shared progression | `game/encounter/include/Encounter.md` |
 
 ## Update 2026-11-06
 
@@ -100,8 +100,8 @@
 | Area | What exists | Explained in |
 |---|---|---|
 | Physics | `Umbra::Physics`: Jolt 5.6 adapter (bodies, raycasts, `CharacterVirtual`), fixed 60 Hz steps, collider scene field, debug outlines (F1) | `engine/physics/include/Physics.md`, `engine/render/src/DebugDraw.md` |
-| Player | `gameplay::PlayerController`: camera-relative movement, sprint, jump, wall-aware orbit camera, interaction ray; mouse capture | `engine/gameplay/include/PlayerController.md` |
-| Presentation | Procedural bob/lean (`StrideAnimator`), `Umbra::Audio` (WAV, mixer, sound bank) + SDL audio device, interactables, HUD, Esc pause menu, missing-asset warnings | `engine/audio/include/Audio.md`, `engine/gameplay/include/StrideAnimator.md` |
+| Player | `gameplay::PlayerController`: camera-relative movement, sprint, jump, wall-aware orbit camera, interaction ray; mouse capture | `game/gameplay/include/PlayerController.md` |
+| Presentation | Procedural bob/lean (`StrideAnimator`), `Umbra::Audio` (WAV, mixer, sound bank) + SDL audio device, interactables, HUD, Esc pause menu, missing-asset warnings | `engine/audio/include/Audio.md`, `game/gameplay/include/StrideAnimator.md` |
 | Areas | `portal` field and spawn markers, settlement ↔ dungeon, F5/F9 development checkpoint, R restart | `engine/scene/include/SceneFormat.md` |
 | Observability | Rolling CPU section timings and resource counters in the overlay | [`testing/phase4-sandbox.md`](testing/phase4-sandbox.md) |
 

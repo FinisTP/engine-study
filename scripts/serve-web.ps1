@@ -1,7 +1,7 @@
 # Serves the browser build on http://localhost:8080/ (roadmap P10). No install, no admin rights:
 # localhost counts as a secure origin, so WebGPU, IndexedDB saves and the offline install work.
-# Usage: powershell -ExecutionPolicy Bypass -File scripts\serve-web.ps1 [folder] [port]
-param([string]$Folder = "$PSScriptRoot\..\out\web", [int]$Port = 8080)
+# Usage: powershell -ExecutionPolicy Bypass -File scripts\serve-web.ps1 [folder] [port] [project]
+param([string]$Folder = "$PSScriptRoot\..\out\web", [int]$Port = 8080, [string]$Project = "reference")
 
 $root = (Resolve-Path $Folder).Path
 
@@ -11,7 +11,7 @@ $tool = @("$PSScriptRoot\..\out\build\windows-msvc\tools\umbratool\Debug\UmbraTo
           "$PSScriptRoot\..\out\build\windows-msvc\tools\umbratool\Release\UmbraTool.exe") |
         Where-Object { Test-Path $_ } | Sort-Object { (Get-Item $_).LastWriteTime } | Select-Object -Last 1
 if ($tool) {
-    & $tool web-pack "$PSScriptRoot\..\assets" $root
+    & $tool web-pack "$PSScriptRoot\..\projects\$Project\assets" $root
     if ($LASTEXITCODE -ne 0) { Write-Host "web-pack failed: the page keeps the assets it had"; }
 } else {
     Write-Host "UmbraTool not built yet (build the editor once): serving the assets from the last web build"

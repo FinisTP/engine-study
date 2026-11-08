@@ -31,7 +31,7 @@ are separate libraries on top of this; neither links the other.
 | status | `id`, `name`, `turns` (1..100) and/or `seconds` (0.1..600), `damagePerTick` (negative heals), `modifiers` |
 | skill | `id`, `name`, `cost` (energy), `target` (`enemy` default, `self`), `effects`, `modes` (`turn`, `realtime`), `realtime` timing (required for real-time), `points`, `requires` (skill ids) |
 | item | `id`, `name`, `slot` (`weapon`, `armor`, none), `stack` (equipment: 1), `modifiers` (while equipped), `use` (effects on self, consumes one) |
-| actor | `id`, `name`, `stats` (`maxHealth` required, `maxEnergy`, `attack`, `defense`, `speed`), `skills` (unlocked at start), `equipment`, `inventory` [`{item,count}`], `inventorySlots`, `skillPoints`, `xp`, `growth`; look in the world (never used by rules): `model` (asset path), `size` (half-height in meters, default 0.8), `color` ([r,g,b,a] tint); `policy` (learned turn-combat AI file, `engine/policy/include/Policy.md`) |
+| actor | `id`, `name`, `stats` (`maxHealth` required, `maxEnergy`, `attack`, `defense`, `speed`), `skills` (unlocked at start), `equipment`, `inventory` [`{item,count}`], `inventorySlots`, `skillPoints`, `xp`, `growth`; look in the world (never used by rules): `model` (asset path), `size` (half-height in meters, default 0.8), `color` ([r,g,b,a] tint); `policy` (learned turn-combat AI file, `game/policy/include/Policy.md`) |
 | effect | `kind`: `damage`, `heal`, `energy`, `status`; `power`; `status` id |
 
 An actor is an **archetype**: placing it twice gives two characters (`wolf_1`, `wolf_2`) with

@@ -4,6 +4,7 @@ rem shaders) -> out\package\Umbra.zip. The folder runs on another Windows PC wit
 rem Output also goes to out\package.log.
 setlocal
 cd /d "%~dp0.."
+set ASSETS=projects\reference\assets
 set LOG=out\package.log
 set CMAKE=E:\VisualStudioCommunity\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe
 
@@ -21,8 +22,8 @@ if not "%errorlevel%"=="0" (
 rem 2. Check the content the package will ship (same checks as the game and the editor).
 rem    Materials too: their images, and a warning for AI models whose license forbids selling.
 set MATERIALS=
-for %%f in (assets\materials\*.material.json) do call set MATERIALS=%%MATERIALS%% %%f
-out\build\windows-msvc\tools\umbratool\Release\UmbraTool.exe validate assets\scenes\settlement.scene.json assets\scenes\dungeon.scene.json assets\scenes\arena.scene.json assets\rpg\reference.rpg.json %MATERIALS% --assets assets >> %LOG% 2>&1
+for %%f in (%ASSETS%\materials\*.material.json) do call set MATERIALS=%%MATERIALS%% %%f
+out\build\windows-msvc\tools\umbratool\Release\UmbraTool.exe validate %ASSETS%\scenes\settlement.scene.json %ASSETS%\scenes\dungeon.scene.json %ASSETS%\scenes\arena.scene.json %ASSETS%\rpg\reference.rpg.json %MATERIALS% --assets %ASSETS% >> %LOG% 2>&1
 if not "%errorlevel%"=="0" (
     echo CONTENT HAS ERRORS, nothing packaged >> %LOG%
     type %LOG%

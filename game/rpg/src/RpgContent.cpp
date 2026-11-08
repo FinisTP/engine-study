@@ -192,7 +192,7 @@ namespace umbra::rpg
                             def.color[i] = (*color)[i].is_number() ? (*color)[i].get<float>() : 1.0F;
                 }
                 def.size = r.Float(s, "size", 0.8F, 0.05F, 20.0F, at);
-                def.policy = r.String(s, "policy", at); // learned turn-based AI (engine/policy)
+                def.policy = r.String(s, "policy", at); // learned turn-based AI (game/policy)
                 Insert(r, c.actors, def, at);
             });
         }

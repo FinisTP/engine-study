@@ -4,7 +4,7 @@ find_package(Catch2 3 CONFIG REQUIRED)
 add_executable(UmbraAuthoringTests)
 target_sources(UmbraAuthoringTests PRIVATE DocumentTests.cpp PackageTests.cpp QuestDraftTests.cpp ValidateTests.cpp WebPackTests.cpp)
 target_include_directories(UmbraAuthoringTests PRIVATE ${PROJECT_SOURCE_DIR}/tests)
-target_compile_definitions(UmbraAuthoringTests PRIVATE UMBRA_TEST_ASSET_DIRECTORY="${PROJECT_SOURCE_DIR}/assets" UMBRA_TEST_DATA_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/data")
+target_compile_definitions(UmbraAuthoringTests PRIVATE UMBRA_TEST_ASSET_DIRECTORY="${UMBRA_REFERENCE_ASSETS}" UMBRA_TEST_DATA_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/data")
 target_compile_features(UmbraAuthoringTests PRIVATE cxx_std_20)
 target_link_libraries(
     UmbraAuthoringTests
@@ -23,11 +23,11 @@ add_test(NAME Umbra.Authoring COMMAND UmbraAuthoringTests)
 add_test(
     NAME Umbra.Tool.ValidateShipped
     COMMAND UmbraTool validate
-        ${PROJECT_SOURCE_DIR}/assets/scenes/settlement.scene.json
-        ${PROJECT_SOURCE_DIR}/assets/scenes/dungeon.scene.json
-        ${PROJECT_SOURCE_DIR}/assets/scenes/arena.scene.json
-        ${PROJECT_SOURCE_DIR}/assets/rpg/reference.rpg.json
-        --assets ${PROJECT_SOURCE_DIR}/assets
+        ${UMBRA_REFERENCE_ASSETS}/scenes/settlement.scene.json
+        ${UMBRA_REFERENCE_ASSETS}/scenes/dungeon.scene.json
+        ${UMBRA_REFERENCE_ASSETS}/scenes/arena.scene.json
+        ${UMBRA_REFERENCE_ASSETS}/rpg/reference.rpg.json
+        --assets ${UMBRA_REFERENCE_ASSETS}
 )
 add_test(
     NAME Umbra.Tool.ValidateBroken
@@ -36,7 +36,7 @@ add_test(
 set_tests_properties(Umbra.Tool.ValidateBroken PROPERTIES WILL_FAIL TRUE)
 add_test(
     NAME Umbra.Tool.Fight
-    COMMAND UmbraTool fight ${PROJECT_SOURCE_DIR}/assets/rpg/reference.rpg.json hero wolf
+    COMMAND UmbraTool fight ${UMBRA_REFERENCE_ASSETS}/rpg/reference.rpg.json hero wolf
 )
 set_tests_properties(Umbra.Tool.Fight PROPERTIES PASS_REGULAR_EXPRESSION "Hero side wins")
 
@@ -44,19 +44,19 @@ set_tests_properties(Umbra.Tool.Fight PROPERTIES PASS_REGULAR_EXPRESSION "Hero s
 # fails, and a non-local address is refused before any connection.
 add_test(
     NAME Umbra.Tool.DraftFromFile
-    COMMAND UmbraTool draft ${PROJECT_SOURCE_DIR}/assets/rpg/reference.rpg.json --npc elder
+    COMMAND UmbraTool draft ${UMBRA_REFERENCE_ASSETS}/rpg/reference.rpg.json --npc elder
         --from ${CMAKE_CURRENT_SOURCE_DIR}/data/good.draft.json
 )
 set_tests_properties(Umbra.Tool.DraftFromFile PROPERTIES PASS_REGULAR_EXPRESSION "ok   The quest completes")
 add_test(
     NAME Umbra.Tool.DraftUnplayable
-    COMMAND UmbraTool draft ${PROJECT_SOURCE_DIR}/assets/rpg/reference.rpg.json --npc elder
+    COMMAND UmbraTool draft ${UMBRA_REFERENCE_ASSETS}/rpg/reference.rpg.json --npc elder
         --from ${CMAKE_CURRENT_SOURCE_DIR}/data/unplayable.draft.json
 )
 set_tests_properties(Umbra.Tool.DraftUnplayable PROPERTIES WILL_FAIL TRUE)
 add_test(
     NAME Umbra.Tool.DraftLocalOnly
-    COMMAND UmbraTool draft ${PROJECT_SOURCE_DIR}/assets/rpg/reference.rpg.json --npc elder --idea "anything"
+    COMMAND UmbraTool draft ${UMBRA_REFERENCE_ASSETS}/rpg/reference.rpg.json --npc elder --idea "anything"
         --host http://api.example.com --json
 )
 set_tests_properties(Umbra.Tool.DraftLocalOnly PROPERTIES PASS_REGULAR_EXPRESSION "ai.host")
@@ -70,7 +70,7 @@ add_test(
 set_tests_properties(Umbra.Tool.TextureLocalOnly PROPERTIES PASS_REGULAR_EXPRESSION "ai.host")
 add_test(
     NAME Umbra.Tool.ValidateMaterial
-    COMMAND UmbraTool validate ${PROJECT_SOURCE_DIR}/assets/materials/sample_bricks.material.json --assets ${PROJECT_SOURCE_DIR}/assets
+    COMMAND UmbraTool validate ${UMBRA_REFERENCE_ASSETS}/materials/sample_bricks.material.json --assets ${UMBRA_REFERENCE_ASSETS}
 )
 
 # AI models (P8D): without an exported workflow the tool says how to make one.

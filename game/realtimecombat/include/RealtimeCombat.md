@@ -1,7 +1,7 @@
 # Real-time combat (`Umbra::RealtimeCombat`)
 
 Attack timing, hit detection and cooldowns only. Damage, costs, statuses and death come from the
-shared rules (`engine/rpg/include/Rpg.md`). Links `Umbra::Rpg` and nothing else: no turn
+shared rules (`game/rpg/include/Rpg.md`). Links `Umbra::Rpg` and nothing else: no turn
 controller, world, physics or renderer (`Umbra.RealtimeOnlyDependencies`, roadmap T40).
 
 ## One action's life

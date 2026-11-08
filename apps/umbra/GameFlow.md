@@ -27,7 +27,7 @@ The combat mode can only be switched while exploring (user decision, 2026-11-07)
 
 - Every `spawner` entity puts `count` roamers into the area when it loads, each a random actor
   from its `pool`. Roamers wander near the spawner; `chase` roamers run at a player they can see
-  (`engine/gameplay/include/Roamer.md`).
+  (`game/gameplay/include/Roamer.md`).
 - Touching a roamer (capsules less than 1 m apart) starts a fight with that enemy plus 0 to
   `group - 1` random companions from the same pool.
 - Every fight, turn-based or real-time, happens in the battle arena
@@ -95,7 +95,7 @@ means: edit in the editor, press Ctrl+S, and the running game changes within a s
 ## Learned enemies (P8A)
 
 An actor with `"policy"` in the RPG content (the bandit leader) uses its learned turn-combat AI
-when the model loads and still fits the content (`engine/policy/include/Policy.md`):
+when the model loads and still fits the content (`game/policy/include/Policy.md`):
 
 - **Asking:** when that enemy's turn starts, an observation and mask snapshot goes to the
   model's worker thread.

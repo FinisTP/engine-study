@@ -93,7 +93,7 @@ private:
     std::vector<std::string> log_;     // recent fight lines
     std::string message_;
 
-    // Learned turn-combat AI per actor (engine/policy). Each has its own worker thread.
+    // Learned turn-combat AI per actor (game/policy). Each has its own worker thread.
     struct LearnedEnemy final
     {
         umbra::policy::PolicyModel model;

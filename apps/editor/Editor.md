@@ -53,7 +53,7 @@ has the entry list (Add, Duplicate, Delete) on the left and the selected entry's
 | Statuses | turns, seconds, damage per tick, modifiers |
 | Actors | stats and per-level growth, starting skills / equipment / inventory, slots, skill points, XP when defeated |
 | Quests | description, ordered objectives (kind, target from the matching list, count, text), fail on death, reward |
-| Conversations | NPC id, start node, nodes (speaker, line, choices with next node). `if` / `do` are JSON lists (format in `engine/story/include/Story.md`). |
+| Conversations | NPC id, start node, nodes (speaker, line, choices with next node). `if` / `do` are JSON lists (format in `game/story/include/Story.md`). |
 
 The rules are the same as for scenes:
 

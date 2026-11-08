@@ -1,7 +1,7 @@
 # Training a learned turn-based enemy
 
 Developer-only tools. Players never need them, and the game and the editor never load them. The
-game runs the finished model with plain C++ (`engine/policy/include/Policy.md`).
+game runs the finished model with plain C++ (`game/policy/include/Policy.md`).
 
 ## What you need
 
@@ -19,7 +19,7 @@ cd tools/policy
 python train.py    --preference 1.0 --seed 301 --out runs/pref.json      # the model
 python train.py    --preference 0   --seed 301 --out runs/control.json   # the same without the preference
 python evaluate.py --model runs/pref.json --control runs/control.json --acceptance acceptance.json --report runs/report.json
-python approve.py  --model runs/pref.json --report runs/report.json --out ../../assets/policies/bandit_leader.policy.json
+python approve.py  --model runs/pref.json --report runs/report.json --out ../../projects/reference/assets/policies/bandit_leader.policy.json
 ```
 
 Defaults:

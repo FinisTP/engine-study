@@ -63,7 +63,7 @@ Linux harness: 2 cores, GCC Debug, Ninja.
 |---|---|
 | No-op build of the game | 0.01 s |
 | A gameplay file (`apps/umbra/GameFlow.cpp`) | 3.3 s |
-| An engine rules file (`engine/rpg/src/Rules.cpp`) | 2.0 s |
+| An engine rules file (`game/rpg/src/Rules.cpp`) | 2.0 s |
 | An editor file (`apps/editor/RpgForms.cpp`) | 4.3 s |
 | A shared header (`engine/core/include/DrawList.hpp`), everything rebuilds | 39.7 s |
 | `UmbraTool validate` of the RPG content / dungeon with models | 0.01 s each |

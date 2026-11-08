@@ -1,7 +1,7 @@
 # Turn combat (`Umbra::TurnCombat`)
 
 Turn order and turn ownership only. Damage, costs, statuses and death come from the shared rules
-(`engine/rpg/include/Rpg.md`). This library links `Umbra::Rpg` and nothing else: no real-time
+(`game/rpg/include/Rpg.md`). This library links `Umbra::Rpg` and nothing else: no real-time
 controller, world, physics or renderer. `Umbra.TurnOnlyDependencies` fails if that changes (roadmap T39).
 
 ## Order (user decision 2026-11-07: speed rounds, one action)

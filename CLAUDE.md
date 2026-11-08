@@ -44,6 +44,8 @@ Continue an authorized, bounded task without asking about every reversible detai
 
 ## Architecture and code discipline
 
+**Layers (ADR 0004):** `engine/` base engine → `game/` base game (RPG rules, combat, story, learned AI, gameplay) → `projects/<name>/engine` → `projects/<name>/game`. Each may use only the layers before it; `engine/` never includes `game/`. `engine/authoring` and `engine/localai` are editor/tool libraries and never go into the game. Content lives in `projects/<name>/assets` (the build's `UMBRA_PROJECT`, default `reference`; tests always use `reference`). Entity behaviour is components (`engine/scene/include/Components.md`): add a project component as a schema plus a `UMBRA_COMPONENT` C++ class, not as a new top-level entity field.
+
 Use explicit ownership and dependency direction. Runtime never depends on editor. Authoritative RPG simulation must compile/run without Vulkan, ImGui, a window, a model, Python, or a network. A collision-dependent headless fixture may use the same physics adapter as gameplay.
 
 Keep definitions separate from instances/state. Use durable IDs in persisted content and generational handles for transient lookup. Do not serialize raw pointers, GPU handles, C++ object memory, or runtime handles as permanent identity. Version schemas; validate before atomically committing state or content.

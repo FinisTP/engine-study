@@ -7,7 +7,7 @@
 
 // RPG content forms (roadmap P7.2). One tab per section: a list of entries on the left, the
 // selected entry's fields on the right. Every field change is one validated, undoable edit of
-// the RPG document; the field names are those of engine/rpg/include/Rpg.md and Story.md.
+// the RPG document; the field names are those of game/rpg/include/Rpg.md and Story.md.
 
 using umbra::authoring::Change;
 using umbra::authoring::Json;

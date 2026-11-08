@@ -2,7 +2,9 @@
 
 This guide covers making a small change to the reference RPG, checking it, playing it, and
 shipping it. It takes about 20 minutes. All paths are relative to the repository folder. The
-commands are for Windows (Developer PowerShell or a plain `cmd` window).
+commands are for Windows (Developer PowerShell or a plain `cmd` window). The reference game's
+content is in `projects/reference/assets`; the folder layout is in
+`projects/README.md`.
 
 ## 0. One-time setup
 
@@ -34,9 +36,9 @@ it takes a while; later builds take seconds.
 
 | What | File | Described in |
 |---|---|---|
-| Areas (settlement, dungeon, battle arena) | `assets\scenes\*.scene.json` | `engine\scene\include\SceneFormat.md` |
-| Items, skills, statuses, actors, quests, conversations | `assets\rpg\reference.rpg.json` | `engine\rpg\include\Rpg.md`, `engine\story\include\Story.md` |
-| Models, sounds | `assets\models`, `assets\audio` | `engine\assets\include\AssetPipeline.md`, `engine\audio\include\Audio.md` |
+| Areas (settlement, dungeon, battle arena) | `projects\reference\assets\scenes\*.scene.json` | `engine\scene\include\SceneFormat.md` |
+| Items, skills, statuses, actors, quests, conversations | `projects\reference\assets\rpg\reference.rpg.json` | `game\rpg\include\Rpg.md`, `game\story\include\Story.md` |
+| Models, sounds | `projects\reference\assets\models`, `projects\reference\assets\audio` | `engine\assets\include\AssetPipeline.md`, `engine\audio\include\Audio.md` |
 
 All of it is data. Changing it needs no C++ build.
 
@@ -98,7 +100,7 @@ Rules worth knowing:
   (`UmbraTool fight` helps).
 - Nothing is sent to the internet: only an Ollama on this computer is accepted.
 
-Without the editor: `UmbraTool draft assets\rpg\reference.rpg.json --npc elder --idea "..."`,
+Without the editor: `UmbraTool draft projects\reference\assets\rpg\reference.rpg.json --npc elder --idea "..."`,
 then the same command with `--apply` (see `tools/umbratool/README.md`).
 
 ## 2c. Make textures with AI
@@ -119,20 +121,20 @@ then the same command with `--apply` (see `tools/umbratool/README.md`).
    real size. One marked "may show" has a visible seam.
 5. **Apply to object**. Ctrl+Z takes it off again; Ctrl+S saves the scene.
 
-What you get: `assets/textures/mossy_cobblestone.png` and `assets/materials/mossy_cobblestone.material.json`.
+What you get: `projects/reference/assets/textures/mossy_cobblestone.png` and `projects/reference/assets/materials/mossy_cobblestone.material.json`.
 The material records the model, prompt and seed, so the texture can be made again. The **Material**
 picker in the inspector puts the same material on other objects.
 
 Rules worth knowing:
 
-- Every prompt gets the project style from `assets/materials/style.json`. Change it once to change the
+- Every prompt gets the project style from `projects/reference/assets/materials/style.json`. Change it once to change the
   look of every new texture.
 - Hand-made textures work the same way: a PNG with power-of-two sides (64–2048) and a material file
-  (`engine/assets/include/Material.md`; `assets/materials/sample_bricks.material.json` is one).
+  (`engine/assets/include/Material.md`; `projects/reference/assets/materials/sample_bricks.material.json` is one).
 - Only a ComfyUI on this computer is used; nothing is uploaded.
 - `scripts\package.bat` warns about textures made with models whose license forbids selling.
 
-Without the editor: `UmbraTool texture "mossy cobblestone" --assets assets --count 2`.
+Without the editor: `UmbraTool texture "mossy cobblestone" --assets projects\reference\assets --count 2`.
 
 ## 2d. Make props with AI
 
@@ -149,7 +151,7 @@ Without the editor: `UmbraTool texture "mossy cobblestone" --assets assets --cou
 2. Looks like: `wooden barrel with iron bands`. **Make concept pictures**; **View** opens each in your
    image viewer. Pick one. (Or **Use my picture** and give a PNG/JPEG of one object on a plain background.)
 3. **Make 3D model**. This takes minutes; you may close the window or even the editor (ComfyUI keeps
-   working, and the next start saves the model). The model lands in `assets/models/` with its concept picture
+   working, and the next start saves the model). The model lands in `projects/reference/assets/models/` with its concept picture
    and a `.source.json` saying how it was made.
 4. Set **Height in the scene** (meters), then **Place in scene**: it appears at the centre of the view,
    standing on the ground. Ctrl+Z removes it; Ctrl+S saves the scene. It gets a box collider fitted to its
@@ -158,25 +160,25 @@ Without the editor: `UmbraTool texture "mossy cobblestone" --assets assets --cou
 Rules worth knowing:
 
 - About 10 000 triangles per prop by default (the **Triangles** slider), with a 1024 px texture.
-- The concept style (`objectPrompt`, `objectNegative` in `assets/materials/style.json`) asks for one object
+- The concept style (`objectPrompt`, `objectNegative` in `projects/reference/assets/materials/style.json`) asks for one object
   on a plain background, which is what image-to-3D needs.
 - Characters still come from Meshy for now.
 
-Without the editor: `UmbraTool model --idea "stone lantern" --assets assets` (or `--image my.png`).
+Without the editor: `UmbraTool model --idea "stone lantern" --assets projects\reference\assets` (or `--image my.png`).
 
 ## 3. Find a planted error
 
-Open `assets\rpg\reference.rpg.json` in a text editor. In the hero's `inventory`, change
+Open `projects\reference\assets\rpg\reference.rpg.json` in a text editor. In the hero's `inventory`, change
 `"health_potion"` to `"helth_potion"` and save. Then:
 
 ```text
-UmbraTool validate assets\rpg\reference.rpg.json
+UmbraTool validate projects\reference\assets\rpg\reference.rpg.json
 ```
 
 prints
 
 ```text
-assets\rpg\reference.rpg.json: error [ref.item] actors.hero.inventory: unknown item 'helth_potion'
+projects\reference\assets\rpg\reference.rpg.json: error [ref.item] actors.hero.inventory: unknown item 'helth_potion'
 1 file(s): 1 error(s), 0 warning(s)
 ```
 
@@ -188,8 +190,8 @@ Other useful commands:
 
 | Command | Use |
 |---|---|
-| `UmbraTool inspect assets\rpg\reference.rpg.json` | Every id in the file |
-| `UmbraTool fight assets\rpg\reference.rpg.json hero wolf wolf` | A quick balance check: the AI fights both sides |
+| `UmbraTool inspect projects\reference\assets\rpg\reference.rpg.json` | Every id in the file |
+| `UmbraTool fight projects\reference\assets\rpg\reference.rpg.json hero wolf wolf` | A quick balance check: the AI fights both sides |
 | `UmbraTool schema` | Format versions and where each format is described |
 
 ## 4. Change C++ (systems, not content)
@@ -236,7 +238,7 @@ Upload the files of `out\web` to any static web host to share it.
 |---|---|
 | `build-and-run.bat` says BUILD FAILED | Read the first `error` in `out\build-and-run.log`. Meanwhile `out\known-good\Umbra.exe` still runs. |
 | The editor refuses an edit | Look at the Diagnostics window: the code names the rule (`ref.*` = something referenced doesn't exist, `id.duplicate`, `field.range`, ...). |
-| "Cannot open" a scene in the editor | Run `UmbraTool validate <scene> --assets assets`. The file has an error the game would refuse too. |
+| "Cannot open" a scene in the editor | Run `UmbraTool validate <scene> --assets projects\reference\assets`. The file has an error the game would refuse too. |
 | The game ignores RPG content changes | Look at the message on screen: either the file has errors, or your current game uses something the change removed (load a save or start a new game). |
 | Play does nothing | The scene couldn't be saved (see Diagnostics), or the game wasn't built. Build once with `build-and-run.bat`. |
 | AI draft: "Ollama is not running" | Start Ollama (it runs in the tray after install), or check the address under **Model**. |

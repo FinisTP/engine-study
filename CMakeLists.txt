@@ -17,14 +17,27 @@ include(UmbraHeadlessCheck)
 # position-independent everywhere.
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# Layers (docs/adr/0004-project-layers.md): engine/ = base engine, game/ = base game (RPG rules,
+# combat, story, learned AI, gameplay), projects/<name>/ = one game made with them: its assets,
+# its engine extensions (engine/) and its game code (game/). The tests use the reference project.
+set(UMBRA_PROJECT "reference" CACHE STRING "Project under projects/ that the game and editor use")
+set(UMBRA_PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/projects/${UMBRA_PROJECT}")
+set(UMBRA_ASSETS "${UMBRA_PROJECT_DIR}/assets")
+set(UMBRA_REFERENCE_ASSETS "${CMAKE_CURRENT_SOURCE_DIR}/projects/reference/assets")
+set(UMBRA_ENGINE_MODULES core diagnostics audio platform render world physics assets scene)
+set(UMBRA_GAME_MODULES rpg turncombat realtimecombat encounter story game policy gameplay)
+
 # Browser build (roadmap P10): only the game and the modules it uses, single-threaded, with
 # exceptions enabled for nlohmann-json. Configure with emcmake; see apps/umbra/web/README.md.
 if(EMSCRIPTEN)
     set(CMAKE_CXX_SCAN_FOR_MODULES OFF) # clang-scan-deps doesn't know the Emscripten sysroot; no modules are used
     add_compile_options(-fexceptions)
     add_link_options(-fexceptions)
-    foreach(module core diagnostics rpg turncombat realtimecombat encounter story game policy audio platform render world physics gameplay assets scene)
+    foreach(module ${UMBRA_ENGINE_MODULES})
         add_subdirectory(engine/${module})
+    endforeach()
+    foreach(module ${UMBRA_GAME_MODULES})
+        add_subdirectory(game/${module})
     endforeach()
     add_subdirectory(apps/umbra)
     # The headless test suites, run by Node (-sNODERAWFS reads the test data from disk): the same
@@ -40,23 +53,14 @@ if(EMSCRIPTEN)
     return()
 endif()
 
-add_subdirectory(engine/core)
-add_subdirectory(engine/diagnostics)
-add_subdirectory(engine/rpg)
-add_subdirectory(engine/turncombat)
-add_subdirectory(engine/realtimecombat)
-add_subdirectory(engine/encounter)
-add_subdirectory(engine/story)
-add_subdirectory(engine/game)
-add_subdirectory(engine/policy)
-add_subdirectory(engine/audio)
-add_subdirectory(engine/platform)
-add_subdirectory(engine/render)
-add_subdirectory(engine/world)
-add_subdirectory(engine/physics)
-add_subdirectory(engine/gameplay)
-add_subdirectory(engine/assets)
-add_subdirectory(engine/scene)
+foreach(module ${UMBRA_ENGINE_MODULES})
+    add_subdirectory(engine/${module})
+endforeach()
+foreach(module ${UMBRA_GAME_MODULES})
+    add_subdirectory(game/${module})
+endforeach()
+# Tool libraries for the editor and UmbraTool: they know both layers (validation of RPG content,
+# AI drafting), so they sit beside them, never inside the game program.
 add_subdirectory(engine/authoring)
 add_subdirectory(engine/localai)
 add_subdirectory(apps/umbra)

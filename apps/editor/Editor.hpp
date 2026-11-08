@@ -107,6 +107,18 @@ private:
     void SaveModelSettings();
     void ResumeModel(); // a job left running in ComfyUI when the editor closed
 
+    // CodePanel.cpp: the C++ files of the four layers, opened in Visual Studio.
+    struct CodeLayer final
+    {
+        std::string name;
+        std::filesystem::path folder;
+        std::vector<std::string> files; // relative to folder
+    };
+    void CodePanel();
+    void ScanCode();
+    void OpenCode(const std::filesystem::path &file); // empty = the whole source folder
+    void NewComponent(const std::string &name);
+
     // Components.cpp
     [[nodiscard]] static const umbra::authoring::Json *ComponentOf(const umbra::authoring::Json &entity, const std::string &type);
     void MoveLegacyParts();
@@ -183,6 +195,8 @@ private:
     // AI model (P8D): concept pictures, then the creator's image-to-3D workflow. ComfyUI address and
     // checkpoint are shared with the texture window.
     bool showModel_ = false;
+    bool showCode_ = false;
+    std::vector<CodeLayer> code_;
     int modelSource_ = 0; // 0 = describe, 1 = picture file
     std::string modelIdea_, modelPicturePath_, modelName_, modelWorkflow_, modelSourceText_, modelResult_, modelSaveName_;
     std::vector<std::filesystem::path> modelWorkflows_; // usable exports in tools/comfyui

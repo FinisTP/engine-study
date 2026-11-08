@@ -49,7 +49,7 @@ namespace
 	// Where the game's files are, found at run time (no build path is compiled in, P9). A package
 	// has assets/ next to the program and keeps its model cache there too. A development build
 	// looks upwards: the build folder (it has CMakeCache.txt) holds the cache, the source tree above
-	// it holds assets/.
+	// it holds projects/<project>/assets/ (the project name is compiled in, not its path).
 	struct GameFolders final
 	{
 		std::filesystem::path assets;
@@ -60,8 +60,8 @@ namespace
 		std::filesystem::path program = umbra::platform::Platform::ProgramFolder().lexically_normal();
 		if (!program.has_filename())
 			program = program.parent_path(); // "C:/Game/" -> "C:/Game"
-		const auto hasAssets = [](const std::filesystem::path &dir) { return std::filesystem::exists(dir / "assets" / "rpg" / "reference.rpg.json"); };
-		if (hasAssets(program))
+		const auto isAssets = [](const std::filesystem::path &dir) { return std::filesystem::is_directory(dir / "scenes"); };
+		if (isAssets(program / "assets"))
 			return {program / "assets", program / "asset-cache"};
 		GameFolders found{program / "assets", program / "asset-cache"};
 		bool cacheFound = false;
@@ -69,9 +69,9 @@ namespace
 		{
 			if (!cacheFound && std::filesystem::exists(dir / "CMakeCache.txt"))
 				found.cache = dir / "asset-cache", cacheFound = true;
-			if (hasAssets(dir))
+			if (const auto project = dir / "projects" / UMBRA_PROJECT_NAME / "assets"; isAssets(project))
 			{
-				found.assets = dir / "assets";
+				found.assets = project;
 				break;
 			}
 			if (dir == dir.parent_path())

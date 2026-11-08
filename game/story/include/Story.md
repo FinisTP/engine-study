@@ -68,5 +68,5 @@ ignore all further events. (The player usually reloads after dying, which restor
 
 On completion: experience (may level up), skill points, items. A `rewarded` flag makes the reward one-shot,
 and completed quests ignore events, so repeated or late events never pay twice. Items that don't fit go to
-the hero's `pending` list (see `engine/rpg/include/Rpg.md`, Progression), so a full inventory never loses a reward.
+the hero's `pending` list (see `game/rpg/include/Rpg.md`, Progression), so a full inventory never loses a reward.
 

@@ -124,7 +124,7 @@ inside the model.
 | T29 export/native disagreement | 120 parity cases ≤ 1e-4 (6.6e-6 measured) and same legal choice; 200 complete native fights | Passed |
 | T30 reward exploit | Held-out fights, control model, counterexample probes; mechanism reported (resource totals decide fights) | Passed (reported) |
 | T31 inference starves the game | 3.9 µs per decision (including the Python call), one worker thread, one job at a time | Passed (measured on Linux) |
-| T41 forced branch | Inspection (no threshold in engine/game code) + paired probes + control | Passed |
+| T41 forced branch | Inspection (no threshold in game/game code) + paired probes + control | Passed |
 | T47 legal in snapshot, illegal at commit | The answer is applied through `Submit` (shared rules) and also checked against the snapshot mask; otherwise fallback | Passed by design |
 | T52 overload / shutdown | One job; busy refuses; destructor joins mid-job (tested) | Passed |
 | T54 leakage / cherry-picking | Separate seed ranges; opponent's bag hidden (tested); 2 final seeds reported, including the refused one | Partly: recipe reliability open |

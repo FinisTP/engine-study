@@ -381,7 +381,7 @@ TEST_CASE("The project style is added to every prompt", "[comfyui]")
 
 namespace
 {
-    const std::filesystem::path testData = std::filesystem::path(UMBRA_TEST_ASSET_DIRECTORY).parent_path() / "tests/localai/data";
+    const std::filesystem::path testData = std::filesystem::path(UMBRA_TEST_LOCALAI_DATA);
 
     std::filesystem::path WriteTemp(const std::string &name, const std::string &text)
     {

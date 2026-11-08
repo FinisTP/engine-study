@@ -4,7 +4,7 @@ Developer-only (Python 3, numpy, PyTorch, CPU is enough). The fights run in the 
 rules through UmbraPolicyEnv. The method, the reward and the preference term are explained in
 tools/policy/README.md.
 
-    python train.py --library <UmbraPolicyEnv> --content ../../assets/rpg/reference.rpg.json \
+    python train.py --library <UmbraPolicyEnv> --content ../../projects/reference/assets/rpg/reference.rpg.json \
                     --out bandit_leader.policy.json --preference 0.15 --seed 1
 """
 import argparse
@@ -19,7 +19,7 @@ import torch.nn as nn
 from umbra_env import FightEnv, load_library
 
 LOW_HEALTH = 0.35  # "the player is low": below this share of maximum health
-OPPONENT_HEALTH = 6  # index of opponent.health in the observation (engine/policy PolicyContract.hpp)
+OPPONENT_HEALTH = 6  # index of opponent.health in the observation (game/policy PolicyContract.hpp)
 
 
 def mlp(inputs, outputs, hidden):
@@ -62,7 +62,7 @@ def export(policy, env, args, stats, path):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--library")
-    ap.add_argument("--content", default="../../assets/rpg/reference.rpg.json")
+    ap.add_argument("--content", default="../../projects/reference/assets/rpg/reference.rpg.json")
     ap.add_argument("--learner", default="bandit_leader")
     ap.add_argument("--opponent", default="hero")
     ap.add_argument("--opponent-level", type=int, default=5)

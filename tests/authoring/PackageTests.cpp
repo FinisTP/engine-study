@@ -81,6 +81,14 @@ TEST_CASE("What may not ship is named (T75)")
         CHECK_FALSE(authoring::CheckPackage(root, "E:/Projects/EngineStudy", d));
         CHECK(Has(d, "package.buildpath"));
     }
+    SECTION("the program depends on a project's source assets folder (not on its code file names)")
+    {
+        test::WriteText(root / "Umbra.exe", "MZ E:/Projects/EngineStudy/projects/reference/game/Spin.cpp");
+        CHECK(authoring::CheckPackage(root, "E:/Projects/EngineStudy", d));
+        test::WriteText(root / "Umbra.exe", "MZ E:/Projects/EngineStudy/projects/reference/assets\0");
+        CHECK_FALSE(authoring::CheckPackage(root, "E:/Projects/EngineStudy", d));
+        CHECK(Has(d, "package.buildpath"));
+    }
     SECTION("source file names alone are only a warning")
     {
         test::WriteText(root / "Umbra.exe", "MZ ... E:/Projects/EngineStudy/engine/core/x.cpp");

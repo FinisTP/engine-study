@@ -1,9 +1,9 @@
 """Approves an evaluated model for the game, or refuses it with the reasons.
 
-Only a model whose evaluation report says "accepted" is copied to assets/policies/, with the
+Only a model whose evaluation report says "accepted" is copied to projects/reference/assets/policies/, with the
 report's summary stored inside it. A refused model never reaches the game.
 
-    python approve.py --model m.json --report report.json --out ../../assets/policies/bandit_leader.policy.json
+    python approve.py --model m.json --report report.json --out ../../projects/reference/assets/policies/bandit_leader.policy.json
 """
 import argparse
 import json

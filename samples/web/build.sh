@@ -8,10 +8,10 @@ cd "$(dirname "$0")/../.."
 
 "$WASI_SDK_PATH/bin/clang++" --target=wasm32-wasip1 -std=c++20 -O2 \
     -mexec-model=reactor -fno-exceptions -DJSON_NOEXCEPTION \
-    -Iengine/core/include -Iengine/rpg/include -Iengine/turncombat/include -isystem "$INCLUDE" \
-    engine/rpg/src/RpgContent.cpp engine/rpg/src/StoryContent.cpp engine/rpg/src/Character.cpp engine/rpg/src/Inventory.cpp \
-    engine/rpg/src/SkillTree.cpp engine/rpg/src/Rules.cpp engine/rpg/src/Progression.cpp \
-    engine/turncombat/src/TurnEncounter.cpp engine/turncombat/src/TurnEnvironment.cpp \
+    -Iengine/core/include -Igame/rpg/include -Igame/turncombat/include -isystem "$INCLUDE" \
+    game/rpg/src/RpgContent.cpp game/rpg/src/StoryContent.cpp game/rpg/src/Character.cpp game/rpg/src/Inventory.cpp \
+    game/rpg/src/SkillTree.cpp game/rpg/src/Rules.cpp game/rpg/src/Progression.cpp \
+    game/turncombat/src/TurnEncounter.cpp game/turncombat/src/TurnEnvironment.cpp \
     samples/web/WebSim.cpp \
     -Wl,--strip-all -o samples/web/umbra_sim.wasm
 ls -l samples/web/umbra_sim.wasm

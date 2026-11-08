@@ -203,8 +203,8 @@ namespace
     {
         const Json formats = Json::array({
             {{"format", "umbra.scene"}, {"version", umbra::scene::sceneFormatVersion}, {"doc", "engine/scene/include/SceneFormat.md"}},
-            {{"format", "umbra.rpg"}, {"version", umbra::rpg::contentFormatVersion}, {"doc", "engine/rpg/include/Rpg.md, engine/story/include/Story.md"}},
-            {{"format", "umbra.save"}, {"version", umbra::game::saveFormatVersion}, {"doc", "engine/game/include/SaveGame.md"}},
+            {{"format", "umbra.rpg"}, {"version", umbra::rpg::contentFormatVersion}, {"doc", "game/rpg/include/Rpg.md, game/story/include/Story.md"}},
+            {{"format", "umbra.save"}, {"version", umbra::game::saveFormatVersion}, {"doc", "game/game/include/SaveGame.md"}},
         });
         if (args.json)
             std::cout << Json{{"formats", formats}}.dump(2) << "\n";

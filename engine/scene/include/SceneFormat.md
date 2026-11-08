@@ -83,7 +83,7 @@ placed inside a portal does not bounce straight back. Place spawns a little away
 
 Asset paths are relative to the asset folder and may not contain `..`.
 
-**Reserved id:** the app treats the entity with id `player` as the player's spawn point and body (see `engine/gameplay/include/PlayerController.md`).
+**Reserved id:** the app treats the entity with id `player` as the player's spawn point and body (see `game/gameplay/include/PlayerController.md`).
 
 ## Loading is all-or-nothing
 

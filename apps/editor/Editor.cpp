@@ -542,6 +542,7 @@ void Editor::DrawUi()
     AiTexture();
     CollectModelResults();
     AiModel();
+    CodePanel();
     StatusBar();
     Popups();
     DrawGizmo();
@@ -614,6 +615,7 @@ void Editor::MenuBar()
         ImGui::MenuItem("AI quest draft", nullptr, &showDraft_);
         ImGui::MenuItem("AI texture", nullptr, &showTexture_);
         ImGui::MenuItem("AI model", nullptr, &showModel_);
+        ImGui::MenuItem("Code", nullptr, &showCode_);
         ImGui::EndMenu();
     }
     const char *names[] = {"Move (W)", "Rotate (E)", "Scale (R)"};
@@ -623,6 +625,8 @@ void Editor::MenuBar()
     ImGui::Separator();
     if (ImGui::Button("Play (F5)"))
         Play();
+    if (ImGui::Button("Code"))
+        showCode_ = true;
     if (ImGui::Button("AI quest draft"))
         showDraft_ = true;
     if (ImGui::Button("AI texture"))

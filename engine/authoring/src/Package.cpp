@@ -174,10 +174,12 @@ namespace umbra::authoring
                 for (std::size_t at = binary.find(root); at != std::string::npos; at = binary.find(root, at + 1))
                 {
                     ++mentions;
-                    const std::string after = binary.substr(at + root.size(), 8);
-                    if (after.starts_with("/assets") || after.starts_with("\\assets"))
+                    // "<root>/assets" or "<root>/projects/<name>/assets" (either slash).
+                    static const std::regex assetsPath(R"re(^[/\\](projects[/\\][^/\\]+[/\\])?assets([^A-Za-z0-9_]|$))re");
+                    const std::string after = binary.substr(at + root.size(), 80);
+                    if (std::regex_search(after, assetsPath))
                     {
-                        error("package.buildpath", program.filename(), "the program contains the source assets path " + root + "/assets: it must find assets at run time");
+                        error("package.buildpath", program.filename(), "the program contains the source assets path " + root + "/.../assets: it must find assets at run time");
                         break;
                     }
                 }
