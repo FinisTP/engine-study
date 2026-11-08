@@ -3,7 +3,7 @@ find_package(httplib CONFIG REQUIRED)
 
 # The Ollama bridge against a stand-in server on 127.0.0.1 (no real model needed).
 add_executable(UmbraLocalAiTests)
-target_sources(UmbraLocalAiTests PRIVATE OllamaTests.cpp ComfyUiTests.cpp QuestDraftTests.cpp SoundGenTests.cpp)
+target_sources(UmbraLocalAiTests PRIVATE OllamaTests.cpp ComfyUiTests.cpp QuestDraftTests.cpp SoundGenTests.cpp AgentTests.cpp)
 target_include_directories(UmbraLocalAiTests PRIVATE ${PROJECT_SOURCE_DIR}/tests)
 target_compile_definitions(UmbraLocalAiTests PRIVATE UMBRA_TEST_ASSET_DIRECTORY="${UMBRA_REFERENCE_ASSETS}" UMBRA_TEST_DATA_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/data" UMBRA_TEST_LOCALAI_DATA="${CMAKE_CURRENT_SOURCE_DIR}/data")
 target_compile_features(UmbraLocalAiTests PRIVATE cxx_std_20)
@@ -11,6 +11,7 @@ target_link_libraries(
     UmbraLocalAiTests
     PRIVATE
         Umbra::LocalAi
+        Umbra::Agent
         httplib::httplib
         Umbra::Warnings
         Umbra::Sanitizers
@@ -63,3 +64,10 @@ add_test(
     COMMAND UmbraTool model --idea "barrel" --assets ${CMAKE_CURRENT_BINARY_DIR}/model-assets --workflow ${CMAKE_CURRENT_BINARY_DIR}/none.api.json
 )
 set_tests_properties(Umbra.Tool.ModelNeedsWorkflow PROPERTIES PASS_REGULAR_EXPRESSION "Export \\(API\\)")
+
+# The agent prompt (S5): only an Ollama on this computer is ever asked.
+add_test(
+    NAME Umbra.Tool.AgentLocalOnly
+    COMMAND UmbraTool agent "add a bench" --assets ${UMBRA_REFERENCE_ASSETS} --scene scenes/settlement.scene.json --host http://api.example.com:11434 --json
+)
+set_tests_properties(Umbra.Tool.AgentLocalOnly PROPERTIES PASS_REGULAR_EXPRESSION "ai.host")

@@ -69,6 +69,9 @@ namespace umbra::authoring
         bool Save(std::vector<core::Diagnostic> &diagnostics, bool overwrite = false);
         [[nodiscard]] bool ChangedOnDisk() const;
 
+        // Runs this document's validator on other data (a draft of a later state).
+        bool Check(const Json &data, std::vector<core::Diagnostic> &diagnostics) const { return validator_(data, file_.string(), diagnostics); }
+
         [[nodiscard]] const Json &Data() const noexcept { return data_; }
         [[nodiscard]] std::string Text() const { return data_.dump(2) + "\n"; }
         [[nodiscard]] const std::filesystem::path &File() const noexcept { return file_; }

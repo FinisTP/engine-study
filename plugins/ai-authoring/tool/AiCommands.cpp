@@ -3,6 +3,7 @@
 #include <ToolCommand.hpp>
 
 #include <Document.hpp>
+#include <Generate.hpp>
 #include <ModelAssistant.hpp>
 #include <QuestAssistant.hpp>
 #include <RpgContent.hpp>
@@ -130,74 +131,58 @@ namespace
         return code;
     }
 
+    // Options shared by texture, sound and model; progress on stderr unless --json.
+    umbra::localai::GenerateOptions Options(const Arguments &args, const std::string &idea)
+    {
+        umbra::localai::GenerateOptions options;
+        options.idea = idea;
+        options.name = args.Text("name");
+        options.assets = args.Assets();
+        options.host = args.Text("host");
+        options.model = args.Text("model");
+        options.count = args.Int("count", 1);
+        options.seed = args.Long("seed", -1);
+        if (!args.json)
+            options.progress = [](const std::string &what, std::size_t done, std::size_t total, float seconds) {
+                std::cerr << "\r" << what << "... " << done << "/" << total << ", " << static_cast<int>(seconds) << " s   " << std::flush;
+            };
+        return options;
+    }
+
+    // Prints what was made (text or JSON); the exit code.
+    int Finish(const Arguments &args, const umbra::localai::GenerateResult &result, const char *key)
+    {
+        if (!args.json)
+            std::cerr << "\n";
+        if (args.json)
+        {
+            Json made = Json::array();
+            for (const auto &m : result.made)
+            {
+                Json entry = {{key, m.path}, {"seed", m.seed}};
+                entry.update(m.info);
+                made.push_back(entry);
+            }
+            Json out = {{"model", result.model}, {"host", result.host}, {"made", made}, {"diagnostics", umbra::authoring::ToJson(result.diagnostics)}};
+            std::cout << out.dump(2) << "\n";
+            return result.made.empty() ? 1 : 0;
+        }
+        for (const auto &m : result.made)
+            std::cout << "Made " << m.path << " (seed " << m.seed << ", " << m.info.dump() << ")\n";
+        const int code = Report(result.diagnostics, result.made.size(), false);
+        return result.made.empty() ? 1 : code;
+    }
+
     // AI texture: idea -> local ComfyUI -> seamless texture + material file(s) in the asset folder.
     int Texture(const Arguments &args)
     {
         if (args.positional.size() != 1 || !args.Has("assets") || args.Int("count", 1) < 1 || args.Int("count", 1) > 8 || !umbra::assets::GoodTextureSize(args.Int("size", 1024), args.Int("size", 1024)) ||
             args.Float("meters", 2.0F) < 0.05F || args.Float("meters", 2.0F) > 100.0F)
             return Usage();
-        std::vector<Diagnostic> diagnostics;
-
-        // 1. Where ComfyUI is and which model to use.
-        std::vector<std::string> checkpoints;
-        const std::string host = !args.Has("host") ? umbra::localai::FindComfyUi(checkpoints) : args.Text("host");
-        if (!!args.Has("host"))
-            checkpoints = umbra::localai::ListCheckpoints(host, diagnostics);
-        const std::string model = !args.Has("model") ? umbra::localai::PreferredCheckpoint(checkpoints) : args.Text("model");
-        if (host.empty() || model.empty())
-        {
-            if (diagnostics.empty())
-                diagnostics.push_back({Severity::Error, "ai.connect", "comfyui", "",
-                                       host.empty() ? "ComfyUI is not running on port 8000 or 8188. Start ComfyUI." : "ComfyUI has no models in models/checkpoints."});
-            return Report(diagnostics, 0, args.json);
-        }
-
-        // 2. Generate the variations, printing progress.
-        const auto style = umbra::localai::LoadTextureStyle(args.Assets());
-        const auto requests = umbra::localai::MakeTextureRequests(args.positional[0], style, model, host, umbra::localai::TextureSeeds(args.Int("count", 1), args.Long("seed", -1)));
-        umbra::localai::ImageJob job;
-        job.Start(requests);
-        std::optional<std::vector<umbra::localai::ImageResult>> results;
-        while (!(results = job.Take()))
-        {
-            if (!args.json)
-                std::cerr << "\rGenerating with " << model << "... " << job.Finished() << "/" << requests.size() << ", "
-                          << static_cast<int>(job.Seconds()) << " s   " << std::flush;
-            std::this_thread::sleep_for(std::chrono::milliseconds(250));
-        }
-        if (!args.json)
-            std::cerr << "\n";
-
-        // 3. Each picture: seamless, saved as a new material; a warning if the seam still shows.
-        Json made = Json::array();
-        for (std::size_t i = 0; i < results->size(); ++i)
-        {
-            const auto &result = (*results)[i];
-            diagnostics.insert(diagnostics.end(), result.diagnostics.begin(), result.diagnostics.end());
-            if (!result.ok)
-                continue;
-            const auto candidate = umbra::localai::FinishTexture(result.image, requests[i], static_cast<std::uint32_t>(args.Int("size", 1024)));
-            const std::string path = umbra::localai::SaveTextureMaterial(args.Path("assets"), !args.Has("name") ? args.positional[0] : args.Text("name"), candidate, args.Float("meters", 2.0F), diagnostics);
-            if (path.empty())
-                continue;
-            if (candidate.seam > umbra::assets::visibleSeam)
-                diagnostics.push_back({Severity::Warning, "texture.seam", path, "", "the repeat seam may still show (score " + std::to_string(candidate.seam) + ")"});
-            const auto license = umbra::assets::ModelLicense(model);
-            if (!license.commercial)
-                diagnostics.push_back({Severity::Warning, "material.license", path, "generated.model",
-                                       license.known ? "made with " + model + " (" + license.name + "): not for a game you sell"
-                                                     : "license of " + model + " is unknown: check it before shipping"});
-            made.push_back({{"material", path}, {"seed", requests[i].seed}, {"seamBefore", candidate.seamBefore}, {"seam", candidate.seam}});
-            if (!args.json)
-                std::cout << "Made " << path << " (seed " << requests[i].seed << ", seam " << candidate.seamBefore << " -> " << candidate.seam << ")\n";
-        }
-        if (args.json)
-        {
-            std::cout << Json{{"model", model}, {"host", host}, {"made", made}, {"diagnostics", umbra::authoring::ToJson(diagnostics)}}.dump(2) << "\n";
-            return made.empty() ? 1 : 0;
-        }
-        const int code = Report(diagnostics, made.size(), false);
-        return made.empty() ? 1 : code;
+        auto options = Options(args, args.positional[0]);
+        options.meters = args.Float("meters", 2.0F);
+        options.size = static_cast<std::uint32_t>(args.Int("size", 1024));
+        return Finish(args, umbra::localai::CreateTexture(options), "material");
     }
 
     // Music (a looping .ogg) or a sound effect (a .wav) through a local ComfyUI (S4, SoundGen.md).
@@ -209,92 +194,12 @@ namespace
         if (args.positional.size() != 1 || !args.Has("assets") || (kindText != "music" && kindText != "effect") || args.Int("count", 1) < 1 ||
             args.Int("count", 1) > 8 || seconds < 0.5F || seconds > 600.0F)
             return Usage();
-        std::vector<Diagnostic> diagnostics;
-
-        // 1. Where ComfyUI is and which audio model to use.
-        std::vector<std::string> checkpoints;
-        const std::string host = !args.Has("host") ? umbra::localai::FindComfyUi(checkpoints) : args.Text("host");
-        if (args.Has("host"))
-            checkpoints = umbra::localai::ListCheckpoints(host, diagnostics);
-        const std::string model = !args.Has("model") ? umbra::localai::PreferredSoundModel(checkpoints, kind) : args.Text("model");
-        if (host.empty() || model.empty())
-        {
-            if (diagnostics.empty() || model.empty())
-                diagnostics.push_back({Severity::Error, host.empty() ? "ai.connect" : "ai.model", "comfyui", "",
-                                       host.empty() ? "ComfyUI is not running on port 8000 or 8188. Start ComfyUI."
-                                                    : "ComfyUI has no audio model: ace_step_1.5_turbo_aio.safetensors (music) or stable_audio_3_*.safetensors (effects) in models/checkpoints."});
-            return Report(diagnostics, 0, args.json);
-        }
-
-        // 2. Generate, then decode, loop or trim, normalize and save each variation.
-        auto requests = umbra::localai::MakeSoundRequests(args.positional[0], kind, umbra::localai::LoadSoundStyle(args.Assets()), model, host, seconds,
-                                                          umbra::localai::TextureSeeds(args.Int("count", 1), args.Long("seed", -1)));
-        for (auto &r : requests)
-        {
-            r.bpm = args.Int("bpm", r.bpm);
-            r.keyscale = args.Text("key", r.keyscale);
-        }
-        umbra::localai::AudioJob job;
-        job.Start(requests);
-        std::optional<std::vector<umbra::localai::AudioResult>> results;
-        while (!(results = job.Take()))
-        {
-            if (!args.json)
-                std::cerr << "\rGenerating with " << model << "... " << job.Finished() << "/" << requests.size() << ", " << static_cast<int>(job.Seconds()) << " s   " << std::flush;
-            std::this_thread::sleep_for(std::chrono::milliseconds(250));
-        }
-        if (!args.json)
-            std::cerr << "\n";
-        Json made = Json::array();
-        const std::string name = umbra::localai::TextureName(!args.Has("name") ? args.positional[0] : args.Text("name"));
-        for (const auto &result : *results)
-        {
-            diagnostics.insert(diagnostics.end(), result.diagnostics.begin(), result.diagnostics.end());
-            umbra::localai::Pcm pcm;
-            std::string error;
-            if (!result.ok)
-                continue;
-            if (!umbra::localai::DecodeFlac(result.file, pcm, error))
-            {
-                diagnostics.push_back({Severity::Error, "ai.answer", "comfyui", "", "couldn't read ComfyUI's sound: " + error});
-                continue;
-            }
-            const auto sound = umbra::localai::FinishSound(pcm, kind, result.request);
-            const std::string path = umbra::localai::SaveSound(args.Path("assets"), name, kind, sound, diagnostics);
-            if (path.empty())
-                continue;
-            if (sound.silent)
-                diagnostics.push_back({Severity::Warning, "sound.silent", path, "", "almost silent: try another prompt or seed"});
-            const auto license = umbra::assets::ModelLicense(model);
-            if (!license.known || !license.commercial)
-                diagnostics.push_back({Severity::Warning, "sound.license", path, "", "license of " + model + ": " + (license.known ? license.name : "unknown, check it before shipping")});
-            made.push_back({{"sound", path}, {"seed", result.request.seed}, {"seconds", sound.seconds}});
-            if (!args.json)
-                std::cout << "Made " << path << " (seed " << result.request.seed << ", " << sound.seconds << " s, " << license.name << ")\n";
-        }
-        if (args.json)
-        {
-            std::cout << Json{{"model", model}, {"host", host}, {"made", made}, {"diagnostics", umbra::authoring::ToJson(diagnostics)}}.dump(2) << "\n";
-            return made.empty() ? 1 : 0;
-        }
-        const int code = Report(diagnostics, made.size(), false);
-        return made.empty() ? 1 : code;
-    }
-
-    // Waits for a background ComfyUI batch, printing progress.
-    template <class Job>
-    auto Wait(Job &job, const char *what, std::size_t count, bool quiet)
-    {
-        decltype(job.Take()) results;
-        while (!(results = job.Take()))
-        {
-            if (!quiet)
-                std::cerr << "\r" << what << "... " << job.Finished() << "/" << count << ", " << static_cast<int>(job.Seconds()) << " s   " << std::flush;
-            std::this_thread::sleep_for(std::chrono::milliseconds(250));
-        }
-        if (!quiet)
-            std::cerr << "\n";
-        return *results;
+        auto options = Options(args, args.positional[0]);
+        options.kind = kind;
+        options.seconds = seconds;
+        options.bpm = args.Int("bpm", 0);
+        options.key = args.Text("key");
+        return Finish(args, umbra::localai::CreateSound(options), "sound");
     }
 
     // AI model: idea -> concept picture (SDXL) or a given picture -> exported image-to-3D workflow -> models/<name>.glb.
@@ -303,82 +208,17 @@ namespace
         const int sources = !!args.Has("idea") + !!args.Has("image") + !!args.Has("resume");
         if (!args.Has("assets") || sources != 1 || args.Int("faces", 10000) < 100 || args.Int("faces", 10000) > 1000000)
             return Usage();
-        std::vector<Diagnostic> diagnostics;
-        const std::filesystem::path workflowFile = !args.Has("workflow") ? umbra::localai::DefaultModelWorkflow(args.Path("assets")) : args.Path("workflow");
-        umbra::localai::ModelRequest request;
-        if (!umbra::localai::LoadModelWorkflow(workflowFile, request.workflow, diagnostics))
-            return Report(diagnostics, 0, args.json);
-
-        // 1. ComfyUI, and the picture: a concept from the idea, or the given file.
-        std::vector<std::string> checkpoints;
-        request.host = !args.Has("host") ? umbra::localai::FindComfyUi(checkpoints) : args.Text("host");
-        if (request.host.empty())
-        {
-            diagnostics.push_back({Severity::Error, "ai.connect", "comfyui", "", "ComfyUI is not running on port 8000 or 8188. Start ComfyUI."});
-            return Report(diagnostics, 0, args.json);
-        }
-        const long long seed = umbra::localai::TextureSeeds(1, args.Long("seed", -1))[0];
-        std::string what = !args.Has("resume") ? "file: " + args.Path("image").filename().string() : "ComfyUI job " + args.Text("resume");
-        if (!!args.Has("resume"))
-            request.resumeId = args.Text("resume"); // the picture is already in ComfyUI
-        else if (!!args.Has("idea"))
-        {
-            if (!!args.Has("host"))
-                checkpoints = umbra::localai::ListCheckpoints(request.host, diagnostics);
-            const std::string checkpoint = !args.Has("model") ? umbra::localai::PreferredCheckpoint(checkpoints) : args.Text("model");
-            umbra::localai::ImageJob concepts;
-            const auto requests = umbra::localai::MakeTextureRequests(args.Text("idea"), umbra::localai::LoadObjectStyle(args.Assets()), checkpoint, request.host, {seed});
-            concepts.Start(requests);
-            const auto results = Wait(concepts, "Concept picture", 1, args.json);
-            diagnostics.insert(diagnostics.end(), results[0].diagnostics.begin(), results[0].diagnostics.end());
-            if (!results[0].ok)
-                return Report(diagnostics, 0, args.json);
-            request.picture = results[0].image;
-            what = requests[0].prompt;
-        }
-        else
-        {
-            std::string error;
-            if (!umbra::assets::LoadImageFile(args.Path("image"), request.picture, error))
-            {
-                diagnostics.push_back({Severity::Error, "file.read", args.Path("image").string(), "", error});
-                return Report(diagnostics, 0, args.json);
-            }
-        }
-
-        // 2. The 3D model, saved and checked.
-        request.seed = seed;
-        request.faces = args.Int("faces", 10000);
+        auto options = Options(args, args.Text("idea"));
+        options.image = args.Path("image");
+        options.resume = args.Text("resume");
+        options.workflow = args.Path("workflow");
+        options.faces = args.Int("faces", 10000);
         if (!args.json)
-            request.queued = [&args](const std::string &job) {
-                std::cerr << "ComfyUI job " << job << ". It keeps going if this tool is closed; then fetch it with\n  UmbraTool model --resume " << job
+            options.queued = [&args](const std::string &job) {
+                std::cerr << "\nComfyUI job " << job << ". It keeps going if this tool is closed; then fetch it with\n  UmbraTool model --resume " << job
                           << " --assets " << args.Text("assets") << (!args.Has("name") ? "" : " --name \"" + args.Text("name") + "\"") << "\n";
             };
-        umbra::localai::ModelJob job;
-        job.Start({request});
-        const auto results = Wait(job, "3D model", 1, args.json);
-        diagnostics.insert(diagnostics.end(), results[0].diagnostics.begin(), results[0].diagnostics.end());
-        std::string path;
-        umbra::localai::ModelInfo info;
-        if (results[0].ok)
-        {
-            const std::string name = !!args.Has("name") ? args.Text("name") : !!args.Has("idea") ? args.Text("idea") : !!args.Has("resume") ? "model" : args.Path("image").stem().string();
-            path = umbra::localai::SaveGeneratedModel(args.Path("assets"), name, results[0].glb, request.picture,
-                                                      {what, workflowFile.filename().string(), seed, args.Int("faces", 10000)}, results[0].graph, diagnostics);
-            if (!path.empty() && umbra::authoring::InspectModel(args.Assets() / path, info, diagnostics) && info.triangles > 2 * static_cast<std::size_t>(args.Int("faces", 10000)))
-                diagnostics.push_back({Severity::Warning, "model.size", path, "", std::to_string(info.triangles) + " triangles: the workflow did not reduce the mesh (no DecimateMesh?)"});
-        }
-        if (args.json)
-        {
-            std::cout << Json{{"model", path}, {"triangles", info.triangles}, {"textureSize", info.textureSize}, {"seed", seed},
-                              {"diagnostics", umbra::authoring::ToJson(diagnostics)}}.dump(2) << "\n";
-            return path.empty() ? 1 : 0;
-        }
-        if (!path.empty())
-            std::cout << "Made " << path << ": " << info.triangles << " triangles, texture " << info.textureSize << " px, size "
-                      << info.max.x - info.min.x << " x " << info.max.y - info.min.y << " x " << info.max.z - info.min.z << " (model units)\n";
-        const int code = Report(diagnostics, path.empty() ? 0 : 1, false);
-        return path.empty() ? 1 : code;
+        return Finish(args, umbra::localai::CreateModel(options), "model");
     }
 }
 

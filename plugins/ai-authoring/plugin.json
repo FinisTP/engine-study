@@ -3,7 +3,7 @@
   "version": 1,
   "name": "ai-authoring",
   "label": "AI authoring tools",
-  "description": "Local Ollama quest drafts and ComfyUI textures, 3D models, music and sound effects: editor windows and UmbraTool commands. Never part of the game.",
+  "description": "Local Ollama quest drafts, the agent prompt (editor Agent window, UmbraTool mcp) and ComfyUI textures, 3D models, music and sound effects: editor windows and UmbraTool commands. Never part of the game.",
   "kind": "tool",
   "requires": [
     "rpg",
@@ -12,10 +12,12 @@
   ],
   "modules": [
     "questdraft",
-    "localai"
+    "localai",
+    "agent"
   ],
   "links": [
     "Umbra::LocalAi",
-    "Umbra::QuestDraft"
+    "Umbra::QuestDraft",
+    "Umbra::Agent"
   ]
 }

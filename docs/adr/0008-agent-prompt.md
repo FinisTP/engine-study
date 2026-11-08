@@ -1,6 +1,6 @@
 # ADR 0008: One prompt that builds things: an editor agent and an MCP server (S5)
 
-- Status: **accepted; planned** (2026-11-08; not implemented yet).
+- Status: **accepted; implemented 2026-11-08** (`#UMBRA-80`; deferred, then started by the user after P11). The real-model check on Windows is open (`docs/testing/s5-agent-prompt.md`).
 - Context: the user asked for an in-engine prompt that sets up a scene, adds sound or a model,
   or implements a feature, with different models working together ("like LangChain").
 
@@ -48,8 +48,31 @@
 4. **Limits**: only the project folder; no shell from the in-editor agent; local network only
    (`Umbra.EngineOffline`); every generated asset keeps its provenance.
 
-## Open before implementing
+## As built (2026-11-08)
 
-- Which local model to recommend by default for the user's GPU, measured on a small task set
-  (e.g. "add a well with a creaky sound near the elder") instead of benchmarks.
-- MCP transport details (stdio first; HTTP later if needed) and the spec revision to follow.
+- **Tool calling by structured output.** Instead of Ollama's native `tools` field, the model must
+  answer one JSON object (`look` / `summary` / `steps`) forced by a JSON schema in which the tool
+  names are an enum. Small local models produce malformed native tool calls often; a schema-forced
+  answer cannot name an unknown tool. Arguments are still checked against each tool's schema, and
+  a broken or failing plan goes back to the model with the reasons. The loop (look -> results ->
+  plan -> fix) is the LangChain-style agent loop in about 150 lines of C++.
+- **Dry run before approval.** Every step runs on throwaway working copies, so the user sees which
+  steps are already known to work; steps that need a generated file are checked when they run.
+- **Step references.** `"$<n>"` in an argument stands for step n's result (a new entity id, a
+  generated asset path), so one plan can generate a sound and attach it.
+- **Generators shared with UmbraTool.** `localai::CreateTexture/Sound/Model` (`Generate.hpp`) now
+  hold the whole generation; `UmbraTool texture/sound/model` and the agent's `generate_*` tools use
+  them.
+- **MCP**: stdio, JSON-RPC 2.0, one message per line; protocol revisions 2025-11-25, 2025-06-18,
+  2025-03-26, 2024-11-05 (the client's if known); tools only (no resources or prompts). Each call
+  is saved at once; `--build` adds `build` and `run_tests` with fixed commands. The editor reloads a
+  scene changed on disk when it has nothing unsaved.
+- **Default model** `qwen3:8b` (fits an 8 GB GPU); still to be measured on the task set in
+  `docs/testing/s5-agent-prompt.md` §4 against a larger model if the user has one.
+- Details: `plugins/ai-authoring/modules/agent/include/Agent.md`.
+
+## Open before implementing (status)
+
+- Which local model to recommend: default `qwen3:8b`; the measurement on the task set is the
+  user's Windows check (open).
+- MCP transport and revision: stdio, revisions above (done); HTTP later only if needed.

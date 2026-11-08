@@ -283,6 +283,9 @@ void Editor::Update(float deltaSeconds, umbra::core::DrawList &drawList)
     {
         diskCheckSeconds_ = 1.0F;
         changedOnDisk_ = scene_->ChangedOnDisk();
+        // Saved by another program (e.g. an agent through UmbraTool mcp) and nothing unsaved here: reload it.
+        if (changedOnDisk_ && !scene_->IsDirty())
+            pendingOpen_ = scenePath_;
     }
 
     // 2. A new document state (edit, undo, redo) means a new preview.

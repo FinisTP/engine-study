@@ -13,7 +13,7 @@ turns them on in `projects/<name>/project.json`; required plugins are added auto
 | `third-person` | Player, roaming enemies, physics bridge, interaction, areas; default sounds; the Music component |
 | `rpg-ui` | The game's screens (HUD, menus, conversation, fight, inventory, skills, quests), skin and fonts; assets only (`engine/ui/include/UI.md`) |
 | `learned-ai` | Learned turn-based enemy; `UmbraTool policy-check`; Python training |
-| `ai-authoring` | Editor/tool only: local AI quest drafts, textures, 3D models, music and sound effects |
+| `ai-authoring` | Editor/tool only: local AI quest drafts, textures, 3D models, music and sound effects; the agent prompt (Agent window, `UmbraTool agent`, `UmbraTool mcp`; S5) |
 | `web-export` | The browser build's page and scripts |
 | `android-export` | The Android app project (Gradle, SDL's Java activity) and `scripts\build-android.bat` (P11) |
 

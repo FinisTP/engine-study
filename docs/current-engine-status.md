@@ -1,7 +1,7 @@
 # Umbra Engine - Current Development Status
 
 **Status date:** 2026-11-08 (Phase 1/2 records dated 2026-09-02)
-**Current milestone:** P11 Android implemented (2026-11-08, ADR 0009; headless 48/48 GCC/Clang/ASan; Gradle/NDK build and emulator run on Windows open; S5 deferred by the user); S4 AI sound, music, turn menu and hotkeys implemented (2026-11-08, ADR 0007; headless 48/48 GCC/Clang/ASan, Windows check open); S3 gameplay UI framework implemented (ADR 0006; Windows check open); S1/S2 implemented (Windows checks open); P10 web export renders on the user's PC; P9 PC release gate: benchmark passed, remaining Windows runs open
+**Current milestone:** S5 agent prompt implemented (2026-11-08, ADR 0008, `#UMBRA-80`; headless 49/49 GCC/Clang/ASan; real-model task set and editor window on Windows open); P11 Android implemented (2026-11-08, ADR 0009; headless 48/48 GCC/Clang/ASan; Gradle/NDK build and emulator run on Windows open); S4 AI sound, music, turn menu and hotkeys implemented (2026-11-08, ADR 0007; headless 48/48 GCC/Clang/ASan, Windows check open); S3 gameplay UI framework implemented (ADR 0006; Windows check open); S1/S2 implemented (Windows checks open); P10 web export renders on the user's PC; P9 PC release gate: benchmark passed, remaining Windows runs open
 **Layout:** `engine/` base engine, `game/` base game, `projects/reference/{assets,engine,game}` (content moved from `assets/`)
 **Phase 1 status:** Complete (interactive checklist unsigned)
 **Phase 2 status:** Complete
@@ -14,6 +14,10 @@
 **P8C status:** Implemented. Headless tests verified on Linux (42/42, GCC/Clang/ASan) against a stand-in ComfyUI; no real ComfyUI/SDXL or GPU run yet (P8C.0 open); editor window not opened
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
+
+## Update 2026-11-08 (S5 agent prompt, `#UMBRA-80`)
+
+- `Umbra::Agent` (`plugins/ai-authoring/modules/agent`): 20 tools (read scenes/assets/components/RPG; change entities, components, RPG entries; generate textures, sounds, models) with JSON schemas, working-copy `Edits` validated by the game's loaders and committed as one undo step per document; `Planner` (local Ollama, schema-forced `look`/`steps` answer, dry run, fix rounds) and `Runner` (generators on a worker thread, stop at the first failure). Editor **Agent** window; `UmbraTool agent`; `UmbraTool mcp` (MCP stdio server, saved at once, optional build/tests). The ComfyUI generation pipelines moved into `localai::CreateTexture/Sound/Model`, shared with `UmbraTool texture/sound/model`. The editor reloads a scene changed on disk when nothing is unsaved. 49/49 GCC/Clang/ASan, plugin sets 37/37 and 33/33, 15/15 WebAssembly. Real-model task set on Windows open (`testing/s5-agent-prompt.md`).
 
 ## Update 2026-11-08 (P11 Android, `#UMBRA-79`)
 

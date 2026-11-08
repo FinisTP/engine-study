@@ -15,6 +15,7 @@ target_sources(
         src/TextureAssistant.cpp
         src/ModelAssistant.cpp
         src/SoundAssistant.cpp
+        src/Generate.cpp
         third_party/dr_flac.h
     PUBLIC
         FILE_SET HEADERS
@@ -26,6 +27,7 @@ target_sources(
             include/TextureAssistant.hpp
             include/ModelAssistant.hpp
             include/SoundAssistant.hpp
+            include/Generate.hpp
 )
 
 target_compile_features(UmbraLocalAi PUBLIC cxx_std_20)

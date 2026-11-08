@@ -149,6 +149,25 @@ setup and the math in `plugins/ai-authoring/modules/localai/include/SoundGen.md`
 
 The RPG content forms also have a **Sound** list for skills and items.
 
+## Agent (menu bar button, or View → Agent; roadmap S5)
+
+Ask for a change in plain words; a local Ollama model plans it with the agent tools
+(`plugins/ai-authoring/modules/agent/include/Agent.md`):
+
+1. Type the request ("put a well with a creaky sound next to the elder", "add a bread item that
+   heals 10"), pick the model (default `qwen3:8b`; first time: `ollama pull qwen3:8b`), **Plan**.
+2. The model may read the scene first; then the plan is shown step by step with its dry run:
+   green = checked on a copy, yellow = checked when it runs (generated files), red = fails
+   (the model was already asked to fix it and gave up).
+3. **Approve and run**: the steps run in order; generators (ComfyUI) can take minutes, **Stop**
+   cancels. A failed step stops the rest and nothing changes in the documents.
+4. All changes are **one undo step** (Ctrl+Z). Save keeps them. Generated files stay in the asset
+   folder either way.
+
+In the editor the agent changes only the open scene and the RPG content. External coding agents
+use the same tools through `UmbraTool mcp`; the editor reloads a scene they saved if it has no
+unsaved changes here.
+
 ## Game UI (View → Game UI; roadmap S3.6)
 
 Screen files (`ui/*.ui.json`, format in `engine/ui/include/UI.md`) are edited here with a live

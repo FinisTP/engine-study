@@ -96,3 +96,10 @@ wait, cancel and download are the same code as for pictures (`RunGraph`); `Model
 `ImageJob` are one `BatchJob` template. No time limit while ComfyUI has the job, size limit 256 MiB;
 a workflow whose model files aren't installed gives `ai.model` with ComfyUI's message. Only what
 the save node needs is run, and a job survives the editor closing. Details in `ModelGen.md`.
+
+## Whole generations (`Generate.hpp`)
+
+`CreateTexture`, `CreateSound` and `CreateModel` run a whole generation (find ComfyUI and the
+model, generate, finish, save with provenance, warn about seams and licenses) and return the new
+asset paths. `UmbraTool texture/sound/model` and the agent's `generate_*` tools (S5) both use
+them. They block: run them on a worker thread; `stop` cancels and `progress` reports.
