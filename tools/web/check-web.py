@@ -25,6 +25,7 @@ async def main():
         await page.goto(URL)
         check('game starts and draws frames', await ready(page))
         check('HUD shows the hero', 'HP 110/110' in await page.inner_text('#status'))
+        check('no HUD warnings (scene and content loaded)', (await page.inner_text('#warnings')).strip() == '', await page.inner_text('#warnings'))
         # (this container loses the WebGPU device, which shows the 'device lost' screen: hide it)
         await page.evaluate("document.getElementById('start').style.display='none'; document.getElementById('canvas').focus()")
         # Input: Tab switches the combat mode (GameFlow), shown in the HUD.
@@ -51,6 +52,13 @@ async def main():
         check('starts with the network off', started)
         await ctx.set_offline(False)
         check('no script errors', not errors, errors[:3])
+        # Mismatched files: umbra.data from another build -> a clear message, the game doesn't run.
+        ctx2 = await browser.new_context()  # no service worker from the first context
+        page2 = await ctx2.new_page()
+        await page2.route('**/umbra.data', lambda route: route.fulfill(body=b'RIFF' + b'\0' * 3259776, content_type='application/octet-stream'))
+        await page2.goto(URL); await page2.wait_for_timeout(5000)
+        text = await page2.inner_text('#start-text')
+        check('mismatched umbra.data: clear message', 'do not belong together' in text, text)
         await browser.close()
         # No WebGPU: a clear message, the game is not loaded.
         browser = await p.chromium.launch(executable_path='/usr/bin/google-chrome', headless=True, args=['--disable-features=WebGPU', '--disable-gpu', '--no-sandbox'])

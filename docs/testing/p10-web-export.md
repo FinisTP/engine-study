@@ -29,7 +29,7 @@
 |---|---|
 | Native (GCC, Clang, ASan) | 44/44 CTest each (nothing native changed behaviour) |
 | WebAssembly in Node: 13 headless suites (core, rpg, turn, real-time, encounter, story, game incl. the 300-fight run T74, policy incl. NumPy parity of the shipped model T29, world, assets, scene, physics, gameplay) | **13/13 pass** |
-| Headless Chrome (`tools/web/check-web.py`) | **9/9**: game starts and draws frames; HUD; keyboard (Tab → real time); pause menu as HTML; a saved file survives a reload (IndexedDB); "Ready offline"; starts with the network off; no script errors; no WebGPU → clear message, game not loaded |
+| Headless Chrome (`tools/web/check-web.py`) | **11/11** (after 3b): no HUD warnings; mismatched `umbra.data` refused; game starts and draws frames; HUD; keyboard (Tab → real time); pause menu as HTML; a saved file survives a reload (IndexedDB); "Ready offline"; starts with the network off; no script errors; no WebGPU → clear message, game not loaded |
 
 Sizes: `umbra.wasm` 5.8 MB, `umbra.data` 3.3 MB, `umbra.js` 0.25 MB.
 
@@ -54,6 +54,18 @@ Sizes: `umbra.wasm` 5.8 MB, `umbra.data` 3.3 MB, `umbra.js` 0.25 MB.
 - Audio through SDL's deprecated ScriptProcessor path; starts after the first click.
 - Built only with Emscripten 3.1.52 so far; Windows build with a current emsdk not tried.
 - Firefox/Safari not tested (not promised).
+
+## 3b. First run on the user's PC (2026-11-08)
+
+`scripts\serve-web.bat` showed "invalid JSON ... line 1, column 1": the `umbra.data` that had been
+copied to `out\web` was not the one from the build (3 265 546 bytes instead of 3 259 780): the
+tool that copies files from the cloud workspace to the user's PC rewrote this binary file (it
+decides by content; `umbra.wasm`, models and sounds arrived intact). The file offsets in
+`umbra.js` then pointed into the wrong data. Fixes: the data file was sent gzip-compressed,
+unpacked on the PC and checked byte for byte (SHA-256 equal); all binary assets in the repository
+were re-checked (equal; `sample_bricks.png` differs only by PNG re-encoding, known since P8C); the page now refuses mismatched files
+with a clear message (`onRuntimeInitialized` checks the content and scene files);
+`check-web.py` now also fails on any HUD warning and tests the mismatch message (11/11).
 
 ## 4. User checklist (Chrome or Edge on the user's PC)
 

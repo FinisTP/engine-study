@@ -117,6 +117,15 @@ var Module = {
       removeRunDependency('saves');
     });
   }],
+  // umbra.data must come from the same build as umbra.js (it holds the file offsets); a mixed copy
+  // would hand the game garbage, so stop with a clear message instead (seen 2026-11-08).
+  onRuntimeInitialized: () => {
+    const starts = (file) => { try { return FS.readFile(file, { encoding: 'utf8' }).trimStart()[0] === '{'; } catch (e) { return false; } };
+    if (!starts('/assets/rpg/reference.rpg.json') || !starts('/assets/scenes/settlement.scene.json')) {
+      Page.fatal('The game files do not belong together (umbra.data is from a different build than umbra.js). Copy all files of one build again.');
+      throw new Error('umbra.data does not match umbra.js');
+    }
+  },
   setStatus: (text) => { if (text) $('start-text').textContent = text; },
   monitorRunDependencies: (left) => { if (left === 0) { $('start-text').textContent = 'Ready.'; $('play').hidden = false; } },
   onHud: (json) => Page.hud(json),
