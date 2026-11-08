@@ -15,6 +15,7 @@ namespace umbra::game
         hero_ = *rpg::MakeCharacter(content_, "hero", "hero"); // the content must define "hero"
         quests_ = story::QuestLog(content_);
         mode_ = AvailableMode();
+        hotkeys_.clear(); // the game fills in its default keys
         conversation_.reset();
         enemies_.clear();
         phase_ = Phase::Exploring;
@@ -156,7 +157,7 @@ namespace umbra::game
     {
         if (phase_ != Phase::Exploring)
             return std::nullopt; // only at a safe boundary
-        return SaveData{scene, feet, yaw, hero_, quests_.All(), mode_};
+        return SaveData{scene, feet, yaw, hero_, quests_.All(), mode_, hotkeys_};
     }
 
     void GameSession::ApplySave(const SaveData &data)
@@ -167,6 +168,7 @@ namespace umbra::game
         hero_.statuses.clear();
         quests_.Restore(data.quests);
         mode_ = data.mode;
+        hotkeys_ = data.hotkeys;
         conversation_.reset();
         enemies_.clear();
         updates_.clear();

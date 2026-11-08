@@ -1,6 +1,7 @@
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(httplib CONFIG REQUIRED)
 find_package(Threads REQUIRED)
+find_package(Vorbis CONFIG REQUIRED) # libvorbisenc: generated music -> .ogg (tool only)
 
 add_library(UmbraLocalAi STATIC)
 add_library(Umbra::LocalAi ALIAS UmbraLocalAi)
@@ -13,6 +14,8 @@ target_sources(
         src/ComfyUi.cpp
         src/TextureAssistant.cpp
         src/ModelAssistant.cpp
+        src/SoundAssistant.cpp
+        third_party/dr_flac.h
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
@@ -22,6 +25,7 @@ target_sources(
             include/ComfyUi.hpp
             include/TextureAssistant.hpp
             include/ModelAssistant.hpp
+            include/SoundAssistant.hpp
 )
 
 target_compile_features(UmbraLocalAi PUBLIC cxx_std_20)
@@ -34,9 +38,11 @@ target_link_libraries(
         Umbra::Authoring
         Umbra::QuestDraft
         Umbra::Assets
+        Umbra::Audio
         Threads::Threads
     PRIVATE
         httplib::httplib
+        Vorbis::vorbisenc
         nlohmann_json::nlohmann_json
         Umbra::Warnings
         Umbra::Sanitizers

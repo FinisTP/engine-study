@@ -93,6 +93,7 @@ namespace umbra::rpg
         RealtimeTiming timing;
         int pointCost = 0;                 // skill points to unlock
         std::vector<std::string> prerequisites; // skills that must be unlocked first ("requires" in JSON)
+        std::string sound;                 // played when it hits (asset path; the game reads it, rules never do)
     };
 
     enum class Slot
@@ -110,6 +111,7 @@ namespace umbra::rpg
         int maxStack = 1;
         std::vector<Modifier> modifiers; // while equipped
         std::vector<EffectDef> use;      // consumed on use (on self) when not empty
+        std::string sound;               // played when it is used (asset path)
     };
 
     struct ItemCount final

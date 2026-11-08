@@ -6,6 +6,8 @@
 #include <Document.hpp>
 #include <ModelTools.hpp>
 #include <DrawList.hpp>
+#include <AudioDevice.hpp>
+#include <Mixer.hpp>
 #include <World.hpp>
 
 #include <glm/mat4x4.hpp>
@@ -65,6 +67,8 @@ public:
     void RescanAssets() override { ScanAssets(); }
     std::vector<std::string> AssetList(const std::string &group) const override;
     void Reveal(const std::string &what, int index) override;
+    void PlaySound(std::shared_ptr<const umbra::audio::AudioClip> clip) override;
+    void StopSounds() override { mixer_.StopAll(); }
 
 private:
     // --- Edits (all go through the documents) ---
@@ -157,4 +161,6 @@ private:
     mutable std::map<std::string, std::optional<umbra::authoring::ModelInfo>> modelBounds_; // FitCollider cache
     umbra::core::MeshHandle gridMesh_; // the ground grid (depth-tested)
     std::vector<std::unique_ptr<umbra::editor::EditorPanel>> panels_; // from plugins
+    umbra::audio::Mixer mixer_;             // sound previews (AI sound window); declared before the device
+    umbra::platform::AudioDevice audio_;    // opened on the first preview
 };

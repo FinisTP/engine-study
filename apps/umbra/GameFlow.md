@@ -8,10 +8,10 @@ Everything it decides is about input, placement and what the screens show.
 
 | Phase     | Player moves?            | Keys                                         | Screen (`ui/*.ui.json`)        |
 |-----------|--------------------------|----------------------------------------------|--------------------------------|
-| Exploring | yes                      | E use, Tab switch combat mode, I/K/J inventory/skills/quests, Esc pause | `hud`         |
+| Exploring | yes                      | E use, Tab switch combat mode, I/K/J/H inventory/skills/quests/hotkeys, Esc pause | `hud` |
 | Talking   | no                       | W/S (or mouse, d-pad) + Enter answer, Esc walk away | `conversation`          |
-| Fighting (turn) | no (stands on its arena marker) | W/S + Enter pick an action, Flee       | `fight`, enemy HP on `hud`     |
-| Fighting (real time) | yes             | 1-4 skills, Q potion, F flee                 | key help, enemy HP on `hud`    |
+| Fighting (turn) | no (stands on its arena marker) | Attack → move → target arrow, Item, Flee | `fight`, `fight-moves`, `fight-target`, `fight-items` |
+| Fighting (real time) | yes             | 1-4 hotkeys (skills or items, set with H), F flee | hotkey bar, enemy HP on `hud` |
 | Dead      | no                       | W/S + Enter                                  | `death`                        |
 | Start menu (launch, a save exists) | no      | W/S + Enter                                  | `start`                        |
 
@@ -65,7 +65,16 @@ quests open with I, K and J while exploring, or from the pause screen. The actio
 
 ## Turn fights
 
-On the hero's turn the menu lists `TurnEncounter::LegalActions()` ("Wait" last) plus Flee.
+On the hero's turn the menu has three steps, all built from `TurnEncounter::LegalActions()`, so
+everything offered is legal:
+
+1. `fight`: Attack, Item (greyed out with no usable item), Flee.
+2. `fight-moves`: each attack skill once (with its energy cost); `fight-items`: each usable item.
+3. `fight-target`: an arrow over each fighter the chosen attack may hit. The arrows' screen
+   points come from projecting a point above each fighter's head with the scene camera
+   (`GameUi::ScreenPoint`); left/right or the mouse moves between them, Enter attacks.
+
+Esc steps back one menu (`back`). An item acts at once.
 Enemy turns wait 0.7 s, then `ChooseTurnAction` decides, through the same `Submit` as the
 player. Everything goes through `EncounterCoordinator::Submit` with a fresh decision id.
 
@@ -75,11 +84,22 @@ Each frame:
 
 1. Placement: the player's feet and facing, and each enemy roamer's feet and facing, go into
    `RealtimeEncounter::SetPlacement`. Movement belongs to physics; the fight only reads it.
-2. Player keys start actions: 1-4 are the hero's unlocked real-time skills in alphabetical
-   order, Q uses the first usable item in the bag.
+2. Player keys start actions: 1-4 use what is on that hotkey, a skill or an item. The
+   hotkeys screen (H, or the pause menu) sets them; they are kept in saves. A new game (or an
+   older save) starts with the first three real-time skills and a potion on key 4.
 3. Each living enemy asks `ChooseRealtimeAction`; its `move` becomes the roamer's velocity
    order (2.5 m/s), its `act` is submitted.
 4. `Update(seconds)` advances wind-ups, hits and cooldowns.
+
+## Music and fight sounds (S4)
+
+- Music: each scene's **Music** component (third-person plugin) names a looping `.ogg`. When the
+  live scene changes (portal, the arena, restart) `Main.cpp` crossfades to the new scene's track
+  over 1.5 s; a scene without one fades the music out. Fights happen in the arena scene, so its
+  track is the battle music.
+- Sounds: every hit plays the skill's `"sound"` from the RPG content, or `audio/hit.wav`; using an
+  item plays its `"sound"` if it has one. GameFlow collects them while reading fight events
+  (`TakeSounds`) and `Main.cpp` plays them on the game bus (paused with the game).
 
 ## Saves
 

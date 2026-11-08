@@ -44,6 +44,8 @@ namespace umbra::game
 
         // Combat mode is chosen outside combat only (user decision 2026-11-07).
         [[nodiscard]] CombatMode Mode() const noexcept { return mode_; }
+        // Real-time keys 1-4 ("skill:<id>", "item:<id>" or ""), kept in saves.
+        [[nodiscard]] std::vector<std::string> &Hotkeys() noexcept { return hotkeys_; }
         bool ToggleMode();
 
         // --- Conversations ---
@@ -81,6 +83,7 @@ namespace umbra::game
         rpg::Character hero_;
         story::QuestLog quests_;
         CombatMode mode_ = AvailableMode();
+        std::vector<std::string> hotkeys_;
         std::unique_ptr<story::Conversation> conversation_;
         encounter::EncounterCoordinator combat_;
         std::vector<rpg::Character> enemies_;

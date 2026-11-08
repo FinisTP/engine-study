@@ -1,9 +1,9 @@
 {
   "format": "umbra.ui", "version": 1, "modal": true,
-  "root": { "type": "stack", "anchor": "bottom-right", "offset": [-24, -24], "style": "panel", "size": [380, 0], "align": "stretch", "gap": 8, "children": [
+  "root": { "type": "stack", "anchor": "bottom-right", "offset": [-24, -24], "style": "panel", "size": [300, 0], "align": "stretch", "gap": 8, "children": [
     { "type": "text", "style": "heading", "text": "Round {fight.round} - your turn" },
-    { "type": "list", "items": "{fight.actions}", "as": "action", "gap": 2, "action": "act", "arg": "{index}",
-      "entry": { "type": "text", "style": "entry", "text": "{action}" } },
+    { "type": "button", "text": "Attack", "action": "attack" },
+    { "type": "button", "text": "Item", "action": "items", "disabled": "{fight.noItems}" },
     { "type": "button", "text": "Flee", "action": "flee" }
   ] }
 }

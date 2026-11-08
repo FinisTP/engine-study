@@ -215,3 +215,43 @@ TEST_CASE("Inventory and skill screens send the game's actions (S3.5)")
     CHECK(skills.contains("unlock fireball"));
     CHECK_FALSE(skills.contains("unlock meteor")); // locked
 }
+
+TEST_CASE("Turn menu: Attack -> move -> target arrow at its point; hotkeys screen (S4 UI)")
+{
+    ui::UiSystem uiSystem;
+    std::vector<core::Diagnostic> diagnostics;
+    const assets::AssetFolders folders(UMBRA_RPG_UI_ASSETS);
+    REQUIRE(uiSystem.Load(folders, diagnostics));
+    std::ifstream in(folders / "ui/sample.json");
+    const json sample = json::parse(in, nullptr, false);
+    core::UiDrawList draw;
+    // One frame of input on a screen (after one frame of layout); returns "action arg" strings.
+    const auto press = [&](const std::string &screen, const ui::UiInput &input) {
+        uiSystem.Open(screen);
+        uiSystem.ResetFocus(screen);
+        draw.Clear();
+        uiSystem.Update(sample, {1280, 720}, {}, draw);
+        draw.Clear();
+        std::vector<std::string> out;
+        for (const ui::UiAction &a : uiSystem.Update(sample, {1280, 720}, input, draw))
+            out.push_back(a.action + " " + a.arg);
+        uiSystem.Close(screen);
+        return out;
+    };
+    ui::UiInput confirm;
+    confirm.confirm = true;
+    CHECK(press("fight", confirm) == std::vector<std::string>{"attack "});
+    CHECK(press("fight-moves", confirm) == std::vector<std::string>{"move strike"});
+    ui::UiInput back;
+    back.back = true;
+    CHECK(press("fight-target", back) == std::vector<std::string>{"back "});
+
+    // The second arrow stands above its point (760, 320): a click just above the point picks it.
+    ui::UiInput click;
+    click.mouse = {760.0F, 305.0F};
+    click.mouseMoved = click.click = true;
+    CHECK(press("fight-target", click) == std::vector<std::string>{"target 2"});
+
+    // Hotkeys: the first choice is key 1.
+    CHECK(press("hotkeys", confirm) == std::vector<std::string>{"slot 0"});
+}

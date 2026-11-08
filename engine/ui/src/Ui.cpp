@@ -21,6 +21,7 @@ namespace umbra::ui
         std::vector<std::pair<std::string, const json *>> scopes; // list entries: "item" -> its value
         std::vector<int> indices;    // their positions, for "{index}"
         std::optional<State> entryState; // the state of the next list entry's root widget
+        State inherited = State::Normal; // a focused or disabled entry's state, seen by the widgets inside it
 
         // "hero.health" -> the value: list entry names first, then the data; nullptr if missing.
         const json *Lookup(const std::string &path) const
@@ -255,6 +256,8 @@ namespace umbra::ui
             }
             (vertical ? content.y : content.x) += node.gap * static_cast<float>(std::max(0, shown - 1));
         }
+        else if (node.type == "list" && node.entry && !node.entry->at.empty())
+            content = {0.0F, 0.0F}; // entries placed at points on the screen take no room here
         else if (node.type == "list" && node.entry)
         {
             // Cells are as big as the biggest entry; a grid has `columns` per row.
@@ -297,9 +300,10 @@ namespace umbra::ui
         const std::optional<State> entryState = std::exchange(c.entryState, std::nullopt);
         if (!node.visible.empty() && !c.Truthy(node.visible))
             return;
-        // 1. State: disabled, focused (a button the player is on), selected, or a list entry's.
+        // 1. State: disabled, focused (a button the player is on), selected, a list entry's, or
+        //    the state of the entry this widget is inside (so an arrow can light up with its entry).
         const bool disabled = !node.disabled.empty() && c.Truthy(node.disabled);
-        State state = entryState.value_or(!node.selected.empty() && c.Truthy(node.selected) ? State::Selected : State::Normal);
+        State state = entryState.value_or(!node.selected.empty() && c.Truthy(node.selected) ? State::Selected : c.inherited);
         if (node.type == "button" && !disabled)
         {
             if (c.input && static_cast<int>(c.choices.size()) == c.focus)
@@ -309,6 +313,8 @@ namespace umbra::ui
         if (disabled)
             state = State::Disabled;
         const Style style = skin_.Get(DefaultStyle(node), state);
+        const State outer = std::exchange(c.inherited, state);
+        struct Restore { Context &c; State state; ~Restore() { c.inherited = state; } } restore{c, outer};
         DrawBox(style, rect, c);
         const Rect inner = Inset(rect, style.padding);
 
@@ -382,15 +388,26 @@ namespace umbra::ui
                 c.scopes.pop_back();
                 c.indices.pop_back();
             }
+            const bool atPoints = !node.entry->at.empty(); // e.g. arrows over enemies in the scene
             const std::size_t columns = node.direction == "horizontal" ? std::max<std::size_t>(count, 1) : static_cast<std::size_t>(node.columns);
             if (node.columns == 1 && node.direction == "vertical")
                 cell.x = inner.w; // a single column fills the width
-            c.painter.PushClip(rect);
+            if (!atPoints)
+                c.painter.PushClip(rect);
             for (std::size_t i = 0; i < count; ++i)
             {
                 c.scopes.push_back({node.as, &items[i]});
                 c.indices.push_back(static_cast<int>(i));
-                const Rect r{inner.x + static_cast<float>(i % columns) * (cell.x + node.gap), inner.y + static_cast<float>(i / columns) * (cell.y + node.gap), cell.x, cell.y};
+                Rect r{inner.x + static_cast<float>(i % columns) * (cell.x + node.gap), inner.y + static_cast<float>(i / columns) * (cell.y + node.gap), cell.x, cell.y};
+                if (atPoints)
+                {
+                    // Centered above the point: its own size, bottom edge on the point.
+                    const json point = c.Value(node.entry->at);
+                    const glm::vec2 size = Measure(*node.entry, c, inner.w);
+                    const bool ok = point.is_array() && point.size() == 2 && point[0].is_number() && point[1].is_number();
+                    const glm::vec2 p = ok ? glm::vec2{point[0].get<float>(), point[1].get<float>()} : glm::vec2{-10000.0F};
+                    r = {std::round(p.x - size.x * 0.5F), std::round(p.y - size.y), size.x, size.y};
+                }
                 const bool entryDisabled = !node.entry->disabled.empty() && c.Truthy(node.entry->disabled);
                 if (!node.action.empty() && !entryDisabled)
                 {
@@ -404,7 +421,8 @@ namespace umbra::ui
                 c.scopes.pop_back();
                 c.indices.pop_back();
             }
-            c.painter.PopClip();
+            if (!atPoints)
+                c.painter.PopClip();
         }
     }
 
@@ -459,7 +477,7 @@ namespace umbra::ui
             const Screen &screen = screens_.at(name);
             if (screen.dim)
                 painter.Fill(view, skin_.Dim());
-            Context c{data, painter, name == target, focus_[name], {}, {}, {}, {}};
+            Context c{data, painter, name == target, focus_[name], {}, {}, {}, {}, State::Normal};
             Place(screen.root, AnchorRect(view, Measure(screen.root, c, view.w), screen.root.anchor, screen.root.offset), c);
             choices_[name] = std::move(c.choices);
         }

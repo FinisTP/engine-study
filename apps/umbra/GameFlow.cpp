@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <set>
 
 using umbra::platform::InputKey;
 namespace rpg = umbra::rpg;
@@ -295,6 +296,8 @@ void GameFlow::StartFight(std::size_t roamer)
     log_ = {"A fight with " + std::to_string(group.size()) + (group.size() == 1 ? " enemy!" : " enemies!")};
     policyFor_ = static_cast<std::size_t>(-1);
     enemyDelay_ = enemyTurnDelay;
+    fightStep_.clear();
+    pendingSkill_.clear();
 }
 
 void GameFlow::Act(rpg::ActionIntent intent, bool player)
@@ -373,20 +376,11 @@ void GameFlow::UpdateRealtimeFight(const umbra::platform::Input &input, float de
         fight->SetPlacement(i + 1, {feet.x, feet.z}, roamers[fighters_[i]].yaw);
     }
 
-    // 2. The player: 1-4 use skills, Q drinks a potion, F flees.
-    const std::vector<std::string> skills = RealtimeSkills();
+    // 2. The player: keys 1-4 use what the hotkeys screen put on them (H), F flees.
     const InputKey keys[] = {InputKey::Num1, InputKey::Num2, InputKey::Num3, InputKey::Num4};
-    for (std::size_t i = 0; i < 4 && i < skills.size(); ++i)
+    for (std::size_t i = 0; i < 4; ++i)
         if (input.IsKeyPressed(keys[i]))
-            Act(rpg::ActionIntent{0, 0, skills[i], "", 0}, true);
-    if (input.IsKeyPressed(InputKey::Q))
-    {
-        const std::string potion = PotionItem();
-        if (potion.empty())
-            Say("No potions left");
-        else
-            Act(rpg::ActionIntent{0, 0, "", potion, 0}, true);
-    }
+            UseHotkey(i);
     if (input.IsKeyPressed(InputKey::F))
         return Flee();
 
@@ -418,19 +412,24 @@ void GameFlow::ReadEvents(const rpg::Events &events)
         std::string line;
         switch (e.kind)
         {
-        case rpg::EventKind::Damage:
+        case rpg::EventKind::Damage: {
             line = FighterName(e.actor) + " hit " + FighterName(e.target) + " for " + std::to_string(e.amount);
+            const rpg::SkillDef *skill = session_.Content().FindSkill(e.what);
+            sounds_.push_back(skill && !skill->sound.empty() ? skill->sound : "audio/hit.wav");
             // Feedback: whoever was hit flashes red.
             if (e.target == 0)
                 scene_.Flash(scene_.GetWorld().Find("player"));
             else if (e.target <= fighters_.size() && scene_.Roamers()[fighters_[e.target - 1]].alive)
                 scene_.Flash(scene_.Roamers()[fighters_[e.target - 1]].visual);
             break;
+        }
         case rpg::EventKind::Heal:
             line = FighterName(e.target) + " healed " + std::to_string(e.amount);
             break;
         case rpg::EventKind::ItemUsed:
             line = FighterName(e.actor) + " used " + ItemList(session_.Content(), {{e.what, 1}});
+            if (const rpg::ItemDef *item = session_.Content().FindItem(e.what); item && !item->sound.empty())
+                sounds_.push_back(item->sound);
             break;
         case rpg::EventKind::StatusApplied:
             line = FighterName(e.target) + " is affected by " + e.what;
@@ -576,6 +575,17 @@ std::string GameFlow::FighterName(std::size_t index)
     return (actor ? actor->name : (*roster)[index].character->actor) + " " + std::to_string(index);
 }
 
+std::vector<float> GameFlow::FighterHead(std::size_t index)
+{
+    // Roster 0 is the hero; enemy i stands where its arena roamer is.
+    glm::vec3 feet{0.0F};
+    if (index == 0)
+        feet = scene_.GetPlayer().GetFeet(scene_.GetPhysics());
+    else if (index - 1 < fighters_.size())
+        feet = scene_.RoamerFeet(fighters_[index - 1]);
+    return {feet.x, feet.y + 2.1F, feet.z};
+}
+
 std::string GameFlow::ActionName(const rpg::ActionIntent &intent)
 {
     if (!intent.item.empty())
@@ -621,6 +631,58 @@ std::string GameFlow::PotionItem()
     return {};
 }
 
+std::vector<std::string> &GameFlow::Hotkeys()
+{
+    // A new game (or an old save) gets the default set: the real-time skills, a potion on the last key.
+    std::vector<std::string> &keys = session_.Hotkeys();
+    if (keys.empty())
+    {
+        keys.clear();
+        for (const std::string &skill : RealtimeSkills())
+            if (keys.size() < 3)
+                keys.push_back("skill:" + skill);
+        if (const std::string potion = PotionItem(); !potion.empty())
+            keys.push_back("item:" + potion);
+    }
+    keys.resize(4);
+    return keys;
+}
+
+nlohmann::json GameFlow::HotkeyEntry(const std::string &key)
+{
+    const rpg::Content &content = session_.Content();
+    if (key.starts_with("skill:"))
+    {
+        const rpg::SkillDef *skill = content.FindSkill(key.substr(6));
+        return {{"id", key}, {"name", skill ? skill->name : key.substr(6)}, {"kind", "Skill"},
+                {"detail", skill && skill->energyCost > 0 ? std::to_string(skill->energyCost) + " EN" : ""}};
+    }
+    if (key.starts_with("item:"))
+    {
+        const rpg::ItemDef *item = content.FindItem(key.substr(5));
+        return {{"id", key}, {"name", item ? item->name : key.substr(5)}, {"kind", "Item"},
+                {"detail", "x" + std::to_string(rpg::CountItem(session_.Hero(), key.substr(5)))}};
+    }
+    return {{"id", ""}, {"name", "(empty)"}, {"kind", ""}, {"detail", ""}};
+}
+
+void GameFlow::UseHotkey(std::size_t slot)
+{
+    // Through the same rules as everything else; the fight says why it can't (no energy, cooldown...).
+    const std::string key = Hotkeys()[slot];
+    if (key.starts_with("skill:"))
+        Act(rpg::ActionIntent{0, 0, key.substr(6), "", 0}, true);
+    else if (key.starts_with("item:"))
+    {
+        if (rpg::CountItem(session_.Hero(), key.substr(5)) <= 0)
+            Say("None left: " + HotkeyEntry(key)["name"].get<std::string>());
+        else
+            Act(rpg::ActionIntent{0, 0, "", key.substr(5), 0}, true);
+    }
+    else
+        Say("Nothing on key " + std::to_string(slot + 1) + " (H: hotkeys)");
+}
+
 std::string GameFlow::Screen() const
 {
     // The game screen this moment needs (the rpg-ui plugin's screens; ui/README.md there).
@@ -636,7 +698,7 @@ std::string GameFlow::Screen() const
 #if UMBRA_PLUGIN_TURN_COMBAT
         if (umbra::turn::TurnEncounter *turn = const_cast<game::GameSession &>(session_).Combat().Turn())
             if (turn->Current() && *turn->Current() == 0)
-                return "fight";
+                return fightStep_.empty() ? "fight" : "fight-" + fightStep_;
 #endif
         return {};
     case game::Phase::Exploring:
@@ -663,16 +725,36 @@ bool GameFlow::HandleUi(const std::string &screen, const std::string &action, co
             Restart();
     }
 #if UMBRA_PLUGIN_TURN_COMBAT
-    else if (screen == "fight")
+    else if (screen.starts_with("fight"))
     {
+        // The hero's turn: Attack -> a move -> a target arrow, or Item -> an item, or Flee.
+        // "back" steps back one menu. Only legal actions are offered, so a choice always fits.
         umbra::turn::TurnEncounter *turn = session_.Combat().Turn();
+        const auto choose = [&](const auto &fits) {
+            for (const rpg::ActionIntent &intent : turn->LegalActions())
+                if (fits(intent))
+                {
+                    Act(intent, true);
+                    enemyDelay_ = enemyTurnDelay;
+                    fightStep_.clear();
+                    return;
+                }
+        };
         if (action == "flee" || turn == nullptr)
             Flee();
-        else if (const std::vector<rpg::ActionIntent> legal = turn->LegalActions(); number() < legal.size())
+        else if (action == "attack" || action == "items")
+            fightStep_ = action == "attack" ? "moves" : "items";
+        else if (action == "back")
+            fightStep_ = fightStep_ == "target" ? "moves" : "";
+        else if (action == "move")
         {
-            Act(legal[number()], true);
-            enemyDelay_ = enemyTurnDelay;
+            pendingSkill_ = arg;
+            fightStep_ = "target";
         }
+        else if (action == "target")
+            choose([&](const rpg::ActionIntent &i) { return i.item.empty() && i.skill == pendingSkill_ && i.target == number(); });
+        else if (action == "item")
+            choose([&](const rpg::ActionIntent &i) { return i.item == arg; });
     }
 #endif
     else if (screen == "inventory" && session_.GetPhase() == game::Phase::Exploring)
@@ -682,6 +764,17 @@ bool GameFlow::HandleUi(const std::string &screen, const std::string &action, co
             Say("That can't be equipped");
         if (action == "unequip" && !rpg::Unequip(session_.Content(), hero, arg == "weapon" ? rpg::Slot::Weapon : rpg::Slot::Armor))
             Say("Your bags are full");
+    }
+    else if (screen == "hotkeys")
+    {
+        // Pick a key, then what goes on it ("" clears it).
+        if (action == "slot")
+            hotkeySlot_ = std::min<std::size_t>(number(), 3);
+        else if (action == "assign")
+        {
+            Hotkeys()[hotkeySlot_] = arg;
+            Say("Key " + std::to_string(hotkeySlot_ + 1) + ": " + HotkeyEntry(arg)["name"].get<std::string>());
+        }
     }
     else if (screen == "skills" && action == "unlock" && session_.GetPhase() == game::Phase::Exploring)
     {
@@ -799,27 +892,60 @@ nlohmann::json GameFlow::UiData()
         if (umbra::turn::TurnEncounter *turn = session_.Combat().Turn())
         {
             fight["round"] = turn->Round();
+            // The turn menu: each attack and item once, then the targets of the chosen attack.
+            json moves = json::array(), items = json::array(), targets = json::array();
+            std::set<std::string> seen;
             for (const rpg::ActionIntent &intent : turn->LegalActions())
-                fight["actions"].push_back(ActionName(intent));
+            {
+                if (!intent.item.empty() && seen.insert("i:" + intent.item).second)
+                {
+                    const rpg::ItemDef *item = content.FindItem(intent.item);
+                    items.push_back({{"id", intent.item}, {"name", item ? item->name : intent.item}, {"count", rpg::CountItem(hero, intent.item)}});
+                }
+                else if (intent.item.empty() && !intent.skill.empty() && seen.insert("s:" + intent.skill).second)
+                {
+                    const rpg::SkillDef *skill = content.FindSkill(intent.skill);
+                    moves.push_back({{"id", intent.skill}, {"name", skill ? skill->name : intent.skill},
+                                     {"cost", skill && skill->energyCost > 0 ? std::to_string(skill->energyCost) + " EN" : ""}});
+                }
+                if (intent.item.empty() && intent.skill == pendingSkill_)
+                    targets.push_back({{"index", intent.target}, {"name", FighterName(intent.target)}, {"world", FighterHead(intent.target)}});
+            }
+            fight["moves"] = moves;
+            fight["items"] = items;
+            fight["noItems"] = items.empty();
+            fight["targets"] = targets;
+            if (const rpg::SkillDef *skill = content.FindSkill(pendingSkill_))
+                fight["move"] = skill->name;
             if (const std::optional<std::size_t> current = turn->Current(); current && *current != 0)
                 data["prompt"] = FighterName(*current) + " is acting...";
         }
         else
 #endif
-        {
-            const std::vector<std::string> skills = RealtimeSkills();
-            std::string keys;
-            for (std::size_t i = 0; i < 4 && i < skills.size(); ++i)
-            {
-                const rpg::SkillDef *skill = content.FindSkill(skills[i]);
-                keys += "[" + std::to_string(i + 1) + "] " + (skill ? skill->name : skills[i]) + "   ";
-            }
-            fight["keys"] = keys + "[Q] potion   [F] flee";
-        }
+            fight["realtime"] = true; // the HUD shows the hotkey bar
         data["fight"] = fight;
     }
 
-    // 7. The start menu: Continue (newest save), the other save if both exist, New game.
+    // 7. Hotkeys: the four keys, and what can go on them (real-time skills learned, usable items).
+    data["hotkeys"] = json::array();
+    const std::vector<std::string> &keys = Hotkeys();
+    for (std::size_t i = 0; i < keys.size(); ++i)
+    {
+        json entry = HotkeyEntry(keys[i]);
+        entry["key"] = std::to_string(i + 1);
+        entry["slot"] = i;
+        entry["chosen"] = i == hotkeySlot_;
+        data["hotkeys"].push_back(entry);
+    }
+    data["assignables"] = json::array();
+    for (const std::string &skill : RealtimeSkills())
+        data["assignables"].push_back(HotkeyEntry("skill:" + skill));
+    for (const rpg::ItemStack &stack : hero.inventory)
+        if (const rpg::ItemDef *item = content.FindItem(stack.item); item && !item->use.empty())
+            data["assignables"].push_back(HotkeyEntry("item:" + stack.item));
+    data["hotkeySlot"] = std::to_string(hotkeySlot_ + 1);
+
+    // 8. The start menu: Continue (newest save), the other save if both exist, New game.
     data["start"]["items"] = json::array({{{"label", "Continue"}, {"action", "continue"}}});
     if (std::filesystem::exists(slots_.Manual()) && std::filesystem::exists(slots_.Autosave()))
         data["start"]["items"].push_back({{"label", "Load the other save"}, {"action", "other"}});

@@ -3,6 +3,7 @@
 #include <AssetFolders.hpp>
 
 #include <Diagnostic.hpp>
+#include <Ogg.hpp>
 #include <Wav.hpp>
 
 #include <filesystem>
@@ -21,16 +22,22 @@ namespace umbra::audio
     public:
         explicit SoundBank(assets::AssetFolders assetRoot) : assetRoot_(std::move(assetRoot)) {}
 
-        [[nodiscard]] std::shared_ptr<const AudioClip> Get(const std::string &path);
+        [[nodiscard]] std::shared_ptr<const AudioClip> Get(const std::string &path); // .wav or .ogg, decoded
+        [[nodiscard]] std::shared_ptr<const MusicTrack> GetMusic(const std::string &path); // .ogg, kept compressed
         // Problems found since the last call.
         [[nodiscard]] std::vector<core::Diagnostic> TakeDiagnostics();
         // Forgets every clip. Clips still playing stay alive until their voice ends.
-        void Clear() { clips_.clear(); }
+        void Clear()
+        {
+            clips_.clear();
+            music_.clear();
+        }
         [[nodiscard]] std::size_t Count() const noexcept { return clips_.size(); }
 
     private:
         assets::AssetFolders assetRoot_; // project, then plugins
         std::map<std::string, std::shared_ptr<const AudioClip>> clips_; // nullptr = failed, don't retry
+        std::map<std::string, std::shared_ptr<const MusicTrack>> music_;
         std::vector<core::Diagnostic> diagnostics_;
     };
 }

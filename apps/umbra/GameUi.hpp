@@ -6,6 +6,7 @@
 #include <Ui.hpp>
 
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -27,6 +28,9 @@ public:
     // The one game screen the RPG asks for ("" = none); the previous one closes.
     void ShowGameScreen(const std::string &screen);
     [[nodiscard]] const std::string &GameScreen() const { return gameScreen_; }
+
+    // Where a point of the world is on the screen, in pixels (nullopt when behind the camera).
+    [[nodiscard]] static std::optional<glm::vec2> ScreenPoint(const umbra::core::Camera &camera, glm::vec2 pixels, glm::vec3 world);
 
     // Input for this frame. `windowSize` and `pixels` turn window mouse coordinates into pixels.
     [[nodiscard]] static umbra::ui::UiInput MapInput(const umbra::platform::Input &input, glm::vec2 windowSize, glm::vec2 pixels);

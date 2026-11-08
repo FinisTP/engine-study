@@ -44,13 +44,16 @@ public:
     bool Interact(const umbra::world::Interactable &interactable);
     // A portal brought the player to a new area: autosave there.
     void OnAreaEntered();
-    // The game screen this moment needs ("start", "conversation", "fight", "death" or ""), the
+    // The game screen this moment needs ("start", "conversation", "fight", "fight-moves",
+    // "fight-items", "fight-target", "death" or ""), the
     // data every screen binds to, and what the player chose on one (true if it was a game screen).
     [[nodiscard]] std::string Screen() const;
     [[nodiscard]] nlohmann::json UiData();
     bool HandleUi(const std::string &screen, const std::string &action, const std::string &arg);
     // News for the screen (quest changes, saves, fight results); empty when nothing new.
     std::string TakeMessage() { return std::exchange(message_, {}); }
+    // Sounds the fights asked for since the last call (a skill's or item's "sound", else a hit).
+    std::vector<std::string> TakeSounds() { return std::exchange(sounds_, {}); }
 
 private:
     void UpdateExploring(const umbra::platform::Input &input);
@@ -73,10 +76,14 @@ private:
 
     [[nodiscard]] const umbra::rpg::Roster *FightRoster();
     [[nodiscard]] std::string FighterName(std::size_t index);
+    [[nodiscard]] std::vector<float> FighterHead(std::size_t index); // a point above a fighter, for target arrows
     [[nodiscard]] std::string ActionName(const umbra::rpg::ActionIntent &intent);
     [[nodiscard]] std::vector<std::string> RealtimeSkills();
     [[nodiscard]] std::string LearnedTag(std::size_t index);
     [[nodiscard]] std::string PotionItem();
+    std::vector<std::string> &Hotkeys();                // keys 1-4, with the default set filled in on a new game
+    [[nodiscard]] nlohmann::json HotkeyEntry(const std::string &key); // label and details of "skill:x" / "item:x"
+    void UseHotkey(std::size_t slot);
     void Say(const std::string &text);
 
     umbra::rpg::Content &content_;
@@ -92,6 +99,10 @@ private:
     std::vector<std::size_t> fighters_; // arena roamer index of each enemy (roster index - 1)
     int fightGeneration_ = 0;          // the world the fight started in
     float enemyDelay_ = 0.0F;          // turn fights: pause before an enemy acts
+    std::string fightStep_;            // the hero's turn menu: "" (Attack/Item/Flee), "moves", "items", "target"
+    std::string pendingSkill_;         // the attack chosen, waiting for its target
+    std::size_t hotkeySlot_ = 0;       // the key being set on the hotkeys screen
+    std::vector<std::string> sounds_;  // for TakeSounds
     float contactCooldown_ = 0.0F;     // after fleeing, touching an enemy does nothing for a moment
     std::vector<std::string> log_;     // recent fight lines
     std::string message_;

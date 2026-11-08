@@ -3,6 +3,9 @@
 #include <Log.hpp>
 #include <TextureTools.hpp>
 
+#include <glm/ext/matrix_clip_space.hpp>
+#include <glm/ext/matrix_transform.hpp>
+
 GameUi::GameUi(umbra::render::Renderer &renderer, const umbra::assets::AssetFolders &assets) : renderer_(renderer), assets_(assets)
 {
     // 1. Skin, fonts and screens; problems go to the log and the warnings in the corner.
@@ -55,6 +58,19 @@ void GameUi::ShowGameScreen(const std::string &screen)
         ui_.Open(screen);
         ui_.ResetFocus(screen);
     }
+}
+
+std::optional<glm::vec2> GameUi::ScreenPoint(const umbra::core::Camera &camera, glm::vec2 pixels, glm::vec3 world)
+{
+    // 1. World -> clip space with the camera the scene is drawn with.
+    const glm::mat4 view = glm::lookAtRH(camera.position, camera.target, glm::vec3{0.0F, 1.0F, 0.0F});
+    const glm::mat4 projection = glm::perspectiveRH_NO(glm::radians(camera.fovYDegrees), pixels.x / std::max(pixels.y, 1.0F), camera.nearPlane, camera.farPlane);
+    const glm::vec4 clip = projection * view * glm::vec4(world, 1.0F);
+    if (clip.w <= 0.0F)
+        return std::nullopt;
+    // 2. Divide by w (normalized -1..1), then to pixels; screen y grows downward.
+    const glm::vec2 ndc = glm::vec2(clip) / clip.w;
+    return glm::vec2{(ndc.x * 0.5F + 0.5F) * pixels.x, (0.5F - ndc.y * 0.5F) * pixels.y};
 }
 
 umbra::ui::UiInput GameUi::MapInput(const umbra::platform::Input &input, glm::vec2 windowSize, glm::vec2 pixels)

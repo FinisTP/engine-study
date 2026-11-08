@@ -32,6 +32,15 @@ TEST_CASE("Invalid definitions are rejected with a code and nothing is loaded")
     REQUIRE(broken.content.skills.empty()); // all or nothing
 }
 
+TEST_CASE("Skills and items may name a sound for the game; rules ignore it")
+{
+    const auto p = Parse(R"("skills":[{"id":"a","modes":["turn"],"sound":"audio/sfx/slash.wav"}],"items":[{"id":"x","sound":"audio/sfx/gulp.wav"}])");
+    REQUIRE(p.ok);
+    REQUIRE(p.content.FindSkill("a")->sound == "audio/sfx/slash.wav");
+    REQUIRE(p.content.FindItem("x")->sound == "audio/sfx/gulp.wav");
+    REQUIRE_FALSE(p.Has("field.unknown"));
+}
+
 TEST_CASE("A status without the clock of a mode that uses it fails validation")
 {
     // Turn-only status used by a real-time skill: rejected, not silently converted.

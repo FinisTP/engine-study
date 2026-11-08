@@ -1,0 +1,9 @@
+{
+  "format": "umbra.ui", "version": 1, "modal": true, "back": "back",
+  "root": { "type": "stack", "anchor": "bottom-right", "offset": [-24, -24], "style": "panel", "size": [340, 0], "align": "stretch", "gap": 8, "children": [
+    { "type": "text", "style": "heading", "text": "Item" },
+    { "type": "list", "items": "{fight.items}", "as": "item", "gap": 2, "action": "item", "arg": "{item.id}",
+      "entry": { "type": "text", "style": "entry", "text": "{item.name}  x{item.count}" } },
+    { "type": "text", "style": "muted", "text": "Enter: use   Esc: back" }
+  ] }
+}

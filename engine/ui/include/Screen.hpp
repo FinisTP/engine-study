@@ -32,6 +32,7 @@ namespace umbra::ui
         std::string image;                // asset path (may contain bindings)
         std::string action, arg;          // button or list entry: what the game gets when it is chosen
         std::string items, as = "item";   // list: an array binding and the name of each entry
+        std::string at;                   // list entry: "{target.at}" = [x, y] pixels; the entry sits centered above that point
         std::unique_ptr<Node> entry;      // list: the widget drawn for each entry
         std::vector<Node> children;
     };

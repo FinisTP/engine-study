@@ -566,6 +566,23 @@ bool SceneRuntime::LeaveArena()
     return true;
 }
 
+std::pair<std::string, float> SceneRuntime::Music() const
+{
+    // The first entity with a "music" component decides (fields as JSON text, Components.md).
+    std::pair<std::string, float> music{"", 0.0F};
+    world_->ForEach([&](umbra::world::Entity entity) {
+        if (const auto *customs = world_->GetCustoms(entity); customs && music.first.empty())
+            for (const umbra::world::CustomComponent &custom : *customs)
+                if (custom.type == "music")
+                {
+                    const nlohmann::json data = nlohmann::json::parse(custom.data, nullptr, false);
+                    if (data.is_object())
+                        music = {data.value("track", ""), data.value("volume", 0.7F)};
+                }
+    });
+    return music;
+}
+
 void SceneRuntime::Flash(umbra::world::Entity entity)
 {
     constexpr float seconds = 0.2F;

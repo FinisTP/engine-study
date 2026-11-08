@@ -1,0 +1,13 @@
+{
+  "format": "umbra.ui", "version": 1, "modal": true, "back": "back",
+  "root": { "type": "panel", "anchor": "fill", "style": "layer", "children": [
+    { "type": "list", "items": "{fight.targets}", "as": "target", "action": "target", "arg": "{target.index}",
+      "entry": { "type": "stack", "style": "target", "at": "{target.at}", "align": "center", "gap": 2, "children": [
+        { "type": "text", "style": "target-name", "text": "{target.name}" },
+        { "type": "image", "style": "target-arrow", "image": "ui/images/target-arrow.png" }
+      ] } },
+    { "type": "stack", "anchor": "bottom", "offset": [0, -24], "style": "prompt", "children": [
+      { "type": "text", "text": "{fight.move}: choose a target   Left/Right   Enter   Esc: back" }
+    ] }
+  ] }
+}

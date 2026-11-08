@@ -60,6 +60,7 @@ namespace umbra::game
                   {"skillPoints", h.skillPoints}, {"skills", h.skills}, {"inventorySlots", h.inventorySlots},
                   {"inventory", Stacks(h.inventory)}, {"pending", Stacks(h.pending)}, {"equipment", equipment}}},
                 {"quests", quests},
+                {"hotkeys", d.hotkeys},
             };
         }
 
@@ -114,6 +115,15 @@ namespace umbra::game
             {
                 return fail("save.field", std::string("missing or wrong field: ") + e.what());
             }
+            // Hotkeys are a preference: older saves have none, and a key whose skill or item is gone is
+            // cleared instead of refusing the save.
+            if (const auto it = p.find("hotkeys"); it != p.end() && it->is_array())
+                for (const json &key : *it)
+                {
+                    const std::string text = key.is_string() ? key.get<std::string>() : "";
+                    const bool known = (text.starts_with("skill:") && content.FindSkill(text.substr(6))) || (text.starts_with("item:") && content.FindItem(text.substr(5)));
+                    d.hotkeys.push_back(known ? text : "");
+                }
 
             // Every id must still exist in the content: a save from content that changed since
             // (renamed item, removed quest) is refused instead of loading half a world.

@@ -1,6 +1,20 @@
 {
-  "hero": {"name": "Hero", "level": 3, "health": 84, "maxHealth": 130, "energy": 22, "maxEnergy": 40, "xp": 180, "nextXp": 250,
-           "skillPoints": 2, "stats": {"attack": 18, "defense": 11, "speed": 12}},
+  "hero": {
+    "name": "Hero",
+    "level": 3,
+    "health": 84,
+    "maxHealth": 130,
+    "energy": 22,
+    "maxEnergy": 40,
+    "xp": 180,
+    "nextXp": 250,
+    "skillPoints": 2,
+    "stats": {
+      "attack": 18,
+      "defense": 11,
+      "speed": 12
+    }
+  },
   "mode": "turn-based",
   "switchHint": "   [Tab] switch",
   "exploring": true,
@@ -9,31 +23,229 @@
   "message": "Picked up a healing potion.",
   "warnings": [],
   "quests": [
-    {"name": "The Old Well", "description": "Something stirs below the village well.", "state": "Active", "objective": "Look inside the well"},
-    {"name": "First Steps", "description": "Learn the ways of the settlement.", "state": "Completed", "objective": ""}
+    {
+      "name": "The Old Well",
+      "description": "Something stirs below the village well.",
+      "state": "Active",
+      "objective": "Look inside the well"
+    },
+    {
+      "name": "First Steps",
+      "description": "Learn the ways of the settlement.",
+      "state": "Completed",
+      "objective": ""
+    }
   ],
-  "activeQuests": [{"name": "The Old Well", "objective": "Look inside the well"}],
+  "activeQuests": [
+    {
+      "name": "The Old Well",
+      "objective": "Look inside the well"
+    }
+  ],
   "noQuests": false,
   "inventory": [
-    {"id": "iron_sword", "name": "Iron Sword", "count": 1, "cannotEquip": false, "hint": "Weapon - choose to equip"},
-    {"id": "leather_armor", "name": "Leather Armor", "count": 1, "cannotEquip": false, "hint": "Armor - choose to equip"},
-    {"id": "healing_potion", "name": "Healing Potion", "count": 3, "cannotEquip": true, "hint": "Use it in fights"}
+    {
+      "id": "iron_sword",
+      "name": "Iron Sword",
+      "count": 1,
+      "cannotEquip": false,
+      "hint": "Weapon - choose to equip"
+    },
+    {
+      "id": "leather_armor",
+      "name": "Leather Armor",
+      "count": 1,
+      "cannotEquip": false,
+      "hint": "Armor - choose to equip"
+    },
+    {
+      "id": "healing_potion",
+      "name": "Healing Potion",
+      "count": 3,
+      "cannotEquip": true,
+      "hint": "Use it in fights"
+    }
   ],
   "bagUsed": 3,
   "bagSize": 12,
   "equipment": [
-    {"slot": "weapon", "label": "Weapon", "name": "Rusty Dagger"},
-    {"slot": "armor", "label": "Armor", "name": "(nothing)"}
+    {
+      "slot": "weapon",
+      "label": "Weapon",
+      "name": "Rusty Dagger"
+    },
+    {
+      "slot": "armor",
+      "label": "Armor",
+      "name": "(nothing)"
+    }
   ],
   "skills": [
-    {"id": "strike", "name": "Strike", "unlocked": true, "locked": false, "state": "Learned", "detail": "0 EN, both modes"},
-    {"id": "fireball", "name": "Fireball", "unlocked": false, "locked": false, "state": "Unlock for 1 point(s)", "detail": "8 EN, both modes"},
-    {"id": "meteor", "name": "Meteor", "unlocked": false, "locked": true, "state": "Needs 3 point(s) and its requirements", "detail": "20 EN, turn-based, needs Fireball"}
+    {
+      "id": "strike",
+      "name": "Strike",
+      "unlocked": true,
+      "locked": false,
+      "state": "Learned",
+      "detail": "0 EN, both modes"
+    },
+    {
+      "id": "fireball",
+      "name": "Fireball",
+      "unlocked": false,
+      "locked": false,
+      "state": "Unlock for 1 point(s)",
+      "detail": "8 EN, both modes"
+    },
+    {
+      "id": "meteor",
+      "name": "Meteor",
+      "unlocked": false,
+      "locked": true,
+      "state": "Needs 3 point(s) and its requirements",
+      "detail": "20 EN, turn-based, needs Fireball"
+    }
   ],
-  "talk": {"speaker": "Elder", "text": "The well has been quiet for years. Lately, at night, we hear scratching from below.",
-           "choices": ["I will look into it.", "What is down there?"], "leaveOnly": false},
-  "fight": {"log": ["Hero hits Wolf for 12.", "Wolf bites Hero for 6."],
-            "enemies": [{"name": "Wolf", "health": 18, "maxHealth": 40, "tag": ""}, {"name": "Wolf 2", "health": 40, "maxHealth": 40, "tag": "  (learned AI)"}],
-            "actions": ["Attack Wolf", "Attack Wolf 2", "Fireball (8 EN)", "Healing Potion"], "round": 2, "keys": ""},
-  "start": {"items": [{"label": "Continue", "action": "continue"}, {"label": "New game", "action": "new"}]}
+  "talk": {
+    "speaker": "Elder",
+    "text": "The well has been quiet for years. Lately, at night, we hear scratching from below.",
+    "choices": [
+      "I will look into it.",
+      "What is down there?"
+    ],
+    "leaveOnly": false
+  },
+  "fight": {
+    "log": [
+      "Hero hits Wolf for 12.",
+      "Wolf bites Hero for 6."
+    ],
+    "enemies": [
+      {
+        "name": "Wolf",
+        "health": 18,
+        "maxHealth": 40,
+        "tag": ""
+      },
+      {
+        "name": "Wolf 2",
+        "health": 40,
+        "maxHealth": 40,
+        "tag": "  (learned AI)"
+      }
+    ],
+    "round": 2,
+    "keys": "",
+    "moves": [
+      {
+        "id": "strike",
+        "name": "Strike",
+        "cost": ""
+      },
+      {
+        "id": "fireball",
+        "name": "Fireball",
+        "cost": "8 EN"
+      }
+    ],
+    "items": [
+      {
+        "id": "healing_potion",
+        "name": "Healing Potion",
+        "count": 3
+      }
+    ],
+    "noItems": false,
+    "move": "Strike",
+    "targets": [
+      {
+        "index": 1,
+        "name": "Wolf 1",
+        "at": [
+          560,
+          300
+        ]
+      },
+      {
+        "index": 2,
+        "name": "Wolf 2",
+        "at": [
+          760,
+          320
+        ]
+      }
+    ],
+    "realtime": false
+  },
+  "start": {
+    "items": [
+      {
+        "label": "Continue",
+        "action": "continue"
+      },
+      {
+        "label": "New game",
+        "action": "new"
+      }
+    ]
+  },
+  "hotkeys": [
+    {
+      "key": "1",
+      "slot": 0,
+      "chosen": true,
+      "id": "skill:strike",
+      "name": "Strike",
+      "kind": "Skill",
+      "detail": ""
+    },
+    {
+      "key": "2",
+      "slot": 1,
+      "chosen": false,
+      "id": "skill:fireball",
+      "name": "Fireball",
+      "kind": "Skill",
+      "detail": "8 EN"
+    },
+    {
+      "key": "3",
+      "slot": 2,
+      "chosen": false,
+      "id": "",
+      "name": "(empty)",
+      "kind": "",
+      "detail": ""
+    },
+    {
+      "key": "4",
+      "slot": 3,
+      "chosen": false,
+      "id": "item:healing_potion",
+      "name": "Healing Potion",
+      "kind": "Item",
+      "detail": "x3"
+    }
+  ],
+  "assignables": [
+    {
+      "id": "skill:strike",
+      "name": "Strike",
+      "kind": "Skill",
+      "detail": ""
+    },
+    {
+      "id": "skill:fireball",
+      "name": "Fireball",
+      "kind": "Skill",
+      "detail": "8 EN"
+    },
+    {
+      "id": "item:healing_potion",
+      "name": "Healing Potion",
+      "kind": "Item",
+      "detail": "x3"
+    }
+  ],
+  "hotkeySlot": "1"
 }

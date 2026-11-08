@@ -81,6 +81,35 @@ namespace umbra::localai
     // Blocking: uploads the picture, runs the workflow, downloads the GLB its save node wrote.
     ModelResult GenerateModel(const ModelRequest &request, CancelToken &cancel);
 
+    // --- Music and sound effects (S4): ACE-Step 1.5 or Stable Audio 3, both native ComfyUI nodes ---
+
+    struct AudioRequest final
+    {
+        std::string host = "http://127.0.0.1:8000";
+        std::string model = "ace_step_1.5_turbo_aio.safetensors"; // "ace" in the name: ACE-Step; else Stable Audio 3
+        std::string textEncoder = "t5gemma_b_b_ul2.safetensors";   // Stable Audio 3 only (models/text_encoders)
+        std::string prompt;  // style tags / description, with the project's style already added
+        float seconds = 30.0F;
+        long long seed = 0;
+        int bpm = 100;                  // ACE-Step only
+        std::string keyscale = "D minor"; // ACE-Step only
+        int timeoutSeconds = 120;
+        std::size_t maxBytes = 128 * 1024 * 1024;
+    };
+
+    struct AudioResult final
+    {
+        bool ok = false;
+        std::vector<std::uint8_t> file; // what ComfyUI saved (FLAC)
+        AudioRequest request;
+        std::vector<core::Diagnostic> diagnostics;
+    };
+
+    // The graph for one run (SoundGen.md): checkpoint -> text -> sampler -> VAE -> PreviewAudio.
+    [[nodiscard]] nlohmann::json AudioWorkflow(const AudioRequest &request);
+    // Blocking: queues the graph, waits, downloads the FLAC file it made.
+    AudioResult GenerateAudio(const AudioRequest &request, CancelToken &cancel);
+
     // --- Discovery ---
 
     // Checkpoint files ComfyUI can load (GET /object_info/CheckpointLoaderSimple). 2 s at most.
@@ -157,4 +186,5 @@ namespace umbra::localai
 
     using ImageJob = BatchJob<ImageRequest, ImageResult, GenerateImage>;
     using ModelJob = BatchJob<ModelRequest, ModelResult, GenerateModel>;
+    using AudioJob = BatchJob<AudioRequest, AudioResult, GenerateAudio>;
 }

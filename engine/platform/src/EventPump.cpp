@@ -101,6 +101,8 @@ namespace
             return InputKey::K;
         case SDL_SCANCODE_J:
             return InputKey::J;
+        case SDL_SCANCODE_H:
+            return InputKey::H;
         default:
             return InputKey::Unknown;
         }

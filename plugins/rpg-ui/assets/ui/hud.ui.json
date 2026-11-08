@@ -28,8 +28,13 @@
     { "type": "stack", "anchor": "bottom", "offset": [0, -40], "align": "center", "gap": 10, "children": [
       { "type": "text", "style": "strong", "text": "{message}", "visible": "{message}", "wrap": true, "size": [720, 0], "textAlign": "center" },
       { "type": "text", "style": "prompt", "text": "{prompt}", "visible": "{prompt}" },
-      { "type": "text", "style": "prompt", "text": "{fight.keys}", "visible": "{fight.keys}" },
-      { "type": "text", "style": "muted", "text": "[I] Inventory   [K] Skills   [J] Quests   [Esc] Menu", "visible": "{exploring}" }
+      { "type": "list", "items": "{hotkeys}", "as": "hk", "direction": "horizontal", "gap": 6, "visible": "{fight.realtime}",
+        "entry": { "type": "stack", "style": "slot", "size": [128, 0], "children": [
+          { "type": "text", "style": "muted", "text": "[{hk.key}]  {hk.detail}" },
+          { "type": "text", "text": "{hk.name}" }
+        ] } },
+      { "type": "text", "style": "muted", "text": "[F] Flee", "visible": "{fight.realtime}" },
+      { "type": "text", "style": "muted", "text": "[I] Inventory   [K] Skills   [J] Quests   [H] Hotkeys   [Esc] Menu", "visible": "{exploring}" }
     ] }
   ] }
 }

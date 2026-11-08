@@ -1,6 +1,7 @@
 # Audio
 
-Small on purpose: load short WAV clips, add them together, hand the result to the sound card.
+Small on purpose: load short WAV or Ogg clips, stream Ogg music, add it all together, hand the
+result to the sound card.
 `Umbra::Audio` has no SDL dependency (it is tested headless). The SDL device lives in
 `engine/platform` (`AudioDevice`) and only pulls mixed samples from the `Mixer`.
 
@@ -9,7 +10,17 @@ SoundBank (files -> AudioClip, cached)  --shared_ptr-->  Mixer::Play  (game thre
                                                           Mixer::Mix   (SDL audio thread) -> device
 ```
 
-## The one supported file format
+## Supported files
+
+Every sound runs at 48000 Hz (`mixRate`), so the mixer never resamples. Two containers:
+
+- **WAV**, 16-bit PCM (below): short sounds, nothing to decode.
+- **Ogg Vorbis** (`.ogg`, decoded by stb_vorbis): music, and optionally short sounds. 48000 Hz,
+  mono or stereo; other rates are refused with the reason. A short `.ogg` is decoded at once by
+  `SoundBank::Get`; music (`SoundBank::GetMusic`) stays compressed in memory (a 3-minute loop
+  is ~3 MB instead of ~70 MB of float samples) and is decoded while it plays.
+
+### WAV
 
 | Field | Required value |
 |---|---|
@@ -40,6 +51,27 @@ then clamp each to -1..1
 
 The clamp matters: several loud clips can sum past 1, and converting that to 16-bit would wrap
 around into loud clicks. Clamping just flattens the peak (mild distortion, no clicks).
+
+## Music
+
+`Mixer::PlayMusic(track, volume, fadeSeconds)` plays one looping track. Each playing track is a
+stream: a `MusicDecoder` (stb_vorbis reading from the track's bytes) and a gain that moves toward a
+target by a fixed step per frame:
+
+```
+step = start gain / (fadeSeconds * 48000)        (frames to fade over)
+per block of n frames: gain moves by step * n toward its target, ramped sample by sample
+```
+
+A new track starts at gain 0 with target `volume` while every older stream gets target 0: a
+crossfade. A stream that has faded to 0 is dropped. `PlayMusic(nullptr)` fades everything out;
+asking for the track that is already playing only changes its volume. At the end of the file the
+decoder seeks back to the start, so a track loops; AI-made music is made to loop without a jump
+(`plugins/ai-authoring/modules/localai/include/SoundGen.md`). Music keeps playing while the game is
+paused and is not stopped by `StopAll` (that is for sound effects).
+
+The game picks the track from the live scene's **Music** component (third-person plugin): when
+the scene changes (portal, arena, restart) it crossfades over 1.5 s.
 
 ## Lifetimes and threads
 

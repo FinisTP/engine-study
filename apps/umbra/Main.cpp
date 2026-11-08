@@ -149,14 +149,18 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 				umbra::platform::AudioDevice audioDevice;
 				(void)audioDevice.Open(mixer); // without a device the game runs silently
 				std::vector<std::string> soundProblems;
-				const auto play = [&](const std::string &path, float volume, umbra::audio::Bus bus) {
-					mixer.Play(sounds.Get(path), volume, bus);
+				const auto reportSounds = [&] {
 					for (const umbra::core::Diagnostic &problem : sounds.TakeDiagnostics())
 					{
 						umbra::diagnostics::Error(umbra::core::Format(problem));
 						soundProblems.push_back("Warning: sound " + problem.file + ": " + problem.message);
 					}
 				};
+				const auto play = [&](const std::string &path, float volume, umbra::audio::Bus bus) {
+					mixer.Play(sounds.Get(path), volume, bus);
+					reportSounds();
+				};
+				int musicGeneration = -1; // the scene whose music is playing
 
 				ModelLibrary models(renderer, folders.assets, folders.cache);
 				SceneRuntime scene(models, folders.assets, scenePath);
@@ -192,7 +196,7 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 						gameUi.Screens().Close("pause");
 				};
 				const auto frozen = [&] {
-					for (const char *screen : {"pause", "inventory", "skills", "quests"})
+					for (const char *screen : {"pause", "inventory", "skills", "quests", "hotkeys"})
 						if (gameUi.Screens().IsOpen(screen))
 							return true;
 					return false;
@@ -303,7 +307,7 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 							play("audio/ui_click.wav", 0.6F, umbra::audio::Bus::Ui);
 						}
 						else if (flow && flow->IsExploring())
-							for (const auto &[key, screen] : {std::pair{InputKey::I, "inventory"}, std::pair{InputKey::K, "skills"}, std::pair{InputKey::J, "quests"}})
+							for (const auto &[key, screen] : {std::pair{InputKey::I, "inventory"}, std::pair{InputKey::K, "skills"}, std::pair{InputKey::J, "quests"}, std::pair{InputKey::H, "hotkeys"}})
 								if (input.IsKeyPressed(key))
 								{
 									gameUi.Screens().Open(screen);
@@ -315,12 +319,25 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 						play("audio/ui_click.wav", 0.3F, umbra::audio::Bus::Ui);
 
 					// Playing: keyboard and mouse -> player intent -> fixed-step simulation.
+					// Music: each scene's "music" component; a new scene (portal, arena, restart) crossfades.
+					if (scene.Generation() != musicGeneration)
+					{
+						musicGeneration = scene.Generation();
+						const auto [track, volume] = scene.Music();
+						mixer.PlayMusic(track.empty() ? nullptr : sounds.GetMusic(track), volume, 1.5F);
+						reportSounds();
+					}
+
 					const umbra::world::Interactable *focused = nullptr;
 					if (!frozen())
 					{
 						SpinEntity(scene.GetWorld(), "spinner", static_cast<float>(deltaTime) * glm::radians(45.0F));
 						if (flow)
+						{
 							flow->Update(input, static_cast<float>(deltaTime));
+							for (const std::string &sound : flow->TakeSounds()) // hits, skills, items
+								play(sound, 0.8F, umbra::audio::Bus::Game);
+						}
 						const bool canMove = !flow || flow->PlayerCanMove();
 						scene.GetWorld().UpdateTransforms();
 
@@ -430,6 +447,14 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 					extractTime.Add(section.Lap());
 					// The screens: the RPG's data plus the prompt, news and asset problems; then what was chosen.
 					nlohmann::json uiData = flow ? flow->UiData() : nlohmann::json::object();
+					// Target arrows: each target's point above its head, on the screen.
+					if (uiData.contains("fight") && uiData["fight"].contains("targets"))
+						for (nlohmann::json &target : uiData["fight"]["targets"])
+						{
+							const auto world = target["world"].get<std::vector<float>>();
+							if (const auto at = GameUi::ScreenPoint(drawList.camera, {static_cast<float>(pixelWidth), static_cast<float>(pixelHeight)}, {world[0], world[1], world[2]}))
+								target["at"] = {at->x, at->y};
+						}
 					if (focused != nullptr && !uiData.contains("prompt") && (!flow || flow->IsExploring()))
 						uiData["prompt"] = "[E] " + focused->prompt;
 					if (messageSeconds > 0.0F)

@@ -3,7 +3,7 @@ find_package(httplib CONFIG REQUIRED)
 
 # The Ollama bridge against a stand-in server on 127.0.0.1 (no real model needed).
 add_executable(UmbraLocalAiTests)
-target_sources(UmbraLocalAiTests PRIVATE OllamaTests.cpp ComfyUiTests.cpp QuestDraftTests.cpp)
+target_sources(UmbraLocalAiTests PRIVATE OllamaTests.cpp ComfyUiTests.cpp QuestDraftTests.cpp SoundGenTests.cpp)
 target_include_directories(UmbraLocalAiTests PRIVATE ${PROJECT_SOURCE_DIR}/tests)
 target_compile_definitions(UmbraLocalAiTests PRIVATE UMBRA_TEST_ASSET_DIRECTORY="${UMBRA_REFERENCE_ASSETS}" UMBRA_TEST_DATA_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/data" UMBRA_TEST_LOCALAI_DATA="${CMAKE_CURRENT_SOURCE_DIR}/data")
 target_compile_features(UmbraLocalAiTests PRIVATE cxx_std_20)
@@ -49,6 +49,13 @@ add_test(
     COMMAND UmbraTool texture "mossy stone" --assets ${CMAKE_CURRENT_BINARY_DIR}/texture-assets --host http://images.example.com:8188 --json
 )
 set_tests_properties(Umbra.Tool.TextureLocalOnly PROPERTIES PASS_REGULAR_EXPRESSION "ai.host")
+
+# AI sound (S4): only a ComfyUI on this computer is ever asked.
+add_test(
+    NAME Umbra.Tool.SoundLocalOnly
+    COMMAND UmbraTool sound "battle drums" --kind music --assets ${CMAKE_CURRENT_BINARY_DIR}/sound-assets --host http://audio.example.com:8188 --json
+)
+set_tests_properties(Umbra.Tool.SoundLocalOnly PROPERTIES PASS_REGULAR_EXPRESSION "ai.host")
 
 # AI models (P8D): without an exported workflow the tool says how to make one.
 add_test(

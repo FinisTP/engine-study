@@ -459,6 +459,72 @@ namespace umbra::localai
         return result;
     }
 
+    Json AudioWorkflow(const AudioRequest &r)
+    {
+        auto node = [](const char *type, Json inputs) { return Json{{"class_type", type}, {"inputs", std::move(inputs)}}; };
+        const bool ace = r.model.find("ace") != std::string::npos;
+        if (ace)
+        {
+            // ACE-Step 1.5 (ComfyUI's template): its language model plans the piece, the DiT makes the
+            // sound; "[Instrumental]" lyrics = no singing. Turbo: 8 steps, CFG 1.
+            return Json{
+                {"1", node("CheckpointLoaderSimple", {{"ckpt_name", r.model}})},
+                {"2", node("ModelSamplingAuraFlow", {{"shift", 3}, {"model", {"1", 0}}})},
+                {"3", node("TextEncodeAceStepAudio1.5", {{"clip", {"1", 1}}, {"tags", r.prompt}, {"lyrics", "[Instrumental]"}, {"seed", r.seed},
+                                                         {"bpm", r.bpm}, {"duration", r.seconds}, {"timesignature", "4"}, {"language", "en"},
+                                                         {"keyscale", r.keyscale}, {"generate_audio_codes", true}, {"cfg_scale", 2.0},
+                                                         {"temperature", 0.85}, {"top_p", 0.9}, {"top_k", 0}, {"min_p", 0.0}})},
+                {"4", node("ConditioningZeroOut", {{"conditioning", {"3", 0}}})},
+                {"5", node("EmptyAceStep1.5LatentAudio", {{"seconds", r.seconds}, {"batch_size", 1}})},
+                {"6", node("KSampler", {{"seed", r.seed}, {"steps", 8}, {"cfg", 1.0}, {"sampler_name", "euler"}, {"scheduler", "simple"}, {"denoise", 1.0},
+                                        {"model", {"2", 0}}, {"positive", {"3", 0}}, {"negative", {"4", 0}}, {"latent_image", {"5", 0}}})},
+                {"7", node("VAEDecodeAudio", {{"samples", {"6", 0}}, {"vae", {"1", 2}}})},
+                {"8", node("PreviewAudio", {{"audio", {"7", 0}}})}, // a temporary file: nothing piles up in ComfyUI's output
+            };
+        }
+        // Stable Audio 3: a "base" checkpoint takes 50 steps at CFG 7; the distilled ones 8 at CFG 1.
+        const bool base = r.model.find("base") != std::string::npos;
+        return Json{
+            {"1", node("CheckpointLoaderSimple", {{"ckpt_name", r.model}})},
+            {"2", node("CLIPLoader", {{"clip_name", r.textEncoder}, {"type", "stable_audio"}, {"device", "default"}})},
+            {"3", node("CLIPTextEncode", {{"text", r.prompt}, {"clip", {"2", 0}}})},
+            {"4", node("CLIPTextEncode", {{"text", ""}, {"clip", {"2", 0}}})},
+            {"5", node("EmptyLatentAudio", {{"seconds", r.seconds}, {"batch_size", 1}})},
+            {"6", node("KSampler", {{"seed", r.seed}, {"steps", base ? 50 : 8}, {"cfg", base ? 7.0 : 1.0}, {"sampler_name", "lcm"}, {"scheduler", "simple"},
+                                    {"denoise", 1.0}, {"model", {"1", 0}}, {"positive", {"3", 0}}, {"negative", {"4", 0}}, {"latent_image", {"5", 0}}})},
+            {"7", node("VAEDecodeAudio", {{"samples", {"6", 0}}, {"vae", {"1", 2}}})},
+            {"8", node("PreviewAudio", {{"audio", {"7", 0}}})},
+        };
+    }
+
+    AudioResult GenerateAudio(const AudioRequest &request, CancelToken &cancel)
+    {
+        // The preview node's file: ComfyUI lists it under "audio" (older builds: "audios").
+        const Pick preview = [](const Json &outputs) {
+            const Json out = outputs.value("8", Json::object());
+            for (const char *key : {"audio", "audios"})
+                if (const Json list = out.value(key, Json::array()); list.is_array() && !list.empty())
+                    return list[0];
+            return Json();
+        };
+        const auto missing = [&](const std::string &why) {
+            if (why.find("ckpt_name") != std::string::npos)
+                return "ComfyUI has no model '" + request.model + "'. Put it in ComfyUI's models/checkpoints folder (SoundGen.md), or pick an installed one.";
+            if (why.find("clip_name") != std::string::npos)
+                return "ComfyUI has no text encoder '" + request.textEncoder + "' (models/text_encoders), which Stable Audio 3 needs.";
+            if (why.find("TextEncodeAceStepAudio1.5") != std::string::npos || why.find("does not exist") != std::string::npos)
+                return "This ComfyUI is too old for ACE-Step 1.5 / Stable Audio 3: update it. (" + why + ")";
+            return std::string();
+        };
+        Run run = RunGraph(request.host, AudioWorkflow(request), cancel, request.timeoutSeconds, request.maxBytes, preview, missing);
+        AudioResult result;
+        result.request = request;
+        result.diagnostics = run.diagnostics;
+        result.ok = run.ok;
+        result.file.assign(run.bytes.begin(), run.bytes.end());
+        return result;
+    }
+
     std::vector<std::string> ListCheckpoints(const std::string &url, std::vector<core::Diagnostic> &diagnostics)
     {
         std::string host;

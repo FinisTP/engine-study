@@ -181,6 +181,24 @@ The HUD and every menu are files in `ui/` (the `rpg-ui` plugin has the reference
 Without the editor: `UmbraTool ui-preview hud inventory --assets projects/reference/assets --out
 inventory.png` draws screens into a picture.
 
+## 2f. Make music and sound effects with AI
+
+One-time: in ComfyUI put `ace_step_1.5_turbo_aio.safetensors` in `models/checkpoints` (music),
+and for effects `stable_audio_3_medium_base.safetensors` there plus `t5gemma_b_b_ul2.safetensors`
+in `models/text_encoders`. Start ComfyUI.
+
+1. In the editor: **AI sound** (menu bar). Choose Music or Sound effect and describe it ("calm
+   village theme, lute and flute", "heavy sword slash").
+2. **Generate**, **Play** the variations, **Keep** the one you like.
+3. Music: open the scene and press **Use as this scene's music**. Battle music: open
+   `scenes/arena.scene.json` and do the same there. Effects: pick the skill or item under
+   **For** and press **Use**.
+4. Save, then **Play**: the music crossfades when you walk through a portal or start a fight.
+
+Without the editor: `UmbraTool sound "calm village theme" --kind music --assets
+projects/reference/assets`. Stable Audio 3 is free to use commercially only below USD 1M yearly
+revenue; the window shows each model's license and the `.source.json` records it.
+
 ## 3. Find a planted error
 
 Open `projects\reference\assets\rpg\reference.rpg.json` in a text editor. In the hero's `inventory`, change

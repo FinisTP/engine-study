@@ -93,7 +93,7 @@ namespace umbra::rpg
             });
 
             r.Objects(root, "skills", "", [&](const json &s, const std::string &at) {
-                r.Known(s, at, {"id", "name", "cost", "target", "effects", "modes", "realtime", "points", "requires"});
+                r.Known(s, at, {"id", "name", "cost", "target", "effects", "modes", "realtime", "points", "requires", "sound"});
                 SkillDef def{r.String(s, "id", at), r.String(s, "name", at)};
                 def.energyCost = r.Int(s, "cost", 0, 0, maxValue, at);
                 const std::string target = r.String(s, "target", at);
@@ -129,11 +129,12 @@ namespace umbra::rpg
                 }
                 def.pointCost = r.Int(s, "points", 0, 0, 100, at);
                 def.prerequisites = r.Strings(s, "requires", at);
+                def.sound = r.String(s, "sound", at);
                 Insert(r, c.skills, def, at);
             });
 
             r.Objects(root, "items", "", [&](const json &s, const std::string &at) {
-                r.Known(s, at, {"id", "name", "slot", "stack", "modifiers", "use"});
+                r.Known(s, at, {"id", "name", "slot", "stack", "modifiers", "use", "sound"});
                 ItemDef def{r.String(s, "id", at), r.String(s, "name", at)};
                 const std::string slot = r.String(s, "slot", at);
                 if (slot == "weapon")
@@ -145,6 +146,7 @@ namespace umbra::rpg
                 def.maxStack = r.Int(s, "stack", 1, 1, 999, at);
                 def.modifiers = ReadModifiers(r, s, at);
                 def.use = ReadEffects(r, s, "use", at);
+                def.sound = r.String(s, "sound", at);
                 if (def.slot != Slot::None && def.maxStack != 1)
                     r.Error("item.stack", at + ".stack", "equipment does not stack");
                 if (def.slot == Slot::None && !def.modifiers.empty())

@@ -261,6 +261,18 @@ void Editor::RebuildWorld()
     builtRevision_ = scene_->Revision();
 }
 
+void Editor::PlaySound(std::shared_ptr<const umbra::audio::AudioClip> clip)
+{
+    // The editor opens the sound device only when something wants to be heard.
+    if (!audio_.IsOpen() && !audio_.Open(mixer_))
+    {
+        Message("No sound device: the preview can't be played.");
+        return;
+    }
+    mixer_.StopAll();
+    mixer_.Play(std::move(clip), 1.0F, umbra::audio::Bus::Ui);
+}
+
 void Editor::Update(float deltaSeconds, umbra::core::DrawList &drawList)
 {
     messageSeconds_ = std::max(0.0F, messageSeconds_ - deltaSeconds);
@@ -941,6 +953,11 @@ void Editor::ScanAssets()
             assets_["Models"].push_back(path);
         else if (name.ends_with(".wav"))
             assets_["Sounds"].push_back(path);
+        else if (name.ends_with(".ogg"))
+        {
+            assets_["Sounds"].push_back(path);
+            assets_["Music"].push_back(path);
+        }
         else if (name.ends_with(".policy.json"))
             assets_["Learned AI"].push_back(path);
         else if (name.ends_with(".material.json"))

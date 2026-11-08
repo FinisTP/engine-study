@@ -49,6 +49,7 @@ namespace umbra::game
         rpg::Character hero;
         std::map<std::string, story::QuestProgress> quests;
         CombatMode mode = CombatMode::Turn;
+        std::vector<std::string> hotkeys; // real-time keys 1-4: "skill:<id>", "item:<id>" or "" (optional in the file)
     };
 
     // The two save files (user decision 2026-11-07): save stones write the manual save,

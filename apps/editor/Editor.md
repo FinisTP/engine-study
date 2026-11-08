@@ -129,6 +129,26 @@ Every prompt gets the project style from `assets/materials/style.json`.
 
 ComfyUI's address and checkpoint are shared with the AI texture window.
 
+## AI sound (menu bar button, or View → AI sound; roadmap S4)
+
+Music and sound effects from a local ComfyUI (ACE-Step 1.5 for music, Stable Audio 3 for effects;
+setup and the math in `plugins/ai-authoring/modules/localai/include/SoundGen.md`):
+
+1. Choose **Music (looping)** or **Sound effect**, describe it, set the length and the number of
+   variations. The model list shows the audio models ComfyUI has; the license of the chosen one is
+   shown under it.
+2. **Generate**. Each variation is decoded, brought to 48 kHz, looped (music) or trimmed (effect)
+   and normalized. **Play** listens on the editor's speakers (the sound device opens on the first
+   preview), **Stop** stops.
+3. **Keep** saves the picked one: music as `audio/music/<name>.ogg`, an effect as
+   `audio/sfx/<name>.wav`, each with a `.source.json` (prompt, seed, model, license).
+4. Use it, as one undoable edit:
+   - music: **Use as this scene's music** sets the scene's Music component (or adds an entity
+     named `music` with one). For battle music, open the arena scene and use a track there.
+   - effect: pick a skill or item under **For**, then **Use**: it becomes that entry's `"sound"`.
+
+The RPG content forms also have a **Sound** list for skills and items.
+
 ## Game UI (View → Game UI; roadmap S3.6)
 
 Screen files (`ui/*.ui.json`, format in `engine/ui/include/UI.md`) are edited here with a live

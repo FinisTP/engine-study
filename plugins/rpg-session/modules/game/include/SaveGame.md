@@ -16,7 +16,10 @@ decisions to store (roadmap 4.5: persist committed state only).
 The payload is the game state as a JSON **string**, so the checksum covers exactly the bytes that
 are read back. It holds: area, player position and yaw, combat mode (`turn`/`realtime`), the hero
 (ids and counts only: health, energy, level, xp, skill points, skills, inventory, pending items,
-equipment) and each started quest (state, current objective, progress, rewarded flag).
+equipment), each started quest (state, current objective, progress, rewarded flag) and the
+real-time hotkeys (`"hotkeys": ["skill:strike", "item:healing_potion", "", ""]`). Hotkeys are
+optional (older saves have none) and a key whose skill or item no longer exists is cleared rather
+than refusing the save.
 
 ## Writing (all or nothing)
 

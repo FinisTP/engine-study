@@ -7,6 +7,7 @@
     { "type": "button", "text": "Inventory", "action": "open:inventory", "textAlign": "center", "visible": "{canManage}" },
     { "type": "button", "text": "Skills", "action": "open:skills", "textAlign": "center", "visible": "{canManage}" },
     { "type": "button", "text": "Quests", "action": "open:quests", "textAlign": "center", "visible": "{canManage}" },
+    { "type": "button", "text": "Hotkeys", "action": "open:hotkeys", "textAlign": "center", "visible": "{canManage}" },
     { "type": "button", "text": "Restart area", "action": "restart", "textAlign": "center" },
     { "type": "button", "text": "Quit", "action": "quit", "textAlign": "center" }
   ] }

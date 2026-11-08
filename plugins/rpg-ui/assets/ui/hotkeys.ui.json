@@ -1,0 +1,21 @@
+{
+  "format": "umbra.ui", "version": 1, "modal": true, "dim": true, "back": "close",
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [640, 0], "gap": 10, "children": [
+    { "type": "text", "style": "title", "text": "Hotkeys" },
+    { "type": "text", "style": "small", "text": "Real-time fights: keys 1-4. Choose a key, then a skill or item for it." },
+    { "type": "list", "items": "{hotkeys}", "as": "hk", "direction": "horizontal", "gap": 8, "action": "slot", "arg": "{hk.slot}",
+      "entry": { "type": "stack", "style": "slot", "size": [140, 0], "selected": "{hk.chosen}", "children": [
+        { "type": "text", "style": "muted", "text": "Key {hk.key}" },
+        { "type": "text", "text": "{hk.name}" },
+        { "type": "text", "style": "muted", "text": "{hk.detail}" }
+      ] } },
+    { "type": "text", "style": "heading", "text": "Put on key {hotkeySlot}" },
+    { "type": "list", "items": "{assignables}", "as": "a", "columns": 3, "gap": 8, "action": "assign", "arg": "{a.id}",
+      "entry": { "type": "stack", "style": "slot", "size": [192, 0], "children": [
+        { "type": "text", "text": "{a.name}" },
+        { "type": "text", "style": "muted", "text": "{a.kind}  {a.detail}" }
+      ] } },
+    { "type": "button", "text": "Clear this key", "action": "assign", "arg": "" },
+    { "type": "text", "style": "muted", "text": "Esc closes." }
+  ] }
+}

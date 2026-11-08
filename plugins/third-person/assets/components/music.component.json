@@ -1,0 +1,11 @@
+{
+  "format": "umbra.component",
+  "version": 1,
+  "type": "music",
+  "label": "Music",
+  "description": "Background music for this scene: it plays (looping) while the scene is live and crossfades when the scene changes. Put it on any one entity. Fights happen in the arena scene, so the arena's music is the battle music.",
+  "fields": {
+    "track": { "kind": "asset", "label": "Track (.ogg)", "folder": "audio/music", "default": "" },
+    "volume": { "kind": "number", "label": "Volume", "default": 0.7, "min": 0, "max": 1 }
+  }
+}

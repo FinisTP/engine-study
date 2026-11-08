@@ -3,9 +3,12 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <Mixer.hpp>
+#include <Ogg.hpp>
 #include <SoundBank.hpp>
 #include <Wav.hpp>
 
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <vector>
@@ -172,4 +175,60 @@ TEST_CASE("Missing sounds are reported once and return nothing")
     REQUIRE(problems[0].code == "sound.load");
     REQUIRE(bank.TakeDiagnostics().empty());
     REQUIRE(bank.Get("audio/jump.wav") == bank.Get("audio/jump.wav")); // cached, shared
+}
+
+TEST_CASE("Ogg Vorbis: a 48 kHz file decodes; other rates and junk are refused with a reason")
+{
+    std::string error;
+    const auto clip = audio::SoundBank(assets::AssetFolders(UMBRA_AUDIO_TEST_DATA)).Get("tone_48k_mono.ogg");
+    REQUIRE(clip != nullptr);
+    CHECK(clip->channels == 1);
+    CHECK(clip->Frames() == Approx(12000).margin(64)); // 0.25 s
+    float peak = 0.0F;
+    for (float s : clip->samples)
+        peak = std::max(peak, std::abs(s));
+    CHECK(peak > 0.1F); // ffmpeg's test tone is 1/8 loud
+
+    CHECK_FALSE(audio::LoadMusic(std::filesystem::path(UMBRA_AUDIO_TEST_DATA) / "tone_44k.ogg", error));
+    CHECK(error.find("44100") != std::string::npos);
+    const std::byte junk[8] = {};
+    CHECK_FALSE(audio::ParseOgg(junk, error));
+}
+
+TEST_CASE("Music streams, loops past its end, and crossfades to the next track")
+{
+    std::string error;
+    auto track = audio::LoadMusic(std::filesystem::path(UMBRA_AUDIO_TEST_DATA) / "tone_48k_mono.ogg", error);
+    REQUIRE(track);
+    const auto first = std::make_shared<const audio::MusicTrack>(*track);
+    const auto second = std::make_shared<const audio::MusicTrack>(*track);
+    audio::Mixer mixer;
+    mixer.PlayMusic(first, 1.0F, 0.1F); // 4800 frames to fade in
+    std::vector<float> out(2 * 48000);
+    mixer.Mix(out.data(), 2400); // the first 50 ms: half way into the fade-in
+    float early = 0.0F;
+    for (std::size_t i = 0; i < 200; ++i)
+        early = std::max(early, std::abs(out[i * 2]));
+    CHECK(early < 0.01F); // starts from silence
+    mixer.Mix(out.data(), 24000); // half a second: twice the track's length, so it looped
+    float lateLoud = 0.0F;
+    for (std::size_t i = 20000; i < 24000; ++i)
+        lateLoud = std::max(lateLoud, std::abs(out[i * 2]));
+    CHECK(lateLoud > 0.1F); // still playing after the end of the file
+
+    // A new track: the old one fades out and is dropped; StopAll leaves music alone.
+    mixer.PlayMusic(second, 1.0F, 0.1F);
+    CHECK(mixer.Music() == second);
+    mixer.StopAll();
+    for (int i = 0; i < 4; ++i)
+        mixer.Mix(out.data(), 4800);
+    CHECK(mixer.Music() == second);
+    mixer.PlayMusic(nullptr, 0.0F, 0.1F); // fade out everything
+    for (int i = 0; i < 4; ++i)
+        mixer.Mix(out.data(), 4800);
+    CHECK(mixer.Music() == nullptr);
+    float last = 0.0F;
+    for (std::size_t i = 0; i < 4800 * 2; ++i)
+        last = std::max(last, std::abs(out[i]));
+    CHECK(last == Approx(0.0F).margin(1e-6));
 }

@@ -1,0 +1,12 @@
+{
+  "format": "umbra.ui", "version": 1, "modal": true, "back": "back",
+  "root": { "type": "stack", "anchor": "bottom-right", "offset": [-24, -24], "style": "panel", "size": [340, 0], "align": "stretch", "gap": 8, "children": [
+    { "type": "text", "style": "heading", "text": "Attack" },
+    { "type": "list", "items": "{fight.moves}", "as": "move", "gap": 2, "action": "move", "arg": "{move.id}",
+      "entry": { "type": "stack", "style": "entry", "direction": "horizontal", "gap": 10, "children": [
+        { "type": "text", "text": "{move.name}" },
+        { "type": "text", "style": "muted", "text": "{move.cost}" }
+      ] } },
+    { "type": "text", "style": "muted", "text": "Enter: choose a target   Esc: back" }
+  ] }
+}

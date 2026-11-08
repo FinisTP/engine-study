@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Ogg.hpp>
 #include <Wav.hpp>
 
 #include <cstddef>
@@ -28,7 +29,12 @@ namespace umbra::audio
         // Writes `frames` stereo frames (L R L R ...) into `out`. Finished voices are dropped.
         void Mix(float *out, std::size_t frames);
         void SetGamePaused(bool paused);
-        void StopAll();
+        void StopAll(); // sound effects; music keeps playing
+
+        // Music: one track at a time, looping. A new track fades in over `fadeSeconds` while the
+        // old one fades out (a crossfade); nullptr fades the music out. Keeps playing while paused.
+        void PlayMusic(std::shared_ptr<const MusicTrack> track, float volume = 0.7F, float fadeSeconds = 1.5F);
+        [[nodiscard]] std::shared_ptr<const MusicTrack> Music() const;
         [[nodiscard]] std::size_t VoiceCount() const;
 
     private:
@@ -40,8 +46,16 @@ namespace umbra::audio
             Bus bus = Bus::Game;
         };
 
+        struct MusicStream final
+        {
+            std::shared_ptr<const MusicTrack> track;
+            std::unique_ptr<MusicDecoder> decoder;
+            float gain = 0.0F, target = 0.0F, step = 0.0F; // gain moves by `step` per frame toward `target`
+        };
+
         mutable std::mutex mutex_;
         std::vector<Voice> voices_;
+        std::vector<MusicStream> music_; // the current track last; older ones are fading out
         bool gamePaused_ = false;
     };
 }

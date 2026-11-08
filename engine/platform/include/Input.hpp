@@ -40,6 +40,7 @@ namespace umbra::platform
         I, // inventory
         K, // skills
         J, // journal (quests)
+        H, // hotkeys
         // Gamepad buttons (SDL gamepad, Xbox names): they act like keys.
         PadA,
         PadB,

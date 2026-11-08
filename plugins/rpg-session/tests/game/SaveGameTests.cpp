@@ -61,6 +61,24 @@ TEST_CASE("A save restores the hero, quests, area, position and combat mode")
     REQUIRE(loaded.quests.at("sun_relic").state == rpg::QuestState::Active);
 }
 
+TEST_CASE("Hotkeys are saved; a key whose skill or item is gone is cleared, and old saves have none")
+{
+    const auto dir = test::TempDir("save-hotkeys");
+    const game::SaveSlots slots{dir};
+    game::SaveData d = Sample();
+    d.hotkeys = {"skill:heavy_blow", "skill:no_such_skill", "", "item:iron_sword"};
+    REQUIRE(game::WriteSave(slots.Manual(), d, diagnostics));
+    game::SaveData loaded;
+    REQUIRE(game::ReadSave(slots.Manual(), C(), loaded, diagnostics));
+    REQUIRE(loaded.hotkeys == std::vector<std::string>{"skill:heavy_blow", "", "", "item:iron_sword"});
+
+    d.hotkeys.clear(); // as written by a build before hotkeys: an empty list
+    REQUIRE(game::WriteSave(slots.Autosave(), d, diagnostics));
+    game::SaveData old;
+    REQUIRE(game::ReadSave(slots.Autosave(), C(), old, diagnostics));
+    REQUIRE(old.hotkeys.empty());
+}
+
 TEST_CASE("Damaged, foreign and newer saves are refused and change nothing")
 {
     const auto dir = test::TempDir("save-bad");

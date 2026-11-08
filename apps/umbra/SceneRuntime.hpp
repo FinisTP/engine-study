@@ -107,6 +107,8 @@ public:
     void RemoveRoamer(std::size_t index);
     // Changes whenever the world is replaced (load, restart, portal), so fights can tell.
     [[nodiscard]] int Generation() const noexcept { return generation_; }
+    // The live scene's "music" component (third-person plugin): track and volume; empty track = none.
+    [[nodiscard]] std::pair<std::string, float> Music() const;
 
     // --- Battle arena: fights happen in their own scene (user decision 2026-11-07) ---
     // Loads the arena and keeps the current area, untouched, to come back to.

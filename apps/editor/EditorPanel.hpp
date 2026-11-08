@@ -5,6 +5,7 @@
 #include <AssetFolders.hpp>
 #include <Document.hpp>
 #include <DrawList.hpp>
+#include <Wav.hpp>
 #include <World.hpp>
 
 #include <glm/vec3.hpp>
@@ -42,6 +43,8 @@ namespace umbra::editor
         virtual void RescanAssets() = 0;
         [[nodiscard]] virtual std::vector<std::string> AssetList(const std::string &group) const = 0; // "Models", "Sounds", "Learned AI"...
         virtual void Reveal(const std::string &what, int index) = 0; // asks every panel to show this (e.g. "quests", 3)
+        virtual void PlaySound(std::shared_ptr<const audio::AudioClip> clip) = 0; // a preview on the editor's speakers (stops the last one)
+        virtual void StopSounds() = 0;
     };
 
     class EditorPanel

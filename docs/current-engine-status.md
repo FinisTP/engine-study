@@ -1,7 +1,7 @@
 # Umbra Engine - Current Development Status
 
 **Status date:** 2026-11-08 (Phase 1/2 records dated 2026-09-02)
-**Current milestone:** S3 gameplay UI framework implemented (2026-11-08, ADR 0006; headless 47/47 GCC/Clang/ASan, Windows check open); S1/S2 implemented (Windows checks open); P10 web export renders on the user's PC; P9 PC release gate: benchmark passed, remaining Windows runs open
+**Current milestone:** S4 AI sound, music, turn menu and hotkeys implemented (2026-11-08, ADR 0007; headless 48/48 GCC/Clang/ASan, Windows check open); S3 gameplay UI framework implemented (ADR 0006; Windows check open); S1/S2 implemented (Windows checks open); P10 web export renders on the user's PC; P9 PC release gate: benchmark passed, remaining Windows runs open
 **Layout:** `engine/` base engine, `game/` base game, `projects/reference/{assets,engine,game}` (content moved from `assets/`)
 **Phase 1 status:** Complete (interactive checklist unsigned)
 **Phase 2 status:** Complete
@@ -14,6 +14,10 @@
 **P8C status:** Implemented. Headless tests verified on Linux (42/42, GCC/Clang/ASan) against a stand-in ComfyUI; no real ComfyUI/SDXL or GPU run yet (P8C.0 open); editor window not opened
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
+
+## Update 2026-11-08 (S4 AI sound, music, turn menu, hotkeys, `#UMBRA-77`)
+
+- AI music (ACE-Step 1.5) and sound effects (Stable Audio 3) through the local ComfyUI: looped/trimmed, normalized, saved as `.ogg` / `.wav` with provenance; editor **AI sound** window and `UmbraTool sound` (ADR 0007). The game streams Ogg music (stb_vorbis) per scene through a data-only Music component, crossfading on scene changes (the arena's music is the battle music); skills and items can name a sound. Turn fights got an Attack / Item / Flee menu with target arrows over the enemies; real-time fights use hotkeys 1-4 set on a new screen and kept in saves. 48/48 GCC/Clang/ASan, 15/15 WebAssembly, check-web 13/13; real-model runs and listening on Windows open (`testing/s4-sound-and-menus.md`).
 
 ## Update 2026-11-08 (S3 gameplay UI framework, `#UMBRA-75`)
 
@@ -177,7 +181,7 @@ Umbra executable (apps/umbra: Main, ModelLibrary, SceneRuntime)
 |- Umbra::Gameplay   player, physics bridge, interaction, areas -> World, Physics
 |- Umbra::Ui         game screens: skin, fonts, layout, bindings, focus -> Core, Assets
 |- Umbra::Physics    Jolt adapter (private dependency)  -> Core, Jolt
-|- Umbra::Audio      WAV loader, mixer, sound bank      -> Core, Assets
+|- Umbra::Audio      WAV/Ogg (stb_vorbis), mixer with music streams, sound bank -> Core, Assets
 |- Umbra::Scene      scene files, model instancing, checkpoints -> World, Assets, nlohmann-json
 |- Umbra::Assets     glTF import, .umodel cache, watcher -> Core, tinygltf
 |- Umbra::World      entities, hierarchy, renderables    -> Core

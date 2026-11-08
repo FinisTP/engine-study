@@ -194,6 +194,13 @@ void RpgFormsPanel::EntryForm(const std::string &at, const Json &entry, const st
         if (changed)
             set(path, value, !newStep_), newStep_ = false;
     };
+    // A sound file for the game to play (rules never read it); empty = the default hit sound.
+    const auto soundField = [&](const char *label) {
+        std::vector<std::string> sounds = host_->AssetList("Sounds");
+        sounds.insert(sounds.begin(), "");
+        if (Combo(label, entry.value("sound", ""), sounds, text))
+            text.empty() ? remove("/sound") : set("/sound", text);
+    };
     const auto textField = [&](const char *name, const std::string &key, bool multiline = false) {
         if (TextField(name, entry.value(key, ""), text, multiline))
             set("/" + key, text);
@@ -311,6 +318,7 @@ void RpgFormsPanel::EntryForm(const std::string &at, const Json &entry, const st
         intField("Stack", entry.value("stack", Json()), "/stack", 1);
         rows("Modifiers (while equipped)", "modifiers", Json{{"stat", "attack"}, {"add", 1}}, modifierRow);
         rows("Use effects (consumes one)", "use", Json{{"kind", "heal"}, {"power", 10}}, effectRow);
+        soundField("Sound when used");
     }
     else if (section_ == "skills")
     {
@@ -346,6 +354,7 @@ void RpgFormsPanel::EntryForm(const std::string &at, const Json &entry, const st
         }
         intField("Skill points", entry.value("points", Json()), "/points", 0);
         idSet("Requires", "requires", "skills");
+        soundField("Sound when it hits");
     }
     else if (section_ == "statuses")
     {

@@ -56,6 +56,7 @@ target_link_libraries(
         Umbra::Scene
         Umbra::Authoring
         Umbra::Ui
+        Umbra::Audio
         imgui::imgui
         imguizmo::imguizmo
         SDL3::SDL3

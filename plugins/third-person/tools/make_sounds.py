@@ -1,6 +1,6 @@
 """Writes the placeholder sounds in assets/audio (48 kHz, 16-bit, mono WAV).
 
-Run from the repository root:  python tools/audio/make_sounds.py
+Run from the plugin folder:  python tools/make_sounds.py
 Every sound is made from sine waves and noise, so there is nothing to license.
 """
 import math
@@ -40,6 +40,13 @@ def ui_click(t, length, state):
     return 0.35 * math.sin(2 * math.pi * 1200 * t) * envelope(t, length, 0.001)
 
 
+def hit(t, length, state):
+    # A short punch: a falling 140 -> 60 Hz thump under a burst of bright noise.
+    state[0] += 2 * math.pi * (140 - 80 * t / length) / RATE
+    noise = random.uniform(-1, 1) * math.exp(-40.0 * t)
+    return (0.7 * math.sin(state[0]) + 0.35 * noise) * envelope(t, length, 0.001)
+
+
 def write(name, generator, seconds):
     random.seed(1)  # same file every run
     state = [0.0]
@@ -59,3 +66,4 @@ write('footstep', footstep, 0.12)
 write('jump', jump, 0.25)
 write('interact', interact, 0.5)
 write('ui_click', ui_click, 0.06)
+write('hit', hit, 0.18)

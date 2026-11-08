@@ -17,6 +17,8 @@ package must be named here.
 | GLM | math | MIT (or Happy Bunny) | inside `Umbra.exe` |
 | nlohmann/json | content and save files | MIT | inside `Umbra.exe` |
 | TinyGLTF (with stb_image) | model import | MIT (stb: MIT or public domain) | inside `Umbra.exe` |
+| stb_truetype | game UI fonts (S3) | MIT or public domain | inside `Umbra.exe` |
+| stb_vorbis | Ogg Vorbis music and sounds (S4) | MIT or public domain | inside `Umbra.exe` |
 | volk | Vulkan function loading | MIT | inside `Umbra.exe` |
 | Vulkan Memory Allocator | GPU memory | MIT | inside `Umbra.exe` |
 | Microsoft Visual C++ runtime | C++ standard library | Microsoft Visual Studio redistributable terms | `msvcp140*.dll`, `vcruntime140*.dll`, `concrt140.dll`, `vccorlib140.dll`, `vcomp140.dll` |
@@ -28,7 +30,9 @@ volk and Vulkan Memory Allocator) compiled into `umbra.wasm`, plus the Emscripte
 libc/libc++ (MIT / University of Illinois NCSA; LLVM libc++: Apache-2.0 with LLVM exception).
 
 Not in the game package (development only): the editor and its ImGuizmo, cpp-httplib (local AI
-bridge), Catch2 (tests), Python/PyTorch (policy training), Ollama, ComfyUI and their models.
+bridge), libogg and libvorbis (BSD-3-Clause; encode generated music), dr_flac (public domain or
+MIT-0; reads ComfyUI's sound files), Catch2 (tests), Python/PyTorch (policy training), Ollama,
+ComfyUI and their models.
 
 ## Assets
 
@@ -36,7 +40,9 @@ bridge), Catch2 (tests), Python/PyTorch (policy training), Ollama, ComfyUI and t
 |---|---|---|
 | `models/hero.glb`, `elder.glb`, `bandit.glb`, `wolf.glb` | Generated with Meshy (`tools/meshy/README.md`) | Paid Meshy plan: commercial use allowed; free plan: CC BY 4.0 (credit Meshy). Check which plan made them before selling |
 | `models/tower.gltf`, `tower.bin` | Hand-made sample for this project (Phase 3) | Project's own |
-| `audio/*.wav` | Synthesized by `tools/audio/make_sounds.py` (sine waves and noise) | Project's own |
+| `audio/*.wav` | Synthesized by `plugins/third-person/tools/make_sounds.py` (sine waves and noise) | Project's own |
+| `ui/fonts/Poppins-*.ttf`, `ui/fonts/Lora.ttf` | Google Fonts (rpg-ui plugin) | SIL Open Font License 1.1 (license files next to the fonts) |
+| `ui/images/target-arrow.png` | Drawn for this project (S4) | Project's own |
 | `textures/sample_bricks.png` | Drawn by `tools/textures/make_sample_bricks.py` | Project's own |
 | `policies/*.policy.json` | Trained for this project (`tools/policy`) | Project's own |
-| AI-made materials and models | Local SDXL / TRELLIS.2; each records its model and license in its `.material.json` / `.source.json` | As recorded there; `UmbraTool package-check` warns about any non-commercial one |
+| AI-made materials, models, music and sounds | Local SDXL / TRELLIS.2 / ACE-Step 1.5 / Stable Audio 3; each records its model and license in its `.material.json` / `.source.json` | As recorded there; `UmbraTool package-check` warns about any non-commercial one. Stable Audio 3 is free for commercial use only below USD 1M yearly revenue |

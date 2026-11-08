@@ -38,10 +38,20 @@ namespace umbra::audio
             voice.frame += count;
         }
 
-        // 2. Drop finished voices (this releases their clips).
+        // 2. Music: each stream's gain moves toward its target by `step` per frame (fade in/out).
+        for (MusicStream &m : music_)
+        {
+            const float frameCount = static_cast<float>(frames), from = m.gain;
+            m.gain = m.target > m.gain ? std::min(m.target, m.gain + m.step * frameCount) : std::max(m.target, m.gain - m.step * frameCount);
+            if (from > 0.0F || m.gain > 0.0F)
+                m.decoder->AddTo(out, frames, from, m.gain);
+        }
+        std::erase_if(music_, [](const MusicStream &m) { return m.gain <= 0.0F && m.target <= 0.0F; });
+
+        // 3. Drop finished voices (this releases their clips).
         std::erase_if(voices_, [](const Voice &voice) { return voice.frame >= voice.clip->Frames(); });
 
-        // 3. Several loud sounds can add past 1; clamp instead of wrapping around.
+        // 4. Several loud sounds can add past 1; clamp instead of wrapping around.
         for (std::size_t i = 0; i < frames * 2; ++i)
             out[i] = std::clamp(out[i], -1.0F, 1.0F);
     }
@@ -56,6 +66,39 @@ namespace umbra::audio
     {
         const std::scoped_lock lock(mutex_);
         voices_.clear();
+    }
+
+    void Mixer::PlayMusic(std::shared_ptr<const MusicTrack> track, float volume, float fadeSeconds)
+    {
+        const std::scoped_lock lock(mutex_);
+        if (track && !music_.empty() && music_.back().track == track && music_.back().target > 0.0F)
+        {
+            music_.back().target = std::clamp(volume, 0.0F, 1.0F); // already playing: only the volume changes
+            return;
+        }
+        // 1. Everything playing fades out.
+        const float frames = std::max(fadeSeconds, 0.01F) * static_cast<float>(mixRate);
+        for (MusicStream &m : music_)
+        {
+            m.target = 0.0F;
+            m.step = std::max(m.gain, 0.01F) / frames;
+        }
+        // 2. The new track fades in from silence, from its start.
+        if (track)
+        {
+            MusicStream stream{track, std::make_unique<MusicDecoder>(*track), 0.0F, std::clamp(volume, 0.0F, 1.0F), 0.0F};
+            stream.step = stream.target / frames;
+            if (stream.decoder->Ok())
+                music_.push_back(std::move(stream));
+        }
+        if (music_.size() > 3)
+            music_.erase(music_.begin()); // switching very fast: drop the oldest at once
+    }
+
+    std::shared_ptr<const MusicTrack> Mixer::Music() const
+    {
+        const std::scoped_lock lock(mutex_);
+        return !music_.empty() && music_.back().target > 0.0F ? music_.back().track : nullptr;
     }
 
     std::size_t Mixer::VoiceCount() const

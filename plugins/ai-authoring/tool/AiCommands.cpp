@@ -1,4 +1,4 @@
-// UmbraTool draft, texture and model: the AI authoring tools without the editor (local Ollama / ComfyUI only).
+// UmbraTool draft, texture, model and sound: the AI authoring tools without the editor (local Ollama / ComfyUI only).
 
 #include <ToolCommand.hpp>
 
@@ -6,6 +6,7 @@
 #include <ModelAssistant.hpp>
 #include <QuestAssistant.hpp>
 #include <RpgContent.hpp>
+#include <SoundAssistant.hpp>
 #include <TextureAssistant.hpp>
 #include <TextureTools.hpp>
 #include <Validate.hpp>
@@ -199,6 +200,87 @@ namespace
         return made.empty() ? 1 : code;
     }
 
+    // Music (a looping .ogg) or a sound effect (a .wav) through a local ComfyUI (S4, SoundGen.md).
+    int Sound(const Arguments &args)
+    {
+        const std::string kindText = args.Text("kind", "music");
+        const auto kind = kindText == "effect" ? umbra::localai::SoundKind::Effect : umbra::localai::SoundKind::Music;
+        const float seconds = args.Float("seconds", kind == umbra::localai::SoundKind::Music ? 60.0F : 2.0F);
+        if (args.positional.size() != 1 || !args.Has("assets") || (kindText != "music" && kindText != "effect") || args.Int("count", 1) < 1 ||
+            args.Int("count", 1) > 8 || seconds < 0.5F || seconds > 600.0F)
+            return Usage();
+        std::vector<Diagnostic> diagnostics;
+
+        // 1. Where ComfyUI is and which audio model to use.
+        std::vector<std::string> checkpoints;
+        const std::string host = !args.Has("host") ? umbra::localai::FindComfyUi(checkpoints) : args.Text("host");
+        if (args.Has("host"))
+            checkpoints = umbra::localai::ListCheckpoints(host, diagnostics);
+        const std::string model = !args.Has("model") ? umbra::localai::PreferredSoundModel(checkpoints, kind) : args.Text("model");
+        if (host.empty() || model.empty())
+        {
+            if (diagnostics.empty() || model.empty())
+                diagnostics.push_back({Severity::Error, host.empty() ? "ai.connect" : "ai.model", "comfyui", "",
+                                       host.empty() ? "ComfyUI is not running on port 8000 or 8188. Start ComfyUI."
+                                                    : "ComfyUI has no audio model: ace_step_1.5_turbo_aio.safetensors (music) or stable_audio_3_*.safetensors (effects) in models/checkpoints."});
+            return Report(diagnostics, 0, args.json);
+        }
+
+        // 2. Generate, then decode, loop or trim, normalize and save each variation.
+        auto requests = umbra::localai::MakeSoundRequests(args.positional[0], kind, umbra::localai::LoadSoundStyle(args.Assets()), model, host, seconds,
+                                                          umbra::localai::TextureSeeds(args.Int("count", 1), args.Long("seed", -1)));
+        for (auto &r : requests)
+        {
+            r.bpm = args.Int("bpm", r.bpm);
+            r.keyscale = args.Text("key", r.keyscale);
+        }
+        umbra::localai::AudioJob job;
+        job.Start(requests);
+        std::optional<std::vector<umbra::localai::AudioResult>> results;
+        while (!(results = job.Take()))
+        {
+            if (!args.json)
+                std::cerr << "\rGenerating with " << model << "... " << job.Finished() << "/" << requests.size() << ", " << static_cast<int>(job.Seconds()) << " s   " << std::flush;
+            std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        }
+        if (!args.json)
+            std::cerr << "\n";
+        Json made = Json::array();
+        const std::string name = umbra::localai::TextureName(!args.Has("name") ? args.positional[0] : args.Text("name"));
+        for (const auto &result : *results)
+        {
+            diagnostics.insert(diagnostics.end(), result.diagnostics.begin(), result.diagnostics.end());
+            umbra::localai::Pcm pcm;
+            std::string error;
+            if (!result.ok)
+                continue;
+            if (!umbra::localai::DecodeFlac(result.file, pcm, error))
+            {
+                diagnostics.push_back({Severity::Error, "ai.answer", "comfyui", "", "couldn't read ComfyUI's sound: " + error});
+                continue;
+            }
+            const auto sound = umbra::localai::FinishSound(pcm, kind, result.request);
+            const std::string path = umbra::localai::SaveSound(args.Path("assets"), name, kind, sound, diagnostics);
+            if (path.empty())
+                continue;
+            if (sound.silent)
+                diagnostics.push_back({Severity::Warning, "sound.silent", path, "", "almost silent: try another prompt or seed"});
+            const auto license = umbra::assets::ModelLicense(model);
+            if (!license.known || !license.commercial)
+                diagnostics.push_back({Severity::Warning, "sound.license", path, "", "license of " + model + ": " + (license.known ? license.name : "unknown, check it before shipping")});
+            made.push_back({{"sound", path}, {"seed", result.request.seed}, {"seconds", sound.seconds}});
+            if (!args.json)
+                std::cout << "Made " << path << " (seed " << result.request.seed << ", " << sound.seconds << " s, " << license.name << ")\n";
+        }
+        if (args.json)
+        {
+            std::cout << Json{{"model", model}, {"host", host}, {"made", made}, {"diagnostics", umbra::authoring::ToJson(diagnostics)}}.dump(2) << "\n";
+            return made.empty() ? 1 : 0;
+        }
+        const int code = Report(diagnostics, made.size(), false);
+        return made.empty() ? 1 : code;
+    }
+
     // Waits for a background ComfyUI batch, printing progress.
     template <class Job>
     auto Wait(Job &job, const char *what, std::size_t count, bool quiet)
@@ -306,3 +388,5 @@ UMBRA_TOOL_COMMAND(Texture, "texture", "texture \"<idea>\" --assets <folder> [--
                                         "            [--size <px>] [--model <checkpoint>] [--host <url>] [--json]", Texture);
 UMBRA_TOOL_COMMAND(Model, "model", "model (--idea \"<text>\" | --image <picture> | --resume <job>) --assets <folder> [--name <name>]\n"
                                     "            [--faces <n>] [--seed <n>] [--workflow <api json>] [--model <checkpoint>] [--host <url>] [--json]", Model);
+UMBRA_TOOL_COMMAND(Sound, "sound", "sound \"<idea>\" --assets <folder> [--kind music|effect] [--seconds <s>] [--name <name>] [--count <n>]\n"
+                                    "            [--seed <n>] [--bpm <n>] [--key \"D minor\"] [--model <checkpoint>] [--host <url>] [--json]", Sound);
