@@ -1,7 +1,8 @@
 # Umbra Engine - Current Development Status
 
-**Status date:** 2026-11-07 (Phase 1/2 records dated 2026-09-02)
-**Current milestone:** P10 web export implemented (2026-11-08; rendering check on the user's PC open); P9 PC release gate: benchmark passed, remaining Windows runs open
+**Status date:** 2026-11-08 (Phase 1/2 records dated 2026-09-02)
+**Current milestone:** S1 project structure and components implemented (2026-11-08, ADR 0004; headless 44/44 GCC/Clang/ASan, Windows editor check open); P10 web export renders on the user's PC; P9 PC release gate: benchmark passed, remaining Windows runs open
+**Layout:** `engine/` base engine, `game/` base game, `projects/reference/{assets,engine,game}` (content moved from `assets/`)
 **Phase 1 status:** Complete (interactive checklist unsigned)
 **Phase 2 status:** Complete
 **Phase 3 status:** Implemented. Headless tests verified on Linux; Windows build and GPU checks not run yet
