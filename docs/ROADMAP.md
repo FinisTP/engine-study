@@ -50,7 +50,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 | P8C AI texture generation | P7 authoring, P8B local-AI bridge | Implemented 2026-11-07; verified on Linux, and **on Windows with ComfyUI/SDXL by the user (2026-11-08: works, with limitations)** | Materials with world-scale texturing and mipmaps; ComfyUI bridge; seamless step and seam score; provenance and license warnings; editor AI texture window with in-scene preview; `UmbraTool texture`. Plan `adr/0002-ai-texture-generation.md`, evidence `testing/p8c-ai-textures.md`. |
 | P8D AI 3D models | P8C ComfyUI bridge | Implemented 2026-11-07; **verified on Windows with TRELLIS.2 by the user (2026-11-08)**; the reported limitations fixed in `#UMBRA-62` (any workflow name, the textured GLB, survives closing the editor, no time limit) | Text → SDXL concept or own picture → the creator's exported TRELLIS.2 workflow (ComfyUI) → GLB with provenance → placed as an undoable scene edit; `UmbraTool model`. ADR `adr/0003-ai-model-generation.md`, evidence `testing/p8d-ai-models.md`. |
 | P9 PC release | P6/P7/P8A/P8B | **In progress** (2026-11-08): release tools built and passing on Linux (benchmark, long-run test, package check, license notices); the Windows gate runs are open | Clean offline install, complete game, authoring workflow, measured reference-PC gate. Evidence `testing/p9-release-gate.md`. |
-| P10 Playable web export | P9; W0 decisions | **Implemented 2026-11-08** (started before the P9 Windows runs finished, at the user's request); verified headlessly (13/13 suites in WebAssembly, 9/9 browser checks); **the picture is unverified** (no working GPU here) | Browser game and local policy, durable-save UX, offline installation readiness. Evidence `testing/p10-web-export.md`. |
+| P10 Playable web export | P9; W0 decisions | **Implemented 2026-11-08** (started before the P9 Windows runs finished, at the user's request); verified headlessly (13/13 suites in WebAssembly, 11/11 browser checks) and **renders on the user's GPU**; Chrome/Edge play-through and offline install to confirm | Browser game and local policy, durable-save UX, offline installation readiness. Evidence `testing/p10-web-export.md`. |
 | P11 Mobile | P10; approved device target | Planned later port | Lifecycle, input, storage, thermal and performance gates on actual devices. |
 | F1 Community improvement | Separate product approval | Deferred proposal | Consent, records, validation, developer retraining, approved model delivery/rollback. |
 
@@ -664,7 +664,7 @@ Verify package composition: shipping game has no editor, training environment, a
 <!-- P10-status -->
 | Task | Status | Evidence |
 |---|---|---|
-| P10.1 | Implemented: WebGPU `Renderer` (JS library), HTML HUD, Emscripten build of the game modules; **rendering not yet seen** | user check `testing/p10-web-export.md` §4 |
+| P10.1 | Implemented; **renders on the user's GPU** (built-in browser, 2026-11-08) | `testing/p10-web-export.md` §3b |
 | P10.2 | Implemented: C++ network in WebAssembly, inline decider; parity with NumPy passes in wasm | Node suites 13/13 |
 | P10.3 | Implemented: IndexedDB saves, visible failures, export/import, Continue | browser check 9/9 |
 | P10.4 | Implemented: versioned all-or-nothing service worker cache, readiness, update on reload | browser check (offline start) |

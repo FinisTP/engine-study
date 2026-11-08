@@ -22,6 +22,8 @@ while ($listener.IsListening) {
         $bytes = [IO.File]::ReadAllBytes($path)
         $type = $types[[IO.Path]::GetExtension($path).ToLower()]
         $response.ContentType = $(if ($type) { $type } else { "application/octet-stream" })
+        $response.ContentLength64 = $bytes.Length # a known length (some browsers refuse service worker scripts without it)
+        $response.Headers.Add("Cache-Control", "no-cache") # always check for a newer build
         $response.OutputStream.Write($bytes, 0, $bytes.Length)
     } else {
         $response.StatusCode = 404

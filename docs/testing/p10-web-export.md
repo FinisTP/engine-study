@@ -8,7 +8,8 @@
   binaryen 115 built from source), Node 22, headless Google Chrome for Testing 153 (Playwright).
 - User decisions (2026-11-08): browsers **Chrome + Edge**; hosting **not decided → single-threaded**
   (any static host); toolchain **workaround in the cloud** (worked: no emsdk download needed).
-- State: **implemented; verified headlessly except the picture.** The whole game runs in headless
+- Update 2026-11-08 (later): **rendering confirmed on the user's GPU** (§3b).
+- State (first record): **implemented; verified headlessly except the picture.** The whole game runs in headless
   Chrome (assets, scenes, HUD, input, menus, saves, offline). This container's software GPU loses
   every WebGPU device within a second (a 10-line WebGPU page does the same), so nothing here proves
   the scene renders correctly. The rendering check is on the user's PC (§4).
@@ -66,6 +67,12 @@ unpacked on the PC and checked byte for byte (SHA-256 equal); all binary assets 
 were re-checked (equal; `sample_bricks.png` differs only by PNG re-encoding, known since P8C); the page now refuses mismatched files
 with a clear message (`onRuntimeInitialized` checks the content and scene files);
 `check-web.py` now also fails on any HUD warning and tests the mismatch message (11/11).
+
+After the fix, in the Claude desktop app's built-in browser on the user's PC (RTX 3050 Laptop,
+`serve-web.bat`): **the settlement renders** (brick walls, crates, hero, Mara), HUD and pause menu
+as HTML, no warnings, ~60 FPS frame count. P10.1 rendering confirmed on real hardware. The service
+worker failed to register there ("unknown error when fetching the script"); `serve-web.ps1` now
+sends a content length and `no-cache`. Offline install still to confirm in Chrome/Edge (§4 item 4).
 
 ## 4. User checklist (Chrome or Edge on the user's PC)
 
