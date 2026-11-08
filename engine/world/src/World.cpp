@@ -66,6 +66,7 @@ namespace umbra::world
     {
         entities_.Clear();
         byId_.clear();
+        SetEnvironment({});
     }
 
     bool World::IsAlive(Entity entity) const noexcept { return Get(entity) != nullptr; }
@@ -274,6 +275,33 @@ namespace umbra::world
         return record && record->portal ? &*record->portal : nullptr;
     }
 
+    bool World::SetLight(Entity entity, Light light)
+    {
+        Record *record = Get(entity);
+        if (record == nullptr)
+            return false;
+        record->light = light;
+        return true;
+    }
+
+    const Light *World::GetLight(Entity entity) const noexcept
+    {
+        const Record *record = Get(entity);
+        return record && record->light ? &*record->light : nullptr;
+    }
+
+    void World::SetEnvironment(const core::EnvironmentSettings &settings, Entity owner)
+    {
+        environment_ = settings;
+        environmentOwner_ = owner;
+        hour_ = settings.hour;
+    }
+
+    void World::AdvanceTime(float seconds)
+    {
+        hour_ = core::AdvanceHour(hour_, seconds, environment_.dayLength);
+    }
+
     bool World::SetCustom(Entity entity, CustomComponent component)
     {
         Record *record = Get(entity);
@@ -301,9 +329,15 @@ namespace umbra::world
             if (record.renderable && record.renderable->meshHandle)
             {
                 const Renderable &r = *record.renderable;
-                drawList.items.push_back({r.meshHandle, r.textureHandle, record.worldMatrix, r.color * r.tint, r.metersPerRepeat});
+                drawList.items.push_back({r.meshHandle, r.textureHandle, record.worldMatrix, r.color * r.tint, r.metersPerRepeat, r.emissive});
+            }
+            if (record.light)
+            {
+                const Light &l = *record.light;
+                drawList.lights.push_back({glm::vec3(record.worldMatrix[3]), l.color, l.intensity, l.range, l.flicker});
             }
         });
+        drawList.environment = core::EvaluateEnvironment(environment_, hour_);
     }
 
     const World::Record *World::Get(Entity entity) const noexcept

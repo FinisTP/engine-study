@@ -2,6 +2,7 @@
 // drawn with WebGPU from JavaScript (umbra_render.js) and the HUD as HTML. See WebRenderer.md.
 #include <Renderer.hpp>
 
+#include <Lighting.hpp>
 #include <Log.hpp>
 #include <SlotMap.hpp>
 
@@ -21,7 +22,8 @@ extern "C"
     void umbra_gpu_texture_level(int id, int level, int width, int height, const unsigned char *rgba);
     void umbra_gpu_destroy_mesh(int id);
     void umbra_gpu_destroy_texture(int id);
-    void umbra_gpu_frame(const float *viewProjection, const float *draws, int drawCount, const float *lines, int lineCount, const char *hud);
+    // `frame`: viewProjection, shadowMatrix, inverseViewProjection (16 floats each), then core::LightingBlock (160 floats).
+    void umbra_gpu_frame(const float *frame, const float *draws, int drawCount, const float *lines, int lineCount, const char *hud);
     // The game UI (core::UiDrawList), drawn on top of the frame just sent: 20-byte vertices,
     // uint16 indices, and per batch 8 floats: texture id, clip x0 y0 x1 y1, first vertex, first index, index count.
     void umbra_gpu_ui(const void *vertices, int vertexCount, const unsigned short *indices, int indexCount, const float *batches, int batchCount);
@@ -37,6 +39,7 @@ namespace umbra::render
     {
         // Floats per draw for JavaScript: model (16), color (4), texturing (4), mesh id, texture id, pad (2).
         constexpr int drawFloats = 28;
+        constexpr std::size_t shadowMapSize = 2048; // umbra_render.js makes it this size
 
         struct WebMesh final
         {
@@ -80,6 +83,7 @@ namespace umbra::render
         core::SlotMap<WebMesh, core::MeshTag> meshes;
         core::SlotMap<int, core::TextureTag> textures;
         std::vector<float> draws, lines;
+        float seconds = 0; // drives torch flicker
     };
 
     Renderer::Renderer() = default;
@@ -162,7 +166,7 @@ namespace umbra::render
         return implementation_->textures.Remove(handle);
     }
 
-    bool Renderer::RenderFrame(float, const core::DrawList &drawList, const std::function<void()> &)
+    bool Renderer::RenderFrame(float deltaSeconds, const core::DrawList &drawList, const std::function<void()> &)
     {
         if (!implementation_)
             return false;
@@ -174,6 +178,16 @@ namespace umbra::render
         const glm::mat4 projection = glm::perspectiveRH_ZO(glm::radians(camera.fovYDegrees), static_cast<float>(width) / static_cast<float>(std::max(height, 1U)),
                                                            camera.nearPlane, camera.farPlane);
         const glm::mat4 viewProjection = projection * view;
+        // Lights, fog and the sun's shadow box: the same numbers as the Vulkan renderer (Lighting.md).
+        struct Frame final
+        {
+            glm::mat4 viewProjection, shadowMatrix, inverseViewProjection;
+            core::LightingBlock lighting;
+        };
+        static_assert(sizeof(Frame) == 208 * sizeof(float));
+        i.seconds += deltaSeconds;
+        const Frame frame{viewProjection, core::SunShadowMatrix(drawList.environment.sunDirection, camera.target, 25.0F, shadowMapSize),
+                          glm::inverse(viewProjection), core::PackLighting(drawList.environment, drawList.lights, camera.position, i.seconds, shadowMapSize)};
 
         // 2. One record per draw (mesh color folded in, as the Vulkan renderer does).
         i.draws.clear();
@@ -186,7 +200,7 @@ namespace umbra::render
             const glm::vec4 color = item.color * mesh->baseColor;
             const float *m = glm::value_ptr(item.model);
             i.draws.insert(i.draws.end(), m, m + 16);
-            i.draws.insert(i.draws.end(), {color.r, color.g, color.b, color.a, item.metersPerRepeat, 0.0F, 0.0F, 0.0F,
+            i.draws.insert(i.draws.end(), {color.r, color.g, color.b, color.a, item.metersPerRepeat, item.emissive, 0.0F, 0.0F,
                                            static_cast<float>(mesh->id), static_cast<float>(texture ? *texture : -1), 0.0F, 0.0F});
         }
         i.lines.clear();
@@ -196,7 +210,7 @@ namespace umbra::render
 
         // 3. Draw, then wait for the browser's next frame (this is where the game loop yields).
         const std::string hud = HudJson(drawList.hud);
-        umbra_gpu_frame(glm::value_ptr(viewProjection), i.draws.data(), static_cast<int>(i.draws.size() / drawFloats), i.lines.data(),
+        umbra_gpu_frame(glm::value_ptr(frame.viewProjection), i.draws.data(), static_cast<int>(i.draws.size() / drawFloats), i.lines.data(),
                         static_cast<int>(i.lines.size() / 10), hud.c_str());
         if (!drawList.ui.batches.empty())
         {
@@ -217,6 +231,8 @@ namespace umbra::render
     void Renderer::RequestResize() noexcept {} // the page sizes the canvas each frame
     void Renderer::ReleaseSurface() noexcept {} // phones only
     void Renderer::RestoreSurface() noexcept {}
+
+    void Renderer::CaptureNextFrame(std::function<void(const core::TextureData &)>) {} // not in the browser (yet)
 
     std::string Renderer::DeviceName() const { return implementation_ ? umbra_gpu_name() : ""; }
 

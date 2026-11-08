@@ -38,6 +38,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
+#include <TextureTools.hpp>
+
 #include <fstream>
 #include <iostream>
 #include <optional>
@@ -138,7 +140,15 @@ namespace
 	}
 }
 
-int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds, bool offerContinue)
+// --capture <png> [frames] [--hour <h>]: run, save one frame of the 3D view as a picture, quit (tests, docs; S6).
+struct CaptureOptions final
+{
+	std::filesystem::path file;
+	int frames = 90;
+	std::optional<float> hour;
+};
+
+int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds, bool offerContinue, const CaptureOptions &capture)
 {
 	// Benchmark (P9): a scripted walk through the reference areas, then a report; no RPG layer.
 	std::optional<Benchmark> benchmark;
@@ -234,6 +244,8 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 					else
 						gameUi.Screens().Close("pause");
 				};
+				int capturedFrames = 0;
+				bool captured = false; // set by the capture callback, which runs when the frame is shown
 				const auto frozen = [&] {
 					for (const char *screen : {"pause", "inventory", "skills", "quests", "hotkeys"})
 						if (gameUi.Screens().IsOpen(screen))
@@ -490,6 +502,12 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 					if (input.IsKeyPressed(InputKey::F1))
 						showColliders = !showColliders;
 
+					// The time of day moves on while the game runs (the "environment" component's day length).
+					if (capture.hour)
+						scene.GetWorld().SetHour(*capture.hour);
+					else if (!frozen())
+						scene.GetWorld().AdvanceTime(static_cast<float>(deltaTime));
+
 					section.Lap(); // extraction starts here
 					drawList.Clear();
 					drawList.camera = scene.GetCamera();
@@ -569,10 +587,26 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 										   {"mode", uiData.value("mode", "")}}
 									 .dump();
 
+					// A capture: the 3D view only (no screens or diagnostics window); take the frame, save it, stop.
+					if (!capture.file.empty())
+					{
+						drawList.hud.diagnosticsWindow = false;
+						drawList.ui.Clear();
+						if (++capturedFrames == capture.frames)
+							renderer.CaptureNextFrame([&](const umbra::core::TextureData &picture) {
+								std::vector<std::uint8_t> png;
+								captured = umbra::assets::EncodePng(picture, png) &&
+										   static_cast<bool>(std::ofstream(capture.file, std::ios::binary).write(reinterpret_cast<const char *>(png.data()),
+																												  static_cast<std::streamsize>(png.size())));
+								umbra::diagnostics::Info((captured ? "Captured " : "Could not write ") + capture.file.string());
+							});
+					}
 					if (!renderer.RenderFrame(static_cast<float>(deltaTime), drawList))
 					{
 						return 1;
 					}
+					if (captured || (!capture.file.empty() && capturedFrames > capture.frames + 5))
+						return captured ? 0 : 1;
 					renderTime.Add(section.Lap()); // CPU side only; includes waiting for a free frame
 
 					// Benchmark: record the frame; next area or the report when its time is up.
@@ -611,14 +645,24 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 
 int main(int argc, char **argv)
 {
-	// Optional: a scene path relative to the asset folder; --benchmark [seconds per area] (P9).
+	// Optional: a scene path relative to the asset folder; --benchmark [seconds per area] (P9);
+	// --capture <png> [frames] and --hour <h> (S6).
 	std::string scenePath = "scenes/settlement.scene.json";
 	std::optional<float> benchmarkSeconds;
+	CaptureOptions capture;
 	bool sceneGiven = false; // the editor's Play names a scene: start there, no "Continue" menu
 	for (int i = 1; i < argc; ++i)
 	{
 		const std::string arg = argv[i];
-		if (arg == "--benchmark")
+		if (arg == "--capture" && i + 1 < argc)
+		{
+			capture.file = argv[++i];
+			if (i + 1 < argc && std::atoi(argv[i + 1]) > 0)
+				capture.frames = std::atoi(argv[++i]);
+		}
+		else if (arg == "--hour" && i + 1 < argc)
+			capture.hour = static_cast<float>(std::atof(argv[++i]));
+		else if (arg == "--benchmark")
 		{
 			benchmarkSeconds = 20.0F;
 			if (i + 1 < argc && std::atof(argv[i + 1]) > 0.0)
@@ -631,7 +675,7 @@ int main(int argc, char **argv)
 	umbra::diagnostics::Initialize();
 	umbra::diagnostics::InstallCrashHandlers();
 
-	const int result = RunApplication(scenePath, benchmarkSeconds, !sceneGiven);
+	const int result = RunApplication(scenePath, benchmarkSeconds, !sceneGiven, capture);
 
 	umbra::diagnostics::UninstallCrashHandlers();
 	umbra::diagnostics::Shutdown();

@@ -41,6 +41,8 @@ namespace umbra::render
 
         // Flushes any pending writes to the GPU. Important for uniform buffer
         void Flush() const noexcept;
+        // Makes the GPU's writes visible to the CPU (a read-back buffer).
+        void Invalidate() const noexcept;
         [[nodiscard]] VkBuffer GetHandle() const noexcept { return buffer_; }
         [[nodiscard]] void *GetMappedData() const noexcept { return mappedData_; }
         [[nodiscard]] VkDeviceSize GetSize() const noexcept { return size_; }
@@ -100,13 +102,15 @@ namespace umbra::render
 
         // Create CPU-writable buffer that is mapped using CPU address space.
         [[nodiscard]] bool CreateMappedBuffer(VkDeviceSize size, VkBufferUsageFlags usage, GpuBuffer &buffer);
+        // A mapped buffer the GPU writes and the CPU reads (frame capture).
+        [[nodiscard]] bool CreateReadbackBuffer(VkDeviceSize size, GpuBuffer &buffer);
 
         // Create a GPU-only texture from RGBA pixel data, and create a VkImageView for it.
         // Uploads all mip levels (level 0 first) into one sampled sRGB image.
         [[nodiscard]] bool CreateTexture(const std::vector<core::TextureData> &levels, GpuImage &image);
 
         // Create a GPU-only depth image with the specified extent and format, and create a VkImageView for it.
-        [[nodiscard]] bool CreateDepthImage(VkExtent2D extent, VkFormat format, GpuImage &image);
+        [[nodiscard]] bool CreateDepthImage(VkExtent2D extent, VkFormat format, GpuImage &image, VkImageUsageFlags extraUsage = 0);
 
         [[nodiscard]] VmaAllocator GetHandle() const noexcept { return allocator_; }
 

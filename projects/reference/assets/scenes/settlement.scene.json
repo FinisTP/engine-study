@@ -543,6 +543,446 @@
         0,
         0.7071068
       ]
+    },
+    {
+      "id": "sky",
+      "name": "Sky and time of day",
+      "components": {
+        "environment": {
+          "hour": 18.3,
+          "dayLength": 720,
+          "sunHeading": 30,
+          "indoor": false,
+          "ambient": 1,
+          "fog": 0.35,
+          "tint": [
+            1,
+            1,
+            1
+          ],
+          "shadows": true
+        }
+      }
+    },
+    {
+      "id": "torch_0",
+      "name": "Torch",
+      "position": [
+        -4.0,
+        0.6,
+        -6.6
+      ],
+      "scale": [
+        0.06,
+        0.6,
+        0.06
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.3,
+        0.2,
+        0.12,
+        1
+      ],
+      "components": {
+        "collider": {}
+      }
+    },
+    {
+      "id": "torch_0_flame",
+      "name": "Flame",
+      "position": [
+        -4.0,
+        1.3,
+        -6.6
+      ],
+      "scale": [
+        0.08,
+        0.11,
+        0.08
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        1,
+        0.55,
+        0.18,
+        1
+      ],
+      "emissive": 2,
+      "components": {
+        "light": {
+          "color": [
+            1,
+            0.62,
+            0.3
+          ],
+          "intensity": 4,
+          "range": 7,
+          "flicker": 0.6
+        }
+      }
+    },
+    {
+      "id": "torch_1",
+      "name": "Torch",
+      "position": [
+        4.4,
+        0.6,
+        -11.2
+      ],
+      "scale": [
+        0.06,
+        0.6,
+        0.06
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.3,
+        0.2,
+        0.12,
+        1
+      ],
+      "components": {
+        "collider": {}
+      }
+    },
+    {
+      "id": "torch_1_flame",
+      "name": "Flame",
+      "position": [
+        4.4,
+        1.3,
+        -11.2
+      ],
+      "scale": [
+        0.08,
+        0.11,
+        0.08
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        1,
+        0.55,
+        0.18,
+        1
+      ],
+      "emissive": 2,
+      "components": {
+        "light": {
+          "color": [
+            1,
+            0.62,
+            0.3
+          ],
+          "intensity": 4,
+          "range": 7,
+          "flicker": 0.6
+        }
+      }
+    },
+    {
+      "id": "torch_2",
+      "name": "Torch",
+      "position": [
+        -3.9,
+        0.6,
+        2.9
+      ],
+      "scale": [
+        0.06,
+        0.6,
+        0.06
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.3,
+        0.2,
+        0.12,
+        1
+      ],
+      "components": {
+        "collider": {}
+      }
+    },
+    {
+      "id": "torch_2_flame",
+      "name": "Flame",
+      "position": [
+        -3.9,
+        1.3,
+        2.9
+      ],
+      "scale": [
+        0.08,
+        0.11,
+        0.08
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        1,
+        0.55,
+        0.18,
+        1
+      ],
+      "emissive": 2,
+      "components": {
+        "light": {
+          "color": [
+            1,
+            0.62,
+            0.3
+          ],
+          "intensity": 4,
+          "range": 7,
+          "flicker": 0.6
+        }
+      }
+    },
+    {
+      "id": "torch_3",
+      "name": "Torch",
+      "position": [
+        1.2,
+        0.6,
+        3.4
+      ],
+      "scale": [
+        0.06,
+        0.6,
+        0.06
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.3,
+        0.2,
+        0.12,
+        1
+      ],
+      "components": {
+        "collider": {}
+      }
+    },
+    {
+      "id": "torch_3_flame",
+      "name": "Flame",
+      "position": [
+        1.2,
+        1.3,
+        3.4
+      ],
+      "scale": [
+        0.08,
+        0.11,
+        0.08
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        1,
+        0.55,
+        0.18,
+        1
+      ],
+      "emissive": 2,
+      "components": {
+        "light": {
+          "color": [
+            1,
+            0.62,
+            0.3
+          ],
+          "intensity": 4,
+          "range": 7,
+          "flicker": 0.6
+        }
+      }
+    },
+    {
+      "id": "torch_4",
+      "name": "Torch",
+      "position": [
+        8.6,
+        0.6,
+        1.5
+      ],
+      "scale": [
+        0.06,
+        0.6,
+        0.06
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.3,
+        0.2,
+        0.12,
+        1
+      ],
+      "components": {
+        "collider": {}
+      }
+    },
+    {
+      "id": "torch_4_flame",
+      "name": "Flame",
+      "position": [
+        8.6,
+        1.3,
+        1.5
+      ],
+      "scale": [
+        0.08,
+        0.11,
+        0.08
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        1,
+        0.55,
+        0.18,
+        1
+      ],
+      "emissive": 2,
+      "components": {
+        "light": {
+          "color": [
+            1,
+            0.62,
+            0.3
+          ],
+          "intensity": 4,
+          "range": 7,
+          "flicker": 0.6
+        }
+      }
+    },
+    {
+      "id": "torch_5",
+      "name": "Torch",
+      "position": [
+        8.6,
+        0.6,
+        -1.5
+      ],
+      "scale": [
+        0.06,
+        0.6,
+        0.06
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.3,
+        0.2,
+        0.12,
+        1
+      ],
+      "components": {
+        "collider": {}
+      }
+    },
+    {
+      "id": "torch_5_flame",
+      "name": "Flame",
+      "position": [
+        8.6,
+        1.3,
+        -1.5
+      ],
+      "scale": [
+        0.08,
+        0.11,
+        0.08
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        1,
+        0.55,
+        0.18,
+        1
+      ],
+      "emissive": 2,
+      "components": {
+        "light": {
+          "color": [
+            1,
+            0.62,
+            0.3
+          ],
+          "intensity": 4,
+          "range": 7,
+          "flicker": 0.6
+        }
+      }
+    },
+    {
+      "id": "torch_6",
+      "name": "Torch",
+      "position": [
+        -2.4,
+        0.6,
+        -2.7
+      ],
+      "scale": [
+        0.06,
+        0.6,
+        0.06
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        0.3,
+        0.2,
+        0.12,
+        1
+      ],
+      "components": {
+        "collider": {}
+      }
+    },
+    {
+      "id": "torch_6_flame",
+      "name": "Flame",
+      "position": [
+        -2.4,
+        1.3,
+        -2.7
+      ],
+      "scale": [
+        0.08,
+        0.11,
+        0.08
+      ],
+      "model": "scenes/phase2.gltf",
+      "mesh": 0,
+      "color": [
+        1,
+        0.55,
+        0.18,
+        1
+      ],
+      "emissive": 2,
+      "components": {
+        "light": {
+          "color": [
+            1,
+            0.62,
+            0.3
+          ],
+          "intensity": 4,
+          "range": 7,
+          "flicker": 0.6
+        }
+      }
     }
   ]
 }

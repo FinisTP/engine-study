@@ -44,6 +44,9 @@ namespace umbra::render
         // ReleaseSurface frees everything presented to it; RestoreSurface makes a new one.
         void ReleaseSurface() noexcept;
         void RestoreSurface() noexcept;
+        // Hands the next presented frame's pixels (RGBA8, top row first) to `done`, on this thread.
+        // For tests, screenshots and the agent's look at the scene. No-op where the GPU can't copy.
+        void CaptureNextFrame(std::function<void(const core::TextureData &)> done);
         // The GPU in use and the size of the picture, for reports (benchmark, P9).
         [[nodiscard]] std::string DeviceName() const;
         [[nodiscard]] std::pair<std::uint32_t, std::uint32_t> Extent() const;

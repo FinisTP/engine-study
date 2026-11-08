@@ -193,7 +193,8 @@ namespace umbra::render
         createInfo.imageColorSpace = surfaceFormat.colorSpace;
         createInfo.imageExtent = selectedExtent;
         createInfo.imageArrayLayers = 1;
-        createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        // Copying out of the picture allows frame captures (Renderer::CaptureFrame), where supported.
+        createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | (support.capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
         createInfo.imageSharingMode = hasDistinctQueueFamilies ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
         createInfo.queueFamilyIndexCount = hasDistinctQueueFamilies ? static_cast<std::uint32_t>(familyIndices.size()) : 0;
         createInfo.pQueueFamilyIndices = hasDistinctQueueFamilies ? familyIndices.data() : nullptr;
@@ -214,6 +215,7 @@ namespace umbra::render
 
         device_ = device;
         imageFormat_ = surfaceFormat.format;
+        capturable_ = (createInfo.imageUsage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) != 0;
         extent_ = selectedExtent;
 
         // first we fetch the number of swapchain images available

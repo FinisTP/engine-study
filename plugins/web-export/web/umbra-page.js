@@ -116,6 +116,8 @@ const Page = {
 // 5. The Emscripten module: canvas, saves mounted before main, callbacks from C++ -----------------
 var Module = {
   canvas: $('canvas'),
+  // Command-line options for testing, e.g. index.html?args=--hour%2012 (the same options as the desktop game).
+  arguments: (new URLSearchParams(location.search).get('args') || '').split(' ').filter(Boolean),
   preRun: [() => {
     addRunDependency('assets');
     Page.loadAssets()

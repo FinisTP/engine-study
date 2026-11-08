@@ -515,7 +515,9 @@ void GameFlow::OnAreaEntered()
 bool GameFlow::Save(const std::filesystem::path &file)
 {
     const umbra::gameplay::SpawnPoint spot = scene_.GetPlayerSpot();
-    const std::optional<game::SaveData> data = session_.MakeSave(scene_.GetScenePath(), spot.feet, spot.yaw);
+    std::optional<game::SaveData> data = session_.MakeSave(scene_.GetScenePath(), spot.feet, spot.yaw);
+    if (data)
+        data->hour = scene_.GetWorld().Hour();
     std::vector<umbra::core::Diagnostic> diagnostics;
     const bool saved = data && game::WriteSave(file, *data, diagnostics);
     for (const umbra::core::Diagnostic &diagnostic : diagnostics)
@@ -545,6 +547,8 @@ bool GameFlow::Load(const std::filesystem::path &file)
         return false;
     }
     session_.ApplySave(data);
+    if (data.hour >= 0.0F)
+        scene_.GetWorld().SetHour(data.hour);
     Say("Loaded");
     return true;
 }

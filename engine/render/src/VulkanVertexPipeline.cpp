@@ -62,8 +62,7 @@ namespace umbra::render
         VkDevice device,
         VulkanAllocator &allocator,
         const VulkanSwapchain &swapchain,
-        const std::filesystem::path &vertexShaderPath,
-        const std::filesystem::path &fragmentShaderPath,
+        const std::filesystem::path &shaderDirectory,
         VkDescriptorSetLayout textureSetLayout)
     {
         if (device_ != VK_NULL_HANDLE || device == VK_NULL_HANDLE || swapchain.GetImageViews().empty())
@@ -82,12 +81,15 @@ namespace umbra::render
         }
 
         // 2. create descriptor set layout
-        // set 0, binding 0: per-frame uniform buffer (vertex shader)
+        // set 0, binding 0: per-frame uniform buffer (camera, lights, fog)
+        // set 0, binding 1: the sun's shadow map (fragment shader)
         // set 1 (owned by SceneResources): per-texture combined image sampler
-        const VkDescriptorSetLayoutBinding uniformBinding{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr};
+        const std::array frameBindings{
+            VkDescriptorSetLayoutBinding{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+            VkDescriptorSetLayoutBinding{1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
         VkDescriptorSetLayoutCreateInfo descriptorInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
-        descriptorInfo.bindingCount = 1;
-        descriptorInfo.pBindings = &uniformBinding;
+        descriptorInfo.bindingCount = static_cast<std::uint32_t>(frameBindings.size());
+        descriptorInfo.pBindings = frameBindings.data();
         if (vkCreateDescriptorSetLayout(device_, &descriptorInfo, nullptr, &descriptorSetLayout_) != VK_SUCCESS)
         {
             diagnostics::Error("Failed creating descriptor set layout.");
@@ -160,20 +162,22 @@ namespace umbra::render
             return false;
         }
 
-        VkShaderModule vertexShader = VK_NULL_HANDLE, fragmentShader = VK_NULL_HANDLE;
-        if (!CreateShader(device_, vertexShaderPath, vertexShader) || !CreateShader(device_, fragmentShaderPath, fragmentShader))
-        {
-            if (vertexShader)
+        // Scene, sky and shadow shaders; they are only needed until the pipelines exist.
+        std::array<VkShaderModule, 5> shaders{};
+        const char *shaderFiles[] = {"Scene.vert.spv", "Scene.frag.spv", "Sky.vert.spv", "Sky.frag.spv", "Shadow.vert.spv"};
+        const auto destroyShaders = [&] {
+            for (VkShaderModule &shader : shaders)
+                if (shader)
+                    vkDestroyShaderModule(device_, shader, nullptr), shader = VK_NULL_HANDLE;
+        };
+        for (std::size_t i = 0; i < shaders.size(); ++i)
+            if (!CreateShader(device_, shaderDirectory / shaderFiles[i], shaders[i]))
             {
-                vkDestroyShaderModule(device_, vertexShader, nullptr);
+                destroyShaders();
+                Shutdown();
+                return false;
             }
-            if (fragmentShader)
-            {
-                vkDestroyShaderModule(device_, fragmentShader, nullptr);
-            }
-            Shutdown();
-            return false;
-        }
+        const VkShaderModule vertexShader = shaders[0], fragmentShader = shaders[1];
 
         // 5. create graphics pipeline
         // 5.1. map HLSL shader interface to Vulkan shader interface
@@ -248,12 +252,32 @@ namespace umbra::render
         pipelineInfo.pColorBlendState = &blend;
         pipelineInfo.layout = pipelineLayout_;
         pipelineInfo.renderPass = renderPass_;
-        const VkResult pipelineResult = vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline_);
-        vkDestroyShaderModule(device_, fragmentShader, nullptr);
-        vkDestroyShaderModule(device_, vertexShader, nullptr);
+        VkResult pipelineResult = vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline_);
+
+        // 6.1. The sky: no vertex buffer (the shader makes one triangle), no depth test, drawn first.
+        const std::array skyStages{
+            VkPipelineShaderStageCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0, VK_SHADER_STAGE_VERTEX_BIT, shaders[2], "main", nullptr},
+            VkPipelineShaderStageCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0, VK_SHADER_STAGE_FRAGMENT_BIT, shaders[3], "main", nullptr}};
+        VkPipelineVertexInputStateCreateInfo noVertices{VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
+        VkPipelineDepthStencilStateCreateInfo noDepth{VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
+        noDepth.maxDepthBounds = 1.0F;
+        VkPipelineRasterizationStateCreateInfo bothSides = raster;
+        bothSides.cullMode = VK_CULL_MODE_NONE;
+        VkGraphicsPipelineCreateInfo skyInfo = pipelineInfo;
+        skyInfo.pStages = skyStages.data();
+        skyInfo.pVertexInputState = &noVertices;
+        skyInfo.pDepthStencilState = &noDepth;
+        skyInfo.pRasterizationState = &bothSides;
+        if (pipelineResult == VK_SUCCESS)
+            pipelineResult = vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &skyInfo, nullptr, &skyPipeline_);
+
+        // 6.2. The sun's shadow map: a depth image the scene shader samples afterwards.
+        if (pipelineResult == VK_SUCCESS && !CreateShadowMap(physicalDevice, allocator, shaders[4], pipelineInfo, vertexInput, assembly, multisample, depthState))
+            pipelineResult = VK_ERROR_INITIALIZATION_FAILED;
+        destroyShaders();
         if (pipelineResult != VK_SUCCESS)
         {
-            diagnostics::Error("Failed creating indexed scene pipeline.");
+            diagnostics::Error("Failed creating the scene, sky or shadow pipeline.");
             Shutdown();
             return false;
         }
@@ -289,6 +313,101 @@ namespace umbra::render
         return true;
     }
 
+    bool VulkanVertexPipeline::CreateShadowMap(VkPhysicalDevice physicalDevice, VulkanAllocator &allocator, VkShaderModule shadowShader,
+                                               const VkGraphicsPipelineCreateInfo &scene, const VkPipelineVertexInputStateCreateInfo &vertexInput,
+                                               const VkPipelineInputAssemblyStateCreateInfo &assembly,
+                                               const VkPipelineMultisampleStateCreateInfo &multisample,
+                                               const VkPipelineDepthStencilStateCreateInfo &depthState)
+    {
+        // 1. A 16-bit depth image that can be drawn into and then sampled (every GPU supports this).
+        constexpr VkFormat format = VK_FORMAT_D16_UNORM;
+        VkFormatProperties properties{};
+        vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &properties);
+        const bool linear = (properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) != 0;
+        if (!allocator.CreateDepthImage({shadowMapSize, shadowMapSize}, format, shadowImage_, VK_IMAGE_USAGE_SAMPLED_BIT))
+            return false;
+
+        // 2. A depth-only render pass that leaves the image ready for the scene shader to read.
+        VkAttachmentDescription depth{};
+        depth.format = format;
+        depth.samples = VK_SAMPLE_COUNT_1_BIT;
+        depth.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depth.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        depth.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        depth.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depth.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        depth.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        const VkAttachmentReference depthRef{0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
+        VkSubpassDescription subpass{};
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.pDepthStencilAttachment = &depthRef;
+        // Wait for last frame's reads before writing; make the writes visible to this frame's reads.
+        std::array<VkSubpassDependency, 2> dependencies{};
+        dependencies[0] = {VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                           VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, 0};
+        dependencies[1] = {0, VK_SUBPASS_EXTERNAL, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                           VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, 0};
+        VkRenderPassCreateInfo passInfo{VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
+        passInfo.attachmentCount = 1;
+        passInfo.pAttachments = &depth;
+        passInfo.subpassCount = 1;
+        passInfo.pSubpasses = &subpass;
+        passInfo.dependencyCount = static_cast<std::uint32_t>(dependencies.size());
+        passInfo.pDependencies = dependencies.data();
+        if (vkCreateRenderPass(device_, &passInfo, nullptr, &shadowRenderPass_) != VK_SUCCESS)
+            return false;
+        const VkImageView view = shadowImage_.GetView();
+        VkFramebufferCreateInfo framebufferInfo{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
+        framebufferInfo.renderPass = shadowRenderPass_;
+        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.pAttachments = &view;
+        framebufferInfo.width = framebufferInfo.height = shadowMapSize;
+        framebufferInfo.layers = 1;
+        if (vkCreateFramebuffer(device_, &framebufferInfo, nullptr, &shadowFramebuffer_) != VK_SUCCESS)
+            return false;
+
+        // 3. A comparison sampler: each lookup answers "lit or not" (filtered when the GPU allows).
+        VkSamplerCreateInfo samplerInfo{VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
+        samplerInfo.magFilter = samplerInfo.minFilter = linear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+        samplerInfo.addressModeU = samplerInfo.addressModeV = samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerInfo.compareEnable = VK_TRUE;
+        samplerInfo.compareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+        samplerInfo.maxLod = 0.0F;
+        if (vkCreateSampler(device_, &samplerInfo, nullptr, &shadowSampler_) != VK_SUCCESS)
+            return false;
+
+        // 4. The pipeline: vertex shader only, both sides, a small depth bias against shadow acne.
+        const VkPipelineShaderStageCreateInfo stage{VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0, VK_SHADER_STAGE_VERTEX_BIT, shadowShader, "main", nullptr};
+        VkViewport viewport{0.0F, 0.0F, static_cast<float>(shadowMapSize), static_cast<float>(shadowMapSize), 0.0F, 1.0F};
+        VkRect2D scissor{{0, 0}, {shadowMapSize, shadowMapSize}};
+        VkPipelineViewportStateCreateInfo viewportInfo{VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
+        viewportInfo.viewportCount = 1;
+        viewportInfo.pViewports = &viewport;
+        viewportInfo.scissorCount = 1;
+        viewportInfo.pScissors = &scissor;
+        VkPipelineRasterizationStateCreateInfo raster{VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};
+        raster.polygonMode = VK_POLYGON_MODE_FILL;
+        raster.cullMode = VK_CULL_MODE_NONE;
+        raster.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        raster.depthBiasEnable = VK_TRUE;
+        raster.depthBiasConstantFactor = 1.25F;
+        raster.depthBiasSlopeFactor = 1.75F;
+        raster.lineWidth = 1.0F;
+        VkPipelineColorBlendStateCreateInfo noColor{VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO};
+        VkGraphicsPipelineCreateInfo info = scene;
+        info.stageCount = 1;
+        info.pStages = &stage;
+        info.pVertexInputState = &vertexInput;
+        info.pInputAssemblyState = &assembly;
+        info.pViewportState = &viewportInfo;
+        info.pRasterizationState = &raster;
+        info.pMultisampleState = &multisample;
+        info.pDepthStencilState = &depthState;
+        info.pColorBlendState = &noColor;
+        info.renderPass = shadowRenderPass_;
+        return vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &info, nullptr, &shadowPipeline_) == VK_SUCCESS;
+    }
+
     void VulkanVertexPipeline::Shutdown() noexcept
     {
         if (device_ == VK_NULL_HANDLE)
@@ -301,6 +420,22 @@ namespace umbra::render
         }
         framebuffers_.clear();
         depthImages_.clear();
+        if (shadowFramebuffer_)
+            vkDestroyFramebuffer(device_, shadowFramebuffer_, nullptr);
+        if (shadowPipeline_)
+            vkDestroyPipeline(device_, shadowPipeline_, nullptr);
+        if (shadowRenderPass_)
+            vkDestroyRenderPass(device_, shadowRenderPass_, nullptr);
+        if (shadowSampler_)
+            vkDestroySampler(device_, shadowSampler_, nullptr);
+        if (skyPipeline_)
+            vkDestroyPipeline(device_, skyPipeline_, nullptr);
+        shadowImage_.Reset();
+        shadowFramebuffer_ = VK_NULL_HANDLE;
+        shadowPipeline_ = VK_NULL_HANDLE;
+        shadowRenderPass_ = VK_NULL_HANDLE;
+        shadowSampler_ = VK_NULL_HANDLE;
+        skyPipeline_ = VK_NULL_HANDLE;
         if (pipeline_)
         {
             vkDestroyPipeline(device_, pipeline_, nullptr);

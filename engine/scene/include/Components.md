@@ -20,8 +20,12 @@ lists only the components it has, one of each type:
 | `interactable` | use with **E**: message, sound, conversation, save stone | `world::Interactable`, `gameplay/Interaction` |
 | `portal` | walking in loads another scene | `world::Portal` |
 | `spawner` | an enemy area | `world::Spawner`, `SceneRuntime` |
+| `light` | a point light: torch, campfire, crystal (S6) | `world::Light`, `core/Lighting.hpp` |
+| `environment` | the scene's sun, sky, fog and time of day; one per scene (S6) | `world::World::SetEnvironment`, `core/Lighting.hpp` |
 
-Their fields are in `SceneFormat.md`.
+Their fields are in `SceneFormat.md`. `light` and `environment` are described by schemas written in
+code (`EngineComponentSchemas()`), so the editor shows their fields like a project component's, and
+a project may not define a component with either name.
 
 ## Project components (your game)
 
@@ -38,6 +42,7 @@ A project component has two parts:
 
    | Field kind | Editor widget | Value |
    |---|---|---|
+   | `color` | color picker | `[r, g, b]`, each within `min`..`max` |
    | `number` / `int` | drag / whole-number box (`min`, `max`) | number |
    | `bool` | checkbox | true/false |
    | `string` | text box | text |

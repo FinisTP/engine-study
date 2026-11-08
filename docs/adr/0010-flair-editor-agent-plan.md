@@ -75,6 +75,11 @@ systems are added in S15 and listed there, so earlier phases stay small.
 | S14 | Graph editor UI | `imgui-node-editor` (MIT; new dependency, reviewed then) |
 | S15 | Vision model | `qwen3-vl:8b` on 8 GB GPUs, measured on the S15 example requests |
 
+Answered (user, 2026-11-09): S6 uses the default (one 2048 map). The time of day is saved in save
+games, the settlement runs a 12-minute day that starts at dusk, and nights are moonlit and readable.
+S7 converts SPIR-V to WGSL at build time. On mobile, post-processing is reduced: tonemapping, grading
+and vignette stay on, and bloom runs at half resolution.
+
 ## Consequences
 
 - Twelve phases, each with tests and its example; Windows checks per phase as before.

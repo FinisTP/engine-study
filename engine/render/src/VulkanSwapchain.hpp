@@ -38,6 +38,7 @@ namespace umbra::render
 
         [[nodiscard]] VkSwapchainKHR GetHandle() const noexcept { return swapchain_; }
         [[nodiscard]] VkFormat GetImageFormat() const noexcept { return imageFormat_; }
+        [[nodiscard]] bool CanCapture() const noexcept { return capturable_; } // images can be copied out
         [[nodiscard]] VkExtent2D GetExtent() const noexcept { return extent_; }
         [[nodiscard]] const std::vector<VkImage> &GetImages() const noexcept { return images_; }
         [[nodiscard]] const std::vector<VkImageView> &GetImageViews() const noexcept { return imageViews_; }
@@ -46,6 +47,7 @@ namespace umbra::render
         VkDevice device_ = VK_NULL_HANDLE;
         VkSwapchainKHR swapchain_ = VK_NULL_HANDLE;
         VkFormat imageFormat_ = VK_FORMAT_UNDEFINED;
+        bool capturable_ = false;
         VkExtent2D extent_{};
         std::vector<VkImage> images_;
         std::vector<VkImageView> imageViews_;

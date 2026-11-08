@@ -1,24 +1,34 @@
 // WebGPU side of the browser renderer (RendererWeb.cpp, roadmap P10). Linked with --js-library.
 // Scene.wgsl below is the hand port of Scene.hlsl (ADR 0001): per-draw data comes from a uniform
 // buffer slot with a dynamic offset instead of push constants, and there is no Y flip.
+// Colors are linear: textures are sRGB and the canvas is viewed as sRGB, like the Vulkan swapchain.
 var UmbraRender = {
   $UG: {
     device: null, context: null, format: null, depth: null, name: 'WebGPU',
     meshes: [null], textures: [null], groups: [null],
     shader: `
-struct Frame { viewProjection: mat4x4f };
-struct Draw { model: mat4x4f, color: vec4f, texturing: vec4f };
+// Must match Frame in RendererWeb.cpp (= core::LightingBlock after the matrices). Math: Lighting.md.
+struct Frame {
+  viewProjection: mat4x4f, shadowMatrix: mat4x4f, inverseViewProjection: mat4x4f,
+  cameraPosition: vec4f, sunDirection: vec4f, sunColor: vec4f, skyColor: vec4f,
+  horizonColor: vec4f, groundColor: vec4f, fogColor: vec4f, counts: vec4f,
+  lightPositions: array<vec4f, 16>, lightColors: array<vec4f, 16>
+};
+struct Draw { model: mat4x4f, color: vec4f, texturing: vec4f }; // texturing: x = meters per repeat, y = emissive
 @group(0) @binding(0) var<uniform> frame: Frame;
 @group(0) @binding(1) var<uniform> draw: Draw;
+@group(0) @binding(2) var shadowMap: texture_depth_2d;
+@group(0) @binding(3) var shadowSampler: sampler_comparison;
 @group(1) @binding(0) var baseColorSampler: sampler;
 @group(1) @binding(1) var baseColorTexture: texture_2d<f32>;
-struct Out { @builtin(position) position: vec4f, @location(0) normal: vec3f, @location(1) uv: vec2f };
+struct Out { @builtin(position) position: vec4f, @location(0) normal: vec3f, @location(1) uv: vec2f, @location(2) world: vec3f };
 @vertex fn vs(@location(0) position: vec3f, @location(1) normal: vec3f, @location(2) uv: vec2f) -> Out {
   var o: Out;
   let world = draw.model * vec4f(position, 1.0);
   o.position = frame.viewProjection * world;
   o.normal = normalize((draw.model * vec4f(normal, 0.0)).xyz);
   o.uv = uv;
+  o.world = world.xyz;
   if (draw.texturing.x > 0.0) { // world-space texture coordinates (WorldUv.md)
     let n = abs(o.normal);
     let p = world.xyz;
@@ -28,11 +38,67 @@ struct Out { @builtin(position) position: vec4f, @location(0) normal: vec3f, @lo
   }
   return o;
 }
+// How much sun reaches this point (1 = lit). WebGPU: clip y = +1 is the map's first row.
+fn sunShadow(p: vec3f, n: vec3f) -> f32 {
+  let s = frame.shadowMatrix * vec4f(p + n * 0.06, 1.0);
+  let uv = vec2f(0.5 + 0.5 * s.x, 0.5 - 0.5 * s.y);
+  if (any(uv < vec2f(0.0)) || any(uv > vec2f(1.0)) || s.z > 1.0) { return 1.0; }
+  var lit = 0.0;
+  for (var y = -1; y <= 1; y++) {
+    for (var x = -1; x <= 1; x++) {
+      lit += textureSampleCompareLevel(shadowMap, shadowSampler, uv + vec2f(f32(x), f32(y)) * frame.counts.y, s.z - 0.0015);
+    }
+  }
+  return lit / 9.0;
+}
 @fragment fn fs(i: Out) -> @location(0) vec4f {
-  let light = normalize(vec3f(0.4, 0.8, 0.5));
-  let lighting = 0.25 + 0.75 * max(dot(normalize(i.normal), light), 0.0);
   let albedo = textureSample(baseColorTexture, baseColorSampler, i.uv) * draw.color;
-  return vec4f(albedo.rgb * lighting, albedo.a);
+  let n = normalize(i.normal);
+  // 1. Sky light from above, ground light from below.
+  let sky = mix(frame.horizonColor.rgb, frame.skyColor.rgb, 0.5);
+  var light = mix(frame.groundColor.rgb, sky, n.y * 0.5 + 0.5) * frame.skyColor.w;
+  // 2. The sun (or moon), unless something stands in the way.
+  let sunAmount = max(dot(n, frame.sunDirection.xyz), 0.0);
+  if (sunAmount > 0.0) {
+    var shadow = 1.0;
+    if (frame.sunDirection.w > 0.0) { shadow = sunShadow(i.world, n); }
+    light += frame.sunColor.rgb * sunAmount * shadow;
+  }
+  // 3. Point lights: softly to nothing at their range.
+  for (var l = 0; l < i32(frame.counts.x); l++) {
+    let toLight = frame.lightPositions[l].xyz - i.world;
+    let d = length(toLight);
+    let x = d / frame.lightPositions[l].w;
+    if (x >= 1.0) { continue; }
+    let window = saturate(1.0 - x * x * x * x);
+    light += frame.lightColors[l].rgb * (window * window / (1.0 + d * d)) * max(dot(n, toLight / max(d, 0.0001)), 0.0);
+  }
+  // 4. Its own glow, then fog.
+  let color = albedo.rgb * (light + draw.texturing.y);
+  let fog = 1.0 - exp(-frame.fogColor.w * length(i.world - frame.cameraPosition.xyz));
+  return vec4f(mix(color, frame.fogColor.rgb, fog), albedo.a);
+}
+// Sun shadow map: depth only, seen from the sun.
+@vertex fn shadowVs(@location(0) position: vec3f) -> @builtin(position) vec4f {
+  return frame.shadowMatrix * draw.model * vec4f(position, 1.0);
+}
+// Sky: one triangle covering the screen, drawn first.
+struct SkyOut { @builtin(position) position: vec4f, @location(0) ndc: vec2f };
+@vertex fn skyVs(@builtin(vertex_index) id: u32) -> SkyOut {
+  var o: SkyOut;
+  let ndc = vec2f(f32((id << 1u) & 2u), f32(id & 2u)) * 2.0 - 1.0;
+  o.position = vec4f(ndc, 1.0, 1.0);
+  o.ndc = ndc;
+  return o;
+}
+@fragment fn skyFs(i: SkyOut) -> @location(0) vec4f {
+  let far = frame.inverseViewProjection * vec4f(i.ndc, 1.0, 1.0);
+  let ray = normalize(far.xyz / far.w - frame.cameraPosition.xyz);
+  var color = mix(frame.horizonColor.rgb, frame.groundColor.rgb, saturate(-ray.y * 4.0));
+  if (ray.y >= 0.0) { color = mix(frame.horizonColor.rgb, frame.skyColor.rgb, sqrt(ray.y)); }
+  let toward = max(dot(ray, frame.sunDirection.xyz), 0.0);
+  color += frame.sunColor.rgb * (pow(toward, 800.0) * 6.0 + pow(toward, 12.0) * 0.25);
+  return vec4f(mix(color, frame.fogColor.rgb, saturate(frame.fogColor.w * 25.0)), 1.0);
 }
 struct LineOut { @builtin(position) position: vec4f, @location(0) color: vec4f };
 @vertex fn lineVs(@location(0) position: vec3f, @location(1) color: vec4f) -> LineOut {
@@ -95,16 +161,22 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
       var device = UG.device = await adapter.requestDevice();
       device.lost.then(function (lost) { if (Module.onGpuLost) Module.onGpuLost(lost.message); });
       device.onuncapturederror = function (e) { if (!UG.errors) UG.errors = 0; if (UG.errors++ < 10) console.warn('WebGPU: ' + e.error.message); };
-      UG.format = navigator.gpu.getPreferredCanvasFormat();
+      var canvasFormat = navigator.gpu.getPreferredCanvasFormat();
+      UG.format = canvasFormat + '-srgb'; // we draw through an sRGB view of the canvas
       UG.context = Module.canvas.getContext('webgpu');
-      UG.context.configure({ device: device, format: UG.format, alphaMode: 'opaque' });
+      UG.context.configure({ device: device, format: canvasFormat, viewFormats: [UG.format], alphaMode: 'opaque' });
       var module = device.createShaderModule({ code: UG.shader });
       var vertexLayout = { arrayStride: 32, attributes: [
         { shaderLocation: 0, offset: 0, format: 'float32x3' }, { shaderLocation: 1, offset: 12, format: 'float32x3' },
         { shaderLocation: 2, offset: 24, format: 'float32x2' }] };
-      var frameLayout = device.createBindGroupLayout({ entries: [
-        { binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: 'uniform' } },
-        { binding: 1, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform', hasDynamicOffset: true } }] });
+      // Group 0: frame, per-draw slot, shadow map. The shadow pass gets a copy without the map (it draws into it).
+      var frameEntries = [
+        { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+        { binding: 1, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform', hasDynamicOffset: true } }];
+      var shadowLayout = device.createBindGroupLayout({ entries: frameEntries });
+      var frameLayout = device.createBindGroupLayout({ entries: frameEntries.concat([
+        { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'depth' } },
+        { binding: 3, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'comparison' } }]) });
       var textureLayout = device.createBindGroupLayout({ entries: [
         { binding: 0, visibility: GPUShaderStage.FRAGMENT, sampler: {} },
         { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: {} }] });
@@ -115,6 +187,23 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
           color: { srcFactor: 'src-alpha', dstFactor: 'one-minus-src-alpha' }, alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' } } }] },
         primitive: { topology: 'triangle-list', cullMode: 'none' },
         depthStencil: { format: 'depth24plus', depthWriteEnabled: true, depthCompare: 'less' } });
+      UG.skyPipeline = device.createRenderPipeline({
+        layout: device.createPipelineLayout({ bindGroupLayouts: [frameLayout] }),
+        vertex: { module: module, entryPoint: 'skyVs' },
+        fragment: { module: module, entryPoint: 'skyFs', targets: [{ format: UG.format }] },
+        primitive: { topology: 'triangle-list' },
+        depthStencil: { format: 'depth24plus', depthWriteEnabled: false, depthCompare: 'always' } });
+      UG.shadowPipeline = device.createRenderPipeline({
+        layout: device.createPipelineLayout({ bindGroupLayouts: [shadowLayout] }),
+        vertex: { module: module, entryPoint: 'shadowVs', buffers: [vertexLayout] },
+        primitive: { topology: 'triangle-list', cullMode: 'none' },
+        depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'less', depthBias: 2, depthBiasSlopeScale: 1.75 } });
+      // The sun's shadow map (RendererWeb.cpp's shadowMapSize) and its hardware comparison.
+      UG.shadowMap = device.createTexture({ size: [2048, 2048], format: 'depth32float',
+        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING });
+      UG.shadowView = UG.shadowMap.createView();
+      UG.shadowSampler = device.createSampler({ compare: 'less-equal', magFilter: 'linear', minFilter: 'linear' });
+      UG.shadowLayout = shadowLayout;
       UG.linePipeline = device.createRenderPipeline({
         layout: device.createPipelineLayout({ bindGroupLayouts: [frameLayout] }),
         vertex: { module: module, entryPoint: 'lineVs', buffers: [{ arrayStride: 28, attributes: [
@@ -136,11 +225,11 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
       UG.uiBuffer = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
       UG.uiGroup = device.createBindGroup({ layout: UG.uiLayout, entries: [{ binding: 0, resource: { buffer: UG.uiBuffer } }] });
       UG.frameLayout = frameLayout;
-      UG.frameBuffer = device.createBuffer({ size: 64, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+      UG.frameBuffer = device.createBuffer({ size: 208 * 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
       UG.drawCapacity = 0;
       UG.sampler = device.createSampler({ magFilter: 'linear', minFilter: 'linear', mipmapFilter: 'linear', addressModeU: 'repeat', addressModeV: 'repeat' });
       // Fallback texture: one white pixel (like the Vulkan renderer's).
-      var white = device.createTexture({ size: [1, 1], format: 'rgba8unorm', usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST });
+      var white = device.createTexture({ size: [1, 1], format: 'rgba8unorm-srgb', usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST });
       device.queue.writeTexture({ texture: white }, new Uint8Array([255, 255, 255, 255]), { bytesPerRow: 4 }, [1, 1]);
       UG.whiteGroup = UG.textureGroup(white);
       return 1;
@@ -164,7 +253,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
   },
   umbra_gpu_texture__deps: ['$UG'],
   umbra_gpu_texture: function (width, height, levels) {
-    var t = UG.device.createTexture({ size: [width, height], mipLevelCount: levels, format: 'rgba8unorm',
+    var t = UG.device.createTexture({ size: [width, height], mipLevelCount: levels, format: 'rgba8unorm-srgb',
       usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST });
     var id = UG.put(UG.textures, t);
     UG.groups[id] = UG.textureGroup(t);
@@ -181,7 +270,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
   },
 
   umbra_gpu_frame__deps: ['$UG'],
-  umbra_gpu_frame: function (viewProjection, draws, drawCount, lines, lineCount, hud) {
+  umbra_gpu_frame: function (frame, draws, drawCount, lines, lineCount, hud) {
     Module.frameCount = (Module.frameCount || 0) + 1; // for the page and tests
     if (Module.onHud) Module.onHud(UTF8ToString(hud));
     var device = UG.device, canvas = Module.canvas;
@@ -194,23 +283,44 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
       UG.depth = device.createTexture({ size: [w, h], format: 'depth24plus', usage: GPUTextureUsage.RENDER_ATTACHMENT });
     }
     // 2. Per-frame and per-draw uniforms: one 256-byte slot per draw (dynamic offset).
-    device.queue.writeBuffer(UG.frameBuffer, 0, HEAPF32.buffer, viewProjection, 64);
+    device.queue.writeBuffer(UG.frameBuffer, 0, HEAPF32.buffer, frame, 208 * 4);
     if (!UG.drawBuffer || drawCount > UG.drawCapacity) {
       if (UG.drawBuffer) UG.drawBuffer.destroy();
       UG.drawCapacity = Math.max(64, drawCount * 2);
       UG.drawBuffer = device.createBuffer({ size: UG.drawCapacity * 256, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
-      UG.frameGroup = device.createBindGroup({ layout: UG.frameLayout, entries: [
-        { binding: 0, resource: { buffer: UG.frameBuffer } }, { binding: 1, resource: { buffer: UG.drawBuffer, size: 96 } }] });
+      var entries = [{ binding: 0, resource: { buffer: UG.frameBuffer } }, { binding: 1, resource: { buffer: UG.drawBuffer, size: 96 } }];
+      UG.shadowGroup = device.createBindGroup({ layout: UG.shadowLayout, entries: entries });
+      UG.frameGroup = device.createBindGroup({ layout: UG.frameLayout, entries: entries.concat([
+        { binding: 2, resource: UG.shadowView }, { binding: 3, resource: UG.shadowSampler }]) });
     }
     var src = HEAPF32.subarray(draws >> 2, (draws >> 2) + drawCount * 28);
     var slots = new Float32Array(Math.max(drawCount, 1) * 64);
     for (var d = 0; d < drawCount; ++d) slots.set(src.subarray(d * 28, d * 28 + 24), d * 64);
     if (drawCount > 0) device.queue.writeBuffer(UG.drawBuffer, 0, slots);
-    // 3. One pass: objects, then debug lines on top.
+    // 3. Shadow pass (only when the sun casts shadows: frame float 48 + 7 = sunDirection.w).
     var encoder = device.createCommandEncoder();
+    var castsShadow = HEAPF32[(frame >> 2) + 55] > 0;
+    var shadowPass = encoder.beginRenderPass({ colorAttachments: [],
+      depthStencilAttachment: { view: UG.shadowView, depthClearValue: 1, depthLoadOp: 'clear', depthStoreOp: 'store' } });
+    if (castsShadow && drawCount > 0) {
+      shadowPass.setPipeline(UG.shadowPipeline);
+      for (var d = 0; d < drawCount; ++d) {
+        var mesh = UG.meshes[src[d * 28 + 24]];
+        if (!mesh) continue;
+        shadowPass.setBindGroup(0, UG.shadowGroup, [d * 256]);
+        shadowPass.setVertexBuffer(0, mesh.vertices);
+        shadowPass.setIndexBuffer(mesh.indices, 'uint32');
+        shadowPass.drawIndexed(mesh.count);
+      }
+    }
+    shadowPass.end();
+    // 4. Main pass: sky, objects, then debug lines on top.
     var pass = encoder.beginRenderPass({
-      colorAttachments: [{ view: UG.context.getCurrentTexture().createView(), clearValue: { r: 0.015, g: 0.02, b: 0.04, a: 1 }, loadOp: 'clear', storeOp: 'store' }],
+      colorAttachments: [{ view: UG.context.getCurrentTexture().createView({ format: UG.format }), clearValue: { r: 0, g: 0, b: 0, a: 1 }, loadOp: 'clear', storeOp: 'store' }],
       depthStencilAttachment: { view: UG.depth.createView(), depthClearValue: 1, depthLoadOp: 'clear', depthStoreOp: 'store' } });
+    pass.setPipeline(UG.skyPipeline);
+    pass.setBindGroup(0, UG.frameGroup, [0]);
+    pass.draw(3);
     if (drawCount > 0) {
       pass.setPipeline(UG.pipeline);
       for (var d = 0; d < drawCount; ++d) {
@@ -251,7 +361,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
     var ib = UG.buffer(GPUBufferUsage.INDEX, HEAPU16.subarray(indices >> 1, (indices >> 1) + indexCount + (indexCount & 1)));
     var b = HEAPF32.subarray(batches >> 2, (batches >> 2) + batchCount * 8);
     var encoder = device.createCommandEncoder();
-    var pass = encoder.beginRenderPass({ colorAttachments: [{ view: UG.context.getCurrentTexture().createView(), loadOp: 'load', storeOp: 'store' }] });
+    var pass = encoder.beginRenderPass({ colorAttachments: [{ view: UG.context.getCurrentTexture().createView({ format: UG.format }), loadOp: 'load', storeOp: 'store' }] });
     pass.setPipeline(UG.uiPipeline);
     pass.setBindGroup(0, UG.uiGroup);
     pass.setVertexBuffer(0, vb);

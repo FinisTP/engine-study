@@ -85,6 +85,11 @@ namespace umbra::render
         if (allocator_ != VK_NULL_HANDLE && allocation_ != VK_NULL_HANDLE)
             (void)vmaFlushAllocation(allocator_, allocation_, 0, VK_WHOLE_SIZE);
     }
+    void GpuBuffer::Invalidate() const noexcept
+    {
+        if (allocator_ != VK_NULL_HANDLE && allocation_ != VK_NULL_HANDLE)
+            (void)vmaInvalidateAllocation(allocator_, allocation_, 0, VK_WHOLE_SIZE);
+    }
     GpuBuffer::GpuBuffer(GpuBuffer &&other) noexcept { *this = std::move(other); }
     GpuBuffer &GpuBuffer::operator=(GpuBuffer &&other) noexcept
     {
@@ -219,6 +224,29 @@ namespace umbra::render
         if (result != VK_SUCCESS)
         {
             LogVkFailure("Failed to allocate mapped buffer.", result);
+            return false;
+        }
+        buffer.allocator_ = allocator_;
+        buffer.mappedData_ = resultInfo.pMappedData;
+        buffer.size_ = size;
+        return true;
+    }
+
+    bool VulkanAllocator::CreateReadbackBuffer(VkDeviceSize size, GpuBuffer &buffer)
+    {
+        buffer.Reset();
+        VkBufferCreateInfo bufferInfo{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+        bufferInfo.size = size;
+        bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        VmaAllocationCreateInfo allocationInfo{};
+        allocationInfo.usage = VMA_MEMORY_USAGE_AUTO;
+        allocationInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        VmaAllocationInfo resultInfo{};
+        const VkResult result = vmaCreateBuffer(allocator_, &bufferInfo, &allocationInfo, &buffer.buffer_, &buffer.allocation_, &resultInfo);
+        if (result != VK_SUCCESS)
+        {
+            LogVkFailure("Failed to allocate read-back buffer.", result);
             return false;
         }
         buffer.allocator_ = allocator_;
@@ -384,7 +412,7 @@ namespace umbra::render
         return true;
     }
 
-    bool VulkanAllocator::CreateDepthImage(VkExtent2D extent, VkFormat format, GpuImage &image)
+    bool VulkanAllocator::CreateDepthImage(VkExtent2D extent, VkFormat format, GpuImage &image, VkImageUsageFlags extraUsage)
     {
         VkImageCreateInfo imageInfo{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -394,7 +422,7 @@ namespace umbra::render
         imageInfo.format = format;
         imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
         imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | extraUsage;
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         VmaAllocationCreateInfo allocationInfo{};

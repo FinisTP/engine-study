@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Handles.hpp>
+#include <Lighting.hpp>
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
@@ -21,6 +22,7 @@ namespace umbra::core
         glm::mat4 model{1.0F};
         glm::vec4 color{1.0F};
         float metersPerRepeat = 0.0F; // > 0: texture repeats every N meters in world space (WorldUv.md)
+        float emissive = 0.0F;        // glows by itself (Lighting.md)
     };
 
     // A world-space line for debugging (collider outlines, rays). Drawn on top, no depth test.
@@ -98,6 +100,8 @@ namespace umbra::core
     struct DrawList final
     {
         Camera camera;
+        Environment environment;        // sun, sky, fog (Lighting.md)
+        std::vector<PointLight> lights; // torches, fires... (the nearest maxLights are used)
         std::vector<DrawItem> items;
         std::vector<DebugLine> lines;
         Hud hud;
@@ -106,6 +110,7 @@ namespace umbra::core
         void Clear()
         {
             items.clear();
+            lights.clear();
             lines.clear();
             hud = {};
             ui.Clear();

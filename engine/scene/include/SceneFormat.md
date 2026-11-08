@@ -29,9 +29,10 @@ A scene is a readable JSON file that people, tools and AI agents can edit. It st
 | `model` | asset path | none | glTF file to draw from. Makes the entity renderable. |
 | `mesh` | integer ≥ 0 | `0` | Which mesh (primitive) of `model`, in import order. |
 | `color` | `[r, g, b, a]` | `[1,1,1,1]` | Tint multiplied with the material color. |
+| `emissive` | number 0..100 | `0` | The surface's own glow, added to the light that reaches it: 1 shows the texture unlit, 2-3 glows (flames, crystals). It does not light other things; add a `light` for that (`engine/core/include/Lighting.md`). |
 | `material` | asset path | none | A `*.material.json` whose image replaces the model's texture, optionally repeating by meters (`engine/assets/include/Material.md`). Needs `model`. |
 | `instance` | asset path | none | At load, the whole node hierarchy of this glTF is created under this entity (ids `"<id>/<node name>"`). |
-| `components` | object | none | `{"<type>": {fields}}`, one of each type: the built-in `collider`, `interactable`, `portal`, `spawner` (below) and the project's own (`Components.md`). |
+| `components` | object | none | `{"<type>": {fields}}`, one of each type: the built-in `collider`, `interactable`, `portal`, `spawner`, `light`, `environment` (below) and the project's own (`Components.md`). |
 
 Older files put the four built-in components directly on the entity (`"collider": {}`). They
 still load; the editor moves them into `components` when it opens the file, and `SaveScene`
@@ -81,6 +82,37 @@ rotation the facing. Any entity can be a spawn marker; it needs no model.
 A portal only fires after the player has been outside every portal since arriving, so a spawn
 placed inside a portal does not bounce straight back. Place spawns a little away from portals.
 
+### Light
+
+```json
+"light": { "color": [1, 0.62, 0.3], "intensity": 4, "range": 7, "flicker": 0.6 }
+```
+
+A point light at the entity's position. `color` is linear RGB, `intensity` 0..50 multiplies it,
+`range` 0.1..100 m is where it fades to nothing, and `flicker` 0..1 makes it waver like a flame.
+At most 16 lights are drawn at once: the ones nearest the camera (`Lighting.md`).
+
+### Environment
+
+```json
+"environment": { "hour": 18.3, "dayLength": 720, "sunHeading": 30, "indoor": false,
+                 "ambient": 1, "fog": 0.35, "tint": [1, 1, 1], "shadows": true }
+```
+
+One per scene (a second one gives the warning `scene.environment.twice` and is ignored), usually on an
+empty entity named `sky`. Without one, the scene gets the defaults: 14:00, no clock, light fog.
+
+| Field | Range | Meaning |
+|---|---|---|
+| `hour` | 0..24 | Time of day when the scene loads. `SaveScene` writes the current time. |
+| `dayLength` | 0..86400 s | Real seconds per game day (720 = 12 minutes); 0 stops the clock. While the clock runs, the time carries on across areas and is kept in save games. |
+| `sunHeading` | 0..360° | Which way the sun stands at noon. |
+| `indoor` | bool | No sun, sky or sun shadows; a faint tinted light so torches do the work. |
+| `ambient` | 0..4 | Strength of sky and ground light. |
+| `fog` | 0..1 | Fog thickness (0.3 light haze, 1 thick). |
+| `tint` | color | Multiplies all sky light (green swamp, red hell). |
+| `shadows` | bool | Sun shadows. |
+
 Asset paths are relative to the asset folder and may not contain `..`.
 
 **Reserved id:** the app treats the entity with id `player` as the player's spawn point and body (see `game/gameplay/include/PlayerController.md`).
@@ -121,6 +153,7 @@ Every problem is a `core::Diagnostic` (`engine/core/include/Diagnostic.hpp`) wit
 | `entity.component.field` | error | A project component's field has the wrong kind or is out of range (its schema) |
 | `entity.component.unknown`, `entity.component.unknown-field` | warning | No `components/<type>.component.json` in the project; a field its schema doesn't list |
 | `component.schema` | warning | A `*.component.json` is invalid; its components are not checked |
+| `scene.environment.twice` | warning | A second `environment` component; only the first is used |
 | `entity.field.unknown` | warning | Unknown field (usually a typo) |
 
 ## Saving

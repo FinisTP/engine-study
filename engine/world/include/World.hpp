@@ -49,6 +49,7 @@ namespace umbra::world
         std::string material;         // optional "materials/x.material.json": replaces the model's texture
         glm::vec4 tint{1.0F};         // from the material, multiplied with color
         float metersPerRepeat = 0.0F; // from the material: > 0 = world-space texture coordinates
+        float emissive = 0.0F;        // glows by itself: color * texture * emissive is added (flames, crystals)
     };
 
     // Physics description of an entity. Pure data: the gameplay layer turns it into a body.
@@ -104,6 +105,16 @@ namespace umbra::world
     {
         std::string scene; // asset path of the destination scene
         std::string spawn = "player";
+    };
+
+    // A point light on this entity (the "light" component, Lighting.md). It shines from the
+    // entity's world position.
+    struct Light final
+    {
+        glm::vec3 color{1.0F, 0.75F, 0.45F};
+        float intensity = 3.0F;
+        float range = 8.0F;
+        float flicker = 0.0F;
     };
 
     // A project's own component (see Components.md): its type name and its fields as JSON text.
@@ -167,11 +178,23 @@ namespace umbra::world
         [[nodiscard]] const Spawner *GetSpawner(Entity entity) const noexcept;
         bool SetPortal(Entity entity, Portal portal);
         [[nodiscard]] const Portal *GetPortal(Entity entity) const noexcept;
+        bool SetLight(Entity entity, Light light);
+        [[nodiscard]] const Light *GetLight(Entity entity) const noexcept;
+        // The scene's sun, sky and fog (the "environment" component) and the time of day.
+        // `owner` is the entity whose component it is (saved there again); none = defaults.
+        void SetEnvironment(const core::EnvironmentSettings &settings, Entity owner = {});
+        [[nodiscard]] const core::EnvironmentSettings &GetEnvironment() const noexcept { return environment_; }
+        [[nodiscard]] Entity EnvironmentOwner() const noexcept { return environmentOwner_; }
+        [[nodiscard]] float Hour() const noexcept { return hour_; }
+        void SetHour(float hour) noexcept { hour_ = hour; }
+        // Moves the time of day on by `seconds` of play (no change if the day length is 0).
+        void AdvanceTime(float seconds);
         // Replaces a custom component of the same type, or adds it.
         bool SetCustom(Entity entity, CustomComponent component);
         [[nodiscard]] const std::vector<CustomComponent> *GetCustoms(Entity entity) const noexcept;
 
-        // Appends one item per renderable with a valid mesh handle. Call after UpdateTransforms().
+        // Appends one item per renderable with a valid mesh handle, one light per light component,
+        // and sets the environment for the current hour. Call after UpdateTransforms().
         void ExtractDrawList(core::DrawList &drawList) const;
 
         // Calls function(entity) for every live entity.
@@ -196,6 +219,7 @@ namespace umbra::world
             std::optional<Interactable> interactable;
             std::optional<Portal> portal;
             std::optional<Spawner> spawner;
+            std::optional<Light> light;
             std::vector<CustomComponent> customs;
         };
 
@@ -207,5 +231,8 @@ namespace umbra::world
         std::uint32_t worldId_ = 0;
         core::SlotMap<Record, EntityTag> entities_;
         std::unordered_map<std::string, Entity> byId_;
+        core::EnvironmentSettings environment_;
+        Entity environmentOwner_;
+        float hour_ = environment_.hour;
     };
 }

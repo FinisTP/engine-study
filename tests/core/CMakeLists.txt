@@ -11,6 +11,7 @@ target_sources(
         SlotMapTests.cpp
         ResourceDataTests.cpp
         ProfilingTests.cpp
+        LightingTests.cpp
 )
 
 target_compile_features(UmbraCoreTests PRIVATE cxx_std_20)

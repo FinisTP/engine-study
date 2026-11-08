@@ -40,12 +40,15 @@ namespace umbra::scene
             std::string model;
             std::uint32_t mesh = 0;
             glm::vec4 color{1.0F};
+            float emissive = 0.0F;
             std::string material;
             std::string instance;
             std::optional<world::Collider> collider;
             std::optional<world::Interactable> interactable;
             std::optional<world::Portal> portal;
             std::optional<world::Spawner> spawner;
+            std::optional<world::Light> light;
+            std::optional<core::EnvironmentSettings> environment;
             std::vector<world::CustomComponent> customs;
         };
 
@@ -317,7 +320,7 @@ namespace umbra::scene
         EntityDesc ParseEntity(const json &entity, const std::string &where, const SceneLoadOptions &options,
                                const std::map<std::string, ComponentSchema> &schemas, Report &report)
         {
-            static const std::set<std::string> knownKeys{"id", "name", "parent", "position", "rotation", "scale", "model", "mesh", "color", "material", "instance", "components",
+            static const std::set<std::string> knownKeys{"id", "name", "parent", "position", "rotation", "scale", "model", "mesh", "color", "emissive", "material", "instance", "components",
                                                          "collider", "interactable", "portal", "spawner"}; // the last four: before components (still read)
             EntityDesc desc;
             for (const auto &[key, value] : entity.items())
@@ -348,6 +351,13 @@ namespace umbra::scene
             desc.transform.position = {position[0], position[1], position[2]};
             desc.transform.scale = {scale[0], scale[1], scale[2]};
             desc.color = {color[0], color[1], color[2], color[3]};
+            if (const auto it = entity.find("emissive"); it != entity.end())
+            {
+                if (!it->is_number() || it->get<double>() < 0.0 || it->get<double>() > 100.0)
+                    report.Error("entity.field.type", where + ".emissive", "expected a number from 0 to 100");
+                else
+                    desc.emissive = it->get<float>();
+            }
 
             // Renderable and model instance.
             if (ReadString(entity, "model", desc.model, where, report) && entity.contains("model"))
@@ -395,6 +405,28 @@ namespace umbra::scene
                     desc.portal = ParsePortal(*value, at, options, report);
                 else if (type == "spawner")
                     desc.spawner = ParseSpawner(*value, at, report);
+                else if (EngineComponentSchemas().contains(type))
+                {
+                    // "light" or "environment" (Lighting.md): checked, then read with defaults for missing fields.
+                    const ComponentSchema &schema = EngineComponentSchemas().at(type);
+                    const std::size_t before = report.out.size();
+                    CheckComponent(schema, *value, report.file, at, report.out);
+                    bool ok = true;
+                    for (std::size_t i = before; i < report.out.size(); ++i)
+                        ok &= report.out[i].severity != Severity::Error;
+                    report.failed |= !ok;
+                    if (!ok)
+                        continue;
+                    json f = schema.Defaults();
+                    f.update(*value);
+                    const auto rgb = [](const json &c) { return glm::vec3{c[0].get<float>(), c[1].get<float>(), c[2].get<float>()}; };
+                    if (type == "light")
+                        desc.light = world::Light{rgb(f["color"]), f["intensity"].get<float>(), f["range"].get<float>(), f["flicker"].get<float>()};
+                    else
+                        desc.environment = core::EnvironmentSettings{f["hour"].get<float>(), f["dayLength"].get<float>(), f["sunHeading"].get<float>(),
+                                                                     f["indoor"].get<bool>(), f["ambient"].get<float>(), f["fog"].get<float>(),
+                                                                     rgb(f["tint"]), f["shadows"].get<bool>()};
+                }
                 else
                 {
                     // A project component: checked against its schema when the project has one.
@@ -548,6 +580,11 @@ namespace umbra::scene
                 scene.entities.push_back(std::move(desc));
             }
             CheckHierarchy(scene.entities, report); // run even after other errors: report everything at once
+            std::size_t environments = 0;
+            for (std::size_t i = 0; i < scene.entities.size(); ++i)
+                if (scene.entities[i].environment && ++environments == 2)
+                    report.Warning("scene.environment.twice", "entities[" + std::to_string(i) + "].components.environment",
+                                   "a scene has one environment: only the first is used");
             for (std::size_t i = 0; i < scene.entities.size(); ++i)
             {
                 const EntityDesc &desc = scene.entities[i];
@@ -606,6 +643,8 @@ namespace umbra::scene
                     out["color"] = {Tidy(r->color.r), Tidy(r->color.g), Tidy(r->color.b), Tidy(r->color.a)};
                 if (!r->material.empty())
                     out["material"] = r->material;
+                if (r->emissive > 0.0F)
+                    out["emissive"] = Tidy(r->emissive);
             }
             if (const world::Collider *c = world.GetCollider(entity))
             {
@@ -642,6 +681,17 @@ namespace umbra::scene
             }
             if (const world::Spawner *sp = world.GetSpawner(entity))
                 out["components"]["spawner"] = {{"pool", sp->pool}, {"count", sp->count}, {"radius", sp->radius}, {"chase", sp->chase}, {"group", sp->group}};
+            const auto rgb = [](glm::vec3 c) { return json::array({Tidy(c.r), Tidy(c.g), Tidy(c.b)}); };
+            if (const world::Light *l = world.GetLight(entity))
+                out["components"]["light"] = {{"color", rgb(l->color)}, {"intensity", Tidy(l->intensity)}, {"range", Tidy(l->range)}, {"flicker", Tidy(l->flicker)}};
+            if (world.EnvironmentOwner() == entity)
+            {
+                // The current hour, so a checkpoint comes back at the same time of day.
+                const core::EnvironmentSettings &e = world.GetEnvironment();
+                out["components"]["environment"] = {{"hour", Tidy(world.Hour())}, {"dayLength", Tidy(e.dayLength)}, {"sunHeading", Tidy(e.sunHeading)},
+                                                    {"indoor", e.indoor}, {"ambient", Tidy(e.ambient)}, {"fog", Tidy(e.fog)}, {"tint", rgb(e.tint)},
+                                                    {"shadows", e.shadows}};
+            }
             for (const world::CustomComponent &custom : *world.GetCustoms(entity))
                 out["components"][custom.type] = json::parse(custom.data);
             return out;
@@ -695,7 +745,11 @@ namespace umbra::scene
             const world::Entity entity = world.Create(desc.id, desc.name);
             world.SetLocalTransform(entity, desc.transform);
             if (!desc.model.empty())
-                world.SetRenderable(entity, world::Renderable{desc.model, desc.mesh, desc.color, {}, {}, desc.material});
+                {
+                world::Renderable renderable{desc.model, desc.mesh, desc.color, {}, {}, desc.material};
+                renderable.emissive = desc.emissive;
+                world.SetRenderable(entity, renderable);
+            }
             if (desc.collider)
                 world.SetCollider(entity, *desc.collider);
             if (desc.interactable)
@@ -704,6 +758,10 @@ namespace umbra::scene
                 world.SetPortal(entity, *desc.portal);
             if (desc.spawner)
                 world.SetSpawner(entity, *desc.spawner);
+            if (desc.light)
+                world.SetLight(entity, *desc.light);
+            if (desc.environment && !world.EnvironmentOwner())
+                world.SetEnvironment(*desc.environment, entity);
             for (const world::CustomComponent &custom : desc.customs)
                 world.SetCustom(entity, custom);
             created.push_back(entity);

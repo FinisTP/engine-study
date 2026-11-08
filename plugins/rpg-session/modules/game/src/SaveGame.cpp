@@ -61,6 +61,7 @@ namespace umbra::game
                   {"inventory", Stacks(h.inventory)}, {"pending", Stacks(h.pending)}, {"equipment", equipment}}},
                 {"quests", quests},
                 {"hotkeys", d.hotkeys},
+                {"hour", d.hour},
             };
         }
 
@@ -124,6 +125,11 @@ namespace umbra::game
                     const bool known = (text.starts_with("skill:") && content.FindSkill(text.substr(6))) || (text.starts_with("item:") && content.FindItem(text.substr(5)));
                     d.hotkeys.push_back(known ? text : "");
                 }
+
+            // The time of day is optional too (older saves have none); a bad value is just dropped.
+            if (const auto it = p.find("hour"); it != p.end() && it->is_number())
+                if (const float hour = it->get<float>(); hour >= 0.0F && hour < 24.0F)
+                    d.hour = hour;
 
             // Every id must still exist in the content: a save from content that changed since
             // (renamed item, removed quest) is refused instead of loading half a world.

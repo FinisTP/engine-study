@@ -17,7 +17,7 @@ namespace umbra::scene
     struct ComponentField final
     {
         std::string name;
-        std::string kind = "number"; // number, int, bool, string, asset, actor, scene
+        std::string kind = "number"; // number, int, bool, string, asset, actor, scene, color ([r, g, b])
         std::string label;           // shown in the editor (default: name)
         nlohmann::json defaultValue;
         double min = -1e9, max = 1e9; // number and int
@@ -36,12 +36,16 @@ namespace umbra::scene
         [[nodiscard]] nlohmann::json Defaults() const;
     };
 
+    // Components the engine itself reads, described in code: "light" and "environment"
+    // (Lighting.md). They are listed with the project's components (editor, agent, checks).
+    [[nodiscard]] const std::map<std::string, ComponentSchema> &EngineComponentSchemas();
+
     // The names of the built-in components (handled by the engine itself, no schema file).
     inline const std::vector<std::string> builtInComponents{"collider", "interactable", "portal", "spawner"};
 
     // Reads every *.component.json in `folder` (no folder = none). Bad files are reported and skipped.
     std::map<std::string, ComponentSchema> LoadComponentSchemas(const std::filesystem::path &folder, std::vector<core::Diagnostic> &diagnostics);
-    // Every "components" folder of the project and its plugins; the project's schema wins.
+    // The engine's components, then every "components" folder of the project and its plugins.
     std::map<std::string, ComponentSchema> LoadComponentSchemas(const assets::AssetFolders &assets, std::vector<core::Diagnostic> &diagnostics);
 
     // Checks one component's fields against its schema; `where` names it in diagnostics.

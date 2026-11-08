@@ -166,6 +166,10 @@ bool SceneRuntime::LoadCheckpoint(const std::filesystem::path &directory)
 
 void SceneRuntime::Install(std::unique_ptr<umbra::world::World> fresh, std::optional<umbra::gameplay::SpawnPoint> start)
 {
+    // 0. One clock for the whole game (ADR 0010, S6): a running day keeps its time across areas.
+    if (world_ && world_->GetEnvironment().dayLength > 0.0F && fresh->GetEnvironment().dayLength > 0.0F)
+        fresh->SetHour(world_->Hour());
+
     // 1. The player is a physics character, not a collider: drop a collider authored on it.
     if (fresh->RemoveCollider(fresh->Find("player")))
         umbra::diagnostics::Info("Warning: the 'player' entity's collider is ignored; the player is a character capsule.");

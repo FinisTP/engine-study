@@ -32,3 +32,16 @@ The budget is the proposal in ROADMAP O18 for the reference PC; it is only meani
 with the `gpu`, `cpuThreads`, `ramMb` and `resolution` the report records. The game prefers the
 mailbox present mode (no vsync wait) and sleeps 1 ms per frame, so frame rates above ~500 FPS are
 not measured exactly; that is far beyond the budget.
+
+## Screenshots (`--capture`, `--hour`, S6)
+
+```
+Umbra.exe --capture shot.png          (save the 90th frame as a PNG, then quit)
+Umbra.exe --capture shot.png 200      (the 200th frame)
+Umbra.exe --hour 21                   (pin the time of day to 21:00; the clock doesn't run)
+Umbra.exe --capture night.png --hour 22 scenes/dungeon.scene.json
+```
+
+A capture shows only the 3D view (no HUD or diagnostics window), so pictures of the same scene can be
+compared. In the browser the same options go in the address: `index.html?args=--hour%2012`
+(capture is not available there).

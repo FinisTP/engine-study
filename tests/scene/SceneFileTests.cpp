@@ -272,6 +272,8 @@ TEST_CASE("Both shipped areas load and link to each other")
         std::vector<core::Diagnostic> diagnostics;
         INFO(name);
         REQUIRE(scene::LoadScene(assetDir / "scenes" / (std::string{name} + ".scene.json"), Options(), world, diagnostics));
+        for (const core::Diagnostic &d : diagnostics)
+            UNSCOPED_INFO(core::Format(d));
         REQUIRE(diagnostics.empty());
     }
 }

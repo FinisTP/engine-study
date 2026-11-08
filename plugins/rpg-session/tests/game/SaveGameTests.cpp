@@ -79,6 +79,24 @@ TEST_CASE("Hotkeys are saved; a key whose skill or item is gone is cleared, and 
     REQUIRE(old.hotkeys.empty());
 }
 
+TEST_CASE("T84: the time of day is saved; older saves and bad values have none")
+{
+    const auto dir = test::TempDir("save-hour");
+    const game::SaveSlots slots{dir};
+    game::SaveData d = Sample();
+    d.hour = 21.5F;
+    REQUIRE(game::WriteSave(slots.Manual(), d, diagnostics));
+    game::SaveData loaded;
+    REQUIRE(game::ReadSave(slots.Manual(), C(), loaded, diagnostics));
+    REQUIRE(loaded.hour == 21.5F);
+
+    d.hour = 30.0F; // out of range: dropped, the save still loads
+    REQUIRE(game::WriteSave(slots.Autosave(), d, diagnostics));
+    game::SaveData bad;
+    REQUIRE(game::ReadSave(slots.Autosave(), C(), bad, diagnostics));
+    REQUIRE(bad.hour < 0.0F);
+}
+
 TEST_CASE("Damaged, foreign and newer saves are refused and change nothing")
 {
     const auto dir = test::TempDir("save-bad");

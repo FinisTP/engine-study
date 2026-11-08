@@ -301,8 +301,13 @@ namespace umbra::render
                 texture = resources.GetTexture(resources.GetFallbackTexture());
             if (texture == nullptr || batch.indexCount == 0)
                 continue;
-            const std::uint32_t vertexEnd = b + 1 == ui.batches.size() ? static_cast<std::uint32_t>(ui.vertices.size()) : ui.batches[b + 1].firstVertex;
-            const int vertexCount = static_cast<int>(vertexEnd - batch.firstVertex);
+            // The batch's vertices: as many as its highest index needs (batches may share a first vertex).
+            std::uint32_t used = 0;
+            for (std::uint32_t i = 0; i < batch.indexCount; ++i)
+                used = std::max<std::uint32_t>(used, ui.indices[batch.firstIndex + i] + 1u);
+            if (batch.firstVertex + used > ui.vertices.size())
+                continue;
+            const int vertexCount = static_cast<int>(used);
             list->PushClipRect({batch.clip.x, batch.clip.y}, {batch.clip.z, batch.clip.w}, true);
             list->PushTexture(ImTextureRef(static_cast<ImTextureID>(reinterpret_cast<std::uintptr_t>(texture->descriptorSet))));
             list->PrimReserve(static_cast<int>(batch.indexCount), vertexCount);
@@ -405,8 +410,11 @@ namespace umbra::render
                 }
                 const ImVec2 clipMin{(command.ClipRect.x - drawData->DisplayPos.x) * drawData->FramebufferScale.x,
                                      (command.ClipRect.y - drawData->DisplayPos.y) * drawData->FramebufferScale.y};
-                const ImVec2 clipMax{(command.ClipRect.z - drawData->DisplayPos.x) * drawData->FramebufferScale.x,
-                                     (command.ClipRect.w - drawData->DisplayPos.y) * drawData->FramebufferScale.y};
+                // Clamped to the picture, like Dear ImGui's own backends (the game UI's clip can be "everything").
+                const ImVec2 clipMax{std::min((command.ClipRect.z - drawData->DisplayPos.x) * drawData->FramebufferScale.x,
+                                              drawData->DisplaySize.x * drawData->FramebufferScale.x),
+                                     std::min((command.ClipRect.w - drawData->DisplayPos.y) * drawData->FramebufferScale.y,
+                                              drawData->DisplaySize.y * drawData->FramebufferScale.y)};
                 if (clipMax.x <= clipMin.x || clipMax.y <= clipMin.y)
                     continue;
                 VkRect2D scissor{};

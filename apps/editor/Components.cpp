@@ -206,7 +206,7 @@ void Editor::ComponentFields(const std::string &type, const Json &c, const std::
     }
     else if (const auto schema = schemas_.find(type); schema != schemas_.end())
     {
-        // A project component: one widget per field kind in its schema.
+        // An engine or project component: one widget per field kind in its schema.
         if (!schema->second.description.empty())
             ImGui::TextDisabled("%s", schema->second.description.c_str());
         for (const umbra::scene::ComponentField &f : schema->second.fields)
@@ -224,6 +224,19 @@ void Editor::ComponentFields(const std::string &type, const Json &c, const std::
                 int v = value.is_number() ? value.get<int>() : 0;
                 if (ImGui::InputInt(name, &v))
                     SetField(at + "/" + f.name, std::clamp(v, static_cast<int>(f.min), static_cast<int>(f.max)), label);
+            }
+            else if (f.kind == "color")
+            {
+                // [r, g, b], each kept within the schema's range (a tint may go above 1).
+                float v[3] = {1.0F, 1.0F, 1.0F};
+                for (int k = 0; k < 3 && value.is_array() && k < static_cast<int>(value.size()); ++k)
+                    v[k] = value[k].is_number() ? value[k].get<float>() : 1.0F;
+                if (ImGui::ColorEdit3(name, v, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR))
+                {
+                    for (float &x : v)
+                        x = std::clamp(x, static_cast<float>(f.min), static_cast<float>(f.max));
+                    drag(f.name, Json::array({v[0], v[1], v[2]}));
+                }
             }
             else if (f.kind == "bool")
             {

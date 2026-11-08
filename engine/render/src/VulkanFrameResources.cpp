@@ -11,7 +11,49 @@
 
 namespace
 {
-    // Summary: Records Vulkan commands to render every draw item and the diagnostics overlay.
+    // Draws every item with the bound pipeline: per-item texture (if wanted), matrix, tint, buffers.
+    void DrawItems(VkCommandBuffer commandBuffer, const umbra::render::VulkanVertexPipeline &pipeline, const umbra::render::SceneResources &resources,
+                   const umbra::core::DrawList &drawList, umbra::render::TextureHandle fallbackTexture, bool textures)
+    {
+        for (const umbra::core::DrawItem &item : drawList.items)
+        {
+            // 1. Resolve handles; stale meshes are skipped, missing textures use the fallback.
+            const umbra::render::MeshResource *mesh = resources.GetMesh(item.mesh);
+            const umbra::render::TextureResource *texture = resources.GetTexture(item.texture);
+            if (texture == nullptr)
+                texture = resources.GetTexture(fallbackTexture);
+            if (mesh == nullptr || texture == nullptr)
+                continue;
+
+            // 2. Bind this item's texture (set 1) and buffers, push its matrix and tint, draw.
+            if (textures)
+                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(), 1, 1, &texture->descriptorSet, 0, nullptr);
+            const umbra::render::DrawConstants constants{item.model, item.color * mesh->baseColor, {item.metersPerRepeat, item.emissive, 0.0F, 0.0F}};
+            vkCmdPushConstants(commandBuffer, pipeline.GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(constants), &constants);
+            const VkBuffer vertexBuffer = mesh->vertexBuffer.GetHandle();
+            constexpr VkDeviceSize vertexOffset = 0;
+            vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, &vertexOffset);
+            vkCmdBindIndexBuffer(commandBuffer, mesh->indexBuffer.GetHandle(), 0, VK_INDEX_TYPE_UINT32);
+            vkCmdDrawIndexed(commandBuffer, mesh->indexCount, 1, 0, 0, 0);
+        }
+    }
+
+    // Moves a swapchain image between "ready to show" and "ready to copy from".
+    void Transition(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout from, VkImageLayout to, VkAccessFlags fromAccess, VkAccessFlags toAccess)
+    {
+        VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+        barrier.oldLayout = from;
+        barrier.newLayout = to;
+        barrier.srcAccessMask = fromAccess;
+        barrier.dstAccessMask = toAccess;
+        barrier.srcQueueFamilyIndex = barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = image;
+        barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    }
+
+    // Summary: Records the frame: the sun's shadow map, then the sky, every draw item and the overlay
+    // (Lighting.md), then an optional copy of the picture for a capture.
     [[nodiscard]] bool RecordSceneCommands(
         VkCommandBuffer commandBuffer,
         std::uint32_t imageIndex,
@@ -22,7 +64,9 @@ namespace
         umbra::render::TextureHandle fallbackTexture,
         VkDescriptorSet descriptorSet,
         umbra::render::DiagnosticsOverlay &overlay,
-        std::size_t frameIndex)
+        std::size_t frameIndex,
+        bool sunShadows,
+        VkBuffer captureBuffer)
     {
         if (imageIndex >= pipeline.GetFramebuffers().size())
         {
@@ -42,6 +86,26 @@ namespace
             return false;
         }
 
+        // 1. The sun's shadow map: depth only, seen from the sun (cleared to "nothing in the way"
+        //    when the sun casts no shadows, so the scene shader always reads a valid map).
+        VkClearValue shadowClear{};
+        shadowClear.depthStencil = {1.0F, 0};
+        VkRenderPassBeginInfo shadowPass{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
+        shadowPass.renderPass = pipeline.GetShadowRenderPass();
+        shadowPass.framebuffer = pipeline.GetShadowFramebuffer();
+        shadowPass.renderArea.extent = {umbra::render::VulkanVertexPipeline::shadowMapSize, umbra::render::VulkanVertexPipeline::shadowMapSize};
+        shadowPass.clearValueCount = 1;
+        shadowPass.pClearValues = &shadowClear;
+        vkCmdBeginRenderPass(commandBuffer, &shadowPass, VK_SUBPASS_CONTENTS_INLINE);
+        if (sunShadows)
+        {
+            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetShadowPipeline());
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(), 0, 1, &descriptorSet, 0, nullptr);
+            DrawItems(commandBuffer, pipeline, resources, drawList, fallbackTexture, false);
+        }
+        vkCmdEndRenderPass(commandBuffer);
+
+        // 2. The picture: sky first (behind everything), then the scene, then the overlay.
         std::array<VkClearValue, 2> clearValues{};
         clearValues[0].color = {{0.015F, 0.02F, 0.04F, 1.0F}};
         clearValues[1].depthStencil = {1.0F, 0};
@@ -55,30 +119,26 @@ namespace
         renderPassInfo.pClearValues = clearValues.data();
 
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetHandle());
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(), 0, 1, &descriptorSet, 0, nullptr);
-        for (const umbra::core::DrawItem &item : drawList.items)
-        {
-            // 1. Resolve handles; stale meshes are skipped, missing textures use the fallback.
-            const umbra::render::MeshResource *mesh = resources.GetMesh(item.mesh);
-            const umbra::render::TextureResource *texture = resources.GetTexture(item.texture);
-            if (texture == nullptr)
-                texture = resources.GetTexture(fallbackTexture);
-            if (mesh == nullptr || texture == nullptr)
-                continue;
-
-            // 2. Bind this item's texture (set 1) and buffers, push its matrix and tint, draw.
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(), 1, 1, &texture->descriptorSet, 0, nullptr);
-            const umbra::render::DrawConstants constants{item.model, item.color * mesh->baseColor, {item.metersPerRepeat, 0.0F, 0.0F, 0.0F}};
-            vkCmdPushConstants(commandBuffer, pipeline.GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(constants), &constants);
-            const VkBuffer vertexBuffer = mesh->vertexBuffer.GetHandle();
-            constexpr VkDeviceSize vertexOffset = 0;
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, &vertexOffset);
-            vkCmdBindIndexBuffer(commandBuffer, mesh->indexBuffer.GetHandle(), 0, VK_INDEX_TYPE_UINT32);
-            vkCmdDrawIndexed(commandBuffer, mesh->indexCount, 1, 0, 0, 0);
-        }
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetSkyPipeline());
+        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetHandle());
+        DrawItems(commandBuffer, pipeline, resources, drawList, fallbackTexture, true);
         overlay.Render(commandBuffer, frameIndex);
         vkCmdEndRenderPass(commandBuffer);
+
+        // 3. A capture: copy the finished picture into a buffer the CPU can read.
+        if (captureBuffer != VK_NULL_HANDLE)
+        {
+            const VkImage image = swapchain.GetImages()[imageIndex];
+            Transition(commandBuffer, image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                       VK_ACCESS_TRANSFER_READ_BIT);
+            VkBufferImageCopy region{};
+            region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+            region.imageExtent = {swapchain.GetExtent().width, swapchain.GetExtent().height, 1};
+            vkCmdCopyImageToBuffer(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, captureBuffer, 1, &region);
+            Transition(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_ACCESS_TRANSFER_READ_BIT, 0);
+        }
 
         result = vkEndCommandBuffer(commandBuffer);
         if (result != VK_SUCCESS)
@@ -104,8 +164,9 @@ namespace umbra::render
         std::uint32_t graphicsQueueFamily,
         std::size_t swapchainImageCount,
         VulkanAllocator &allocator,
-        VkDescriptorSetLayout descriptorSetLayout)
+        const VulkanVertexPipeline &pipeline)
     {
+        const VkDescriptorSetLayout descriptorSetLayout = pipeline.GetDescriptorSetLayout();
         if (device_ != VK_NULL_HANDLE)
         {
             diagnostics::Error("Cannot initialize Vulkan frame resources: they are already initialized.");
@@ -118,6 +179,7 @@ namespace umbra::render
         }
 
         device_ = device;
+        allocator_ = &allocator;
 
         // 1. Create a command pool for allocating command buffers for rendering.
         VkCommandPoolCreateInfo poolCreateInfo{};
@@ -181,7 +243,8 @@ namespace umbra::render
 
         // 4. Create a descriptor pool and allocate per-frame descriptor sets for uniform buffers.
         const std::array poolSizes{
-            VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<std::uint32_t>(framesInFlight)}};
+            VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<std::uint32_t>(framesInFlight)},
+            VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, static_cast<std::uint32_t>(framesInFlight)}};
         VkDescriptorPoolCreateInfo descriptorPoolInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
         descriptorPoolInfo.maxSets = static_cast<std::uint32_t>(framesInFlight);
         descriptorPoolInfo.poolSizeCount = static_cast<std::uint32_t>(poolSizes.size());
@@ -220,9 +283,12 @@ namespace umbra::render
             }
             frames_[index].descriptorSet = descriptorSets[index];
             const VkDescriptorBufferInfo bufferInfo{frames_[index].uniformBuffer.GetHandle(), 0, sizeof(SceneUniform)};
+            const VkDescriptorImageInfo shadowInfo{pipeline.GetShadowSampler(), pipeline.GetShadowView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
             const std::array writes{
                 VkWriteDescriptorSet{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, descriptorSets[index], 0, 0, 1,
-                                     VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, nullptr, &bufferInfo, nullptr}};
+                                     VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, nullptr, &bufferInfo, nullptr},
+                VkWriteDescriptorSet{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, descriptorSets[index], 1, 0, 1,
+                                     VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &shadowInfo, nullptr, nullptr}};
             vkUpdateDescriptorSets(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
         }
 
@@ -257,7 +323,8 @@ namespace umbra::render
         const core::DrawList &drawList,
         TextureHandle fallbackTexture,
         const SceneUniform &uniform,
-        DiagnosticsOverlay &overlay)
+        DiagnosticsOverlay &overlay,
+        const CaptureCallback *capture)
     {
         if (device_ == VK_NULL_HANDLE || graphicsQueue == VK_NULL_HANDLE || presentQueue == VK_NULL_HANDLE)
         {
@@ -335,8 +402,17 @@ namespace umbra::render
         // update the uniform buffer with the latest scene data for this frame
         std::memcpy(frame.uniformBuffer.GetMappedData(), &uniform, sizeof(uniform));
         frame.uniformBuffer.Flush();
+        // A capture copies the picture into a read-back buffer (BGRA or RGBA, 4 bytes per pixel).
+        GpuBuffer captureBuffer;
+        const VkExtent2D extent = swapchain.GetExtent();
+        if (capture && (!swapchain.CanCapture() || !allocator_->CreateReadbackBuffer(VkDeviceSize{extent.width} * extent.height * 4, captureBuffer)))
+        {
+            diagnostics::Error("This GPU can't copy out the picture; no capture made.");
+            capture = nullptr;
+        }
         if (!RecordSceneCommands(frame.commandBuffer, imageIndex, swapchain, pipeline,
-                                 resources, drawList, fallbackTexture, frame.descriptorSet, overlay, currentFrame_))
+                                 resources, drawList, fallbackTexture, frame.descriptorSet, overlay, currentFrame_,
+                                 uniform.lighting.sunDirection.w > 0.0F, capture ? captureBuffer.GetHandle() : VK_NULL_HANDLE))
         {
             return FrameResult::FatalError;
         }
@@ -360,6 +436,20 @@ namespace umbra::render
                 "Failed submitting Vulkan frame. VkResult=" +
                 std::to_string(static_cast<int>(result)) + ".");
             return FrameResult::FatalError;
+        }
+
+        // A capture waits for this frame, then hands over its pixels as RGBA, top row first.
+        if (capture)
+        {
+            (void)vkWaitForFences(device_, 1, &frame.inFlight, VK_TRUE, std::numeric_limits<std::uint64_t>::max());
+            captureBuffer.Invalidate();
+            core::TextureData picture{extent.width, extent.height, std::vector<std::uint8_t>(std::size_t{extent.width} * extent.height * 4)};
+            std::memcpy(picture.rgba.data(), captureBuffer.GetMappedData(), picture.rgba.size());
+            const VkFormat format = swapchain.GetImageFormat();
+            if (format == VK_FORMAT_B8G8R8A8_SRGB || format == VK_FORMAT_B8G8R8A8_UNORM)
+                for (std::size_t i = 0; i < picture.rgba.size(); i += 4)
+                    std::swap(picture.rgba[i], picture.rgba[i + 2]);
+            (*capture)(picture);
         }
 
         // add to present queue for presentation, and wait for the renderFinished semaphore to ensure rendering is complete before presenting.

@@ -473,6 +473,23 @@ void Editor::AddSelectionBox(umbra::core::DrawList &drawList) const
     const int edges[12][2] = {{0, 1}, {2, 3}, {4, 5}, {6, 7}, {0, 2}, {1, 3}, {4, 6}, {5, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
     for (const auto &edge : edges)
         drawList.lines.push_back({corner[edge[0]], corner[edge[1]], color});
+
+    // A light shows how far it reaches: three rings of its range around its position.
+    if (const umbra::world::Light *light = world_->GetLight(entity))
+    {
+        const glm::vec3 center = glm::vec3((*matrix)[3]);
+        const glm::vec4 ring{light->color, 1.0F};
+        constexpr int segments = 32;
+        for (int i = 0; i < segments; ++i)
+        {
+            const float a = glm::two_pi<float>() * static_cast<float>(i) / segments, b = glm::two_pi<float>() * static_cast<float>(i + 1) / segments;
+            const glm::vec2 p{std::cos(a), std::sin(a)}, q{std::cos(b), std::sin(b)};
+            const float r = light->range;
+            drawList.lines.push_back({center + r * glm::vec3(p.x, 0, p.y), center + r * glm::vec3(q.x, 0, q.y), ring});
+            drawList.lines.push_back({center + r * glm::vec3(p.x, p.y, 0), center + r * glm::vec3(q.x, q.y, 0), ring});
+            drawList.lines.push_back({center + r * glm::vec3(0, p.x, p.y), center + r * glm::vec3(0, q.x, q.y), ring});
+        }
+    }
 }
 
 void Editor::ViewportInput()
@@ -758,6 +775,15 @@ void Editor::Inspector()
             if (ImGui::IsItemActivated())
                 newStep_ = true;
             SetField(at + "/color", Json::array({color.r, color.g, color.b, color.a}), "Color " + selected_, !newStep_);
+            newStep_ = false;
+        }
+        // Glow: 0 = lit only by lights, 1+ = shines by itself (flames, crystals).
+        float emissive = entity.value("emissive", 0.0F);
+        if (ImGui::DragFloat("Emissive", &emissive, 0.05F, 0.0F, 100.0F))
+        {
+            if (ImGui::IsItemActivated())
+                newStep_ = true;
+            SetField(at + "/emissive", std::clamp(emissive, 0.0F, 100.0F), "Emissive " + selected_, !newStep_);
             newStep_ = false;
         }
         // Material: "" = the model's own texture.

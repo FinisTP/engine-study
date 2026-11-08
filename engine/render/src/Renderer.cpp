@@ -24,11 +24,13 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/geometric.hpp>
+#include <glm/matrix.hpp>
 #include <glm/trigonometric.hpp>
 
 #include <algorithm>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -107,8 +109,7 @@ namespace umbra::render
                                      device.GetHandle(),
                                      allocator,
                                      swapchain,
-                                     shaderDirectory / "Scene.vert.spv",
-                                     shaderDirectory / "Scene.frag.spv",
+                                     shaderDirectory,
                                      sceneResources.GetTextureSetLayout()))
             {
                 return PresentationInitializationResult::FatalError;
@@ -119,7 +120,7 @@ namespace umbra::render
                     physicalDevice.GetQueueFamilyIndices().graphics,
                     swapchain.GetImages().size(),
                     allocator,
-                    pipeline.GetDescriptorSetLayout()))
+                    pipeline))
             {
                 return PresentationInitializationResult::FatalError;
             }
@@ -171,8 +172,9 @@ namespace umbra::render
             return InitializePresentationResources();
         }
 
-        [[nodiscard]] SceneUniform BuildUniform(const core::Camera &camera) const
+        [[nodiscard]] SceneUniform BuildUniform(const core::DrawList &drawList) const
         {
+            const core::Camera &camera = drawList.camera;
             SceneUniform uniform;
             uniform.view = glm::lookAtRH(camera.position, camera.target, glm::vec3{0.0F, 1.0F, 0.0F});
             const VkExtent2D extent = swapchain.GetExtent();
@@ -180,8 +182,16 @@ namespace umbra::render
                                                        static_cast<float>(extent.width) / static_cast<float>(extent.height),
                                                        camera.nearPlane, camera.farPlane);
             uniform.projection[1][1] *= -1.0F;
+            uniform.inverseViewProjection = glm::inverse(uniform.projection * uniform.view);
+            // Sun shadows cover the area around what the camera looks at (Lighting.md).
+            uniform.shadowMatrix = core::SunShadowMatrix(drawList.environment.sunDirection, camera.target, shadowRadius, VulkanVertexPipeline::shadowMapSize);
+            uniform.lighting = core::PackLighting(drawList.environment, drawList.lights, camera.position, seconds, VulkanVertexPipeline::shadowMapSize);
             return uniform;
         }
+
+        static constexpr float shadowRadius = 25.0F; // meters around the camera's target
+        float seconds = 0.0F;                        // since start: light flicker
+        std::optional<CaptureCallback> capture;       // asked for by CaptureNextFrame
     };
 
     Renderer::Renderer() = default;
@@ -293,7 +303,8 @@ namespace umbra::render
                                             drawCount,
                                             indexCount,
                                             drawList.hud.diagnosticsWindow);
-        const SceneUniform uniform = implementation_->BuildUniform(drawList.camera);
+        implementation_->seconds += deltaSeconds;
+        const SceneUniform uniform = implementation_->BuildUniform(drawList);
         implementation_->overlay.DrawLines(drawList.lines, uniform.projection * uniform.view, implementation_->swapchain.GetExtent());
         implementation_->overlay.DrawUi(drawList.ui, resources);
         implementation_->overlay.DrawHud(drawList.hud, implementation_->swapchain.GetExtent());
@@ -310,7 +321,10 @@ namespace umbra::render
             drawList,
             resources.GetFallbackTexture(),
             uniform,
-            implementation_->overlay);
+            implementation_->overlay,
+            implementation_->capture ? &*implementation_->capture : nullptr);
+        if (result == FrameResult::Presented)
+            implementation_->capture.reset();
 
         if (result == FrameResult::SwapchainOutOfDate)
         {
@@ -402,6 +416,12 @@ namespace umbra::render
         i->surfaceReleased = false;
         i->resizeRequested = true;
         diagnostics::Info("Renderer: surface restored (foreground).");
+    }
+
+    void Renderer::CaptureNextFrame(std::function<void(const core::TextureData &)> done)
+    {
+        if (implementation_)
+            implementation_->capture = std::move(done);
     }
 
     std::string Renderer::DeviceName() const

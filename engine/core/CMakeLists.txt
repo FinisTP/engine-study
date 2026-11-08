@@ -10,6 +10,7 @@ target_sources(
         src/FrameClock.cpp
         src/FixedStepAccumulator.cpp
         src/MeshData.cpp
+        src/Lighting.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
@@ -19,6 +20,8 @@ target_sources(
             include/FixedStepAccumulator.hpp
             include/SlotMap.hpp
             include/DrawList.hpp
+            include/Lighting.hpp
+            include/Lighting.md
             include/Handles.hpp
             include/Diagnostic.hpp
             include/MeshData.hpp
