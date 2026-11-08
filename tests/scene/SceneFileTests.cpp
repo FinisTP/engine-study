@@ -21,7 +21,7 @@ namespace
     {
         static std::map<std::string, assets::ImportResult> cache;
         scene::SceneLoadOptions options;
-        options.assetRoot = assetDir;
+        options.assetRoot = test::ReferenceAssets(); // with the plugins' assets (sounds)
         options.models = [](const std::string &path) -> const assets::Model * {
             auto it = cache.find(path);
             if (it == cache.end())

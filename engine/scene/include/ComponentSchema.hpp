@@ -1,5 +1,6 @@
 #pragma once
 
+#include <AssetFolders.hpp>
 #include <Diagnostic.hpp>
 
 #include <nlohmann/json.hpp>
@@ -40,6 +41,8 @@ namespace umbra::scene
 
     // Reads every *.component.json in `folder` (no folder = none). Bad files are reported and skipped.
     std::map<std::string, ComponentSchema> LoadComponentSchemas(const std::filesystem::path &folder, std::vector<core::Diagnostic> &diagnostics);
+    // Every "components" folder of the project and its plugins; the project's schema wins.
+    std::map<std::string, ComponentSchema> LoadComponentSchemas(const assets::AssetFolders &assets, std::vector<core::Diagnostic> &diagnostics);
 
     // Checks one component's fields against its schema; `where` names it in diagnostics.
     void CheckComponent(const ComponentSchema &schema, const nlohmann::json &value, const std::string &file, const std::string &where,

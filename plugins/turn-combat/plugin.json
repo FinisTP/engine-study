@@ -1,0 +1,17 @@
+{
+  "format": "umbra.plugin",
+  "version": 1,
+  "name": "turn-combat",
+  "label": "Turn-based combat",
+  "description": "Speed-ordered rounds with one action each; independent of real-time combat.",
+  "kind": "game",
+  "requires": [
+    "rpg"
+  ],
+  "modules": [
+    "turncombat"
+  ],
+  "links": [
+    "Umbra::TurnCombat"
+  ]
+}

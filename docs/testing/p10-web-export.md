@@ -30,7 +30,7 @@
 |---|---|
 | Native (GCC, Clang, ASan) | 44/44 CTest each (nothing native changed behaviour) |
 | WebAssembly in Node: 13 headless suites (core, rpg, turn, real-time, encounter, story, game incl. the 300-fight run T74, policy incl. NumPy parity of the shipped model T29, world, assets, scene, physics, gameplay) | **13/13 pass** |
-| Headless Chrome (`tools/web/check-web.py`) | **12/12** (after 3c): no HUD warnings; damaged `assets.bin` refused; repacked assets (hero HP 999) show up without a rebuild; game starts and draws frames; HUD; keyboard (Tab → real time); pause menu as HTML; a saved file survives a reload (IndexedDB); "Ready offline"; starts with the network off; no script errors; no WebGPU → clear message, game not loaded |
+| Headless Chrome (`plugins/web-export/tools/check-web.py`) | **12/12** (after 3c): no HUD warnings; damaged `assets.bin` refused; repacked assets (hero HP 999) show up without a rebuild; game starts and draws frames; HUD; keyboard (Tab → real time); pause menu as HTML; a saved file survives a reload (IndexedDB); "Ready offline"; starts with the network off; no script errors; no WebGPU → clear message, game not loaded |
 
 Sizes: `umbra.wasm` 5.8 MB, `umbra.data` 3.3 MB, `umbra.js` 0.25 MB.
 

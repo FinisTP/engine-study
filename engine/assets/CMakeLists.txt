@@ -9,6 +9,7 @@ target_sources(
     PRIVATE
         src/GltfImporter.cpp
         src/ModelCache.cpp
+        src/AssetFolders.cpp
         src/FileWatcher.cpp
         src/Material.cpp
         src/TextureTools.cpp
@@ -19,6 +20,7 @@ target_sources(
             include/Model.hpp
             include/GltfImporter.hpp
             include/ModelCache.hpp
+            include/AssetFolders.hpp
             include/FileWatcher.hpp
             include/Material.hpp
             include/TextureTools.hpp

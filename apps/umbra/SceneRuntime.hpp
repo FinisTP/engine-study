@@ -60,7 +60,7 @@ struct RoamerSlot final
 class SceneRuntime final
 {
 public:
-    SceneRuntime(ModelLibrary &models, std::filesystem::path assetRoot, std::string scenePath);
+    SceneRuntime(ModelLibrary &models, umbra::assets::AssetFolders assetRoot, std::string scenePath);
 
     // Loads the scene file into a fresh world and swaps it in only on success.
     // keepPlayer: a hot reload keeps the player where it is; false respawns at the 'player' marker.
@@ -140,7 +140,7 @@ private:
     void SyncRoamerVisuals();
 
     ModelLibrary &models_;
-    std::filesystem::path assetRoot_;
+    umbra::assets::AssetFolders assetRoot_; // project, then plugins
     std::string scenePath_;
     std::unique_ptr<umbra::world::World> world_;
     std::unique_ptr<umbra::physics::PhysicsWorld> physics_; // bodies for world_'s colliders; replaced together

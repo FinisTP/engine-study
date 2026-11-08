@@ -119,7 +119,7 @@ namespace umbra::assets
         return ParseMaterial(text, file.string(), material, diagnostics);
     }
 
-    bool CheckMaterialImage(const std::filesystem::path &assetRoot, const Material &material, const std::string &name,
+    bool CheckMaterialImage(const AssetFolders &assetRoot, const Material &material, const std::string &name,
                             std::vector<core::Diagnostic> &diagnostics)
     {
         int width = 0, height = 0;

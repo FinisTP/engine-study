@@ -1,0 +1,15 @@
+{
+  "format": "umbra.plugin",
+  "version": 1,
+  "name": "third-person",
+  "label": "Third-person gameplay",
+  "description": "Player character, roaming enemies, physics bridge, interaction, areas, pause menu, walk animation; default gameplay sounds.",
+  "kind": "game",
+  "requires": [],
+  "modules": [
+    "gameplay"
+  ],
+  "links": [
+    "Umbra::Gameplay"
+  ]
+}

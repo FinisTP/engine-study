@@ -27,22 +27,23 @@ namespace umbra::authoring
         }
     }
 
-    std::string PackWebAssets(const std::filesystem::path &assets, const std::filesystem::path &webFolder, std::vector<core::Diagnostic> &diagnostics)
+    std::string PackWebAssets(const assets::AssetFolders &assets, const std::filesystem::path &webFolder, std::vector<core::Diagnostic> &diagnostics)
     {
         const auto fail = [&](const std::filesystem::path &file, const std::string &message) {
             diagnostics.push_back({core::Severity::Error, "webpack.io", file.generic_string(), "", message});
             return std::string{};
         };
-        if (!std::filesystem::is_directory(assets))
-            return fail(assets, "no assets folder");
+        if (!std::filesystem::is_directory(assets.Project()))
+            return fail(assets.Project(), "no assets folder");
         if (!std::filesystem::exists(webFolder / "umbra.js"))
             return fail(webFolder, "no web build here (umbra.js missing)");
 
-        // 1. Every asset file, sorted so the same folder always gives the same package.
+        // 1. Every asset file of the project and its plugins (a project file hides a plugin's),
+        //    sorted so the same folders always give the same package.
         std::vector<std::filesystem::path> files;
-        for (const auto &entry : std::filesystem::recursive_directory_iterator(assets))
-            if (entry.is_regular_file() && !Skip(std::filesystem::relative(entry.path(), assets)))
-                files.push_back(std::filesystem::relative(entry.path(), assets));
+        for (const std::string &file : assets.ListFiles())
+            if (!Skip(file))
+                files.push_back(std::filesystem::path(std::u8string(file.begin(), file.end())));
         std::sort(files.begin(), files.end());
 
         // 2. assets.bin = the files back to back; assets.json = where each one is.

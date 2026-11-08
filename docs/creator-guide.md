@@ -227,7 +227,7 @@ when one exists, the game starts with a menu: Continue, Load the other save, New
 
 ## 6. The browser version
 
-`apps/umbra/web/README.md`. Short version: put a web build in `out\web`, double-click
+`plugins/web-export/web/README.md`. Short version: put a web build in `out\web`, double-click
 `scripts\serve-web.bat`, play in Chrome or Edge. The page has **Export saves** / **Import saves**
 (browsers may clear site data) and says **Ready offline** once it can start without a network.
 Upload the files of `out\web` to any static web host to share it.

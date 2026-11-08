@@ -28,7 +28,7 @@ namespace
     }
 }
 
-SceneRuntime::SceneRuntime(ModelLibrary &models, std::filesystem::path assetRoot, std::string scenePath)
+SceneRuntime::SceneRuntime(ModelLibrary &models, umbra::assets::AssetFolders assetRoot, std::string scenePath)
     : models_(models), assetRoot_(std::move(assetRoot)), scenePath_(std::move(scenePath)),
       world_(std::make_unique<umbra::world::World>()), physics_(std::make_unique<umbra::physics::PhysicsWorld>())
 {

@@ -3,9 +3,16 @@
 #include <Log.hpp>
 #include <Platform.hpp>
 #include <Profiling.hpp>
+// Optional plugins (UMBRA_PLUGIN_* from the build): each combat mode and the learned enemy.
+#if UMBRA_PLUGIN_LEARNED_AI
 #include <PolicyContract.hpp>
+#endif
+#if UMBRA_PLUGIN_REALTIME_COMBAT
 #include <RealtimeEncounter.hpp>
+#endif
+#if UMBRA_PLUGIN_TURN_COMBAT
 #include <TurnEncounter.hpp>
+#endif
 
 #include <glm/geometric.hpp>
 
@@ -62,6 +69,7 @@ void GameFlow::LoadPolicies()
 {
     // Each actor that names a learned policy gets it only if the file loads and still fits the
     // content; otherwise the standard AI plays it, and the screen says so (roadmap P8A.6).
+#if UMBRA_PLUGIN_LEARNED_AI
     learned_.clear();
     const std::filesystem::path assets = contentFile_.parent_path().parent_path(); // assets/rpg/x.rpg.json
     for (const auto &[id, actor] : content_.actors)
@@ -83,6 +91,7 @@ void GameFlow::LoadPolicies()
             umbra::diagnostics::Error(umbra::core::Format(d));
         Say("Learned AI for " + actor.name + " refused (" + (diagnostics.empty() ? "unknown" : diagnostics.back().message) + "); standard AI plays it");
     }
+#endif
 }
 
 void GameFlow::ReloadContent()
@@ -153,10 +162,14 @@ void GameFlow::Update(const umbra::platform::Input &input, float deltaSeconds)
         UpdateTalking(input);
         break;
     case game::Phase::Fighting:
+#if UMBRA_PLUGIN_TURN_COMBAT
         if (session_.Mode() == game::CombatMode::Turn)
             UpdateTurnFight(input, deltaSeconds);
-        else
+#endif
+#if UMBRA_PLUGIN_REALTIME_COMBAT
+        if (session_.Mode() == game::CombatMode::Realtime)
             UpdateRealtimeFight(input, deltaSeconds);
+#endif
         if (std::optional<game::FightResult> result = session_.CheckFightEnd())
             EndFight(*result);
         break;
@@ -322,6 +335,7 @@ void GameFlow::Act(rpg::ActionIntent intent, bool player)
         Say(std::string{"Can't: "} + rpg::ToString(rejection));
 }
 
+#if UMBRA_PLUGIN_TURN_COMBAT
 void GameFlow::UpdateTurnFight(const umbra::platform::Input &input, float deltaSeconds)
 {
     umbra::turn::TurnEncounter *turn = session_.Combat().Turn();
@@ -347,6 +361,7 @@ void GameFlow::UpdateTurnFight(const umbra::platform::Input &input, float deltaS
     //    learned policy asks it in the background when its turn starts; the pause is the deadline.
     else if (current)
     {
+#if UMBRA_PLUGIN_LEARNED_AI
         const auto learned = learned_.find(turn->GetRoster()[*current].character->actor);
         if (learned != learned_.end() && policyFor_ != *current)
         {
@@ -357,10 +372,12 @@ void GameFlow::UpdateTurnFight(const umbra::platform::Input &input, float deltaS
             if (!learned->second.decider->Request(policyRequest_, umbra::policy::Observe(session_.Content(), *turn, *current, 0, 30), policyMask_))
                 policyRequest_ = 0; // busy: this decision falls back
         }
+#endif
         enemyDelay_ -= deltaSeconds;
         if (enemyDelay_ <= 0.0F)
         {
             rpg::ActionIntent intent = umbra::turn::ChooseTurnAction(session_.Content(), *turn);
+#if UMBRA_PLUGIN_LEARNED_AI
             if (learned != learned_.end())
             {
                 // Use the answer only if it is for this decision, arrived in time and is legal.
@@ -370,6 +387,7 @@ void GameFlow::UpdateTurnFight(const umbra::platform::Input &input, float deltaS
                 else
                     log_.push_back(FighterName(*current) + ": learned AI gave no usable answer, standard AI acts");
             }
+#endif
             Act(intent, false);
             enemyDelay_ = enemyTurnDelay;
             policyFor_ = static_cast<std::size_t>(-1);
@@ -377,7 +395,9 @@ void GameFlow::UpdateTurnFight(const umbra::platform::Input &input, float deltaS
     }
     ReadEvents(turn->TakeEvents());
 }
+#endif
 
+#if UMBRA_PLUGIN_REALTIME_COMBAT
 void GameFlow::UpdateRealtimeFight(const umbra::platform::Input &input, float deltaSeconds)
 {
     umbra::realtime::RealtimeEncounter *fight = session_.Combat().Realtime();
@@ -429,6 +449,7 @@ void GameFlow::UpdateRealtimeFight(const umbra::platform::Input &input, float de
     session_.Combat().Update(deltaSeconds);
     ReadEvents(fight->TakeEvents());
 }
+#endif
 
 void GameFlow::ReadEvents(const rpg::Events &events)
 {
@@ -606,10 +627,14 @@ bool GameFlow::Load(const std::filesystem::path &file)
 
 const rpg::Roster *GameFlow::FightRoster()
 {
+#if UMBRA_PLUGIN_TURN_COMBAT
     if (umbra::turn::TurnEncounter *turn = session_.Combat().Turn())
         return &turn->GetRoster();
+#endif
+#if UMBRA_PLUGIN_REALTIME_COMBAT
     if (umbra::realtime::RealtimeEncounter *fight = session_.Combat().Realtime())
         return &fight->GetRoster();
+#endif
     return nullptr;
 }
 
@@ -637,6 +662,17 @@ std::string GameFlow::ActionName(const rpg::ActionIntent &intent)
     if (intent.target != intent.actor)
         text += " -> " + FighterName(intent.target);
     return text;
+}
+
+std::string GameFlow::LearnedTag([[maybe_unused]] std::size_t index)
+{
+    // "(learned AI)" after an enemy that a learned policy plays (turn fights only).
+#if UMBRA_PLUGIN_LEARNED_AI
+    const rpg::Roster *roster = FightRoster();
+    if (roster && index < roster->size() && learned_.contains((*roster)[index].character->actor) && session_.Mode() == game::CombatMode::Turn)
+        return "  (learned AI)";
+#endif
+    return {};
 }
 
 std::vector<std::string> GameFlow::RealtimeSkills()
@@ -678,7 +714,7 @@ void GameFlow::FillHud(umbra::core::Hud &hud)
                          "/" + std::to_string(rpg::Get(stats, rpg::Stat::MaxEnergy)) + "   XP " + std::to_string(hero.xp) +
                          "/" + std::to_string(rpg::XpForLevel(hero.level + 1)));
     hud.status.push_back(std::string{"Combat: "} + (session_.Mode() == game::CombatMode::Turn ? "turn-based" : "real-time") +
-                         (session_.GetPhase() == game::Phase::Exploring ? "  [Tab] switch" : ""));
+                         (session_.GetPhase() == game::Phase::Exploring && game::hasTurnMode && game::hasRealtimeMode ? "  [Tab] switch" : ""));
     for (const auto &[id, progress] : session_.Quests().All())
     {
         const rpg::QuestDef *quest = content.FindQuest(id);
@@ -712,9 +748,9 @@ void GameFlow::FillHud(umbra::core::Hud &hud)
         if (const rpg::Roster *roster = FightRoster())
             for (std::size_t i = 1; i < roster->size(); ++i)
                 if ((*roster)[i].character->IsAlive())
-                    hud.status.push_back(FighterName(i) + ": " + std::to_string((*roster)[i].character->health) + " HP" +
-                                         (learned_.contains((*roster)[i].character->actor) && session_.Mode() == game::CombatMode::Turn ? "  (learned AI)" : ""));
+                    hud.status.push_back(FighterName(i) + ": " + std::to_string((*roster)[i].character->health) + " HP" + LearnedTag(i));
         hud.status.insert(hud.status.end(), log_.begin(), log_.end());
+#if UMBRA_PLUGIN_TURN_COMBAT
         if (umbra::turn::TurnEncounter *turn = session_.Combat().Turn())
         {
             const std::optional<std::size_t> current = turn->Current();
@@ -732,6 +768,7 @@ void GameFlow::FillHud(umbra::core::Hud &hud)
                 hud.prompt = FighterName(*current) + " is acting...";
         }
         else
+#endif
         {
             const std::vector<std::string> skills = RealtimeSkills();
             std::string keys;

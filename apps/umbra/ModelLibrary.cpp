@@ -5,7 +5,7 @@
 #include <ModelCache.hpp>
 #include <TextureTools.hpp>
 
-ModelLibrary::ModelLibrary(umbra::render::Renderer &renderer, std::filesystem::path assetRoot, std::filesystem::path cacheRoot)
+ModelLibrary::ModelLibrary(umbra::render::Renderer &renderer, umbra::assets::AssetFolders assetRoot, std::filesystem::path cacheRoot)
     : renderer_(renderer), assetRoot_(std::move(assetRoot)), cacheRoot_(std::move(cacheRoot))
 {
 }
@@ -150,7 +150,7 @@ bool ModelLibrary::BuildAndUpload(const std::string &modelPath, LoadedModel &loa
 {
     // 1. Build the cached .umodel if the source (or a dependency) changed.
     using namespace umbra::assets;
-    const BuildResult build = BuildModel(assetRoot_, modelPath, cacheRoot_);
+    const BuildResult build = BuildModel(assetRoot_.RootOf(modelPath), modelPath, cacheRoot_);
     for (const std::string &warning : build.warnings)
         umbra::diagnostics::Info("Warning: " + modelPath + ": " + warning);
     for (const std::string &error : build.errors)

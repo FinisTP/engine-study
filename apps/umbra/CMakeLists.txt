@@ -25,7 +25,12 @@ file(GLOB_RECURSE UMBRA_PROJECT_CODE CONFIGURE_DEPENDS
      "${UMBRA_PROJECT_DIR}/engine/*.cpp" "${UMBRA_PROJECT_DIR}/engine/*.hpp" "${UMBRA_PROJECT_DIR}/game/*.cpp" "${UMBRA_PROJECT_DIR}/game/*.hpp")
 target_sources(Umbra PRIVATE ${UMBRA_PROJECT_CODE})
 target_include_directories(Umbra PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} "${UMBRA_PROJECT_DIR}/engine")
-target_compile_definitions(Umbra PRIVATE UMBRA_PROJECT_NAME="${UMBRA_PROJECT}")
+target_compile_definitions(Umbra PRIVATE UMBRA_PROJECT_NAME="${UMBRA_PROJECT}" "UMBRA_GAME_PLUGINS=\"${UMBRA_PLUGINS_TEXT}\"")
+
+# Plugins: the game needs the RPG ones and third-person gameplay; combat modes and the learned
+# enemy are optional (UMBRA_PLUGIN_* guards). Each plugin's game/ folder compiles in.
+umbra_require_plugins("The game" rpg story rpg-session third-person)
+umbra_add_plugin_sources(Umbra game)
 
 target_compile_features(Umbra PRIVATE cxx_std_20)
 
@@ -48,16 +53,16 @@ target_link_libraries(
         Umbra::Gameplay
         Umbra::Audio
         Umbra::Game
-        Umbra::Policy
+        $<TARGET_NAME_IF_EXISTS:Umbra::Policy>
         Umbra::Warnings
         Umbra::Sanitizers
 )
 
 umbra_copy_asan_runtime(Umbra)
 
-# Browser build (roadmap P10, web/README.md): umbra.js/.wasm plus the page, the offline service
+# Browser build (roadmap P10, plugins/web-export/web/README.md): umbra.js/.wasm plus the page, the offline service
 # worker and its version stamp. The assets are not linked in: "UmbraTool web-pack" writes
-# assets.bin/assets.json next to the page (tools/web/build-web.sh, scripts/serve-web.ps1).
+# assets.bin/assets.json next to the page (plugins/web-export/tools/build-web.sh, scripts/serve-web.ps1).
 # Single-threaded; the frame loop yields to the browser
 # through Asyncify (RenderFrame waits for the next animation frame).
 if(EMSCRIPTEN)
@@ -70,7 +75,7 @@ if(EMSCRIPTEN)
     )
     # Relink when the JavaScript renderer changes.
     set_property(TARGET Umbra APPEND PROPERTY LINK_DEPENDS "${PROJECT_SOURCE_DIR}/engine/render/web/umbra_render.js")
-    set(UMBRA_WEB_PAGE "${CMAKE_CURRENT_SOURCE_DIR}/web")
+    set(UMBRA_WEB_PAGE "${UMBRA_PLUGIN_DIR_web-export}/web") # the web-export plugin
     add_custom_target(
         UmbraWebPage ALL
         DEPENDS Umbra
@@ -91,8 +96,11 @@ if(WIN32)
     set(CMAKE_INSTALL_SYSTEM_RUNTIME_COMPONENT game)
     include(InstallRequiredSystemLibraries)
 endif()
+# Plugin assets first, then the project's on top (a project file replaces a plugin's).
 # AI concept pictures stay in the project; provenance files (.source.json) ship with their models.
-install(DIRECTORY ${UMBRA_ASSETS}/ DESTINATION assets COMPONENT game PATTERN "*.concept.png" EXCLUDE)
+foreach(dir ${UMBRA_PLUGIN_ASSETS} ${UMBRA_ASSETS})
+    install(DIRECTORY ${dir}/ DESTINATION assets COMPONENT game PATTERN "*.concept.png" EXCLUDE)
+endforeach()
 
 # Licenses (P9): the notices file plus the full license text of each library the game links,
 # taken from vcpkg (every port installs share/<port>/copyright).

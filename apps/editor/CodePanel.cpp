@@ -8,14 +8,15 @@
 #include <cstdio>
 #include <fstream>
 
-// Code window (docs/adr/0004-project-layers.md): the C++ files of the four layers, a click opens one
+// Code window (docs/adr/0004-project-layers.md, 0005-plugins.md): the C++ files of the engine, each
+// enabled plugin and the project; a click opens one
 // in Visual Studio 2022, "Open project" opens the source folder (CMake mode, CMakePresets.json),
 // and "New component" writes a project component (schema + C++) from a template.
 
 namespace
 {
     std::filesystem::path SourceRoot() { return std::filesystem::path(UMBRA_SOURCE_DIRECTORY); }
-    std::filesystem::path ProjectRoot() { return SourceRoot() / "projects" / UMBRA_PROJECT_NAME; }
+    std::filesystem::path ProjectRoot() { return std::filesystem::path(UMBRA_PROJECT_DIRECTORY); }
 
 #ifdef _WIN32
     // Visual Studio's devenv.exe: asked from vswhere (installed with every VS 2017+), else on PATH.
@@ -75,11 +76,21 @@ namespace
 
 void Editor::ScanCode()
 {
-    // Every .cpp/.hpp of each layer, grouped by its first folder (the module).
+    // Every .cpp/.hpp of each layer, grouped by its first folder: the engine, each enabled plugin
+    // ("name=folder|..." from the build), then the project's own engine and game code.
     code_.clear();
-    const std::pair<const char *, std::filesystem::path> layers[] = {
-        {"Base engine", SourceRoot() / "engine"}, {"Base game", SourceRoot() / "game"},
-        {"Project engine", ProjectRoot() / "engine"}, {"Project game", ProjectRoot() / "game"}};
+    std::vector<std::pair<std::string, std::filesystem::path>> layers{{"Engine", SourceRoot() / "engine"}};
+    const std::string plugins = UMBRA_PLUGIN_SOURCE_DIRS;
+    for (std::size_t start = 0; start < plugins.size();)
+    {
+        const std::size_t end = std::min(plugins.find('|', start), plugins.size());
+        const std::string entry = plugins.substr(start, end - start);
+        if (const std::size_t eq = entry.find('='); eq != std::string::npos)
+            layers.push_back({"Plugin: " + entry.substr(0, eq), std::filesystem::path(std::u8string(entry.begin() + static_cast<std::ptrdiff_t>(eq) + 1, entry.end()))});
+        start = end + 1;
+    }
+    layers.push_back({"Project engine", ProjectRoot() / "engine"});
+    layers.push_back({"Project game", ProjectRoot() / "game"});
     for (const auto &[name, folder] : layers)
     {
         CodeLayer layer{name, folder, {}};
@@ -129,7 +140,7 @@ void Editor::NewComponent(const std::string &rawName)
     while (!type.empty() && type.back() == '_')
         type.pop_back();
     const std::filesystem::path cpp = ProjectRoot() / "game" / (className + ".cpp");
-    const std::filesystem::path schema = assetRoot_ / "components" / (type + ".component.json");
+    const std::filesystem::path schema = assetRoot_.Project() / "components" / (type + ".component.json");
     if (type.empty() || !std::isalpha(static_cast<unsigned char>(className[0])) || std::filesystem::exists(cpp) || std::filesystem::exists(schema))
     {
         message_ = "Choose a new name that starts with a letter (" + className + ".cpp or " + type + ".component.json exists?)";

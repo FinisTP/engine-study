@@ -1,5 +1,6 @@
 #pragma once
 
+#include <AssetFolders.hpp>
 #include <Diagnostic.hpp>
 
 #include <nlohmann/json.hpp>
@@ -24,7 +25,7 @@ namespace umbra::authoring
 
     struct ValidateOptions final
     {
-        std::filesystem::path assetRoot; // scenes: referenced files must exist here
+        assets::AssetFolders assetRoot; // scenes: referenced files must exist here (project, then plugins)
         std::filesystem::path content;   // saves: the RPG content they must match
     };
 

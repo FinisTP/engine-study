@@ -91,6 +91,16 @@ namespace umbra::scene
         return schemas;
     }
 
+    std::map<std::string, ComponentSchema> LoadComponentSchemas(const assets::AssetFolders &assets, std::vector<core::Diagnostic> &diagnostics)
+    {
+        // Plugins first (last one first), then the project, so later folders replace earlier types.
+        std::map<std::string, ComponentSchema> schemas;
+        for (auto it = assets.All().rbegin(); it != assets.All().rend(); ++it)
+            for (auto &[type, schema] : LoadComponentSchemas(*it / "components", diagnostics))
+                schemas[type] = std::move(schema);
+        return schemas;
+    }
+
     void CheckComponent(const ComponentSchema &schema, const json &value, const std::string &file, const std::string &where,
                         std::vector<core::Diagnostic> &diagnostics)
     {

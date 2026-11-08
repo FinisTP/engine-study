@@ -1,0 +1,15 @@
+{
+  "format": "umbra.plugin",
+  "version": 1,
+  "name": "rpg",
+  "label": "RPG rules",
+  "description": "Content (items, skills, statuses, actors), characters, inventory, skill tree and the shared action resolver. Editor: the RPG content forms.",
+  "kind": "game",
+  "requires": [],
+  "modules": [
+    "rpg"
+  ],
+  "links": [
+    "Umbra::Rpg"
+  ]
+}

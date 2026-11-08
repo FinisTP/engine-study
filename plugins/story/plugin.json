@@ -1,0 +1,17 @@
+{
+  "format": "umbra.plugin",
+  "version": 1,
+  "name": "story",
+  "label": "Story",
+  "description": "Quest log and branching conversations.",
+  "kind": "game",
+  "requires": [
+    "rpg"
+  ],
+  "modules": [
+    "story"
+  ],
+  "links": [
+    "Umbra::Story"
+  ]
+}

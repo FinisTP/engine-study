@@ -12,10 +12,8 @@ target_sources(
         Editor.cpp
         Editor.hpp
         Editor.md
-        RpgForms.cpp
-        AiDraft.cpp
-        AiTexture.cpp
-        AiModel.cpp
+        EditorPanel.cpp
+        EditorPanel.hpp
         Components.cpp
         CodePanel.cpp
         Widgets.hpp
@@ -32,9 +30,18 @@ target_compile_definitions(
         UMBRA_ASSET_DIRECTORY="${UMBRA_ASSETS}"
         UMBRA_SOURCE_DIRECTORY="${PROJECT_SOURCE_DIR}"
         UMBRA_PROJECT_NAME="${UMBRA_PROJECT}"
+        UMBRA_PROJECT_DIRECTORY="${UMBRA_PROJECT_DIR}"
         UMBRA_CACHE_DIRECTORY="${CMAKE_BINARY_DIR}/asset-cache"
         UMBRA_GAME_EXECUTABLE="$<TARGET_FILE:Umbra>"
+        "UMBRA_PLUGIN_ASSET_DIRS=\"${UMBRA_PLUGIN_ASSETS_TEXT}\""
+        "UMBRA_PLUGIN_SOURCE_DIRS=\"${UMBRA_PLUGIN_DIRS_TEXT}\""
 )
+target_include_directories(UmbraEditor PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}) # EditorPanel.hpp for plugin panels
+
+# Plugin windows (each plugin's editor/ folder) compile into the editor; it needs the RPG plugins
+# for its content checks and the RPG pickers in the inspector.
+umbra_require_plugins("The editor" rpg story rpg-session)
+umbra_add_plugin_sources(UmbraEditor editor)
 
 target_link_libraries(
     UmbraEditor
@@ -47,7 +54,6 @@ target_link_libraries(
         Umbra::Assets
         Umbra::Scene
         Umbra::Authoring
-        Umbra::LocalAi
         imgui::imgui
         imguizmo::imguizmo
         SDL3::SDL3

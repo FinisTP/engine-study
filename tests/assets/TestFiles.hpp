@@ -1,5 +1,9 @@
 #pragma once
 
+#if __has_include(<AssetFolders.hpp>)
+#include <AssetFolders.hpp>
+#endif
+
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -7,6 +11,16 @@
 
 namespace test
 {
+#if __has_include(<AssetFolders.hpp>) && defined(UMBRA_TEST_ASSET_DIRECTORY)
+    // The reference project's assets with its plugins' assets underneath, as the game sees them.
+    inline umbra::assets::AssetFolders ReferenceAssets()
+    {
+        umbra::assets::AssetFolders folders(UMBRA_TEST_ASSET_DIRECTORY);
+        folders.AddPlugins(UMBRA_TEST_PLUGIN_ASSETS);
+        return folders;
+    }
+#endif
+
     // Fresh empty folder under the system temp folder, unique per name.
     inline std::filesystem::path TempDir(const std::string &name)
     {

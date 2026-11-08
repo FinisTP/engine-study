@@ -1,3 +1,4 @@
+#include "assets/TestFiles.hpp"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
@@ -103,7 +104,7 @@ TEST_CASE("The shipped sounds load")
     {
         std::string error;
         INFO(name << ": " << error);
-        REQUIRE(audio::LoadWav(assetDir / "audio" / (std::string{name} + ".wav"), error));
+        REQUIRE(audio::LoadWav(test::ReferenceAssets() / ("audio/" + std::string{name} + ".wav"), error));
     }
 }
 
@@ -148,7 +149,7 @@ TEST_CASE("Pausing freezes game voices but not UI voices; voices are capped")
 
 TEST_CASE("A playing voice keeps its clip alive after the bank forgets it")
 {
-    audio::SoundBank bank(assetDir);
+    audio::SoundBank bank(test::ReferenceAssets()); // the sounds come from the third-person plugin
     audio::Mixer mixer;
     std::weak_ptr<const audio::AudioClip> watch = bank.Get("audio/ui_click.wav");
     REQUIRE(mixer.Play(watch.lock()));
@@ -162,7 +163,7 @@ TEST_CASE("A playing voice keeps its clip alive after the bank forgets it")
 
 TEST_CASE("Missing sounds are reported once and return nothing")
 {
-    audio::SoundBank bank(assetDir);
+    audio::SoundBank bank(test::ReferenceAssets()); // the sounds come from the third-person plugin
     REQUIRE(bank.Get("audio/missing.wav") == nullptr);
     REQUIRE(bank.Get("audio/missing.wav") == nullptr);
     REQUIRE(bank.Get("../outside.wav") == nullptr);

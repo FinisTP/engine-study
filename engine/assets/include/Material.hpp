@@ -1,5 +1,7 @@
 #pragma once
 
+#include <AssetFolders.hpp>
+
 #include <Diagnostic.hpp>
 
 #include <glm/vec4.hpp>
@@ -40,7 +42,7 @@ namespace umbra::assets
     bool ParseMaterial(const std::string &text, const std::string &name, Material &material, std::vector<core::Diagnostic> &diagnostics);
     bool LoadMaterial(const std::filesystem::path &file, Material &material, std::vector<core::Diagnostic> &diagnostics);
     // The image exists under `assetRoot`, is readable, and has power-of-two sides from 64 to 2048.
-    bool CheckMaterialImage(const std::filesystem::path &assetRoot, const Material &material, const std::string &name,
+    bool CheckMaterialImage(const AssetFolders &assetRoot, const Material &material, const std::string &name,
                             std::vector<core::Diagnostic> &diagnostics);
     // The file text for a material (stable key order, two-space indent).
     [[nodiscard]] std::string MaterialText(const Material &material);

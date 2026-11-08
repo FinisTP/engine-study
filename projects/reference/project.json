@@ -1,0 +1,17 @@
+{
+  "format": "umbra.project",
+  "version": 1,
+  "name": "reference",
+  "title": "Umbra reference RPG",
+  "plugins": [
+    "rpg",
+    "story",
+    "turn-combat",
+    "realtime-combat",
+    "rpg-session",
+    "third-person",
+    "learned-ai",
+    "ai-authoring",
+    "web-export"
+  ]
+}

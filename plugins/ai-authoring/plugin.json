@@ -1,0 +1,21 @@
+{
+  "format": "umbra.plugin",
+  "version": 1,
+  "name": "ai-authoring",
+  "label": "AI authoring tools",
+  "description": "Local Ollama quest drafts and ComfyUI textures and 3D models: editor windows and UmbraTool commands. Never part of the game.",
+  "kind": "tool",
+  "requires": [
+    "rpg",
+    "story",
+    "rpg-session"
+  ],
+  "modules": [
+    "questdraft",
+    "localai"
+  ],
+  "links": [
+    "Umbra::LocalAi",
+    "Umbra::QuestDraft"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "format": "umbra.plugin",
+  "version": 1,
+  "name": "realtime-combat",
+  "label": "Real-time combat",
+  "description": "Cooldowns and reach in seconds; independent of turn-based combat.",
+  "kind": "game",
+  "requires": [
+    "rpg"
+  ],
+  "modules": [
+    "realtimecombat"
+  ],
+  "links": [
+    "Umbra::RealtimeCombat"
+  ]
+}

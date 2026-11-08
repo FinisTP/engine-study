@@ -1,5 +1,7 @@
 #pragma once
 
+#include <AssetFolders.hpp>
+
 #include <Diagnostic.hpp>
 #include <Wav.hpp>
 
@@ -17,7 +19,7 @@ namespace umbra::audio
     class SoundBank final
     {
     public:
-        explicit SoundBank(std::filesystem::path assetRoot) : assetRoot_(std::move(assetRoot)) {}
+        explicit SoundBank(assets::AssetFolders assetRoot) : assetRoot_(std::move(assetRoot)) {}
 
         [[nodiscard]] std::shared_ptr<const AudioClip> Get(const std::string &path);
         // Problems found since the last call.
@@ -27,7 +29,7 @@ namespace umbra::audio
         [[nodiscard]] std::size_t Count() const noexcept { return clips_.size(); }
 
     private:
-        std::filesystem::path assetRoot_;
+        assets::AssetFolders assetRoot_; // project, then plugins
         std::map<std::string, std::shared_ptr<const AudioClip>> clips_; // nullptr = failed, don't retry
         std::vector<core::Diagnostic> diagnostics_;
     };

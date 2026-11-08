@@ -57,9 +57,11 @@ namespace
             events.SetRawEventHandler([](const void *event) { ImGui_ImplSDL3_ProcessEvent(static_cast<const SDL_Event *>(event)); });
 
             // 2. The editor and its first scene.
-            ModelLibrary models(renderer, UMBRA_ASSET_DIRECTORY, UMBRA_CACHE_DIRECTORY);
+            umbra::assets::AssetFolders assets(UMBRA_ASSET_DIRECTORY); // the project's assets, then its plugins'
+            assets.AddPlugins(UMBRA_PLUGIN_ASSET_DIRS);
+            ModelLibrary models(renderer, assets, UMBRA_CACHE_DIRECTORY);
             {
-                Editor editor(models, UMBRA_ASSET_DIRECTORY, UMBRA_GAME_EXECUTABLE);
+                Editor editor(models, assets, UMBRA_GAME_EXECUTABLE);
                 editor.OpenScene(scenePath);
                 umbra::platform::Input input;
                 umbra::platform::ApplicationEvents app;

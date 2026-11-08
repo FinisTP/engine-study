@@ -18,7 +18,7 @@ namespace umbra::authoring
         using core::Severity;
 
         // Loads the scene into a throwaway world, then imports every model it draws.
-        bool ValidateScene(const std::filesystem::path &file, const std::filesystem::path &assetRoot,
+        bool ValidateScene(const std::filesystem::path &file, const assets::AssetFolders &assetRoot,
                            std::vector<Diagnostic> &diagnostics)
         {
             std::map<std::string, assets::ImportResult> imported;
@@ -122,7 +122,7 @@ namespace umbra::authoring
         {
             // The image (under --assets, else two folders up: assets/materials/x -> assets) and the license.
             assets::Material material;
-            const std::filesystem::path root = options.assetRoot.empty() ? file.parent_path().parent_path() : options.assetRoot;
+            const assets::AssetFolders root = options.assetRoot.empty() ? assets::AssetFolders(file.parent_path().parent_path()) : options.assetRoot;
             if (!assets::LoadMaterial(file, material, diagnostics) || !assets::CheckMaterialImage(root, material, file.string(), diagnostics))
                 return false;
             assets::CheckMaterialLicense(material, file.string(), diagnostics);

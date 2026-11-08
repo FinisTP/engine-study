@@ -1,0 +1,26 @@
+{
+  "format": "umbra.plugin",
+  "version": 1,
+  "name": "rpg-session",
+  "label": "RPG session",
+  "description": "Encounter coordinator, game session (story + fights + saves) and save files.",
+  "kind": "game",
+  "requires": [
+    "rpg",
+    "story"
+  ],
+  "requiresAny": [
+    [
+      "turn-combat",
+      "realtime-combat"
+    ]
+  ],
+  "modules": [
+    "encounter",
+    "game"
+  ],
+  "links": [
+    "Umbra::Encounter",
+    "Umbra::Game"
+  ]
+}

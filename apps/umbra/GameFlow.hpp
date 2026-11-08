@@ -6,7 +6,9 @@
 #include <FileWatcher.hpp>
 #include <GameSession.hpp>
 #include <Input.hpp>
+#if UMBRA_PLUGIN_LEARNED_AI
 #include <PolicyDecider.hpp>
+#endif
 
 #include <map>
 #include <memory>
@@ -72,6 +74,7 @@ private:
     [[nodiscard]] std::string FighterName(std::size_t index);
     [[nodiscard]] std::string ActionName(const umbra::rpg::ActionIntent &intent);
     [[nodiscard]] std::vector<std::string> RealtimeSkills();
+    [[nodiscard]] std::string LearnedTag(std::size_t index);
     [[nodiscard]] std::string PotionItem();
     void Say(const std::string &text);
 
@@ -93,14 +96,16 @@ private:
     std::vector<std::string> log_;     // recent fight lines
     std::string message_;
 
-    // Learned turn-combat AI per actor (game/policy). Each has its own worker thread.
+#if UMBRA_PLUGIN_LEARNED_AI
+    // Learned turn-combat AI per actor (learned-ai plugin). Each has its own worker thread.
     struct LearnedEnemy final
     {
         umbra::policy::PolicyModel model;
         std::unique_ptr<umbra::policy::PolicyDecider> decider;
     };
     std::map<std::string, LearnedEnemy> learned_;
-    std::size_t policyFor_ = static_cast<std::size_t>(-1); // roster index whose decision is pending
     std::uint64_t policyRequest_ = 0;
     std::vector<std::uint8_t> policyMask_;
+#endif
+    std::size_t policyFor_ = static_cast<std::size_t>(-1); // roster index whose decision is pending
 };

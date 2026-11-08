@@ -93,7 +93,7 @@ umbra::core::Camera OrbitCamera::ToCamera() const
     return camera;
 }
 
-Editor::Editor(ModelLibrary &models, std::filesystem::path assetRoot, std::filesystem::path gameExecutable)
+Editor::Editor(ModelLibrary &models, umbra::assets::AssetFolders assetRoot, std::filesystem::path gameExecutable)
     : models_(models), assetRoot_(std::move(assetRoot)), gameExecutable_(std::move(gameExecutable))
 {
     // The RPG content is open the whole time: forms edit it, scene pickers read its ids.
@@ -102,17 +102,15 @@ Editor::Editor(ModelLibrary &models, std::filesystem::path assetRoot, std::files
     if (!rpg_->Open(diagnostics))
         Report(diagnostics, "RPG content did not open");
     ScanAssets();
-    LoadDraftSettings();
-    LoadModelSettings();
-    ResumeModel();
+    panels_ = umbra::editor::CreatePanels();
 }
 
 Editor::~Editor()
 {
     if (gridMesh_)
         models_.DestroyLooseMesh(gridMesh_);
-    modelJob_->Leave(); // ComfyUI finishes the model; the next start fetches it (ResumeModel)
-    ClearTexturePreviews();
+    for (const auto &panel : panels_)
+        panel->Leave();
 }
 
 // ---------------- Edits ----------------
@@ -285,7 +283,8 @@ void Editor::Update(float deltaSeconds, umbra::core::DrawList &drawList)
     drawList.hud.diagnosticsWindow = false;
     if (world_)
         world_->ExtractDrawList(drawList);
-    ApplyTexturePreview(drawList);
+    for (const auto &panel : panels_)
+        panel->DecorateView(*this, drawList);
     // The grid is a real (depth-tested) mesh, so objects hide it; selection and colliders are
     // overlay lines drawn on top on purpose.
     if (!gridMesh_)
@@ -427,14 +426,14 @@ std::optional<authoring::Json> Editor::FitCollider(const authoring::Json &entity
         return std::nullopt;
     if (!modelBounds_.contains(model))
     {
-        umbra::localai::ModelInfo info;
+        umbra::authoring::ModelInfo info;
         std::vector<umbra::core::Diagnostic> ignored;
-        modelBounds_[model] = umbra::localai::InspectModel(assetRoot_ / model, info, ignored) ? std::optional(info) : std::nullopt;
+        modelBounds_[model] = umbra::authoring::InspectModel(assetRoot_ / model, info, ignored) ? std::optional(info) : std::nullopt;
     }
     const auto &info = modelBounds_[model];
     if (!info)
         return std::nullopt;
-    authoring::Json fitted = umbra::localai::FittedCollider(*info, Vec3(entity, "scale", glm::vec3{1.0F}));
+    authoring::Json fitted = umbra::authoring::FittedCollider(*info, Vec3(entity, "scale", glm::vec3{1.0F}));
     const Json *collider = ComponentOf(entity, "collider");
     fitted["motion"] = collider ? collider->value("motion", "static") : "static";
     return fitted;
@@ -537,11 +536,7 @@ void Editor::DrawUi()
     Inspector();
     AssetBrowser();
     DiagnosticsPanel();
-    RpgForms();
-    AiDraft();
-    AiTexture();
-    CollectModelResults();
-    AiModel();
+    PluginPanels();
     CodePanel();
     StatusBar();
     Popups();
@@ -611,10 +606,8 @@ void Editor::MenuBar()
     }
     if (ImGui::BeginMenu("View"))
     {
-        ImGui::MenuItem("RPG content", nullptr, &showRpg_);
-        ImGui::MenuItem("AI quest draft", nullptr, &showDraft_);
-        ImGui::MenuItem("AI texture", nullptr, &showTexture_);
-        ImGui::MenuItem("AI model", nullptr, &showModel_);
+        for (const auto &panel : panels_)
+            ImGui::MenuItem(panel->Title(), nullptr, &panel->open);
         ImGui::MenuItem("Code", nullptr, &showCode_);
         ImGui::EndMenu();
     }
@@ -627,12 +620,9 @@ void Editor::MenuBar()
         Play();
     if (ImGui::Button("Code"))
         showCode_ = true;
-    if (ImGui::Button("AI quest draft"))
-        showDraft_ = true;
-    if (ImGui::Button("AI texture"))
-        showTexture_ = true;
-    if (ImGui::Button(modelJob_->Running() ? "AI model (working)###AiModel" : "AI model###AiModel"))
-        showModel_ = true;
+    for (const auto &panel : panels_)
+        if (const std::string label = panel->ButtonLabel(); !label.empty() && ImGui::Button((label + "###" + panel->Title()).c_str()))
+            panel->open = true;
     ImGui::EndMainMenuBar();
 }
 
@@ -794,7 +784,7 @@ void Editor::AssetBrowser()
             if (group == "Scenes" && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
                 pendingOpen_ = file;
             if (group == "RPG content" && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-                showRpg_ = true;
+                Reveal("items", 0);
         }
         ImGui::TreePop();
     }
@@ -933,20 +923,16 @@ void Editor::RequestQuit()
 
 void Editor::ScanAssets()
 {
-    // Every content file under the asset folder, grouped by kind, as forward-slash paths.
+    // Every content file of the project and its plugins, grouped by kind, as forward-slash paths.
     assets_.clear();
     modelBounds_.clear(); // a model file may have changed
     std::vector<umbra::core::Diagnostic> schemaProblems;
-    schemas_ = umbra::scene::LoadComponentSchemas(assetRoot_ / "components", schemaProblems);
+    schemas_ = umbra::scene::LoadComponentSchemas(assetRoot_, schemaProblems);
     if (!schemaProblems.empty())
         Report(schemaProblems, "Component schema problems");
-    std::error_code ec;
-    for (auto it = std::filesystem::recursive_directory_iterator(assetRoot_, ec); it != std::filesystem::recursive_directory_iterator(); it.increment(ec))
+    for (const std::string &path : assetRoot_.ListFiles())
     {
-        if (ec || !it->is_regular_file())
-            continue;
-        const std::string path = Utf8(std::filesystem::relative(it->path(), assetRoot_));
-        const std::string name = Utf8(it->path().filename());
+        const std::string name = path.substr(path.rfind('/') + 1);
         if (name.ends_with(".scene.json"))
             assets_["Scenes"].push_back(path);
         else if (name.ends_with(".rpg.json"))
@@ -971,6 +957,30 @@ std::optional<std::size_t> Editor::SelectedIndex() const
     if (!scene_ || selected_.empty())
         return std::nullopt;
     return authoring::FindEntity(scene_->Data(), selected_);
+}
+
+void Editor::PluginPanels()
+{
+    // Every panel ticks each frame (background jobs); open ones draw their window.
+    for (const auto &panel : panels_)
+    {
+        panel->Tick(*this);
+        if (panel->open)
+            panel->Draw(*this);
+    }
+}
+
+std::vector<std::string> Editor::AssetList(const std::string &group) const
+{
+    const auto it = assets_.find(group);
+    return it == assets_.end() ? std::vector<std::string>{} : it->second;
+}
+
+void Editor::Reveal(const std::string &what, int index)
+{
+    for (const auto &panel : panels_)
+        if (panel->Reveal(what, index))
+            return;
 }
 
 std::vector<std::string> Editor::RpgIds(const char *section) const

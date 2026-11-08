@@ -531,7 +531,7 @@ namespace umbra::scene
             // 4. Entities, duplicate ids, hierarchy. Project components are checked against
             //    "<assets>/components/*.component.json".
             const std::map<std::string, ComponentSchema> schemas =
-                options.assetRoot.empty() ? std::map<std::string, ComponentSchema>{} : LoadComponentSchemas(options.assetRoot / "components", diagnostics);
+                options.assetRoot.empty() ? std::map<std::string, ComponentSchema>{} : LoadComponentSchemas(options.assetRoot, diagnostics);
             std::unordered_map<std::string, std::size_t> firstUse;
             for (std::size_t i = 0; i < entities->size(); ++i)
             {

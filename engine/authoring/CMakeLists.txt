@@ -9,7 +9,7 @@ target_sources(
         src/Document.cpp
         src/Package.cpp
         src/WebPack.cpp
-        src/QuestDraft.cpp
+        src/ModelTools.cpp
         src/SceneEdits.cpp
         src/Validate.cpp
     PUBLIC
@@ -19,7 +19,7 @@ target_sources(
             include/Document.hpp
             include/Package.hpp
             include/WebPack.hpp
-            include/QuestDraft.hpp
+            include/ModelTools.hpp
             include/SceneEdits.hpp
             include/Validate.hpp
 )

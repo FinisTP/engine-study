@@ -1,5 +1,6 @@
 #pragma once
 
+#include <AssetFolders.hpp>
 #include <Model.hpp>
 #include <ModelInstance.hpp>
 #include <Renderer.hpp>
@@ -40,7 +41,7 @@ public:
         StructureChanged // nodes changed: entities built from this model must be rebuilt
     };
 
-    ModelLibrary(umbra::render::Renderer &renderer, std::filesystem::path assetRoot, std::filesystem::path cacheRoot);
+    ModelLibrary(umbra::render::Renderer &renderer, umbra::assets::AssetFolders assetRoot, std::filesystem::path cacheRoot);
     ~ModelLibrary();
 
     ModelLibrary(const ModelLibrary &) = delete;
@@ -76,7 +77,7 @@ private:
     void Release(LoadedModel &loaded);
 
     umbra::render::Renderer &renderer_;
-    std::filesystem::path assetRoot_;
+    umbra::assets::AssetFolders assetRoot_; // project, then plugins
     std::filesystem::path cacheRoot_;
     std::map<std::string, LoadedModel> models_;
     std::map<std::string, LoadedMaterial> materials_;

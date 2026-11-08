@@ -23,7 +23,7 @@ package must be named here.
 
 The Vulkan loader (`vulkan-1.dll`) comes with the graphics driver and is not shipped.
 
-The browser version (`apps/umbra/web`) contains the same libraries (minus the Microsoft runtime,
+The browser version (`plugins/web-export/web`) contains the same libraries (minus the Microsoft runtime,
 volk and Vulkan Memory Allocator) compiled into `umbra.wasm`, plus the Emscripten runtime and its
 libc/libc++ (MIT / University of Illinois NCSA; LLVM libc++: Apache-2.0 with LLVM exception).
 

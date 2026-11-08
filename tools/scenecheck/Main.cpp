@@ -21,7 +21,7 @@ namespace
 
     // Imports every model a loaded scene draws and turns importer problems into diagnostics.
     void CheckModels(const umbra::world::World &world,
-                     std::map<std::string, umbra::assets::ImportResult> &imported, const std::filesystem::path &assetRoot,
+                     std::map<std::string, umbra::assets::ImportResult> &imported, const umbra::assets::AssetFolders &assetRoot,
                      std::vector<Diagnostic> &diagnostics)
     {
         std::set<std::string> models;
@@ -52,7 +52,10 @@ int main(int argc, char **argv)
     {
         const std::string arg = argv[i];
         if (arg == "--assets" && i + 1 < argc)
+        {
             options.assetRoot = argv[++i];
+            options.assetRoot.AddPlugins(UMBRA_PLUGIN_ASSET_DIRS); // the enabled plugins' assets underneath
+        }
         else if (arg == "--json")
             json = true;
         else if (!arg.empty() && arg[0] != '-')

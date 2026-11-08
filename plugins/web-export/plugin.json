@@ -1,0 +1,11 @@
+{
+  "format": "umbra.plugin",
+  "version": 1,
+  "name": "web-export",
+  "label": "Web export",
+  "description": "The browser page, offline service worker and build scripts for the WebAssembly build of the game.",
+  "kind": "tool",
+  "requires": [],
+  "modules": [],
+  "links": []
+}

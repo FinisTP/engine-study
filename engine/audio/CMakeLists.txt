@@ -22,8 +22,8 @@ target_link_libraries(
     UmbraAudio
     PUBLIC
         Umbra::Core
+        Umbra::Assets # AssetFolders in SoundBank.hpp
     PRIVATE
-        Umbra::Assets
         Umbra::Warnings
         Umbra::Sanitizers
 )

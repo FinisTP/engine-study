@@ -47,12 +47,13 @@ namespace
 	}
 
 	// Where the game's files are, found at run time (no build path is compiled in, P9). A package
-	// has assets/ next to the program and keeps its model cache there too. A development build
-	// looks upwards: the build folder (it has CMakeCache.txt) holds the cache, the source tree above
-	// it holds projects/<project>/assets/ (the project name is compiled in, not its path).
+	// has assets/ next to the program (its plugins' assets merged in) and keeps its model cache
+	// there too. A development build looks upwards: the build folder (it has CMakeCache.txt) holds
+	// the cache, the source tree above it holds projects/<project>/assets/ and
+	// plugins/<plugin>/assets/ (only the names are compiled in, not their paths).
 	struct GameFolders final
 	{
-		std::filesystem::path assets;
+		umbra::assets::AssetFolders assets;
 		std::filesystem::path cache;
 	};
 	GameFolders FindFolders()
@@ -71,7 +72,16 @@ namespace
 				found.cache = dir / "asset-cache", cacheFound = true;
 			if (const auto project = dir / "projects" / UMBRA_PROJECT_NAME / "assets"; isAssets(project))
 			{
+				// The enabled plugins' assets, below the project's ("a|b|c" from the build).
 				found.assets = project;
+				const std::string plugins = UMBRA_GAME_PLUGINS;
+				for (std::size_t start = 0; start < plugins.size();)
+				{
+					const std::size_t end = std::min(plugins.find('|', start), plugins.size());
+					if (const auto folder = dir / "plugins" / plugins.substr(start, end - start) / "assets"; std::filesystem::is_directory(folder))
+						found.assets.AddPlugin(folder);
+					start = end + 1;
+				}
 				break;
 			}
 			if (dir == dir.parent_path())

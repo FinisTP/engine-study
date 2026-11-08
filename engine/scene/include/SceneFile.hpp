@@ -1,5 +1,6 @@
 #pragma once
 
+#include <AssetFolders.hpp>
 #include <Diagnostic.hpp>
 #include <Model.hpp>
 #include <World.hpp>
@@ -19,7 +20,7 @@ namespace umbra::scene
 
     struct SceneLoadOptions final
     {
-        std::filesystem::path assetRoot; // if set, model/instance files must exist under it
+        assets::AssetFolders assetRoot; // if set, model/instance files must exist there (project, then plugins)
         ModelProvider models;            // needed only for scenes that use "instance"
     };
 

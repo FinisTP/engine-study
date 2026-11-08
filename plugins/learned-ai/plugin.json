@@ -1,0 +1,17 @@
+{
+  "format": "umbra.plugin",
+  "version": 1,
+  "name": "learned-ai",
+  "label": "Learned enemy AI",
+  "description": "Turn-based enemy policy (observation contract, built-in network, async decider with fallback) and its Python training tools.",
+  "kind": "game",
+  "requires": [
+    "turn-combat"
+  ],
+  "modules": [
+    "policy"
+  ],
+  "links": [
+    "Umbra::Policy"
+  ]
+}

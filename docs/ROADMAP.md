@@ -32,7 +32,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 
 **First action for a new agent:** finish B0 — the Windows-side checks are still open (see the B0 record). Re-inspect the checkout; if it has advanced past this dashboard, preserve completed work and select the earliest genuinely unmet task. Do not blindly implement P3.1 again.
 
-**Current next task:** the user's S1 check on Windows (rebuild after the folder move; editor: Add component, Spin in the dungeon, Code window opens Visual Studio 2022, New component builds), then the user's P10 browser check (`testing/p10-web-export.md` §4: does the scene render in Chrome/Edge), the P9 gate runs on Windows (`testing/p9-release-gate.md` §4: benchmark → O18, package check, clean install, journey on the package), and confirm the `#UMBRA-62`/`#UMBRA-63` fixes on Windows (`testing/p8d-ai-models.md` §3c), the remaining Windows checklists for P6, P7 and P8A (`testing/phase6-reference-game.md` §4, `testing/phase7-creator-workflow.md` §4, `testing/p8a-learned-enemy.md` §5), then P9 (PC release gate). P8B, P8C and P8D were confirmed working on Windows by the user on 2026-11-08. Open in parallel: P8A recipe robustness (1 of 2 seeds). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
+**Current next task:** S3 (gameplay UI framework, in progress), and the user's S1/S2 check on Windows (reconfigure after the folder moves; editor windows from plugins; AI model window finds the workflows in projects\reference\tools\comfyui) (editor: Add component, Spin in the dungeon, Code window opens Visual Studio 2022, New component builds), then the user's P10 browser check (`testing/p10-web-export.md` §4: does the scene render in Chrome/Edge), the P9 gate runs on Windows (`testing/p9-release-gate.md` §4: benchmark → O18, package check, clean install, journey on the package), and confirm the `#UMBRA-62`/`#UMBRA-63` fixes on Windows (`testing/p8d-ai-models.md` §3c), the remaining Windows checklists for P6, P7 and P8A (`testing/phase6-reference-game.md` §4, `testing/phase7-creator-workflow.md` §4, `testing/p8a-learned-enemy.md` §5), then P9 (PC release gate). P8B, P8C and P8D were confirmed working on Windows by the user on 2026-11-08. Open in parallel: P8A recipe robustness (1 of 2 seeds). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
 
 | Gate | Dependency | Status (updated 2026-11-07) | Evidence / exit summary |
 |---|---|---|---|
@@ -52,6 +52,8 @@ The three formerly open decisions are resolved: the combat modes are independent
 | P9 PC release | P6/P7/P8A/P8B | **In progress** (2026-11-08): release tools built and passing on Linux (benchmark, long-run test, package check, license notices); the Windows gate runs are open | Clean offline install, complete game, authoring workflow, measured reference-PC gate. Evidence `testing/p9-release-gate.md`. |
 | P10 Playable web export | P9; W0 decisions | **Implemented 2026-11-08** (started before the P9 Windows runs finished, at the user's request); verified headlessly (13/13 suites in WebAssembly, 11/11 browser checks) and **renders on the user's GPU**; Chrome/Edge play-through and offline install to confirm | Browser game and local policy, durable-save UX, offline installation readiness. Evidence `testing/p10-web-export.md`. |
 | S1 Project structure and components | P10 | **Implemented 2026-11-08** (user request after P10): `engine/` / `game/` / `projects/<name>/{assets,engine,game}`, entity components with project C++ components, editor Code window (VS 2022) and Add component; verified headlessly (T77, all suites); editor use on Windows to confirm | ADR 0004; `projects/README.md`; `engine/scene/include/Components.md`. |
+| S2 Source plugins | S1 | **Implemented 2026-11-08** (user request): game systems and tools in `plugins/<name>/` chosen by `project.json`; editor windows and tool commands register themselves; layered assets; three plugin sets verified (T78); Windows check open | ADR 0005; `plugins/README.md`. |
+| S3 Gameplay UI framework | S2 | **In progress** (user request 2026-11-08): data screens, engine-drawn UI on PC and web, current UI replaced, inventory/skill tree/quest log | Section S3. |
 | P11 Mobile | P10; approved device target | Planned later port | Lifecycle, input, storage, thermal and performance gates on actual devices. |
 | F1 Community improvement | Separate product approval | Deferred proposal | Consent, records, validation, developer retraining, approved model delivery/rollback. |
 
@@ -689,6 +691,32 @@ If worker/thread deployment needs special headers or capabilities, test the actu
 | S1.3 Editor: Add component / remove, schema fields, Code window opening VS 2022, New component template | Implemented; Windows check open | ADR 0004 |
 | S1.4 Web build picks up editor changes (`UmbraTool web-pack`, run by `serve-web.bat`) | Implemented (`#UMBRA-70`) | T76; check-web |
 
+### S2 — Source plugins (user request, 2026-11-08; ADR 0005)
+
+| Item | Status | Evidence |
+|---|---|---|
+| S2.1 Plugin manifests, project.json, CMake loader (requirements, `requiresAny`, `UMBRA_PLUGIN_*`) | Implemented (`#UMBRA-74`) | configure messages; T78 |
+| S2.2 Game systems and tools moved into 9 plugins (modules, tests, tools, assets) | Implemented | all suites (reference set) |
+| S2.3 Hosts without plugin names: `UMBRA_EDITOR_PANEL` + `EditorHost`, `UMBRA_TOOL_COMMAND` | Implemented; editor Windows check open | builds without ai-authoring show no AI windows/commands |
+| S2.4 Optional combat modes and learned AI really optional | Implemented | T78: turn-only (+learned AI, no AI tools) 35/35, real-time only 31/31 |
+| S2.5 Layered assets (`assets::AssetFolders`: project over plugins) in game, editor, tools, web pack, package | Implemented | gameplay sounds from `third-person`; web asset pack includes them; check-web 11/11 |
+
+### S3 — Gameplay UI framework (user request, 2026-11-08)
+
+User decisions (2026-11-08): screens are **data** (`assets/ui/*.ui.json`, editable with a live
+preview in the editor) with C++ only for new widget kinds and game bindings; the game **draws its
+UI itself** (same look on PC and web; Dear ImGui stays for debug and the editor); the first slice
+**replaces all current game UI and adds inventory/equipment, skill tree and quest log screens**.
+
+| Task | Work | Exit evidence |
+|---|---|---|
+| S3.1 UI drawing | `core::DrawList` gets UI quads (rect, image, 9-slice, text) with clipping; a font atlas from a TTF (OFL font, stb_truetype); the Vulkan and WebGPU renderers draw them after the scene | Same screen pixels-close on both renderers (capture); text crisp at 1x/2x; no ImGui in the game's normal UI |
+| S3.2 Screens and widgets | `engine/ui`: widget tree from JSON (panel, text, image, bar, button, list, grid, tabs), anchors + stacks layout, a skin file (colors, fonts, panel images), bindings `{hero.health}` from a C++ data provider, actions sent to C++ handlers; validated with diagnostics like scenes | Headless layout/binding tests; bad screen files named with field paths |
+| S3.3 Input and focus | Mouse, keyboard and gamepad navigation (focus moves, confirm/back), modal stack, pause interaction | Headless navigation tests; manual gamepad check |
+| S3.4 Replace the current UI | HUD (HP/EN/XP, prompts, messages, warnings), start/pause/death menus, conversation and fight menus as screens; the browser page's HTML HUD replaced by engine drawing | Journey on PC and in Chrome/Edge with the new screens; check-web updated |
+| S3.5 New RPG screens | Inventory and equipment, skill tree (unlock), quest log, in the `rpg`/`story` plugins' assets with their bindings | Headless session tests for equip/unlock through the screens' actions; manual play |
+| S3.6 Editor | UI window: open a screen, live preview with sample data, edit properties (undoable, validated) | Editor checklist on Windows |
+
 ### P11 — Mobile
 
 Select the initial OS/device tier before implementation. Earlier Android ARM64 intent is historical context, not a newly confirmed permanent API-level requirement. Reuse platform-neutral rules/assets and choose appropriate graphics/inference backends, lifecycle/storage and packaging adapters.
@@ -817,6 +845,7 @@ This is an initial **60-case register**, not an assertion that every possible fu
 | T74 | Long run: hundreds of fights in both modes with saves, loads and a damaged save | Every save round trip byte-identical; no fight state left over; backup rescues the damaged save; save size bounded | P9 |
 | T75 | Package with a development program, an unlisted DLL, a key, an absolute path, a dependency on the source assets folder, missing content/policy | `package-check` names each (secret values never printed); AI leftovers and non-commercial models are warnings; `package.bat` makes no zip on errors | P9 |
 | T77 | Entity with built-in and project components; older top-level parts; a project component with wrong or out-of-range fields; a type with no schema or no C++ | Both forms load the same; saving writes `components`; schema errors named; unknown type is a warning and only data; registered C++ behaviour starts and updates (Spin turns 90° in 1 s at 90°/s) | S1 |
+| T78 | Projects with different plugin sets (reference; turn-only with learned AI and no AI tools; real-time only); an unknown plugin; a missing combat mode | Each set builds and passes its suites; the game, editor and tool show only their plugins' parts; clear configure errors | S2 |
 | T76 | Assets edited after a web build; damaged `assets.bin` | `UmbraTool web-pack` (run by `serve-web.bat`) packs them next to the page with a new offline version; the page shows the edit without a rebuild; AI working files left out; a short `assets.bin` is refused with a clear message | P10 |
 | T73 | Placed generated model; collider added to a model entity | A static box fitted to the model's bounds at the entity scale (not the scale-derived default meant for the -1..1 cube) | P8D |
 | T70 | Generated GLB the importer refuses | Not kept (all files removed); a good one is saved with provenance and never overwrites | P8D |

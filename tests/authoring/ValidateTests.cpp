@@ -40,7 +40,7 @@ TEST_CASE("Shipped content passes; unknown files and saves without content are e
 {
     const std::filesystem::path assets{UMBRA_TEST_ASSET_DIRECTORY};
     std::vector<core::Diagnostic> diagnostics;
-    REQUIRE(authoring::ValidateFile(assets / "scenes/dungeon.scene.json", {assets, {}}, diagnostics));
+    REQUIRE(authoring::ValidateFile(assets / "scenes/dungeon.scene.json", {test::ReferenceAssets(), {}}, diagnostics));
     REQUIRE(authoring::ValidateFile(assets / "rpg/reference.rpg.json", {}, diagnostics));
     REQUIRE(diagnostics.empty());
 
