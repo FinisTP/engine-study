@@ -1,0 +1,17 @@
+# Writes sw.js into DIR from TEMPLATE: the version is a hash of every file the page needs, so a
+# new build is a new offline version (roadmap P10.4).
+set(files index.html umbra-page.js umbra-page.css umbra.js umbra.wasm umbra.data)
+set(all "")
+set(list "")
+foreach(f ${files})
+    file(SHA256 "${DIR}/${f}" hash)
+    string(APPEND all "${hash}")
+    string(APPEND list "'${f}', ")
+endforeach()
+string(APPEND list "'./'")
+string(SHA256 version "${all}")
+string(SUBSTRING "${version}" 0 12 version)
+file(READ "${TEMPLATE}" text)
+string(REPLACE "@UMBRA_VERSION@" "${version}" text "${text}")
+string(REPLACE "@UMBRA_FILES@" "${list}" text "${text}")
+file(WRITE "${DIR}/sw.js" "${text}")

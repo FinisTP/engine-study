@@ -1,6 +1,7 @@
 #include "GameFlow.hpp"
 
 #include <Log.hpp>
+#include <Platform.hpp>
 #include <Profiling.hpp>
 #include <PolicyContract.hpp>
 #include <RealtimeEncounter.hpp>
@@ -572,6 +573,8 @@ bool GameFlow::Save(const std::filesystem::path &file)
     const bool saved = data && game::WriteSave(file, *data, diagnostics);
     for (const umbra::core::Diagnostic &diagnostic : diagnostics)
         umbra::diagnostics::Error(umbra::core::Format(diagnostic));
+    if (saved)
+        umbra::platform::Platform::PersistFiles(); // browser: into IndexedDB
     return saved;
 }
 

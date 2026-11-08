@@ -1,7 +1,7 @@
 # Umbra Engine - Current Development Status
 
 **Status date:** 2026-11-07 (Phase 1/2 records dated 2026-09-02)
-**Current milestone:** P9 PC release gate in progress (tools done 2026-11-08; Windows gate runs open); P8B/P8C/P8D verified on Windows by the user 2026-11-08
+**Current milestone:** P10 web export implemented (2026-11-08; rendering check on the user's PC open); P9 PC release gate: benchmark passed, remaining Windows runs open
 **Phase 1 status:** Complete (interactive checklist unsigned)
 **Phase 2 status:** Complete
 **Phase 3 status:** Implemented. Headless tests verified on Linux; Windows build and GPU checks not run yet
@@ -13,6 +13,10 @@
 **P8C status:** Implemented. Headless tests verified on Linux (42/42, GCC/Clang/ASan) against a stand-in ComfyUI; no real ComfyUI/SDXL or GPU run yet (P8C.0 open); editor window not opened
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
+
+## Update 2026-11-08 (P10 web export, `#UMBRA-66`)
+
+- The game builds for the browser with Emscripten (single-threaded, WebGPU through a JS library behind the same `Renderer` interface, HUD as HTML, saves in IndexedDB with export/import, offline service worker). 13 headless suites pass in WebAssembly; 9/9 browser checks in headless Chrome. Rendering not yet seen on real hardware (`testing/p10-web-export.md`). O18 (performance target) and O19 (Chrome + Edge, single-thread) decided by the user.
 
 ## Update 2026-11-08 (P9 benchmark, `#UMBRA-65`)
 

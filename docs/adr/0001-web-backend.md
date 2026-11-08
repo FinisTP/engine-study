@@ -50,6 +50,19 @@
   SharedArrayBuffer (requires cross-origin isolation headers: COOP/COEP) or single-threaded builds.
 - **Memory:** the rules module runs in 128 KiB of linear memory for the reference fight.
 
+## P10 result (2026-11-08)
+
+- **Emscripten works** for the whole game (3.1.52 with the system LLVM 18; no emsdk download):
+  SDL3, Jolt (single-threaded job system), spdlog, tinygltf and every engine module the game uses
+  compile unchanged apart from `#ifdef __EMSCRIPTEN__` in the window flags, the policy decider
+  (no worker thread) and the frame sleep. 13 headless suites pass in WebAssembly under Node.
+- **WebGPU from JavaScript, not C++ bindings:** the browser `Renderer` (`engine/render/web`) calls a
+  small JS library instead of Emdawnwebgpu/`USE_WEBGPU`, so it uses the current browser API and
+  needs no extra port. The game loop stays a normal loop: `RenderFrame` waits for the next
+  animation frame through Asyncify.
+- **Shaders:** still the hand WGSL port (now in `umbra_render.js`); HLSL → WGSL automation open.
+- Rendering in a real browser is checked on the user's PC (`docs/testing/p10-web-export.md` §4).
+
 ## Limitations and revisit triggers
 
 - Tested only in Edge (Chromium) on Windows with an Intel GPU. Run `samples/web/umbra-web.html` in

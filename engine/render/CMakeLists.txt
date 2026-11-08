@@ -1,5 +1,17 @@
-find_package(SDL3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
+
+# Browser: the same Renderer interface drawn with WebGPU from JavaScript (web/WebRenderer.md).
+if(EMSCRIPTEN)
+    add_library(UmbraRender STATIC web/RendererWeb.cpp)
+    add_library(Umbra::Render ALIAS UmbraRender)
+    target_sources(UmbraRender PUBLIC FILE_SET HEADERS BASE_DIRS include FILES include/Renderer.hpp)
+    target_compile_features(UmbraRender PUBLIC cxx_std_20)
+    target_link_libraries(UmbraRender PUBLIC Umbra::Core PRIVATE Umbra::Diagnostics glm::glm Umbra::Warnings)
+    target_link_options(UmbraRender INTERFACE "--js-library=${CMAKE_CURRENT_SOURCE_DIR}/web/umbra_render.js")
+    return()
+endif()
+
+find_package(SDL3 CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(volk CONFIG REQUIRED)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)

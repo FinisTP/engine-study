@@ -25,7 +25,11 @@ namespace umbra::platform
         }
 
         const std::string windowTitle{title};
+#ifdef __EMSCRIPTEN__
+        window_ = SDL_CreateWindow(windowTitle.c_str(), width, height, SDL_WINDOW_RESIZABLE); // the page's canvas; WebGPU draws into it
+#else
         window_ = SDL_CreateWindow(windowTitle.c_str(), width, height, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
+#endif
 
         if (window_ == nullptr)
         {

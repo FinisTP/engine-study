@@ -17,6 +17,29 @@ include(UmbraHeadlessCheck)
 # position-independent everywhere.
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# Browser build (roadmap P10): only the game and the modules it uses, single-threaded, with
+# exceptions enabled for nlohmann-json. Configure with emcmake; see apps/umbra/web/README.md.
+if(EMSCRIPTEN)
+    set(CMAKE_CXX_SCAN_FOR_MODULES OFF) # clang-scan-deps doesn't know the Emscripten sysroot; no modules are used
+    add_compile_options(-fexceptions)
+    add_link_options(-fexceptions)
+    foreach(module core diagnostics rpg turncombat realtimecombat encounter story game policy audio platform render world physics gameplay assets scene)
+        add_subdirectory(engine/${module})
+    endforeach()
+    add_subdirectory(apps/umbra)
+    # The headless test suites, run by Node (-sNODERAWFS reads the test data from disk): the same
+    # rules must give the same results in the browser (P10.2).
+    option(UMBRA_WEB_TESTS "Build the headless tests for Node" OFF)
+    if(UMBRA_WEB_TESTS)
+        include(CTest)
+        add_link_options(-sNODERAWFS=1 -sENVIRONMENT=node -sALLOW_MEMORY_GROWTH=1 -sSTACK_SIZE=4194304 -sEXIT_RUNTIME=1)
+        foreach(suite core rpg turncombat realtimecombat encounter story game policy world assets scene physics gameplay)
+            add_subdirectory(tests/${suite})
+        endforeach()
+    endif()
+    return()
+endif()
+
 add_subdirectory(engine/core)
 add_subdirectory(engine/diagnostics)
 add_subdirectory(engine/rpg)

@@ -3,6 +3,10 @@
 #include <SDL3/SDL.h>
 #include <Log.hpp>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #ifdef _WIN32
 #ifndef PSAPI_VERSION
 #define PSAPI_VERSION 2 // K32GetProcessMemoryInfo lives in kernel32: no extra library
@@ -86,6 +90,23 @@ namespace umbra::platform
 	int Platform::SystemRamMb()
 	{
 		return SDL_GetSystemRAM();
+	}
+
+	void Platform::PersistFiles()
+	{
+#ifdef __EMSCRIPTEN__
+		// The page (umbra-page.js) mounted IndexedDB under /libsdl and reports failures on screen.
+		EM_ASM({ if (Module.persistSaves) Module.persistSaves(); });
+#endif
+	}
+
+	void Platform::Idle(int milliseconds)
+	{
+#ifdef __EMSCRIPTEN__
+		emscripten_sleep(static_cast<unsigned>(milliseconds)); // Asyncify: the page keeps running
+#else
+		SDL_Delay(static_cast<Uint32>(milliseconds));
+#endif
 	}
 
 	int Platform::PeakMemoryMb()

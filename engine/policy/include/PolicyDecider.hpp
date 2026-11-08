@@ -42,6 +42,6 @@ namespace umbra::policy
         std::vector<float> observation_;
         std::vector<std::uint8_t> mask_;
         std::optional<std::pair<std::uint64_t, int>> answer_;
-        std::thread worker_; // last: starts after everything above exists
+        std::thread worker_; // last: started in the constructor body after everything above exists
     };
 }

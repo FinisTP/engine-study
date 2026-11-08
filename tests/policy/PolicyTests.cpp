@@ -192,6 +192,17 @@ TEST_CASE("Decisions are tagged: late, stale and overlapping requests are contro
             answer = decider.Take(1);
         REQUIRE(answer == 2);
     }
+#if defined(__EMSCRIPTEN__) && !defined(__EMSCRIPTEN_PTHREADS__)
+    // 2. Browser build without threads (P10): the answer is there at once; a stale id is still dropped.
+    {
+        policy::PolicyDecider decider(TinyNetwork());
+        REQUIRE(decider.Request(1, obs, all));
+        REQUIRE_FALSE(decider.Take(2));
+        REQUIRE_FALSE(decider.Take(1)); // gone
+        REQUIRE(decider.Request(3, obs, {0, 0, 0, 0, 0, 0}));
+        REQUIRE(decider.Take(3) == -1);
+    }
+#else
     // 2. A slow model (T28): nothing before the deadline; busy while working; the late answer
     //    for decision 1 is never taken as the answer to decision 2.
     {
@@ -211,6 +222,7 @@ TEST_CASE("Decisions are tagged: late, stale and overlapping requests are contro
         policy::PolicyDecider decider(TinyNetwork(), 30ms);
         REQUIRE(decider.Request(1, obs, all));
     }
+#endif
 }
 
 TEST_CASE("The shipped model matches its training scores and plays complete legal fights")

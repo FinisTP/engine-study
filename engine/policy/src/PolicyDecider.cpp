@@ -1,10 +1,18 @@
 #include <PolicyDecider.hpp>
 
+// A browser build without threads (P10) decides at once on the caller's thread: the network takes
+// microseconds, and the caller still collects the answer with Take, so nothing else changes.
+#if defined(__EMSCRIPTEN__) && !defined(__EMSCRIPTEN_PTHREADS__)
+#define UMBRA_POLICY_INLINE 1
+#endif
+
 namespace umbra::policy
 {
-    PolicyDecider::PolicyDecider(Network network, std::chrono::milliseconds delay)
-        : network_(std::move(network)), delay_(delay), worker_([this] { Run(); })
+    PolicyDecider::PolicyDecider(Network network, std::chrono::milliseconds delay) : network_(std::move(network)), delay_(delay)
     {
+#ifndef UMBRA_POLICY_INLINE
+        worker_ = std::thread([this] { Run(); });
+#endif
     }
 
     PolicyDecider::~PolicyDecider()
@@ -14,11 +22,16 @@ namespace umbra::policy
             stop_ = true;
         }
         wake_.notify_all();
-        worker_.join();
+        if (worker_.joinable())
+            worker_.join();
     }
 
     bool PolicyDecider::Request(std::uint64_t id, std::vector<float> observation, std::vector<std::uint8_t> mask)
     {
+#ifdef UMBRA_POLICY_INLINE
+        answer_ = std::make_pair(id, network_.Choose(observation, mask));
+        return true;
+#endif
         {
             std::lock_guard lock(mutex_);
             if (busy_)

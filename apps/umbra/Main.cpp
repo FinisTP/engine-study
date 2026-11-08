@@ -256,7 +256,7 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 					if (isSuspended)
 					{
 						// If the application is suspended, skip the update and rendering loop
-						std::this_thread::sleep_for(std::chrono::milliseconds{100});
+						umbra::platform::Platform::Idle(100);
 						continue;
 					}
 
@@ -476,7 +476,9 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 						break;
 					}
 
-					std::this_thread::sleep_for(std::chrono::milliseconds{1});
+#ifndef __EMSCRIPTEN__
+					std::this_thread::sleep_for(std::chrono::milliseconds{1}); // browser: RenderFrame already waited for the next frame
+#endif
 				}
 			}
 		}

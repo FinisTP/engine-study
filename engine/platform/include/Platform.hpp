@@ -30,5 +30,9 @@ namespace umbra::platform
 		[[nodiscard]] static int SystemRamMb();
 		// Most memory this process has used so far (peak working set / max resident size), 0 if unknown.
 		[[nodiscard]] static int PeakMemoryMb();
+		// Browser: copy changed files (saves) from memory to the browser's storage. Desktop: nothing.
+		static void PersistFiles();
+		// Waits without busy looping; in the browser this hands control back to the page meanwhile.
+		static void Idle(int milliseconds);
 	};
 }

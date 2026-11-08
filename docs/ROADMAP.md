@@ -32,7 +32,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 
 **First action for a new agent:** finish B0 — the Windows-side checks are still open (see the B0 record). Re-inspect the checkout; if it has advanced past this dashboard, preserve completed work and select the earliest genuinely unmet task. Do not blindly implement P3.1 again.
 
-**Current next task:** the P9 gate runs on Windows (`testing/p9-release-gate.md` §4: benchmark → O18, package check, clean install, journey on the package), and confirm the `#UMBRA-62`/`#UMBRA-63` fixes on Windows (`testing/p8d-ai-models.md` §3c), the remaining Windows checklists for P6, P7 and P8A (`testing/phase6-reference-game.md` §4, `testing/phase7-creator-workflow.md` §4, `testing/p8a-learned-enemy.md` §5), then P9 (PC release gate). P8B, P8C and P8D were confirmed working on Windows by the user on 2026-11-08. Open in parallel: P8A recipe robustness (1 of 2 seeds). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
+**Current next task:** the user's P10 browser check (`testing/p10-web-export.md` §4: does the scene render in Chrome/Edge), the P9 gate runs on Windows (`testing/p9-release-gate.md` §4: benchmark → O18, package check, clean install, journey on the package), and confirm the `#UMBRA-62`/`#UMBRA-63` fixes on Windows (`testing/p8d-ai-models.md` §3c), the remaining Windows checklists for P6, P7 and P8A (`testing/phase6-reference-game.md` §4, `testing/phase7-creator-workflow.md` §4, `testing/p8a-learned-enemy.md` §5), then P9 (PC release gate). P8B, P8C and P8D were confirmed working on Windows by the user on 2026-11-08. Open in parallel: P8A recipe robustness (1 of 2 seeds). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
 
 | Gate | Dependency | Status (updated 2026-11-07) | Evidence / exit summary |
 |---|---|---|---|
@@ -50,7 +50,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 | P8C AI texture generation | P7 authoring, P8B local-AI bridge | Implemented 2026-11-07; verified on Linux, and **on Windows with ComfyUI/SDXL by the user (2026-11-08: works, with limitations)** | Materials with world-scale texturing and mipmaps; ComfyUI bridge; seamless step and seam score; provenance and license warnings; editor AI texture window with in-scene preview; `UmbraTool texture`. Plan `adr/0002-ai-texture-generation.md`, evidence `testing/p8c-ai-textures.md`. |
 | P8D AI 3D models | P8C ComfyUI bridge | Implemented 2026-11-07; **verified on Windows with TRELLIS.2 by the user (2026-11-08)**; the reported limitations fixed in `#UMBRA-62` (any workflow name, the textured GLB, survives closing the editor, no time limit) | Text → SDXL concept or own picture → the creator's exported TRELLIS.2 workflow (ComfyUI) → GLB with provenance → placed as an undoable scene edit; `UmbraTool model`. ADR `adr/0003-ai-model-generation.md`, evidence `testing/p8d-ai-models.md`. |
 | P9 PC release | P6/P7/P8A/P8B | **In progress** (2026-11-08): release tools built and passing on Linux (benchmark, long-run test, package check, license notices); the Windows gate runs are open | Clean offline install, complete game, authoring workflow, measured reference-PC gate. Evidence `testing/p9-release-gate.md`. |
-| P10 Playable web export | P9; W0 decisions | Planned later port | Browser game and local policy, durable-save UX, offline installation readiness. |
+| P10 Playable web export | P9; W0 decisions | **Implemented 2026-11-08** (started before the P9 Windows runs finished, at the user's request); verified headlessly (13/13 suites in WebAssembly, 9/9 browser checks); **the picture is unverified** (no working GPU here) | Browser game and local policy, durable-save UX, offline installation readiness. Evidence `testing/p10-web-export.md`. |
 | P11 Mobile | P10; approved device target | Planned later port | Lifecycle, input, storage, thermal and performance gates on actual devices. |
 | F1 Community improvement | Separate product approval | Deferred proposal | Consent, records, validation, developer retraining, approved model delivery/rollback. |
 
@@ -661,6 +661,16 @@ Verify package composition: shipping game has no editor, training environment, a
 | P10.4 Offline installation | Version-coherent app/assets/model caching and readiness indicator; controlled update behavior | Complete offline-ready install works with network unavailable; partial cache is not reported ready |
 | P10.5 Lifecycle/performance/package | Tab hide/suspend, graphics loss, audio/input restrictions, memory/download limits, profile support | Repeated suspension/resume and failure matrix; packaging does not depend on Windows paths/editor |
 
+<!-- P10-status -->
+| Task | Status | Evidence |
+|---|---|---|
+| P10.1 | Implemented: WebGPU `Renderer` (JS library), HTML HUD, Emscripten build of the game modules; **rendering not yet seen** | user check `testing/p10-web-export.md` §4 |
+| P10.2 | Implemented: C++ network in WebAssembly, inline decider; parity with NumPy passes in wasm | Node suites 13/13 |
+| P10.3 | Implemented: IndexedDB saves, visible failures, export/import, Continue | browser check 9/9 |
+| P10.4 | Implemented: versioned all-or-nothing service worker cache, readiness, update on reload | browser check (offline start) |
+| P10.5 | Implemented: no-WebGPU and device-lost messages, hidden-tab pause, local server script | browser check; user checklist |
+<!-- /P10-status -->
+
 ONNX Runtime Web provides a browser adapter candidate, but operators/backends and actual model compatibility require testing [S6]. This may be a JavaScript/worker bridge to the C++ WebAssembly game; do not assume linking the desktop inference library unchanged is the solution.
 
 Service workers can serve cached resources offline [S9]. Browser storage has quota and eviction behavior [S10]. Therefore keep explicit offline readiness, coherent package updates and save export/import; never promise that browser storage cannot be cleared or evicted. First visit is not equivalent to a complete offline installation.
@@ -888,10 +898,11 @@ These are bounded decisions, not a request to stop and ask the user all of them 
 | O10 | Inference runtime/operators/device and budget; candidate CPU ONNX path. **Decided 2026-11-07 (user):** built-in C++ MLP, no ONNX Runtime; 3.9 µs per decision. | P8A.4 | Actual policy latency/resource/platform issue |
 | O11 | Local authoring provider/model/license and novice installation experience. **Decided 2026-11-07 (user):** Ollama on the creator's PC, default `qwen2.5:7b` (4.7 GB, Apache-2.0), installed by the creator, not shipped; editor window + `UmbraTool draft`; drafts only add one quest and its conversation lines and only reference existing content. Model quality on real drafts is still unmeasured. | P8B.1 | Model quality, resource or redistribution problem |
 | O12 | Reference PC/settings/workload and quantitative release budgets | Before P9 sign-off | Content or target tier changes |
+| O19 | Web export scope. **Decided 2026-11-08 (user):** supported browsers Chrome + Edge (WebGPU); hosting undecided → single-threaded build for any static host; toolchain: Emscripten in the cloud (3.1.52 with the system LLVM 18). | P10 | A target host or browser that this excludes |
 | O13 | Browser backend, shader path, capabilities/hosting support. **User decision 2026-11-06:** run W0 after P4. **W0 (2026-11-07):** WebGPU for graphics (separate small backend behind `core::DrawList`), HLSL → SPIR-V → WGSL planned, Emscripten candidate for P10; rules already build to WebAssembly unchanged. See `docs/adr/0001-web-backend.md`. | W0; finalize P10 | Actual supported-browser failure |
 | O14 | First mobile OS/device tier | P11 planning | User target choice |
 | O15 | Community records versus model updates, consent, backend operations | F1 approval only | Explicit decision to fund/build service |
-| O18 | Reference workload and performance budget. **Proposed 2026-11-08 (Claude; measured the same day, user confirmation of the numbers pending):** reference PC = the user's PC (NVIDIA RTX 3050 Laptop GPU, 16 threads, 16 GB; measured 3.47 ms average / ≤ 6.2 ms p99); 1920×1080, default settings; workload = `Umbra --benchmark` (settlement, dungeon, arena) plus a learned-enemy fight; budget average ≤ 16.67 ms (60 FPS) and p99 ≤ 33.3 ms per area. | Before P9 sign-off | Measurements far from the budget either way, or a different target PC |
+| O18 | Reference workload and performance budget. **Decided 2026-11-08 (user confirmed after measuring):** reference PC = the user's PC (NVIDIA RTX 3050 Laptop GPU, 16 threads, 16 GB; measured 3.47 ms average / ≤ 6.2 ms p99); 1920×1080, default settings; workload = `Umbra --benchmark` (settlement, dungeon, arena) plus a learned-enemy fight; budget average ≤ 16.67 ms (60 FPS) and p99 ≤ 33.3 ms per area. | Before P9 sign-off | Measurements far from the budget either way, or a different target PC |
 | O17 | AI 3D model generator, scope, budget. **Decided 2026-11-07 (user, ADR 0003):** ComfyUI image-to-3D with TRELLIS.2 (MIT) through the creator's exported workflow; props first (characters stay with Meshy); ~10 000 triangles; text → SDXL concept or own picture. | Before P8D.0 | Quality/VRAM unusable on the user's PC |
 | O16 | AI texture generator, default model, scope and timing. **Decided 2026-11-07 (user, ADR 0002 §7):** ComfyUI first behind an `ImageProvider` interface (Ollama later); tileable world surfaces first; SDXL base 1.0 at 1024 px for the user's 8 GB GPU; independent track before P9. | Before P8C.0 | Generator unusable on the user's PC, or Ollama image generation reaches Windows |
 
@@ -1025,6 +1036,8 @@ This reference list supports the limited factual technology statements, not a re
 Version 1.0, 2026-11-01: incorporates final answers 21–23; makes independent combat-mode use an explicit contract/test; selects turn-based learned policy; removes mandatory-threshold interpretation of aggression; preserves deferred modding and offline scope; expands milestone tasks/evidence; retains T01–T38 and adds T39–T60; establishes concise root instructions plus separate context/roadmap files.
 
 No implementation completion was advanced by preparing this pack. Further updates must record actual evidence, product changes and their source separately.
+
+2026-11-08: O18 decided (user). P10 implemented (`#UMBRA-66`): Emscripten build of the game, WebGPU renderer in a JS library, HTML HUD, IndexedDB saves with export/import, offline service worker, no-WebGPU/device-lost messages, `scripts\serve-web.bat`, O19; evidence `testing/p10-web-export.md`.
 
 2026-11-08: P9 benchmark measured on the user's PC (far inside the budget, no memory growth); `#UMBRA-65` start menu with Continue (a dungeon save seemed lost after restarting).
 

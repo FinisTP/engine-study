@@ -83,7 +83,8 @@ NVIDIA GeForce RTX 3050 Laptop GPU, 16 CPU threads, 16 GB RAM, 1920×1080.
 | 60 s | dungeon | 17 281 | 3.47 (288) | 5.60 | 6.08 | 11.57 | 1.75 |
 | 60 s | arena | 17 281 | 3.47 (288) | 5.62 | 6.06 | 7.24 | 1.75 |
 
-- Every area is far inside the proposed budget (average 4.8× under 16.67 ms, p99 5.4× under 33.3 ms).
+- **O18 decided (user, 2026-11-08):** the budget below is the final performance target.
+- Every area is far inside the budget (average 4.8× under 16.67 ms, p99 5.4× under 33.3 ms).
 - Peak memory 249 MB (30 s) and 250 MB (60 s): no growth between runs or across three area loads.
 - The same ~288 FPS everywhere, with CPU work ~1.75 ms, means the frame rate is set by the 1 ms
   sleep per frame (Windows timer granularity) and presenting, not by the scenes; the GPU has room.
