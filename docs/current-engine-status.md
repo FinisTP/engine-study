@@ -15,6 +15,10 @@
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
 
+## Plan 2026-11-08 (S6-S17, `#UMBRA-81`)
+
+- ADR 0010 plans twelve phases chosen by the user: RPG flair first (S6 lighting, S7 post-processing and custom shaders, S8 skeletal animation and AI rigging, S9 animation events/SFX/VFX, S10 RPG systems, S11 cutscenes), then the editor (S12 prefabs, S13 play in editor, S14 graph editors), then the agent (S15 chat and vision, S16 recipes and scatter, S17 code agents). Each ships an example. Nothing implemented yet.
+
 ## Update 2026-11-08 (S5 agent prompt, `#UMBRA-80`)
 
 - `Umbra::Agent` (`plugins/ai-authoring/modules/agent`): 20 tools (read scenes/assets/components/RPG; change entities, components, RPG entries; generate textures, sounds, models) with JSON schemas, working-copy `Edits` validated by the game's loaders and committed as one undo step per document; `Planner` (local Ollama, schema-forced `look`/`steps` answer, dry run, fix rounds) and `Runner` (generators on a worker thread, stop at the first failure). Editor **Agent** window; `UmbraTool agent`; `UmbraTool mcp` (MCP stdio server, saved at once, optional build/tests). The ComfyUI generation pipelines moved into `localai::CreateTexture/Sound/Model`, shared with `UmbraTool texture/sound/model`. The editor reloads a scene changed on disk when nothing is unsaved. 49/49 GCC/Clang/ASan, plugin sets 37/37 and 33/33, 15/15 WebAssembly. Real-model task set on Windows open (`testing/s5-agent-prompt.md`).

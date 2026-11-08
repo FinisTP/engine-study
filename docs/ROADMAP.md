@@ -32,7 +32,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 
 **First action for a new agent:** finish B0 — the Windows-side checks are still open (see the B0 record). Re-inspect the checkout; if it has advanced past this dashboard, preserve completed work and select the earliest genuinely unmet task. Do not blindly implement P3.1 again.
 
-**Current next task:** the user's Windows checks: S5 agent task set with a real Ollama model (`testing/s5-agent-prompt.md` §4) and the P11 emulator run (`testing/p11-android.md` §4); every numbered roadmap phase and S1-S5 are implemented; the user's S4 check on Windows (`testing/s4-sound-and-menus.md` §4: generate music and an effect with real models, listen, the turn menu arrows, hotkeys), the S3 check (`testing/s3-game-ui.md` §3: screens on Vulkan and in Chrome/Edge, gamepad, editor Game UI window), and the user's S1/S2 check on Windows (reconfigure after the folder moves; editor windows from plugins; AI model window finds the workflows in projects\reference\tools\comfyui) (editor: Add component, Spin in the dungeon, Code window opens Visual Studio 2022, New component builds), then the user's P10 browser check (`testing/p10-web-export.md` §4: does the scene render in Chrome/Edge), the P9 gate runs on Windows (`testing/p9-release-gate.md` §4: benchmark → O18, package check, clean install, journey on the package), and confirm the `#UMBRA-62`/`#UMBRA-63` fixes on Windows (`testing/p8d-ai-models.md` §3c), the remaining Windows checklists for P6, P7 and P8A (`testing/phase6-reference-game.md` §4, `testing/phase7-creator-workflow.md` §4, `testing/p8a-learned-enemy.md` §5), then P9 (PC release gate). P8B, P8C and P8D were confirmed working on Windows by the user on 2026-11-08. Open in parallel: P8A recipe robustness (1 of 2 seeds). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
+**Current next task:** S6 lighting & atmosphere (ADR 0010: the RPG flair, editor and agent plan S6-S17, RPG flair first); open Windows checks: S5 agent task set (`testing/s5-agent-prompt.md` §4), P11 emulator run (`testing/p11-android.md` §4); the user's S4 check on Windows (`testing/s4-sound-and-menus.md` §4: generate music and an effect with real models, listen, the turn menu arrows, hotkeys), the S3 check (`testing/s3-game-ui.md` §3: screens on Vulkan and in Chrome/Edge, gamepad, editor Game UI window), and the user's S1/S2 check on Windows (reconfigure after the folder moves; editor windows from plugins; AI model window finds the workflows in projects\reference\tools\comfyui) (editor: Add component, Spin in the dungeon, Code window opens Visual Studio 2022, New component builds), then the user's P10 browser check (`testing/p10-web-export.md` §4: does the scene render in Chrome/Edge), the P9 gate runs on Windows (`testing/p9-release-gate.md` §4: benchmark → O18, package check, clean install, journey on the package), and confirm the `#UMBRA-62`/`#UMBRA-63` fixes on Windows (`testing/p8d-ai-models.md` §3c), the remaining Windows checklists for P6, P7 and P8A (`testing/phase6-reference-game.md` §4, `testing/phase7-creator-workflow.md` §4, `testing/p8a-learned-enemy.md` §5), then P9 (PC release gate). P8B, P8C and P8D were confirmed working on Windows by the user on 2026-11-08. Open in parallel: P8A recipe robustness (1 of 2 seeds). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
 
 | Gate | Dependency | Status (updated 2026-11-07) | Evidence / exit summary |
 |---|---|---|---|
@@ -56,6 +56,18 @@ The three formerly open decisions are resolved: the combat modes are independent
 | S3 Gameplay UI framework | S2 | **Implemented 2026-11-08** (user request, `#UMBRA-75`): screens as data files drawn by the engine on PC and web, all game UI replaced, inventory/skills/quest log, editor Game UI window, `UmbraTool ui-preview`; verified headlessly (T79, check-web 13/13); GPU, gamepad and editor check on Windows open | ADR 0006; `engine/ui/include/UI.md`; evidence `testing/s3-game-ui.md`. |
 | S4 AI sound, music, turn menu, hotkeys | S3 | **Implemented 2026-11-08** (user request, `#UMBRA-77`): AI music (ACE-Step 1.5) and effects (Stable Audio 3) through ComfyUI, Ogg music with crossfades per scene, skill/item sounds, turn menu with target arrows, real-time hotkeys and their screen; verified headlessly (T80, T81, check-web 13/13); real models and listening on Windows open | ADR 0007; evidence `testing/s4-sound-and-menus.md`. |
 | S5 Agent prompt (editor Agent window, MCP server) | S4 | **Implemented 2026-11-08** (started by the user after P11, `#UMBRA-80`): one tool registry over the authoring documents and the ComfyUI generators, a local Ollama planner (schema-forced plan, read rounds, dry run, fixes), runner with one undo step, editor Agent window, `UmbraTool agent`, `UmbraTool mcp` (stdio, + build/tests); verified headlessly (T83); real-model task set and editor check on Windows open | ADR 0008; `Agent.md`; evidence `testing/s5-agent-prompt.md`. |
+| S6 Lighting & atmosphere | S5 | Planned (ADR 0010, user 2026-11-08: RPG flair first) | Sun/sky, fog, 16 point lights, sun shadow map, day/night; example: settlement at dusk, torch-lit dungeon. |
+| S7 Post-processing & custom shaders | S6 | Planned | HDR, tonemap, bloom, LUT grade, vignette; material surface shaders (also WGSL); example: well water, glowing crystal, dungeon grade. |
+| S8 Skeletal animation & rigging | S5 | Planned | glTF skins and clips, GPU skinning, animation graph; AI rig (UniRig) and text-to-motion (HY-Motion) via ComfyUI; example: hero/wolf/bandit clips, AI villager waving. |
+| S9 Animation events, SFX & VFX | S8 | Planned | Clip events, particles (`*.vfx.json`), damage numbers, hit-stop, shake; example: synced sword sounds, fireball, torch fire, poison bubbles. |
+| S10 RPG systems | S5 | Planned | Gold and shops, loot, chests/doors/levers, dialogue choices with consequences; example: merchant Tobin, locked chest and key, the elder's choice. |
+| S11 Cutscenes | S9, S10 | Planned | `*.cutscene.json` timeline (camera, actors, lines, sound, fades); example: intro fly-over to the elder, bandit leader reveal. |
+| S12 Prefabs & drag-and-drop | S11 | Planned | Prefabs with overrides, thumbnails, drag into the view, multi-select, duplicate, snapping; example: ten torches from one prefab. |
+| S13 Play in editor | S12 | Planned | Game inside the editor view, Stop restores the scene; example: walk and fight in the editor. |
+| S14 Graph editors | S13, S10 | Planned | Conversation, quest, cutscene and animation graphs; example: elder and merchant conversations as graphs. |
+| S15 Agent chat & vision | S14 | Planned | Follow-ups, selection/cursor context, `look_at_scene` with a local vision model, tools for S6-S14; example: "put a torch here", "spread the market out". |
+| S16 Recipes & scatter | S15, S12 | Planned | One-click recipes, scatter tool; example: "Market square", "scatter 20 trees". |
+| S17 Code agents | S16 | Planned | `create_component` scaffold, MCP resources/prompts, `UmbraTool agent-eval`; example: Claude Code adds a "bob" component; model eval report. |
 | P11 Mobile | P10; approved device target | **Implemented 2026-11-08** (user decisions: Android, emulator first, touch + gamepad, landscape; `#UMBRA-79`): `plugins/android-export` Gradle app, `libmain.so`, `game.pack`, lifecycle (save, release/restore the Vulkan surface), touch controls and gamepad sticks; verified headlessly (T82); the Gradle/NDK build and the emulator run on Windows open, phones later | ADR 0009; `apps/umbra/Mobile.md`; evidence `testing/p11-android.md`. |
 | F1 Community improvement | Separate product approval | Deferred proposal | Consent, records, validation, developer retraining, approved model delivery/rollback. |
 
@@ -765,6 +777,28 @@ external coding agents through MCP.
 | S5.2 Agent loop | Local Ollama tool calling; plan (dry-run) -> approve -> run; stop on the first failed step | Stand-in Ollama tests: a scripted plan runs, a malformed call is refused, a failing step stops the rest |
 | S5.3 Editor Agent window | Prompt, plan view, approve/cancel, per-step results, one undo | Windows editor checklist with a real model on a small task set |
 | S5.4 `UmbraTool mcp` | MCP stdio server with the same tools plus build/test, local only | An MCP client lists and calls tools; a scene edit made through MCP validates and appears in the editor |
+
+### S6-S17 — RPG flair, editor and agent (user request, 2026-11-08; ADR 0010)
+
+**Planned.** The user chose every proposed improvement, added cutscenes, an animation/SFX event
+system, rigging, custom shaders and post-processing, and asked for an example of each; RPG flair
+first. Details, examples and the decisions to confirm per phase: `adr/0010-flair-editor-agent-plan.md`.
+Each phase gets its own test IDs, evidence record and Windows checklist when it starts.
+
+| Phase | Exit evidence (besides its example in the reference project) |
+|---|---|
+| S6 Lighting & atmosphere | Light and fog math checked headlessly; shadow map and lights on Vulkan and WebGPU; frame time within O18 on the user's PC |
+| S7 Post & custom shaders | Tonemap/bloom/LUT checked on CPU-rendered references; a custom shader compiles for Vulkan and WGSL; a bad shader is refused with its line |
+| S8 Skeletal & rigging | Skinned glTF import and clip sampling tested against known poses; crossfade; AI rig + motion workflow through a stand-in ComfyUI |
+| S9 Events, SFX, VFX | Events fire once per frame crossing (also at low frame rates); particle simulation deterministic for a seed; effects named in RPG content are validated |
+| S10 RPG systems | Shop, loot, locks and dialogue conditions/consequences through the real `GameSession`; saves keep gold, flags and opened chests |
+| S11 Cutscenes | Timeline sampling; trigger once; skip leaves the world in the end state; validated files |
+| S12 Prefabs | Prefab instances with overrides load like the game; a prefab change reaches every instance; undo |
+| S13 Play in editor | Stop restores the exact document state; play uses the same `GameFlow` as the game |
+| S14 Graph editors | Graph edits round-trip to the same JSON; invalid links refused |
+| S15 Agent chat & vision | Follow-up and "here/this" context in the request; `look_at_scene` image sent to a stand-in vision model; new tools tested like S5 |
+| S16 Recipes & scatter | Scatter places N non-overlapping, ground-snapped entities for a seed; recipes validated |
+| S17 Code agents | Scaffolded component builds and passes its test; MCP resources listed and read; agent-eval scores a scripted model |
 
 ### P11 — Mobile
 
