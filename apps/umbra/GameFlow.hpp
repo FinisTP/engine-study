@@ -36,6 +36,17 @@ public:
     // Once per frame, before Simulate: menus, fights and touching an enemy.
     void Update(const umbra::platform::Input &input, float deltaSeconds);
     [[nodiscard]] bool IsExploring() const { return session_.GetPhase() == umbra::game::Phase::Exploring; }
+    // The app is leaving the screen (phones): the system may end it there, so save what can be
+    // saved (the autosave slot; nothing mid-fight or in a conversation, like a save stone).
+    void SaveForSuspend()
+    {
+        if (IsExploring())
+            (void)Save(slots_.Autosave());
+    }
+    [[nodiscard]] bool InRealtimeFight() const
+    {
+        return session_.GetPhase() == umbra::game::Phase::Fighting && session_.Mode() == umbra::game::CombatMode::Realtime;
+    }
     // May the player walk? Not while talking, in a turn fight or dead.
     [[nodiscard]] bool PlayerCanMove() const;
     // Portals work while exploring or talking, never in a fight or after death.

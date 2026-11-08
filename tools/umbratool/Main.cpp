@@ -140,6 +140,18 @@ namespace
             std::cout << "assets packed into " << args.positional[1] << " (version " << version << ")\n";
         return Report(diagnostics, 1, args.json);
     }
+
+    // Phones (P11): assets + shaders in game.pack for the app package (apps/umbra/Mobile.md).
+    int GamePack(const Arguments &args)
+    {
+        if (args.positional.size() != 3)
+            return Usage();
+        std::vector<Diagnostic> diagnostics;
+        const std::string hash = umbra::authoring::PackGame(Arguments::AssetsOf(args.positional[0]), args.positional[1], args.positional[2], diagnostics);
+        if (!hash.empty())
+            std::cout << "game.pack written to " << args.positional[2] << " (version " << hash << ")\n";
+        return Report(diagnostics, 1, args.json);
+    }
 }
 
 UMBRA_TOOL_COMMAND(Validate, "validate", "validate <file>... [--assets <folder>] [--content <rpg file>] [--json]", Validate);
@@ -188,3 +200,4 @@ int main(int argc, char **argv)
         return Usage();
     }
 }
+UMBRA_TOOL_COMMAND(GamePack, "game-pack", "game-pack <project assets folder> <shaders folder> <output folder>   (for the Android app)", GamePack);

@@ -80,6 +80,18 @@ namespace umbra::core
             indices.clear();
             batches.clear();
         }
+        // Adds another list on top (drawn after this one); its indices stay relative to their batch.
+        void Append(const UiDrawList &other)
+        {
+            for (UiBatch batch : other.batches)
+            {
+                batch.firstVertex += static_cast<std::uint32_t>(vertices.size());
+                batch.firstIndex += static_cast<std::uint32_t>(indices.size());
+                batches.push_back(batch);
+            }
+            vertices.insert(vertices.end(), other.vertices.begin(), other.vertices.end());
+            indices.insert(indices.end(), other.indices.begin(), other.indices.end());
+        }
     };
 
     // Read-only presentation data the world hands to the renderer each frame.

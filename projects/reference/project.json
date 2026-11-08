@@ -13,6 +13,7 @@
     "rpg-ui",
     "learned-ai",
     "ai-authoring",
-    "web-export"
+    "web-export",
+    "android-export"
   ]
 }

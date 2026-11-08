@@ -1,5 +1,8 @@
 #include <Input.hpp>
 
+#include <algorithm>
+#include <cmath>
+
 namespace umbra::platform
 {
     void Input::HandleKeyDown(InputKey key, bool isRepeat) noexcept
@@ -38,6 +41,34 @@ namespace umbra::platform
         mousePressed_.fill(false);
         mouseDeltaX_ = 0.0F;
         mouseDeltaY_ = 0.0F;
+        // Lifted fingers were seen for one frame; the others start a new frame.
+        std::erase_if(fingers_, [](const Finger &f) { return !f.down; });
+        for (Finger &f : fingers_)
+            f.dx = f.dy = 0.0F, f.pressed = false;
+    }
+
+    void Input::HandleFinger(std::uint64_t id, float x, float y, float dx, float dy, int phase)
+    {
+        touchSeen_ = true;
+        auto it = std::find_if(fingers_.begin(), fingers_.end(), [&](const Finger &f) { return f.id == id && f.down; });
+        if (phase == 0 || it == fingers_.end())
+        {
+            if (phase != 0)
+                return; // a finger we never saw go down (e.g. down before a resume)
+            fingers_.push_back({id, x, y, x, y, 0.0F, 0.0F, true, true});
+            return;
+        }
+        it->x = x, it->y = y;
+        it->dx += dx, it->dy += dy;
+        it->down = phase != 2;
+    }
+
+    void Input::HandleAxis(int axis, float value) noexcept
+    {
+        // A small dead zone: worn sticks rest a little off center.
+        constexpr float deadZone = 0.2F;
+        if (axis >= 0 && axis < 4)
+            axes_[static_cast<std::size_t>(axis)] = std::abs(value) < deadZone ? 0.0F : (value - std::copysign(deadZone, value)) / (1.0F - deadZone);
     }
 
     void Input::HandleMouseMotion(float dx, float dy, float x, float y) noexcept
@@ -121,5 +152,7 @@ namespace umbra::platform
         mouseHeld_.fill(false);
         mouseDeltaX_ = 0.0F;
         mouseDeltaY_ = 0.0F;
+        fingers_.clear();
+        axes_.fill(0.0F);
     }
 }

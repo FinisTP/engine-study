@@ -25,3 +25,8 @@ target_link_libraries(
         Umbra::Warnings
         Umbra::Sanitizers
 )
+
+# Android: spdlog's logcat sink needs the system log library.
+if(ANDROID)
+    target_link_libraries(UmbraDiagnostics PRIVATE log)
+endif()

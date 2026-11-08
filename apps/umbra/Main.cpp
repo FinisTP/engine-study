@@ -23,7 +23,14 @@
 #include "SceneRuntime.hpp"
 #include "GameFlow.hpp"
 #include "GameUi.hpp"
+#include "TouchControls.hpp"
 #include <RpgContent.hpp>
+#include <GamePack.hpp>
+
+#if defined(__ANDROID__)
+#include <SDL3/SDL_iostream.h>
+#include <SDL3/SDL_main.h> // the app package calls SDL_main (SDLActivity)
+#endif
 
 #include <glm/gtc/constants.hpp>
 
@@ -51,6 +58,35 @@ namespace
 	// there too. A development build looks upwards: the build folder (it has CMakeCache.txt) holds
 	// the cache, the source tree above it holds projects/<project>/assets/ and
 	// plugins/<plugin>/assets/ (only the names are compiled in, not their paths).
+	// Phones (P11, Mobile.md): the assets and shaders come inside the app package as game.pack;
+	// on first start (and after an update: a new hash) they are written to the app's folder, which
+	// then counts as the program folder. False only if a pack is there but cannot be unpacked.
+	bool UnpackPackagedGame()
+	{
+#if defined(__ANDROID__)
+		std::size_t indexSize = 0, packSize = 0;
+		char *index = static_cast<char *>(SDL_LoadFile("game.pack.json", &indexSize)); // read from the APK
+		if (index == nullptr)
+			return true; // no pack: a development run
+		const std::string indexText(index, indexSize);
+		SDL_free(index);
+		const std::filesystem::path target = umbra::platform::Platform::PreferencesFolder() / "game";
+		umbra::platform::Platform::SetProgramFolder(target);
+		if (umbra::assets::InstalledPackHash(target) == umbra::assets::PackHash(indexText))
+			return true; // unpacked before
+		umbra::diagnostics::Info("Unpacking the game's files to " + target.string());
+		void *pack = SDL_LoadFile("game.pack", &packSize);
+		std::string error = pack ? "" : std::string("game.pack missing from the app: ") + SDL_GetError();
+		const bool ok = pack && umbra::assets::UnpackGame(indexText, std::span(static_cast<const std::byte *>(pack), packSize), target, error);
+		SDL_free(pack);
+		if (!ok)
+			umbra::diagnostics::Error("Could not unpack the game: " + error);
+		return ok;
+#else
+		return true;
+#endif
+	}
+
 	struct GameFolders final
 	{
 		umbra::assets::AssetFolders assets;
@@ -120,6 +156,9 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 		{
 			return 1;
 		}
+		// Android: the shaders and assets come out of the app before the renderer looks for them.
+		if (!UnpackPackagedGame())
+			return EXIT_FAILURE;
 
 		{
 			umbra::core::FrameClock clock;
@@ -203,6 +242,10 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 				};
 				bool mouseCaptured = true;
 				window.SetMouseCaptured(true);
+				// Phones (P11, Mobile.md): on-screen stick, camera drag and buttons; a gamepad's sticks too.
+				TouchControls touch;
+				umbra::core::UiDrawList touchLayer;
+				TouchControls::Output touchOutput;
 				std::string message; // shown after using an interactable
 				float messageSeconds = 0.0F;
 
@@ -267,10 +310,24 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 						isSuspended = false;
 					}
 
+					// Phones (P11): leaving the screen destroys the window's surface, and the system may end
+					// the app without warning; save, pause, let go of the surface. Back: a new surface.
+					if (applicationEvents.IsEventRequested(umbra::platform::ApplicationEventType::EnteredBackground))
+					{
+						if (flow)
+							flow->SaveForSuspend();
+						setPaused(true);
+						renderer.ReleaseSurface();
+					}
+					if (applicationEvents.IsEventRequested(umbra::platform::ApplicationEventType::EnteredForeground))
+						renderer.RestoreSurface();
+
 					if (applicationEvents.IsEventRequested(umbra::platform::ApplicationEventType::Terminated))
 					{
 						// Handle application termination event
 						umbra::diagnostics::Info("Application terminated.");
+						if (flow)
+							flow->SaveForSuspend();
 						break;
 					}
 
@@ -296,6 +353,12 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 					// screen Esc / B is its "back"); I, K, J open the inventory, skills and quests.
 					bool quit = false;
 					const auto [pixelWidth, pixelHeight] = renderer.Extent();
+					// Touch first: its buttons press keys that the rest of this frame reads.
+					touchLayer.Clear();
+					if (!benchmark)
+						touchOutput = touch.Update(input, {static_cast<float>(pixelWidth), static_cast<float>(pixelHeight)},
+												   {flow ? flow->IsExploring() : true, flow && flow->InRealtimeFight(), gameUi.Screens().TakesInput() || frozen()},
+												   gameUi.Screens().Fonts(), gameUi.AtlasTexture(), [&](const std::string &path) { return gameUi.Image(path); }, touchLayer);
 					umbra::ui::UiInput uiInput = GameUi::MapInput(input, {static_cast<float>(window.GetWidth()), static_cast<float>(window.GetHeight())},
 																  {static_cast<float>(pixelWidth), static_cast<float>(pixelHeight)});
 					if (!gameUi.Screens().TakesInput() && !benchmark)
@@ -353,12 +416,20 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 						else if (canMove)
 						{
 							playerInput.move = {axis(InputKey::D, InputKey::A), axis(InputKey::W, InputKey::S)};
+							playerInput.move += touchOutput.move + glm::vec2{input.Axis(0), -input.Axis(1)}; // touch stick, gamepad left stick
+							if (glm::length(playerInput.move) > 1.0F)
+								playerInput.move = glm::normalize(playerInput.move);
 							playerInput.sprint = input.IsKeyHeld(InputKey::LeftShift);
 							playerInput.jump = input.IsKeyPressed(InputKey::Space);
 						}
 						constexpr float mouseSensitivity = 0.0025F; // radians per pixel
+						constexpr float touchSensitivity = 0.006F, stickTurn = 2.5F; // radians per dragged pixel / per second at full tilt
 						if (!benchmark)
+						{
 							scene.Look(-input.GetMouseDeltaX() * mouseSensitivity, -input.GetMouseDeltaY() * mouseSensitivity);
+							scene.Look(-touchOutput.look.x * touchSensitivity, -touchOutput.look.y * touchSensitivity);
+							scene.Look(-input.Axis(2) * stickTurn * static_cast<float>(deltaTime), -input.Axis(3) * stickTurn * static_cast<float>(deltaTime));
+						}
 
 						umbra::core::Stopwatch simulateWatch;
 						const SimulationEvents events = scene.Simulate(static_cast<float>(deltaTime), playerInput);
@@ -485,6 +556,7 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 					}
 					if (quit)
 						break;
+					drawList.ui.Append(touchLayer); // over the HUD (hidden while a menu is open)
 					gameUi.ShowGameScreen(flow ? flow->Screen() : "");
 					// Mouse and game sound follow the screens.
 					if (const bool capture = !gameUi.Screens().TakesInput() && !frozen(); capture != mouseCaptured)

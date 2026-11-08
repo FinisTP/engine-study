@@ -1,7 +1,7 @@
 # Umbra Engine - Current Development Status
 
 **Status date:** 2026-11-08 (Phase 1/2 records dated 2026-09-02)
-**Current milestone:** S4 AI sound, music, turn menu and hotkeys implemented (2026-11-08, ADR 0007; headless 48/48 GCC/Clang/ASan, Windows check open); S3 gameplay UI framework implemented (ADR 0006; Windows check open); S1/S2 implemented (Windows checks open); P10 web export renders on the user's PC; P9 PC release gate: benchmark passed, remaining Windows runs open
+**Current milestone:** P11 Android implemented (2026-11-08, ADR 0009; headless 48/48 GCC/Clang/ASan; Gradle/NDK build and emulator run on Windows open; S5 deferred by the user); S4 AI sound, music, turn menu and hotkeys implemented (2026-11-08, ADR 0007; headless 48/48 GCC/Clang/ASan, Windows check open); S3 gameplay UI framework implemented (ADR 0006; Windows check open); S1/S2 implemented (Windows checks open); P10 web export renders on the user's PC; P9 PC release gate: benchmark passed, remaining Windows runs open
 **Layout:** `engine/` base engine, `game/` base game, `projects/reference/{assets,engine,game}` (content moved from `assets/`)
 **Phase 1 status:** Complete (interactive checklist unsigned)
 **Phase 2 status:** Complete
@@ -14,6 +14,10 @@
 **P8C status:** Implemented. Headless tests verified on Linux (42/42, GCC/Clang/ASan) against a stand-in ComfyUI; no real ComfyUI/SDXL or GPU run yet (P8C.0 open); editor window not opened
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
+
+## Update 2026-11-08 (P11 Android, `#UMBRA-79`)
+
+- The game builds for Android as `libmain.so` inside a Gradle app (`plugins/android-export`: SDL 3.4.14's Java activity, a game-only vcpkg manifest, `scripts\build-android.bat` which packs, builds, starts the emulator and installs). Assets and shaders travel in `game.pack` (`UmbraTool game-pack`) and are unpacked once per version; shaders are now built for Vulkan 1.1. Going to the background saves, pauses and releases the Vulkan surface; returning makes a new one. Touch controls (floating stick, camera drag, buttons, fight hotkeys) and gamepad sticks (`apps/umbra/Mobile.md`). 48/48 GCC/Clang/ASan, plugin sets 37/37 and 33/33, 15/15 WebAssembly, check-web 13/13. The Android build and the emulator run on Windows are open (`testing/p11-android.md`).
 
 ## Update 2026-11-08 (S4 AI sound, music, turn menu, hotkeys, `#UMBRA-77`)
 

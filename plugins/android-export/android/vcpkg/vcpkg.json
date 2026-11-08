@@ -1,0 +1,24 @@
+{
+  "dependencies": [
+    "glm",
+    {
+      "name": "imgui",
+      "features": [
+        "sdl3-binding"
+      ]
+    },
+    "joltphysics",
+    "nlohmann-json",
+    {
+      "name": "sdl3",
+      "features": [
+        "vulkan"
+      ]
+    },
+    "spdlog",
+    "volk",
+    "tinygltf",
+    "vulkan-memory-allocator",
+    "vulkan-utility-libraries"
+  ]
+}

@@ -163,7 +163,7 @@ namespace umbra::render
         allocatorInfo.instance = instance;
         allocatorInfo.physicalDevice = physicalDevice;
         allocatorInfo.device = device;
-        allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_3;
+        allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_1; // the oldest version the renderer supports (phones)
         allocatorInfo.pVulkanFunctions = &functions;
         if (vmaCreateAllocator(&allocatorInfo, &allocator_) != VK_SUCCESS)
         {

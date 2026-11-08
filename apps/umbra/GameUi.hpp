@@ -24,6 +24,9 @@ public:
     [[nodiscard]] bool Ready() const { return ready_; }
     [[nodiscard]] const std::vector<std::string> &Problems() const { return problems_; }
     [[nodiscard]] umbra::ui::UiSystem &Screens() { return ui_; }
+    // A picture from the assets, uploaded once (screens and the touch controls share them).
+    [[nodiscard]] umbra::ui::ImageRef Image(const std::string &path);
+    [[nodiscard]] umbra::core::TextureHandle AtlasTexture() const { return atlas_; }
 
     // The one game screen the RPG asks for ("" = none); the previous one closes.
     void ShowGameScreen(const std::string &screen);

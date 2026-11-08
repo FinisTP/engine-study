@@ -13,6 +13,7 @@
 #include "VulkanVertexPipeline.hpp"
 
 #include <Log.hpp>
+#include <Platform.hpp>
 #include <Window.hpp>
 
 #include <SDL3/SDL_error.h>
@@ -61,6 +62,7 @@ namespace umbra::render
         DiagnosticsOverlay overlay;
         platform::Window *window = nullptr;
         bool resizeRequested = false;
+        bool surfaceReleased = false; // in the background (ReleaseSurface)
 
         ~Implementation() { (void)device.WaitIdle(); }
 
@@ -98,10 +100,8 @@ namespace umbra::render
 
             // A packaged game has its shaders next to the program; a build uses the build folder.
             std::filesystem::path shaderDirectory{UMBRA_SHADER_DIRECTORY};
-            if (const char *base = SDL_GetBasePath())
-                if (const std::filesystem::path packaged = std::filesystem::path{reinterpret_cast<const char8_t *>(base)} / "shaders";
-                    std::filesystem::exists(packaged / "Scene.vert.spv"))
-                    shaderDirectory = packaged;
+            if (const std::filesystem::path packaged = platform::Platform::ProgramFolder() / "shaders"; std::filesystem::exists(packaged / "Scene.vert.spv"))
+                shaderDirectory = packaged;
 
             if (!pipeline.Initialize(physicalDevice.GetHandle(),
                                      device.GetHandle(),
@@ -256,6 +256,8 @@ namespace umbra::render
             return false;
         }
 
+        if (implementation_->surfaceReleased)
+            return true; // nothing to present to until RestoreSurface
         if (implementation_->resizeRequested)
         {
             const Implementation::PresentationInitializationResult recreationResult =
@@ -315,6 +317,13 @@ namespace umbra::render
             implementation_->resizeRequested = true;
             return true;
         }
+        if (result == FrameResult::SurfaceLost)
+        {
+            // Android took the window before the app heard it went to the background: let go of
+            // the surface now; RestoreSurface makes a new one when the app comes back.
+            ReleaseSurface();
+            return true;
+        }
         if (result != FrameResult::Presented)
         {
             return false;
@@ -360,6 +369,39 @@ namespace umbra::render
         {
             implementation_->resizeRequested = true;
         }
+    }
+
+    void Renderer::ReleaseSurface() noexcept
+    {
+        // Everything that presents to the surface goes, then the surface; meshes and textures stay.
+        Implementation *i = implementation_.get();
+        if (i == nullptr || i->surfaceReleased)
+            return;
+        (void)i->device.WaitIdle();
+        i->sceneResources.FlushRetired();
+        i->overlay.Shutdown(true);
+        i->frameResources.Shutdown();
+        i->pipeline.Shutdown();
+        i->swapchain.Shutdown();
+        i->surface.Shutdown();
+        i->surfaceReleased = true;
+        diagnostics::Info("Renderer: surface released (background).");
+    }
+
+    void Renderer::RestoreSurface() noexcept
+    {
+        // A new surface for the window Android gave back; the next frame builds the swapchain on it.
+        Implementation *i = implementation_.get();
+        if (i == nullptr || !i->surfaceReleased)
+            return;
+        if (!i->surface.Initialize(i->window->GetNativeHandle(), i->instance.GetHandle()))
+        {
+            diagnostics::Error("Renderer: could not make a new surface after returning to the foreground.");
+            return;
+        }
+        i->surfaceReleased = false;
+        i->resizeRequested = true;
+        diagnostics::Info("Renderer: surface restored (foreground).");
     }
 
     std::string Renderer::DeviceName() const

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <vector>
 #include <cstddef>
 #include <cstdint>
 
@@ -73,6 +74,17 @@ namespace umbra::platform
         return static_cast<InputKeyState>(static_cast<std::uint8_t>(lhs) & static_cast<std::uint8_t>(rhs));
     }
 
+    // One finger on a touch screen; positions are 0..1 across the window (SDL's normalized touch).
+    struct Finger final
+    {
+        std::uint64_t id = 0;
+        float x = 0.0F, y = 0.0F;   // now
+        float startX = 0.0F, startY = 0.0F; // where it went down
+        float dx = 0.0F, dy = 0.0F; // moved since the last BeginFrame
+        bool down = true;           // false: lifted this frame (removed next frame)
+        bool pressed = true;        // went down this frame
+    };
+
     class Input final
     {
     public:
@@ -101,6 +113,15 @@ namespace umbra::platform
         [[nodiscard]] bool IsMouseButtonPressed(int button) const noexcept;
         [[nodiscard]] bool IsMouseButtonHeld(int button) const noexcept;
 
+        // Touch (P11): fingers on the screen, oldest first; lifted ones stay for one frame.
+        void HandleFinger(std::uint64_t id, float x, float y, float dx, float dy, int phase); // phase: 0 down, 1 move, 2 up
+        [[nodiscard]] const std::vector<Finger> &Fingers() const noexcept { return fingers_; }
+        [[nodiscard]] bool TouchSeen() const noexcept { return touchSeen_; }
+
+        // Gamepad sticks, -1..1 with a dead zone: 0 left x, 1 left y, 2 right x, 3 right y (y down).
+        void HandleAxis(int axis, float value) noexcept;
+        [[nodiscard]] float Axis(int axis) const noexcept { return axis >= 0 && axis < 4 ? axes_[static_cast<std::size_t>(axis)] : 0.0F; }
+
     private:
         static constexpr std::size_t keyCount_ = static_cast<std::size_t>(InputKey::Count);
 
@@ -122,5 +143,8 @@ namespace umbra::platform
         float mouseDeltaX_ = 0.0F;
         float mouseDeltaY_ = 0.0F;
         float mouseX_ = -1.0F, mouseY_ = -1.0F;
+        std::vector<Finger> fingers_;
+        bool touchSeen_ = false;
+        std::array<float, 4> axes_{};
     };
 }

@@ -289,6 +289,10 @@ namespace umbra::render
         {
             return FrameResult::SwapchainOutOfDate;
         }
+        if (result == VK_ERROR_SURFACE_LOST_KHR)
+        {
+            return FrameResult::SurfaceLost;
+        }
         const bool acquiredSuboptimal = result == VK_SUBOPTIMAL_KHR;
         if (result != VK_SUCCESS && !acquiredSuboptimal)
         {
@@ -373,6 +377,10 @@ namespace umbra::render
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || acquiredSuboptimal)
         {
             return FrameResult::SwapchainOutOfDate;
+        }
+        if (result == VK_ERROR_SURFACE_LOST_KHR)
+        {
+            return FrameResult::SurfaceLost;
         }
         if (result != VK_SUCCESS)
         {

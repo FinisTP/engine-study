@@ -21,6 +21,7 @@ namespace umbra::render
     {
         Presented,
         SwapchainOutOfDate,
+        SurfaceLost, // phones: the window went away between frames
         FatalError
     };
 

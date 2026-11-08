@@ -7,6 +7,8 @@ layer as the editor (`engine/authoring`), so all three report the same diagnosti
 |---|---|
 | `UmbraTool validate <file>... [--assets <folder>] [--content <rpg>] [--json]` | Checks scenes (including every model they draw), RPG content and saves. A save needs `--content`. |
 | `UmbraTool package-check <package folder> [--source <project folder>] [--json]` | Release check of a packaged game (P9): program, content, shaders, policies and notices present; no editor/tools/scripts, secrets or absolute paths; a license notice for every DLL; the program doesn't depend on `<source>/assets`. Rules: `engine/authoring/include/Package.md`. `scripts\package.bat` runs it. |
+| `UmbraTool web-pack <project assets folder> <web build folder>` | Browser build (P10): the project's and plugins' assets into `assets.bin` + `assets.json` next to the page, with a new offline version. |
+| `UmbraTool game-pack <project assets folder> <shaders folder> <output folder>` | Android app (P11): the assets (under `assets/`) and compiled shaders (under `shaders/`) into `game.pack` + `game.pack.json`; the game unpacks it on first start and after an update (`apps/umbra/Mobile.md`). `scripts\build-android.bat` runs it. |
 | `UmbraTool inspect <file> [--json]` | Lists what a scene or RPG file holds, by id. |
 | `UmbraTool schema [--json]` | Format versions this build reads, and the document describing each. |
 | `UmbraTool fight <rpg> <hero> <enemy>... [--json]` | A turn fight with the conventional AI on both sides, e.g. to check balance after editing stats. |

@@ -12,6 +12,7 @@ target_sources(
         src/AssetFolders.cpp
         src/FileWatcher.cpp
         src/Material.cpp
+        src/GamePack.cpp
         src/TextureTools.cpp
     PUBLIC
         FILE_SET HEADERS
@@ -23,6 +24,7 @@ target_sources(
             include/AssetFolders.hpp
             include/FileWatcher.hpp
             include/Material.hpp
+            include/GamePack.hpp
             include/TextureTools.hpp
 )
 

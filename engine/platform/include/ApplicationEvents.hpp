@@ -17,6 +17,8 @@ namespace umbra::platform
         WindowSuspended,
         WindowResumed,
         Terminated,
+        EnteredBackground, // phones: the app left the screen; its window surface is gone until it returns
+        EnteredForeground,
         Count
     };
 
@@ -39,6 +41,8 @@ namespace umbra::platform
         void RequestWindowSuspended() noexcept;
         void RequestWindowResumed() noexcept;
         void RequestTerminated() noexcept;
+        void RequestEnteredBackground() noexcept { Request(ApplicationEventType::EnteredBackground); }
+        void RequestEnteredForeground() noexcept { Request(ApplicationEventType::EnteredForeground); }
 
         void BeginFrame() noexcept;
         [[nodiscard]] bool IsEventRequested(ApplicationEventType eventType) const noexcept;

@@ -15,6 +15,7 @@ turns them on in `projects/<name>/project.json`; required plugins are added auto
 | `learned-ai` | Learned turn-based enemy; `UmbraTool policy-check`; Python training |
 | `ai-authoring` | Editor/tool only: local AI quest drafts, textures, 3D models, music and sound effects |
 | `web-export` | The browser build's page and scripts |
+| `android-export` | The Android app project (Gradle, SDL's Java activity) and `scripts\build-android.bat` (P11) |
 
 Inside a plugin:
 

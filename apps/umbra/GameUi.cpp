@@ -21,20 +21,23 @@ GameUi::GameUi(umbra::render::Renderer &renderer, const umbra::assets::AssetFold
     // 2. The font atlas, and pictures uploaded the first time a screen draws them.
     atlas_ = renderer_.CreateTexture(ui_.Atlas());
     ui_.SetAtlasTexture(atlas_);
-    ui_.SetImageLoader([this](const std::string &path) {
-        if (const auto it = images_.find(path); it != images_.end())
-            return it->second;
-        umbra::core::TextureData image;
-        std::string error;
-        umbra::ui::ImageRef ref;
-        if (umbra::assets::LoadImageFile(assets_ / path, image, error))
-            ref = {renderer_.CreateTexture(image), {static_cast<float>(image.width), static_cast<float>(image.height)}};
-        else
-            umbra::diagnostics::Error("UI picture " + path + ": " + error);
-        images_[path] = ref; // a missing picture is asked for once
-        return ref;
-    });
+    ui_.SetImageLoader([this](const std::string &path) { return Image(path); });
     ui_.Open("hud");
+}
+
+umbra::ui::ImageRef GameUi::Image(const std::string &path)
+{
+    if (const auto it = images_.find(path); it != images_.end())
+        return it->second;
+    umbra::core::TextureData image;
+    std::string error;
+    umbra::ui::ImageRef ref;
+    if (umbra::assets::LoadImageFile(assets_ / path, image, error))
+        ref = {renderer_.CreateTexture(image), {static_cast<float>(image.width), static_cast<float>(image.height)}};
+    else
+        umbra::diagnostics::Error("UI picture " + path + ": " + error);
+    images_[path] = ref; // a missing picture is asked for once
+    return ref;
 }
 
 GameUi::~GameUi()

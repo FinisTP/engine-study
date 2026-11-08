@@ -215,6 +215,8 @@ namespace umbra::render
     }
 
     void Renderer::RequestResize() noexcept {} // the page sizes the canvas each frame
+    void Renderer::ReleaseSurface() noexcept {} // phones only
+    void Renderer::RestoreSurface() noexcept {}
 
     std::string Renderer::DeviceName() const { return implementation_ ? umbra_gpu_name() : ""; }
 

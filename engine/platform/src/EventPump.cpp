@@ -40,6 +40,7 @@ namespace
         switch (sdlKeyCode)
         {
         case SDL_SCANCODE_ESCAPE:
+        case SDL_SCANCODE_AC_BACK: // the Android back button/gesture
             return InputKey::Escape;
         case SDL_SCANCODE_SPACE:
             return InputKey::Space;
@@ -141,15 +142,19 @@ namespace umbra::platform
                 applicationEvents.RequestWindowFocusLost();
                 input.ClearKeyStates();
                 break;
-            case SDL_EVENT_WINDOW_MINIMIZED:
             case SDL_EVENT_WILL_ENTER_BACKGROUND:
+                applicationEvents.RequestEnteredBackground(); // Android/iOS: save now, release the surface
+                [[fallthrough]];
+            case SDL_EVENT_WINDOW_MINIMIZED:
             case SDL_EVENT_DID_ENTER_BACKGROUND:
                 applicationEvents.RequestWindowSuspended();
                 input.ClearKeyStates();
                 break;
+            case SDL_EVENT_DID_ENTER_FOREGROUND:
+                applicationEvents.RequestEnteredForeground();
+                [[fallthrough]];
             case SDL_EVENT_WINDOW_RESTORED:
             case SDL_EVENT_WILL_ENTER_FOREGROUND:
-            case SDL_EVENT_DID_ENTER_FOREGROUND:
                 applicationEvents.RequestWindowResumed();
                 break;
             case SDL_EVENT_TERMINATING:
@@ -172,7 +177,23 @@ namespace umbra::platform
                 input.HandleKeyUp(TranslateButton(event.gbutton.button));
                 break;
             case SDL_EVENT_MOUSE_MOTION:
-                input.HandleMouseMotion(event.motion.xrel, event.motion.yrel, event.motion.x, event.motion.y);
+                // A mouse made up from a finger only points (menus); the finger itself steers.
+                if (event.motion.which == SDL_TOUCH_MOUSEID)
+                    input.HandleMouseMotion(0.0F, 0.0F, event.motion.x, event.motion.y);
+                else
+                    input.HandleMouseMotion(event.motion.xrel, event.motion.yrel, event.motion.x, event.motion.y);
+                break;
+            case SDL_EVENT_FINGER_DOWN:
+            case SDL_EVENT_FINGER_MOTION:
+            case SDL_EVENT_FINGER_UP:
+            case SDL_EVENT_FINGER_CANCELED:
+                input.HandleFinger(event.tfinger.fingerID, event.tfinger.x, event.tfinger.y, event.tfinger.dx, event.tfinger.dy,
+                                   event.type == SDL_EVENT_FINGER_DOWN ? 0 : event.type == SDL_EVENT_FINGER_MOTION ? 1 : 2);
+                break;
+            case SDL_EVENT_GAMEPAD_AXIS_MOTION:
+                // Sticks only (triggers are not used): SDL gives -32768..32767.
+                if (event.gaxis.axis <= SDL_GAMEPAD_AXIS_RIGHTY)
+                    input.HandleAxis(event.gaxis.axis, static_cast<float>(event.gaxis.value) / 32767.0F);
                 break;
             case SDL_EVENT_MOUSE_BUTTON_DOWN:
             case SDL_EVENT_MOUSE_BUTTON_UP:

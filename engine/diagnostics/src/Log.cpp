@@ -1,6 +1,9 @@
 #include <Log.hpp>
 
 #include <spdlog/spdlog.h>
+#if defined(__ANDROID__)
+#include <spdlog/sinks/android_sink.h>
+#endif
 #include <cstdlib>
 
 #if defined(_WIN32)
@@ -24,6 +27,10 @@ namespace umbra::diagnostics
 {
 	void Initialize()
 	{
+#if defined(__ANDROID__)
+		// Phones have no console: messages go to logcat under the tag "Umbra".
+		spdlog::set_default_logger(spdlog::android_logger_mt("umbra", "Umbra"));
+#endif
 		spdlog::set_pattern("[%H:%M:%S] [%^%l%$] %v");
 		spdlog::info("Diagnostics initialized.");
 	}

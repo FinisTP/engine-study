@@ -1,0 +1,11 @@
+{
+  "format": "umbra.plugin",
+  "version": 1,
+  "name": "android-export",
+  "label": "Android export",
+  "description": "The Android app project (Gradle, SDL's Java activity) and the script that builds the game for the Android emulator or a phone.",
+  "kind": "tool",
+  "requires": [],
+  "modules": [],
+  "links": []
+}

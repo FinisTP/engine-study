@@ -23,6 +23,11 @@ find_path(
     REQUIRED
 )
 
+# The shaders are compiled on the PC (DXC from the Vulkan SDK). The Android build has no DXC: its
+# shaders come in game.pack, made from the PC build's shaders folder (apps/umbra/Mobile.md).
+# Target Vulkan 1.1 (SPIR-V 1.3) so phones and the Android emulator can load them.
+set(UMBRA_SHADER_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/shaders")
+if(NOT ANDROID)
 find_program(
     UMBRA_DXC_EXECUTABLE
     NAMES dxc
@@ -37,7 +42,6 @@ find_program(
     REQUIRED
 )
 
-set(UMBRA_SHADER_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/shaders")
 set(UMBRA_VERTEX_SHADER "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Scene.vert.spv")
 set(UMBRA_FRAGMENT_SHADER "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Scene.frag.spv")
 set(UMBRA_OVERLAY_VERTEX_SHADER "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Overlay.vert.spv")
@@ -49,13 +53,13 @@ function(umbra_compile_hlsl output source profile entry_point)
         COMMAND ${CMAKE_COMMAND} -E make_directory "${UMBRA_SHADER_OUTPUT_DIRECTORY}"
         COMMAND "${UMBRA_DXC_EXECUTABLE}"
                 -spirv
-                -fspv-target-env=vulkan1.3
+                -fspv-target-env=vulkan1.1
                 -fspv-entrypoint-name=main
                 -T "${profile}"
                 -E "${entry_point}"
                 -Fo "${output}"
                 "${CMAKE_CURRENT_SOURCE_DIR}/${source}"
-        COMMAND "${UMBRA_SPIRV_VAL_EXECUTABLE}" --target-env vulkan1.3 "${output}"
+        COMMAND "${UMBRA_SPIRV_VAL_EXECUTABLE}" --target-env vulkan1.1 "${output}"
         DEPENDS "${source}"
         COMMENT "Compiling HLSL ${source}:${entry_point}"
         VERBATIM
@@ -72,6 +76,7 @@ add_custom_target(
     DEPENDS "${UMBRA_VERTEX_SHADER}" "${UMBRA_FRAGMENT_SHADER}"
             "${UMBRA_OVERLAY_VERTEX_SHADER}" "${UMBRA_OVERLAY_FRAGMENT_SHADER}"
 )
+endif()
 
 add_library(UmbraRender STATIC)
 add_library(Umbra::Render ALIAS UmbraRender)
@@ -108,7 +113,9 @@ target_sources(
 
 target_compile_features(UmbraRender PUBLIC cxx_std_20)
 
-add_dependencies(UmbraRender UmbraRenderShaders)
+if(TARGET UmbraRenderShaders)
+    add_dependencies(UmbraRender UmbraRenderShaders)
+endif()
 
 target_compile_definitions(
     UmbraRender
@@ -139,8 +146,10 @@ target_link_libraries(
 )
 
 # Package layout: compiled shaders in shaders/ next to the program (Renderer looks there first).
+if(NOT ANDROID)
 install(
     FILES "${UMBRA_VERTEX_SHADER}" "${UMBRA_FRAGMENT_SHADER}" "${UMBRA_OVERLAY_VERTEX_SHADER}" "${UMBRA_OVERLAY_FRAGMENT_SHADER}"
     DESTINATION shaders
     COMPONENT game
 )
+endif()

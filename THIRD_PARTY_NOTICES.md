@@ -29,6 +29,12 @@ The browser version (`plugins/web-export/web`) contains the same libraries (minu
 volk and Vulkan Memory Allocator) compiled into `umbra.wasm`, plus the Emscripten runtime and its
 libc/libc++ (MIT / University of Illinois NCSA; LLVM libc++: Apache-2.0 with LLVM exception).
 
+The Android app (`plugins/android-export`, roadmap P11) contains the same libraries (minus the
+Microsoft runtime) compiled into `libmain.so`, plus the Android NDK's `libc++_shared.so` (LLVM
+libc++: Apache-2.0 with LLVM exception), Vulkan Utility Libraries' enum-name header (Apache-2.0),
+and SDL's Java activity (`org/libsdl/app/*.java`, zlib, the same SDL release). The build-only
+Gradle wrapper (`gradlew`, `gradle-wrapper.jar`, Apache-2.0) is not part of the app.
+
 Not in the game package (development only): the editor and its ImGuizmo, cpp-httplib (local AI
 bridge), libogg and libvorbis (BSD-3-Clause; encode generated music), dr_flac (public domain or
 MIT-0; reads ComfyUI's sound files), Catch2 (tests), Python/PyTorch (policy training), Ollama,

@@ -1,0 +1,61 @@
+// The Umbra app: SDL's Java activity + libmain.so (the game, built by CMake from the repository root)
+// + game.pack (assets and shaders, made by "UmbraTool game-pack"). See plugins/android-export/README.md.
+plugins {
+    id 'com.android.application'
+}
+
+// Set by tools/build-android.ps1; defaults for opening the project in Android Studio.
+def abis = (findProperty('umbraAbis') ?: 'x86_64').split(',')          // x86_64 = emulator, arm64-v8a = phones
+def cmakeVersion = findProperty('umbraCmake') ?: '3.31.6'
+def ndk = findProperty('umbraNdk') ?: '28.2.13676358'
+def umbraProject = findProperty('umbraProject') ?: 'reference'   // a folder under projects/
+def vcpkgRoot = (System.getenv('VCPKG_ROOT') ?: '').replace('\\', '/')
+def repoRoot = file('../../../..').absolutePath.replace('\\', '/')
+
+android {
+    namespace = 'com.umbra.game'
+    compileSdk = 35
+    ndkVersion = ndk
+
+    defaultConfig {
+        applicationId = 'com.umbra.game'
+        minSdk = 29          // Android 10: Vulkan 1.1 on every device that has Vulkan
+        targetSdk = 35
+        versionCode = 1
+        versionName = '0.1.0'
+        ndk { abiFilters.addAll(abis as List) }
+        externalNativeBuild {
+            cmake {
+                // vcpkg builds the libraries for Android (vcpkg/vcpkg.json); the NDK toolchain is chained in.
+                arguments "-DCMAKE_TOOLCHAIN_FILE=${vcpkgRoot}/scripts/buildsystems/vcpkg.cmake",
+                          "-DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=${android.ndkDirectory.absolutePath.replace('\\', '/')}/build/cmake/android.toolchain.cmake",
+                          "-DVCPKG_MANIFEST_DIR=${file('../vcpkg').absolutePath.replace('\\', '/')}",
+                          "-DANDROID_STL=c++_shared",
+                          "-DUMBRA_PROJECT=${umbraProject}",
+                          "-DBUILD_TESTING=OFF"
+                targets 'Umbra'
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("${repoRoot}/CMakeLists.txt")
+            version = cmakeVersion
+        }
+    }
+
+    // game.pack and game.pack.json, written here by tools/build-android.ps1. Stored uncompressed
+    // so the first start copies them out quickly.
+    sourceSets.main.assets.srcDirs += ['build/generated/gamepack']
+    androidResources { noCompress 'pack' }
+
+    buildTypes {
+        release {
+            minifyEnabled = false
+        }
+    }
+    lint {
+        abortOnError = false
+    }
+}

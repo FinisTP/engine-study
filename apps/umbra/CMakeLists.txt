@@ -1,4 +1,10 @@
-add_executable(Umbra)
+# Android: a shared library named libmain.so, started by SDL's Java activity (SDL_main.h in Main.cpp).
+if(ANDROID)
+    add_library(Umbra SHARED)
+    set_target_properties(Umbra PROPERTIES OUTPUT_NAME main)
+else()
+    add_executable(Umbra)
+endif()
 
 target_sources(
     Umbra
@@ -18,6 +24,9 @@ target_sources(
         GameComponents.hpp
         GameUi.cpp
         GameUi.hpp
+        TouchControls.cpp
+        TouchControls.hpp
+        Mobile.md
 )
 
 # The project's own code (projects/<name>/engine and game) is compiled into the program itself,
@@ -62,6 +71,14 @@ target_link_libraries(
 )
 
 umbra_copy_asan_runtime(Umbra)
+
+# Android: SDL is linked statically, so keep its JNI_OnLoad (it registers SDL's Java callbacks)
+# and export SDL_main, which the activity looks up by name. No install rules: Gradle packs the APK.
+if(ANDROID)
+    target_link_options(Umbra PRIVATE "LINKER:--undefined=JNI_OnLoad")
+    target_link_libraries(Umbra PRIVATE android log)
+    return()
+endif()
 
 # Browser build (roadmap P10, plugins/web-export/web/README.md): umbra.js/.wasm plus the page, the offline service
 # worker and its version stamp. The assets are not linked in: "UmbraTool web-pack" writes

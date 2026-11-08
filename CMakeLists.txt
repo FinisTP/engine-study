@@ -1,5 +1,17 @@
 cmake_minimum_required(VERSION 3.28)
 
+# Android (roadmap P11): Gradle builds once per ABI with the same arguments, so pick the vcpkg
+# triplet from the ABI here, before vcpkg starts (plugins/android-export/README.md).
+if(ANDROID_ABI AND NOT VCPKG_TARGET_TRIPLET)
+    if(ANDROID_ABI STREQUAL "x86_64")
+        set(VCPKG_TARGET_TRIPLET x64-android)
+    elseif(ANDROID_ABI STREQUAL "arm64-v8a")
+        set(VCPKG_TARGET_TRIPLET arm64-android)
+    else()
+        message(FATAL_ERROR "Android ABI ${ANDROID_ABI} is not supported (x86_64 or arm64-v8a)")
+    endif()
+endif()
+
 project(
     Umbra
     VERSION 0.1.0
@@ -69,6 +81,18 @@ if(EMSCRIPTEN)
             endif()
         endforeach()
     endif()
+    return()
+endif()
+
+# Android build (roadmap P11): only the game, as the shared library libmain.so that SDL's Java
+# activity loads. Gradle runs this; see plugins/android-export/README.md.
+if(ANDROID)
+    umbra_require_plugins("The Android build" android-export)
+    foreach(module ${UMBRA_ENGINE_MODULES})
+        add_subdirectory(engine/${module})
+    endforeach()
+    umbra_add_plugin_modules(KIND game)
+    add_subdirectory(apps/umbra)
     return()
 endif()
 
