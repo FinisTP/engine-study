@@ -14,6 +14,8 @@ Image files store *sRGB* values, which spend more numbers on dark shades.
 - The screen is an sRGB target (`B8G8R8A8_SRGB`, or the canvas viewed as `bgra8unorm-srgb`).
   The GPU converts the linear result back when it writes the pixel.
 - So the shader works only in linear values and never calls `pow(x, 2.2)` itself.
+- Since S7 the scene is drawn into an HDR (16-bit float) picture first. Exposure, bloom, tonemapping
+  and the color grade then turn it into the screen's 0..1 (`Post.md`).
 
 ## 2. What lights a pixel
 

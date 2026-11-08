@@ -3,6 +3,7 @@
 #include <Renderer.hpp>
 
 #include <Lighting.hpp>
+#include <Post.hpp>
 #include <Log.hpp>
 #include <SlotMap.hpp>
 
@@ -11,6 +12,11 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <cstdio>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
+#include <map>
+#include <string>
 
 // JavaScript side (umbra_render.js). Ids are small integers owned by JavaScript.
 extern "C"
@@ -19,11 +25,14 @@ extern "C"
     int umbra_gpu_mesh(const float *vertices, int vertexCount, const unsigned *indices, int indexCount);
     void umbra_gpu_replace_mesh(int id, const float *vertices, int vertexCount, const unsigned *indices, int indexCount);
     int umbra_gpu_texture(int width, int height, int levels);
+    int umbra_gpu_surface(const char *wgsl); // a custom surface shader's pipeline
     void umbra_gpu_texture_level(int id, int level, int width, int height, const unsigned char *rgba);
     void umbra_gpu_destroy_mesh(int id);
     void umbra_gpu_destroy_texture(int id);
     // `frame`: viewProjection, shadowMatrix, inverseViewProjection (16 floats each), then core::LightingBlock (160 floats).
-    void umbra_gpu_frame(const float *frame, const float *draws, int drawCount, const float *lines, int lineCount, const char *hud);
+    // `post`: core::PostBlock::exposure (4 floats).
+    void umbra_gpu_frame(const float *frame, const float *post, const float *draws, int drawCount, const float *lines, int lineCount, const char *hud);
+    void umbra_gpu_lut(const unsigned char *strip); // the post color table (256x16 RGBA)
     // The game UI (core::UiDrawList), drawn on top of the frame just sent: 20-byte vertices,
     // uint16 indices, and per batch 8 floats: texture id, clip x0 y0 x1 y1, first vertex, first index, index count.
     void umbra_gpu_ui(const void *vertices, int vertexCount, const unsigned short *indices, int indexCount, const float *batches, int batchCount);
@@ -84,6 +93,9 @@ namespace umbra::render
         core::SlotMap<int, core::TextureTag> textures;
         std::vector<float> draws, lines;
         float seconds = 0; // drives torch flicker
+        std::map<std::string, int> surfaces; // custom surface shader name -> pipeline id (CustomShaders.md)
+        core::PostSettings grade;                         // the color table now on the GPU (Post.md)
+        std::shared_ptr<const core::TextureData> gradeImage;
     };
 
     Renderer::Renderer() = default;
@@ -97,6 +109,16 @@ namespace umbra::render
             return false;
         }
         implementation_ = std::make_unique<Implementation>();
+        umbra_gpu_lut(core::BakeGradeLut(implementation_->grade).rgba.data()); // neutral until a scene sets a grade
+        // Custom surface shaders, converted to WGSL at build time and embedded at /shaders/surface.
+        std::error_code ec;
+        for (const auto &entry : std::filesystem::directory_iterator("/shaders/surface", ec))
+            if (entry.path().extension() == ".wgsl")
+            {
+                std::ifstream in(entry.path());
+                const std::string code((std::istreambuf_iterator<char>(in)), {});
+                implementation_->surfaces[entry.path().stem().string()] = umbra_gpu_surface(code.c_str());
+            }
         diagnostics::Info(std::string{"WebGPU renderer: "} + umbra_gpu_name());
         return true;
     }
@@ -186,6 +208,13 @@ namespace umbra::render
         };
         static_assert(sizeof(Frame) == 208 * sizeof(float));
         i.seconds += deltaSeconds;
+        // An item's custom surface shader pipeline id (0 = the plain one).
+        const auto surfaceId = [&](const core::DrawItem &item) {
+            if (item.surface == 0 || item.surface >= drawList.surfaces.size())
+                return 0.0F;
+            const auto it = i.surfaces.find(drawList.surfaces[item.surface]);
+            return it != i.surfaces.end() ? static_cast<float>(it->second) : 0.0F;
+        };
         const Frame frame{viewProjection, core::SunShadowMatrix(drawList.environment.sunDirection, camera.target, 25.0F, shadowMapSize),
                           glm::inverse(viewProjection), core::PackLighting(drawList.environment, drawList.lights, camera.position, i.seconds, shadowMapSize)};
 
@@ -201,7 +230,7 @@ namespace umbra::render
             const float *m = glm::value_ptr(item.model);
             i.draws.insert(i.draws.end(), m, m + 16);
             i.draws.insert(i.draws.end(), {color.r, color.g, color.b, color.a, item.metersPerRepeat, item.emissive, 0.0F, 0.0F,
-                                           static_cast<float>(mesh->id), static_cast<float>(texture ? *texture : -1), 0.0F, 0.0F});
+                                           static_cast<float>(mesh->id), static_cast<float>(texture ? *texture : -1), surfaceId(item), 0.0F});
         }
         i.lines.clear();
         for (const core::DebugLine &line : drawList.lines)
@@ -210,7 +239,17 @@ namespace umbra::render
 
         // 3. Draw, then wait for the browser's next frame (this is where the game loop yields).
         const std::string hud = HudJson(drawList.hud);
-        umbra_gpu_frame(glm::value_ptr(frame.viewProjection), i.draws.data(), static_cast<int>(i.draws.size() / drawFloats), i.lines.data(),
+        // The color table again only when the grade changed; the post constants every frame.
+        const core::PostSettings &post = drawList.post;
+        if (post.temperature != i.grade.temperature || post.saturation != i.grade.saturation || post.contrast != i.grade.contrast ||
+            drawList.postLut != i.gradeImage)
+        {
+            umbra_gpu_lut(core::BakeGradeLut(post, drawList.postLut.get()).rgba.data());
+            i.grade = post;
+            i.gradeImage = drawList.postLut;
+        }
+        const core::PostBlock postBlock = core::PackPost(post, 1, 1);
+        umbra_gpu_frame(glm::value_ptr(frame.viewProjection), glm::value_ptr(postBlock.exposure), i.draws.data(), static_cast<int>(i.draws.size() / drawFloats), i.lines.data(),
                         static_cast<int>(i.lines.size() / 10), hud.c_str());
         if (!drawList.ui.batches.empty())
         {

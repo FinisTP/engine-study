@@ -9,6 +9,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -50,6 +51,7 @@ namespace umbra::world
         glm::vec4 tint{1.0F};         // from the material, multiplied with color
         float metersPerRepeat = 0.0F; // from the material: > 0 = world-space texture coordinates
         float emissive = 0.0F;        // glows by itself: color * texture * emissive is added (flames, crystals)
+        std::string surface;          // from the material: custom surface shader name ("" = plain)
     };
 
     // Physics description of an entity. Pure data: the gameplay layer turns it into a body.
@@ -185,6 +187,10 @@ namespace umbra::world
         void SetEnvironment(const core::EnvironmentSettings &settings, Entity owner = {});
         [[nodiscard]] const core::EnvironmentSettings &GetEnvironment() const noexcept { return environment_; }
         [[nodiscard]] Entity EnvironmentOwner() const noexcept { return environmentOwner_; }
+        // The scene's post-processing (the "post" component, Post.md) and its LUT image if any.
+        void SetPost(const core::PostSettings &settings, std::shared_ptr<const core::TextureData> lut = {}, Entity owner = {});
+        [[nodiscard]] const core::PostSettings &GetPost() const noexcept { return post_; }
+        [[nodiscard]] Entity PostOwner() const noexcept { return postOwner_; }
         [[nodiscard]] float Hour() const noexcept { return hour_; }
         void SetHour(float hour) noexcept { hour_ = hour; }
         // Moves the time of day on by `seconds` of play (no change if the day length is 0).
@@ -233,6 +239,9 @@ namespace umbra::world
         std::unordered_map<std::string, Entity> byId_;
         core::EnvironmentSettings environment_;
         Entity environmentOwner_;
+        core::PostSettings post_;
+        std::shared_ptr<const core::TextureData> postLut_;
+        Entity postOwner_;
         float hour_ = environment_.hour;
     };
 }

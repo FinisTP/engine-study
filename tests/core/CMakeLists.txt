@@ -12,6 +12,7 @@ target_sources(
         ResourceDataTests.cpp
         ProfilingTests.cpp
         LightingTests.cpp
+        PostTests.cpp
 )
 
 target_compile_features(UmbraCoreTests PRIVATE cxx_std_20)

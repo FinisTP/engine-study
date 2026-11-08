@@ -16,8 +16,15 @@ does not change. The GPU work is in `umbra_render.js` (an Emscripten JavaScript 
    - the **shadow pass** draws depth from the sun into a 2048² `depth32float` texture (skipped
      indoors). It uses its own bind group without that texture, because WebGPU forbids reading a
      texture in the pass that draws into it;
-   - the **main pass** draws the sky triangle, the lit objects (sun, shadow compare, 16 lights,
-     fog) and then the lines. The math is in `engine/core/include/Lighting.md`.
+   - the **scene pass** draws the sky triangle and the lit objects (sun, shadow compare, 16 lights,
+     fog) into an `rgba16float` HDR picture. The math is in `engine/core/include/Lighting.md`;
+   - the **post passes** (S7, `engine/core/include/Post.md`) build bloom (6 levels starting at half
+     size, as on the PC). The composite onto the canvas then applies exposure, tonemapping, the
+     16³ color table (`umbra_gpu_lut`, uploaded only when the grade changes) and the vignette.
+     The debug lines are drawn after it, and the game UI after that (`umbra_gpu_ui`).
+
+   Draw float 26 picks a custom surface shader's pipeline (`umbra_gpu_surface`). Its WGSL was made
+   at build time from `Scene.hlsl` by DXC and naga (`engine/render/shaders/CustomShaders.md`).
 4. Then it **waits for the browser's next animation frame**. This is where the game's normal
    `while` loop hands control back to the page (Asyncify), so the loop needs no browser-specific
    structure and runs at the display's rate.
@@ -29,7 +36,8 @@ lookup uses `uv.y = 0.5 - 0.5*y`; no ImGui (the HUD is HTML); textures and sampl
 Colors: textures are `rgba8unorm-srgb` and the canvas (usually `bgra8unorm`) is configured with an
 `-srgb` view format, so drawing happens in linear light and the GPU converts on write, as on Vulkan.
 
-The WGSL in `umbra_render.js` is a hand copy of `Scene.hlsl`: change both together. To check it,
+The scene and post WGSL in `umbra_render.js` are hand copies of `Scene.hlsl` and `Post.hlsl`:
+change both together. (Custom surface shaders are converted automatically.) To check it,
 extract the string and run `naga scene.wgsl` (naga-cli validates WGSL).
 
 Testing options: `index.html?args=--hour%2012` passes command-line options to the game.

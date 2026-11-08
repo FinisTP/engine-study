@@ -1,53 +1,16 @@
 // The scene shaders (Vulkan). Lighting, fog, sky and shadows: engine/core/include/Lighting.md.
-// The browser's copy is Scene.wgsl in web/umbra_render.js: keep the two in step.
+// The browser's copy is Scene.wgsl in web/umbra_render.js: keep the two in step. Custom surface
+// shaders are this file's PSMain with UMBRA_WEB, converted to WGSL at build time.
 
-// set 0, binding 0: per-frame data (must match SceneUniform in VulkanFrameResources.hpp)
-struct SceneUniform
+#include "Surface.hlsli"
+
+// A material without a custom shader keeps the plain surface. A custom one is compiled from a
+// wrapper that includes its file first and defines UMBRA_SURFACE (CustomShaders.md).
+#ifndef UMBRA_SURFACE
+void Surface(inout SurfaceData s, SurfaceInput i)
 {
-    column_major float4x4 view;
-    column_major float4x4 projection;
-    column_major float4x4 shadowMatrix;          // world -> sun shadow map (depth 0..1)
-    column_major float4x4 inverseViewProjection; // screen -> world (the sky's view rays)
-    float4 cameraPosition; // w = seconds
-    float4 sunDirection;   // towards the sun; w = 1 if it casts shadows
-    float4 sunColor;
-    float4 skyColor;       // straight up; w = ambient strength
-    float4 horizonColor;
-    float4 groundColor;
-    float4 fogColor;       // w = density per meter
-    float4 counts;         // x = point lights, y = shadow texel size
-    float4 lightPositions[16]; // xyz, w = range
-    float4 lightColors[16];
-};
-
-// per-draw data (push constants, must match DrawConstants in VulkanVertexPipeline.hpp)
-struct DrawConstants
-{
-    column_major float4x4 model;
-    float4 color;
-    float4 texturing; // x = meters per repeat for world-space texture coordinates (0 = mesh UVs), y = emissive
-};
-
-[[vk::binding(0, 0)]] ConstantBuffer<SceneUniform> scene;
-[[vk::push_constant]] ConstantBuffer<DrawConstants> perDraw;
-
-// set 0, binding 1: the sun's shadow map, compared in hardware
-[[vk::combinedImageSampler]]
-[[vk::binding(1, 0)]]
-Texture2D<float> shadowMap : register(t1, space0);
-
-[[vk::combinedImageSampler]]
-[[vk::binding(1, 0)]]
-SamplerComparisonState shadowSampler : register(s1, space0);
-
-// set 1: per-texture descriptor
-[[vk::combinedImageSampler]]
-[[vk::binding(0, 1)]]
-Texture2D<float4> baseColorTexture : register(t0, space1);
-
-[[vk::combinedImageSampler]]
-[[vk::binding(0, 1)]]
-SamplerState baseColorSampler : register(s0, space1);
+}
+#endif
 
 struct VertexInput
 {
@@ -66,6 +29,7 @@ struct VertexOutput
     [[vk::location(4)]] float emissive : TEXCOORD2;
 };
 
+#ifndef UMBRA_WEB
 VertexOutput VSMain(VertexInput input)
 {
     VertexOutput output;
@@ -88,13 +52,18 @@ VertexOutput VSMain(VertexInput input)
     output.emissive = perDraw.texturing.y;
     return output;
 }
+#endif
 
 // How much sun reaches this point: 1 = lit, 0 = in shadow. 3x3 samples soften the edge.
 float SunShadow(float3 worldPosition, float3 normal)
 {
     // 1. Into the shadow map, pushed a little off the surface so it doesn't shadow itself.
     const float4 s = mul(scene.shadowMatrix, float4(worldPosition + normal * 0.06F, 1.0F));
+#ifdef UMBRA_WEB
+    const float2 uv = float2(0.5F + 0.5F * s.x, 0.5F - 0.5F * s.y); // WebGPU: clip y = +1 is the first row
+#else
     const float2 uv = s.xy * 0.5F + 0.5F; // Vulkan: clip y = -1 is the map's first row
+#endif
     if (any(uv < 0.0F) || any(uv > 1.0F) || s.z > 1.0F)
         return 1.0F;
     // 2. Each sample answers "is this point nearer the sun than what the map saw?".
@@ -108,8 +77,21 @@ float SunShadow(float3 worldPosition, float3 normal)
 
 float4 PSMain(VertexOutput input) : SV_Target0
 {
-    const float4 albedo = baseColorTexture.Sample(baseColorSampler, input.uv) * input.baseColor;
-    const float3 n = normalize(input.normal);
+    // 0. The surface: the plain material, then the material's own shader if it has one.
+    SurfaceInput si;
+    si.uv = input.uv;
+    si.worldPosition = input.worldPosition;
+    si.normal = normalize(input.normal);
+    si.time = scene.cameraPosition.w;
+    si.tint = input.baseColor;
+    const float4 base = SampleBase(input.uv) * input.baseColor;
+    SurfaceData surface;
+    surface.albedo = base.rgb;
+    surface.alpha = base.a;
+    surface.normal = si.normal;
+    surface.emissive = input.emissive;
+    Surface(surface, si);
+    const float3 n = normalize(surface.normal);
     const float3 p = input.worldPosition;
 
     // 1. Sky light from above, ground light from below.
@@ -136,10 +118,10 @@ float4 PSMain(VertexOutput input) : SV_Target0
     }
 
     // 4. Its own glow (flames, crystals), then fog: the farther, the more of the fog's color.
-    float3 color = albedo.rgb * (light + input.emissive);
+    float3 color = surface.albedo * (light + surface.emissive);
     const float fog = 1.0F - exp(-scene.fogColor.w * length(p - scene.cameraPosition.xyz));
     color = lerp(color, scene.fogColor.rgb, fog);
-    return float4(color, albedo.a);
+    return float4(color, surface.alpha);
 }
 
 // ---- Sun shadow map: depth only, seen from the sun ----

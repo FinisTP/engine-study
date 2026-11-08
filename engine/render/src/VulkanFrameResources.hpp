@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VulkanSwapchain.hpp"
+#include "VulkanPost.hpp"
 #include "VulkanVertexPipeline.hpp"
 #include "RenderResources.hpp"
 
@@ -72,6 +73,7 @@ namespace umbra::render
             TextureHandle fallbackTexture,
             const SceneUniform &uniform,
             DiagnosticsOverlay &overlay,
+            const VulkanPost &post,
             const CaptureCallback *capture = nullptr);
 
         void Shutdown() noexcept;

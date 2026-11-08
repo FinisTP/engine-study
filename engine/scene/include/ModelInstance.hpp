@@ -28,6 +28,7 @@ namespace umbra::scene
         core::TextureHandle texture;
         glm::vec4 tint{1.0F};
         float metersPerRepeat = 0.0F; // 0 = the model's own UVs
+        std::string surface;          // custom surface shader name ("" = the plain one)
     };
     // Looks up a material path; nullopt if it can't be loaded (the model's texture is kept).
     using MaterialResolver = std::function<std::optional<MaterialBinding>(const std::string &material)>;

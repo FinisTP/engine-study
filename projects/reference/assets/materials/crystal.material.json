@@ -1,0 +1,8 @@
+{
+  "format": "umbra.material",
+  "version": 1,
+  "baseColor": "textures/water.png",
+  "projection": "uv",
+  "tint": [1.6, 1.9, 2.4, 1],
+  "shader": "shaders/crystal.surface.hlsl"
+}

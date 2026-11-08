@@ -33,8 +33,11 @@ namespace umbra::assets
         bool worldProjection = false; // true: repeat by meters in world space; false: the model's UVs
         float metersPerRepeat = 2.0F;
         glm::vec4 tint{1.0F};
+        std::string shader;           // optional custom surface shader "shaders/<name>.surface.hlsl" (CustomShaders.md)
         std::optional<Generated> generated;
     };
+    // "shaders/water.surface.hlsl" -> "water": the name the build gives the compiled shader.
+    [[nodiscard]] std::string SurfaceName(const std::string &shaderPath);
 
     inline constexpr int materialFormatVersion = 1;
 

@@ -123,9 +123,9 @@ namespace umbra::authoring
             return {};
         }
         auto entries = AssetEntries(assets, "assets/");
-        for (const auto &file : std::filesystem::directory_iterator(shaderFolder))
+        for (const auto &file : std::filesystem::recursive_directory_iterator(shaderFolder)) // with surface/ (CustomShaders.md)
             if (file.path().extension() == ".spv")
-                entries.emplace_back("shaders/" + file.path().filename().generic_string(), file.path());
+                entries.emplace_back("shaders/" + std::filesystem::relative(file.path(), shaderFolder).generic_string(), file.path());
         std::sort(entries.begin(), entries.end());
         return WritePack(entries, outFolder, "game.pack", "game.pack.json", "umbra.game-pack", diagnostics);
     }

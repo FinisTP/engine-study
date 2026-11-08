@@ -67,6 +67,7 @@ namespace umbra::world
         entities_.Clear();
         byId_.clear();
         SetEnvironment({});
+        SetPost({});
     }
 
     bool World::IsAlive(Entity entity) const noexcept { return Get(entity) != nullptr; }
@@ -290,6 +291,13 @@ namespace umbra::world
         return record && record->light ? &*record->light : nullptr;
     }
 
+    void World::SetPost(const core::PostSettings &settings, std::shared_ptr<const core::TextureData> lut, Entity owner)
+    {
+        post_ = settings;
+        postLut_ = std::move(lut);
+        postOwner_ = owner;
+    }
+
     void World::SetEnvironment(const core::EnvironmentSettings &settings, Entity owner)
     {
         environment_ = settings;
@@ -329,7 +337,8 @@ namespace umbra::world
             if (record.renderable && record.renderable->meshHandle)
             {
                 const Renderable &r = *record.renderable;
-                drawList.items.push_back({r.meshHandle, r.textureHandle, record.worldMatrix, r.color * r.tint, r.metersPerRepeat, r.emissive});
+                drawList.items.push_back({r.meshHandle, r.textureHandle, record.worldMatrix, r.color * r.tint, r.metersPerRepeat, r.emissive,
+                                          drawList.SurfaceIndex(r.surface)});
             }
             if (record.light)
             {
@@ -338,6 +347,8 @@ namespace umbra::world
             }
         });
         drawList.environment = core::EvaluateEnvironment(environment_, hour_);
+        drawList.post = post_;
+        drawList.postLut = postLut_;
     }
 
     const World::Record *World::Get(Entity entity) const noexcept

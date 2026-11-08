@@ -1,7 +1,7 @@
 # Umbra Engine - Current Development Status
 
 **Status date:** 2026-11-08 (Phase 1/2 records dated 2026-09-02)
-**Current milestone:** S6 lighting & atmosphere implemented (2026-11-09, `#UMBRA-82`; headless 49/49 GCC/Clang/ASan, plugin sets 37/37 and 33/33, check-web 13/13, Vulkan and WebGPU pictures on SwiftShader; GPU look and frame time on Windows open; S7 next); S5 agent prompt implemented (2026-11-08, ADR 0008, `#UMBRA-80`; headless 49/49 GCC/Clang/ASan; real-model task set and editor window on Windows open); P11 Android implemented (2026-11-08, ADR 0009; headless 48/48 GCC/Clang/ASan; Gradle/NDK build and emulator run on Windows open); S4 AI sound, music, turn menu and hotkeys implemented (2026-11-08, ADR 0007; headless 48/48 GCC/Clang/ASan, Windows check open); S3 gameplay UI framework implemented (ADR 0006; Windows check open); S1/S2 implemented (Windows checks open); P10 web export renders on the user's PC; P9 PC release gate: benchmark passed, remaining Windows runs open
+**Current milestone:** S7 post-processing & custom shaders implemented (2026-11-09, `#UMBRA-83`; headless 50/50 GCC/Clang/ASan, check-web 13/13, Vulkan and WebGPU pictures on SwiftShader; the user's S6+S7 check open); S6 lighting & atmosphere implemented (2026-11-09, `#UMBRA-82`; headless 49/49 GCC/Clang/ASan, plugin sets 37/37 and 33/33, check-web 13/13, Vulkan and WebGPU pictures on SwiftShader; GPU look and frame time on Windows open; S7 next); S5 agent prompt implemented (2026-11-08, ADR 0008, `#UMBRA-80`; headless 49/49 GCC/Clang/ASan; real-model task set and editor window on Windows open); P11 Android implemented (2026-11-08, ADR 0009; headless 48/48 GCC/Clang/ASan; Gradle/NDK build and emulator run on Windows open); S4 AI sound, music, turn menu and hotkeys implemented (2026-11-08, ADR 0007; headless 48/48 GCC/Clang/ASan, Windows check open); S3 gameplay UI framework implemented (ADR 0006; Windows check open); S1/S2 implemented (Windows checks open); P10 web export renders on the user's PC; P9 PC release gate: benchmark passed, remaining Windows runs open
 **Layout:** `engine/` base engine, `game/` base game, `projects/reference/{assets,engine,game}` (content moved from `assets/`)
 **Phase 1 status:** Complete (interactive checklist unsigned)
 **Phase 2 status:** Complete
@@ -14,6 +14,16 @@
 **P8C status:** Implemented. Headless tests verified on Linux (42/42, GCC/Clang/ASan) against a stand-in ComfyUI; no real ComfyUI/SDXL or GPU run yet (P8C.0 open); editor window not opened
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
+
+## Update 2026-11-09 (S7 post-processing & custom shaders, `#UMBRA-83`)
+
+HDR scene picture, bloom (6 levels; 4 from quarter size on Android), ACES tonemap, a baked 16³
+color table (LUT image + temperature/saturation/contrast), vignette; `post` component. Custom
+material surface shaders (`*.surface.hlsl` inserted into the scene shader; Vulkan pipeline per
+shader; WGSL for the browser by DXC + naga at build time; errors at the shader's line). Also fixed:
+the install step now ships every compiled shader (S6's sky and shadow shaders were missing from
+packages). Example: warm settlement with well water, cold dungeon with a LUT and a pulsing crystal.
+Evidence: `docs/testing/s7-post-and-shaders.md`; math: `engine/core/include/Post.md`.
 
 ## Update 2026-11-09 (S6 lighting & atmosphere, `#UMBRA-82`)
 

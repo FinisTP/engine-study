@@ -42,7 +42,7 @@ namespace umbra::assets
             diagnostics.insert(diagnostics.end(), d.begin(), d.end());
             return false;
         }
-        static const std::set<std::string> known{"format", "version", "baseColor", "projection", "metersPerRepeat", "tint", "generated"};
+        static const std::set<std::string> known{"format", "version", "baseColor", "projection", "metersPerRepeat", "tint", "shader", "generated"};
         for (const auto &[key, value] : j.items())
             if (!known.contains(key))
                 Add(d, core::Severity::Warning, "material.field.unknown", name, key, "unknown field is ignored (typo?)");
@@ -79,7 +79,19 @@ namespace umbra::assets
                 m.tint = {t[0].get<float>(), t[1].get<float>(), t[2].get<float>(), t[3].get<float>()};
         }
 
-        // 3. Provenance (optional).
+        // 3. A custom surface shader (optional): compiled with the engine's shaders (CustomShaders.md).
+        if (j.contains("shader"))
+        {
+            const std::string shader = j["shader"].is_string() ? j["shader"].get<std::string>() : "";
+            if (!shader.ends_with(".surface.hlsl") || SurfaceName(shader).empty())
+                error("material.shader", "shader", "must name a \"shaders/<name>.surface.hlsl\" file");
+            else if (!IsSafeAssetPath(shader))
+                error("asset.path.unsafe", "shader", "'" + shader + "' must be relative to the asset folder without '..'");
+            else
+                m.shader = shader;
+        }
+
+        // 4. Provenance (optional).
         if (j.contains("generated"))
         {
             const Json &g = j["generated"];
@@ -132,10 +144,30 @@ namespace umbra::assets
         else if (!GoodTextureSize(width, height))
             problem = "'" + material.baseColor + "' is " + std::to_string(width) + "x" + std::to_string(height) +
                       "; sides must be powers of two from 64 to 2048";
-        if (problem.empty())
-            return true;
-        Add(diagnostics, core::Severity::Error, "material.image", name, "baseColor", problem);
-        return false;
+        if (!problem.empty())
+        {
+            Add(diagnostics, core::Severity::Error, "material.image", name, "baseColor", problem);
+            return false;
+        }
+        if (!material.shader.empty() && !std::filesystem::is_regular_file(assetRoot / material.shader))
+        {
+            Add(diagnostics, core::Severity::Error, "material.shader", name, "shader", "'" + material.shader + "' does not exist in " + assetRoot.string());
+            return false;
+        }
+        return true;
+    }
+
+    std::string SurfaceName(const std::string &shaderPath)
+    {
+        // The file name without folders and without ".surface.hlsl"; letters, digits and _ only.
+        std::string name = std::filesystem::path(shaderPath).filename().string();
+        if (!name.ends_with(".surface.hlsl"))
+            return {};
+        name.resize(name.size() - std::string(".surface.hlsl").size());
+        for (const char c : name)
+            if (!std::isalnum(static_cast<unsigned char>(c)) && c != '_')
+                return {};
+        return name;
     }
 
     std::string MaterialText(const Material &material)
@@ -144,6 +176,8 @@ namespace umbra::assets
                {"projection", material.worldProjection ? "world" : "uv"}, {"metersPerRepeat", material.metersPerRepeat}};
         if (material.tint != glm::vec4{1.0F})
             j["tint"] = {material.tint.r, material.tint.g, material.tint.b, material.tint.a};
+        if (!material.shader.empty())
+            j["shader"] = material.shader;
         if (const auto &g = material.generated)
             j["generated"] = {{"provider", g->provider}, {"model", g->model}, {"license", g->license}, {"prompt", g->prompt},
                               {"negative", g->negative}, {"seed", g->seed}, {"steps", g->steps}, {"date", g->date}};

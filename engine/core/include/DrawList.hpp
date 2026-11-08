@@ -2,6 +2,7 @@
 
 #include <Handles.hpp>
 #include <Lighting.hpp>
+#include <Post.hpp>
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
@@ -9,6 +10,7 @@
 #include <glm/vec4.hpp>
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -23,6 +25,7 @@ namespace umbra::core
         glm::vec4 color{1.0F};
         float metersPerRepeat = 0.0F; // > 0: texture repeats every N meters in world space (WorldUv.md)
         float emissive = 0.0F;        // glows by itself (Lighting.md)
+        std::uint32_t surface = 0;    // custom surface shader: index into DrawList::surfaces (0 = plain)
     };
 
     // A world-space line for debugging (collider outlines, rays). Drawn on top, no depth test.
@@ -101,15 +104,29 @@ namespace umbra::core
     {
         Camera camera;
         Environment environment;        // sun, sky, fog (Lighting.md)
+        PostSettings post;              // exposure, bloom, grade, vignette (Post.md)
+        std::shared_ptr<const TextureData> postLut; // the post's LUT image, if it names one
         std::vector<PointLight> lights; // torches, fires... (the nearest maxLights are used)
         std::vector<DrawItem> items;
+        std::vector<std::string> surfaces{""}; // custom surface shader names used this frame; [0] = plain
         std::vector<DebugLine> lines;
         Hud hud;
         UiDrawList ui; // the game's own UI; drawn under the diagnostics window
 
+        // The index of a surface shader name in `surfaces`, added on first use.
+        std::uint32_t SurfaceIndex(const std::string &name)
+        {
+            for (std::uint32_t i = 0; i < surfaces.size(); ++i)
+                if (surfaces[i] == name)
+                    return i;
+            surfaces.push_back(name);
+            return static_cast<std::uint32_t>(surfaces.size() - 1);
+        }
+
         void Clear()
         {
             items.clear();
+            surfaces.assign(1, "");
             lights.clear();
             lines.clear();
             hud = {};

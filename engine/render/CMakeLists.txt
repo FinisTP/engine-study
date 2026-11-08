@@ -8,6 +8,16 @@ if(EMSCRIPTEN)
     target_compile_features(UmbraRender PUBLIC cxx_std_20)
     target_link_libraries(UmbraRender PUBLIC Umbra::Core PRIVATE Umbra::Diagnostics glm::glm Umbra::Warnings)
     target_link_options(UmbraRender INTERFACE "--js-library=${CMAKE_CURRENT_SOURCE_DIR}/web/umbra_render.js")
+    # Custom surface shaders as WGSL (HLSL -> SPIR-V with DXC -> WGSL with naga), embedded at /shaders/surface.
+    find_program(UMBRA_DXC_EXECUTABLE NAMES dxc HINTS "$ENV{VULKAN_SDK}/Bin")
+    find_program(UMBRA_NAGA_EXECUTABLE NAMES naga HINTS "$ENV{HOME}/.cargo/bin")
+    include(SurfaceShaders.cmake)
+    umbra_surface_shaders(web surfaceOutputs)
+    if(surfaceOutputs)
+        add_custom_target(UmbraSurfaceShaders DEPENDS ${surfaceOutputs})
+        add_dependencies(UmbraRender UmbraSurfaceShaders)
+        target_link_options(UmbraRender INTERFACE "--embed-file=${CMAKE_CURRENT_BINARY_DIR}/surface@/shaders/surface")
+    endif()
     return()
 endif()
 
@@ -49,6 +59,10 @@ set(UMBRA_SKY_VERTEX_SHADER "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Sky.vert.spv")
 set(UMBRA_SKY_FRAGMENT_SHADER "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Sky.frag.spv")
 set(UMBRA_OVERLAY_VERTEX_SHADER "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Overlay.vert.spv")
 set(UMBRA_OVERLAY_FRAGMENT_SHADER "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Overlay.frag.spv")
+set(UMBRA_POST_SHADERS
+    "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Fullscreen.vert.spv" "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Bright.frag.spv"
+    "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Down.frag.spv" "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Up.frag.spv"
+    "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Composite.frag.spv")
 
 function(umbra_compile_hlsl output source profile entry_point)
     add_custom_command(
@@ -76,12 +90,20 @@ umbra_compile_hlsl("${UMBRA_SKY_VERTEX_SHADER}" shaders/Scene.hlsl vs_6_0 SkyVS)
 umbra_compile_hlsl("${UMBRA_SKY_FRAGMENT_SHADER}" shaders/Scene.hlsl ps_6_0 SkyPS)
 umbra_compile_hlsl("${UMBRA_OVERLAY_VERTEX_SHADER}" shaders/Overlay.hlsl vs_6_0 VSMain)
 umbra_compile_hlsl("${UMBRA_OVERLAY_FRAGMENT_SHADER}" shaders/Overlay.hlsl ps_6_0 PSMain)
+umbra_compile_hlsl("${UMBRA_SHADER_OUTPUT_DIRECTORY}/Fullscreen.vert.spv" shaders/Post.hlsl vs_6_0 FullscreenVS)
+umbra_compile_hlsl("${UMBRA_SHADER_OUTPUT_DIRECTORY}/Bright.frag.spv" shaders/Post.hlsl ps_6_0 BrightPS)
+umbra_compile_hlsl("${UMBRA_SHADER_OUTPUT_DIRECTORY}/Down.frag.spv" shaders/Post.hlsl ps_6_0 DownPS)
+umbra_compile_hlsl("${UMBRA_SHADER_OUTPUT_DIRECTORY}/Up.frag.spv" shaders/Post.hlsl ps_6_0 UpPS)
+umbra_compile_hlsl("${UMBRA_SHADER_OUTPUT_DIRECTORY}/Composite.frag.spv" shaders/Post.hlsl ps_6_0 CompositePS)
+
+include(SurfaceShaders.cmake)
+umbra_surface_shaders(vulkan surfaceOutputs)
 
 add_custom_target(
     UmbraRenderShaders
     DEPENDS "${UMBRA_VERTEX_SHADER}" "${UMBRA_FRAGMENT_SHADER}"
             "${UMBRA_SHADOW_VERTEX_SHADER}" "${UMBRA_SKY_VERTEX_SHADER}" "${UMBRA_SKY_FRAGMENT_SHADER}"
-            "${UMBRA_OVERLAY_VERTEX_SHADER}" "${UMBRA_OVERLAY_FRAGMENT_SHADER}"
+            "${UMBRA_OVERLAY_VERTEX_SHADER}" "${UMBRA_OVERLAY_FRAGMENT_SHADER}" ${UMBRA_POST_SHADERS} ${surfaceOutputs}
 )
 endif()
 
@@ -98,6 +120,8 @@ target_sources(
         src/RenderResources.cpp
         src/RenderResources.hpp
         src/VulkanDevice.cpp
+        src/VulkanPost.cpp
+        src/VulkanPost.hpp
         src/VulkanDevice.hpp
         src/VulkanFrameResources.cpp
         src/VulkanFrameResources.hpp
@@ -154,9 +178,5 @@ target_link_libraries(
 
 # Package layout: compiled shaders in shaders/ next to the program (Renderer looks there first).
 if(NOT ANDROID)
-install(
-    FILES "${UMBRA_VERTEX_SHADER}" "${UMBRA_FRAGMENT_SHADER}" "${UMBRA_OVERLAY_VERTEX_SHADER}" "${UMBRA_OVERLAY_FRAGMENT_SHADER}"
-    DESTINATION shaders
-    COMPONENT game
-)
+install(DIRECTORY "${UMBRA_SHADER_OUTPUT_DIRECTORY}/" DESTINATION shaders COMPONENT game FILES_MATCHING PATTERN "*.spv")
 endif()

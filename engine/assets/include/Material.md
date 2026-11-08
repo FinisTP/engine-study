@@ -20,6 +20,7 @@ A material gives a scene object its own surface instead of the texture inside it
 | `projection` | `"uv"`: the model's own texture coordinates. `"world"`: repeat by distance, every `metersPerRepeat` meters (`engine/render/shaders/WorldUv.md`) |
 | `metersPerRepeat` | 0.05–100; only used by `"world"` |
 | `tint` | Multiplied with the image and the entity's `color` |
+| `shader` | Optional custom surface shader `"shaders/<name>.surface.hlsl"` (S7, `engine/render/shaders/CustomShaders.md`); a bad name or a missing file is `material.shader` |
 | `generated` | Optional: how an AI texture was made (make it again; check the license) |
 
 A scene entity uses it with `"material": "materials/x.material.json"` (it needs a `model` to

@@ -5,7 +5,7 @@
 var UmbraRender = {
   $UG: {
     device: null, context: null, format: null, depth: null, name: 'WebGPU',
-    meshes: [null], textures: [null], groups: [null],
+    meshes: [null], textures: [null], groups: [null], surfaces: [null],
     shader: `
 // Must match Frame in RendererWeb.cpp (= core::LightingBlock after the matrices). Math: Lighting.md.
 struct Frame {
@@ -21,14 +21,18 @@ struct Draw { model: mat4x4f, color: vec4f, texturing: vec4f }; // texturing: x 
 @group(0) @binding(3) var shadowSampler: sampler_comparison;
 @group(1) @binding(0) var baseColorSampler: sampler;
 @group(1) @binding(1) var baseColorTexture: texture_2d<f32>;
-struct Out { @builtin(position) position: vec4f, @location(0) normal: vec3f, @location(1) uv: vec2f, @location(2) world: vec3f };
+// The same locations as Scene.hlsl's VertexOutput, so converted custom surface shaders fit this vertex shader.
+struct Out { @builtin(position) position: vec4f, @location(0) normal: vec3f, @location(1) uv: vec2f, @location(2) color: vec4f,
+             @location(3) world: vec3f, @location(4) emissive: f32 };
 @vertex fn vs(@location(0) position: vec3f, @location(1) normal: vec3f, @location(2) uv: vec2f) -> Out {
   var o: Out;
   let world = draw.model * vec4f(position, 1.0);
   o.position = frame.viewProjection * world;
   o.normal = normalize((draw.model * vec4f(normal, 0.0)).xyz);
   o.uv = uv;
+  o.color = draw.color;
   o.world = world.xyz;
+  o.emissive = draw.texturing.y;
   if (draw.texturing.x > 0.0) { // world-space texture coordinates (WorldUv.md)
     let n = abs(o.normal);
     let p = world.xyz;
@@ -52,7 +56,7 @@ fn sunShadow(p: vec3f, n: vec3f) -> f32 {
   return lit / 9.0;
 }
 @fragment fn fs(i: Out) -> @location(0) vec4f {
-  let albedo = textureSample(baseColorTexture, baseColorSampler, i.uv) * draw.color;
+  let albedo = textureSample(baseColorTexture, baseColorSampler, i.uv) * i.color;
   let n = normalize(i.normal);
   // 1. Sky light from above, ground light from below.
   let sky = mix(frame.horizonColor.rgb, frame.skyColor.rgb, 0.5);
@@ -74,7 +78,7 @@ fn sunShadow(p: vec3f, n: vec3f) -> f32 {
     light += frame.lightColors[l].rgb * (window * window / (1.0 + d * d)) * max(dot(n, toLight / max(d, 0.0001)), 0.0);
   }
   // 4. Its own glow, then fog.
-  let color = albedo.rgb * (light + draw.texturing.y);
+  let color = albedo.rgb * (light + i.emissive);
   let fog = 1.0 - exp(-frame.fogColor.w * length(i.world - frame.cameraPosition.xyz));
   return vec4f(mix(color, frame.fogColor.rgb, fog), albedo.a);
 }
@@ -109,6 +113,54 @@ struct LineOut { @builtin(position) position: vec4f, @location(0) color: vec4f }
 }
 @fragment fn lineFs(i: LineOut) -> @location(0) vec4f { return i.color; }`,
 
+    // Post.wgsl: the hand port of Post.hlsl (keep the two in step). uv 0 = top row in both.
+    postShader: `
+struct Post { exposure: vec4f, sizes: vec4f };
+@group(0) @binding(0) var<uniform> post: Post;
+@group(0) @binding(1) var clampSampler: sampler;
+@group(0) @binding(2) var source: texture_2d<f32>;
+@group(0) @binding(3) var bloom: texture_2d<f32>;
+@group(0) @binding(4) var lut: texture_3d<f32>;
+struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f };
+@vertex fn fullscreenVs(@builtin(vertex_index) id: u32) -> Out {
+  var o: Out;
+  let uv = vec2f(f32((id << 1u) & 2u), f32(id & 2u));
+  o.position = vec4f(uv.x * 2.0 - 1.0, 1.0 - uv.y * 2.0, 0.0, 1.0);
+  o.uv = uv;
+  return o;
+}
+fn box(uv: vec2f) -> vec3f {
+  let d = post.sizes.xy * 0.5;
+  return (textureSample(source, clampSampler, uv + vec2f(-d.x, -d.y)).rgb + textureSample(source, clampSampler, uv + vec2f(d.x, -d.y)).rgb +
+          textureSample(source, clampSampler, uv + vec2f(-d.x, d.y)).rgb + textureSample(source, clampSampler, uv + vec2f(d.x, d.y)).rgb) * 0.25;
+}
+@fragment fn brightFs(i: Out) -> @location(0) vec4f { return vec4f(max(box(i.uv) * post.exposure.x - post.exposure.z, vec3f(0.0)), 1.0); }
+@fragment fn downFs(i: Out) -> @location(0) vec4f { return vec4f(box(i.uv), 1.0); }
+@fragment fn upFs(i: Out) -> @location(0) vec4f {
+  let d = post.sizes.xy;
+  var c = textureSample(source, clampSampler, i.uv).rgb * 4.0;
+  c += (textureSample(source, clampSampler, i.uv + vec2f(d.x, 0.0)).rgb + textureSample(source, clampSampler, i.uv - vec2f(d.x, 0.0)).rgb +
+        textureSample(source, clampSampler, i.uv + vec2f(0.0, d.y)).rgb + textureSample(source, clampSampler, i.uv - vec2f(0.0, d.y)).rgb) * 2.0;
+  c += textureSample(source, clampSampler, i.uv + d).rgb + textureSample(source, clampSampler, i.uv - d).rgb +
+       textureSample(source, clampSampler, i.uv + vec2f(d.x, -d.y)).rgb + textureSample(source, clampSampler, i.uv + vec2f(-d.x, d.y)).rgb;
+  return vec4f(c / 16.0, 1.0);
+}
+fn tonemap(h: vec3f) -> vec3f {
+  let x = max(h, vec3f(0.0)) * 0.8;
+  return saturate(x * (2.51 * x + 0.03) / (x * (2.43 * x + 0.59) + 0.14));
+}
+fn toSrgb(c: vec3f) -> vec3f { let s = saturate(c); return select(1.055 * pow(s, vec3f(1.0 / 2.4)) - 0.055, s * 12.92, s <= vec3f(0.0031308)); }
+fn toLinear(c: vec3f) -> vec3f { return select(pow((c + 0.055) / 1.055, vec3f(2.4)), c / 12.92, c <= vec3f(0.04045)); }
+@fragment fn compositeFs(i: Out) -> @location(0) vec4f {
+  let hdr = textureSample(source, clampSampler, i.uv).rgb * post.exposure.x + textureSample(bloom, clampSampler, i.uv).rgb * post.exposure.y;
+  let n = post.sizes.z;
+  let cell = toSrgb(tonemap(hdr)) * ((n - 1.0) / n) + 0.5 / n;
+  var color = toLinear(textureSampleLevel(lut, clampSampler, cell, 0.0).rgb);
+  let d = length(i.uv - vec2f(0.5)) * 1.41421356;
+  color *= 1.0 - post.exposure.w * d * d;
+  return vec4f(color, 1.0);
+}`,
+
     uiShader: `
 struct Ui { size: vec2f };
 @group(0) @binding(0) var<uniform> ui: Ui;
@@ -123,6 +175,47 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
   return o;
 }
 @fragment fn fs(i: Out) -> @location(0) vec4f { return i.color * textureSample(uiTexture, uiSampler, i.uv); }`,
+
+    // HDR picture and bloom levels for a canvas of w x h, with one bind group per post pass.
+    // Pass slots in postBuffer (256 bytes each): 0..5 down, 6..10 up, 11 composite.
+    makePostTargets: function (w, h) {
+      var device = UG.device;
+      (UG.postTextures || []).forEach(function (t) { t.destroy(); });
+      var make = function (tw, th) { return device.createTexture({ size: [Math.max(1, tw), Math.max(1, th)], format: 'rgba16float',
+        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING }); };
+      UG.hdr = make(w, h);
+      UG.hdrView = UG.hdr.createView();
+      UG.levels = [];
+      for (var i = 0; i < 6; ++i) UG.levels.push(make(Math.floor(w / (2 << i)), Math.floor(h / (2 << i))));
+      UG.postTextures = [UG.hdr].concat(UG.levels);
+      var group = function (slot, source, bloom) {
+        return device.createBindGroup({ layout: UG.postLayout, entries: [
+          { binding: 0, resource: { buffer: UG.postBuffer, offset: slot * 256, size: 32 } }, { binding: 1, resource: UG.clampSampler },
+          { binding: 2, resource: source.createView() }, { binding: 3, resource: bloom.createView() }, { binding: 4, resource: UG.lut.createView({ dimension: '3d' }) }] });
+      };
+      UG.downGroups = [], UG.upGroups = [];
+      // (a pass may not sample the picture it draws into, so unused bloom slots repeat the source)
+      for (var i = 0; i < 6; ++i) { var from = i === 0 ? UG.hdr : UG.levels[i - 1]; UG.downGroups.push(group(i, from, from)); }
+      for (var i = 0; i < 5; ++i) UG.upGroups.push(group(6 + i, UG.levels[i + 1], UG.levels[i + 1]));
+      UG.compositeGroup = group(11, UG.hdr, UG.levels[0]);
+    },
+    // Writes each pass's constants (exposure block + the source's texel size) and records bloom.
+    postPasses: function (encoder, post) {
+      var p = HEAPF32.subarray(post >> 2, (post >> 2) + 4), data = new Float32Array(12 * 64);
+      var size = function (t) { return [1 / t.width, 1 / t.height]; };
+      var put = function (slot, source) { data.set(p, slot * 64); data.set(size(source), slot * 64 + 4); data[slot * 64 + 6] = 16; };
+      for (var i = 0; i < 6; ++i) put(i, i === 0 ? UG.hdr : UG.levels[i - 1]);
+      for (var i = 0; i < 5; ++i) put(6 + i, UG.levels[i + 1]);
+      put(11, UG.hdr);
+      UG.device.queue.writeBuffer(UG.postBuffer, 0, data);
+      var run = function (pipeline, group, target, load) {
+        var pass = encoder.beginRenderPass({ colorAttachments: [{ view: target.createView(), loadOp: load ? 'load' : 'clear',
+          clearValue: { r: 0, g: 0, b: 0, a: 1 }, storeOp: 'store' }] });
+        pass.setPipeline(pipeline); pass.setBindGroup(0, group); pass.draw(3); pass.end();
+      };
+      for (var i = 0; i < 6; ++i) run(i === 0 ? UG.brightPipeline : UG.downPipeline, UG.downGroups[i], UG.levels[i], false);
+      for (var i = 4; i >= 0; --i) run(UG.upPipeline, UG.upGroups[i], UG.levels[i], true);
+    },
 
     // A free slot in a list (index 0 is never used: it means "none").
     put: function (list, value) {
@@ -180,17 +273,21 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
       var textureLayout = device.createBindGroupLayout({ entries: [
         { binding: 0, visibility: GPUShaderStage.FRAGMENT, sampler: {} },
         { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: {} }] });
-      UG.pipeline = device.createRenderPipeline({
-        layout: device.createPipelineLayout({ bindGroupLayouts: [frameLayout, textureLayout] }),
-        vertex: { module: module, entryPoint: 'vs', buffers: [vertexLayout] },
-        fragment: { module: module, entryPoint: 'fs', targets: [{ format: UG.format, blend: {
-          color: { srcFactor: 'src-alpha', dstFactor: 'one-minus-src-alpha' }, alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' } } }] },
-        primitive: { topology: 'triangle-list', cullMode: 'none' },
-        depthStencil: { format: 'depth24plus', depthWriteEnabled: true, depthCompare: 'less' } });
+      // The lit scene; a custom surface shader (umbra_gpu_surface) swaps in its own fragment module.
+      UG.sceneDesc = function (fragmentModule, entry) {
+        return {
+          layout: device.createPipelineLayout({ bindGroupLayouts: [frameLayout, textureLayout] }),
+          vertex: { module: module, entryPoint: 'vs', buffers: [vertexLayout] },
+          fragment: { module: fragmentModule, entryPoint: entry, targets: [{ format: 'rgba16float', blend: {
+            color: { srcFactor: 'src-alpha', dstFactor: 'one-minus-src-alpha' }, alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' } } }] },
+          primitive: { topology: 'triangle-list', cullMode: 'none' },
+          depthStencil: { format: 'depth24plus', depthWriteEnabled: true, depthCompare: 'less' } };
+      };
+      UG.pipeline = device.createRenderPipeline(UG.sceneDesc(module, 'fs'));
       UG.skyPipeline = device.createRenderPipeline({
         layout: device.createPipelineLayout({ bindGroupLayouts: [frameLayout] }),
         vertex: { module: module, entryPoint: 'skyVs' },
-        fragment: { module: module, entryPoint: 'skyFs', targets: [{ format: UG.format }] },
+        fragment: { module: module, entryPoint: 'skyFs', targets: [{ format: 'rgba16float' }] },
         primitive: { topology: 'triangle-list' },
         depthStencil: { format: 'depth24plus', depthWriteEnabled: false, depthCompare: 'always' } });
       UG.shadowPipeline = device.createRenderPipeline({
@@ -209,8 +306,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
         vertex: { module: module, entryPoint: 'lineVs', buffers: [{ arrayStride: 28, attributes: [
           { shaderLocation: 0, offset: 0, format: 'float32x3' }, { shaderLocation: 1, offset: 12, format: 'float32x4' }] }] },
         fragment: { module: module, entryPoint: 'lineFs', targets: [{ format: UG.format }] },
-        primitive: { topology: 'line-list' },
-        depthStencil: { format: 'depth24plus', depthWriteEnabled: false, depthCompare: 'always' } });
+        primitive: { topology: 'line-list' } }); // drawn on the finished picture, over everything
       // The game UI: 2D triangles in pixels, textured and tinted, no depth (core::UiDrawList).
       var uiModule = device.createShaderModule({ code: UG.uiShader });
       UG.uiLayout = device.createBindGroupLayout({ entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: 'uniform' } }] });
@@ -222,6 +318,28 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
         fragment: { module: uiModule, entryPoint: 'fs', targets: [{ format: UG.format, blend: {
           color: { srcFactor: 'src-alpha', dstFactor: 'one-minus-src-alpha' }, alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' } } }] },
         primitive: { topology: 'triangle-list', cullMode: 'none' } });
+      // Post-processing (Post.md): bloom chain and the composite onto the canvas.
+      var postModule = device.createShaderModule({ code: UG.postShader });
+      UG.postLayout = device.createBindGroupLayout({ entries: [
+        { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+        { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: {} },
+        { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: {} },
+        { binding: 3, visibility: GPUShaderStage.FRAGMENT, texture: {} },
+        { binding: 4, visibility: GPUShaderStage.FRAGMENT, texture: { viewDimension: '3d' } }] });
+      var postPipeline = function (entry, format, add) {
+        var target = { format: format };
+        if (add) target.blend = { color: { srcFactor: 'one', dstFactor: 'one' }, alpha: { srcFactor: 'one', dstFactor: 'one' } };
+        return device.createRenderPipeline({ layout: device.createPipelineLayout({ bindGroupLayouts: [UG.postLayout] }),
+          vertex: { module: postModule, entryPoint: 'fullscreenVs' }, fragment: { module: postModule, entryPoint: entry, targets: [target] },
+          primitive: { topology: 'triangle-list' } });
+      };
+      UG.brightPipeline = postPipeline('brightFs', 'rgba16float', false);
+      UG.downPipeline = postPipeline('downFs', 'rgba16float', false);
+      UG.upPipeline = postPipeline('upFs', 'rgba16float', true);
+      UG.compositePipeline = postPipeline('compositeFs', UG.format, false);
+      UG.clampSampler = device.createSampler({ magFilter: 'linear', minFilter: 'linear' });
+      UG.lut = device.createTexture({ size: [16, 16, 16], dimension: '3d', format: 'rgba8unorm', usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST });
+      UG.postBuffer = device.createBuffer({ size: 16 * 256, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
       UG.uiBuffer = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
       UG.uiGroup = device.createBindGroup({ layout: UG.uiLayout, entries: [{ binding: 0, resource: { buffer: UG.uiBuffer } }] });
       UG.frameLayout = frameLayout;
@@ -234,6 +352,21 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
       UG.whiteGroup = UG.textureGroup(white);
       return 1;
     });
+  },
+
+  // A custom surface shader: WGSL converted at build time from Scene.hlsl + the material's surface file.
+  umbra_gpu_surface__deps: ['$UG'],
+  umbra_gpu_surface: function (code) {
+    var module = UG.device.createShaderModule({ code: UTF8ToString(code) });
+    return UG.put(UG.surfaces, UG.device.createRenderPipeline(UG.sceneDesc(module, 'main')));
+  },
+
+  // The post color table from its 256x16 strip (x = b * 16 + r, y = g) into the 16^3 texture.
+  umbra_gpu_lut__deps: ['$UG'],
+  umbra_gpu_lut: function (strip) {
+    var src = HEAPU8.subarray(strip, strip + 256 * 16 * 4), out = new Uint8Array(16 * 16 * 16 * 4);
+    for (var b = 0; b < 16; ++b) for (var g = 0; g < 16; ++g) out.set(src.subarray((g * 256 + b * 16) * 4, (g * 256 + b * 16 + 16) * 4), ((b * 16 + g) * 16) * 4);
+    UG.device.queue.writeTexture({ texture: UG.lut }, out, { bytesPerRow: 64, rowsPerImage: 16 }, [16, 16, 16]);
   },
 
   umbra_gpu_mesh__deps: ['$UG'],
@@ -270,7 +403,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
   },
 
   umbra_gpu_frame__deps: ['$UG'],
-  umbra_gpu_frame: function (frame, draws, drawCount, lines, lineCount, hud) {
+  umbra_gpu_frame: function (frame, post, draws, drawCount, lines, lineCount, hud) {
     Module.frameCount = (Module.frameCount || 0) + 1; // for the page and tests
     if (Module.onHud) Module.onHud(UTF8ToString(hud));
     var device = UG.device, canvas = Module.canvas;
@@ -281,6 +414,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
     if (!UG.depth || UG.depth.width !== w || UG.depth.height !== h) {
       if (UG.depth) UG.depth.destroy();
       UG.depth = device.createTexture({ size: [w, h], format: 'depth24plus', usage: GPUTextureUsage.RENDER_ATTACHMENT });
+      UG.makePostTargets(w, h);
     }
     // 2. Per-frame and per-draw uniforms: one 256-byte slot per draw (dynamic offset).
     device.queue.writeBuffer(UG.frameBuffer, 0, HEAPF32.buffer, frame, 208 * 4);
@@ -314,18 +448,20 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
       }
     }
     shadowPass.end();
-    // 4. Main pass: sky, objects, then debug lines on top.
+    // 4. Scene pass into the HDR picture: sky, then objects.
     var pass = encoder.beginRenderPass({
-      colorAttachments: [{ view: UG.context.getCurrentTexture().createView({ format: UG.format }), clearValue: { r: 0, g: 0, b: 0, a: 1 }, loadOp: 'clear', storeOp: 'store' }],
+      colorAttachments: [{ view: UG.hdrView, clearValue: { r: 0, g: 0, b: 0, a: 1 }, loadOp: 'clear', storeOp: 'store' }],
       depthStencilAttachment: { view: UG.depth.createView(), depthClearValue: 1, depthLoadOp: 'clear', depthStoreOp: 'store' } });
     pass.setPipeline(UG.skyPipeline);
     pass.setBindGroup(0, UG.frameGroup, [0]);
     pass.draw(3);
     if (drawCount > 0) {
-      pass.setPipeline(UG.pipeline);
+      var bound = null;
       for (var d = 0; d < drawCount; ++d) {
         var mesh = UG.meshes[src[d * 28 + 24]];
         if (!mesh) continue;
+        var pipeline = UG.surfaces[src[d * 28 + 26]] || UG.pipeline; // custom surface shader, else the plain one
+        if (pipeline !== bound) { pass.setPipeline(pipeline); bound = pipeline; }
         var texture = src[d * 28 + 25];
         pass.setBindGroup(0, UG.frameGroup, [d * 256]);
         pass.setBindGroup(1, (texture > 0 && UG.groups[texture]) || UG.whiteGroup);
@@ -334,6 +470,14 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
         pass.drawIndexed(mesh.count);
       }
     }
+    pass.end();
+    // 5. Bloom down then up, then the composite onto the canvas (Post.md); debug lines on top.
+    UG.postPasses(encoder, post);
+    pass = encoder.beginRenderPass({ colorAttachments: [{ view: UG.context.getCurrentTexture().createView({ format: UG.format }), loadOp: 'clear',
+      clearValue: { r: 0, g: 0, b: 0, a: 1 }, storeOp: 'store' }] });
+    pass.setPipeline(UG.compositePipeline);
+    pass.setBindGroup(0, UG.compositeGroup);
+    pass.draw(3);
     var vb = null;
     if (lineCount > 0) {
       var raw = HEAPF32.subarray(lines >> 2, (lines >> 2) + lineCount * 10), verts = new Float32Array(lineCount * 14);

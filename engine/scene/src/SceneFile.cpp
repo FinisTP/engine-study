@@ -1,4 +1,5 @@
 #include <SceneFile.hpp>
+#include <TextureTools.hpp>
 
 #include <ComponentSchema.hpp>
 
@@ -49,6 +50,8 @@ namespace umbra::scene
             std::optional<world::Spawner> spawner;
             std::optional<world::Light> light;
             std::optional<core::EnvironmentSettings> environment;
+            std::optional<core::PostSettings> post;
+            std::shared_ptr<const core::TextureData> postLut;
             std::vector<world::CustomComponent> customs;
         };
 
@@ -422,6 +425,22 @@ namespace umbra::scene
                     const auto rgb = [](const json &c) { return glm::vec3{c[0].get<float>(), c[1].get<float>(), c[2].get<float>()}; };
                     if (type == "light")
                         desc.light = world::Light{rgb(f["color"]), f["intensity"].get<float>(), f["range"].get<float>(), f["flicker"].get<float>()};
+                    else if (type == "post")
+                    {
+                        desc.post = core::PostSettings{f["exposure"].get<float>(), f["bloom"].get<float>(), f["bloomThreshold"].get<float>(),
+                                                       f["contrast"].get<float>(), f["saturation"].get<float>(), f["temperature"].get<float>(),
+                                                       f["vignette"].get<float>(), f["lut"].get<std::string>()};
+                        // The LUT image is read now, so a bad one is reported with the scene (Post.md).
+                        if (!desc.post->lut.empty() && !options.assetRoot.empty())
+                        {
+                            auto lut = std::make_shared<core::TextureData>();
+                            std::string error;
+                            if (!assets::LoadImageFile(options.assetRoot / desc.post->lut, *lut, error) || !(error = core::CheckLutImage(*lut)).empty())
+                                report.Error("entity.post.lut", at + ".lut", "'" + desc.post->lut + "': " + error);
+                            else
+                                desc.postLut = std::move(lut);
+                        }
+                    }
                     else
                         desc.environment = core::EnvironmentSettings{f["hour"].get<float>(), f["dayLength"].get<float>(), f["sunHeading"].get<float>(),
                                                                      f["indoor"].get<bool>(), f["ambient"].get<float>(), f["fog"].get<float>(),
@@ -580,11 +599,15 @@ namespace umbra::scene
                 scene.entities.push_back(std::move(desc));
             }
             CheckHierarchy(scene.entities, report); // run even after other errors: report everything at once
-            std::size_t environments = 0;
+            std::size_t environments = 0, posts = 0;
             for (std::size_t i = 0; i < scene.entities.size(); ++i)
+            {
                 if (scene.entities[i].environment && ++environments == 2)
                     report.Warning("scene.environment.twice", "entities[" + std::to_string(i) + "].components.environment",
                                    "a scene has one environment: only the first is used");
+                if (scene.entities[i].post && ++posts == 2)
+                    report.Warning("scene.post.twice", "entities[" + std::to_string(i) + "].components.post", "a scene has one post: only the first is used");
+            }
             for (std::size_t i = 0; i < scene.entities.size(); ++i)
             {
                 const EntityDesc &desc = scene.entities[i];
@@ -692,6 +715,13 @@ namespace umbra::scene
                                                     {"indoor", e.indoor}, {"ambient", Tidy(e.ambient)}, {"fog", Tidy(e.fog)}, {"tint", rgb(e.tint)},
                                                     {"shadows", e.shadows}};
             }
+            if (world.PostOwner() == entity)
+            {
+                const core::PostSettings &p = world.GetPost();
+                out["components"]["post"] = {{"exposure", Tidy(p.exposure)}, {"bloom", Tidy(p.bloom)}, {"bloomThreshold", Tidy(p.bloomThreshold)},
+                                             {"contrast", Tidy(p.contrast)}, {"saturation", Tidy(p.saturation)}, {"temperature", Tidy(p.temperature)},
+                                             {"vignette", Tidy(p.vignette)}, {"lut", p.lut}};
+            }
             for (const world::CustomComponent &custom : *world.GetCustoms(entity))
                 out["components"][custom.type] = json::parse(custom.data);
             return out;
@@ -762,6 +792,8 @@ namespace umbra::scene
                 world.SetLight(entity, *desc.light);
             if (desc.environment && !world.EnvironmentOwner())
                 world.SetEnvironment(*desc.environment, entity);
+            if (desc.post && !world.PostOwner())
+                world.SetPost(*desc.post, desc.postLut, entity);
             for (const world::CustomComponent &custom : desc.customs)
                 world.SetCustom(entity, custom);
             created.push_back(entity);

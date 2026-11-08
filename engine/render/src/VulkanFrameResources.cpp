@@ -15,6 +15,7 @@ namespace
     void DrawItems(VkCommandBuffer commandBuffer, const umbra::render::VulkanVertexPipeline &pipeline, const umbra::render::SceneResources &resources,
                    const umbra::core::DrawList &drawList, umbra::render::TextureHandle fallbackTexture, bool textures)
     {
+        VkPipeline bound = pipeline.GetHandle(); // the caller bound the plain scene pipeline
         for (const umbra::core::DrawItem &item : drawList.items)
         {
             // 1. Resolve handles; stale meshes are skipped, missing textures use the fallback.
@@ -25,7 +26,10 @@ namespace
             if (mesh == nullptr || texture == nullptr)
                 continue;
 
-            // 2. Bind this item's texture (set 1) and buffers, push its matrix and tint, draw.
+            // 2. Its surface shader (custom materials), texture (set 1) and buffers; push its matrix and tint, draw.
+            if (textures && item.surface < drawList.surfaces.size())
+                if (const VkPipeline wanted = pipeline.GetSurfacePipeline(drawList.surfaces[item.surface]); wanted != bound)
+                    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, bound = wanted);
             if (textures)
                 vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(), 1, 1, &texture->descriptorSet, 0, nullptr);
             const umbra::render::DrawConstants constants{item.model, item.color * mesh->baseColor, {item.metersPerRepeat, item.emissive, 0.0F, 0.0F}};
@@ -64,6 +68,7 @@ namespace
         umbra::render::TextureHandle fallbackTexture,
         VkDescriptorSet descriptorSet,
         umbra::render::DiagnosticsOverlay &overlay,
+        const umbra::render::VulkanPost &post,
         std::size_t frameIndex,
         bool sunShadows,
         VkBuffer captureBuffer)
@@ -105,29 +110,34 @@ namespace
         }
         vkCmdEndRenderPass(commandBuffer);
 
-        // 2. The picture: sky first (behind everything), then the scene, then the overlay.
+        // 2. The HDR picture: sky first (behind everything), then the scene (Lighting.md).
         std::array<VkClearValue, 2> clearValues{};
         clearValues[0].color = {{0.015F, 0.02F, 0.04F, 1.0F}};
         clearValues[1].depthStencil = {1.0F, 0};
-
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = pipeline.GetRenderPass();
-        renderPassInfo.framebuffer = pipeline.GetFramebuffers()[imageIndex];
+        VkRenderPassBeginInfo renderPassInfo{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
+        renderPassInfo.renderPass = post.GetSceneRenderPass();
+        renderPassInfo.framebuffer = post.GetSceneFramebuffer(imageIndex);
         renderPassInfo.renderArea.extent = swapchain.GetExtent();
         renderPassInfo.clearValueCount = static_cast<std::uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
-
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(), 0, 1, &descriptorSet, 0, nullptr);
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetSkyPipeline());
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetHandle());
         DrawItems(commandBuffer, pipeline, resources, drawList, fallbackTexture, true);
+        vkCmdEndRenderPass(commandBuffer);
+
+        // 3. Bloom, then the screen: the finished picture (Post.md), then the overlay on top.
+        post.RecordBloom(commandBuffer, imageIndex, drawList.post);
+        renderPassInfo.renderPass = pipeline.GetRenderPass();
+        renderPassInfo.framebuffer = pipeline.GetFramebuffers()[imageIndex];
+        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        post.DrawComposite(commandBuffer, imageIndex, drawList.post);
         overlay.Render(commandBuffer, frameIndex);
         vkCmdEndRenderPass(commandBuffer);
 
-        // 3. A capture: copy the finished picture into a buffer the CPU can read.
+        // 4. A capture: copy the finished picture into a buffer the CPU can read.
         if (captureBuffer != VK_NULL_HANDLE)
         {
             const VkImage image = swapchain.GetImages()[imageIndex];
@@ -324,6 +334,7 @@ namespace umbra::render
         TextureHandle fallbackTexture,
         const SceneUniform &uniform,
         DiagnosticsOverlay &overlay,
+        const VulkanPost &post,
         const CaptureCallback *capture)
     {
         if (device_ == VK_NULL_HANDLE || graphicsQueue == VK_NULL_HANDLE || presentQueue == VK_NULL_HANDLE)
@@ -411,7 +422,7 @@ namespace umbra::render
             capture = nullptr;
         }
         if (!RecordSceneCommands(frame.commandBuffer, imageIndex, swapchain, pipeline,
-                                 resources, drawList, fallbackTexture, frame.descriptorSet, overlay, currentFrame_,
+                                 resources, drawList, fallbackTexture, frame.descriptorSet, overlay, post, currentFrame_,
                                  uniform.lighting.sunDirection.w > 0.0F, capture ? captureBuffer.GetHandle() : VK_NULL_HANDLE))
         {
             return FrameResult::FatalError;

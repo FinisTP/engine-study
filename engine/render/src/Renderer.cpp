@@ -59,6 +59,7 @@ namespace umbra::render
         VulkanAllocator allocator;
         SceneResources sceneResources;
         VulkanSwapchain swapchain;
+        VulkanPost post;
         VulkanVertexPipeline pipeline;
         VulkanFrameResources frameResources;
         DiagnosticsOverlay overlay;
@@ -105,12 +106,18 @@ namespace umbra::render
             if (const std::filesystem::path packaged = platform::Platform::ProgramFolder() / "shaders"; std::filesystem::exists(packaged / "Scene.vert.spv"))
                 shaderDirectory = packaged;
 
-            if (!pipeline.Initialize(physicalDevice.GetHandle(),
-                                     device.GetHandle(),
-                                     allocator,
-                                     swapchain,
-                                     shaderDirectory,
-                                     sceneResources.GetTextureSetLayout()))
+            // HDR picture and bloom first (the scene pipelines draw into its pass), then the scene
+            // pipelines, then the composite inside the swapchain pass. Phones get the reduced post.
+#if defined(__ANDROID__)
+            constexpr core::PostQuality postQuality = core::PostQuality::Reduced;
+#else
+            constexpr core::PostQuality postQuality = core::PostQuality::Full;
+#endif
+            const VkFormat depthFormat = VulkanVertexPipeline::FindDepthFormat(physicalDevice.GetHandle());
+            if (!post.Initialize(device.GetHandle(), allocator, swapchain, depthFormat, shaderDirectory, postQuality) ||
+                !pipeline.Initialize(physicalDevice.GetHandle(), device.GetHandle(), allocator, swapchain, shaderDirectory,
+                                     sceneResources.GetTextureSetLayout(), post.GetSceneRenderPass()) ||
+                !post.CreateComposite(pipeline.GetRenderPass()))
             {
                 return PresentationInitializationResult::FatalError;
             }
@@ -168,6 +175,7 @@ namespace umbra::render
             overlay.Shutdown(true); // keep the ImGui context (and the editor's input backend)
             frameResources.Shutdown();
             pipeline.Shutdown();
+            post.Shutdown();
             swapchain.Shutdown();
             return InitializePresentationResources();
         }
@@ -312,6 +320,7 @@ namespace umbra::render
             ui(); // the editor's windows, inside the same ImGui frame
         implementation_->overlay.EndFrame();
 
+        implementation_->post.SetGrade(drawList.post, drawList.postLut); // only does work when the grade changed
         const FrameResult result = implementation_->frameResources.DrawFrame(
             implementation_->device.GetGraphicsQueue(),
             implementation_->device.GetPresentQueue(),
@@ -322,6 +331,7 @@ namespace umbra::render
             resources.GetFallbackTexture(),
             uniform,
             implementation_->overlay,
+            implementation_->post,
             implementation_->capture ? &*implementation_->capture : nullptr);
         if (result == FrameResult::Presented)
             implementation_->capture.reset();
@@ -396,6 +406,7 @@ namespace umbra::render
         i->overlay.Shutdown(true);
         i->frameResources.Shutdown();
         i->pipeline.Shutdown();
+        i->post.Shutdown();
         i->swapchain.Shutdown();
         i->surface.Shutdown();
         i->surfaceReleased = true;

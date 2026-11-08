@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <fstream>
 #include <limits>
 #include <string>
 #include <type_traits>
@@ -79,6 +80,31 @@ namespace
 
 namespace umbra::render
 {
+    bool LoadShaderModule(VkDevice device, const std::filesystem::path &path, VkShaderModule &shader)
+    {
+        // HLSL -> shader compiler -> SPIR-V file -> VkShaderModule
+        std::ifstream file(path, std::ios::ate | std::ios::binary);
+        if (!file)
+        {
+            umbra::diagnostics::Error("Failed opening shader: " + path.string());
+            return false;
+        }
+        const auto size = file.tellg();
+        if (size <= 0 || size % 4 != 0)
+        {
+            umbra::diagnostics::Error("Shader size is invalid: " + path.string());
+            return false;
+        }
+        std::vector<std::uint32_t> code(static_cast<std::size_t>(size) / 4);
+        file.seekg(0);
+        file.read(reinterpret_cast<char *>(code.data()), size);
+        VkShaderModuleCreateInfo info{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
+        info.codeSize = code.size() * 4;
+        info.pCode = code.data();
+        return vkCreateShaderModule(device, &info, nullptr, &shader) == VK_SUCCESS;
+    }
+
+
     GpuBuffer::~GpuBuffer() { Reset(); }
     void GpuBuffer::Flush() const noexcept
     {
@@ -406,6 +432,104 @@ namespace umbra::render
         if (result != VK_SUCCESS)
         {
             LogVkFailure("Failed to create texture view.", result);
+            image.Reset();
+            return false;
+        }
+        return true;
+    }
+
+    bool VulkanAllocator::CreateColorTarget(VkExtent2D extent, VkFormat format, GpuImage &image)
+    {
+        VkImageCreateInfo imageInfo{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
+        imageInfo.imageType = VK_IMAGE_TYPE_2D;
+        imageInfo.extent = {std::max(extent.width, 1u), std::max(extent.height, 1u), 1};
+        imageInfo.mipLevels = 1;
+        imageInfo.arrayLayers = 1;
+        imageInfo.format = format;
+        imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+        imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        VmaAllocationCreateInfo allocationInfo{};
+        allocationInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+        VkResult result = vmaCreateImage(allocator_, &imageInfo, &allocationInfo, &image.image_, &image.allocation_, nullptr);
+        if (result != VK_SUCCESS)
+        {
+            LogVkFailure("Failed to allocate a color target.", result);
+            return false;
+        }
+        image.allocator_ = allocator_;
+        image.device_ = device_;
+        image.format_ = format;
+        VkImageViewCreateInfo viewInfo{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
+        viewInfo.image = image.GetHandle();
+        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = format;
+        viewInfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        result = vkCreateImageView(device_, &viewInfo, nullptr, &image.view_);
+        if (result != VK_SUCCESS)
+        {
+            LogVkFailure("Failed to create a color target view.", result);
+            image.Reset();
+            return false;
+        }
+        return true;
+    }
+
+    bool VulkanAllocator::CreateLut3D(const core::TextureData &strip, GpuImage &image)
+    {
+        // 1. Strip (x = b * 16 + r, y = g) -> 3D order (r fastest, then g, then b).
+        constexpr std::uint32_t n = core::lutSize;
+        if (strip.width != n * n || strip.height != n)
+            return false;
+        GpuBuffer staging;
+        if (!CreateMappedBuffer(n * n * n * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, staging))
+            return false;
+        auto *out = static_cast<std::uint8_t *>(staging.GetMappedData());
+        for (std::uint32_t b = 0; b < n; ++b)
+            for (std::uint32_t g = 0; g < n; ++g)
+                std::memcpy(out + ((b * n + g) * n) * 4, strip.rgba.data() + (g * n * n + b * n) * 4, n * 4);
+        staging.Flush();
+        // 2. The image (UNORM: the shader decodes sRGB itself) and its upload.
+        VkImageCreateInfo imageInfo{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
+        imageInfo.imageType = VK_IMAGE_TYPE_3D;
+        imageInfo.extent = {n, n, n};
+        imageInfo.mipLevels = 1;
+        imageInfo.arrayLayers = 1;
+        imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+        imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+        imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        VmaAllocationCreateInfo allocationInfo{};
+        allocationInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+        VkResult result = vmaCreateImage(allocator_, &imageInfo, &allocationInfo, &image.image_, &image.allocation_, nullptr);
+        if (result != VK_SUCCESS)
+        {
+            LogVkFailure("Failed to allocate the color table.", result);
+            return false;
+        }
+        image.allocator_ = allocator_;
+        image.device_ = device_;
+        image.format_ = imageInfo.format;
+        TextureUploadContext context{};
+        VkBufferImageCopy copy{};
+        copy.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        copy.imageExtent = {n, n, n};
+        context.copies.push_back(copy);
+        context.staging = staging.GetHandle();
+        context.image = image.GetHandle();
+        if (!SubmitImmediate(RecordTextureUpload, &context))
+        {
+            image.Reset();
+            return false;
+        }
+        VkImageViewCreateInfo viewInfo{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
+        viewInfo.image = image.GetHandle();
+        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_3D;
+        viewInfo.format = imageInfo.format;
+        viewInfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        result = vkCreateImageView(device_, &viewInfo, nullptr, &image.view_);
+        if (result != VK_SUCCESS)
+        {
             image.Reset();
             return false;
         }

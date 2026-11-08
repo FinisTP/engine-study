@@ -74,6 +74,21 @@ namespace umbra::scene
                                   Field("shadows", "bool", "Sun shadows", true)};
             environment.file = "engine: environment";
             out["environment"] = environment;
+            ComponentSchema post;
+            post.type = "post";
+            post.label = "Post-processing";
+            post.description = "How the scene's picture is finished: exposure, bloom, color grade, vignette. One per scene.";
+            post.fields = {Field("exposure", "number", "Exposure (stops)", 0.0, -4.0, 4.0),
+                           Field("bloom", "number", "Bloom", 0.5, 0.0, 2.0),
+                           Field("bloomThreshold", "number", "Bloom threshold", 1.0, 0.0, 10.0),
+                           Field("contrast", "number", "Contrast", 1.0, 0.5, 2.0),
+                           Field("saturation", "number", "Saturation", 1.0, 0.0, 2.0),
+                           Field("temperature", "number", "Temperature (cold..warm)", 0.0, -1.0, 1.0),
+                           Field("vignette", "number", "Vignette", 0.25, 0.0, 1.0),
+                           Field("lut", "asset", "Color table (256x16 image)", "")};
+            post.fields.back().folder = "textures/";
+            post.file = "engine: post";
+            out["post"] = post;
             return out;
         }();
         return schemas;

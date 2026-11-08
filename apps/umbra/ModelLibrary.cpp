@@ -84,6 +84,7 @@ bool ModelLibrary::BuildMaterial(const std::string &materialPath, LoadedMaterial
     }
     loaded.binding.tint = material.tint;
     loaded.binding.metersPerRepeat = material.worldProjection ? material.metersPerRepeat : 0.0F;
+    loaded.binding.surface = umbra::assets::SurfaceName(material.shader);
     loaded.files = {assetRoot_ / materialPath, assetRoot_ / material.baseColor};
     umbra::diagnostics::Info("Loaded material " + materialPath + " (" + std::to_string(image.width) + "x" + std::to_string(image.height) + ").");
     return true;

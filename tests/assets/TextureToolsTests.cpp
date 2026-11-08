@@ -141,6 +141,32 @@ TEST_CASE("Material files parse, write back and check their image (T63)", "[text
     }
 }
 
+TEST_CASE("A material may name a custom surface shader; bad names and missing files are refused (T86)", "[textures][material]")
+{
+    const std::filesystem::path root = test::TempDir("material-shader");
+    std::vector<std::uint8_t> png;
+    REQUIRE(assets::EncodePng(Waves(128), png));
+    WriteBytes(root / "textures/waves.png", png);
+    WriteBytes(root / "shaders/water.surface.hlsl", std::vector<std::uint8_t>{'/', '/'});
+
+    std::vector<core::Diagnostic> diagnostics;
+    assets::Material m;
+    REQUIRE(assets::ParseMaterial(R"({"format":"umbra.material","version":1,"baseColor":"textures/waves.png","shader":"shaders/water.surface.hlsl"})", "m", m, diagnostics));
+    CHECK(m.shader == "shaders/water.surface.hlsl");
+    CHECK(assets::SurfaceName(m.shader) == "water");
+    CHECK(assets::MaterialText(m).find("\"shader\": \"shaders/water.surface.hlsl\"") != std::string::npos);
+    CHECK(assets::CheckMaterialImage(root, m, "m", diagnostics));
+
+    m.shader = "shaders/lava.surface.hlsl"; // not there
+    CHECK_FALSE(assets::CheckMaterialImage(root, m, "m", diagnostics));
+    CHECK(HasCode(diagnostics, "material.shader"));
+    diagnostics.clear();
+    CHECK_FALSE(assets::ParseMaterial(R"({"format":"umbra.material","version":1,"baseColor":"textures/waves.png","shader":"shaders/water.hlsl"})", "m", m, diagnostics));
+    CHECK(HasCode(diagnostics, "material.shader"));
+    CHECK(assets::SurfaceName("shaders/bad name.surface.hlsl").empty());
+    CHECK(assets::SurfaceName("water.hlsl").empty());
+}
+
 TEST_CASE("Model licenses are looked up, and risky ones warned about (T65)", "[textures][material]")
 {
     CHECK(assets::ModelLicense("sd_xl_base_1.0.safetensors").commercial);

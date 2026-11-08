@@ -173,3 +173,39 @@ TEST_CASE("The engine's light and environment are listed with the project's comp
     REQUIRE(problems.size() == 1);
     CHECK(problems[0].code == "component.schema");
 }
+
+TEST_CASE("The post component is read with its LUT image, checked and saved again (T85)")
+{
+    world::World w;
+    const Loaded ok = Load(R"({"id":"look","components":{"post":{"exposure":0.5,"temperature":-0.4,"lut":"textures/lut_moonlight.png"}}})", w);
+    REQUIRE(ok.ok);
+    CHECK(w.PostOwner() == w.Find("look"));
+    CHECK(w.GetPost().exposure == 0.5F);
+    CHECK(w.GetPost().bloom == 0.5F); // default
+    core::DrawList drawList;
+    w.UpdateTransforms();
+    w.ExtractDrawList(drawList);
+    CHECK(drawList.post.temperature == -0.4F);
+    REQUIRE(drawList.postLut != nullptr);
+    CHECK(drawList.postLut->width == 256);
+    CHECK(w.GetCustoms(w.Find("look"))->empty());
+
+    const auto dir = test::TempDir("post-save");
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(scene::SaveScene(w, dir / "s.scene.json", diagnostics));
+    const nlohmann::json saved = nlohmann::json::parse(test::ReadText(dir / "s.scene.json"));
+    CHECK(saved["entities"][0]["components"]["post"]["lut"] == "textures/lut_moonlight.png");
+    CHECK(saved["entities"][0]["components"]["post"]["exposure"] == 0.5);
+
+    // A LUT of the wrong size, a missing one, a bad value, a second post.
+    world::World a, b, c, d;
+    const Loaded size = Load(R"({"id":"x","components":{"post":{"lut":"textures/sample_bricks.png"}}})", a);
+    CHECK_FALSE(size.ok);
+    CHECK(size.Has("entity.post.lut"));
+    CHECK_FALSE(Load(R"({"id":"x","components":{"post":{"lut":"textures/none.png"}}})", b).ok);
+    CHECK_FALSE(Load(R"({"id":"x","components":{"post":{"bloom":9}}})", c).ok);
+    const Loaded twice = Load(R"({"id":"a","components":{"post":{"exposure":1}}},{"id":"b","components":{"post":{"exposure":2}}})", d);
+    CHECK(twice.ok);
+    CHECK(twice.Has("scene.post.twice"));
+    CHECK(d.GetPost().exposure == 1.0F);
+}

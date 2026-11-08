@@ -9,35 +9,12 @@
 #include <string>
 #include <vector>
 
-namespace
+namespace umbra::render
 {
-    // Loads a SPIR-V shader from a file and creates a VkShaderModule.
-    bool CreateShader(VkDevice device, const std::filesystem::path &path, VkShaderModule &shader)
-    {
-        // Scene.hlsl → shader compiler → SPIR-V file → VkShaderModule
-        std::ifstream file(path, std::ios::ate | std::ios::binary);
-        if (!file)
-        {
-            umbra::diagnostics::Error("Failed opening shader: " + path.string());
-            return false;
-        }
-        const auto size = file.tellg();
-        if (size <= 0 || size % 4 != 0)
-        {
-            umbra::diagnostics::Error("Shader size is invalid: " + path.string());
-            return false;
-        }
-        std::vector<std::uint32_t> code(static_cast<std::size_t>(size) / 4);
-        file.seekg(0);
-        file.read(reinterpret_cast<char *>(code.data()), size);
-        VkShaderModuleCreateInfo info{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
-        info.codeSize = code.size() * 4;
-        info.pCode = code.data();
-        return vkCreateShaderModule(device, &info, nullptr, &shader) == VK_SUCCESS;
-    }
+    VulkanVertexPipeline::~VulkanVertexPipeline() { Shutdown(); }
 
     // Finds a supported depth format for the given physical device.
-    VkFormat FindDepthFormat(VkPhysicalDevice physicalDevice)
+    VkFormat VulkanVertexPipeline::FindDepthFormat(VkPhysicalDevice physicalDevice)
     {
         constexpr std::array formats{VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
         for (VkFormat format : formats)
@@ -51,11 +28,6 @@ namespace
         }
         return VK_FORMAT_UNDEFINED;
     }
-}
-
-namespace umbra::render
-{
-    VulkanVertexPipeline::~VulkanVertexPipeline() { Shutdown(); }
 
     bool VulkanVertexPipeline::Initialize(
         VkPhysicalDevice physicalDevice,
@@ -63,7 +35,8 @@ namespace umbra::render
         VulkanAllocator &allocator,
         const VulkanSwapchain &swapchain,
         const std::filesystem::path &shaderDirectory,
-        VkDescriptorSetLayout textureSetLayout)
+        VkDescriptorSetLayout textureSetLayout,
+        VkRenderPass sceneRenderPass)
     {
         if (device_ != VK_NULL_HANDLE || device == VK_NULL_HANDLE || swapchain.GetImageViews().empty())
         {
@@ -171,7 +144,7 @@ namespace umbra::render
                     vkDestroyShaderModule(device_, shader, nullptr), shader = VK_NULL_HANDLE;
         };
         for (std::size_t i = 0; i < shaders.size(); ++i)
-            if (!CreateShader(device_, shaderDirectory / shaderFiles[i], shaders[i]))
+            if (!LoadShaderModule(device_, shaderDirectory / shaderFiles[i], shaders[i]))
             {
                 destroyShaders();
                 Shutdown();
@@ -251,7 +224,7 @@ namespace umbra::render
         pipelineInfo.pDepthStencilState = &depthState;
         pipelineInfo.pColorBlendState = &blend;
         pipelineInfo.layout = pipelineLayout_;
-        pipelineInfo.renderPass = renderPass_;
+        pipelineInfo.renderPass = sceneRenderPass; // the HDR picture (VulkanPost); the sky copies this
         VkResult pipelineResult = vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline_);
 
         // 6.1. The sky: no vertex buffer (the shader makes one triangle), no depth test, drawn first.
@@ -271,7 +244,29 @@ namespace umbra::render
         if (pipelineResult == VK_SUCCESS)
             pipelineResult = vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &skyInfo, nullptr, &skyPipeline_);
 
-        // 6.2. The sun's shadow map: a depth image the scene shader samples afterwards.
+        // 6.2. Custom surface shaders: the same pipeline with the material's fragment shader.
+        std::error_code ec;
+        for (const auto &entry : std::filesystem::directory_iterator(shaderDirectory / "surface", ec))
+        {
+            const std::string file = entry.path().filename().string();
+            if (pipelineResult != VK_SUCCESS || !file.ends_with(".frag.spv"))
+                continue;
+            VkShaderModule fragment = VK_NULL_HANDLE;
+            if (!LoadShaderModule(device_, entry.path(), fragment))
+                continue;
+            auto surfaceStages = stages;
+            surfaceStages[1].module = fragment;
+            VkGraphicsPipelineCreateInfo surfaceInfo = pipelineInfo;
+            surfaceInfo.pStages = surfaceStages.data();
+            VkPipeline surface = VK_NULL_HANDLE;
+            if (vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &surfaceInfo, nullptr, &surface) == VK_SUCCESS)
+                surfaces_[file.substr(0, file.size() - std::string(".frag.spv").size())] = surface;
+            else
+                diagnostics::Error("Failed creating the pipeline for surface shader " + file);
+            vkDestroyShaderModule(device_, fragment, nullptr);
+        }
+
+        // 6.3. The sun's shadow map: a depth image the scene shader samples afterwards.
         if (pipelineResult == VK_SUCCESS && !CreateShadowMap(physicalDevice, allocator, shaders[4], pipelineInfo, vertexInput, assembly, multisample, depthState))
             pipelineResult = VK_ERROR_INITIALIZATION_FAILED;
         destroyShaders();
@@ -311,6 +306,12 @@ namespace umbra::render
         }
         diagnostics::Info("Indexed textured pipeline and per-image depth buffers initialized.");
         return true;
+    }
+
+    VkPipeline VulkanVertexPipeline::GetSurfacePipeline(const std::string &name) const
+    {
+        const auto it = surfaces_.find(name);
+        return it != surfaces_.end() ? it->second : pipeline_;
     }
 
     bool VulkanVertexPipeline::CreateShadowMap(VkPhysicalDevice physicalDevice, VulkanAllocator &allocator, VkShaderModule shadowShader,
@@ -420,6 +421,9 @@ namespace umbra::render
         }
         framebuffers_.clear();
         depthImages_.clear();
+        for (const auto &[name, surface] : surfaces_)
+            vkDestroyPipeline(device_, surface, nullptr);
+        surfaces_.clear();
         if (shadowFramebuffer_)
             vkDestroyFramebuffer(device_, shadowFramebuffer_, nullptr);
         if (shadowPipeline_)

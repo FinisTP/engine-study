@@ -5,6 +5,7 @@
 
 #include <DrawList.hpp>
 #include <MeshData.hpp>
+#include <Post.hpp>
 #include <RetireQueue.hpp>
 #include <SlotMap.hpp>
 
@@ -23,6 +24,9 @@ namespace umbra::render
 {
     // Vertex layout shared with the importer; see core MeshData.hpp.
     using core::Vertex;
+
+    // Loads a SPIR-V file (*.spv) as a shader module; logs and returns false on failure.
+    [[nodiscard]] bool LoadShaderModule(VkDevice device, const std::filesystem::path &path, VkShaderModule &shader);
 
     // Wraps VkBuffer, think of it as GPU memory array
     class GpuBuffer final
@@ -111,6 +115,10 @@ namespace umbra::render
 
         // Create a GPU-only depth image with the specified extent and format, and create a VkImageView for it.
         [[nodiscard]] bool CreateDepthImage(VkExtent2D extent, VkFormat format, GpuImage &image, VkImageUsageFlags extraUsage = 0);
+        // A picture to draw into and then sample (HDR scene, bloom levels).
+        [[nodiscard]] bool CreateColorTarget(VkExtent2D extent, VkFormat format, GpuImage &image);
+        // The post color table as a 16x16x16 3D texture, from its 256x16 strip (Post.md).
+        [[nodiscard]] bool CreateLut3D(const core::TextureData &strip, GpuImage &image);
 
         [[nodiscard]] VmaAllocator GetHandle() const noexcept { return allocator_; }
 

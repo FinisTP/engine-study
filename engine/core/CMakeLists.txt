@@ -11,6 +11,7 @@ target_sources(
         src/FixedStepAccumulator.cpp
         src/MeshData.cpp
         src/Lighting.cpp
+        src/Post.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
@@ -22,6 +23,8 @@ target_sources(
             include/DrawList.hpp
             include/Lighting.hpp
             include/Lighting.md
+            include/Post.hpp
+            include/Post.md
             include/Handles.hpp
             include/Diagnostic.hpp
             include/MeshData.hpp

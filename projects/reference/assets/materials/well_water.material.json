@@ -1,0 +1,8 @@
+{
+  "format": "umbra.material",
+  "version": 1,
+  "baseColor": "textures/water.png",
+  "projection": "world",
+  "metersPerRepeat": 1.0,
+  "shader": "shaders/water.surface.hlsl"
+}

@@ -53,9 +53,10 @@ Browser (WebGPU, `index.html?args=--hour%2011`, then the default dusk start):
 
 The same picture as Vulkan, including shadow placement, which checks the flipped shadow lookup.
 
-Known cloud-only problem: SwiftShader crashes while compiling the ImGui overlay's vertex shader
-after the swapchain is recreated (inside `sw::SpirvEmitter::emit`, in SwiftShader's own code). Capture mode therefore hides the
-overlay. Real GPUs are not affected (the overlay has run on the user's PC since P2).
+Capture mode hides the overlay so pictures compare. A SwiftShader crash on the overlay seen during S6
+was later traced (S7) to a stale cloud-built `Overlay.vert.spv` from the old glslang stand-in compiler,
+whose entry point was not `main`. Once it was rebuilt with DXC, the game with its overlay ran cleanly.
+It was never an engine problem.
 
 ## 3. Builds
 

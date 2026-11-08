@@ -57,12 +57,14 @@ namespace umbra::scene
             renderable->textureHandle = texture;
             renderable->tint = glm::vec4{1.0F};
             renderable->metersPerRepeat = 0.0F;
+            renderable->surface.clear();
             if (!renderable->material.empty() && materials)
                 if (const std::optional<MaterialBinding> binding = materials(renderable->material))
                 {
                     renderable->textureHandle = binding->texture;
                     renderable->tint = binding->tint;
                     renderable->metersPerRepeat = binding->metersPerRepeat;
+                    renderable->surface = binding->surface;
                 }
             if (!mesh)
                 ++unresolved;

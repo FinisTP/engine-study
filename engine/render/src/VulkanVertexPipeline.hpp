@@ -4,6 +4,8 @@
 #include "VulkanSwapchain.hpp"
 
 #include <filesystem>
+#include <map>
+#include <string>
 
 #include <glm/mat4x4.hpp>
 #include <cstdint>
@@ -32,11 +34,18 @@ namespace umbra::render
         [[nodiscard]] bool Initialize(VkPhysicalDevice physicalDevice, VkDevice device,
             VulkanAllocator &allocator, const VulkanSwapchain &swapchain,
             const std::filesystem::path &shaderDirectory,
-            VkDescriptorSetLayout textureSetLayout);
+            VkDescriptorSetLayout textureSetLayout,
+            VkRenderPass sceneRenderPass);
+        // The best depth format this GPU has (VK_FORMAT_UNDEFINED if none).
+        [[nodiscard]] static VkFormat FindDepthFormat(VkPhysicalDevice physicalDevice);
         void Shutdown() noexcept;
 
+        // The swapchain pass: the post composite and the overlay. The scene itself draws into the
+        // HDR pass given to Initialize (VulkanPost).
         [[nodiscard]] VkRenderPass GetRenderPass() const noexcept { return renderPass_; }
         [[nodiscard]] VkPipeline GetHandle() const noexcept { return pipeline_; }
+        // A material's custom surface shader (CustomShaders.md); the plain pipeline if it wasn't built.
+        [[nodiscard]] VkPipeline GetSurfacePipeline(const std::string &name) const;
         [[nodiscard]] VkPipelineLayout GetLayout() const noexcept { return pipelineLayout_; }
         [[nodiscard]] VkDescriptorSetLayout GetDescriptorSetLayout() const noexcept { return descriptorSetLayout_; }
         [[nodiscard]] VkFormat GetDepthFormat() const noexcept { return depthFormat_; }
@@ -65,6 +74,7 @@ namespace umbra::render
         std::vector<GpuImage> depthImages_;
         std::vector<VkFramebuffer> framebuffers_;
         VkPipeline skyPipeline_ = VK_NULL_HANDLE;
+        std::map<std::string, VkPipeline> surfaces_; // "water" -> scene pipeline with shaders/surface/water.frag.spv
         VkRenderPass shadowRenderPass_ = VK_NULL_HANDLE;
         VkPipeline shadowPipeline_ = VK_NULL_HANDLE;
         GpuImage shadowImage_;

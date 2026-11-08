@@ -727,6 +727,23 @@
           "range": 5,
           "flicker": 0
         }
+      },
+      "material": "materials/crystal.material.json"
+    },
+    {
+      "id": "look",
+      "name": "Cold look",
+      "components": {
+        "post": {
+          "exposure": 0.8,
+          "bloom": 1.0,
+          "bloomThreshold": 0.8,
+          "contrast": 1.1,
+          "saturation": 0.95,
+          "temperature": -0.25,
+          "vignette": 0.35,
+          "lut": "textures/lut_moonlight.png"
+        }
       }
     }
   ]
