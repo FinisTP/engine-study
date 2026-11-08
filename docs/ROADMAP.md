@@ -32,7 +32,7 @@ The three formerly open decisions are resolved: the combat modes are independent
 
 **First action for a new agent:** finish B0 — the Windows-side checks are still open (see the B0 record). Re-inspect the checkout; if it has advanced past this dashboard, preserve completed work and select the earliest genuinely unmet task. Do not blindly implement P3.1 again.
 
-**Current next task:** the user's S4 check on Windows (`testing/s4-sound-and-menus.md` §4: generate music and an effect with real models, listen, the turn menu arrows, hotkeys), the S3 check (`testing/s3-game-ui.md` §3: screens on Vulkan and in Chrome/Edge, gamepad, editor Game UI window), and the user's S1/S2 check on Windows (reconfigure after the folder moves; editor windows from plugins; AI model window finds the workflows in projects\reference\tools\comfyui) (editor: Add component, Spin in the dungeon, Code window opens Visual Studio 2022, New component builds), then the user's P10 browser check (`testing/p10-web-export.md` §4: does the scene render in Chrome/Edge), the P9 gate runs on Windows (`testing/p9-release-gate.md` §4: benchmark → O18, package check, clean install, journey on the package), and confirm the `#UMBRA-62`/`#UMBRA-63` fixes on Windows (`testing/p8d-ai-models.md` §3c), the remaining Windows checklists for P6, P7 and P8A (`testing/phase6-reference-game.md` §4, `testing/phase7-creator-workflow.md` §4, `testing/p8a-learned-enemy.md` §5), then P9 (PC release gate). P8B, P8C and P8D were confirmed working on Windows by the user on 2026-11-08. Open in parallel: P8A recipe robustness (1 of 2 seeds). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
+**Current next task:** S5 (agent prompt, planned: ADR 0008) when the user starts it; the user's S4 check on Windows (`testing/s4-sound-and-menus.md` §4: generate music and an effect with real models, listen, the turn menu arrows, hotkeys), the S3 check (`testing/s3-game-ui.md` §3: screens on Vulkan and in Chrome/Edge, gamepad, editor Game UI window), and the user's S1/S2 check on Windows (reconfigure after the folder moves; editor windows from plugins; AI model window finds the workflows in projects\reference\tools\comfyui) (editor: Add component, Spin in the dungeon, Code window opens Visual Studio 2022, New component builds), then the user's P10 browser check (`testing/p10-web-export.md` §4: does the scene render in Chrome/Edge), the P9 gate runs on Windows (`testing/p9-release-gate.md` §4: benchmark → O18, package check, clean install, journey on the package), and confirm the `#UMBRA-62`/`#UMBRA-63` fixes on Windows (`testing/p8d-ai-models.md` §3c), the remaining Windows checklists for P6, P7 and P8A (`testing/phase6-reference-game.md` §4, `testing/phase7-creator-workflow.md` §4, `testing/p8a-learned-enemy.md` §5), then P9 (PC release gate). P8B, P8C and P8D were confirmed working on Windows by the user on 2026-11-08. Open in parallel: P8A recipe robustness (1 of 2 seeds). Still open in parallel: the interactive/GPU checklists (`testing/phase3-assets-world.md` section 4, `testing/phase4-sandbox.md` section 5), the clang-cl/ASan presets, re-running `Umbra.Assets` on Windows (blocked from starting on 2026-11-07). A document creation date does not update source-code completion dates.
 
 | Gate | Dependency | Status (updated 2026-11-07) | Evidence / exit summary |
 |---|---|---|---|
@@ -741,6 +741,20 @@ a prompt, using the turn menu (Attack / Item / Flee, target arrow) and real-time
 | S4.3 Ogg music (stb_vorbis), streaming with crossfades, Music component, browser build | Implemented; listening on Windows open | T80; WebAssembly 15/15 |
 | S4.4 Skill/item `"sound"`, default hit sound | Implemented | `Umbra.Rpg` |
 | S4.5 AI sound: ComfyUI graphs, loop/trim/normalize, Vorbis/WAV, provenance, editor window, `UmbraTool sound` | Implemented; real-model run open | T81; `Umbra.Tool.SoundLocalOnly` |
+
+### S5 — Agent prompt: editor Agent window and MCP server (user request, 2026-11-08; ADR 0008)
+
+Planned. User decisions (2026-11-08): both an in-editor Agent window and an MCP server over one
+tool registry; the in-editor agent uses local models only (Ollama tool calling); it shows a plan
+for approval and lands as one undoable edit; it changes data only, while C++ features come from
+external coding agents through MCP.
+
+| Task | Work | Exit evidence |
+|---|---|---|
+| S5.1 Tool registry | Read and change tools over the existing documents and AI generators, JSON schemas | Headless tests: each tool's normal path, bad arguments named, changes undoable |
+| S5.2 Agent loop | Local Ollama tool calling; plan (dry-run) -> approve -> run; stop on the first failed step | Stand-in Ollama tests: a scripted plan runs, a malformed call is refused, a failing step stops the rest |
+| S5.3 Editor Agent window | Prompt, plan view, approve/cancel, per-step results, one undo | Windows editor checklist with a real model on a small task set |
+| S5.4 `UmbraTool mcp` | MCP stdio server with the same tools plus build/test, local only | An MCP client lists and calls tools; a scene edit made through MCP validates and appears in the editor |
 
 ### P11 — Mobile
 
