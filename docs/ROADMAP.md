@@ -643,7 +643,7 @@ Verify package composition: shipping game has no editor, training environment, a
 <!-- P9-status -->
 | Task | Status | Evidence |
 |---|---|---|
-| P9.1 Performance measurement | Implemented: `Umbra --benchmark`, frame-time percentiles, hardware and peak memory in `benchmark.json`; **not run** (no GPU here) | `ProfilingTests`, `BenchmarkTests`; `apps/umbra/Benchmark.md` |
+| P9.1 Performance measurement | **Measured on the reference PC** (user, 2026-11-08; RTX 3050 Laptop, 1920×1080): 3.47 ms average, p99 ≤ 6.2 ms in every area, 250 MB peak, no growth | `testing/p9-release-gate.md` §3b |
 | P9.2 Long-run state | Implemented and passing: 300 fights, save round trips, damaged-save rescue | T74 |
 | P9.3 Package composition/licenses | Implemented: `UmbraTool package-check` in `package.bat`, run-time asset lookup (no build paths used), notices + `licenses/` | T75; `Package.md` |
 | P9.4 Gate runs | **Open:** benchmark on the reference PC (decides O18), package + clean install, journey on the package, P3/P4/P6/P7/P8A checklists | `testing/p9-release-gate.md` §4 |
@@ -891,7 +891,7 @@ These are bounded decisions, not a request to stop and ask the user all of them 
 | O13 | Browser backend, shader path, capabilities/hosting support. **User decision 2026-11-06:** run W0 after P4. **W0 (2026-11-07):** WebGPU for graphics (separate small backend behind `core::DrawList`), HLSL → SPIR-V → WGSL planned, Emscripten candidate for P10; rules already build to WebAssembly unchanged. See `docs/adr/0001-web-backend.md`. | W0; finalize P10 | Actual supported-browser failure |
 | O14 | First mobile OS/device tier | P11 planning | User target choice |
 | O15 | Community records versus model updates, consent, backend operations | F1 approval only | Explicit decision to fund/build service |
-| O18 | Reference workload and performance budget. **Proposed 2026-11-08 (Claude, awaiting the user's measurement and confirmation):** reference PC = the user's PC (8 GB GPU; exact parts from `benchmark.json`); 1920×1080, default settings; workload = `Umbra --benchmark` (settlement, dungeon, arena) plus a learned-enemy fight; budget average ≤ 16.67 ms (60 FPS) and p99 ≤ 33.3 ms per area. | Before P9 sign-off | Measurements far from the budget either way, or a different target PC |
+| O18 | Reference workload and performance budget. **Proposed 2026-11-08 (Claude; measured the same day, user confirmation of the numbers pending):** reference PC = the user's PC (NVIDIA RTX 3050 Laptop GPU, 16 threads, 16 GB; measured 3.47 ms average / ≤ 6.2 ms p99); 1920×1080, default settings; workload = `Umbra --benchmark` (settlement, dungeon, arena) plus a learned-enemy fight; budget average ≤ 16.67 ms (60 FPS) and p99 ≤ 33.3 ms per area. | Before P9 sign-off | Measurements far from the budget either way, or a different target PC |
 | O17 | AI 3D model generator, scope, budget. **Decided 2026-11-07 (user, ADR 0003):** ComfyUI image-to-3D with TRELLIS.2 (MIT) through the creator's exported workflow; props first (characters stay with Meshy); ~10 000 triangles; text → SDXL concept or own picture. | Before P8D.0 | Quality/VRAM unusable on the user's PC |
 | O16 | AI texture generator, default model, scope and timing. **Decided 2026-11-07 (user, ADR 0002 §7):** ComfyUI first behind an `ImageProvider` interface (Ollama later); tileable world surfaces first; SDXL base 1.0 at 1024 px for the user's 8 GB GPU; independent track before P9. | Before P8C.0 | Generator unusable on the user's PC, or Ollama image generation reaches Windows |
 
@@ -1025,6 +1025,8 @@ This reference list supports the limited factual technology statements, not a re
 Version 1.0, 2026-11-01: incorporates final answers 21–23; makes independent combat-mode use an explicit contract/test; selects turn-based learned policy; removes mandatory-threshold interpretation of aggression; preserves deferred modding and offline scope; expands milestone tasks/evidence; retains T01–T38 and adds T39–T60; establishes concise root instructions plus separate context/roadmap files.
 
 No implementation completion was advanced by preparing this pack. Further updates must record actual evidence, product changes and their source separately.
+
+2026-11-08: P9 benchmark measured on the user's PC (far inside the budget, no memory growth); `#UMBRA-65` start menu with Continue (a dungeon save seemed lost after restarting).
 
 2026-11-08: P9 started (`#UMBRA-64`): benchmark mode, long-run soak test (T74), package check with license notices (T75), run-time asset lookup (no build paths in the game), O18 proposed; evidence `testing/p9-release-gate.md`.
 

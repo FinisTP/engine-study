@@ -14,6 +14,11 @@
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
 
+## Update 2026-11-08 (P9 benchmark, `#UMBRA-65`)
+
+- Benchmark on the user's PC (RTX 3050 Laptop, 1920×1080): 3.47 ms average (288 FPS), p99 ≤ 6.2 ms in all three areas, peak memory 250 MB with no growth (`testing/p9-release-gate.md` §3b).
+- `#UMBRA-65`: a start menu at launch (Continue / Load the other save / New game) when a save exists; before, restarting always began fresh in the settlement, so a dungeon save seemed lost.
+
 ## Update 2026-11-08 (P9 started, `#UMBRA-64`)
 
 - P9 (PC release gate) tools: `Umbra --benchmark` (frame-time percentiles, hardware, peak memory → `benchmark.json`), a 300-fight long-run test with save round trips and damaged-save rescue (T74), `UmbraTool package-check` run by `package.bat` (T75), `THIRD_PARTY_NOTICES.md` and vcpkg license texts in the package, and run-time asset lookup so the game no longer contains the source assets path. 44/44 CTest on GCC/Clang/ASan. The gate runs on Windows are open (`testing/p9-release-gate.md` §4); performance budget O18 proposed.

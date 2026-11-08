@@ -92,7 +92,7 @@ namespace
 	}
 }
 
-int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds)
+int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds, bool offerContinue)
 {
 	// Benchmark (P9): a scripted walk through the reference areas, then a report; no RPG layer.
 	std::optional<Benchmark> benchmark;
@@ -163,7 +163,7 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds)
 					{
 						std::filesystem::path saves = umbra::platform::Platform::PreferencesFolder();
 						saves = saves.empty() ? folders.cache / "saves" : saves / "saves";
-						flow.emplace(content, contentFile, scene, saves, scenePath);
+						flow.emplace(content, contentFile, scene, saves, scenePath, offerContinue);
 						umbra::diagnostics::Info("Saves go to " + saves.string());
 					}
 					for (const umbra::core::Diagnostic &diagnostic : diagnostics)
@@ -491,6 +491,7 @@ int main(int argc, char **argv)
 	// Optional: a scene path relative to the asset folder; --benchmark [seconds per area] (P9).
 	std::string scenePath = "scenes/settlement.scene.json";
 	std::optional<float> benchmarkSeconds;
+	bool sceneGiven = false; // the editor's Play names a scene: start there, no "Continue" menu
 	for (int i = 1; i < argc; ++i)
 	{
 		const std::string arg = argv[i];
@@ -501,13 +502,13 @@ int main(int argc, char **argv)
 				benchmarkSeconds = static_cast<float>(std::atof(argv[++i]));
 		}
 		else
-			scenePath = arg;
+			scenePath = arg, sceneGiven = true;
 	}
 
 	umbra::diagnostics::Initialize();
 	umbra::diagnostics::InstallCrashHandlers();
 
-	const int result = RunApplication(scenePath, benchmarkSeconds);
+	const int result = RunApplication(scenePath, benchmarkSeconds, !sceneGiven);
 
 	umbra::diagnostics::UninstallCrashHandlers();
 	umbra::diagnostics::Shutdown();

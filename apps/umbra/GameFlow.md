@@ -13,6 +13,13 @@ about input, placement and the screen.
 | Fighting (turn) | no (stands on its arena marker) | W/S + Enter pick an action, F flee          | action menu, enemy HP, log     |
 | Fighting (real time) | yes             | 1-4 skills, Q potion, F flee                 | key help, enemy HP, log        |
 | Dead      | no                       | W/S + Enter                                  | Load save / Load autosave / New game |
+| Start menu (launch, a save exists) | no      | W/S + Enter                                  | Continue / Load the other save / New game |
+
+At launch, when the saves folder has a save-stone save or an autosave, a start menu comes first
+(`#UMBRA-65`; before, the game always began fresh in the settlement, so a save made in the dungeon
+seemed lost). **Continue** loads the newer of the two (file time), **Load the other save** the older
+one (only when both exist), **New game** plays on in the start area. Not shown when a scene is named
+on the command line (the editor's Play) or in `--benchmark`.
 
 The combat mode can only be switched while exploring (user decision, 2026-11-07).
 

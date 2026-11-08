@@ -60,14 +60,39 @@ The Linux build has no GPU, so the benchmark itself has not run anywhere yet.
 
 | # | Do | Expect | Result |
 |---|---|---|---|
-| 1 | `out\build\windows-msvc\apps\umbra\Release\Umbra.exe --benchmark 30` with nothing else running | three areas, then it quits; `%APPDATA%\Umbra\UmbraEngine\benchmark.json`. Send it: it names the GPU and decides O18 | |
+| 1 | `out\build\windows-msvc\apps\umbra\Release\Umbra.exe --benchmark 30` with nothing else running | three areas, then it quits; `%APPDATA%\Umbra\UmbraEngine\benchmark.json`. Send it: it names the GPU and decides O18 | **Passed** (user, 2026-11-08): §3b |
 | 2 | `scripts\package.bat` | `PACKAGE OK`; the log shows `package-check` warnings only (AI leftovers in `assets\models` will be listed) | |
 | 3 | Look in `out\package\Umbra` | `Umbra.exe`, DLLs, `assets\`, `shaders\`, `licenses\`, `THIRD_PARTY_NOTICES.md`; no `UmbraEditor`, `UmbraTool`, `.py`, `.bat` | |
 | 4 | Copy `Umbra.zip` to another PC (or a user account) without Visual Studio, unzip, run | starts, offline (network unplugged) | |
 | 5 | Unzip into `C:\Trò chơi\` and run | starts, saves work | |
-| 6 | Package: talk to Mara, accept, fight (turn and real time), save at the stone, quit, start again, load | state restored; quest continues | |
+| 6 | Package: talk to Mara, accept, fight (turn and real time), save at the stone, quit, start again, **Continue** | state restored in the area where you saved; quest continues | First try: restart began in the settlement (no load at launch) → `#UMBRA-65`; re-check |
 | 7 | Package: fight the bandit leader with the stats overlay | frame times stay within the budget during the learned enemy's turns | |
-| 8 | Package: `Umbra.exe --benchmark 60` twice | similar numbers; `peakMemoryMb` does not grow | |
+| 8 | Package: `Umbra.exe --benchmark 60` twice | similar numbers; `peakMemoryMb` does not grow | 30 s + 60 s runs: same numbers, 249 → 250 MB (§3b) |
+
+## 3b. Results from the user's PC (2026-11-08)
+
+**Benchmark** (user ran items 1 and 8; files in this conversation, not committed). Reference PC:
+NVIDIA GeForce RTX 3050 Laptop GPU, 16 CPU threads, 16 GB RAM, 1920×1080.
+
+| Run | Area | Frames | Average ms (FPS) | p95 ms | p99 ms | Max ms | CPU work ms |
+|---|---|---|---|---|---|---|---|
+| 30 s | settlement | 8 629 | 3.48 (288) | 5.65 | 6.20 | 23.79 | 1.76 |
+| 30 s | dungeon | 8 616 | 3.48 (287) | 5.65 | 6.08 | 47.57 | 1.77 |
+| 30 s | arena | 8 641 | 3.47 (288) | 5.64 | 6.06 | 6.70 | 1.73 |
+| 60 s | settlement | 17 281 | 3.47 (288) | 5.60 | 6.07 | 7.08 | 1.74 |
+| 60 s | dungeon | 17 281 | 3.47 (288) | 5.60 | 6.08 | 11.57 | 1.75 |
+| 60 s | arena | 17 281 | 3.47 (288) | 5.62 | 6.06 | 7.24 | 1.75 |
+
+- Every area is far inside the proposed budget (average 4.8× under 16.67 ms, p99 5.4× under 33.3 ms).
+- Peak memory 249 MB (30 s) and 250 MB (60 s): no growth between runs or across three area loads.
+- The same ~288 FPS everywhere, with CPU work ~1.75 ms, means the frame rate is set by the 1 ms
+  sleep per frame (Windows timer granularity) and presenting, not by the scenes; the GPU has room.
+- Single slow frames (47.6 ms, 23.8 ms) appeared only in the first run: first-use costs right after
+  the warm-up window; they did not repeat in the 60 s run.
+
+**Play-through finding:** saving in the dungeon and restarting the game started fresh in the
+settlement. The game had no way to load at launch (only from the death menu). Fixed in `#UMBRA-65`:
+a start menu offers Continue (newest save), Load the other save, New game.
 
 ## 5. Limits, honestly
 

@@ -24,8 +24,10 @@ class GameFlow final
 public:
     // `content` is the live RPG content loaded from `contentFile`; it is replaced in place when
     // the file changes and the new version fits the running game (see GameFlow.md, "Reloading").
+    // `offerContinue`: at launch, if a save exists, show "Continue" before playing (not when a
+    // specific scene was asked for, e.g. the editor's Play).
     GameFlow(umbra::rpg::Content &content, std::filesystem::path contentFile, SceneRuntime &scene,
-             std::filesystem::path saveFolder, std::string startScene);
+             std::filesystem::path saveFolder, std::string startScene, bool offerContinue = false);
 
     // Once per frame, before Simulate: menus, fights and touching an enemy.
     void Update(const umbra::platform::Input &input, float deltaSeconds);
@@ -50,6 +52,8 @@ private:
     void UpdateTurnFight(const umbra::platform::Input &input, float deltaSeconds);
     void UpdateRealtimeFight(const umbra::platform::Input &input, float deltaSeconds);
     void UpdateDeath(const umbra::platform::Input &input);
+    void UpdateStartMenu(const umbra::platform::Input &input);
+    [[nodiscard]] std::vector<std::string> StartMenuItems() const;
     void ReloadContent();
     void LoadPolicies();
 
@@ -79,6 +83,7 @@ private:
     SceneRuntime &scene_;
     umbra::game::SaveSlots slots_;
     std::string startScene_;
+    bool startMenu_ = false;           // "Continue / New game" shown at launch when a save exists
     int selected_ = 0;                 // menu cursor
     std::size_t touched_ = 0;          // the dungeon roamer that started the fight
     std::vector<std::size_t> fighters_; // arena roamer index of each enemy (roster index - 1)

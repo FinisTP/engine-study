@@ -220,7 +220,8 @@ scripts\package.bat
 How fast is it? `Umbra.exe --benchmark` walks through the three areas and writes
 `%APPDATA%\Umbra\UmbraEngine\benchmark.json` (`apps/umbra/Benchmark.md`).
 
-Copy the zip to another PC, unzip, run `Umbra.exe`. Saves go to `%APPDATA%\Umbra\UmbraEngine\saves`.
+Copy the zip to another PC, unzip, run `Umbra.exe`. Saves go to `%APPDATA%\Umbra\UmbraEngine\saves`;
+when one exists, the game starts with a menu: Continue, Load the other save, New game.
 
 ## Troubleshooting
 

@@ -36,10 +36,11 @@ namespace
 }
 
 GameFlow::GameFlow(rpg::Content &content, std::filesystem::path contentFile, SceneRuntime &scene, std::filesystem::path saveFolder,
-                   std::string startScene)
+                   std::string startScene, bool offerContinue)
     : content_(content), contentFile_(std::move(contentFile)), session_(content, 20261107U), scene_(scene),
       slots_{std::move(saveFolder)}, startScene_(std::move(startScene))
 {
+    startMenu_ = offerContinue && (std::filesystem::exists(slots_.Manual()) || std::filesystem::exists(slots_.Autosave()));
     contentWatcher_.SetFiles({contentFile_});
 
     // Enemies look like their actor's model (RPG content); without one, the tinted cube.
@@ -136,6 +137,12 @@ void GameFlow::Update(const umbra::platform::Input &input, float deltaSeconds)
     if (session_.GetPhase() == game::Phase::Fighting && scene_.Generation() != fightGeneration_)
         Flee();
 
+    if (startMenu_)
+    {
+        UpdateStartMenu(input);
+        scene_.SetRoamersActive(false);
+        return;
+    }
     switch (session_.GetPhase())
     {
     case game::Phase::Exploring:
@@ -172,6 +179,8 @@ void GameFlow::Update(const umbra::platform::Input &input, float deltaSeconds)
 
 bool GameFlow::PlayerCanMove() const
 {
+    if (startMenu_)
+        return false;
     const game::Phase phase = session_.GetPhase();
     return phase == game::Phase::Exploring ||
            (phase == game::Phase::Fighting && session_.Mode() == game::CombatMode::Realtime);
@@ -179,11 +188,13 @@ bool GameFlow::PlayerCanMove() const
 
 bool GameFlow::AllowsPortals() const
 {
-    return session_.GetPhase() == game::Phase::Exploring || session_.GetPhase() == game::Phase::Talking;
+    return !startMenu_ && (session_.GetPhase() == game::Phase::Exploring || session_.GetPhase() == game::Phase::Talking);
 }
 
 bool GameFlow::HandleEscape()
 {
+    if (startMenu_)
+        return true; // the start menu stays until a choice is made
     if (session_.GetPhase() == game::Phase::Talking)
     {
         session_.EndTalk(); // walking away changes nothing
@@ -516,6 +527,37 @@ void GameFlow::UpdateDeath(const umbra::platform::Input &input)
     }
 }
 
+std::vector<std::string> GameFlow::StartMenuItems() const
+{
+    // "Continue" = the newer of the save-stone save and the autosave; the other one by name.
+    std::vector<std::string> items{"Continue"};
+    if (std::filesystem::exists(slots_.Manual()) && std::filesystem::exists(slots_.Autosave()))
+        items.push_back("Load the other save");
+    items.push_back("New game");
+    return items;
+}
+
+void GameFlow::UpdateStartMenu(const umbra::platform::Input &input)
+{
+    const std::vector<std::string> items = StartMenuItems();
+    if (!MenuInput(input, items.size()))
+        return;
+    // 1. Which save is newer (a missing file counts as oldest).
+    std::error_code ignored;
+    const auto time = [&](const std::filesystem::path &file) { return std::filesystem::last_write_time(file, ignored); };
+    const bool haveManual = std::filesystem::exists(slots_.Manual()), haveAuto = std::filesystem::exists(slots_.Autosave());
+    const bool manualNewer = haveManual && (!haveAuto || time(slots_.Manual()) >= time(slots_.Autosave()));
+    const std::filesystem::path newest = manualNewer ? slots_.Manual() : slots_.Autosave();
+    const std::filesystem::path other = manualNewer ? slots_.Autosave() : slots_.Manual();
+    // 2. Load it, or start fresh where the game opened.
+    const std::string &picked = items[static_cast<std::size_t>(selected_)];
+    if (picked == "New game" || Load(picked == "Continue" ? newest : other))
+    {
+        startMenu_ = false;
+        selected_ = 0;
+    }
+}
+
 void GameFlow::OnAreaEntered()
 {
     if (!Save(slots_.Autosave()))
@@ -615,6 +657,14 @@ std::string GameFlow::PotionItem()
 
 void GameFlow::FillHud(umbra::core::Hud &hud)
 {
+    if (startMenu_)
+    {
+        hud.menuTitle = "Umbra";
+        hud.menuItems = StartMenuItems();
+        hud.menuSelected = selected_;
+        hud.menuHint = "W/S choose, Enter";
+        return;
+    }
     const rpg::Content &content = session_.Content();
     rpg::Character &hero = session_.Hero();
     const rpg::StatBlock stats = rpg::DerivedStats(content, hero);

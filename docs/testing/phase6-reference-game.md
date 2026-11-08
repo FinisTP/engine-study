@@ -21,6 +21,8 @@ User decisions used (2026-11-07):
 - Saving: E on a save stone writes the one manual slot, which keeps a backup. Changing area
   writes the one autosave slot.
 - On death the menu offers: Load save, Load last autosave, New game.
+- At launch, if a save exists: Continue (newest save), Load the other save, New game (`#UMBRA-65`,
+  user report 2026-11-08: a save made in the dungeon seemed lost after restarting).
 - The hero grows by XP and levels.
 - The quest is a placeholder written by Claude ("The Stolen Relic", Elder Mara).
 
