@@ -143,6 +143,8 @@ Editor::Editor(ModelLibrary &models, std::filesystem::path assetRoot, std::files
 
 Editor::~Editor()
 {
+    if (gridMesh_)
+        models_.DestroyLooseMesh(gridMesh_);
     modelJob_->Leave(); // ComfyUI finishes the model; the next start fetches it (ResumeModel)
     ClearTexturePreviews();
 }
@@ -317,15 +319,33 @@ void Editor::Update(float deltaSeconds, umbra::core::DrawList &drawList)
     if (world_)
         world_->ExtractDrawList(drawList);
     ApplyTexturePreview(drawList);
-    const glm::vec4 gridColor{0.35F, 0.35F, 0.4F, 1.0F};
+    // The grid is a real (depth-tested) mesh, so objects hide it; selection and colliders are
+    // overlay lines drawn on top on purpose.
+    if (!gridMesh_)
+        gridMesh_ = models_.CreateLooseMesh(GridMesh());
+    drawList.items.push_back({gridMesh_, {}, glm::mat4{1.0F}, glm::vec4{0.35F, 0.35F, 0.42F, 1.0F}});
+    AddSelectionBox(drawList);
+    AddColliderLines(drawList);
+}
+
+umbra::core::MeshData Editor::GridMesh()
+{
+    // 41 + 41 thin strips (3 cm wide) one meter apart, a hair above y = 0, facing up.
+    umbra::core::MeshData grid;
+    const auto strip = [&grid](glm::vec3 a, glm::vec3 b, glm::vec3 side) {
+        const auto base = static_cast<std::uint32_t>(grid.vertices.size());
+        for (const glm::vec3 p : {a - side, a + side, b + side, b - side})
+            grid.vertices.push_back({p, {0.0F, 1.0F, 0.0F}, {0.0F, 0.0F}});
+        grid.indices.insert(grid.indices.end(), {base, base + 1, base + 2, base, base + 2, base + 3});
+    };
+    constexpr float half = 0.015F, y = 0.005F;
     for (int i = -20; i <= 20; ++i)
     {
         const float f = static_cast<float>(i);
-        drawList.lines.push_back({{f, 0.0F, -20.0F}, {f, 0.0F, 20.0F}, gridColor});
-        drawList.lines.push_back({{-20.0F, 0.0F, f}, {20.0F, 0.0F, f}, gridColor});
+        strip({f, y, -20.0F}, {f, y, 20.0F}, {half, 0.0F, 0.0F});
+        strip({-20.0F, y, f}, {20.0F, y, f}, {0.0F, 0.0F, half});
     }
-    AddSelectionBox(drawList);
-    AddColliderLines(drawList);
+    return grid;
 }
 
 glm::mat4 Editor::View() const

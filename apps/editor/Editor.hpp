@@ -69,6 +69,7 @@ private:
     [[nodiscard]] glm::mat4 View() const;
     [[nodiscard]] glm::mat4 GlProjection() const; // OpenGL-style, for ImGuizmo and picking
     void AddSelectionBox(umbra::core::DrawList &drawList) const;
+    static umbra::core::MeshData GridMesh();
     void AddColliderLines(umbra::core::DrawList &drawList) const; // the selected entity's collider, green
     bool MeshBounds(const umbra::world::Renderable &look, glm::vec3 &min, glm::vec3 &max) const;
     std::optional<umbra::authoring::Json> FitCollider(const umbra::authoring::Json &entity) const; // box around its model
@@ -178,6 +179,7 @@ private:
     std::string modelIdea_, modelPicturePath_, modelName_, modelWorkflow_, modelSourceText_, modelResult_, modelSaveName_;
     std::vector<std::filesystem::path> modelWorkflows_; // usable exports in tools/comfyui
     mutable std::map<std::string, std::optional<umbra::localai::ModelInfo>> modelBounds_; // FitCollider cache
+    umbra::core::MeshHandle gridMesh_; // the ground grid (depth-tested)
     bool modelWorkflowsScanned_ = false;
     int conceptCount_ = 4;
     int modelFaces_ = 10000; // user decision 2026-11-07

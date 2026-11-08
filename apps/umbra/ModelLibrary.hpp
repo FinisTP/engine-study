@@ -58,6 +58,9 @@ public:
     // Editor previews: a texture that belongs to no file. The caller destroys it.
     umbra::core::TextureHandle CreatePreviewTexture(const umbra::core::TextureData &data) { return renderer_.CreateTexture(data); }
     void DestroyPreviewTexture(umbra::core::TextureHandle handle) { renderer_.DestroyTexture(handle); }
+    // Editor helpers (the ground grid): a mesh that belongs to no file. The caller destroys it.
+    umbra::core::MeshHandle CreateLooseMesh(const umbra::core::MeshData &data) { return renderer_.CreateMesh(data); }
+    void DestroyLooseMesh(umbra::core::MeshHandle handle) { renderer_.DestroyMesh(handle); }
 
     // Rebuilds and re-uploads a model (or a material: path ends in ".material.json") as one transaction (see Reload.md). A model that failed
     // before is simply tried again.
