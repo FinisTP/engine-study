@@ -15,11 +15,6 @@
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
 
-## Update 2026-11-10 (direction: the living town, ADR 0011, `#UMBRA-85`)
-
-- The user chose the game's direction: an open-ended storytelling simulation RPG. A main plot that always wins, inside a simulated town of about seven residents that is the core gameplay; a required built-in local model that proposes and words (the simulation validates); outcomes that differ per playthrough and are managed by the developer through an outcome plan; theme open (need not be fantasy).
-- Planned as S21-S25 after S9; S10 and S18 are re-scoped into them. A living-town game is PC only for now. Nothing is implemented yet.
-
 ## Update 2026-11-10 (S8 skeletal animation & rigging, `#UMBRA-84`)
 
 - Skins and clips: the glTF importer keeps one skin per model (joints, inverse bind matrices, rest pose, per-vertex joints and normalised weights) and every clip by joint name; the `.umodel` cache stores them (format 2). Math in `engine/core/include/Skeleton.md`.
