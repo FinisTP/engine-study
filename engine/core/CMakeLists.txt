@@ -14,6 +14,7 @@ target_sources(
         src/Post.cpp
         src/Skeleton.cpp
         src/Animator.cpp
+        src/Particles.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
@@ -30,6 +31,8 @@ target_sources(
             include/Skeleton.hpp
             include/Animator.hpp
             include/Skeleton.md
+            include/Particles.hpp
+            include/Particles.md
             include/Handles.hpp
             include/Diagnostic.hpp
             include/MeshData.hpp

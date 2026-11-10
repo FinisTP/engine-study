@@ -32,7 +32,7 @@ A scene is a readable JSON file that people, tools and AI agents can edit. It st
 | `emissive` | number 0..100 | `0` | The surface's own glow, added to the light that reaches it: 1 shows the texture unlit, 2-3 glows (flames, crystals). It does not light other things; add a `light` for that (`engine/core/include/Lighting.md`). |
 | `material` | asset path | none | A `*.material.json` whose image replaces the model's texture, optionally repeating by meters (`engine/assets/include/Material.md`). Needs `model`. |
 | `instance` | asset path | none | At load, the whole node hierarchy of this glTF is created under this entity (ids `"<id>/<node name>"`). |
-| `components` | object | none | `{"<type>": {fields}}`, one of each type: the built-in `collider`, `interactable`, `portal`, `spawner`, `light`, `environment`, `post`, `animation` (below) and the project's own (`Components.md`). |
+| `components` | object | none | `{"<type>": {fields}}`, one of each type: the built-in `collider`, `interactable`, `portal`, `spawner`, `light`, `environment`, `post`, `animation`, `vfx` (below) and the project's own (`Components.md`). |
 
 Older files put the four built-in components directly on the entity (`"collider": {}`). They
 still load; the editor moves them into `components` when it opens the file, and `SaveScene`
@@ -145,6 +145,18 @@ The entity's model must be rigged (a glTF skin); the graph picks its clips
 when the game binds it (`entity.animation.skeleton`, `entity.animation.clip`, a bad graph file)
 are listed with the scene's problems; the entity then stands in its rest pose.
 
+### Vfx
+
+```json
+"vfx": { "effect": "vfx/fire.vfx.json" }
+```
+
+A particle effect that runs at the entity while it has the component: torch fire, a glowing
+crystal, chimney smoke (S9; the effect file is described in `engine/core/include/Particles.md`).
+An empty path is `entity.vfx.effect`. `UmbraTool validate` and the editor also load the effect
+file and report its own mistakes (`vfx.*`); the game lists them with the scene's problems and
+draws nothing for that entity.
+
 Asset paths are relative to the asset folder and may not contain `..`.
 
 **Reserved id:** the app treats the entity with id `player` as the player's spawn point and body (see `game/gameplay/include/PlayerController.md`).
@@ -189,6 +201,8 @@ Every problem is a `core::Diagnostic` (`engine/core/include/Diagnostic.hpp`) wit
 | `scene.post.twice` | warning | A second `post` component; only the first is used |
 | `entity.post.lut` | error | The `post` component's LUT image is missing, unreadable or not 256x16 |
 | `entity.animation.graph` | error | The `animation` component has no graph, or its graph file can't be used |
+| `entity.vfx.effect` | error | The `vfx` component names no effect file |
+| `vfx.format`, `vfx.<field>`, `vfx.read` | error | The effect file is not an effect, has a bad field, or can't be opened |
 | `entity.animation.skeleton`, `entity.animation.clip` | error | (when the game binds animators) the model isn't rigged, or a state names a missing clip |
 | `entity.field.unknown` | warning | Unknown field (usually a typo) |
 

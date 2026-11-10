@@ -76,6 +76,30 @@ world tick (deterministic) --> legal intents and facts --> model (worker thread)
   developer's instrument for "managing outcomes", and the main thing a general engine does not
   give for free.
 
+### 2b. A forkable world: the storyteller rehearses the future (user, 2026-11-10)
+
+The whole town is one block of plain data (target: a few hundred KB) that can be **copied, run
+forward and thrown away**. The storyteller uses it to look ahead, like a chess program:
+
+```text
+snapshot --> N copies, each with one candidate nudge --> run D days (rule-based residents, no model)
+         --> score each future against the outcome plan (next beat reachable? pacing? repetition?)
+         --> apply the best nudge to the real world; discard the copies
+```
+
+- Design rules for S21 (cheap now, expensive to retrofit): all world state lives in the one
+  copyable block (no hidden state in scene objects, statics or the physics world); the coarse tick
+  uses integer math and its own seeded random stream stored in the block; a fork never touches
+  files, sound or the renderer.
+- Rehearsals are approximate: the language model is too slow to run inside them, so copies use the
+  residents' conventional choices; the model acts only in the real timeline.
+- The same foundation gives: automatic playtesting (scripted players over thousands of runs),
+  exact bug replays (seed + inputs + stored model output), small shareable playthrough files that a
+  build without the model (the browser) could replay, and later, if wanted, player-facing time
+  mechanics.
+- Status of the idea: promising, not proven. No search was made for shipped games doing this;
+  "drama manager" research has explored look-ahead for years.
+
 ### 3. Seen by the player
 
 A chronicle screen, rumours between residents, changed greetings and prices, and warnings before
@@ -107,10 +131,10 @@ otherwise; S25 may be a new project.
 
 | Phase | What | Example |
 |---|---|---|
-| **S21 World tick & residents** | A deterministic world clock (seeded, fixed step, integer math in the coarse tick so PC builds agree); residents as RPG characters with needs, schedules, relationships and growth; residents act when the player is elsewhere; world state in saves; headless fast-forward | Seven residents live a week with nobody watching: the same seed gives the same week |
+| **S21 World tick & residents** | A deterministic world clock (seeded, fixed step, integer math in the coarse tick so PC builds agree); residents as RPG characters with needs, schedules, relationships and growth; residents act when the player is elsewhere; world state in saves; headless fast-forward; **the world is one copyable block (fork, run, discard)** | Seven residents live a week with nobody watching: the same seed gives the same week |
 | **S22 Memory, chronicle & rumours** | An event log; each resident remembers what they saw or heard; rumours travel; chronicle screen; plain template wording (used by tests and as the per-line fallback) | The player skips a favour; two days later another resident mentions it |
 | **S23 Built-in model** | The model plugin (llama.cpp, worker thread, bounded queue, deadline); briefs and schema-forced answers; proposals through the validator; stored output; a scripted stand-in model for tests; the model pack in packaging | Residents speak in their own voice about real events; a resident picks an unexpected but legal action |
-| **S24 Storyteller & outcome plan** | The outcome plan file and its validation; the storyteller (filter, pressure, forced beats); warnings; editor view of beats and outcomes; the soak test and its report | One story beat reached three different ways across seeds; a forbidden outcome never happens in 1,000 seeds |
+| **S24 Storyteller & outcome plan** | The outcome plan file and its validation; the storyteller (filter, pressure, forced beats, **look-ahead over forked worlds**); warnings; editor view of beats and outcomes; the soak test and its report | One story beat reached three different ways across seeds; a forbidden outcome never happens in 1,000 seeds |
 | **S25 The town** | The example game slice: one town, seven residents, a short main plot with managed variation, played start to finish | Two playthroughs that differ and both end the main plot |
 
 **Order:** S8 (done), S9, **S21-S25**, then S11, S19, S20, S12-S17. **S10 (RPG systems) and S18

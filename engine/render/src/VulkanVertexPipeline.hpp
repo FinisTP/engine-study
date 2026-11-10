@@ -54,6 +54,7 @@ namespace umbra::render
         [[nodiscard]] const std::vector<VkFramebuffer> &GetFramebuffers() const noexcept { return framebuffers_; }
         // The sky: one screen-covering triangle drawn before the scene (Lighting.md).
         [[nodiscard]] VkPipeline GetSkyPipeline() const noexcept { return skyPipeline_; }
+        [[nodiscard]] VkPipeline GetParticlePipeline() const noexcept { return particlePipeline_; }
         // The sun's shadow map: a depth-only pass seen from the sun, sampled by the scene shader.
         static constexpr std::uint32_t shadowMapSize = 2048;
         [[nodiscard]] VkRenderPass GetShadowRenderPass() const noexcept { return shadowRenderPass_; }
@@ -77,6 +78,7 @@ namespace umbra::render
         std::vector<GpuImage> depthImages_;
         std::vector<VkFramebuffer> framebuffers_;
         VkPipeline skyPipeline_ = VK_NULL_HANDLE;
+        VkPipeline particlePipeline_ = VK_NULL_HANDLE; // S9: camera-facing squares, one instance each
         std::map<std::string, VkPipeline> surfaces_; // "water" -> scene pipeline with shaders/surface/water.frag.spv
         std::map<std::string, VkPipeline> skinnedSurfaces_;
         VkPipeline skinnedPipeline_ = VK_NULL_HANDLE;       // GetSurfacePipeline("", true)

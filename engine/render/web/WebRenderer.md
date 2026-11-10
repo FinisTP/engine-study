@@ -32,6 +32,12 @@ does not change. The GPU work is in `umbra_render.js` (an Emscripten JavaScript 
    (`texturing.z`) is where its joints start in this frame's joint storage buffer (group 0
    binding 4, grown as needed). Every custom surface shader has a plain and a skinned pipeline.
    Math: `engine/core/include/Skeleton.md`.
+
+   **Particles (S9).** `umbra_gpu_particles(pointer, count)` copies this frame's 48-byte particle
+   instances into one vertex buffer (grown as needed). They are drawn last in the scene pass with
+   `particlePipeline`: six vertices per instance, corners made in `particleVs`, no depth write,
+   premultiplied blending (glow and cover in one draw). The WGSL mirrors `Particles.hlsl` by hand
+   and is checked with naga. Math: `engine/core/include/Particles.md`.
 4. Then it **waits for the browser's next animation frame**. This is where the game's normal
    `while` loop hands control back to the page (Asyncify), so the loop needs no browser-specific
    structure and runs at the display's rate.

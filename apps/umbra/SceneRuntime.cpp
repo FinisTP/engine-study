@@ -1,6 +1,7 @@
 #include "SceneRuntime.hpp"
 
 #include <AnimGraph.hpp>
+#include <Vfx.hpp>
 
 #include <Log.hpp>
 #include <ModelInstance.hpp>
@@ -186,6 +187,9 @@ void SceneRuntime::Install(std::unique_ptr<umbra::world::World> fresh, std::opti
     roamers_.clear(); // their characters live in the old physics world, destroyed below
     flashes_.clear();
     fading_.clear(); // their entities go with the old world
+    particles_.Clear();
+    attachedEffects_.clear();
+    clipEvents_.clear();
     world_ = std::move(fresh);
     physics_ = std::move(freshPhysics);
     ++generation_;
@@ -229,6 +233,11 @@ void SceneRuntime::Update()
             reloadScene = true;
         else if (owner.ends_with(".anim.json"))
             graphs_.erase(owner); // read again by the rebind below
+        else if (owner.ends_with(".vfx.json"))
+        {
+            effects_.erase(owner); // read again when next used; running copies end
+            particles_.Clear();
+        }
         else
             models.insert(owner);
     }
@@ -288,7 +297,8 @@ SimulationEvents SceneRuntime::Simulate(float deltaSeconds, const umbra::gamepla
     {
         const glm::vec3 velocity = player_.GetVelocity(*physics_);
         const float speed = glm::length(glm::vec2{velocity.x, velocity.z});
-        if (stride_.Update(speed, player_.IsGrounded(*physics_), deltaSeconds))
+        // A rigged player's footsteps come from its walk clip's events instead (S9).
+        if (stride_.Update(speed, player_.IsGrounded(*physics_), deltaSeconds) && world_->GetAnimator(world_->Find("player")) == nullptr)
             ++events.footsteps;
 
         // Portals fire once the player has been outside every portal since arriving.
@@ -304,7 +314,8 @@ SimulationEvents SceneRuntime::Simulate(float deltaSeconds, const umbra::gamepla
     SyncPlayerVisual();
     SyncRoamerVisuals();
     UpdateFlashes(deltaSeconds);
-    UpdateAnimation(deltaSeconds);
+    UpdateAnimation(deltaSeconds, events);
+    UpdateEffects(static_cast<float>(deltaSeconds));
     return events;
 }
 
@@ -394,7 +405,64 @@ std::shared_ptr<const umbra::core::AnimGraph> SceneRuntime::LoadGraph(const std:
     return graph;
 }
 
-void SceneRuntime::UpdateAnimation(float seconds)
+std::optional<glm::vec3> SceneRuntime::ChestOf(umbra::world::Entity entity) const
+{
+    // An enemy: 60% up its own height (a wolf is low, a bandit tall). Anyone else: 1 m up.
+    for (const RoamerSlot &slot : roamers_)
+        if (slot.visual == entity)
+            return RoamerFeet(static_cast<std::size_t>(&slot - roamers_.data())) + glm::vec3{0.0F, slot.height * 0.6F, 0.0F};
+    const std::optional<glm::vec3> at = PositionOf(entity);
+    return at ? std::optional<glm::vec3>(*at + glm::vec3{0.0F, 1.0F, 0.0F}) : std::nullopt;
+}
+
+std::optional<glm::vec3> SceneRuntime::PositionOf(umbra::world::Entity entity) const
+{
+    const glm::mat4 *matrix = world_->GetWorldMatrix(entity);
+    return matrix ? std::optional<glm::vec3>(glm::vec3((*matrix)[3])) : std::nullopt;
+}
+
+std::shared_ptr<const umbra::core::VfxEffect> SceneRuntime::LoadEffect(const std::string &path)
+{
+    if (const auto it = effects_.find(path); it != effects_.end())
+        return it->second;
+    // A bad effect is remembered as nullptr (and shown with the scene's problems) until its file changes.
+    std::vector<umbra::core::Diagnostic> problems;
+    const auto effect = umbra::scene::LoadVfx(assetRoot_ / path, path, problems);
+    for (const umbra::core::Diagnostic &d : problems)
+    {
+        graphProblems_.push_back(umbra::core::Format(d));
+        umbra::diagnostics::Error(graphProblems_.back());
+    }
+    effects_[path] = effect;
+    RefreshWatchList(); // its file is watched from now on
+    return effect;
+}
+
+void SceneRuntime::SpawnEffect(const std::string &effect, glm::vec3 position)
+{
+    if (!effect.empty())
+        particles_.Spawn(LoadEffect(effect), position);
+}
+
+void SceneRuntime::UpdateEffects(float seconds)
+{
+    // 1. Effects that live on entities: "vfx" components, then the game's own (statuses).
+    const auto finder = [&](const std::string &path) { return LoadEffect(path); };
+    std::vector<std::uint64_t> keys = umbra::scene::SyncVfx(*world_, particles_, finder);
+    for (const auto &[entity, path] : attachedEffects_)
+        if (const auto at = ChestOf(entity))
+        {
+            // Slot 1..255 from the path, so one entity can carry several effects.
+            const std::uint64_t key = umbra::scene::VfxKey(entity, 1 + static_cast<std::uint32_t>(std::hash<std::string>{}(path) % 255));
+            particles_.Attach(key, LoadEffect(path), *at);
+            keys.push_back(key);
+        }
+    particles_.KeepOnly(keys);
+    // 2. Every particle moves on.
+    particles_.Update(seconds);
+}
+
+void SceneRuntime::UpdateAnimation(float seconds, SimulationEvents &events)
 {
     // 1. Speeds and flags the graphs choose states from.
     if (umbra::core::Animator *animator = world_->GetAnimator(world_->Find("player")); animator && player_.IsSpawned())
@@ -412,6 +480,19 @@ void SceneRuntime::UpdateAnimation(float seconds)
     std::erase_if(fading_, [](const Fading &body) { return body.secondsLeft <= 0.0F; });
     // 3. Advance every animator (poses for this frame's draw list).
     world_->UpdateAnimation(seconds);
+    // 4. Clip events (AnimGraph.md): a sound, quieter with distance from the player; an effect at the
+    //    entity's feet; the name for the game (a "hit" lands the blow).
+    const glm::vec3 listener = player_.IsSpawned() ? player_.GetFeet(*physics_) : glm::vec3{0.0F};
+    for (const umbra::world::World::AnimationEvent &e : world_->TakeAnimationEvents())
+    {
+        const glm::vec3 at = PositionOf(e.entity).value_or(listener);
+        constexpr float fullVolumeMeters = 4.0F, silentMeters = 22.0F;
+        const float volume = std::clamp((silentMeters - glm::distance(at, listener)) / (silentMeters - fullVolumeMeters), 0.0F, 1.0F);
+        if (!e.event.sound.empty() && volume > 0.0F)
+            events.sounds.emplace_back(e.event.sound, volume);
+        SpawnEffect(e.event.effect, at);
+        clipEvents_.emplace_back(e.entity, e.event.name);
+    }
 }
 
 void SceneRuntime::ClearFading()
@@ -432,6 +513,8 @@ void SceneRuntime::RefreshWatchList()
     owners_ = models_.WatchedFiles();
     owners_[assetRoot_ / scenePath_] = "";
     for (const auto &[path, graph] : graphs_)
+        owners_[assetRoot_ / path] = path;
+    for (const auto &[path, effect] : effects_)
         owners_[assetRoot_ / path] = path;
     std::set<std::filesystem::path> files;
     for (const auto &[file, owner] : owners_)
@@ -498,14 +581,16 @@ std::size_t SceneRuntime::AddRoamer(const std::string &actor, glm::vec3 feet, gl
     {
         // A rigged model is measured as drawn at rest (its vertices are in bind space, S8).
         const umbra::core::MeshData &mesh = loaded->model->meshes[look.mesh].data;
-        float lowest = 0.0F;
+        float lowest = 0.0F, highest = 0.0F;
+        const auto measure = [&](float y) { lowest = std::min(lowest, y), highest = std::max(highest, y); };
         if (loaded->model->skeleton)
             for (const glm::vec3 &p : umbra::core::RestPositions(*loaded->model->skeleton, mesh))
-                lowest = std::min(lowest, p.y);
+                measure(p.y);
         else
             for (const umbra::core::Vertex &v : mesh.vertices)
-                lowest = std::min(lowest, v.position.y);
+                measure(v.position.y);
         slot.lift = -lowest * look.scale.y;
+        slot.height = (highest - lowest) * look.scale.y;
     }
 
     // 3. A visual entity with a unique id; Rebind gives it its mesh.
@@ -637,6 +722,9 @@ bool SceneRuntime::LeaveArena()
         return false;
     // 1. The kept area becomes live again (the arena and its physics are destroyed here).
     fading_.clear();
+    particles_.Clear();
+    attachedEffects_.clear();
+    clipEvents_.clear();
     world_ = std::move(kept_->world);
     physics_ = std::move(kept_->physics);
     roamers_ = std::move(kept_->roamers);

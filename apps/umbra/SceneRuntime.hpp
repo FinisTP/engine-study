@@ -28,6 +28,7 @@ struct SimulationEvents final
     int steps = 0; // fixed physics steps run
     int footsteps = 0;
     bool jumped = false;
+    std::vector<std::pair<std::string, float>> sounds; // clip events: sound asset path, volume (S9)
     std::optional<umbra::world::Portal> portal; // the player walked into this portal
 };
 
@@ -54,6 +55,7 @@ struct RoamerSlot final
     float yaw = 0.0F;                   // facing, 0 faces -z
     glm::vec3 scale{1.0F};              // visual scale
     float lift = 0.0F;                  // feet -> model center (so the model stands on the ground)
+    float height = 1.8F; // meters, feet to top (where effects and numbers go)
     float speed = 0.0F;                 // horizontal m/s of the last step (drives the walk animation)
 };
 
@@ -110,6 +112,18 @@ public:
     void RemoveRoamer(std::size_t index, bool animate = false);
     // Starts a one-shot animation ("attack", "hit") on an entity with an animator; nothing otherwise.
     void Animate(umbra::world::Entity entity, const std::string &trigger);
+    // Particles (S9, Particles.md). A one-shot effect at a place; effects that stay on entities
+    // while they are in the list (poison over a fighter); this frame's particles for the renderer.
+    void SpawnEffect(const std::string &effect, glm::vec3 position);
+    void SetAttachedEffects(std::vector<std::pair<umbra::world::Entity, std::string>> effects) { attachedEffects_ = std::move(effects); }
+    void ExtractEffects(umbra::core::DrawList &drawList) const { particles_.Extract(drawList); }
+    [[nodiscard]] std::size_t ParticleCount() const { return particles_.Count(); }
+    // Named clip events since the last call ("hit", "step"), with the entity they happened on.
+    [[nodiscard]] std::vector<std::pair<umbra::world::Entity, std::string>> TakeClipEvents() { return std::exchange(clipEvents_, {}); }
+    // Where an entity is in the world (its origin); nothing if it is gone.
+    [[nodiscard]] std::optional<glm::vec3> PositionOf(umbra::world::Entity entity) const;
+    // The middle of a body, where blows land and effects sit (enemies: by their model's height).
+    [[nodiscard]] std::optional<glm::vec3> ChestOf(umbra::world::Entity entity) const;
     // Changes whenever the world is replaced (load, restart, portal), so fights can tell.
     [[nodiscard]] int Generation() const noexcept { return generation_; }
     // The live scene's "music" component (third-person plugin): track and volume; empty track = none.
@@ -184,7 +198,13 @@ private:
     void UpdateFlashes(float seconds);
     // Animation (S8): graphs by path, loaded once (reloaded when the file changes).
     std::shared_ptr<const umbra::core::AnimGraph> LoadGraph(const std::string &path);
-    void UpdateAnimation(float seconds);
+    void UpdateAnimation(float seconds, SimulationEvents &events);
+    void UpdateEffects(float seconds);
+    std::shared_ptr<const umbra::core::VfxEffect> LoadEffect(const std::string &path);
+    umbra::core::ParticleSystem particles_;
+    std::map<std::string, std::shared_ptr<const umbra::core::VfxEffect>> effects_; // by path; nullptr = unusable
+    std::vector<std::pair<umbra::world::Entity, std::string>> attachedEffects_;
+    std::vector<std::pair<umbra::world::Entity, std::string>> clipEvents_;
     std::map<std::string, std::shared_ptr<const umbra::core::AnimGraph>> graphs_;
     std::vector<std::string> graphProblems_; // from the last Rebind
     struct Fading final                      // a defeated enemy's body while its death clip plays

@@ -21,6 +21,7 @@
 #include "Benchmark.hpp"
 #include "ModelLibrary.hpp"
 #include "SceneRuntime.hpp"
+#include "GameFeel.hpp"
 #include "GameFlow.hpp"
 #include "GameUi.hpp"
 #include "TouchControls.hpp"
@@ -141,11 +142,13 @@ namespace
 }
 
 // --capture <png> [frames] [--hour <h>]: run, save one frame of the 3D view as a picture, quit (tests, docs; S6).
+// --demo <skill>: a fight that plays itself with that skill; a capture then keeps the screens (S9).
 struct CaptureOptions final
 {
 	std::filesystem::path file;
 	int frames = 90;
 	std::optional<float> hour;
+	std::string demo;
 };
 
 int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds, bool offerContinue, const CaptureOptions &capture)
@@ -260,6 +263,7 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 				TouchControls::Output touchOutput;
 				std::string message; // shown after using an interactable
 				float messageSeconds = 0.0F;
+				GameFeel feel; // numbers, freeze, shake and flash on blows (S9)
 
 				// CPU time per frame section, shown in the diagnostics window (see docs/testing/phase4-sandbox.md).
 				umbra::core::RollingTimer frameTime, reloadTime, simulateTime, extractTime, renderTime;
@@ -352,8 +356,10 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 
 					clock.Tick();
 					const umbra::core::Stopwatch frameWork; // this frame's work, without the idle sleep
-					const double deltaTime = clock.GetDeltaTimeSeconds();
-					frameTime.Add(deltaTime * 1000.0);
+					const double realDeltaTime = clock.GetDeltaTimeSeconds();
+					frameTime.Add(realDeltaTime * 1000.0);
+					// A heavy blow freezes the game for a moment (hit-stop); the screens keep real time.
+					const double deltaTime = realDeltaTime * static_cast<double>(feel.Update(static_cast<float>(realDeltaTime)));
 					umbra::core::Stopwatch section;
 
 					// Pick up edited scene/model files.
@@ -409,9 +415,13 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 						SpinEntity(scene.GetWorld(), "spinner", static_cast<float>(deltaTime) * glm::radians(45.0F));
 						if (flow)
 						{
+							if (!capture.demo.empty())
+								flow->Demo(capture.demo);
 							flow->Update(input, static_cast<float>(deltaTime));
 							for (const std::string &sound : flow->TakeSounds()) // hits, skills, items
 								play(sound, 0.8F, umbra::audio::Bus::Game);
+							for (const GameFlow::Impact &impact : flow->TakeImpacts())
+								feel.Add(impact);
 						}
 						const bool canMove = !flow || flow->PlayerCanMove();
 						scene.GetWorld().UpdateTransforms();
@@ -449,6 +459,8 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 						physicsSteps = events.steps;
 						for (int i = 0; i < events.footsteps; ++i)
 							play("audio/footstep.wav", 0.5F, umbra::audio::Bus::Game);
+						for (const auto &[sound, volume] : events.sounds) // clip events: steps, swings (AnimGraph.md)
+							play(sound, 0.6F * volume, umbra::audio::Bus::Game);
 						if (events.jumped)
 							play("audio/jump.wav", 0.5F, umbra::audio::Bus::Game);
 
@@ -511,7 +523,9 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 					section.Lap(); // extraction starts here
 					drawList.Clear();
 					drawList.camera = scene.GetCamera();
+					feel.Shake(drawList.camera);
 					scene.GetWorld().ExtractDrawList(drawList); // fetched now: restart/portal/checkpoint replace the world
+					scene.ExtractEffects(drawList);
 					if (showColliders)
 						scene.AddDebugLines(drawList);
 
@@ -528,7 +542,7 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 								 "Physics steps: " + std::to_string(physicsSteps) +
 									 " | bodies " + std::to_string(scene.GetPhysics().BodyCount()) +
 									 " | characters " + std::to_string(scene.GetPhysics().CharacterCount()),
-								 "Entities: " + std::to_string(scene.GetWorld().Count()) +
+								 "Entities: " + std::to_string(scene.GetWorld().Count()) + " | particles " + std::to_string(scene.ParticleCount()) +
 									 " | models " + std::to_string(models.Count()),
 								 "Sounds: " + std::to_string(mixer.VoiceCount()) + " playing | " +
 									 std::to_string(sounds.Count()) + " cached" + (audioDevice.IsOpen() ? "" : " (no device)"),
@@ -555,6 +569,8 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 					uiData["warnings"] = warnings;
 					if (!gameUi.Ready())
 						hud.warnings = warnings; // without screens, at least say why
+					if (gameUi.Ready())
+						feel.Draw(drawList.camera, {static_cast<float>(pixelWidth), static_cast<float>(pixelHeight)}, gameUi.Screens().Fonts(), gameUi.AtlasTexture(), drawList.ui);
 					for (const umbra::ui::UiAction &action : gameUi.Screens().Update(uiData, {static_cast<float>(pixelWidth), static_cast<float>(pixelHeight)}, uiInput, drawList.ui))
 					{
 						play("audio/ui_click.wav", 0.6F, umbra::audio::Bus::Ui);
@@ -591,7 +607,8 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 					if (!capture.file.empty())
 					{
 						drawList.hud.diagnosticsWindow = false;
-						drawList.ui.Clear();
+						if (capture.demo.empty())
+							drawList.ui.Clear();
 						if (++capturedFrames == capture.frames)
 							renderer.CaptureNextFrame([&](const umbra::core::TextureData &picture) {
 								std::vector<std::uint8_t> png;
@@ -601,7 +618,7 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 								umbra::diagnostics::Info((captured ? "Captured " : "Could not write ") + capture.file.string());
 							});
 					}
-					if (!renderer.RenderFrame(static_cast<float>(deltaTime), drawList))
+					if (!renderer.RenderFrame(static_cast<float>(realDeltaTime), drawList))
 					{
 						return 1;
 					}
@@ -610,7 +627,7 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 					renderTime.Add(section.Lap()); // CPU side only; includes waiting for a free frame
 
 					// Benchmark: record the frame; next area or the report when its time is up.
-					if (benchmark && benchmark->AddFrame(static_cast<float>(deltaTime), deltaTime * 1000.0, frameWork.Milliseconds(), scene.GetWorld().Count()))
+					if (benchmark && benchmark->AddFrame(static_cast<float>(realDeltaTime), realDeltaTime * 1000.0, frameWork.Milliseconds(), scene.GetWorld().Count()))
 					{
 						if (!benchmark->Finished())
 						{
@@ -662,6 +679,8 @@ int main(int argc, char **argv)
 		}
 		else if (arg == "--hour" && i + 1 < argc)
 			capture.hour = static_cast<float>(std::atof(argv[++i]));
+		else if (arg == "--demo" && i + 1 < argc)
+			capture.demo = argv[++i];
 		else if (arg == "--benchmark")
 		{
 			benchmarkSeconds = 20.0F;

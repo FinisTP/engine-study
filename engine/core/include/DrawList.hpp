@@ -2,6 +2,7 @@
 
 #include <Handles.hpp>
 #include <Lighting.hpp>
+#include <Particles.hpp>
 #include <Post.hpp>
 
 #include <glm/mat4x4.hpp>
@@ -112,6 +113,7 @@ namespace umbra::core
         std::vector<DrawItem> items;
         std::vector<std::string> surfaces{""}; // custom surface shader names used this frame; [0] = plain
         std::vector<glm::mat4> joints;         // skinning matrices of every animated item (S8)
+        std::vector<ParticleInstance> particles; // effects, far ones first (S9, Particles.md)
         std::vector<DebugLine> lines;
         Hud hud;
         UiDrawList ui; // the game's own UI; drawn under the diagnostics window
@@ -131,6 +133,7 @@ namespace umbra::core
             items.clear();
             surfaces.assign(1, "");
             joints.clear();
+            particles.clear();
             lights.clear();
             lines.clear();
             hud = {};

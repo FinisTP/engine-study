@@ -52,6 +52,7 @@ namespace umbra::scene
             std::optional<core::EnvironmentSettings> environment;
             std::optional<core::PostSettings> post;
             std::string animationGraph;
+            std::string vfx;
             std::shared_ptr<const core::TextureData> postLut;
             std::vector<world::CustomComponent> customs;
         };
@@ -430,6 +431,12 @@ namespace umbra::scene
                         if (desc.animationGraph.empty())
                             report.Error("entity.animation.graph", at + ".graph", "the animation component needs a graph file (animations/*.anim.json)");
                     }
+                    else if (type == "vfx")
+                    {
+                        desc.vfx = f["effect"].get<std::string>();
+                        if (desc.vfx.empty())
+                            report.Error("entity.vfx.effect", at + ".effect", "the vfx component needs an effect file (vfx/*.vfx.json)");
+                    }
                     else if (type == "light")
                         desc.light = world::Light{rgb(f["color"]), f["intensity"].get<float>(), f["range"].get<float>(), f["flicker"].get<float>()};
                     else if (type == "post")
@@ -724,6 +731,8 @@ namespace umbra::scene
             }
             if (const std::string *graph = world.GetAnimationGraph(entity))
                 out["components"]["animation"] = {{"graph", *graph}};
+            if (const std::string *effect = world.GetVfx(entity))
+                out["components"]["vfx"] = {{"effect", *effect}};
             if (world.PostOwner() == entity)
             {
                 const core::PostSettings &p = world.GetPost();
@@ -801,6 +810,8 @@ namespace umbra::scene
                 world.SetLight(entity, *desc.light);
             if (!desc.animationGraph.empty())
                 world.SetAnimationGraph(entity, desc.animationGraph);
+            if (!desc.vfx.empty())
+                world.SetVfx(entity, desc.vfx);
             if (desc.environment && !world.EnvironmentOwner())
                 world.SetEnvironment(*desc.environment, entity);
             if (desc.post && !world.PostOwner())

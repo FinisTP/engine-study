@@ -82,6 +82,14 @@ namespace umbra::scene
             animation.fields.back().folder = "animations/";
             animation.file = "engine: animation";
             out["animation"] = animation;
+            ComponentSchema vfx;
+            vfx.type = "vfx";
+            vfx.label = "Particle effect";
+            vfx.description = "A particle effect (*.vfx.json) that runs at this entity: fire on a torch, smoke, sparkles.";
+            vfx.fields = {Field("effect", "asset", "Effect", "")};
+            vfx.fields.back().folder = "vfx/";
+            vfx.file = "engine: vfx";
+            out["vfx"] = vfx;
             ComponentSchema post;
             post.type = "post";
             post.label = "Post-processing";

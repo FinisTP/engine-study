@@ -71,7 +71,7 @@ namespace umbra::scene
             // 4. Events at times in the clip (used by S9: footsteps, hits).
             for (const json &e : s.value("events", json::array()))
                 if (e.is_object() && e.value("at", -1.0F) >= 0.0F && !e.value("name", "").empty())
-                    state.events.emplace_back(e["at"].get<float>(), e["name"].get<std::string>());
+                    state.events.push_back({e["at"].get<float>(), e["name"].get<std::string>(), e.value("sound", ""), e.value("effect", "")});
                 else
                     Add(diagnostics, "animgraph.event", file, at + ".events", "an event needs \"at\" (seconds) and a \"name\"");
             for (const core::AnimState &other : out.states)

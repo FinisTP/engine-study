@@ -20,7 +20,7 @@ TEST_CASE("Unlocking follows prerequisites and spends points once (T12)")
     REQUIRE(hero.skillPoints == 0);
     REQUIRE(Unlock(c, hero, "guard") == UnlockResult::NotEnoughPoints);
     REQUIRE_FALSE(hero.skills.contains("guard"));
-    REQUIRE(Unlock(c, hero, "fireball") == UnlockResult::UnknownSkill);
+    REQUIRE(Unlock(c, hero, "meteor") == UnlockResult::UnknownSkill);
     REQUIRE_FALSE(CanUnlock(c, hero, "weaken"));
 }
 

@@ -5,6 +5,7 @@
 #include <RpgContent.hpp>
 #include <SaveGame.hpp>
 #include <SceneFile.hpp>
+#include <Vfx.hpp>
 
 #include <fstream>
 #include <map>
@@ -38,12 +39,17 @@ namespace umbra::authoring
             if (!scene::LoadScene(file, options, world, diagnostics))
                 return false;
 
-            std::set<std::string> models;
+            std::set<std::string> models, effects;
             world.ForEach([&](world::Entity entity) {
                 if (const world::Renderable *r = world.GetRenderable(entity))
                     models.insert(r->model);
+                if (const std::string *effect = world.GetVfx(entity))
+                    effects.insert(*effect);
             });
             bool ok = true;
+            // Particle effects the scene's "vfx" components name must load (S9).
+            for (const std::string &effect : effects)
+                ok &= scene::LoadVfx(assetRoot / effect, effect, diagnostics) != nullptr;
             for (const std::string &model : models)
             {
                 const assets::ImportResult &result = import(model);
@@ -102,7 +108,21 @@ namespace umbra::authoring
         case FileKind::Rpg:
         {
             rpg::Content content;
-            return rpg::LoadContent(file, content, diagnostics);
+            if (!rpg::LoadContent(file, content, diagnostics))
+                return false;
+            // Particle effects named by skills, items and statuses must load (S9; rules never read them).
+            std::set<std::string> effects;
+            for (const auto &[id, def] : content.skills)
+                effects.insert(def.effect);
+            for (const auto &[id, def] : content.items)
+                effects.insert(def.effect);
+            for (const auto &[id, def] : content.statuses)
+                effects.insert(def.effect);
+            bool ok = true;
+            for (const std::string &effect : effects)
+                if (!effect.empty() && !options.assetRoot.empty())
+                    ok &= scene::LoadVfx(options.assetRoot / effect, effect, diagnostics) != nullptr;
+            return ok;
         }
         case FileKind::Save:
         {

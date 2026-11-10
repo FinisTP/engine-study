@@ -323,10 +323,28 @@ namespace umbra::world
 
     void World::UpdateAnimation(float seconds)
     {
-        entities_.ForEach([&](core::Handle<EntityTag>, Record &record) {
-            if (record.animator)
-                record.animator->Update(seconds);
+        entities_.ForEach([&](core::Handle<EntityTag> slot, Record &record) {
+            if (!record.animator)
+                return;
+            record.animator->Update(seconds);
+            for (core::AnimEvent &event : record.animator->TakeEvents())
+                animationEvents_.push_back({Entity{slot, worldId_}, std::move(event)});
         });
+    }
+
+    bool World::SetVfx(Entity entity, std::string effect)
+    {
+        Record *record = Get(entity);
+        if (record == nullptr)
+            return false;
+        record->vfx = std::move(effect);
+        return true;
+    }
+
+    const std::string *World::GetVfx(Entity entity) const noexcept
+    {
+        const Record *record = Get(entity);
+        return record && !record->vfx.empty() ? &record->vfx : nullptr;
     }
 
     void World::SetPost(const core::PostSettings &settings, std::shared_ptr<const core::TextureData> lut, Entity owner)

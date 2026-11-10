@@ -23,7 +23,7 @@ program; the game (`Umbra`) links none of it (`Umbra.GameExcludesEditor` checks 
 | Menu bar | File (New scene, Save, Reload, Quit), Edit (Undo, Redo, Add, Duplicate, Delete), View (RPG content), gizmo mode, **Play** |
 | Hierarchy | Entities by parent. Click to select. Add / Add child. |
 | Inspector | Id (renames children's references too), name, transform, model, then the entity's **components**, one header each with **x** to remove it. **Add component** lists the built-in ones (collider, interactable, portal, spawner) and the project's own from `assets/components/*.component.json`, whose fields are drawn from the schema (`engine/scene/include/Components.md`). Opening an older scene moves its parts into `components` as one undo step. A new collider on a model entity is a box fitted to the model's bounds; **Half size** / **Radius** / **Half height** edit it in meters, **Fit to model** refits it (again after scaling). The selected entity shows its mesh box in yellow and its collider in green. |
-| Assets | Scenes, RPG content, models, sounds under `assets/`. Double-click a scene to open it. |
+| Assets | Scenes, RPG content, models, sounds, animations and effects (`vfx/*.vfx.json`) under `assets/`. Double-click a scene to open it. Entities with a `vfx` component show their effect running in the view (S9). |
 | Diagnostics | The loader's messages for the last refused edit, open or save. |
 | Status bar | File, `*` when unsaved, a warning when the file changed outside the editor. |
 

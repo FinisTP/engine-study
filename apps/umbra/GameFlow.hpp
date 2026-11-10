@@ -65,6 +65,19 @@ public:
     std::string TakeMessage() { return std::exchange(message_, {}); }
     // Sounds the fights asked for since the last call (a skill's or item's "sound", else a hit).
     std::vector<std::string> TakeSounds() { return std::exchange(sounds_, {}); }
+    // Blows and heals that just landed, for the screen's feedback (numbers, shake, freeze; GameFeel).
+    struct Impact final
+    {
+        glm::vec3 at{0.0F}; // a point on whoever was hit
+        int amount = 0;
+        bool heal = false;
+        bool heavy = false;    // a big part of their health, or the finishing blow
+        bool onPlayer = false;
+    };
+    std::vector<Impact> TakeImpacts() { return std::exchange(impacts_, {}); }
+    // For pictures and checks without a keyboard (`--demo <skill>`): starts a turn fight with the
+    // first enemy and plays the hero's turns with `skill` (learned for free), else any legal move.
+    void Demo(const std::string &skill);
 
 private:
     void UpdateExploring(const umbra::platform::Input &input);
@@ -116,6 +129,25 @@ private:
     std::string pendingSkill_;         // the attack chosen, waiting for its target
     std::size_t hotkeySlot_ = 0;       // the key being set on the hotkeys screen
     std::vector<std::string> sounds_;  // for TakeSounds
+    // A hit the rules already counted, shown when the attacker's swing reaches its "hit" clip
+    // event (or after `wait` seconds if its clips have none): GameFlow.md "Blows".
+    struct Blow final
+    {
+        umbra::world::Entity attacker;
+        std::size_t target = 0;
+        int amount = 0;
+        std::string skill;
+        bool kills = false;
+        float wait = 0.0F;
+    };
+    std::vector<Blow> blows_;
+    std::vector<Impact> impacts_;
+    float outro_ = 0.0F; // seconds the finished fight stays on screen for its last blow
+    void LandBlows(float deltaSeconds);
+    void Land(const Blow &blow);
+    void Fell(std::size_t target);
+    void UpdateStatusEffects();
+    [[nodiscard]] bool FightOver();
     float contactCooldown_ = 0.0F;     // after fleeing, touching an enemy does nothing for a moment
     std::vector<std::string> log_;     // recent fight lines
     std::string message_;

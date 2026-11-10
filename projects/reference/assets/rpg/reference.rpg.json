@@ -7,7 +7,8 @@
       "name": "Poisoned",
       "turns": 3,
       "seconds": 6,
-      "damagePerTick": 3
+      "damagePerTick": 3,
+      "effect": "vfx/poison.vfx.json"
     },
     {
       "id": "guarded",
@@ -84,6 +85,34 @@
       }
     },
     {
+      "id": "fireball",
+      "name": "Fireball",
+      "cost": 12,
+      "effects": [
+        {
+          "kind": "damage",
+          "power": 16
+        }
+      ],
+      "modes": [
+        "turn",
+        "realtime"
+      ],
+      "points": 1,
+      "requires": [
+        "strike"
+      ],
+      "realtime": {
+        "windup": 0.5,
+        "active": 0.2,
+        "recovery": 0.4,
+        "cooldown": 3.0,
+        "range": 6.0,
+        "arc": 40
+      },
+      "effect": "vfx/fireball.vfx.json"
+    },
+    {
       "id": "guard",
       "name": "Guard",
       "cost": 5,
@@ -140,7 +169,8 @@
         "cooldown": 3.0,
         "range": 1.8,
         "arc": 90
-      }
+      },
+      "effect": "vfx/poison.vfx.json"
     },
     {
       "id": "weaken",
@@ -230,7 +260,8 @@
           "kind": "heal",
           "power": 30
         }
-      ]
+      ],
+      "effect": "vfx/heal.vfx.json"
     },
     {
       "id": "ether",
@@ -333,7 +364,7 @@
       "inventorySlots": 4,
       "xp": 25,
       "model": "models/bandit.glb",
-      "animation": "animations/humanoid.anim.json",
+      "animation": "animations/bandit.anim.json",
       "size": 0.9
     },
     {
@@ -368,7 +399,7 @@
       "inventorySlots": 4,
       "xp": 60,
       "model": "models/bandit.glb",
-      "animation": "animations/humanoid.anim.json",
+      "animation": "animations/bandit.anim.json",
       "size": 1.0,
       "color": [
         0.8,

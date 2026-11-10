@@ -62,7 +62,7 @@ TEST_CASE("Illegal actions are rejected and change nothing (T46)")
     REQUIRE(f.Act(Skill(0, "heavy_blow", 1)) == Rejection::NotEnoughEnergy);
     REQUIRE(f.Act(Skill(0, "strike", 0)) == Rejection::BadTarget);  // own team
     REQUIRE(f.Act(Skill(0, "strike", 9)) == Rejection::BadTarget);  // no such fighter
-    REQUIRE(f.Act(Skill(0, "fireball", 1)) == Rejection::UnknownSkill);
+    REQUIRE(f.Act(Skill(0, "meteor", 1)) == Rejection::UnknownSkill);
     REQUIRE(f.Act({0, 0, "", "iron_sword", 0}) == Rejection::NoSuchItem);
     REQUIRE(f.Act({0, 0, "", "health_potion", 0}) == Rejection::None); // legal: drinks one
     REQUIRE(f.Act({0, 9, "strike", "", 1}) == Rejection::UnknownActor);

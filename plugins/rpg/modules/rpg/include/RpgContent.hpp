@@ -47,6 +47,7 @@ namespace umbra::rpg
         std::optional<float> seconds;
         int damagePerTick = 0; // per turn or per second; negative heals
         std::vector<Modifier> modifiers;
+        std::string effect; // particle effect over whoever has it (asset path; the game reads it, rules never do)
     };
 
     enum class EffectKind
@@ -94,6 +95,7 @@ namespace umbra::rpg
         int pointCost = 0;                 // skill points to unlock
         std::vector<std::string> prerequisites; // skills that must be unlocked first ("requires" in JSON)
         std::string sound;                 // played when it hits (asset path; the game reads it, rules never do)
+        std::string effect;                // particle effect where it hits (asset path; "" = the default spark)
     };
 
     enum class Slot
@@ -112,6 +114,7 @@ namespace umbra::rpg
         std::vector<Modifier> modifiers; // while equipped
         std::vector<EffectDef> use;      // consumed on use (on self) when not empty
         std::string sound;               // played when it is used (asset path)
+        std::string effect;              // particle effect on whoever uses it (asset path)
     };
 
     struct ItemCount final

@@ -147,6 +147,8 @@ private:
     bool openNewScene_ = false;
 
     std::map<std::string, std::vector<std::string>> assets_; // "Scenes", "Models", ... -> paths
+    umbra::core::ParticleSystem particles_; // the view's "vfx" components (S9)
+    std::map<std::string, std::shared_ptr<const umbra::core::VfxEffect>> effects_;
     std::map<std::string, umbra::scene::ComponentSchema> schemas_; // project components (assets/components)
     std::vector<umbra::core::Diagnostic> problems_;
     std::string message_;

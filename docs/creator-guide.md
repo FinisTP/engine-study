@@ -199,6 +199,27 @@ Without the editor: `UmbraTool sound "calm village theme" --kind music --assets
 projects/reference/assets`. Stable Audio 3 is free to use commercially only below USD 1M yearly
 revenue; the window shows each model's license and the `.source.json` records it.
 
+## 2g. Effects and timed sounds (S9)
+
+**Fire on a torch.** In the editor select the entity, **Add component** → `vfx`, and pick an
+effect from `vfx/` (the **Effects** list in the asset panel shows them). It burns in the view at
+once. To change the fire, edit `vfx/fire.vfx.json` (rate, colours, size; every field is explained
+in `engine/core/include/Particles.md`); the running game picks the saved file up.
+
+**A new effect.** Copy one of the six in `projects/reference/assets/vfx/` and change it. A burst
+(`"rate": 0, "burst": 30, "duration": 0.1`) is a one-shot; a `rate` alone runs until removed.
+
+**An effect for a skill, item or status.** In the RPG data window, the skill's, item's or status's
+**Effect** field. A skill's plays where its blow lands, an item's on whoever used it, a status's
+stays over the fighter while it lasts (poison bubbles).
+
+**A sound on the right frame.** In the model's `animations/*.anim.json`, give the state an event:
+`{"at": 0.42, "name": "swing", "sound": "audio/swing.wav"}`. `at` is seconds into the clip. An
+event named `hit` in the attack state is the moment the damage, sparks and number show.
+
+**Check your work:** `UmbraTool validate projects/reference/assets/rpg/reference.rpg.json --assets
+projects/reference/assets` names an effect file that is missing or wrong.
+
 ## 3. Find a planted error
 
 Open `projects\reference\assets\rpg\reference.rpg.json` in a text editor. In the hero's `inventory`, change

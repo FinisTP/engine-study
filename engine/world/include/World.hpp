@@ -15,6 +15,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace umbra::world
@@ -191,6 +192,16 @@ namespace umbra::world
         [[nodiscard]] core::Animator *GetAnimator(Entity entity) noexcept;
         // Advances every animator (call once per frame, before ExtractDrawList).
         void UpdateAnimation(float seconds);
+        // The clip events crossed since the last call, with the entity they happened on (S9).
+        struct AnimationEvent final
+        {
+            Entity entity;
+            core::AnimEvent event;
+        };
+        [[nodiscard]] std::vector<AnimationEvent> TakeAnimationEvents() { return std::exchange(animationEvents_, {}); }
+        // A particle effect that runs on this entity (the "vfx" component, Particles.md); "" = none.
+        bool SetVfx(Entity entity, std::string effect);
+        [[nodiscard]] const std::string *GetVfx(Entity entity) const noexcept;
         // The scene's sun, sky and fog (the "environment" component) and the time of day.
         // `owner` is the entity whose component it is (saved there again); none = defaults.
         void SetEnvironment(const core::EnvironmentSettings &settings, Entity owner = {});
@@ -236,6 +247,7 @@ namespace umbra::world
             std::optional<Spawner> spawner;
             std::optional<Light> light;
             std::string animationGraph;
+            std::string vfx;
             std::optional<core::Animator> animator;
             std::vector<CustomComponent> customs;
         };
@@ -253,6 +265,7 @@ namespace umbra::world
         core::PostSettings post_;
         std::shared_ptr<const core::TextureData> postLut_;
         Entity postOwner_;
+        std::vector<AnimationEvent> animationEvents_;
         float hour_ = environment_.hour;
     };
 }

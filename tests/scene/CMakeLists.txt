@@ -1,7 +1,7 @@
 find_package(Catch2 3 CONFIG REQUIRED)
 
 add_executable(UmbraSceneTests)
-target_sources(UmbraSceneTests PRIVATE ModelInstanceTests.cpp SceneFileTests.cpp ComponentTests.cpp AnimGraphTests.cpp)
+target_sources(UmbraSceneTests PRIVATE ModelInstanceTests.cpp SceneFileTests.cpp ComponentTests.cpp AnimGraphTests.cpp VfxTests.cpp)
 target_compile_definitions(UmbraSceneTests PRIVATE UMBRA_TEST_ASSET_DIRECTORY="${UMBRA_REFERENCE_ASSETS}")
 target_compile_features(UmbraSceneTests PRIVATE cxx_std_20)
 target_link_libraries(

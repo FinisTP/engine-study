@@ -1,0 +1,92 @@
+{
+  "format": "umbra.animgraph",
+  "version": 1,
+  "fade": 0.2,
+  "states": [
+    {
+      "name": "dead",
+      "clip": "death",
+      "loop": false,
+      "when": {
+        "flag": "dead"
+      }
+    },
+    {
+      "name": "hit",
+      "clip": "hit",
+      "on": "hit"
+    },
+    {
+      "name": "attack",
+      "clip": "attack",
+      "on": "attack",
+      "events": [
+        {
+          "at": 0.92,
+          "name": "swing",
+          "sound": "audio/swing.wav"
+        },
+        {
+          "at": 1.08,
+          "name": "hit"
+        }
+      ]
+    },
+    {
+      "name": "run",
+      "clip": "run",
+      "when": {
+        "param": "speed",
+        "above": 2.6
+      },
+      "rate": {
+        "param": "speed",
+        "per": 4.5
+      },
+      "events": [
+        {
+          "at": 0.28,
+          "name": "step",
+          "sound": "audio/footstep.wav",
+          "effect": "vfx/dust.vfx.json"
+        },
+        {
+          "at": 0.61,
+          "name": "step",
+          "sound": "audio/footstep.wav",
+          "effect": "vfx/dust.vfx.json"
+        }
+      ]
+    },
+    {
+      "name": "walk",
+      "clip": "walk",
+      "when": {
+        "param": "speed",
+        "above": 0.3
+      },
+      "rate": {
+        "param": "speed",
+        "per": 1.8
+      },
+      "events": [
+        {
+          "at": 0.05,
+          "name": "step",
+          "sound": "audio/footstep.wav",
+          "effect": "vfx/dust.vfx.json"
+        },
+        {
+          "at": 0.55,
+          "name": "step",
+          "sound": "audio/footstep.wav",
+          "effect": "vfx/dust.vfx.json"
+        }
+      ]
+    },
+    {
+      "name": "idle",
+      "clip": "idle"
+    }
+  ]
+}

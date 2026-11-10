@@ -135,3 +135,66 @@ TEST_CASE("The animator picks states by flags, numbers and triggers, and fades b
     CHECK(b.Missing());
     CHECK(b.MissingClip() == "wave");
 }
+
+TEST_CASE("Clip events fire once per crossing, at any frame rate, and again each lap (T89)", "[animation]")
+{
+    auto skeleton = std::make_shared<Skeleton>(Chain());
+    auto clips = std::make_shared<std::vector<Clip>>(std::vector<Clip>{Turn("idle", 0.0F), Turn("walk", 30.0F), Turn("attack", 60.0F)});
+    auto graph = std::make_shared<AnimGraph>();
+    AnimState attack{"attack", "attack", false};
+    attack.on = "attack";
+    attack.events = {{0.0F, "start", "", ""}, {0.4F, "swing", "audio/swing.wav", ""}, {0.6F, "hit", "", "vfx/hit.vfx.json"}};
+    AnimState walk{"walk", "walk", true, "", "speed", 0.1F};
+    walk.events = {{0.25F, "step", "", ""}, {0.75F, "step", "", ""}};
+    graph->states = {attack, walk, AnimState{"idle", "idle"}};
+    const auto find = [&](const std::string &name) -> std::shared_ptr<const Clip> {
+        for (const Clip &c : *clips)
+            if (c.name == name)
+                return std::shared_ptr<const Clip>(clips, &c);
+        return nullptr;
+    };
+    // Counts the events of `seconds` of play in steps of `step`.
+    const auto count = [&](Animator &a, float seconds, float step) {
+        std::vector<std::string> names;
+        for (float t = 0.0F; t < seconds - step * 0.5F; t += step)
+        {
+            a.Update(step);
+            for (const AnimEvent &e : a.TakeEvents())
+                names.push_back(e.name);
+        }
+        return names;
+    };
+
+    // 1. A one-shot at 60 and at 5 frames a second: each event once, in order, also the one at 0 s.
+    for (const float step : {1.0F / 60.0F, 0.2F})
+    {
+        Animator a(skeleton, graph, find);
+        a.Update(0.1F);
+        a.Trigger("attack");
+        INFO(step);
+        CHECK(count(a, 1.4F, step) == std::vector<std::string>{"start", "swing", "hit"});
+    }
+
+    // 2. One slow frame over the whole clip still gives every event, with its sound and effect.
+    Animator slow(skeleton, graph, find);
+    slow.Trigger("attack");
+    slow.Update(2.0F);
+    const std::vector<AnimEvent> all = slow.TakeEvents();
+    REQUIRE(all.size() == 3);
+    CHECK(all[1].sound == "audio/swing.wav");
+    CHECK(all[2].effect == "vfx/hit.vfx.json");
+    CHECK(slow.TakeEvents().empty()); // taken once
+
+    // 3. A looping clip: two steps a lap, at any frame rate; a stall is capped at four laps.
+    for (const float step : {1.0F / 60.0F, 0.1F, 0.5F})
+    {
+        Animator a(skeleton, graph, find);
+        a.SetNumber("speed", 1.0F);
+        INFO(step);
+        CHECK(count(a, 3.0F, step).size() == 6);
+    }
+    Animator stalled(skeleton, graph, find);
+    stalled.SetNumber("speed", 1.0F);
+    stalled.Update(60.0F);
+    CHECK(stalled.TakeEvents().size() <= 8);
+}

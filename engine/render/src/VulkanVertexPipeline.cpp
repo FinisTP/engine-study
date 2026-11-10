@@ -137,9 +137,9 @@ namespace umbra::render
         }
 
         // Scene, sky and shadow shaders; they are only needed until the pipelines exist.
-        std::array<VkShaderModule, 7> shaders{};
+        std::array<VkShaderModule, 9> shaders{};
         const char *shaderFiles[] = {"Scene.vert.spv", "Scene.frag.spv", "Sky.vert.spv", "Sky.frag.spv", "Shadow.vert.spv",
-                                     "Skinned.vert.spv", "ShadowSkinned.vert.spv"};
+                                     "Skinned.vert.spv", "ShadowSkinned.vert.spv", "Particle.vert.spv", "Particle.frag.spv"};
         const auto destroyShaders = [&] {
             for (VkShaderModule &shader : shaders)
                 if (shader)
@@ -264,6 +264,39 @@ namespace umbra::render
         skinnedInfo.pVertexInputState = &skinnedInput;
         if (pipelineResult == VK_SUCCESS)
             pipelineResult = vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &skinnedInfo, nullptr, &skinnedPipeline_);
+
+        // 6.15. Particles (Particles.md): one instance per particle, no depth writes, premultiplied
+        // blending (alpha 0 adds light, alpha covers), the HDR picture's own alpha left alone.
+        const std::array particleStages{
+            VkPipelineShaderStageCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0, VK_SHADER_STAGE_VERTEX_BIT, shaders[7], "main", nullptr},
+            VkPipelineShaderStageCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0, VK_SHADER_STAGE_FRAGMENT_BIT, shaders[8], "main", nullptr}};
+        const VkVertexInputBindingDescription particleBinding{0, sizeof(core::ParticleInstance), VK_VERTEX_INPUT_RATE_INSTANCE};
+        const std::array particleAttributes{VkVertexInputAttributeDescription{0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
+                                            VkVertexInputAttributeDescription{1, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 16},
+                                            VkVertexInputAttributeDescription{2, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 32}};
+        VkPipelineVertexInputStateCreateInfo particleInput{VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
+        particleInput.vertexBindingDescriptionCount = 1;
+        particleInput.pVertexBindingDescriptions = &particleBinding;
+        particleInput.vertexAttributeDescriptionCount = static_cast<std::uint32_t>(particleAttributes.size());
+        particleInput.pVertexAttributeDescriptions = particleAttributes.data();
+        VkPipelineDepthStencilStateCreateInfo readDepth = depthState;
+        readDepth.depthWriteEnable = VK_FALSE;
+        VkPipelineColorBlendAttachmentState particleBlendAttachment = blendAttachment;
+        particleBlendAttachment.blendEnable = VK_TRUE;
+        particleBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+        particleBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        particleBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+        particleBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+        VkPipelineColorBlendStateCreateInfo particleBlend = blend;
+        particleBlend.pAttachments = &particleBlendAttachment;
+        VkGraphicsPipelineCreateInfo particleInfo = pipelineInfo;
+        particleInfo.pStages = particleStages.data();
+        particleInfo.pVertexInputState = &particleInput;
+        particleInfo.pDepthStencilState = &readDepth;
+        particleInfo.pRasterizationState = &bothSides;
+        particleInfo.pColorBlendState = &particleBlend;
+        if (pipelineResult == VK_SUCCESS)
+            pipelineResult = vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &particleInfo, nullptr, &particlePipeline_);
 
         // 6.2. Custom surface shaders: the same pipeline with the material's fragment shader.
         std::error_code ec;
@@ -476,6 +509,9 @@ namespace umbra::render
             vkDestroySampler(device_, shadowSampler_, nullptr);
         if (skyPipeline_)
             vkDestroyPipeline(device_, skyPipeline_, nullptr);
+        if (particlePipeline_)
+            vkDestroyPipeline(device_, particlePipeline_, nullptr);
+        particlePipeline_ = VK_NULL_HANDLE;
         shadowImage_.Reset();
         shadowFramebuffer_ = VK_NULL_HANDLE;
         shadowPipeline_ = VK_NULL_HANDLE;

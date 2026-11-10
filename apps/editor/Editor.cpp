@@ -2,6 +2,7 @@
 #include "Widgets.hpp"
 
 #include <AnimGraph.hpp>
+#include <Vfx.hpp>
 #include <Log.hpp>
 #include <ModelInstance.hpp>
 #include <SceneEdits.hpp>
@@ -271,6 +272,8 @@ void Editor::RebuildWorld()
     if (!diagnostics.empty())
         Report(diagnostics, "Animation problems");
     world_ = std::move(fresh);
+    particles_.Clear(); // their entities belonged to the old world
+    effects_.clear();   // effect files are read again
     builtRevision_ = scene_->Revision();
 }
 
@@ -312,7 +315,21 @@ void Editor::Update(float deltaSeconds, umbra::core::DrawList &drawList)
     if (world_)
     {
         world_->UpdateAnimation(deltaSeconds);
+        (void)world_->TakeAnimationEvents(); // the editor plays no sounds or effects for clip events
         world_->ExtractDrawList(drawList);
+        // "vfx" components run in the view too (S9); a changed or broken effect file is read again on Reload.
+        particles_.KeepOnly(umbra::scene::SyncVfx(*world_, particles_, [&](const std::string &path) {
+            if (!effects_.contains(path))
+            {
+                std::vector<umbra::core::Diagnostic> problems;
+                effects_[path] = umbra::scene::LoadVfx(assetRoot_ / path, path, problems);
+                if (!problems.empty())
+                    Report(problems, "Particle effect");
+            }
+            return effects_[path];
+        }));
+        particles_.Update(deltaSeconds);
+        particles_.Extract(drawList);
     }
     for (const auto &panel : panels_)
         panel->DecorateView(*this, drawList);
@@ -1012,6 +1029,8 @@ void Editor::ScanAssets()
         }
         else if (name.ends_with(".anim.json"))
             assets_["Animations"].push_back(path);
+        else if (name.ends_with(".vfx.json"))
+            assets_["Effects"].push_back(path);
         else if (name.ends_with(".policy.json"))
             assets_["Learned AI"].push_back(path);
         else if (name.ends_with(".material.json"))

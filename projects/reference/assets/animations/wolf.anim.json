@@ -19,7 +19,18 @@
     {
       "name": "attack",
       "clip": "attack",
-      "on": "attack"
+      "on": "attack",
+      "events": [
+        {
+          "at": 0.8,
+          "name": "swing",
+          "sound": "audio/swing.wav"
+        },
+        {
+          "at": 0.9,
+          "name": "hit"
+        }
+      ]
     },
     {
       "name": "run",
@@ -31,7 +42,21 @@
       "rate": {
         "param": "speed",
         "per": 4.0
-      }
+      },
+      "events": [
+        {
+          "at": 0.15,
+          "name": "step",
+          "sound": "audio/footstep.wav",
+          "effect": "vfx/dust.vfx.json"
+        },
+        {
+          "at": 0.42,
+          "name": "step",
+          "sound": "audio/footstep.wav",
+          "effect": "vfx/dust.vfx.json"
+        }
+      ]
     },
     {
       "name": "walk",
@@ -43,7 +68,21 @@
       "rate": {
         "param": "speed",
         "per": 1.5
-      }
+      },
+      "events": [
+        {
+          "at": 0.25,
+          "name": "step",
+          "sound": "audio/footstep.wav",
+          "effect": "vfx/dust.vfx.json"
+        },
+        {
+          "at": 0.77,
+          "name": "step",
+          "sound": "audio/footstep.wav",
+          "effect": "vfx/dust.vfx.json"
+        }
+      ]
     },
     {
       "name": "idle",

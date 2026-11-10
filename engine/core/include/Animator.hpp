@@ -7,11 +7,21 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 // Plays an entity's clips through its animation graph (S8, Skeleton.md section 4).
 namespace umbra::core
 {
+    // Something that happens at a moment of a clip (S9, AnimGraph.md): a footstep, a sword's impact.
+    struct AnimEvent final
+    {
+        float at = 0.0F;    // seconds into the clip
+        std::string name;   // what the game hears ("step", "hit")
+        std::string sound;  // optional sound to play there (asset path)
+        std::string effect; // optional particle effect to spawn there (asset path)
+    };
+
     // One state of an animation graph (`*.anim.json`, parsed by scene::ParseAnimGraph).
     struct AnimState final
     {
@@ -24,7 +34,7 @@ namespace umbra::core
         std::string on;              // or: played once when this trigger fires (e.g. "attack")
         std::string rateParam;       // playback speed = param / ratePer (e.g. walk faster when moving faster)
         float ratePer = 0.0F;
-        std::vector<std::pair<float, std::string>> events; // (seconds into the clip, name) for S9
+        std::vector<AnimEvent> events;
     };
 
     struct AnimGraph final
@@ -48,6 +58,8 @@ namespace umbra::core
         // Picks the state, advances time, blends from the last state, fills the palette.
         void Update(float seconds);
         [[nodiscard]] const std::vector<glm::mat4> &Palette() const { return palette_; }
+        // The events the clip's time passed since the last call: each once, also at low frame rates.
+        [[nodiscard]] std::vector<AnimEvent> TakeEvents() { return std::exchange(fired_, {}); }
         [[nodiscard]] const std::string &State() const;
         [[nodiscard]] float StateTime() const { return time_; }
         [[nodiscard]] bool Missing() const { return !missing_.empty(); } // a state names a clip that isn't there
@@ -57,6 +69,7 @@ namespace umbra::core
         [[nodiscard]] bool Matches(std::size_t state) const;
         [[nodiscard]] bool Finished() const;
         void Pose(std::size_t state, float time, std::vector<JointPose> &out) const;
+        void FireEvents(float from, float to);
 
         std::shared_ptr<const Skeleton> skeleton_;
         std::shared_ptr<const AnimGraph> graph_;
@@ -72,5 +85,7 @@ namespace umbra::core
         std::vector<JointPose> pose_;
         std::vector<glm::mat4> palette_;
         std::string missing_;
+        std::vector<AnimEvent> fired_;
+        bool entered_ = false; // the state began this update: an event at 0 s counts
     };
 }

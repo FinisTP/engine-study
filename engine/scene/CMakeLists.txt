@@ -11,6 +11,7 @@ target_sources(
         src/Checkpoint.cpp
         src/ComponentSchema.cpp
         src/AnimGraph.cpp
+        src/Vfx.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
@@ -21,6 +22,7 @@ target_sources(
             include/ComponentSchema.hpp
             include/AnimGraph.hpp
             include/AnimGraph.md
+            include/Vfx.hpp
 )
 
 target_compile_features(UmbraScene PUBLIC cxx_std_20)

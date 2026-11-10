@@ -79,7 +79,8 @@ namespace
         const umbra::render::VulkanPost &post,
         std::size_t frameIndex,
         bool sunShadows,
-        VkBuffer captureBuffer)
+        VkBuffer captureBuffer,
+        VkBuffer particleBuffer)
     {
         if (imageIndex >= pipeline.GetFramebuffers().size())
         {
@@ -132,6 +133,14 @@ namespace
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetSkyPipeline());
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
         DrawItems(commandBuffer, pipeline, resources, drawList, fallbackTexture, false);
+        // Particles last: they blend over the solid scene (6 vertices per instance, Particles.md).
+        if (const std::size_t particles = std::min(drawList.particles.size(), umbra::core::ParticleSystem::maxDrawn); particles > 0)
+        {
+            constexpr VkDeviceSize start = 0;
+            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetParticlePipeline());
+            vkCmdBindVertexBuffers(commandBuffer, 0, 1, &particleBuffer, &start);
+            vkCmdDraw(commandBuffer, 6, static_cast<std::uint32_t>(particles), 0, 0);
+        }
         vkCmdEndRenderPass(commandBuffer);
 
         // 3. Bloom, then the screen: the finished picture (Post.md), then the overlay on top.
@@ -294,7 +303,9 @@ namespace umbra::render
         {
             if (!allocator.CreateMappedBuffer(sizeof(SceneUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                               frames_[index].uniformBuffer) ||
-                !allocator.CreateMappedBuffer(maxFrameJoints * sizeof(glm::mat4), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, frames_[index].jointBuffer))
+                !allocator.CreateMappedBuffer(maxFrameJoints * sizeof(glm::mat4), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, frames_[index].jointBuffer) ||
+                !allocator.CreateMappedBuffer(core::ParticleSystem::maxDrawn * sizeof(core::ParticleInstance), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                                              frames_[index].particleBuffer))
             {
                 Shutdown();
                 return false;
@@ -431,6 +442,12 @@ namespace umbra::render
             std::memcpy(frame.jointBuffer.GetMappedData(), drawList.joints.data(), joints * sizeof(glm::mat4));
             frame.jointBuffer.Flush();
         }
+        const std::size_t particles = std::min(drawList.particles.size(), core::ParticleSystem::maxDrawn);
+        if (particles > 0)
+        {
+            std::memcpy(frame.particleBuffer.GetMappedData(), drawList.particles.data(), particles * sizeof(core::ParticleInstance));
+            frame.particleBuffer.Flush();
+        }
         // A capture copies the picture into a read-back buffer (BGRA or RGBA, 4 bytes per pixel).
         GpuBuffer captureBuffer;
         const VkExtent2D extent = swapchain.GetExtent();
@@ -441,7 +458,7 @@ namespace umbra::render
         }
         if (!RecordSceneCommands(frame.commandBuffer, imageIndex, swapchain, pipeline,
                                  resources, drawList, fallbackTexture, frame.descriptorSet, overlay, post, currentFrame_,
-                                 uniform.lighting.sunDirection.w > 0.0F, capture ? captureBuffer.GetHandle() : VK_NULL_HANDLE))
+                                 uniform.lighting.sunDirection.w > 0.0F, capture ? captureBuffer.GetHandle() : VK_NULL_HANDLE, frame.particleBuffer.GetHandle()))
         {
             return FrameResult::FatalError;
         }

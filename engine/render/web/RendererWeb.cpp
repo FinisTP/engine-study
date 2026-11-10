@@ -33,6 +33,7 @@ extern "C"
     void umbra_gpu_destroy_texture(int id);
     // `frame`: viewProjection, shadowMatrix, inverseViewProjection (16 floats each), then core::LightingBlock (160 floats).
     // `post`: core::PostBlock::exposure (4 floats).
+    void umbra_gpu_particles(const void *particles, int count); // core::ParticleInstance each
     void umbra_gpu_frame(const float *frame, const float *post, const float *draws, int drawCount, const float *lines, int lineCount, const char *hud,
                          const float *joints, int jointCount);
     void umbra_gpu_lut(const unsigned char *strip); // the post color table (256x16 RGBA)
@@ -262,6 +263,7 @@ namespace umbra::render
             i.gradeImage = drawList.postLut;
         }
         const core::PostBlock postBlock = core::PackPost(post, 1, 1);
+        umbra_gpu_particles(drawList.particles.data(), static_cast<int>(std::min(drawList.particles.size(), core::ParticleSystem::maxDrawn)));
         umbra_gpu_frame(glm::value_ptr(frame.viewProjection), glm::value_ptr(postBlock.exposure), i.draws.data(), static_cast<int>(i.draws.size() / drawFloats), i.lines.data(),
                         static_cast<int>(i.lines.size() / 10), hud.c_str(), drawList.joints.empty() ? nullptr : glm::value_ptr(drawList.joints[0]),
                         static_cast<int>(std::min(drawList.joints.size(), maxFrameJoints)));

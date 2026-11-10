@@ -48,7 +48,7 @@ ComfyUI and their models.
 | `models/wolf.glb` | "Wolf" from Quaternius' Ultimate Animated Animal Pack (quaternius.com, poly.pizza/m/P1gU3Qkr9r), packed by `tools/models/pack_animated.py` | CC0 1.0 (public domain); credit optional |
 | `animations/*.anim.json` | Written for this project (S8) | Project's own |
 | `models/tower.gltf`, `tower.bin` | Hand-made sample for this project (Phase 3) | Project's own |
-| `audio/*.wav` | Synthesized by `plugins/third-person/tools/make_sounds.py` (sine waves and noise) | Project's own |
+| `audio/*.wav` | Synthesized by `plugins/third-person/tools/make_sounds.py` (sine waves and noise); `audio/swing.wav` by `tools/audio/make_swing.py` (filtered noise) | Project's own |
 | `ui/fonts/Poppins-*.ttf`, `ui/fonts/Lora.ttf` | Google Fonts (rpg-ui plugin) | SIL Open Font License 1.1 (license files next to the fonts) |
 | `ui/images/target-arrow.png` | Drawn for this project (S4) | Project's own |
 | `textures/sample_bricks.png` | Drawn by `tools/textures/make_sample_bricks.py` | Project's own |

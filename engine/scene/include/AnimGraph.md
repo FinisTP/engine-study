@@ -30,10 +30,38 @@ placed). The math behind clips and skinning is in `engine/core/include/Skeleton.
 | `when.param` + `above` | plays while this number is above the value |
 | `on` | a one-shot started by this trigger; it plays to its end |
 | `rate.param` + `per` | playback speed = number / per, kept within 0.5..2 |
-| `events` | `[{"at": 0.4, "name": "swing"}]`: times in the clip, for S9 (sounds, effects) |
+| `events` | moments in the clip (seconds): see "Events" below |
 
 A state without `when` or `on` always matches. **The first matching state wins**, so put the
 important ones first: dead, then hit and attack, then movement, then idle last.
+
+## Events (S9)
+
+```json
+"events": [
+  {"at": 0.42, "name": "swing", "sound": "audio/swing.wav"},
+  {"at": 0.55, "name": "hit"},
+  {"at": 0.05, "name": "step", "sound": "audio/footstep.wav", "effect": "vfx/dust.vfx.json"}
+]
+```
+
+| Field | Meaning |
+|---|---|
+| `at` | seconds into the clip |
+| `name` | what the game hears; `hit` is when an attack's damage shows (`GameFlow.md`, "Blows") |
+| `sound` | optional: played at the entity, quieter with distance from the player |
+| `effect` | optional: a particle effect started at the entity (`Particles.md`) |
+
+An event fires **once each time the clip's time passes it**: also when one slow frame jumps over
+it, and again on every lap of a looping clip. The rule: with the clip time going from `a` to `b`
+this frame, every event with `a < at <= b` fires (a state that has just begun counts from before
+0, so an event at 0 s is not lost). A long stall fires at most four laps' worth.
+
+To find the right moment, play the clip in the editor and read the time when the foot meets the
+ground or the blade is furthest forward.
+
+A rigged player's footsteps come from its `step` events; a player without a rig keeps the stride
+counter (S4).
 
 ## What the game sets
 

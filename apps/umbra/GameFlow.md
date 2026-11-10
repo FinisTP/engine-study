@@ -91,6 +91,29 @@ Each frame:
    order (2.5 m/s), its `act` is submitted.
 4. `Update(seconds)` advances wind-ups, hits and cooldowns.
 
+## Blows (S9)
+
+The rules decide a blow at once: health is already lower when the event arrives. The screen shows
+it **when the swing lands**, so the sound, the sparks, the number and the health bar agree with the
+animation.
+
+1. A `Damage` event makes a `Blow` (attacker, target, amount, skill) and triggers the attacker's
+   `attack` state.
+2. The blow waits for the attacker's clip event named `hit` (`AnimGraph.md`, "Events"). An attacker
+   without a rig or without that event lands it after at most 1.3 s; an attack with no attacker in
+   the world (poison) lands at once.
+3. Landing: the hit sound (the skill's `sound`, else `audio/hit.wav`), the target's white flash and
+   `hit` state, the skill's `effect` (else `vfx/hit.vfx.json`) on its chest, and an `Impact` for
+   `GameFeel.md` (number, and for a heavy blow hit-stop and shake).
+4. A `Death` event marks the waiting blow as the finishing one: the enemy falls when it lands.
+
+A decided fight stays on screen until its last blow has landed. In a turn fight the next enemy's
+pause starts after the previous blow landed. Statuses with an `effect` show it over the fighter
+while they last; an item's `effect` plays once on whoever used it.
+
+`--demo <skill>` (with `--capture`) plays a turn fight by itself with that skill, for pictures and
+checks without a keyboard; such a capture keeps the screens and numbers.
+
 ## Music and fight sounds (S4)
 
 - Music: each scene's **Music** component (third-person plugin) names a looping `.ogg`. When the

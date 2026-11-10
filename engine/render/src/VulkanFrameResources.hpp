@@ -92,6 +92,7 @@ namespace umbra::render
             VkFence inFlight = VK_NULL_HANDLE;
             GpuBuffer uniformBuffer;
             GpuBuffer jointBuffer; // skinning matrices of this frame (S8), set 0 binding 2
+            GpuBuffer particleBuffer; // this frame's particle instances (S9)
             VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
         };
 

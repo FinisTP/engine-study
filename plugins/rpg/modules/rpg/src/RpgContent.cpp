@@ -80,20 +80,21 @@ namespace umbra::rpg
         void ReadSections(Reader &r, const json &root, Content &c)
         {
             r.Objects(root, "statuses", "", [&](const json &s, const std::string &at) {
-                r.Known(s, at, {"id", "name", "turns", "seconds", "damagePerTick", "modifiers"});
+                r.Known(s, at, {"id", "name", "turns", "seconds", "damagePerTick", "modifiers", "effect"});
                 StatusDef def{r.String(s, "id", at), r.String(s, "name", at), {}, {}, 0, ReadModifiers(r, s, at)};
                 if (s.contains("turns"))
                     def.turns = r.Int(s, "turns", 1, 1, 100, at);
                 if (s.contains("seconds"))
                     def.seconds = r.Float(s, "seconds", 1.0F, 0.1F, 600.0F, at);
                 def.damagePerTick = r.Int(s, "damagePerTick", 0, -maxValue, maxValue, at);
+                def.effect = r.String(s, "effect", at);
                 if (!def.turns && !def.seconds)
                     r.Error("status.clock", at, "needs \"turns\" and/or \"seconds\"");
                 Insert(r, c.statuses, def, at);
             });
 
             r.Objects(root, "skills", "", [&](const json &s, const std::string &at) {
-                r.Known(s, at, {"id", "name", "cost", "target", "effects", "modes", "realtime", "points", "requires", "sound"});
+                r.Known(s, at, {"id", "name", "cost", "target", "effects", "modes", "realtime", "points", "requires", "sound", "effect"});
                 SkillDef def{r.String(s, "id", at), r.String(s, "name", at)};
                 def.energyCost = r.Int(s, "cost", 0, 0, maxValue, at);
                 const std::string target = r.String(s, "target", at);
@@ -130,11 +131,12 @@ namespace umbra::rpg
                 def.pointCost = r.Int(s, "points", 0, 0, 100, at);
                 def.prerequisites = r.Strings(s, "requires", at);
                 def.sound = r.String(s, "sound", at);
+                def.effect = r.String(s, "effect", at);
                 Insert(r, c.skills, def, at);
             });
 
             r.Objects(root, "items", "", [&](const json &s, const std::string &at) {
-                r.Known(s, at, {"id", "name", "slot", "stack", "modifiers", "use", "sound"});
+                r.Known(s, at, {"id", "name", "slot", "stack", "modifiers", "use", "sound", "effect"});
                 ItemDef def{r.String(s, "id", at), r.String(s, "name", at)};
                 const std::string slot = r.String(s, "slot", at);
                 if (slot == "weapon")
@@ -147,6 +149,7 @@ namespace umbra::rpg
                 def.modifiers = ReadModifiers(r, s, at);
                 def.use = ReadEffects(r, s, "use", at);
                 def.sound = r.String(s, "sound", at);
+                def.effect = r.String(s, "effect", at);
                 if (def.slot != Slot::None && def.maxStack != 1)
                     r.Error("item.stack", at + ".stack", "equipment does not stack");
                 if (def.slot == Slot::None && !def.modifiers.empty())

@@ -195,6 +195,13 @@ void RpgFormsPanel::EntryForm(const std::string &at, const Json &entry, const st
             set(path, value, !newStep_), newStep_ = false;
     };
     // A sound file for the game to play (rules never read it); empty = the default hit sound.
+    // A particle effect for the game to show (rules never read it).
+    const auto effectField = [&](const char *label) {
+        std::vector<std::string> effects = host_->AssetList("Effects");
+        effects.insert(effects.begin(), "");
+        if (Combo(label, entry.value("effect", ""), effects, text))
+            text.empty() ? remove("/effect") : set("/effect", text);
+    };
     const auto soundField = [&](const char *label) {
         std::vector<std::string> sounds = host_->AssetList("Sounds");
         sounds.insert(sounds.begin(), "");
@@ -319,6 +326,7 @@ void RpgFormsPanel::EntryForm(const std::string &at, const Json &entry, const st
         rows("Modifiers (while equipped)", "modifiers", Json{{"stat", "attack"}, {"add", 1}}, modifierRow);
         rows("Use effects (consumes one)", "use", Json{{"kind", "heal"}, {"power", 10}}, effectRow);
         soundField("Sound when used");
+        effectField("Effect on the user");
     }
     else if (section_ == "skills")
     {
@@ -355,12 +363,14 @@ void RpgFormsPanel::EntryForm(const std::string &at, const Json &entry, const st
         intField("Skill points", entry.value("points", Json()), "/points", 0);
         idSet("Requires", "requires", "skills");
         soundField("Sound when it hits");
+        effectField("Effect where it hits");
     }
     else if (section_ == "statuses")
     {
         intField("Turns", entry.value("turns", Json()), "/turns", 0);
         floatField("Seconds", entry.value("seconds", Json()), "/seconds", 0.0F);
         intField("Damage per tick", entry.value("damagePerTick", Json()), "/damagePerTick", 0);
+        effectField("Effect while it lasts");
         rows("Modifiers", "modifiers", Json{{"stat", "defense"}, {"percent", 50}}, modifierRow);
     }
     else if (section_ == "actors")

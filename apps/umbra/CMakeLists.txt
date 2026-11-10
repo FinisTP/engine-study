@@ -10,6 +10,7 @@ target_sources(
     Umbra
     PRIVATE
         GameFlow.cpp
+        GameFeel.cpp
         GameFlow.hpp
         GameFlow.md
         Benchmark.cpp

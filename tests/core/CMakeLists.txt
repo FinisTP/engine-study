@@ -14,6 +14,7 @@ target_sources(
         LightingTests.cpp
         PostTests.cpp
         AnimationTests.cpp
+        ParticleTests.cpp
 )
 
 target_compile_features(UmbraCoreTests PRIVATE cxx_std_20)

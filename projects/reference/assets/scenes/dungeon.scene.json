@@ -506,6 +506,9 @@
       ],
       "emissive": 2,
       "components": {
+        "vfx": {
+          "effect": "vfx/fire.vfx.json"
+        },
         "light": {
           "color": [
             1,
@@ -541,6 +544,9 @@
       ],
       "emissive": 2,
       "components": {
+        "vfx": {
+          "effect": "vfx/fire.vfx.json"
+        },
         "light": {
           "color": [
             1,
@@ -576,6 +582,9 @@
       ],
       "emissive": 2,
       "components": {
+        "vfx": {
+          "effect": "vfx/fire.vfx.json"
+        },
         "light": {
           "color": [
             1,
@@ -611,6 +620,9 @@
       ],
       "emissive": 2,
       "components": {
+        "vfx": {
+          "effect": "vfx/fire.vfx.json"
+        },
         "light": {
           "color": [
             1,
@@ -646,6 +658,9 @@
       ],
       "emissive": 2,
       "components": {
+        "vfx": {
+          "effect": "vfx/fire.vfx.json"
+        },
         "light": {
           "color": [
             1,
@@ -681,6 +696,9 @@
       ],
       "emissive": 2,
       "components": {
+        "vfx": {
+          "effect": "vfx/fire.vfx.json"
+        },
         "light": {
           "color": [
             1,

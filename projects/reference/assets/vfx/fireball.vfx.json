@@ -1,0 +1,44 @@
+{
+  "format": "umbra.vfx",
+  "version": 1,
+  "rate": 0,
+  "burst": 70,
+  "duration": 0.1,
+  "lifetime": [
+    0.3,
+    0.75
+  ],
+  "radius": 0.25,
+  "velocity": [
+    0,
+    1.2,
+    0
+  ],
+  "spread": [
+    3.2,
+    2.6,
+    3.2
+  ],
+  "gravity": 1.5,
+  "drag": 3.0,
+  "size": [
+    0.55,
+    0.08
+  ],
+  "color": [
+    [
+      5.0,
+      2.2,
+      0.5,
+      1.0
+    ],
+    [
+      1.5,
+      0.1,
+      0.0,
+      0.0
+    ]
+  ],
+  "blend": "add",
+  "max": 120
+}

@@ -30,6 +30,7 @@ namespace game = umbra::game;
 namespace
 {
     constexpr float enemyTurnDelay = 0.7F; // seconds, so the player can follow enemy turns
+    constexpr float blowWait = 1.3F;       // seconds a blow waits for its "hit" clip event at most (the longest swing: 1.1 s)
     constexpr float enemyFightSpeed = 2.5F; // m/s while fighting in real time
     constexpr std::size_t logLines = 5;
     const std::string arenaScene = "scenes/arena.scene.json"; // every fight happens here
@@ -137,6 +138,32 @@ void GameFlow::ReloadContent()
 
 // ---------------- Per frame ----------------
 
+void GameFlow::Demo(const std::string &skill)
+{
+    // 1. Exploring: learn the skill and walk into the first enemy's fight, turn-based.
+    if (startMenu_ || contactCooldown_ > 0.0F)
+        return;
+    if (IsExploring() && !scene_.Roamers().empty())
+    {
+        session_.Hero().skills.insert(skill);
+        if (session_.Mode() != game::CombatMode::Turn)
+            (void)session_.ToggleMode();
+        StartFight(0);
+        return;
+    }
+#if UMBRA_PLUGIN_TURN_COMBAT
+    // 2. The hero's turn, once the last blow has landed: the skill if it is legal, else anything.
+    umbra::turn::TurnEncounter *turn = session_.GetPhase() == game::Phase::Fighting ? session_.Combat().Turn() : nullptr;
+    if (turn == nullptr || FightOver() || !blows_.empty() || turn->Current() != std::optional<std::size_t>{0})
+        return;
+    const std::vector<rpg::ActionIntent> legal = turn->LegalActions();
+    const auto wanted = std::find_if(legal.begin(), legal.end(), [&](const rpg::ActionIntent &intent) { return intent.skill == skill; });
+    if (!legal.empty())
+        Act(wanted != legal.end() ? *wanted : legal.front(), true);
+    enemyDelay_ = enemyTurnDelay;
+#endif
+}
+
 void GameFlow::Update(const umbra::platform::Input &input, float deltaSeconds)
 {
     contactCooldown_ = std::max(0.0F, contactCooldown_ - deltaSeconds);
@@ -164,17 +191,28 @@ void GameFlow::Update(const umbra::platform::Input &input, float deltaSeconds)
     case game::Phase::Talking:
         break; // answers come from the conversation screen (HandleUi)
     case game::Phase::Fighting:
+    {
+        // A decided fight stays a moment so its last blow can land and be seen (S9).
+        const bool over = FightOver();
+        if (over)
+            outro_ -= deltaSeconds;
 #if UMBRA_PLUGIN_TURN_COMBAT
-        if (session_.Mode() == game::CombatMode::Turn)
+        if (!over && session_.Mode() == game::CombatMode::Turn)
             UpdateTurnFight(input, deltaSeconds);
 #endif
 #if UMBRA_PLUGIN_REALTIME_COMBAT
-        if (session_.Mode() == game::CombatMode::Realtime)
+        if (!over && session_.Mode() == game::CombatMode::Realtime)
             UpdateRealtimeFight(input, deltaSeconds);
 #endif
-        if (std::optional<game::FightResult> result = session_.CheckFightEnd())
-            EndFight(*result);
+        if (session_.GetPhase() != game::Phase::Fighting)
+            break; // fled
+        LandBlows(deltaSeconds);
+        UpdateStatusEffects();
+        if (!FightOver() || (blows_.empty() && outro_ <= 0.0F))
+            if (std::optional<game::FightResult> result = session_.CheckFightEnd())
+                EndFight(*result);
         break;
+    }
     case game::Phase::Dead:
         break; // the death screen (HandleUi)
     }
@@ -336,7 +374,8 @@ void GameFlow::UpdateTurnFight(const umbra::platform::Input &input, float deltaS
                 policyRequest_ = 0; // busy: this decision falls back
         }
 #endif
-        enemyDelay_ -= deltaSeconds;
+        if (blows_.empty()) // the pause starts once the last blow has landed (S9)
+            enemyDelay_ -= deltaSeconds;
         if (enemyDelay_ <= 0.0F)
         {
             rpg::ActionIntent intent = umbra::turn::ChooseTurnAction(session_.Content(), *turn);
@@ -390,8 +429,13 @@ void GameFlow::UpdateRealtimeFight(const umbra::platform::Input &input, float de
     for (std::size_t i = 0; i < fighters_.size(); ++i)
     {
         RoamerSlot &slot = roamers[fighters_[i]];
-        if (!roster[i + 1].character->IsAlive() || !slot.alive)
+        if (!slot.alive)
             continue;
+        if (!roster[i + 1].character->IsAlive())
+        {
+            slot.order = {}; // defeated: stands still until the blow that did it lands
+            continue;
+        }
         const umbra::realtime::Decision decision = umbra::realtime::ChooseRealtimeAction(session_.Content(), *fight, i + 1);
         slot.order = glm::vec3{decision.move.x, 0.0F, decision.move.y} * enemyFightSpeed;
         slot.yaw = decision.yaw;
@@ -415,36 +459,45 @@ void GameFlow::ReadEvents(const rpg::Events &events)
         {
         case rpg::EventKind::Damage: {
             line = FighterName(e.actor) + " hit " + FighterName(e.target) + " for " + std::to_string(e.amount);
-            const rpg::SkillDef *skill = session_.Content().FindSkill(e.what);
-            sounds_.push_back(skill && !skill->sound.empty() ? skill->sound : "audio/hit.wav");
-            // Feedback: the attacker swings, whoever was hit flashes red and flinches (clips: S8).
-            if (const umbra::world::Entity attacker = FighterEntity(e.actor))
+            // The attacker swings now; the blow is shown when the swing lands (LandBlows). Damage
+            // without a swing (poison, a fighter that isn't rigged) shows at once.
+            const umbra::world::Entity attacker = e.actor != e.target ? FighterEntity(e.actor) : umbra::world::Entity{};
+            const bool swings = attacker && scene_.GetWorld().GetAnimator(attacker) != nullptr;
+            if (swings)
                 scene_.Animate(attacker, "attack");
-            if (const umbra::world::Entity target = FighterEntity(e.target))
-            {
-                scene_.Flash(target);
-                scene_.Animate(target, "hit");
-            }
+            blows_.push_back({attacker, e.target, e.amount, e.what, false, swings ? blowWait : 0.0F});
             break;
         }
         case rpg::EventKind::Heal:
             line = FighterName(e.target) + " healed " + std::to_string(e.amount);
+            if (const auto at = scene_.ChestOf(FighterEntity(e.target)))
+                impacts_.push_back({*at, e.amount, true, false, e.target == 0});
             break;
         case rpg::EventKind::ItemUsed:
             line = FighterName(e.actor) + " used " + ItemList(session_.Content(), {{e.what, 1}});
-            if (const rpg::ItemDef *item = session_.Content().FindItem(e.what); item && !item->sound.empty())
-                sounds_.push_back(item->sound);
+            if (const rpg::ItemDef *item = session_.Content().FindItem(e.what))
+            {
+                if (!item->sound.empty())
+                    sounds_.push_back(item->sound);
+                if (const auto at = scene_.ChestOf(FighterEntity(e.actor)))
+                    scene_.SpawnEffect(item->effect, *at);
+            }
             break;
         case rpg::EventKind::StatusApplied:
             line = FighterName(e.target) + " is affected by " + e.what;
             break;
         case rpg::EventKind::Death:
+        {
             line = FighterName(e.target) + (e.target == 0 ? " fell" : " was defeated");
-            if (umbra::core::Animator *animator = e.target == 0 ? scene_.GetWorld().GetAnimator(FighterEntity(0)) : nullptr)
-                animator->SetFlag("dead", true);
-            if (e.target >= 1 && e.target <= fighters_.size())
-                scene_.RemoveRoamer(fighters_[e.target - 1], true);
+            outro_ = blowWait + 0.3F;
+            // They fall when the blow that did it lands; without one (poison), now.
+            const auto blow = std::find_if(blows_.rbegin(), blows_.rend(), [&](const Blow &b) { return b.target == e.target; });
+            if (blow != blows_.rend())
+                blow->kills = true;
+            else
+                Fell(e.target);
             break;
+        }
         default:
             break;
         }
@@ -455,12 +508,92 @@ void GameFlow::ReadEvents(const rpg::Events &events)
         log_.erase(log_.begin(), log_.end() - static_cast<std::ptrdiff_t>(logLines));
 }
 
+bool GameFlow::FightOver()
+{
+    // Decided when the hero or every enemy is down (the session ends it in CheckFightEnd).
+    const rpg::Roster *roster = FightRoster();
+    if (roster == nullptr || roster->empty())
+        return false;
+    bool enemies = false;
+    for (std::size_t i = 1; i < roster->size(); ++i)
+        enemies |= (*roster)[i].character->IsAlive();
+    return !(*roster)[0].character->IsAlive() || !enemies;
+}
+
+void GameFlow::Fell(std::size_t target)
+{
+    if (umbra::core::Animator *animator = target == 0 ? scene_.GetWorld().GetAnimator(FighterEntity(0)) : nullptr)
+        animator->SetFlag("dead", true);
+    if (target >= 1 && target <= fighters_.size())
+        scene_.RemoveRoamer(fighters_[target - 1], true);
+}
+
+void GameFlow::Land(const Blow &blow)
+{
+    // 1. Whoever was hit flashes and flinches; the skill's sound and effect (or the plain ones).
+    const rpg::SkillDef *skill = session_.Content().FindSkill(blow.skill);
+    sounds_.push_back(skill && !skill->sound.empty() ? skill->sound : "audio/hit.wav");
+    const umbra::world::Entity target = FighterEntity(blow.target);
+    const std::optional<glm::vec3> chest = scene_.ChestOf(target);
+    if (target)
+    {
+        scene_.Flash(target);
+        scene_.Animate(target, "hit");
+    }
+    if (chest)
+    {
+        // 2. Feedback for the screen: heavy = a quarter of their health or the finishing blow.
+        scene_.SpawnEffect(skill && !skill->effect.empty() ? skill->effect : "vfx/hit.vfx.json", *chest);
+        int maxHealth = 1;
+        if (const rpg::Roster *roster = FightRoster(); roster && blow.target < roster->size())
+            maxHealth = std::max(1, rpg::Get(rpg::DerivedStats(session_.Content(), *(*roster)[blow.target].character), rpg::Stat::MaxHealth));
+        impacts_.push_back({*chest, blow.amount, false, blow.kills || blow.amount * 4 >= maxHealth, blow.target == 0});
+    }
+    // 3. The finishing blow: they fall now.
+    if (blow.kills)
+        Fell(blow.target);
+}
+
+void GameFlow::LandBlows(float deltaSeconds)
+{
+    // A blow lands when its attacker's clip says "hit", or when its wait runs out.
+    const auto events = scene_.TakeClipEvents();
+    for (auto it = blows_.begin(); it != blows_.end();)
+    {
+        it->wait -= deltaSeconds;
+        const bool hit = std::any_of(events.begin(), events.end(), [&](const auto &e) { return e.first == it->attacker && e.second == "hit"; });
+        if (!hit && it->wait > 0.0F)
+        {
+            ++it;
+            continue;
+        }
+        const Blow blow = *it;
+        it = blows_.erase(it);
+        Land(blow);
+    }
+}
+
+void GameFlow::UpdateStatusEffects()
+{
+    // Every status with an effect shows it over whoever has it (poison bubbles), while it lasts.
+    std::vector<std::pair<umbra::world::Entity, std::string>> effects;
+    if (const rpg::Roster *roster = FightRoster())
+        for (std::size_t i = 0; i < roster->size(); ++i)
+            if (const umbra::world::Entity entity = FighterEntity(i); entity && (*roster)[i].character->IsAlive())
+                for (const rpg::ActiveStatus &active : (*roster)[i].character->statuses)
+                    if (const rpg::StatusDef *def = session_.Content().FindStatus(active.status); def && !def->effect.empty())
+                        effects.emplace_back(entity, def->effect);
+    scene_.SetAttachedEffects(std::move(effects));
+}
+
 void GameFlow::Flee()
 {
     // Fleeing always works: back to the dungeon spot. The touched enemy calms down and
     // can't start a new fight for a few seconds, so the player can get away.
     session_.Flee();
     fighters_.clear();
+    blows_.clear();
+    scene_.SetAttachedEffects({});
     if (scene_.LeaveArena() && touched_ < scene_.Roamers().size())
         scene_.Roamers()[touched_].roamer.Calm();
     contactCooldown_ = 3.0F;
@@ -470,6 +603,8 @@ void GameFlow::Flee()
 void GameFlow::EndFight(const game::FightResult &result)
 {
     fighters_.clear();
+    blows_.clear();
+    scene_.SetAttachedEffects({});
     // Defeat: stay in the arena with the death menu (loading replaces everything).
     if (!result.won)
     {
