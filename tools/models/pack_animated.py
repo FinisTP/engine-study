@@ -2,6 +2,7 @@
 #
 #   python pack_animated.py rigged.glb out.glb [--turn 0] [--texture 1024]
 #                           [--clip idle=idle.glb] [--clip walk=walk.glb#0] [--keep run=Gallop ...]
+#                           [--limit Head=40 ...]
 #
 # 1. A new root node turns the model (--turn degrees about Y; Meshy rigs already face -Z like
 #    Umbra), centers it and scales it so its largest half-extent is 1 (the same convention as slim_glb.py and the -1..1 sample cube).
@@ -9,6 +10,8 @@
 #    from its material colours, and every vertex points at its material's cell.
 # 3. Clips come from the model itself (--keep new=old) and from other GLBs with the same joint names
 #    (--clip name=file.glb or file.glb#index); channels are matched by node name.
+#    --limit Joint=degrees keeps a joint from turning further than that from its rest pose in any
+#    clip (README.md "Joint limits"): library clips on an auto-made rig can twist a head or wrist.
 # 4. The base-colour texture becomes a JPEG of at most --texture pixels.
 import argparse, io, json, struct
 import numpy as np
@@ -85,6 +88,7 @@ def main():
     p.add_argument('--texture', type=int, default=1024)
     p.add_argument('--clip', action='append', default=[])
     p.add_argument('--keep', action='append', default=[])
+    p.add_argument('--limit', action='append', default=[])
     a = p.parse_args()
     j, binb = read_glb(a.model)
 
@@ -171,15 +175,36 @@ def main():
     # 5. Clips: channels matched to our nodes by name.
     names = {n.get('name'): i for i, n in enumerate(j['nodes'])}
     animations = []
+    limits = {k: np.radians(float(v)) for k, v in (spec.split('=') for spec in a.limit)}
+    def limited(q, rest, most):
+        # Rotation away from rest: d = rest^-1 * q, by `angle` about `axis`. The angle is squeezed
+        # smoothly under `most` (most * tanh(angle / most)): small turns stay, big ones flatten.
+        out = q.copy()
+        for i, (x, y, z, w_) in enumerate(q):
+            rx, ry, rz, rw = -rest[0], -rest[1], -rest[2], rest[3]
+            d = np.array([rw * x + rx * w_ + ry * z - rz * y, rw * y - rx * z + ry * w_ + rz * x,
+                          rw * z + rx * y - ry * x + rz * w_, rw * w_ - rx * x - ry * y - rz * z])
+            if d[3] < 0: d = -d
+            sine = np.linalg.norm(d[:3])
+            if sine < 1e-6: continue
+            angle = 2 * np.arctan2(sine, d[3])
+            half = most * np.tanh(angle / most) / 2
+            dx, dy, dz = d[:3] / sine * np.sin(half); dw = np.cos(half)
+            x0, y0, z0, w0 = rest
+            out[i] = [w0 * dx + x0 * dw + y0 * dz - z0 * dy, w0 * dy - x0 * dz + y0 * dw + z0 * dx,
+                      w0 * dz + x0 * dy - y0 * dx + z0 * dw, w0 * dw - x0 * dx - y0 * dy - z0 * dz]
+        return out.astype(np.float32)
     def copy_clip(src_j, src_bin, anim, name):
         out = {'name': name, 'channels': [], 'samplers': []}
         for ch in anim['channels']:
             target = src_j['nodes'][ch['target']['node']].get('name')
             if target not in names: continue
             s = anim['samplers'][ch['sampler']]
+            values = accessor(src_j, src_bin, s['output']).astype(np.float32)
+            if ch['target']['path'] == 'rotation' and target in limits and s.get('interpolation', 'LINEAR') != 'CUBICSPLINE':
+                values = limited(values, np.array(j['nodes'][names[target]].get('rotation', [0, 0, 0, 1]), dtype=np.float64), limits[target])
             out['samplers'].append({'input': w.add(accessor(src_j, src_bin, s['input']).astype(np.float32), 'SCALAR', None, True),
-                                    'output': w.add(accessor(src_j, src_bin, s['output']).astype(np.float32),
-                                                    src_j['accessors'][s['output']]['type']),
+                                    'output': w.add(values, src_j['accessors'][s['output']]['type']),
                                     'interpolation': s.get('interpolation', 'LINEAR')})
             out['channels'].append({'sampler': len(out['samplers']) - 1, 'target': {'node': names[target], 'path': ch['target']['path']}})
         animations.append(out)
