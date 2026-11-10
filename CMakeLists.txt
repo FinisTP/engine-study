@@ -178,3 +178,16 @@ if(BUILD_TESTING)
         )
     endif()
 endif()
+
+# "UmbraCheck": what scripts/build-and-run.bat does, as one target for Visual Studio (build it from
+# the CMake Targets view or pick it as the startup item's build). Builds everything, runs the
+# tests, and if they all pass copies the game to out/known-good.
+add_custom_target(
+    UmbraCheck
+    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --config $<CONFIG>
+    COMMAND ${CMAKE_CTEST_COMMAND} --test-dir ${CMAKE_BINARY_DIR} -C $<CONFIG> --output-on-failure
+    COMMAND ${CMAKE_COMMAND} -E rm -rf ${CMAKE_SOURCE_DIR}/out/known-good
+    COMMAND ${CMAKE_COMMAND} --install ${CMAKE_BINARY_DIR} --config $<CONFIG> --component game --prefix ${CMAKE_SOURCE_DIR}/out/known-good
+    USES_TERMINAL
+    VERBATIM
+)

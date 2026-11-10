@@ -53,6 +53,21 @@
       "configuration": "Release"
     },
     {
+      "name": "windows-msvc-release-j4",
+      "displayName": "Release, 4 compilers at once (if Windows blocks cl.exe)",
+      "configurePreset": "windows-msvc",
+      "configuration": "Release",
+      "jobs": 4
+    },
+    {
+      "name": "windows-msvc-check",
+      "displayName": "Release: build, test, update known-good",
+      "configurePreset": "windows-msvc",
+      "configuration": "Release",
+      "targets": [ "UmbraCheck" ],
+      "jobs": 4
+    },
+    {
       "name": "windows-clang-debug",
       "configurePreset": "windows-clang",
       "configuration": "Debug"
@@ -73,6 +88,14 @@
       },
       "execution": {
         "stopOnFailure": true
+      }
+    },
+    {
+      "name": "windows-msvc-release",
+      "configurePreset": "windows-msvc",
+      "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
       }
     },
     {

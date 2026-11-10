@@ -23,6 +23,17 @@ scripts\build-and-run.bat
 3. Copies a fully passing build to `out\known-good`.
 4. Starts the game.
 
+**From Visual Studio instead** (File > Open > Folder on the repository): pick a build preset in
+the toolbar's second box and press **Ctrl+Shift+B**; **F5** starts the game.
+
+| Preset | Does |
+|---|---|
+| `windows-msvc-release` | builds everything in Release |
+| `windows-msvc-release-j4` | the same with 4 compilers at once: use it when the build stops with `CreateProcess: Access is denied` |
+| `windows-msvc-check` | what the .bat does: build, run the tests, and if they pass update `out\known-good` |
+
+Tests alone: **Test > Run CTests for Umbra**.
+
 The log is in `out\build-and-run.log`. The first build downloads and compiles the libraries, so
 it takes a while; later builds take seconds.
 
