@@ -66,7 +66,7 @@ S12 prefabs -> S13 play in editor -> S14 graph editors
 S15 agent chat/vision -> S16 recipes/scatter (scatter uses prefabs, S12) -> S17 code agents
 ```
 
-The order is S6, S7, S8, S9, S10, S18, S11, S19, S20, S12, S13, S14, S15, S16, S17 (S18-S20 added
+**Superseded in part by ADR 0011 (2026-11-10):** after S9 come S21-S25 (the living town); S10 and S18 are re-scoped into them. The earlier order was S6, S7, S8, S9, S10, S18, S11, S19, S20, S12, S13, S14, S15, S16, S17 (S18-S20 added
 from the user's S6/S7 review on 2026-11-10; the numbers are kept so earlier references stay valid). Agent tools for new
 systems are added in S15 and listed there, so earlier phases stay small.
 
