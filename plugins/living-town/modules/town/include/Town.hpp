@@ -36,8 +36,31 @@ namespace umbra::town
         std::int32_t what = 0;             // activity, need or amount (see Town.md)
     };
 
+    // Something worth remembering (S22). `saw` and `knows` have one bit per resident: who was
+    // there, and who knows by now (they saw it or were told). `told`: who has told the player.
+    enum class FactKind : std::uint8_t { LevelUp, Crisis, Friends, Rivals, FavourKept, FavourSkipped };
+    struct Fact final
+    {
+        std::int32_t tick = 0;
+        FactKind kind = FactKind::LevelUp;
+        std::int16_t who = -1, other = -1; // residents (a favour: who asked, who was to be visited)
+        std::int32_t what = 0;             // level, need or favour
+        std::uint64_t saw = 0, knows = 0, told = 0;
+    };
+    enum class FavourStatus : std::uint8_t { Open, Asked, Kept, Skipped };
+    struct FavourState final
+    {
+        FavourStatus status = FavourStatus::Open;
+        std::int32_t due = 0; // tick an asked favour must be kept by
+    };
+
     struct TownState final
     {
+        std::vector<Fact> facts;           // the most recent (at most maxFacts), oldest first
+        std::vector<std::int16_t> regard;  // per resident: what they think of the player, -1000..1000
+        std::vector<FavourState> favours;
+        static constexpr std::size_t maxFacts = 128;
+
         std::uint64_t seed = 0;
         std::uint64_t random = 0; // the town's own random stream
         std::int32_t tick = 0;    // 10-minute steps since day 1, 00:00
@@ -79,6 +102,17 @@ namespace umbra::town
     using Decider = std::optional<Intent> (*)(const TownDef &, const TownState &, int resident, void *user);
     void Tick(const TownDef &def, TownState &state, Decider decide = nullptr, void *user = nullptr);
     void Run(const TownDef &def, TownState &state, int ticks);
+
+    // Memory and talk (S22, Town.md "Memory and rumours").
+    // The player talks to a resident: a favour asked or thanked, else the newest thing they know
+    // and have not told yet, else a greeting. Changes the state (favours, who told what).
+    std::string TalkTo(const TownDef &def, TownState &state, int resident);
+    // A fact as a plain sentence, for the chronicle and the tool.
+    [[nodiscard]] std::string Sentence(const TownDef &def, const Fact &fact);
+    // The same fact as `resident` would say it to the player.
+    [[nodiscard]] std::string Says(const TownDef &def, const Fact &fact, int resident);
+    // What the player has learned so far: facts someone told them, oldest first.
+    [[nodiscard]] std::vector<std::string> Chronicle(const TownDef &def, const TownState &state);
 
     // One number for the whole state: equal states give equal numbers on every compiler.
     [[nodiscard]] std::uint64_t Fingerprint(const TownState &state);

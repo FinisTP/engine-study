@@ -144,6 +144,7 @@ private:
     std::vector<Blow> blows_;
 #if UMBRA_PLUGIN_LIVING_TOWN
     std::optional<TownFlow> town_; // the living town, if the project has a town file
+    int nearResident_ = -1;        // the resident in reach last frame (the hint shows once per approach)
 #endif
     std::vector<Impact> impacts_;
     float outro_ = 0.0F; // seconds the finished fight stays on screen for its last blow

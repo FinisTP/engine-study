@@ -42,6 +42,7 @@ namespace umbra::platform
         K, // skills
         J, // journal (quests)
         H, // hotkeys
+        L, // log (the town's chronicle)
         // Gamepad buttons (SDL gamepad, Xbox names): they act like keys.
         PadA,
         PadB,

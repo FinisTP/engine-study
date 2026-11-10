@@ -99,6 +99,17 @@ void TownFlow::ShowResidents()
     }
 }
 
+int TownFlow::Near(glm::vec3 feet) const
+{
+    int nearest = -1;
+    float best = 2.2F; // meters: arm's length and a step
+    for (std::size_t i = 0; i < shown_.size() && ready_; ++i)
+        if (shown_[i].roamer != static_cast<std::size_t>(-1))
+            if (const float distance = glm::length(scene_.RoamerFeet(shown_[i].roamer) - feet); distance < best)
+                nearest = static_cast<int>(i), best = distance;
+    return nearest;
+}
+
 std::string TownFlow::Save() const { return ready_ ? SaveTown(def_, state_).dump() : std::string(); }
 
 bool TownFlow::Load(const std::string &text)
@@ -133,7 +144,12 @@ nlohmann::json TownFlow::UiData() const
         residents.push_back({{"name", def_.residents[i].name}, {"doing", def_.activities[static_cast<std::size_t>(r.activity)].name},
                              {"place", def_.places[static_cast<std::size_t>(r.place)].name}, {"money", r.money}, {"level", r.level}});
     }
-    return {{"day", state_.Day()}, {"time", text}, {"residents", residents}};
+    // The chronicle, newest first (the screen shows the top of the list).
+    std::vector<std::string> chronicle = Chronicle(def_, state_);
+    std::reverse(chronicle.begin(), chronicle.end());
+    if (chronicle.size() > 12)
+        chronicle.resize(12);
+    return {{"day", state_.Day()}, {"time", text}, {"residents", residents}, {"chronicle", chronicle}, {"noChronicle", chronicle.empty()}};
 }
 
 #endif

@@ -250,7 +250,7 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 				int capturedFrames = 0;
 				bool captured = false; // set by the capture callback, which runs when the frame is shown
 				const auto frozen = [&] {
-					for (const char *screen : {"pause", "inventory", "skills", "quests", "hotkeys"})
+					for (const char *screen : {"pause", "inventory", "skills", "quests", "hotkeys", "chronicle"})
 						if (gameUi.Screens().IsOpen(screen))
 							return true;
 					return false;
@@ -388,7 +388,7 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 							play("audio/ui_click.wav", 0.6F, umbra::audio::Bus::Ui);
 						}
 						else if (flow && flow->IsExploring())
-							for (const auto &[key, screen] : {std::pair{InputKey::I, "inventory"}, std::pair{InputKey::K, "skills"}, std::pair{InputKey::J, "quests"}, std::pair{InputKey::H, "hotkeys"}})
+							for (const auto &[key, screen] : {std::pair{InputKey::I, "inventory"}, std::pair{InputKey::K, "skills"}, std::pair{InputKey::J, "quests"}, std::pair{InputKey::H, "hotkeys"}, std::pair{InputKey::L, "chronicle"}})
 								if (input.IsKeyPressed(key))
 								{
 									gameUi.Screens().Open(screen);

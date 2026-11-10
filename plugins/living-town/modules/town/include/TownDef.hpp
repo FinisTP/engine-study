@@ -60,8 +60,18 @@ namespace umbra::town
         std::vector<std::pair<int, int>> bonds; // starting feelings: {other resident, -1000..1000}
     };
 
+    // Something a resident asks of the player: go and see `target` within `hours` (S22).
+    struct FavourDef final
+    {
+        std::string id;
+        int resident = 0, target = 0;
+        std::string ask, thanks; // what the asker says; what the target says when the player comes
+        int hours = 24;
+    };
+
     struct TownDef final
     {
+        std::vector<FavourDef> favours;
         std::vector<NeedDef> needs;
         std::vector<PlaceDef> places;
         std::vector<ActivityDef> activities; // activities[0] is the free fallback (rest at home)

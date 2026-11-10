@@ -91,6 +91,15 @@ namespace
                 std::cout << def.residents[i].name << ": " << r.money << " coins, level " << r.level << ", " << def.activities[static_cast<std::size_t>(r.activity)].name
                           << " at " << def.places[static_cast<std::size_t>(r.place)].name << "\n";
         }
+        // 4. What is remembered, and by how many (--facts).
+        if (args.Has("facts") || args.positional.size() > 1)
+            for (const Fact &f : state.facts)
+            {
+                int knows = 0;
+                for (std::size_t i = 0; i < def.residents.size(); ++i)
+                    knows += (f.knows >> i) & 1U;
+                std::cout << Clock(f.tick) << "  " << Sentence(def, f) << "  (known to " << knows << ")\n";
+            }
         const std::string print = std::to_string(Fingerprint(state));
         const double daysPerSecond = seconds > 0.0 ? days / seconds : 0.0;
         if (args.json)
@@ -104,4 +113,4 @@ namespace
     }
 }
 
-UMBRA_TOOL_COMMAND(TownRun, "town-run", "town-run <town file> [--days 7] [--seed 1] [--content <rpg file>] [--json]", TownRun);
+UMBRA_TOOL_COMMAND(TownRun, "town-run", "town-run <town file> [--days 7] [--seed 1] [--content <rpg file>] [--json] [--facts 1]", TownRun);

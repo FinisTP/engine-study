@@ -30,7 +30,13 @@ public:
     // The town as JSON text for the save, and back (false = not this town: a new one is started).
     [[nodiscard]] std::string Save() const;
     bool Load(const std::string &text);
-    // For screens: {"day", "time", "residents": [{"name", "doing", "place", "money", "level"}]}.
+    // The resident with a body within reach of `feet` (-1 = nobody), and talking to them (S22):
+    // the line they say. Talking can ask or settle a favour and adds to the chronicle.
+    [[nodiscard]] int Near(glm::vec3 feet) const;
+    [[nodiscard]] std::string NameOf(int resident) const { return def_.residents[static_cast<std::size_t>(resident)].name; }
+    std::string Talk(int resident) { return umbra::town::TalkTo(def_, state_, resident); }
+    // For screens: {"day", "time", "residents": [{"name", "doing", "place", "money", "level"}],
+    // "chronicle": [lines, newest first], "noChronicle"}.
     [[nodiscard]] nlohmann::json UiData() const;
     [[nodiscard]] const umbra::town::TownState &State() const { return state_; }
 

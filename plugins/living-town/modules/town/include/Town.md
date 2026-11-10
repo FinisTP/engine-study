@@ -99,6 +99,61 @@ The state keeps the latest 512 events: started an activity, paid, earned, reache
 at its limit, became friends (a bond crossing +300) or fell out (−300). `UmbraTool town-run`
 prints the notable ones as sentences. S22 turns this into memory, rumours and the chronicle.
 
+## Memory and rumours (S22)
+
+Notable things become **facts**: someone reached a level, was in a bad way, made a friend, fell
+out, or the player kept or skipped a favour. The town keeps the latest 128.
+
+Each fact has three sets of residents, one bit per resident (so a town has at most 64):
+
+| Set | Meaning |
+|---|---|
+| `saw` | who was there: the people it is about, and everyone at the same place at that moment |
+| `knows` | who knows by now: those who saw it, and those who were told |
+| `told` | who has told the player |
+
+**Rumours.** When two people talk (step 3 of the tick), each tells the other the newest fact the
+other does not know yet. One fact each way per talk. That is the whole rule: news moves along
+the same meetings that make friendships, so the people who drink together know each other's
+business and someone who keeps to themselves hears little.
+
+**What they think of the player** (`regard`, −1000..1000, per resident): learning that the player
+kept a favour adds 80 for the one who asked and 40 for anyone else; a skipped one takes 120 and
+60. It changes when the resident *learns* it, so a bad name spreads at the speed of talk.
+
+## Favours
+
+```json
+"favours": [ { "id": "look_in_on_bren", "resident": "edda", "target": "bren", "hours": 24,
+               "ask": "Look in on her for me before tomorrow night, would you?",
+               "thanks": "Edda sent you? Tell her I'm well." } ]
+```
+
+`resident` asks the player to go and see `target` within `hours`. Talking to the asker starts it
+(unless they think badly of the player); talking to the target in time keeps it; otherwise it is
+skipped when the time is up, and at first only the asker knows.
+
+## Talking (`TalkTo`)
+
+The player talks to a resident and gets one line, in this order:
+
+1. thanks, if the player was sent to them;
+2. a favour, if they have one to ask;
+3. the newest thing they know and have not told the player yet (news about the player first):
+   in their own words if it is about them, "I saw it myself: ..." if they were there,
+   "They say ..." if they only heard;
+4. a greeting that shows their regard ("Good to see you!", "Hello.", "Oh. It's you.") and what
+   they are doing.
+
+These lines are plain templates. S23's model will word them; the templates stay as the fallback
+for any line the model fails to give in time, and as what tests check.
+
+## The chronicle
+
+`Chronicle` lists the facts **someone has told the player** (and favours the player settled in
+person), not everything that happened: the player learns the town by talking. `UmbraTool town-run
+... --facts 1` prints every fact with how many residents know it.
+
 ## Growth
 
 Activities give experience; 100 make a level. The level and the resident's `actor` are what a
@@ -125,8 +180,10 @@ without one starts a new town.
   they vanish and appear at the new place: S21 does not walk them along the streets. Residents at
   places without a marker, or in other areas, live on unseen. Walking in and out shows them
   exactly where the town has them (the hand-over).
-- Screens get `town` in their data: `day`, `time`, and for each resident `name`, `doing`, `place`,
-  `money`, `level`.
+- **Talking.** Near a resident the game shows "[E] Talk to ..."; **E** gives their line
+  (`TalkTo`). **L** opens the chronicle screen (`plugins/living-town/assets/ui/chronicle.ui.json`).
+- Screens get `town` in their data: `day`, `time`, `chronicle` (newest first), and for each
+  resident `name`, `doing`, `place`, `money`, `level`.
 
 ## Try it
 
@@ -140,8 +197,9 @@ days per second for seven residents).
 
 ## Limits (S21)
 
-- No memory, rumours or chronicle (S22), no model (S23), no storyteller or story beats (S24).
-- Residents cannot be talked to as residents yet, do not walk between places, and one who is
-  shown vanishes when the town moves them.
+- No model (S23): every line is a template. No storyteller or story beats (S24).
+- Residents do not walk between places: one who is shown vanishes when the town moves them.
+- A resident tells one thing per talk and never repeats it; there is no conversation screen.
+- Favours are of one kind (go and see someone) and each is asked once.
 - Money is the only thing traded; there are no goods or stock.
 - The example's balance (prices, wages, rise rates) is first-pass data, not tuned by play.

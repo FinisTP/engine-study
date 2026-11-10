@@ -172,12 +172,25 @@ namespace umbra::town
                         bad("bonds", "residents[" + std::to_string(i) + "].bonds." + other, "a resident and a whole number from -1000 to 1000");
                 }
 
+        // 5b. Favours residents ask of the player.
+        const json favours = list("favours");
+        for (std::size_t i = 0; i < favours.size(); ++i)
+        {
+            const std::string field = "favours[" + std::to_string(i) + "]";
+            FavourDef favour{id_of(favours[i], field), def.Resident(text_of(favours[i], "resident")), def.Resident(text_of(favours[i], "target")),
+                             text_of(favours[i], "ask"), text_of(favours[i], "thanks"), number(favours[i], "hours", 1, 24 * 30, 24, field)};
+            if (favour.resident < 0 || favour.target < 0 || favour.resident == favour.target || favour.ask.empty() || favour.thanks.empty())
+                bad("favour", field, "a favour needs a \"resident\" who asks, another as \"target\", and the \"ask\" and \"thanks\" lines");
+            def.favours.push_back(std::move(favour));
+        }
+
         // 6. The fingerprint: every id in order (a save made with another town must not load).
         def.fingerprint = 14695981039346656037ULL;
         for (const NeedDef &n : def.needs) Mix(def.fingerprint, n.id);
         for (const PlaceDef &p : def.places) Mix(def.fingerprint, p.id);
         for (const ActivityDef &a : def.activities) Mix(def.fingerprint, a.id);
         for (const ResidentDef &r : def.residents) Mix(def.fingerprint, r.id);
+        for (const FavourDef &f : def.favours) Mix(def.fingerprint, f.id);
         if (diagnostics.size() != before)
             return false;
         out = std::move(def);

@@ -38,7 +38,7 @@
       "schedule": [ { "from": 22, "to": 6, "activity": "sleep" }, { "from": 8, "to": 18, "activity": "work" }, { "from": 18, "to": 22, "activity": "drink" } ],
       "bonds": { "edda": 250 } },
     { "id": "edda", "name": "Edda", "actor": "resident_edda", "home": "inn", "work": "inn", "money": 70,
-      "schedule": [ { "from": 23, "to": 7, "activity": "sleep" }, { "from": 9, "to": 19, "activity": "work" } ] },
+      "schedule": [ { "from": 23, "to": 7, "activity": "sleep" }, { "from": 9, "to": 19, "activity": "work" }, { "from": 19, "to": 23, "activity": "drink" } ] },
     { "id": "garrick", "name": "Garrick", "actor": "resident_garrick", "home": "forge", "work": "forge", "money": 50,
       "schedule": [ { "from": 21, "to": 5, "activity": "sleep" }, { "from": 6, "to": 16, "activity": "work" }, { "from": 17, "to": 21, "activity": "drink" } ],
       "bonds": { "bren": -200 } },
@@ -49,5 +49,13 @@
       "bonds": { "wynn": 200 } },
     { "id": "pip", "name": "Pip", "actor": "resident_pip", "home": "house_bren", "work": "well", "money": 5,
       "schedule": [ { "from": 20, "to": 7, "activity": "sleep" }, { "from": 8, "to": 11, "activity": "work" }, { "from": 11, "to": 19, "activity": "chat" } ] }
+  ],
+  "favours": [
+    { "id": "look_in_on_bren", "resident": "edda", "target": "bren", "hours": 24,
+      "ask": "Old Bren hasn't been by in days. Look in on her for me before tomorrow night, would you?",
+      "thanks": "Edda sent you? Tell her I'm well. Kind of you to come." },
+    { "id": "hinges_for_tobin", "resident": "garrick", "target": "tobin", "hours": 12,
+      "ask": "If you pass Tobin's, tell him his hinges are ready. Today, mind.",
+      "thanks": "My hinges? About time. Thanks for the word." }
   ]
 }

@@ -27,6 +27,14 @@ namespace umbra::town
         out["events"] = json::array();
         for (const TownEvent &e : state.events)
             out["events"].push_back({e.tick, static_cast<int>(e.kind), e.who, e.other, e.what});
+        // S22: what is remembered, what residents think of the player, favours.
+        out["facts"] = json::array();
+        for (const Fact &f : state.facts)
+            out["facts"].push_back({f.tick, static_cast<int>(f.kind), f.who, f.other, f.what, std::to_string(f.saw), std::to_string(f.knows), std::to_string(f.told)});
+        out["regard"] = state.regard;
+        out["favours"] = json::array();
+        for (const FavourState &f : state.favours)
+            out["favours"].push_back({static_cast<int>(f.status), f.due});
         return out;
     }
 
@@ -81,6 +89,21 @@ namespace umbra::town
                                         e.at(3).get<std::int16_t>(), e.at(4).get<std::int32_t>()});
             if (state.events.size() > TownState::maxEvents)
                 return fail("events", "too many events");
+            // S22 parts: a save from before them has none (nobody remembers anything yet).
+            state.regard.assign(count, 0);
+            state.favours.assign(def.favours.size(), {});
+            if (saved.contains("facts"))
+            {
+                for (const json &f : saved.at("facts"))
+                    state.facts.push_back({f.at(0).get<std::int32_t>(), static_cast<FactKind>(f.at(1).get<int>()), f.at(2).get<std::int16_t>(), f.at(3).get<std::int16_t>(),
+                                           f.at(4).get<std::int32_t>(), std::stoull(f.at(5).get<std::string>()), std::stoull(f.at(6).get<std::string>()),
+                                           std::stoull(f.at(7).get<std::string>())});
+                state.regard = saved.at("regard").get<std::vector<std::int16_t>>();
+                for (std::size_t i = 0; i < saved.at("favours").size() && i < state.favours.size(); ++i)
+                    state.favours[i] = {static_cast<FavourStatus>(saved["favours"][i].at(0).get<int>()), saved["favours"][i].at(1).get<std::int32_t>()};
+                if (state.facts.size() > TownState::maxFacts || state.regard.size() != count)
+                    return fail("facts", "the saved memories do not fit this town");
+            }
             out = std::move(state);
             return true;
         }

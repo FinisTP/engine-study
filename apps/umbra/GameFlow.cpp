@@ -266,6 +266,15 @@ void GameFlow::UpdateExploring(const umbra::platform::Input &input)
     if (contactCooldown_ <= 0.0F)
         if (const std::optional<std::size_t> touched = scene_.TouchingRoamer())
             StartFight(*touched);
+#if UMBRA_PLUGIN_LIVING_TOWN
+    // A town resident in reach: a hint once, and E talks to them (S22).
+    const int inReach = town_->Near(scene_.GetPlayerSpot().feet);
+    if (inReach >= 0 && inReach != nearResident_)
+        Say("[E] Talk to " + town_->NameOf(inReach));
+    if (inReach >= 0 && input.IsKeyPressed(InputKey::E))
+        Say(town_->Talk(inReach));
+    nearResident_ = inReach;
+#endif
 }
 
 bool GameFlow::Interact(const umbra::world::Interactable &interactable)

@@ -86,6 +86,8 @@ TEST_CASE("Mistakes in a town file are named by field (T90)", "[town]")
               "town.schedule"));
     CHECK(Has(Parse(head + needs + places + R"("activities": [)" + rest + R"(], "residents": [{"id": "a", "home": "home", "bonds": {"ghost": 5}}]})"), "town.bonds"));
     CHECK(Has(Parse(head + needs + R"("places": [{"id": "home", "owner": "ghost"}], "activities": [)" + rest + "], " + people), "town.owner"));
+    CHECK(Has(Parse(head + needs + places + R"("activities": [)" + rest + R"(], "favours": [{"id": "f", "resident": "a", "target": "a", "ask": "x", "thanks": "y"}], )" + people.substr(0, people.size() - 1) + "}"),
+              "town.favour"));
     // With RPG content, a resident must be one of its actors.
     std::vector<core::Diagnostic> diagnostics;
     rpg::Content content;
@@ -106,7 +108,7 @@ TEST_CASE("The same seed gives the same week on every compiler; another seed ano
     // The golden number: GCC, Clang and MSVC must all get it (integer rules, the town's own dice).
     // It changes when the rules or town/settlement.town.json change: then run
     // `UmbraTool town-run <town file>` and put the fingerprint it prints here.
-    CHECK(Fingerprint(a) == 8457611075030242857ULL);
+    CHECK(Fingerprint(a) == 5492929141690153105ULL);
 }
 
 TEST_CASE("A fork run forward equals the original run forward, and never changes it (T90)", "[town]")
@@ -298,4 +300,137 @@ TEST_CASE("Fast-forward: a year of the town in well under a second (T90)", "[tow
     WARN("365 days of seven residents: " << seconds << " s (" << static_cast<int>(365.0 / seconds) << " days per second, " << sizeof(ResidentState) * 7 << " bytes of residents)");
     CHECK(state.Day() == 366);
     CHECK(seconds < 5.0); // generous: debug and sanitizer builds too
+}
+
+// ---------------- S22: memory, rumours, the chronicle (T91) ----------------
+
+namespace
+{
+    std::uint64_t Bit(int resident) { return 1ULL << resident; }
+}
+
+TEST_CASE("Events are known only to those who were there, then travel by talk (T91)", "[town]")
+{
+    const TownDef def = Settlement();
+    TownState state = NewTown(def, 1);
+    Run(def, state, 30 * ticksPerDay);
+    REQUIRE_FALSE(state.facts.empty());
+    REQUIRE(state.facts.size() <= TownState::maxFacts);
+    int travelled = 0;
+    for (const Fact &f : state.facts)
+    {
+        CHECK((f.saw & Bit(f.who)) != 0);     // whoever it is about was there
+        CHECK((f.saw & ~f.knows) == 0);       // everyone who saw it knows it
+        CHECK(f.told == 0);                   // nobody has talked to the player
+        travelled += f.knows != f.saw;
+    }
+    CHECK(travelled > 5); // rumours do spread...
+    // ...in order of time, and never to someone who neither saw it nor talked to anyone.
+    for (std::size_t i = 1; i < state.facts.size(); ++i)
+        CHECK(state.facts[i - 1].tick <= state.facts[i].tick);
+
+    // A town where nobody ever meets: every fact stays with its witnesses.
+    TownDef alone = def;
+    for (ActivityDef &a : alone.activities)
+        a.social = false;
+    TownState quiet = NewTown(alone, 1);
+    Run(alone, quiet, 30 * ticksPerDay);
+    REQUIRE_FALSE(quiet.facts.empty());
+    for (const Fact &f : quiet.facts)
+        CHECK(f.knows == f.saw);
+}
+
+TEST_CASE("A skipped favour: the asker knows at once, others hear of it and say so (T91)", "[town]")
+{
+    const TownDef def = Settlement();
+    const int edda = def.Resident("edda"), bren = def.Resident("bren");
+    TownState state = NewTown(def, 1);
+    Run(def, state, 12 * ticksPerHour);
+
+    // 1. Edda asks; the player does nothing for a day and a bit.
+    CHECK(TalkTo(def, state, edda).find("Look in on her") != std::string::npos);
+    CHECK(state.favours[0].status == FavourStatus::Asked);
+    Run(def, state, 25 * ticksPerHour);
+    CHECK(state.favours[0].status == FavourStatus::Skipped);
+    const auto skipped = [&]() -> const Fact & { return *std::find_if(state.facts.begin(), state.facts.end(), [](const Fact &f) { return f.kind == FactKind::FavourSkipped; }); };
+    CHECK(skipped().saw == Bit(edda)); // only she knows...
+    CHECK(state.regard[static_cast<std::size_t>(edda)] == -120);
+    CHECK(TalkTo(def, state, edda).find("You never went") != std::string::npos); // ...and says so first
+
+    // 2. Two days later someone else has heard, thinks less of the player, and mentions it.
+    Run(def, state, 2 * ticksPerDay);
+    const std::uint64_t others = skipped().knows & ~Bit(edda);
+    REQUIRE(others != 0);
+    int heard = 0;
+    while (!(others & Bit(heard)))
+        ++heard;
+    CHECK(state.regard[static_cast<std::size_t>(heard)] == -60);
+    CHECK(TalkTo(def, state, heard) == def.residents[static_cast<std::size_t>(heard)].name + ": They say you let Edda down: you never went to see Old Bren.");
+    // Someone who has not heard is as friendly as before.
+    for (int i = 0; i < 7; ++i)
+        if (!(skipped().knows & Bit(i)))
+            CHECK(state.regard[static_cast<std::size_t>(i)] == 0);
+    (void)bren;
+
+    // 3. The chronicle holds what the player was told, oldest first, each once.
+    const std::vector<std::string> lines = Chronicle(def, state);
+    REQUIRE_FALSE(lines.empty());
+    CHECK(std::count_if(lines.begin(), lines.end(), [](const std::string &l) { return l.find("You let Edda down") != std::string::npos; }) == 1);
+    CHECK(Chronicle(def, state) == lines); // reading it changes nothing
+}
+
+TEST_CASE("A kept favour: thanks on the spot, the asker hears and warms to the player (T91)", "[town]")
+{
+    const TownDef def = Settlement();
+    const int edda = def.Resident("edda"), bren = def.Resident("bren");
+    TownState state = NewTown(def, 2);
+    Run(def, state, 12 * ticksPerHour);
+    (void)TalkTo(def, state, edda);
+    CHECK(TalkTo(def, state, bren).find("Kind of you to come") != std::string::npos);
+    CHECK(state.favours[0].status == FavourStatus::Kept);
+    CHECK(state.regard[static_cast<std::size_t>(bren)] == 40);
+    CHECK(Chronicle(def, state).back().find("You kept your word to Edda") != std::string::npos);
+    // The deadline passing changes nothing now; a week later Edda has heard.
+    Run(def, state, 7 * ticksPerDay);
+    CHECK(state.favours[0].status == FavourStatus::Kept);
+    const Fact &kept = *std::find_if(state.facts.begin(), state.facts.end(), [](const Fact &f) { return f.kind == FactKind::FavourKept; });
+    CHECK((kept.knows & Bit(edda)) != 0);
+    CHECK(state.regard[static_cast<std::size_t>(edda)] == 80);
+    // With nothing new to tell, a resident greets by what they think of the player.
+    std::string last;
+    for (int i = 0; i < 200 && last.find("Good to see you!") == std::string::npos; ++i)
+        last = TalkTo(def, state, edda);
+    CHECK(last.find("Good to see you! I'm ") != std::string::npos);
+}
+
+TEST_CASE("Every kind of fact has a chronicle sentence and a spoken line; memories are saved (T91)", "[town]")
+{
+    const TownDef def = Settlement();
+    for (const FactKind kind : {FactKind::LevelUp, FactKind::Crisis, FactKind::Friends, FactKind::Rivals, FactKind::FavourKept, FactKind::FavourSkipped})
+    {
+        const Fact fact{0, kind, 1, 2, 0, Bit(1), Bit(1) | Bit(3), 0};
+        CHECK_FALSE(Sentence(def, fact).empty());
+        CHECK_FALSE(Says(def, fact, 1).empty());                          // about themselves
+        CHECK(Says(def, fact, 3).starts_with("They say "));               // heard
+        CHECK(Says(def, Fact{0, kind, 1, 2, 0, Bit(3), Bit(3), 0}, 3).starts_with("I saw it myself: ")); // seen
+    }
+    // Memories, regard and favours go through a save and continue the same.
+    TownState state = NewTown(def, 6);
+    Run(def, state, 5 * ticksPerDay);
+    (void)TalkTo(def, state, def.Resident("edda"));
+    (void)TalkTo(def, state, def.Resident("garrick"));
+    Run(def, state, 2 * ticksPerDay);
+    for (int i = 0; i < 7; ++i)
+        (void)TalkTo(def, state, i);
+    TownState loaded;
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(LoadTownState(def, nlohmann::json::parse(SaveTown(def, state).dump()), loaded, diagnostics));
+    CHECK(Fingerprint(loaded) == Fingerprint(state));
+    CHECK(Chronicle(def, loaded) == Chronicle(def, state));
+    // A save from before S22 (no memories) still loads: nobody remembers anything.
+    nlohmann::json old = SaveTown(def, state);
+    old.erase("facts"), old.erase("regard"), old.erase("favours");
+    REQUIRE(LoadTownState(def, old, loaded, diagnostics));
+    CHECK(loaded.facts.empty());
+    CHECK(loaded.regard == std::vector<std::int16_t>(7, 0));
 }

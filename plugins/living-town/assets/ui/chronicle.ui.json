@@ -1,0 +1,14 @@
+{
+  "format": "umbra.ui", "version": 1, "modal": true, "dim": true, "back": "close",
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [760, 0], "align": "stretch", "gap": 12, "children": [
+    { "type": "text", "style": "title", "text": "Chronicle" },
+    { "type": "text", "style": "small", "text": "Day {town.day}, {town.time}" },
+    { "type": "text", "style": "muted", "text": "Nothing yet. Talk to people: what they tell you is written here.", "visible": "{town.noChronicle}" },
+    { "type": "list", "items": "{town.chronicle}", "as": "line", "gap": 6,
+      "entry": { "type": "text", "text": "{line}", "wrap": true, "size": [700, 0] } },
+    { "type": "text", "style": "heading", "text": "The town now" },
+    { "type": "list", "items": "{town.residents}", "as": "r", "gap": 2,
+      "entry": { "type": "text", "style": "small", "text": "{r.name}: {r.doing}, {r.place}" } },
+    { "type": "button", "text": "Close", "action": "close" }
+  ] }
+}
