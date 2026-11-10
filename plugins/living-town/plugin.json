@@ -1,0 +1,17 @@
+{
+  "format": "umbra.plugin",
+  "version": 1,
+  "name": "living-town",
+  "label": "Living town",
+  "description": "A simulated town (ADR 0011): residents with needs, schedules, money and bonds on a deterministic, forkable world clock.",
+  "kind": "game",
+  "requires": [
+    "rpg"
+  ],
+  "modules": [
+    "town"
+  ],
+  "links": [
+    "Umbra::Town"
+  ]
+}

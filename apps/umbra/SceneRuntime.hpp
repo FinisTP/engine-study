@@ -51,6 +51,7 @@ struct RoamerSlot final
     std::vector<std::string> pool; // its spawner's pool and group size, for the fight it starts
     int group = 1;
     bool alive = true;                  // false once removed (indices stay valid)
+    bool peaceful = false;              // a town resident: touching one starts no fight
     std::optional<glm::vec3> order;     // a velocity chosen by the fight; replaces wandering
     float yaw = 0.0F;                   // facing, 0 faces -z
     glm::vec3 scale{1.0F};              // visual scale

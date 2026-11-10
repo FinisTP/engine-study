@@ -51,6 +51,9 @@ namespace umbra::game
         CombatMode mode = CombatMode::Turn;
         std::vector<std::string> hotkeys; // real-time keys 1-4: "skill:<id>", "item:<id>" or "" (optional in the file)
         float hour = -1.0F;               // time of day 0..24, -1 = not saved (optional in the file)
+        // What other plugins keep in the save, by name, each as JSON text (optional in the file):
+        // "town" = the living town's state. Kept as it is; whoever owns a name checks its own part.
+        std::map<std::string, std::string> extras;
     };
 
     // The two save files (user decision 2026-11-07): save stones write the manual save,

@@ -1049,6 +1049,51 @@
         1
       ],
       "material": "materials/well_water.material.json"
+    },
+    {
+      "id": "town_house_a",
+      "name": "Town: Bren's house",
+      "position": [
+        -6.0,
+        0,
+        -5.6
+      ]
+    },
+    {
+      "id": "town_house_b",
+      "name": "Town: row houses",
+      "position": [
+        6.0,
+        0,
+        -10.2
+      ]
+    },
+    {
+      "id": "town_inn",
+      "name": "Town: inn",
+      "position": [
+        1.6,
+        0,
+        5.0
+      ]
+    },
+    {
+      "id": "town_shop",
+      "name": "Town: Tobin's shop",
+      "position": [
+        0.5,
+        0,
+        -3.5
+      ]
+    },
+    {
+      "id": "town_well",
+      "name": "Town: well",
+      "position": [
+        -3.0,
+        0,
+        3.8
+      ]
     }
   ]
 }

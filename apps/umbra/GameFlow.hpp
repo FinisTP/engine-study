@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SceneRuntime.hpp"
+#include "TownFlow.hpp"
 
 #include <DrawList.hpp>
 #include <FileWatcher.hpp>
@@ -141,6 +142,9 @@ private:
         float wait = 0.0F;
     };
     std::vector<Blow> blows_;
+#if UMBRA_PLUGIN_LIVING_TOWN
+    std::optional<TownFlow> town_; // the living town, if the project has a town file
+#endif
     std::vector<Impact> impacts_;
     float outro_ = 0.0F; // seconds the finished fight stays on screen for its last blow
     void LandBlows(float deltaSeconds);

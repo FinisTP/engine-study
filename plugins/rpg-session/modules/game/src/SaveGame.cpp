@@ -50,7 +50,11 @@ namespace umbra::game
             json quests = json::object();
             for (const auto &[id, q] : d.quests)
                 quests[id] = {{"state", rpg::ToString(q.state)}, {"objective", q.objective}, {"count", q.count}, {"rewarded", q.rewarded}};
+            json extras = json::object();
+            for (const auto &[name, text] : d.extras)
+                extras[name] = json::parse(text, nullptr, false);
             return {
+                {"extras", extras},
                 {"scene", d.scene},
                 {"feet", {d.feet.x, d.feet.y, d.feet.z}},
                 {"yaw", d.yaw},
@@ -125,6 +129,10 @@ namespace umbra::game
                     const bool known = (text.starts_with("skill:") && content.FindSkill(text.substr(6))) || (text.starts_with("item:") && content.FindItem(text.substr(5)));
                     d.hotkeys.push_back(known ? text : "");
                 }
+
+            if (const auto it = p.find("extras"); it != p.end() && it->is_object())
+                for (const auto &[name, part] : it->items())
+                    d.extras[name] = part.dump();
 
             // The time of day is optional too (older saves have none); a bad value is just dropped.
             if (const auto it = p.find("hour"); it != p.end() && it->is_number())

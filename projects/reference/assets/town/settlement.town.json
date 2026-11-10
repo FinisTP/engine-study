@@ -1,0 +1,53 @@
+{
+  "format": "umbra.town",
+  "version": 1,
+  "urgent": 700,
+  "needs": [
+    { "id": "hunger", "name": "Hunger", "risePerDay": 1500 },
+    { "id": "rest", "name": "Tiredness", "risePerDay": 1100 },
+    { "id": "company", "name": "Loneliness", "risePerDay": 700 }
+  ],
+  "places": [
+    { "id": "house_bren", "name": "Bren's house", "scene": "scenes/settlement.scene.json", "marker": "town_house_a" },
+    { "id": "house_row", "name": "the row houses", "scene": "scenes/settlement.scene.json", "marker": "town_house_b" },
+    { "id": "inn", "name": "the inn", "owner": "edda", "scene": "scenes/settlement.scene.json", "marker": "town_inn" },
+    { "id": "shop", "name": "Tobin's shop", "owner": "tobin", "scene": "scenes/settlement.scene.json", "marker": "town_shop" },
+    { "id": "forge", "name": "the forge", "owner": "garrick" },
+    { "id": "fields", "name": "the fields" },
+    { "id": "well", "name": "the well", "scene": "scenes/settlement.scene.json", "marker": "town_well" }
+  ],
+  "activities": [
+    { "id": "rest", "name": "resting at home", "where": "home", "hours": 1, "relief": { "rest": 60 } },
+    { "id": "sleep", "name": "sleeping", "where": "home", "hours": 7, "openFrom": 21, "openTo": 6, "relief": { "rest": 160 } },
+    { "id": "eat_home", "name": "eating at home", "where": "home", "hours": 1, "cost": 5, "relief": { "hunger": 500 } },
+    { "id": "eat_inn", "name": "eating at the inn", "where": "inn", "hours": 1, "cost": 6, "openFrom": 11, "openTo": 22, "social": true,
+      "relief": { "hunger": 700, "company": 120 } },
+    { "id": "drink", "name": "an evening drink", "where": "inn", "hours": 2, "cost": 3, "openFrom": 17, "openTo": 23, "social": true,
+      "relief": { "company": 260 } },
+    { "id": "chat", "name": "talking at the well", "where": "well", "hours": 1, "openFrom": 7, "openTo": 20, "social": true, "relief": { "company": 180 } },
+    { "id": "forage", "name": "foraging in the fields", "where": "fields", "hours": 2, "openFrom": 6, "openTo": 20, "relief": { "hunger": 220 } },
+    { "id": "work", "name": "working", "where": "work", "hours": 2, "openFrom": 6, "openTo": 19, "wage": 4, "xp": 2 },
+    { "id": "shop", "name": "buying at Tobin's", "where": "shop", "hours": 1, "cost": 8, "openFrom": 8, "openTo": 18, "social": true,
+      "relief": { "hunger": 300, "company": 60 } }
+  ],
+  "residents": [
+    { "id": "bren", "name": "Old Bren", "actor": "resident_bren", "home": "house_bren", "work": "well", "money": 60,
+      "schedule": [ { "from": 21, "to": 6, "activity": "sleep" }, { "from": 8, "to": 12, "activity": "chat" }, { "from": 14, "to": 17, "activity": "work" } ],
+      "bonds": { "pip": 400, "garrick": -150 } },
+    { "id": "tobin", "name": "Tobin", "actor": "resident_tobin", "home": "house_row", "work": "shop", "money": 90,
+      "schedule": [ { "from": 22, "to": 6, "activity": "sleep" }, { "from": 8, "to": 18, "activity": "work" }, { "from": 18, "to": 22, "activity": "drink" } ],
+      "bonds": { "edda": 250 } },
+    { "id": "edda", "name": "Edda", "actor": "resident_edda", "home": "inn", "work": "inn", "money": 70,
+      "schedule": [ { "from": 23, "to": 7, "activity": "sleep" }, { "from": 9, "to": 19, "activity": "work" } ] },
+    { "id": "garrick", "name": "Garrick", "actor": "resident_garrick", "home": "forge", "work": "forge", "money": 50,
+      "schedule": [ { "from": 21, "to": 5, "activity": "sleep" }, { "from": 6, "to": 16, "activity": "work" }, { "from": 17, "to": 21, "activity": "drink" } ],
+      "bonds": { "bren": -200 } },
+    { "id": "wynn", "name": "Wynn", "actor": "resident_wynn", "home": "house_row", "work": "fields", "money": 25,
+      "schedule": [ { "from": 21, "to": 5, "activity": "sleep" }, { "from": 6, "to": 17, "activity": "work" }, { "from": 17, "to": 19, "activity": "chat" } ] },
+    { "id": "hale", "name": "Hale", "actor": "resident_hale", "home": "house_row", "work": "fields", "money": 15,
+      "schedule": [ { "from": 23, "to": 7, "activity": "sleep" }, { "from": 9, "to": 15, "activity": "work" }, { "from": 17, "to": 23, "activity": "drink" } ],
+      "bonds": { "wynn": 200 } },
+    { "id": "pip", "name": "Pip", "actor": "resident_pip", "home": "house_bren", "work": "well", "money": 5,
+      "schedule": [ { "from": 20, "to": 7, "activity": "sleep" }, { "from": 8, "to": 11, "activity": "work" }, { "from": 11, "to": 19, "activity": "chat" } ] }
+  ]
+}

@@ -408,6 +408,173 @@
         1.0
       ],
       "policy": "policies/bandit_leader.policy.json"
+    },
+    {
+      "id": "resident_bren",
+      "name": "Old Bren",
+      "stats": {
+        "maxHealth": 60,
+        "maxEnergy": 20,
+        "attack": 6,
+        "defense": 4,
+        "speed": 8
+      },
+      "skills": [
+        "strike"
+      ],
+      "inventorySlots": 6,
+      "model": "models/elder.glb",
+      "size": 0.9,
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "resident_tobin",
+      "name": "Tobin",
+      "stats": {
+        "maxHealth": 60,
+        "maxEnergy": 20,
+        "attack": 6,
+        "defense": 4,
+        "speed": 8
+      },
+      "skills": [
+        "strike"
+      ],
+      "inventorySlots": 6,
+      "model": "models/bandit.glb",
+      "size": 0.9,
+      "color": [
+        0.9,
+        0.75,
+        0.5,
+        1
+      ],
+      "animation": "animations/bandit.anim.json"
+    },
+    {
+      "id": "resident_edda",
+      "name": "Edda",
+      "stats": {
+        "maxHealth": 60,
+        "maxEnergy": 20,
+        "attack": 6,
+        "defense": 4,
+        "speed": 8
+      },
+      "skills": [
+        "strike"
+      ],
+      "inventorySlots": 6,
+      "model": "models/bandit.glb",
+      "size": 0.9,
+      "color": [
+        0.75,
+        0.55,
+        0.8,
+        1
+      ],
+      "animation": "animations/bandit.anim.json"
+    },
+    {
+      "id": "resident_garrick",
+      "name": "Garrick",
+      "stats": {
+        "maxHealth": 60,
+        "maxEnergy": 20,
+        "attack": 6,
+        "defense": 4,
+        "speed": 8
+      },
+      "skills": [
+        "strike"
+      ],
+      "inventorySlots": 6,
+      "model": "models/bandit.glb",
+      "size": 0.9,
+      "color": [
+        0.55,
+        0.55,
+        0.6,
+        1
+      ],
+      "animation": "animations/bandit.anim.json"
+    },
+    {
+      "id": "resident_wynn",
+      "name": "Wynn",
+      "stats": {
+        "maxHealth": 60,
+        "maxEnergy": 20,
+        "attack": 6,
+        "defense": 4,
+        "speed": 8
+      },
+      "skills": [
+        "strike"
+      ],
+      "inventorySlots": 6,
+      "model": "models/bandit.glb",
+      "size": 0.9,
+      "color": [
+        0.6,
+        0.85,
+        0.55,
+        1
+      ],
+      "animation": "animations/bandit.anim.json"
+    },
+    {
+      "id": "resident_hale",
+      "name": "Hale",
+      "stats": {
+        "maxHealth": 60,
+        "maxEnergy": 20,
+        "attack": 6,
+        "defense": 4,
+        "speed": 8
+      },
+      "skills": [
+        "strike"
+      ],
+      "inventorySlots": 6,
+      "model": "models/bandit.glb",
+      "size": 0.9,
+      "color": [
+        0.5,
+        0.7,
+        0.9,
+        1
+      ],
+      "animation": "animations/bandit.anim.json"
+    },
+    {
+      "id": "resident_pip",
+      "name": "Pip",
+      "stats": {
+        "maxHealth": 60,
+        "maxEnergy": 20,
+        "attack": 6,
+        "defense": 4,
+        "speed": 8
+      },
+      "skills": [
+        "strike"
+      ],
+      "inventorySlots": 6,
+      "model": "models/bandit.glb",
+      "size": 0.75,
+      "color": [
+        1.0,
+        0.85,
+        0.4,
+        1
+      ],
+      "animation": "animations/bandit.anim.json"
     }
   ],
   "quests": [

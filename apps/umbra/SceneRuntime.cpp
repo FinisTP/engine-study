@@ -640,7 +640,7 @@ std::optional<std::size_t> SceneRuntime::TouchingRoamer() const
     const glm::vec3 player = player_.GetFeet(*physics_);
     for (std::size_t i = 0; i < roamers_.size(); ++i)
     {
-        if (!roamers_[i].alive)
+        if (!roamers_[i].alive || roamers_[i].peaceful)
             continue;
         const glm::vec3 feet = RoamerFeet(i);
         if (glm::length(glm::vec2{feet.x - player.x, feet.z - player.z}) < 1.0F && std::abs(feet.y - player.y) < 1.0F)

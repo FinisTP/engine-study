@@ -183,3 +183,21 @@ TEST_CASE("A failed write leaves the existing save as it was")
     REQUIRE(test::ReadText(file) == before);
     std::filesystem::remove_all(blocker);
 }
+
+TEST_CASE("T90: other plugins' parts (the town) travel in the save as they are; older saves have none")
+{
+    const auto dir = test::TempDir("save-extras");
+    const game::SaveSlots slots{dir};
+    game::SaveData d = Sample();
+    d.extras["town"] = R"({"format":"umbra.town.state","seed":"18446744073709551615","tick":431})";
+    REQUIRE(game::WriteSave(slots.Manual(), d, diagnostics));
+    game::SaveData loaded;
+    REQUIRE(game::ReadSave(slots.Manual(), C(), loaded, diagnostics));
+    REQUIRE(loaded.extras.at("town") == d.extras.at("town")); // 64-bit numbers survive as text
+
+    d.extras.clear();
+    REQUIRE(game::WriteSave(slots.Autosave(), d, diagnostics));
+    game::SaveData old;
+    REQUIRE(game::ReadSave(slots.Autosave(), C(), old, diagnostics));
+    REQUIRE(old.extras.empty());
+}

@@ -11,6 +11,7 @@ target_sources(
     PRIVATE
         GameFlow.cpp
         GameFeel.cpp
+        TownFlow.cpp
         GameFlow.hpp
         GameFlow.md
         Benchmark.cpp
@@ -67,6 +68,7 @@ target_link_libraries(
         Umbra::Audio
         Umbra::Game
         $<TARGET_NAME_IF_EXISTS:Umbra::Policy>
+        $<TARGET_NAME_IF_EXISTS:Umbra::Town>
         Umbra::Warnings
         Umbra::Sanitizers
 )

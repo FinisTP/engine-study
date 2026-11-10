@@ -54,6 +54,9 @@ GameFlow::GameFlow(rpg::Content &content, std::filesystem::path contentFile, Sce
 {
     startMenu_ = offerContinue && (std::filesystem::exists(slots_.Manual()) || std::filesystem::exists(slots_.Autosave()));
     contentWatcher_.SetFiles({contentFile_});
+#if UMBRA_PLUGIN_LIVING_TOWN
+    town_.emplace(contentFile_.parent_path().parent_path(), content_, scene_); // assets/rpg/x.rpg.json -> assets
+#endif
 
     // Enemies look like their actor's model (RPG content); without one, the tinted cube.
     scene_.SetRoamerLook([this](const std::string &actor) -> std::optional<RoamerLook> {
@@ -183,6 +186,9 @@ void GameFlow::Update(const umbra::platform::Input &input, float deltaSeconds)
         scene_.SetRoamersActive(false); // the start screen waits for a choice (HandleUi)
         return;
     }
+#if UMBRA_PLUGIN_LIVING_TOWN
+    town_->Update(); // the town lives whenever the world's clock runs: exploring, talking, fighting
+#endif
     switch (session_.GetPhase())
     {
     case game::Phase::Exploring:
@@ -632,6 +638,9 @@ void GameFlow::Restart()
     session_.NewGame();
     if (!scene_.ChangeScene(startScene_, "player"))
         Say("Cannot load " + startScene_);
+#if UMBRA_PLUGIN_LIVING_TOWN
+    town_->NewGame();
+#endif
 }
 
 void GameFlow::StartChoice(const std::string &action)
@@ -659,6 +668,10 @@ bool GameFlow::Save(const std::filesystem::path &file)
     std::optional<game::SaveData> data = session_.MakeSave(scene_.GetScenePath(), spot.feet, spot.yaw);
     if (data)
         data->hour = scene_.GetWorld().Hour();
+#if UMBRA_PLUGIN_LIVING_TOWN
+    if (data && town_->Ready())
+        data->extras["town"] = town_->Save();
+#endif
     std::vector<umbra::core::Diagnostic> diagnostics;
     const bool saved = data && game::WriteSave(file, *data, diagnostics);
     for (const umbra::core::Diagnostic &diagnostic : diagnostics)
@@ -690,6 +703,11 @@ bool GameFlow::Load(const std::filesystem::path &file)
     session_.ApplySave(data);
     if (data.hour >= 0.0F)
         scene_.GetWorld().SetHour(data.hour);
+#if UMBRA_PLUGIN_LIVING_TOWN
+    // The town as it was saved; a save without one (or from a changed town file) starts a new town.
+    const auto town = data.extras.find("town");
+    town_->Load(town != data.extras.end() ? town->second : std::string());
+#endif
     Say("Loaded");
     return true;
 }
@@ -957,6 +975,10 @@ nlohmann::json GameFlow::UiData()
                     {"skillPoints", hero.skillPoints},
                     {"stats", {{"attack", rpg::Get(stats, rpg::Stat::Attack)}, {"defense", rpg::Get(stats, rpg::Stat::Defense)}, {"speed", rpg::Get(stats, rpg::Stat::Speed)}}}};
     data["mode"] = session_.Mode() == game::CombatMode::Turn ? "turn-based" : "real-time";
+#if UMBRA_PLUGIN_LIVING_TOWN
+    if (town_->Ready())
+        data["town"] = town_->UiData();
+#endif
     const bool exploring = !startMenu_ && session_.GetPhase() == game::Phase::Exploring;
     data["switchHint"] = exploring && game::hasTurnMode && game::hasRealtimeMode ? "   [Tab] switch" : "";
     data["exploring"] = exploring;

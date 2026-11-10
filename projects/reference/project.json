@@ -6,6 +6,7 @@
   "plugins": [
     "rpg",
     "story",
+    "living-town",
     "turn-combat",
     "realtime-combat",
     "rpg-session",

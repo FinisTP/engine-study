@@ -19,7 +19,7 @@ are read back. It holds: area, player position and yaw, combat mode (`turn`/`rea
 equipment), each started quest (state, current objective, progress, rewarded flag) and the
 real-time hotkeys (`"hotkeys": ["skill:strike", "item:healing_potion", "", ""]`). Hotkeys are
 optional (older saves have none) and a key whose skill or item no longer exists is cleared rather
-than refusing the save. The time of day (`"hour": 21.5`, S6) is optional too: loading restores it,
+than refusing the save. Other plugins keep their own part under `"extras"` by name (`extras.town` = the living town, S21): the save carries each part as it is, and the plugin that owns a name checks it when loading. The time of day (`"hour": 21.5`, S6) is optional too: loading restores it,
 and a missing or out-of-range value keeps the area's own time.
 
 ## Writing (all or nothing)
