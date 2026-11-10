@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Animator.hpp>
 #include <DrawList.hpp>
 #include <SlotMap.hpp>
 
@@ -182,6 +183,14 @@ namespace umbra::world
         [[nodiscard]] const Portal *GetPortal(Entity entity) const noexcept;
         bool SetLight(Entity entity, Light light);
         [[nodiscard]] const Light *GetLight(Entity entity) const noexcept;
+        // Skeletal animation (S8): the graph file named by the "animation" component, and the
+        // animator built for it once the model is loaded (scene::BindAnimators).
+        bool SetAnimationGraph(Entity entity, std::string graph);
+        [[nodiscard]] const std::string *GetAnimationGraph(Entity entity) const noexcept;
+        bool SetAnimator(Entity entity, std::optional<core::Animator> animator);
+        [[nodiscard]] core::Animator *GetAnimator(Entity entity) noexcept;
+        // Advances every animator (call once per frame, before ExtractDrawList).
+        void UpdateAnimation(float seconds);
         // The scene's sun, sky and fog (the "environment" component) and the time of day.
         // `owner` is the entity whose component it is (saved there again); none = defaults.
         void SetEnvironment(const core::EnvironmentSettings &settings, Entity owner = {});
@@ -226,6 +235,8 @@ namespace umbra::world
             std::optional<Portal> portal;
             std::optional<Spawner> spawner;
             std::optional<Light> light;
+            std::string animationGraph;
+            std::optional<core::Animator> animator;
             std::vector<CustomComponent> customs;
         };
 

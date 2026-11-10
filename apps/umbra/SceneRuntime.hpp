@@ -39,6 +39,7 @@ struct RoamerLook final
     std::uint32_t mesh = 0;
     glm::vec4 color{0.9F, 0.5F, 0.1F, 1.0F};
     glm::vec3 scale{0.35F, 0.8F, 0.35F};
+    std::string graph; // animation graph for a rigged model ("" = none, S8)
 };
 
 // One dungeon enemy walking in the world, and the entity that draws it.
@@ -53,6 +54,7 @@ struct RoamerSlot final
     float yaw = 0.0F;                   // facing, 0 faces -z
     glm::vec3 scale{1.0F};              // visual scale
     float lift = 0.0F;                  // feet -> model center (so the model stands on the ground)
+    float speed = 0.0F;                 // horizontal m/s of the last step (drives the walk animation)
 };
 
 // Owns the live world for one scene file and keeps it in sync with the files on disk.
@@ -104,7 +106,10 @@ public:
     [[nodiscard]] glm::vec3 RoamerFeet(std::size_t index) const;
     // A new roamer standing at `feet`, wandering within homeRadius of home. Returns its index.
     std::size_t AddRoamer(const std::string &actor, glm::vec3 feet, glm::vec3 home, float homeRadius, bool chase);
-    void RemoveRoamer(std::size_t index);
+    // animate: a rigged enemy plays its "dead" state before its body goes (S8); otherwise it goes at once.
+    void RemoveRoamer(std::size_t index, bool animate = false);
+    // Starts a one-shot animation ("attack", "hit") on an entity with an animator; nothing otherwise.
+    void Animate(umbra::world::Entity entity, const std::string &trigger);
     // Changes whenever the world is replaced (load, restart, portal), so fights can tell.
     [[nodiscard]] int Generation() const noexcept { return generation_; }
     // The live scene's "music" component (third-person plugin): track and volume; empty track = none.
@@ -177,6 +182,18 @@ private:
     };
     std::vector<FlashState> flashes_;
     void UpdateFlashes(float seconds);
+    // Animation (S8): graphs by path, loaded once (reloaded when the file changes).
+    std::shared_ptr<const umbra::core::AnimGraph> LoadGraph(const std::string &path);
+    void UpdateAnimation(float seconds);
+    std::map<std::string, std::shared_ptr<const umbra::core::AnimGraph>> graphs_;
+    std::vector<std::string> graphProblems_; // from the last Rebind
+    struct Fading final                      // a defeated enemy's body while its death clip plays
+    {
+        umbra::world::Entity entity;
+        float secondsLeft = 0.0F;
+    };
+    std::vector<Fading> fading_;
+    void ClearFading();
     std::mt19937 roamerRandom_{7};
     std::function<std::optional<RoamerLook>(const std::string &)> roamerLook_;
     bool roamersActive_ = true;

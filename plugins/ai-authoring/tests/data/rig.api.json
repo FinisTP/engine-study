@@ -1,0 +1,51 @@
+{
+  "1": {
+    "class_type": "UniRigLoadMesh",
+    "inputs": {
+      "mesh_path": "3d/character.glb"
+    }
+  },
+  "2": {
+    "class_type": "UniRigLoadSkeletonModel",
+    "inputs": {
+      "model_name": "VAST-AI/UniRig"
+    }
+  },
+  "3": {
+    "class_type": "UniRigExtractSkeleton",
+    "inputs": {
+      "mesh": [
+        "1",
+        0
+      ],
+      "model": [
+        "2",
+        0
+      ],
+      "seed": 42
+    }
+  },
+  "4": {
+    "class_type": "UniRigApplySkinningMLNew",
+    "inputs": {
+      "mesh": [
+        "1",
+        0
+      ],
+      "skeleton": [
+        "3",
+        0
+      ]
+    }
+  },
+  "5": {
+    "class_type": "UniRigSaveRiggedMesh",
+    "inputs": {
+      "rigged": [
+        "4",
+        0
+      ],
+      "filename_prefix": "rigged/character.glb"
+    }
+  }
+}

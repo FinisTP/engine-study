@@ -16,6 +16,7 @@ target_sources(
         src/ModelAssistant.cpp
         src/SoundAssistant.cpp
         src/Generate.cpp
+        src/AnimationGen.cpp
         third_party/dr_flac.h
     PUBLIC
         FILE_SET HEADERS
@@ -28,6 +29,7 @@ target_sources(
             include/ModelAssistant.hpp
             include/SoundAssistant.hpp
             include/Generate.hpp
+            include/AnimationGen.hpp
 )
 
 target_compile_features(UmbraLocalAi PUBLIC cxx_std_20)

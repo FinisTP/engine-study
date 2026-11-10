@@ -34,12 +34,15 @@ PC at 1920x1080); phones get a lower quality setting.
 | **S8 Skeletal animation & rigging** | glTF skins (joints, weights) and clips imported; GPU skinning; clips sampled with interpolation and crossfaded; an animation graph per model (states idle/walk/run/attack/hit/die, conditions from the game) in a data file. AI: rig a generated model through an exported ComfyUI workflow (UniRig), make clips from text (HY-Motion) and retarget them, like P8D | Hero, wolf and bandit animated (idle, walk, attack, hit, death); an AI-made villager rigged and given a "wave" clip from a text prompt |
 | **S9 Animation events, SFX & VFX** | Events on clip frames (footstep, hit, cast) that play sounds, spawn effects and time the damage; a particle system (`*.vfx.json`: rate, lifetime, velocity, gravity, colour and size over life, texture, additive/alpha) with GPU billboards; game feel: damage numbers, hit-stop, camera shake, screen flash; skills, items and statuses name their effects in the RPG content | Sword swings with footstep and hit sounds on the right frames; a fireball skill; fire on the torches; poison bubbles over a poisoned actor; numbers and a short freeze on a heavy blow |
 | **S10 RPG systems** | Gold, merchants and shops (buy/sell screens); loot tables and drops; chests, doors and levers (locks and keys); dialogue choices with conditions and consequences (flags, items, gold, reputation); a quest with two outcomes | Merchant Tobin in the settlement sells potions; the bandit leader drops the key to a locked chest in the dungeon; the elder asks for help: accept (reward) or refuse (she remembers it) |
+| **S18 Party & characters** (added 2026-11-10) | Up to four party members: companions recruited through dialogue consequences (S10), who follow the leader while exploring; every member has their own stats, level, equipment and skill tree; shared inventory and gold. Turn fights: each member acts on their turn, chosen by the player. Real-time fights: the controlled member is switched with a key, and the others use conventional companion AI. A character screen (stats, equipment, skills, swap leader) and a party bar in the HUD; party in saves | Recruit Mara the hunter (bow, ranged skills) in the settlement after the elder's quest; a turn fight with hero and Mara against the bandits; give Mara the sword in the character screen |
 | **S11 Cutscenes** | A timeline file (`*.cutscene.json`) with tracks: camera (keyframes, look-at), actor moves and clips, dialogue lines, sounds and music, fades, waits; started by a trigger zone or a quest step; skippable; saved as seen | An intro: the camera flies over the settlement to the elder, who speaks; a short reveal before the bandit leader's fight |
 
 ### Wave 2: Editor
 
 | Phase | What | Example |
 |---|---|---|
+| **S19 Resource previewers** (added 2026-11-10) | A preview for every asset that can be clicked in the inspector or the asset browser, except code (which opens Visual Studio): sounds and music (play/stop/loop, position, volume, waveform, length, format), images (zoom, checkerboard alpha, size, mip levels, tiled view), models (turntable rendered by the engine, meshes/triangles/materials, clips after S8), materials (lit sphere and cube, shader), UI screens (the existing Game UI preview), RPG content (item/skill/character cards). One preview window that follows the last asset clicked, so it doubles as the thumbnail renderer S12 needs | Click `sounds/torch.wav` and hear it; click `models/hero.glb` and turn it; click `materials/well_water.material.json` and see the water moving on a sphere |
+| **S20 Editor settings** (added 2026-11-10) | A Settings window saved per user (`editor-settings.json`, next to `umbra-editor.ini`). Preferences: colour scheme (dark, light, classic, plus an accent colour), UI scale and font size, hotkeys rebinding for every editor command with conflict warnings. Diagnostics: the diagnostics overlay on/off (editor and game), frame-time graph, Vulkan validation on/off (takes effect on restart), log level | Switch to the light scheme, bind "Play" to F6 instead of F5, hide the diagnostics overlay; all of it kept after a restart |
 | **S12 Prefabs & drag-and-drop** | `*.prefab.json` (an entity tree with components); scene entities that use a prefab keep only their overrides; the asset browser shows thumbnails (rendered by the engine); drag a model or prefab into the view (lands on the ground); multi-select, Ctrl+D duplicate, grid and angle snapping | A torch prefab placed ten times along the road; changing the prefab's light colour updates all ten; a market stall prefab |
 | **S13 Play in editor** | The game runs inside the editor's view (Play / Pause / Stop, "play from here"); the scene returns to its edited state on Stop; entities can be inspected while playing | Walk around the settlement, fight the wolf, press Stop: everything is as it was |
 | **S14 Graph editors** | Conversations and quests as node graphs (choices, conditions and consequences from S10), the cutscene timeline (S11) and the animation graph (S8) as visual editors; the files stay readable JSON | The elder's conversation as a graph; the merchant's conversation built from nothing in the graph |
@@ -57,12 +60,14 @@ PC at 1920x1080); phones get a lower quality setting.
 ```text
 S6 lighting -> S7 post + shaders            (HDR needs the lit scene)
 S8 skeletal -> S9 events/SFX/VFX -> S11 cutscenes (cutscenes move animated actors)
-S10 RPG systems (independent; choices feed S14 and S11)
+S10 RPG systems (independent; choices feed S14 and S11) -> S18 party (companions are recruited by dialogue consequences)
+S19 previewers -> S12 prefabs (the preview renderer makes the asset thumbnails); S20 settings (independent)
 S12 prefabs -> S13 play in editor -> S14 graph editors
 S15 agent chat/vision -> S16 recipes/scatter (scatter uses prefabs, S12) -> S17 code agents
 ```
 
-The order is S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, S16, S17. Agent tools for new
+The order is S6, S7, S8, S9, S10, S18, S11, S19, S20, S12, S13, S14, S15, S16, S17 (S18-S20 added
+from the user's S6/S7 review on 2026-11-10; the numbers are kept so earlier references stay valid). Agent tools for new
 systems are added in S15 and listed there, so earlier phases stay small.
 
 ## Decisions to confirm when each phase starts
@@ -74,11 +79,21 @@ systems are added in S15 and listed there, so earlier phases stay small.
 | S8 | AI rigging and motion models | UniRig and HY-Motion through ComfyUI custom nodes on the creator's PC; licenses shown like other model licenses and checked before shipping |
 | S14 | Graph editor UI | `imgui-node-editor` (MIT; new dependency, reviewed then) |
 | S15 | Vision model | `qwen3-vl:8b` on 8 GB GPUs, measured on the S15 example requests |
+| S18 | Party size and real-time control | Up to 4; in real-time fights the player controls one member (switch with Tab) and the others use companion AI |
+| S18 | The learned enemy policy (P8A) with more heroes | The observation stays v1 (it sees the targeted hero); a party-aware policy is a later retraining |
+| S19 | Model previews | Rendered off-screen by the editor's Vulkan renderer into an ImGui image (no second window) |
+| S20 | Where settings live | Per user, beside `umbra-editor.ini`; nothing in the project (a team shares the project, not preferences) |
 
 Answered (user, 2026-11-09): S6 uses the default (one 2048 map). The time of day is saved in save
 games, the settlement runs a 12-minute day that starts at dusk, and nights are moonlit and readable.
 S7 converts SPIR-V to WGSL at build time. On mobile, post-processing is reduced: tonemapping, grading
 and vignette stay on, and bloom runs at half resolution.
+
+Answered (user, 2026-11-10): S8 uses the default for AI (UniRig and HY-Motion through a local
+ComfyUI, tested with a stand-in server). The example characters are rigged and animated with Meshy
+(the hero and bandit: idle, walk, run, attack, hit, death), and the wolf is a free CC0 animated model
+(Quaternius). Meshy could not rig the elder (her robe hides the legs), so she stays unrigged; the
+"AI villager waving" example needs the user's ComfyUI run (`testing/s8-skeletal-animation.md` §4).
 
 ## Consequences
 

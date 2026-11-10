@@ -87,6 +87,8 @@ private:
 
     [[nodiscard]] const umbra::rpg::Roster *FightRoster();
     [[nodiscard]] std::string FighterName(std::size_t index);
+    // The entity drawing a fighter (0 = the player); invalid if it has left the world.
+    [[nodiscard]] umbra::world::Entity FighterEntity(std::size_t index);
     [[nodiscard]] std::vector<float> FighterHead(std::size_t index); // a point above a fighter, for target arrows
     [[nodiscard]] std::string ActionName(const umbra::rpg::ActionIntent &intent);
     [[nodiscard]] std::vector<std::string> RealtimeSkills();

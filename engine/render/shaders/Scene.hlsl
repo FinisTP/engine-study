@@ -30,6 +30,42 @@ struct VertexOutput
 };
 
 #ifndef UMBRA_WEB
+// Skinned meshes (S8, Skeleton.md): joints and weights in a second vertex buffer, joint matrices
+// for the whole frame in a storage buffer; this draw's start there is perDraw.texturing.z.
+struct SkinInput
+{
+    [[vk::location(3)]] uint4 joints : BLENDINDICES0;
+    [[vk::location(4)]] float4 weights : BLENDWEIGHT0;
+};
+struct JointMatrix
+{
+    column_major float4x4 m;
+};
+[[vk::binding(2, 0)]] StructuredBuffer<JointMatrix> jointMatrices;
+
+// The weighted sum of this vertex's joint matrices: moves the bind-pose vertex with its bones.
+float4x4 SkinMatrix(SkinInput skin)
+{
+    const uint first = (uint)perDraw.texturing.z;
+    return jointMatrices[first + skin.joints.x].m * skin.weights.x + jointMatrices[first + skin.joints.y].m * skin.weights.y +
+           jointMatrices[first + skin.joints.z].m * skin.weights.z + jointMatrices[first + skin.joints.w].m * skin.weights.w;
+}
+
+VertexOutput VSMain(VertexInput input);
+
+VertexOutput VSSkinned(VertexInput input, SkinInput skin)
+{
+    const float4x4 m = SkinMatrix(skin);
+    input.position = mul(m, float4(input.position, 1.0F)).xyz;
+    input.normal = mul((float3x3)m, input.normal);
+    return VSMain(input);
+}
+
+float4 ShadowSkinnedVS(VertexInput input, SkinInput skin) : SV_Position
+{
+    return mul(scene.shadowMatrix, mul(perDraw.model, mul(SkinMatrix(skin), float4(input.position, 1.0F))));
+}
+
 VertexOutput VSMain(VertexInput input)
 {
     VertexOutput output;

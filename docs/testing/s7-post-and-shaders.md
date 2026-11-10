@@ -9,8 +9,8 @@
   in Chrome on the same SwiftShader under a virtual display.
 - User decisions (2026-11-09): custom shaders reach the browser by converting SPIR-V to WGSL at build
   time (naga); phones get reduced post (tonemap, grade and vignette on, bloom from a smaller picture).
-- State: **implemented; verified headlessly and in software-rendered pictures.** The user checks S6
-  and S7 together on Windows (§4).
+- State: **verified** (the user's S6 + S7 review on Windows, 2026-11-09: "everything works fine"; the
+  review found a crash on undo in the editor's Game UI window, tracked separately in the ROADMAP).
 
 ## What was built
 

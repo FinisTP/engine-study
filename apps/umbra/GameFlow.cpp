@@ -61,6 +61,7 @@ GameFlow::GameFlow(rpg::Content &content, std::filesystem::path contentFile, Sce
             return std::nullopt;
         RoamerLook look;
         look.model = def->model;
+        look.graph = def->animation;
         look.color = {def->color[0], def->color[1], def->color[2], def->color[3]};
         look.scale = glm::vec3{def->size};
         return look;
@@ -416,11 +417,14 @@ void GameFlow::ReadEvents(const rpg::Events &events)
             line = FighterName(e.actor) + " hit " + FighterName(e.target) + " for " + std::to_string(e.amount);
             const rpg::SkillDef *skill = session_.Content().FindSkill(e.what);
             sounds_.push_back(skill && !skill->sound.empty() ? skill->sound : "audio/hit.wav");
-            // Feedback: whoever was hit flashes red.
-            if (e.target == 0)
-                scene_.Flash(scene_.GetWorld().Find("player"));
-            else if (e.target <= fighters_.size() && scene_.Roamers()[fighters_[e.target - 1]].alive)
-                scene_.Flash(scene_.Roamers()[fighters_[e.target - 1]].visual);
+            // Feedback: the attacker swings, whoever was hit flashes red and flinches (clips: S8).
+            if (const umbra::world::Entity attacker = FighterEntity(e.actor))
+                scene_.Animate(attacker, "attack");
+            if (const umbra::world::Entity target = FighterEntity(e.target))
+            {
+                scene_.Flash(target);
+                scene_.Animate(target, "hit");
+            }
             break;
         }
         case rpg::EventKind::Heal:
@@ -436,8 +440,10 @@ void GameFlow::ReadEvents(const rpg::Events &events)
             break;
         case rpg::EventKind::Death:
             line = FighterName(e.target) + (e.target == 0 ? " fell" : " was defeated");
+            if (umbra::core::Animator *animator = e.target == 0 ? scene_.GetWorld().GetAnimator(FighterEntity(0)) : nullptr)
+                animator->SetFlag("dead", true);
             if (e.target >= 1 && e.target <= fighters_.size())
-                scene_.RemoveRoamer(fighters_[e.target - 1]);
+                scene_.RemoveRoamer(fighters_[e.target - 1], true);
             break;
         default:
             break;
@@ -577,6 +583,15 @@ std::string GameFlow::FighterName(std::size_t index)
         return "Enemy " + std::to_string(index);
     const rpg::ActorDef *actor = session_.Content().FindActor((*roster)[index].character->actor);
     return (actor ? actor->name : (*roster)[index].character->actor) + " " + std::to_string(index);
+}
+
+umbra::world::Entity GameFlow::FighterEntity(std::size_t index)
+{
+    if (index == 0)
+        return scene_.GetWorld().Find("player");
+    if (index > fighters_.size() || !scene_.Roamers()[fighters_[index - 1]].alive)
+        return {};
+    return scene_.Roamers()[fighters_[index - 1]].visual;
 }
 
 std::vector<float> GameFlow::FighterHead(std::size_t index)

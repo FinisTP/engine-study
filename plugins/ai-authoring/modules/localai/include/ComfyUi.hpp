@@ -81,6 +81,46 @@ namespace umbra::localai
     // Blocking: uploads the picture, runs the workflow, downloads the GLB its save node wrote.
     ModelResult GenerateModel(const ModelRequest &request, CancelToken &cancel);
 
+    // --- Rigging and motion (S8, AnimationGen.md): the creator's exported UniRig / HY-Motion workflows ---
+
+    enum class AnimKind
+    {
+        Rig,   // a model file in (one mesh-file input), a rigged model out
+        Motion // a text in (the "text"/"prompt" inputs), an animation out
+    };
+
+    // Checks an "Export (API)" workflow for what Umbra fills in: rig = exactly one input naming a
+    // .glb/.fbx/.obj file; motion = at least one "text" or "prompt" text input.
+    bool LoadAnimWorkflow(const std::filesystem::path &file, AnimKind kind, nlohmann::json &graph, std::vector<core::Diagnostic> &diagnostics);
+
+    struct AnimRequest final
+    {
+        std::string host = "http://127.0.0.1:8000";
+        AnimKind kind = AnimKind::Rig;
+        nlohmann::json workflow;       // from LoadAnimWorkflow
+        std::vector<std::uint8_t> model; // rig: the model to rig; motion: optional character to retarget onto
+        std::string modelName;          // its file name, e.g. "hero.glb"
+        std::string prompt;             // motion: what the character does
+        float seconds = 4.0F;           // motion: length ("duration" inputs)
+        long long seed = 0;
+        int timeoutSeconds = 120;
+        std::size_t maxBytes = 256 * 1024 * 1024;
+    };
+
+    struct AnimResult final
+    {
+        bool ok = false;
+        std::vector<std::uint8_t> file;
+        std::string extension; // ".glb" or ".fbx", as ComfyUI saved it
+        nlohmann::json graph;  // what ran, for the provenance
+        std::vector<core::Diagnostic> diagnostics;
+    };
+
+    // The workflow with this run's model path, text, length and seeds filled in.
+    [[nodiscard]] nlohmann::json PrepareAnimWorkflow(const AnimRequest &request, const std::string &uploadedModel);
+    // Blocking: uploads the model (if any), runs the workflow, downloads the GLB (or FBX) it saved.
+    AnimResult GenerateAnim(const AnimRequest &request, CancelToken &cancel);
+
     // --- Music and sound effects (S4): ACE-Step 1.5 or Stable Audio 3, both native ComfyUI nodes ---
 
     struct AudioRequest final

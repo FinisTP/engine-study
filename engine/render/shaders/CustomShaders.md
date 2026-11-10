@@ -56,7 +56,8 @@ writes a small wrapper for each:
 ```
 
 - **Vulkan.** DXC compiles the wrapper's `PSMain` to `shaders/surface/water.frag.spv`. The renderer
-  makes one extra scene pipeline per file it finds there. Draws whose material names the shader use
+  makes one extra scene pipeline per file it finds there (two since S8: plain and skinned, the
+  skinned one with `VSSkinned` from `Skinned.vert.spv`). Draws whose material names the shader use
   that pipeline; all the others use the plain one.
 - **Browser.** The same wrapper is compiled with `-DUMBRA_WEB` (the browser's bindings; see
   `Surface.hlsli`) to SPIR-V, and **naga** turns that SPIR-V into WGSL (`cargo install naga-cli`).

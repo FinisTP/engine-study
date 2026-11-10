@@ -11,8 +11,8 @@ namespace umbra::assets
 {
     // Bump modelFormatVersion when the .umodel layout changes, importerVersion when
     // the importer output changes. Either one makes every cached file rebuild.
-    inline constexpr std::uint32_t modelFormatVersion = 1;
-    inline constexpr std::uint32_t importerVersion = 1;
+    inline constexpr std::uint32_t modelFormatVersion = 2; // 2: skins, skeleton and clips (S8)
+    inline constexpr std::uint32_t importerVersion = 2;
 
     struct BuildInfo final
     {

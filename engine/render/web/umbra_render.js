@@ -14,17 +14,31 @@ struct Frame {
   horizonColor: vec4f, groundColor: vec4f, fogColor: vec4f, counts: vec4f,
   lightPositions: array<vec4f, 16>, lightColors: array<vec4f, 16>
 };
-struct Draw { model: mat4x4f, color: vec4f, texturing: vec4f }; // texturing: x = meters per repeat, y = emissive
+struct Draw { model: mat4x4f, color: vec4f, texturing: vec4f }; // texturing: x = meters per repeat, y = emissive, z = first joint
 @group(0) @binding(0) var<uniform> frame: Frame;
 @group(0) @binding(1) var<uniform> draw: Draw;
 @group(0) @binding(2) var shadowMap: texture_depth_2d;
 @group(0) @binding(3) var shadowSampler: sampler_comparison;
+@group(0) @binding(4) var<storage, read> joints: array<mat4x4f>; // this frame's skinning matrices (Skeleton.md)
 @group(1) @binding(0) var baseColorSampler: sampler;
 @group(1) @binding(1) var baseColorTexture: texture_2d<f32>;
 // The same locations as Scene.hlsl's VertexOutput, so converted custom surface shaders fit this vertex shader.
 struct Out { @builtin(position) position: vec4f, @location(0) normal: vec3f, @location(1) uv: vec2f, @location(2) color: vec4f,
              @location(3) world: vec3f, @location(4) emissive: f32 };
 @vertex fn vs(@location(0) position: vec3f, @location(1) normal: vec3f, @location(2) uv: vec2f) -> Out {
+  return shade(position, normal, uv);
+}
+// A skinned vertex: up to four joints' matrices, weighted, move it before the usual work (Skeleton.md).
+fn skin(j: vec4u, w: vec4f) -> mat4x4f {
+  let first = u32(draw.texturing.z);
+  return joints[first + j.x] * w.x + joints[first + j.y] * w.y + joints[first + j.z] * w.z + joints[first + j.w] * w.w;
+}
+@vertex fn vsSkinned(@location(0) position: vec3f, @location(1) normal: vec3f, @location(2) uv: vec2f,
+                     @location(3) j: vec4u, @location(4) w: vec4f) -> Out {
+  let m = skin(j, w);
+  return shade((m * vec4f(position, 1.0)).xyz, (m * vec4f(normal, 0.0)).xyz, uv);
+}
+fn shade(position: vec3f, normal: vec3f, uv: vec2f) -> Out {
   var o: Out;
   let world = draw.model * vec4f(position, 1.0);
   o.position = frame.viewProjection * world;
@@ -85,6 +99,9 @@ fn sunShadow(p: vec3f, n: vec3f) -> f32 {
 // Sun shadow map: depth only, seen from the sun.
 @vertex fn shadowVs(@location(0) position: vec3f) -> @builtin(position) vec4f {
   return frame.shadowMatrix * draw.model * vec4f(position, 1.0);
+}
+@vertex fn shadowSkinnedVs(@location(0) position: vec3f, @location(3) j: vec4u, @location(4) w: vec4f) -> @builtin(position) vec4f {
+  return frame.shadowMatrix * draw.model * skin(j, w) * vec4f(position, 1.0);
 }
 // Sky: one triangle covering the screen, drawn first.
 struct SkyOut { @builtin(position) position: vec4f, @location(0) ndc: vec2f };
@@ -235,6 +252,15 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
         count: indexCount
       };
     },
+    dropMesh: function (m) { m.vertices.destroy(); m.indices.destroy(); if (m.skin) m.skin.destroy(); },
+    // The frame's group-0 bind groups (rebuilt when the draw or joint buffer grows).
+    makeFrameGroups: function () {
+      var entries = [{ binding: 0, resource: { buffer: UG.frameBuffer } }, { binding: 1, resource: { buffer: UG.drawBuffer, size: 96 } },
+                     { binding: 4, resource: { buffer: UG.jointBuffer } }];
+      UG.shadowGroup = UG.device.createBindGroup({ layout: UG.shadowLayout, entries: entries });
+      UG.frameGroup = UG.device.createBindGroup({ layout: UG.frameLayout, entries: entries.concat([
+        { binding: 2, resource: UG.shadowView }, { binding: 3, resource: UG.shadowSampler }]) });
+    },
     textureGroup: function (texture) {
       return UG.device.createBindGroup({ layout: UG.pipeline.getBindGroupLayout(1), entries: [
         { binding: 0, resource: UG.sampler }, { binding: 1, resource: texture.createView() }] });
@@ -262,10 +288,14 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
       var vertexLayout = { arrayStride: 32, attributes: [
         { shaderLocation: 0, offset: 0, format: 'float32x3' }, { shaderLocation: 1, offset: 12, format: 'float32x3' },
         { shaderLocation: 2, offset: 24, format: 'float32x2' }] };
+      // Skinned meshes have a second buffer: 4 joint indices (uint16) and 4 weights (core::SkinVertex).
+      var skinLayout = { arrayStride: 24, attributes: [
+        { shaderLocation: 3, offset: 0, format: 'uint16x4' }, { shaderLocation: 4, offset: 8, format: 'float32x4' }] };
       // Group 0: frame, per-draw slot, shadow map. The shadow pass gets a copy without the map (it draws into it).
       var frameEntries = [
         { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-        { binding: 1, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform', hasDynamicOffset: true } }];
+        { binding: 1, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform', hasDynamicOffset: true } },
+        { binding: 4, visibility: GPUShaderStage.VERTEX, buffer: { type: 'read-only-storage' } }];
       var shadowLayout = device.createBindGroupLayout({ entries: frameEntries });
       var frameLayout = device.createBindGroupLayout({ entries: frameEntries.concat([
         { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'depth' } },
@@ -274,16 +304,17 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
         { binding: 0, visibility: GPUShaderStage.FRAGMENT, sampler: {} },
         { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: {} }] });
       // The lit scene; a custom surface shader (umbra_gpu_surface) swaps in its own fragment module.
-      UG.sceneDesc = function (fragmentModule, entry) {
+      UG.sceneDesc = function (fragmentModule, entry, skinned) {
         return {
           layout: device.createPipelineLayout({ bindGroupLayouts: [frameLayout, textureLayout] }),
-          vertex: { module: module, entryPoint: 'vs', buffers: [vertexLayout] },
+          vertex: skinned ? { module: module, entryPoint: 'vsSkinned', buffers: [vertexLayout, skinLayout] } : { module: module, entryPoint: 'vs', buffers: [vertexLayout] },
           fragment: { module: fragmentModule, entryPoint: entry, targets: [{ format: 'rgba16float', blend: {
             color: { srcFactor: 'src-alpha', dstFactor: 'one-minus-src-alpha' }, alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' } } }] },
           primitive: { topology: 'triangle-list', cullMode: 'none' },
           depthStencil: { format: 'depth24plus', depthWriteEnabled: true, depthCompare: 'less' } };
       };
-      UG.pipeline = device.createRenderPipeline(UG.sceneDesc(module, 'fs'));
+      UG.pipeline = device.createRenderPipeline(UG.sceneDesc(module, 'fs', false));
+      UG.skinnedPipeline = device.createRenderPipeline(UG.sceneDesc(module, 'fs', true));
       UG.skyPipeline = device.createRenderPipeline({
         layout: device.createPipelineLayout({ bindGroupLayouts: [frameLayout] }),
         vertex: { module: module, entryPoint: 'skyVs' },
@@ -293,6 +324,11 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
       UG.shadowPipeline = device.createRenderPipeline({
         layout: device.createPipelineLayout({ bindGroupLayouts: [shadowLayout] }),
         vertex: { module: module, entryPoint: 'shadowVs', buffers: [vertexLayout] },
+        primitive: { topology: 'triangle-list', cullMode: 'none' },
+        depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'less', depthBias: 2, depthBiasSlopeScale: 1.75 } });
+      UG.skinnedShadowPipeline = device.createRenderPipeline({
+        layout: device.createPipelineLayout({ bindGroupLayouts: [shadowLayout] }),
+        vertex: { module: module, entryPoint: 'shadowSkinnedVs', buffers: [vertexLayout, skinLayout] },
         primitive: { topology: 'triangle-list', cullMode: 'none' },
         depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'less', depthBias: 2, depthBiasSlopeScale: 1.75 } });
       // The sun's shadow map (RendererWeb.cpp's shadowMapSize) and its hardware comparison.
@@ -345,6 +381,8 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
       UG.frameLayout = frameLayout;
       UG.frameBuffer = device.createBuffer({ size: 208 * 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
       UG.drawCapacity = 0;
+      UG.jointCapacity = 64;
+      UG.jointBuffer = device.createBuffer({ size: UG.jointCapacity * 64, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
       UG.sampler = device.createSampler({ magFilter: 'linear', minFilter: 'linear', mipmapFilter: 'linear', addressModeU: 'repeat', addressModeV: 'repeat' });
       // Fallback texture: one white pixel (like the Vulkan renderer's).
       var white = device.createTexture({ size: [1, 1], format: 'rgba8unorm-srgb', usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST });
@@ -358,7 +396,8 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
   umbra_gpu_surface__deps: ['$UG'],
   umbra_gpu_surface: function (code) {
     var module = UG.device.createShaderModule({ code: UTF8ToString(code) });
-    return UG.put(UG.surfaces, UG.device.createRenderPipeline(UG.sceneDesc(module, 'main')));
+    return UG.put(UG.surfaces, { plain: UG.device.createRenderPipeline(UG.sceneDesc(module, 'main', false)),
+                                 skinned: UG.device.createRenderPipeline(UG.sceneDesc(module, 'main', true)) });
   },
 
   // The post color table from its 256x16 strip (x = b * 16 + r, y = g) into the 16^3 texture.
@@ -375,14 +414,17 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
   },
   umbra_gpu_replace_mesh__deps: ['$UG'],
   umbra_gpu_replace_mesh: function (id, vertices, vertexCount, indices, indexCount) {
-    var old = UG.meshes[id];
-    if (old) { old.vertices.destroy(); old.indices.destroy(); }
+    if (UG.meshes[id]) UG.dropMesh(UG.meshes[id]);
     UG.meshes[id] = UG.meshFrom(vertices, vertexCount, indices, indexCount);
+  },
+  // Skin data for a mesh just made or replaced (24 bytes per vertex).
+  umbra_gpu_mesh_skin__deps: ['$UG'],
+  umbra_gpu_mesh_skin: function (id, skin, vertexCount) {
+    UG.meshes[id].skin = UG.buffer(GPUBufferUsage.VERTEX, HEAPU8.subarray(skin, skin + vertexCount * 24));
   },
   umbra_gpu_destroy_mesh__deps: ['$UG'],
   umbra_gpu_destroy_mesh: function (id) {
-    var m = UG.meshes[id];
-    if (m) { m.vertices.destroy(); m.indices.destroy(); UG.meshes[id] = null; }
+    if (UG.meshes[id]) { UG.dropMesh(UG.meshes[id]); UG.meshes[id] = null; }
   },
   umbra_gpu_texture__deps: ['$UG'],
   umbra_gpu_texture: function (width, height, levels) {
@@ -403,7 +445,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
   },
 
   umbra_gpu_frame__deps: ['$UG'],
-  umbra_gpu_frame: function (frame, post, draws, drawCount, lines, lineCount, hud) {
+  umbra_gpu_frame: function (frame, post, draws, drawCount, lines, lineCount, hud, joints, jointCount) {
     Module.frameCount = (Module.frameCount || 0) + 1; // for the page and tests
     if (Module.onHud) Module.onHud(UTF8ToString(hud));
     var device = UG.device, canvas = Module.canvas;
@@ -418,15 +460,21 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
     }
     // 2. Per-frame and per-draw uniforms: one 256-byte slot per draw (dynamic offset).
     device.queue.writeBuffer(UG.frameBuffer, 0, HEAPF32.buffer, frame, 208 * 4);
+    var regroup = false;
     if (!UG.drawBuffer || drawCount > UG.drawCapacity) {
       if (UG.drawBuffer) UG.drawBuffer.destroy();
       UG.drawCapacity = Math.max(64, drawCount * 2);
       UG.drawBuffer = device.createBuffer({ size: UG.drawCapacity * 256, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
-      var entries = [{ binding: 0, resource: { buffer: UG.frameBuffer } }, { binding: 1, resource: { buffer: UG.drawBuffer, size: 96 } }];
-      UG.shadowGroup = device.createBindGroup({ layout: UG.shadowLayout, entries: entries });
-      UG.frameGroup = device.createBindGroup({ layout: UG.frameLayout, entries: entries.concat([
-        { binding: 2, resource: UG.shadowView }, { binding: 3, resource: UG.shadowSampler }]) });
+      regroup = true;
     }
+    if (jointCount > UG.jointCapacity) { // skinning matrices: 64 bytes each
+      UG.jointBuffer.destroy();
+      UG.jointCapacity = jointCount * 2;
+      UG.jointBuffer = device.createBuffer({ size: UG.jointCapacity * 64, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+      regroup = true;
+    }
+    if (regroup) UG.makeFrameGroups();
+    if (jointCount > 0) device.queue.writeBuffer(UG.jointBuffer, 0, HEAPF32.buffer, joints, jointCount * 64);
     var src = HEAPF32.subarray(draws >> 2, (draws >> 2) + drawCount * 28);
     var slots = new Float32Array(Math.max(drawCount, 1) * 64);
     for (var d = 0; d < drawCount; ++d) slots.set(src.subarray(d * 28, d * 28 + 24), d * 64);
@@ -437,12 +485,16 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
     var shadowPass = encoder.beginRenderPass({ colorAttachments: [],
       depthStencilAttachment: { view: UG.shadowView, depthClearValue: 1, depthLoadOp: 'clear', depthStoreOp: 'store' } });
     if (castsShadow && drawCount > 0) {
-      shadowPass.setPipeline(UG.shadowPipeline);
+      var bound = null;
       for (var d = 0; d < drawCount; ++d) {
         var mesh = UG.meshes[src[d * 28 + 24]];
         if (!mesh) continue;
+        var skinned = src[d * 28 + 27] > 0 && mesh.skin; // float 27: drawn with this frame's joints
+        var pipeline = skinned ? UG.skinnedShadowPipeline : UG.shadowPipeline;
+        if (pipeline !== bound) { shadowPass.setPipeline(pipeline); bound = pipeline; }
         shadowPass.setBindGroup(0, UG.shadowGroup, [d * 256]);
         shadowPass.setVertexBuffer(0, mesh.vertices);
+        if (skinned) shadowPass.setVertexBuffer(1, mesh.skin);
         shadowPass.setIndexBuffer(mesh.indices, 'uint32');
         shadowPass.drawIndexed(mesh.count);
       }
@@ -460,12 +512,15 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
       for (var d = 0; d < drawCount; ++d) {
         var mesh = UG.meshes[src[d * 28 + 24]];
         if (!mesh) continue;
-        var pipeline = UG.surfaces[src[d * 28 + 26]] || UG.pipeline; // custom surface shader, else the plain one
+        var skinned = src[d * 28 + 27] > 0 && mesh.skin;
+        var surface = UG.surfaces[src[d * 28 + 26]]; // custom surface shader, else the plain one
+        var pipeline = surface ? (skinned ? surface.skinned : surface.plain) : (skinned ? UG.skinnedPipeline : UG.pipeline);
         if (pipeline !== bound) { pass.setPipeline(pipeline); bound = pipeline; }
         var texture = src[d * 28 + 25];
         pass.setBindGroup(0, UG.frameGroup, [d * 256]);
         pass.setBindGroup(1, (texture > 0 && UG.groups[texture]) || UG.whiteGroup);
         pass.setVertexBuffer(0, mesh.vertices);
+        if (skinned) pass.setVertexBuffer(1, mesh.skin);
         pass.setIndexBuffer(mesh.indices, 'uint32');
         pass.drawIndexed(mesh.count);
       }

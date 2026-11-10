@@ -39,7 +39,7 @@ std::pair<umbra::core::MeshHandle, umbra::core::TextureHandle> ModelLibrary::Res
     const LoadedModel *loaded = Load(modelPath);
     if (loaded == nullptr || mesh >= loaded->meshes.size())
         return {};
-    const std::int32_t texture = loaded->model.meshes[mesh].texture;
+    const std::int32_t texture = loaded->model->meshes[mesh].texture;
     return {loaded->meshes[mesh], texture >= 0 ? loaded->textures[static_cast<std::size_t>(texture)] : umbra::core::TextureHandle{}};
 }
 
@@ -121,7 +121,7 @@ ModelLibrary::ReloadResult ModelLibrary::Reload(const std::string &modelPath)
     //    renderables before the next frame; old GPU data is retired, not freed at once.
     failed_.erase(modelPath);
     const auto it = models_.find(modelPath);
-    const bool sameStructure = it != models_.end() && umbra::assets::SameStructure(it->second.model, fresh.model);
+    const bool sameStructure = it != models_.end() && umbra::assets::SameStructure(*it->second.model, *fresh.model);
     if (it != models_.end())
     {
         Release(it->second);
@@ -162,7 +162,7 @@ bool ModelLibrary::BuildAndUpload(const std::string &modelPath, LoadedModel &loa
     // 2. Read it back.
     BuildInfo info;
     std::string error;
-    if (!ReadModelFile(build.output, loaded.model, info, error))
+    if (!ReadModelFile(build.output, *loaded.model, info, error))
     {
         umbra::diagnostics::Error("Cannot read " + build.output.string() + ": " + error);
         return false;
@@ -172,9 +172,9 @@ bool ModelLibrary::BuildAndUpload(const std::string &modelPath, LoadedModel &loa
         loaded.files.push_back((assetRoot_ / modelPath).parent_path() / dependency);
 
     // 3. Upload everything; on any failure release what was uploaded (all or nothing).
-    for (const umbra::core::TextureData &texture : loaded.model.textures)
+    for (const umbra::core::TextureData &texture : loaded.model->textures)
         loaded.textures.push_back(renderer_.CreateTexture(texture));
-    for (const umbra::assets::ModelMesh &mesh : loaded.model.meshes)
+    for (const umbra::assets::ModelMesh &mesh : loaded.model->meshes)
         loaded.meshes.push_back(renderer_.CreateMesh(mesh.data));
     for (const auto handle : loaded.meshes)
     {
@@ -186,8 +186,8 @@ bool ModelLibrary::BuildAndUpload(const std::string &modelPath, LoadedModel &loa
         }
     }
     umbra::diagnostics::Info("Loaded model " + modelPath + (build.status == BuildStatus::UpToDate ? " (cached)" : " (built)") +
-                             ": " + std::to_string(loaded.model.nodes.size()) + " nodes, " +
-                             std::to_string(loaded.model.meshes.size()) + " meshes.");
+                             ": " + std::to_string(loaded.model->nodes.size()) + " nodes, " +
+                             std::to_string(loaded.model->meshes.size()) + " meshes.");
     return true;
 }
 

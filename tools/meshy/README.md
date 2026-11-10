@@ -28,11 +28,29 @@ supports.
 | wolf.glb | grey wolf on all fours | 01a1b557-2d18… / 01a1b558-36e9… / 01a1b55b-86c8… |
 | bandit.glb | hooded bandit, scarf, leather clothes, dagger | 01a1b557-3788… / 01a1b558-3c5b… / 01a1b55b-8c2a… |
 
+## Rigging and clips (S8, 2026-11-10)
+
+`hero.glb` and `bandit.glb` were replaced by rigged versions with six clips each; `wolf.glb` by a
+free (CC0) rigged wolf; `elder.glb` stays unrigged.
+
+1. Meshy auto-rigging of the remeshed humanoids (`rig`, height 1.7 m): a 24-joint skeleton plus
+   walking and running clips. 5 credits each. The elder failed ("Pose estimation failed": her robe
+   hides the legs) and keeps her procedural look.
+2. Meshy animations on each rig (3 credits each): idle (action 0), attack (hero 219 "Right-hand
+   Sword Slash", bandit 4 "Attack"), hit (178), death (189).
+3. `tools/models/pack_animated.py` merged each rig and its clips into one GLB (one skinned mesh,
+   clips named idle, walk, run, attack, hit, death; `--turn 0`, Meshy rigs already face −Z).
+4. The wolf: Quaternius' "Wolf" from the Ultimate Animated Animal Pack (CC0, poly.pizza/m/P1gU3Qkr9r;
+   file sha256 16ac9633…8f84), packed with `--turn 180` and its own clips renamed
+   (Idle, Walk, Gallop → run, Attack, Idle_HitReact_Left → hit, Death).
+
+Total: 34 credits (rig task ids 01a1c1c0-a7fc… hero, 01a1c1c0-b70e… bandit).
+
 Where they are used:
 
-- Scenes: the `player` entity draws `hero.glb` in the settlement, dungeon and arena. Elder Mara
-  draws `elder.glb`.
-- RPG content: actors carry `model`, `size` and an optional `color` tint. Enemies in the world and
+- Scenes: the `player` entity draws `hero.glb` in the settlement, dungeon and arena, with the
+  `animation` component `animations/humanoid.anim.json`. Elder Mara draws `elder.glb`.
+- RPG content: actors carry `model`, `animation` (humanoid or wolf graph), `size` and an optional `color` tint. Enemies in the world and
   in the battle arena are drawn with these. The bandit leader is `bandit.glb`, a bit larger, with
   a purple tint.
 

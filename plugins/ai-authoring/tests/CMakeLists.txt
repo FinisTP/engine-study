@@ -71,3 +71,16 @@ add_test(
     COMMAND UmbraTool agent "add a bench" --assets ${UMBRA_REFERENCE_ASSETS} --scene scenes/settlement.scene.json --host http://api.example.com:11434 --json
 )
 set_tests_properties(Umbra.Tool.AgentLocalOnly PROPERTIES PASS_REGULAR_EXPRESSION "ai.host")
+
+# AI rigging and motion (S8): only a ComfyUI on this computer; without an exported workflow the tool says how to make one.
+add_test(
+    NAME Umbra.Tool.MotionLocalOnly
+    COMMAND UmbraTool motion "waves" --assets ${CMAKE_CURRENT_BINARY_DIR}/motion-assets --workflow ${CMAKE_CURRENT_SOURCE_DIR}/data/motion.api.json
+        --host http://motion.example.com:8188 --json
+)
+set_tests_properties(Umbra.Tool.MotionLocalOnly PROPERTIES PASS_REGULAR_EXPRESSION "ai.host")
+add_test(
+    NAME Umbra.Tool.RigNeedsWorkflow
+    COMMAND UmbraTool rig models/hero.glb --assets ${UMBRA_REFERENCE_ASSETS} --workflow ${CMAKE_CURRENT_BINARY_DIR}/none.api.json
+)
+set_tests_properties(Umbra.Tool.RigNeedsWorkflow PROPERTIES PASS_REGULAR_EXPRESSION "Export \\(API\\)")

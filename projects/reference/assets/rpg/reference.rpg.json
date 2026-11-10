@@ -285,6 +285,7 @@
         "defense": 1
       },
       "model": "models/hero.glb",
+      "animation": "animations/humanoid.anim.json",
       "size": 0.9
     },
     {
@@ -303,6 +304,7 @@
       "inventorySlots": 0,
       "xp": 15,
       "model": "models/wolf.glb",
+      "animation": "animations/wolf.anim.json",
       "size": 0.6
     },
     {
@@ -331,6 +333,7 @@
       "inventorySlots": 4,
       "xp": 25,
       "model": "models/bandit.glb",
+      "animation": "animations/humanoid.anim.json",
       "size": 0.9
     },
     {
@@ -365,6 +368,7 @@
       "inventorySlots": 4,
       "xp": 60,
       "model": "models/bandit.glb",
+      "animation": "animations/humanoid.anim.json",
       "size": 1.0,
       "color": [
         0.8,

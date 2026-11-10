@@ -11,6 +11,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <algorithm>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
@@ -24,6 +25,7 @@ extern "C"
     int umbra_gpu_init();                                               // async: 1 ok, 0 no WebGPU
     int umbra_gpu_mesh(const float *vertices, int vertexCount, const unsigned *indices, int indexCount);
     void umbra_gpu_replace_mesh(int id, const float *vertices, int vertexCount, const unsigned *indices, int indexCount);
+    void umbra_gpu_mesh_skin(int id, const void *skin, int vertexCount); // core::SkinVertex per vertex
     int umbra_gpu_texture(int width, int height, int levels);
     int umbra_gpu_surface(const char *wgsl); // a custom surface shader's pipeline
     void umbra_gpu_texture_level(int id, int level, int width, int height, const unsigned char *rgba);
@@ -31,7 +33,8 @@ extern "C"
     void umbra_gpu_destroy_texture(int id);
     // `frame`: viewProjection, shadowMatrix, inverseViewProjection (16 floats each), then core::LightingBlock (160 floats).
     // `post`: core::PostBlock::exposure (4 floats).
-    void umbra_gpu_frame(const float *frame, const float *post, const float *draws, int drawCount, const float *lines, int lineCount, const char *hud);
+    void umbra_gpu_frame(const float *frame, const float *post, const float *draws, int drawCount, const float *lines, int lineCount, const char *hud,
+                         const float *joints, int jointCount);
     void umbra_gpu_lut(const unsigned char *strip); // the post color table (256x16 RGBA)
     // The game UI (core::UiDrawList), drawn on top of the frame just sent: 20-byte vertices,
     // uint16 indices, and per batch 8 floats: texture id, clip x0 y0 x1 y1, first vertex, first index, index count.
@@ -46,14 +49,17 @@ namespace umbra::render
 {
     namespace
     {
-        // Floats per draw for JavaScript: model (16), color (4), texturing (4), mesh id, texture id, pad (2).
+        // Floats per draw for JavaScript: model (16), color (4), texturing (4; z = first joint), mesh id,
+        // texture id, surface id, skinned (1 = use this frame's joints).
         constexpr int drawFloats = 28;
+        constexpr std::size_t maxFrameJoints = 16384; // like the Vulkan renderer; past it items draw unskinned
         constexpr std::size_t shadowMapSize = 2048; // umbra_render.js makes it this size
 
         struct WebMesh final
         {
             int id = 0;
             glm::vec4 baseColor{1.0F};
+            bool skinned = false; // has skin data on the GPU (S8)
         };
 
         std::string Escape(const std::string &text)
@@ -129,7 +135,9 @@ namespace umbra::render
             return {};
         const int id = umbra_gpu_mesh(&data.vertices[0].position.x, static_cast<int>(data.vertices.size()), data.indices.data(),
                                       static_cast<int>(data.indices.size()));
-        return implementation_->meshes.Insert({id, data.baseColor});
+        if (!data.skin.empty())
+            umbra_gpu_mesh_skin(id, data.skin.data(), static_cast<int>(data.skin.size()));
+        return implementation_->meshes.Insert({id, data.baseColor, !data.skin.empty()});
     }
 
     bool Renderer::ReplaceMesh(core::MeshHandle handle, const core::MeshData &data)
@@ -139,7 +147,10 @@ namespace umbra::render
             return false;
         umbra_gpu_replace_mesh(mesh->id, &data.vertices[0].position.x, static_cast<int>(data.vertices.size()), data.indices.data(),
                                static_cast<int>(data.indices.size()));
+        if (!data.skin.empty())
+            umbra_gpu_mesh_skin(mesh->id, data.skin.data(), static_cast<int>(data.skin.size()));
         mesh->baseColor = data.baseColor;
+        mesh->skinned = !data.skin.empty();
         return true;
     }
 
@@ -228,9 +239,11 @@ namespace umbra::render
             const int *texture = i.textures.Get(item.texture);
             const glm::vec4 color = item.color * mesh->baseColor;
             const float *m = glm::value_ptr(item.model);
+            const bool skinned = item.jointCount > 0 && mesh->skinned && item.jointOffset + item.jointCount <= maxFrameJoints;
             i.draws.insert(i.draws.end(), m, m + 16);
-            i.draws.insert(i.draws.end(), {color.r, color.g, color.b, color.a, item.metersPerRepeat, item.emissive, 0.0F, 0.0F,
-                                           static_cast<float>(mesh->id), static_cast<float>(texture ? *texture : -1), surfaceId(item), 0.0F});
+            i.draws.insert(i.draws.end(), {color.r, color.g, color.b, color.a, item.metersPerRepeat, item.emissive,
+                                           skinned ? static_cast<float>(item.jointOffset) : 0.0F, 0.0F, static_cast<float>(mesh->id),
+                                           static_cast<float>(texture ? *texture : -1), surfaceId(item), skinned ? 1.0F : 0.0F});
         }
         i.lines.clear();
         for (const core::DebugLine &line : drawList.lines)
@@ -250,7 +263,8 @@ namespace umbra::render
         }
         const core::PostBlock postBlock = core::PackPost(post, 1, 1);
         umbra_gpu_frame(glm::value_ptr(frame.viewProjection), glm::value_ptr(postBlock.exposure), i.draws.data(), static_cast<int>(i.draws.size() / drawFloats), i.lines.data(),
-                        static_cast<int>(i.lines.size() / 10), hud.c_str());
+                        static_cast<int>(i.lines.size() / 10), hud.c_str(), drawList.joints.empty() ? nullptr : glm::value_ptr(drawList.joints[0]),
+                        static_cast<int>(std::min(drawList.joints.size(), maxFrameJoints)));
         if (!drawList.ui.batches.empty())
         {
             std::vector<float> batches;

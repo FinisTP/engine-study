@@ -1,0 +1,53 @@
+{
+  "format": "umbra.animgraph",
+  "version": 1,
+  "fade": 0.2,
+  "states": [
+    {
+      "name": "dead",
+      "clip": "death",
+      "loop": false,
+      "when": {
+        "flag": "dead"
+      }
+    },
+    {
+      "name": "hit",
+      "clip": "hit",
+      "on": "hit"
+    },
+    {
+      "name": "attack",
+      "clip": "attack",
+      "on": "attack"
+    },
+    {
+      "name": "run",
+      "clip": "run",
+      "when": {
+        "param": "speed",
+        "above": 2.4
+      },
+      "rate": {
+        "param": "speed",
+        "per": 4.0
+      }
+    },
+    {
+      "name": "walk",
+      "clip": "walk",
+      "when": {
+        "param": "speed",
+        "above": 0.3
+      },
+      "rate": {
+        "param": "speed",
+        "per": 1.5
+      }
+    },
+    {
+      "name": "idle",
+      "clip": "idle"
+    }
+  ]
+}

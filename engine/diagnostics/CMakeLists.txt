@@ -26,6 +26,11 @@ target_link_libraries(
         Umbra::Sanitizers
 )
 
+# Windows: MiniDumpWriteDump for crash dumps (CrashHandler.cpp).
+if(WIN32)
+    target_link_libraries(UmbraDiagnostics PRIVATE dbghelp)
+endif()
+
 # Android: spdlog's logcat sink needs the system log library.
 if(ANDROID)
     target_link_libraries(UmbraDiagnostics PRIVATE log)

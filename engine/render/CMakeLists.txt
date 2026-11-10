@@ -62,7 +62,8 @@ set(UMBRA_OVERLAY_FRAGMENT_SHADER "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Overlay.frag
 set(UMBRA_POST_SHADERS
     "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Fullscreen.vert.spv" "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Bright.frag.spv"
     "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Down.frag.spv" "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Up.frag.spv"
-    "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Composite.frag.spv")
+    "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Composite.frag.spv"
+    "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Skinned.vert.spv" "${UMBRA_SHADER_OUTPUT_DIRECTORY}/ShadowSkinned.vert.spv")
 
 function(umbra_compile_hlsl output source profile entry_point)
     add_custom_command(
@@ -86,6 +87,8 @@ endfunction()
 umbra_compile_hlsl("${UMBRA_VERTEX_SHADER}" shaders/Scene.hlsl vs_6_0 VSMain)
 umbra_compile_hlsl("${UMBRA_FRAGMENT_SHADER}" shaders/Scene.hlsl ps_6_0 PSMain)
 umbra_compile_hlsl("${UMBRA_SHADOW_VERTEX_SHADER}" shaders/Scene.hlsl vs_6_0 ShadowVS)
+umbra_compile_hlsl("${UMBRA_SHADER_OUTPUT_DIRECTORY}/Skinned.vert.spv" shaders/Scene.hlsl vs_6_0 VSSkinned)
+umbra_compile_hlsl("${UMBRA_SHADER_OUTPUT_DIRECTORY}/ShadowSkinned.vert.spv" shaders/Scene.hlsl vs_6_0 ShadowSkinnedVS)
 umbra_compile_hlsl("${UMBRA_SKY_VERTEX_SHADER}" shaders/Scene.hlsl vs_6_0 SkyVS)
 umbra_compile_hlsl("${UMBRA_SKY_FRAGMENT_SHADER}" shaders/Scene.hlsl ps_6_0 SkyPS)
 umbra_compile_hlsl("${UMBRA_OVERLAY_VERTEX_SHADER}" shaders/Overlay.hlsl vs_6_0 VSMain)

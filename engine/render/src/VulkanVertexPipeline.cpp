@@ -59,7 +59,8 @@ namespace umbra::render
         // set 1 (owned by SceneResources): per-texture combined image sampler
         const std::array frameBindings{
             VkDescriptorSetLayoutBinding{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-            VkDescriptorSetLayoutBinding{1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+            VkDescriptorSetLayoutBinding{1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+            VkDescriptorSetLayoutBinding{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}};
         VkDescriptorSetLayoutCreateInfo descriptorInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
         descriptorInfo.bindingCount = static_cast<std::uint32_t>(frameBindings.size());
         descriptorInfo.pBindings = frameBindings.data();
@@ -136,8 +137,9 @@ namespace umbra::render
         }
 
         // Scene, sky and shadow shaders; they are only needed until the pipelines exist.
-        std::array<VkShaderModule, 5> shaders{};
-        const char *shaderFiles[] = {"Scene.vert.spv", "Scene.frag.spv", "Sky.vert.spv", "Sky.frag.spv", "Shadow.vert.spv"};
+        std::array<VkShaderModule, 7> shaders{};
+        const char *shaderFiles[] = {"Scene.vert.spv", "Scene.frag.spv", "Sky.vert.spv", "Sky.frag.spv", "Shadow.vert.spv",
+                                     "Skinned.vert.spv", "ShadowSkinned.vert.spv"};
         const auto destroyShaders = [&] {
             for (VkShaderModule &shader : shaders)
                 if (shader)
@@ -169,6 +171,17 @@ namespace umbra::render
         vertexInput.pVertexBindingDescriptions = &binding;
         vertexInput.vertexAttributeDescriptionCount = static_cast<std::uint32_t>(attributes.size());
         vertexInput.pVertexAttributeDescriptions = attributes.data();
+        // Skinned meshes (S8): a second buffer with joint indices and weights per vertex.
+        const std::array skinnedBindings{binding, VkVertexInputBindingDescription{1, sizeof(core::SkinVertex), VK_VERTEX_INPUT_RATE_VERTEX}};
+        const std::array skinnedAttributes{
+            attributes[0], attributes[1], attributes[2],
+            VkVertexInputAttributeDescription{3, 1, VK_FORMAT_R16G16B16A16_UINT, offsetof(core::SkinVertex, joints)},
+            VkVertexInputAttributeDescription{4, 1, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(core::SkinVertex, weights)}};
+        VkPipelineVertexInputStateCreateInfo skinnedInput = vertexInput;
+        skinnedInput.vertexBindingDescriptionCount = static_cast<std::uint32_t>(skinnedBindings.size());
+        skinnedInput.pVertexBindingDescriptions = skinnedBindings.data();
+        skinnedInput.vertexAttributeDescriptionCount = static_cast<std::uint32_t>(skinnedAttributes.size());
+        skinnedInput.pVertexAttributeDescriptions = skinnedAttributes.data();
 
         // 5.2. configure input assembly (group 3 vertices into a triangle)
         VkPipelineInputAssemblyStateCreateInfo assembly{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
@@ -243,6 +256,14 @@ namespace umbra::render
         skyInfo.pRasterizationState = &bothSides;
         if (pipelineResult == VK_SUCCESS)
             pipelineResult = vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &skyInfo, nullptr, &skyPipeline_);
+        // The same scene pipeline for skinned meshes: skinning vertex shader + the joint buffer.
+        auto skinnedStages = stages;
+        skinnedStages[0].module = shaders[5];
+        VkGraphicsPipelineCreateInfo skinnedInfo = pipelineInfo;
+        skinnedInfo.pStages = skinnedStages.data();
+        skinnedInfo.pVertexInputState = &skinnedInput;
+        if (pipelineResult == VK_SUCCESS)
+            pipelineResult = vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &skinnedInfo, nullptr, &skinnedPipeline_);
 
         // 6.2. Custom surface shaders: the same pipeline with the material's fragment shader.
         std::error_code ec;
@@ -254,20 +275,26 @@ namespace umbra::render
             VkShaderModule fragment = VK_NULL_HANDLE;
             if (!LoadShaderModule(device_, entry.path(), fragment))
                 continue;
-            auto surfaceStages = stages;
-            surfaceStages[1].module = fragment;
-            VkGraphicsPipelineCreateInfo surfaceInfo = pipelineInfo;
-            surfaceInfo.pStages = surfaceStages.data();
-            VkPipeline surface = VK_NULL_HANDLE;
-            if (vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &surfaceInfo, nullptr, &surface) == VK_SUCCESS)
-                surfaces_[file.substr(0, file.size() - std::string(".frag.spv").size())] = surface;
-            else
-                diagnostics::Error("Failed creating the pipeline for surface shader " + file);
+            // A plain and a skinned pipeline for each surface shader.
+            const std::string name = file.substr(0, file.size() - std::string(".frag.spv").size());
+            for (const bool skinned : {false, true})
+            {
+                auto surfaceStages = skinned ? skinnedStages : stages;
+                surfaceStages[1].module = fragment;
+                VkGraphicsPipelineCreateInfo surfaceInfo = skinned ? skinnedInfo : pipelineInfo;
+                surfaceInfo.pStages = surfaceStages.data();
+                VkPipeline surface = VK_NULL_HANDLE;
+                if (vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &surfaceInfo, nullptr, &surface) == VK_SUCCESS)
+                    (skinned ? skinnedSurfaces_ : surfaces_)[name] = surface;
+                else
+                    diagnostics::Error("Failed creating the pipeline for surface shader " + file);
+            }
             vkDestroyShaderModule(device_, fragment, nullptr);
         }
 
         // 6.3. The sun's shadow map: a depth image the scene shader samples afterwards.
-        if (pipelineResult == VK_SUCCESS && !CreateShadowMap(physicalDevice, allocator, shaders[4], pipelineInfo, vertexInput, assembly, multisample, depthState))
+        if (pipelineResult == VK_SUCCESS && !CreateShadowMap(physicalDevice, allocator, shaders[4], shaders[6], pipelineInfo, vertexInput, skinnedInput,
+                                                             assembly, multisample, depthState))
             pipelineResult = VK_ERROR_INITIALIZATION_FAILED;
         destroyShaders();
         if (pipelineResult != VK_SUCCESS)
@@ -308,14 +335,17 @@ namespace umbra::render
         return true;
     }
 
-    VkPipeline VulkanVertexPipeline::GetSurfacePipeline(const std::string &name) const
+    VkPipeline VulkanVertexPipeline::GetSurfacePipeline(const std::string &name, bool skinned) const
     {
-        const auto it = surfaces_.find(name);
-        return it != surfaces_.end() ? it->second : pipeline_;
+        const auto &list = skinned ? skinnedSurfaces_ : surfaces_;
+        const auto it = list.find(name);
+        return it != list.end() ? it->second : (skinned ? skinnedPipeline_ : pipeline_);
     }
 
     bool VulkanVertexPipeline::CreateShadowMap(VkPhysicalDevice physicalDevice, VulkanAllocator &allocator, VkShaderModule shadowShader,
-                                               const VkGraphicsPipelineCreateInfo &scene, const VkPipelineVertexInputStateCreateInfo &vertexInput,
+                                               VkShaderModule skinnedShadowShader, const VkGraphicsPipelineCreateInfo &scene,
+                                               const VkPipelineVertexInputStateCreateInfo &vertexInput,
+                                               const VkPipelineVertexInputStateCreateInfo &skinnedInput,
                                                const VkPipelineInputAssemblyStateCreateInfo &assembly,
                                                const VkPipelineMultisampleStateCreateInfo &multisample,
                                                const VkPipelineDepthStencilStateCreateInfo &depthState)
@@ -406,7 +436,14 @@ namespace umbra::render
         info.pDepthStencilState = &depthState;
         info.pColorBlendState = &noColor;
         info.renderPass = shadowRenderPass_;
-        return vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &info, nullptr, &shadowPipeline_) == VK_SUCCESS;
+        if (vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &info, nullptr, &shadowPipeline_) != VK_SUCCESS)
+            return false;
+        // Skinned meshes cast shadows that move with them.
+        VkPipelineShaderStageCreateInfo skinnedStage = stage;
+        skinnedStage.module = skinnedShadowShader;
+        info.pStages = &skinnedStage;
+        info.pVertexInputState = &skinnedInput;
+        return vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &info, nullptr, &skinnedShadowPipeline_) == VK_SUCCESS;
     }
 
     void VulkanVertexPipeline::Shutdown() noexcept
@@ -421,9 +458,14 @@ namespace umbra::render
         }
         framebuffers_.clear();
         depthImages_.clear();
-        for (const auto &[name, surface] : surfaces_)
-            vkDestroyPipeline(device_, surface, nullptr);
+        for (const auto *list : {&surfaces_, &skinnedSurfaces_})
+            for (const auto &[name, surface] : *list)
+                vkDestroyPipeline(device_, surface, nullptr);
         surfaces_.clear();
+        skinnedSurfaces_.clear();
+        for (VkPipeline *pipeline : {&skinnedPipeline_, &skinnedShadowPipeline_})
+            if (*pipeline)
+                vkDestroyPipeline(device_, *pipeline, nullptr), *pipeline = VK_NULL_HANDLE;
         if (shadowFramebuffer_)
             vkDestroyFramebuffer(device_, shadowFramebuffer_, nullptr);
         if (shadowPipeline_)

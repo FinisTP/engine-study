@@ -135,6 +135,7 @@ namespace umbra::rpg
         StatBlock growth{}; // added to the base stats per level above 1
         // Look in the world (the game reads these; rules never do). Empty model = placeholder cube.
         std::string model;                       // asset path, e.g. "models/wolf.glb"
+        std::string animation;                   // graph for a rigged model, e.g. "animations/wolf.anim.json" (S8)
         std::array<float, 4> color{1, 1, 1, 1};  // tint multiplied with the texture
         float size = 0.8F;                       // half-height in meters
         std::string policy;                      // learned turn-combat AI file (empty = conventional AI)

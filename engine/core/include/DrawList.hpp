@@ -26,6 +26,8 @@ namespace umbra::core
         float metersPerRepeat = 0.0F; // > 0: texture repeats every N meters in world space (WorldUv.md)
         float emissive = 0.0F;        // glows by itself (Lighting.md)
         std::uint32_t surface = 0;    // custom surface shader: index into DrawList::surfaces (0 = plain)
+        std::uint32_t jointOffset = 0; // skinned: its joint matrices start here in DrawList::joints
+        std::uint32_t jointCount = 0;  // 0 = not skinned
     };
 
     // A world-space line for debugging (collider outlines, rays). Drawn on top, no depth test.
@@ -109,6 +111,7 @@ namespace umbra::core
         std::vector<PointLight> lights; // torches, fires... (the nearest maxLights are used)
         std::vector<DrawItem> items;
         std::vector<std::string> surfaces{""}; // custom surface shader names used this frame; [0] = plain
+        std::vector<glm::mat4> joints;         // skinning matrices of every animated item (S8)
         std::vector<DebugLine> lines;
         Hud hud;
         UiDrawList ui; // the game's own UI; drawn under the diagnostics window
@@ -127,6 +130,7 @@ namespace umbra::core
         {
             items.clear();
             surfaces.assign(1, "");
+            joints.clear();
             lights.clear();
             lines.clear();
             hud = {};

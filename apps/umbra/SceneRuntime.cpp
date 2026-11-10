@@ -1,5 +1,7 @@
 #include "SceneRuntime.hpp"
 
+#include <AnimGraph.hpp>
+
 #include <Log.hpp>
 #include <ModelInstance.hpp>
 #include <Area.hpp>
@@ -10,6 +12,7 @@
 
 #include <glm/gtc/constants.hpp>
 
+#include <algorithm>
 #include <cmath>
 #include <set>
 
@@ -40,7 +43,7 @@ umbra::scene::SceneLoadOptions SceneRuntime::Options()
     options.assetRoot = assetRoot_;
     options.models = [&](const std::string &path) -> const umbra::assets::Model * {
         const LoadedModel *loaded = models_.Load(path);
-        return loaded ? &loaded->model : nullptr;
+        return loaded ? loaded->model.get() : nullptr;
     };
     return options;
 }
@@ -182,6 +185,7 @@ void SceneRuntime::Install(std::unique_ptr<umbra::world::World> fresh, std::opti
         umbra::diagnostics::Error(std::to_string(failed) + " collider(s) have unusable sizes and got no physics body.");
     roamers_.clear(); // their characters live in the old physics world, destroyed below
     flashes_.clear();
+    fading_.clear(); // their entities go with the old world
     world_ = std::move(fresh);
     physics_ = std::move(freshPhysics);
     ++generation_;
@@ -223,12 +227,14 @@ void SceneRuntime::Update()
         const std::string &owner = owners_[file];
         if (owner.empty())
             reloadScene = true;
+        else if (owner.ends_with(".anim.json"))
+            graphs_.erase(owner); // read again by the rebind below
         else
             models.insert(owner);
     }
+    bool rebind = std::any_of(changed.begin(), changed.end(), [&](const auto &file) { return owners_[file].ends_with(".anim.json"); });
 
     // 2. Reload models; a node-structure change means instances must be rebuilt from the scene.
-    bool rebind = false;
     for (const std::string &model : models)
     {
         const ModelLibrary::ReloadResult result = models_.Reload(model);
@@ -298,6 +304,7 @@ SimulationEvents SceneRuntime::Simulate(float deltaSeconds, const umbra::gamepla
     SyncPlayerVisual();
     SyncRoamerVisuals();
     UpdateFlashes(deltaSeconds);
+    UpdateAnimation(deltaSeconds);
     return events;
 }
 
@@ -306,6 +313,8 @@ std::vector<std::string> SceneRuntime::GetProblems() const
     std::vector<std::string> problems = problems_;
     if (!bindProblem_.empty())
         problems.push_back("Error: " + bindProblem_);
+    for (const std::string &problem : graphProblems_)
+        problems.push_back(problem);
     return problems;
 }
 
@@ -323,7 +332,8 @@ void SceneRuntime::SyncPlayerVisual()
     umbra::world::Transform transform = *world_->GetLocalTransform(entity);
     const auto &settings = player_.GetSettings();
     // Procedural pose on top: bob up, then lean forward around the body's own right axis (-X turned by yaw).
-    const umbra::gameplay::BodyPose pose = stride_.GetPose();
+    // A rigged player's clips do the walking, so no procedural bob or lean then (S8).
+    const umbra::gameplay::BodyPose pose = world_->GetAnimator(entity) ? umbra::gameplay::BodyPose{} : stride_.GetPose();
     transform.position = player_.GetFeet(*physics_) + glm::vec3{0.0F, settings.radius + settings.halfHeight + pose.bob, 0.0F};
     transform.rotation = glm::angleAxis(player_.GetFacingYaw(), glm::vec3{0.0F, 1.0F, 0.0F}) *
                          glm::angleAxis(pose.lean, glm::vec3{-1.0F, 0.0F, 0.0F});
@@ -358,12 +368,71 @@ void SceneRuntime::Rebind()
         bindProblem_ = std::to_string(unresolved) + " renderable(s) have no loaded mesh and are not drawn.";
         umbra::diagnostics::Error(bindProblem_);
     }
+    // Animators for rigged models (S8). A rebind starts them again from their first state.
+    std::vector<umbra::core::Diagnostic> problems;
+    umbra::scene::BindAnimators(
+        *world_, [&](const std::string &model) { return models_.Shared(model); }, [&](const std::string &graph) { return LoadGraph(graph); },
+        problems);
+    graphProblems_.clear();
+    for (const umbra::core::Diagnostic &d : problems)
+    {
+        graphProblems_.push_back(umbra::core::Format(d));
+        umbra::diagnostics::Error(graphProblems_.back());
+    }
+}
+
+std::shared_ptr<const umbra::core::AnimGraph> SceneRuntime::LoadGraph(const std::string &path)
+{
+    if (const auto it = graphs_.find(path); it != graphs_.end())
+        return it->second;
+    // A bad graph is remembered as nullptr until its file changes.
+    std::vector<umbra::core::Diagnostic> problems;
+    const auto graph = umbra::scene::LoadAnimGraph(assetRoot_ / path, path, problems);
+    for (const umbra::core::Diagnostic &d : problems)
+        umbra::diagnostics::Error(umbra::core::Format(d));
+    graphs_[path] = graph;
+    return graph;
+}
+
+void SceneRuntime::UpdateAnimation(float seconds)
+{
+    // 1. Speeds and flags the graphs choose states from.
+    if (umbra::core::Animator *animator = world_->GetAnimator(world_->Find("player")); animator && player_.IsSpawned())
+    {
+        const glm::vec3 velocity = player_.GetVelocity(*physics_);
+        animator->SetNumber("speed", glm::length(glm::vec2{velocity.x, velocity.z}));
+    }
+    for (const RoamerSlot &slot : roamers_)
+        if (umbra::core::Animator *animator = slot.alive ? world_->GetAnimator(slot.visual) : nullptr)
+            animator->SetNumber("speed", slot.speed);
+    // 2. Bodies of defeated enemies go once their death clip has played.
+    for (Fading &body : fading_)
+        if ((body.secondsLeft -= seconds) <= 0.0F)
+            world_->Destroy(body.entity);
+    std::erase_if(fading_, [](const Fading &body) { return body.secondsLeft <= 0.0F; });
+    // 3. Advance every animator (poses for this frame's draw list).
+    world_->UpdateAnimation(seconds);
+}
+
+void SceneRuntime::ClearFading()
+{
+    for (const Fading &body : fading_)
+        world_->Destroy(body.entity);
+    fading_.clear();
+}
+
+void SceneRuntime::Animate(umbra::world::Entity entity, const std::string &trigger)
+{
+    if (umbra::core::Animator *animator = world_->GetAnimator(entity))
+        animator->Trigger(trigger);
 }
 
 void SceneRuntime::RefreshWatchList()
 {
     owners_ = models_.WatchedFiles();
     owners_[assetRoot_ / scenePath_] = "";
+    for (const auto &[path, graph] : graphs_)
+        owners_[assetRoot_ / path] = path;
     std::set<std::filesystem::path> files;
     for (const auto &[file, owner] : owners_)
         files.insert(file);
@@ -425,11 +494,17 @@ std::size_t SceneRuntime::AddRoamer(const std::string &actor, glm::vec3 feet, gl
     slot.scale = look.scale;
     // The model's lowest point goes on the ground: lift = -(lowest y) * scale.
     slot.lift = look.scale.y;
-    if (const LoadedModel *loaded = models_.Load(look.model); loaded && look.mesh < loaded->model.meshes.size())
+    if (const LoadedModel *loaded = models_.Load(look.model); loaded && look.mesh < loaded->model->meshes.size())
     {
+        // A rigged model is measured as drawn at rest (its vertices are in bind space, S8).
+        const umbra::core::MeshData &mesh = loaded->model->meshes[look.mesh].data;
         float lowest = 0.0F;
-        for (const umbra::core::Vertex &v : loaded->model.meshes[look.mesh].data.vertices)
-            lowest = std::min(lowest, v.position.y);
+        if (loaded->model->skeleton)
+            for (const glm::vec3 &p : umbra::core::RestPositions(*loaded->model->skeleton, mesh))
+                lowest = std::min(lowest, p.y);
+        else
+            for (const umbra::core::Vertex &v : mesh.vertices)
+                lowest = std::min(lowest, v.position.y);
         slot.lift = -lowest * look.scale.y;
     }
 
@@ -441,20 +516,30 @@ std::size_t SceneRuntime::AddRoamer(const std::string &actor, glm::vec3 feet, gl
     renderable.mesh = look.mesh;
     renderable.color = look.color;
     world_->SetRenderable(slot.visual, renderable);
+    if (!look.graph.empty())
+        world_->SetAnimationGraph(slot.visual, look.graph);
     roamers_.push_back(std::move(slot));
     SyncRoamerVisuals();
     Rebind();
     return roamers_.size() - 1;
 }
 
-void SceneRuntime::RemoveRoamer(std::size_t index)
+void SceneRuntime::RemoveRoamer(std::size_t index, bool animate)
 {
     if (index >= roamers_.size() || !roamers_[index].alive)
         return;
     RoamerSlot &slot = roamers_[index];
     slot.roamer.Despawn(*physics_);
-    world_->Destroy(slot.visual);
     slot.alive = false;
+    // A rigged body falls (its "dead" state) and stays a moment; anything else goes at once.
+    constexpr float bodySeconds = 2.5F;
+    if (umbra::core::Animator *animator = animate ? world_->GetAnimator(slot.visual) : nullptr)
+    {
+        animator->SetFlag("dead", true);
+        fading_.push_back({slot.visual, bodySeconds});
+    }
+    else
+        world_->Destroy(slot.visual);
 }
 
 glm::vec3 SceneRuntime::RoamerFeet(std::size_t index) const
@@ -496,6 +581,7 @@ void SceneRuntime::UpdateRoamers(float step)
             slot.roamer.Walk(*physics_, glm::vec3{0.0F}, step);
         // Face the way it moved (yaw 0 faces -z, like the player).
         const glm::vec3 moved = slot.roamer.GetFeet(*physics_) - before;
+        slot.speed = glm::length(glm::vec2{moved.x, moved.z}) / step;
         if (glm::length(glm::vec2{moved.x, moved.z}) > 1e-4F)
             slot.yaw = std::atan2(-moved.x, -moved.z);
     }
@@ -528,6 +614,7 @@ bool SceneRuntime::EnterArena(const std::string &arenaScene)
         return false;
     // 1. Keep the current area as it is. The player's character leaves its physics world,
     //    so it doesn't stand there as an invisible obstacle when we come back.
+    ClearFading(); // bodies don't wait in the kept area
     auto kept = std::make_unique<KeptArea>();
     kept->player = GetPlayerSpot();
     player_.Despawn(*physics_);
@@ -549,6 +636,7 @@ bool SceneRuntime::LeaveArena()
     if (!kept_)
         return false;
     // 1. The kept area becomes live again (the arena and its physics are destroyed here).
+    fading_.clear();
     world_ = std::move(kept_->world);
     physics_ = std::move(kept_->physics);
     roamers_ = std::move(kept_->roamers);

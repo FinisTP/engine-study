@@ -23,6 +23,10 @@ namespace umbra::core
                 return "index " + std::to_string(index) + " is out of range";
             }
         }
+        if (!mesh.skin.empty() && mesh.skin.size() != mesh.vertices.size())
+        {
+            return "skin data does not match the vertex count";
+        }
         for (const Vertex &v : mesh.vertices)
         {
             if (!std::isfinite(v.position.x) || !std::isfinite(v.position.y) || !std::isfinite(v.position.z))

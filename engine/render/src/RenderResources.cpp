@@ -685,6 +685,11 @@ namespace umbra::render
         {
             return false;
         }
+        if (!data.skin.empty() && !allocator_->CreateDeviceBuffer(data.skin.data(), data.skin.size() * sizeof(core::SkinVertex),
+                                                                  VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, mesh.skinBuffer))
+        {
+            return false;
+        }
         mesh.indexCount = static_cast<std::uint32_t>(data.indices.size());
         mesh.baseColor = data.baseColor;
         return true;

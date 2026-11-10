@@ -1,13 +1,17 @@
 #include "Generate.hpp"
 
+#include <AnimationGen.hpp>
 #include <ComfyUi.hpp>
 #include <Material.hpp>
+#include <ModelCache.hpp>
 #include <ModelAssistant.hpp>
 #include <ModelTools.hpp>
 #include <TextureAssistant.hpp>
 #include <TextureTools.hpp>
 
 #include <chrono>
+#include <fstream>
+#include <iterator>
 #include <thread>
 
 namespace umbra::localai
@@ -205,5 +209,74 @@ namespace umbra::localai
         out.made.push_back({path, seed,
                             {{"triangles", info.triangles}, {"textureSize", info.textureSize}, {"size", {info.max.x - info.min.x, info.max.y - info.min.y, info.max.z - info.min.z}}}});
         return out;
+    }
+
+    namespace
+    {
+        // One rig or motion run: workflow, ComfyUI, the source model, the run, FBX -> GLB, saved and checked.
+        GenerateResult CreateAnim(const GenerateOptions &options, AnimKind kind)
+        {
+            GenerateResult out;
+            const std::filesystem::path workflowFile = options.workflow.empty() ? DefaultAnimWorkflow(options.assets.Project(), kind) : options.workflow;
+            AnimRequest request;
+            request.kind = kind;
+            if (!LoadAnimWorkflow(workflowFile, kind, request.workflow, out.diagnostics))
+                return out;
+            std::vector<std::string> checkpoints;
+            if (!Connect(options, out, checkpoints))
+                return out;
+            request.host = out.host;
+            request.seed = TextureSeeds(1, options.seed)[0];
+            request.prompt = options.idea;
+            request.seconds = options.seconds > 0.0F ? options.seconds : 4.0F;
+            if (!options.source.empty())
+            {
+                std::ifstream in(options.assets / options.source, std::ios::binary);
+                if (!assets::IsSafeAssetPath(options.source) || !in)
+                {
+                    out.diagnostics.push_back({Severity::Error, "file.read", options.source, "", "cannot read the model"});
+                    return out;
+                }
+                request.model.assign(std::istreambuf_iterator<char>(in), {});
+                request.modelName = std::filesystem::path(options.source).filename().string();
+            }
+
+            // The run (in the background so `stop` and progress work), then FBX -> GLB if needed.
+            BatchJob<AnimRequest, AnimResult, GenerateAnim> job;
+            job.Start({request});
+            const auto results = Wait(job, options, kind == AnimKind::Rig ? "Rigging" : "Motion", 1);
+            out.diagnostics.insert(out.diagnostics.end(), results[0].diagnostics.begin(), results[0].diagnostics.end());
+            if (!results[0].ok)
+                return out;
+            std::vector<std::uint8_t> glb = results[0].file;
+            if (results[0].extension == ".fbx" && !FbxToGlb(results[0].file, glb, out.diagnostics))
+                return out;
+
+            // Saved next to the other assets with how it was made.
+            const std::string stem = std::filesystem::path(options.source).stem().string();
+            const std::string name = !options.name.empty() ? options.name : kind == AnimKind::Rig ? stem + "_rigged" : options.idea;
+            const nlohmann::ordered_json source{{"workflow", workflowFile.filename().string()}, {"source", options.source}, {"prompt", options.idea},
+                                                {"seconds", kind == AnimKind::Motion ? request.seconds : 0.0F}, {"seed", request.seed}};
+            const std::string path = SaveAnimResult(options.assets.Project(), kind, name, glb, source, out.diagnostics);
+            authoring::ModelInfo info;
+            if (path.empty() || !authoring::InspectModel(options.assets / path, info, out.diagnostics))
+                return out;
+            out.made.push_back({path, request.seed, {{"joints", info.joints}, {"clips", info.clips}}});
+            return out;
+        }
+    }
+
+    GenerateResult CreateRig(const GenerateOptions &options)
+    {
+        if (options.source.empty())
+            return {{}, {}, {}, {{Severity::Error, "ai.answer", "rig", "", "no model to rig (--model-file models/<name>.glb)"}}};
+        return CreateAnim(options, AnimKind::Rig);
+    }
+
+    GenerateResult CreateMotion(const GenerateOptions &options)
+    {
+        if (options.idea.empty())
+            return {{}, {}, {}, {{Severity::Error, "ai.answer", "motion", "", "describe the motion (--idea \"<text>\")"}}};
+        return CreateAnim(options, AnimKind::Motion);
     }
 }

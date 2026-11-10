@@ -142,6 +142,7 @@ namespace umbra::render
         // holds the indices (like lines connecting the dots), should be divisible by 3 for triangles
         // clockwise winding order is used for front face, counter-clockwise for back face
         GpuBuffer indexBuffer;
+        GpuBuffer skinBuffer; // skinned meshes: joints + weights per vertex (core::SkinVertex), else empty
         std::uint32_t indexCount = 0;
         glm::vec4 baseColor{1.0F};
     };

@@ -11,11 +11,12 @@
 
 namespace
 {
-    // Draws every item with the bound pipeline: per-item texture (if wanted), matrix, tint, buffers.
+    // Draws every item: its pipeline (plain or skinned, with its surface shader), texture (if wanted),
+    // matrix, tint and buffers. `shadow` draws depth only, with the shadow pipelines.
     void DrawItems(VkCommandBuffer commandBuffer, const umbra::render::VulkanVertexPipeline &pipeline, const umbra::render::SceneResources &resources,
-                   const umbra::core::DrawList &drawList, umbra::render::TextureHandle fallbackTexture, bool textures)
+                   const umbra::core::DrawList &drawList, umbra::render::TextureHandle fallbackTexture, bool shadow)
     {
-        VkPipeline bound = pipeline.GetHandle(); // the caller bound the plain scene pipeline
+        VkPipeline bound = VK_NULL_HANDLE;
         for (const umbra::core::DrawItem &item : drawList.items)
         {
             // 1. Resolve handles; stale meshes are skipped, missing textures use the fallback.
@@ -26,17 +27,24 @@ namespace
             if (mesh == nullptr || texture == nullptr)
                 continue;
 
-            // 2. Its surface shader (custom materials), texture (set 1) and buffers; push its matrix and tint, draw.
-            if (textures && item.surface < drawList.surfaces.size())
-                if (const VkPipeline wanted = pipeline.GetSurfacePipeline(drawList.surfaces[item.surface]); wanted != bound)
-                    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, bound = wanted);
-            if (textures)
+            // 2. Skinned if it has joints in this frame's buffer and skin data on the GPU (Skeleton.md).
+            const bool skinned = item.jointCount > 0 && mesh->skinBuffer.GetHandle() != VK_NULL_HANDLE &&
+                                 item.jointOffset + item.jointCount <= umbra::render::VulkanFrameResources::maxFrameJoints;
+            const std::string &surface = item.surface < drawList.surfaces.size() ? drawList.surfaces[item.surface] : drawList.surfaces[0];
+            const VkPipeline wanted = shadow ? (skinned ? pipeline.GetSkinnedShadowPipeline() : pipeline.GetShadowPipeline())
+                                             : pipeline.GetSurfacePipeline(surface, skinned);
+            if (wanted != bound)
+                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, bound = wanted);
+
+            // 3. Texture (set 1), constants (matrix, tint, texturing; z = first joint), buffers, draw.
+            if (!shadow)
                 vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(), 1, 1, &texture->descriptorSet, 0, nullptr);
-            const umbra::render::DrawConstants constants{item.model, item.color * mesh->baseColor, {item.metersPerRepeat, item.emissive, 0.0F, 0.0F}};
+            const umbra::render::DrawConstants constants{item.model, item.color * mesh->baseColor,
+                                                         {item.metersPerRepeat, item.emissive, skinned ? static_cast<float>(item.jointOffset) : 0.0F, 0.0F}};
             vkCmdPushConstants(commandBuffer, pipeline.GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(constants), &constants);
-            const VkBuffer vertexBuffer = mesh->vertexBuffer.GetHandle();
-            constexpr VkDeviceSize vertexOffset = 0;
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, &vertexOffset);
+            const std::array buffers{mesh->vertexBuffer.GetHandle(), mesh->skinBuffer.GetHandle()};
+            constexpr std::array<VkDeviceSize, 2> offsets{0, 0};
+            vkCmdBindVertexBuffers(commandBuffer, 0, skinned ? 2 : 1, buffers.data(), offsets.data());
             vkCmdBindIndexBuffer(commandBuffer, mesh->indexBuffer.GetHandle(), 0, VK_INDEX_TYPE_UINT32);
             vkCmdDrawIndexed(commandBuffer, mesh->indexCount, 1, 0, 0, 0);
         }
@@ -104,9 +112,8 @@ namespace
         vkCmdBeginRenderPass(commandBuffer, &shadowPass, VK_SUBPASS_CONTENTS_INLINE);
         if (sunShadows)
         {
-            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetShadowPipeline());
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(), 0, 1, &descriptorSet, 0, nullptr);
-            DrawItems(commandBuffer, pipeline, resources, drawList, fallbackTexture, false);
+            DrawItems(commandBuffer, pipeline, resources, drawList, fallbackTexture, true);
         }
         vkCmdEndRenderPass(commandBuffer);
 
@@ -124,8 +131,7 @@ namespace
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(), 0, 1, &descriptorSet, 0, nullptr);
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetSkyPipeline());
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetHandle());
-        DrawItems(commandBuffer, pipeline, resources, drawList, fallbackTexture, true);
+        DrawItems(commandBuffer, pipeline, resources, drawList, fallbackTexture, false);
         vkCmdEndRenderPass(commandBuffer);
 
         // 3. Bloom, then the screen: the finished picture (Post.md), then the overlay on top.
@@ -254,7 +260,8 @@ namespace umbra::render
         // 4. Create a descriptor pool and allocate per-frame descriptor sets for uniform buffers.
         const std::array poolSizes{
             VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<std::uint32_t>(framesInFlight)},
-            VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, static_cast<std::uint32_t>(framesInFlight)}};
+            VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, static_cast<std::uint32_t>(framesInFlight)},
+            VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, static_cast<std::uint32_t>(framesInFlight)}};
         VkDescriptorPoolCreateInfo descriptorPoolInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
         descriptorPoolInfo.maxSets = static_cast<std::uint32_t>(framesInFlight);
         descriptorPoolInfo.poolSizeCount = static_cast<std::uint32_t>(poolSizes.size());
@@ -286,7 +293,8 @@ namespace umbra::render
         for (std::size_t index = 0; index < frames_.size(); ++index)
         {
             if (!allocator.CreateMappedBuffer(sizeof(SceneUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                              frames_[index].uniformBuffer))
+                                              frames_[index].uniformBuffer) ||
+                !allocator.CreateMappedBuffer(maxFrameJoints * sizeof(glm::mat4), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, frames_[index].jointBuffer))
             {
                 Shutdown();
                 return false;
@@ -294,7 +302,10 @@ namespace umbra::render
             frames_[index].descriptorSet = descriptorSets[index];
             const VkDescriptorBufferInfo bufferInfo{frames_[index].uniformBuffer.GetHandle(), 0, sizeof(SceneUniform)};
             const VkDescriptorImageInfo shadowInfo{pipeline.GetShadowSampler(), pipeline.GetShadowView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+            const VkDescriptorBufferInfo jointInfo{frames_[index].jointBuffer.GetHandle(), 0, VK_WHOLE_SIZE};
             const std::array writes{
+                VkWriteDescriptorSet{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, descriptorSets[index], 2, 0, 1,
+                                     VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &jointInfo, nullptr},
                 VkWriteDescriptorSet{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, descriptorSets[index], 0, 0, 1,
                                      VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, nullptr, &bufferInfo, nullptr},
                 VkWriteDescriptorSet{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, descriptorSets[index], 1, 0, 1,
@@ -413,6 +424,13 @@ namespace umbra::render
         // update the uniform buffer with the latest scene data for this frame
         std::memcpy(frame.uniformBuffer.GetMappedData(), &uniform, sizeof(uniform));
         frame.uniformBuffer.Flush();
+        // ...and this frame's joint matrices (what fits; DrawItems leaves the rest unskinned).
+        const std::size_t joints = std::min(drawList.joints.size(), maxFrameJoints);
+        if (joints > 0)
+        {
+            std::memcpy(frame.jointBuffer.GetMappedData(), drawList.joints.data(), joints * sizeof(glm::mat4));
+            frame.jointBuffer.Flush();
+        }
         // A capture copies the picture into a read-back buffer (BGRA or RGBA, 4 bytes per pixel).
         GpuBuffer captureBuffer;
         const VkExtent2D extent = swapchain.GetExtent();

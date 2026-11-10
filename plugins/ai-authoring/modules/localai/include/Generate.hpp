@@ -41,6 +41,8 @@ namespace umbra::localai
         std::filesystem::path workflow; // "" = the first exported workflow found
         int faces = 10000;
         std::function<void(const std::string &job)> queued; // model: ComfyUI's job id (worker thread)
+        // Rig / motion (S8): the model to rig, or the character a motion is made for ("" = none)
+        std::string source;
 
         std::function<void(const std::string &what, std::size_t done, std::size_t total, float seconds)> progress; // ~4 times a second
         const std::atomic<bool> *stop = nullptr; // set to cancel
@@ -63,4 +65,8 @@ namespace umbra::localai
     [[nodiscard]] GenerateResult CreateTexture(const GenerateOptions &options);
     [[nodiscard]] GenerateResult CreateSound(const GenerateOptions &options);
     [[nodiscard]] GenerateResult CreateModel(const GenerateOptions &options);
+    // S8: a model -> the exported rigging workflow -> models/<name>.glb with a skeleton.
+    [[nodiscard]] GenerateResult CreateRig(const GenerateOptions &options);
+    // S8: idea (what the character does) -> the exported text-to-motion workflow -> animations/<name>.glb.
+    [[nodiscard]] GenerateResult CreateMotion(const GenerateOptions &options);
 }

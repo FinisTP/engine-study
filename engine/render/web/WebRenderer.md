@@ -25,6 +25,13 @@ does not change. The GPU work is in `umbra_render.js` (an Emscripten JavaScript 
 
    Draw float 26 picks a custom surface shader's pipeline (`umbra_gpu_surface`). Its WGSL was made
    at build time from `Scene.hlsl` by DXC and naga (`engine/render/shaders/CustomShaders.md`).
+
+   **Skinning (S8).** A rigged mesh also gets a skin buffer (`umbra_gpu_mesh_skin`: 4 × uint16 joint
+   indices and 4 weights per vertex). Draw float 27 = 1 means "skinned": the draw uses the
+   `vsSkinned` / `shadowSkinnedVs` pipelines with that second vertex buffer, and float 22
+   (`texturing.z`) is where its joints start in this frame's joint storage buffer (group 0
+   binding 4, grown as needed). Every custom surface shader has a plain and a skinned pipeline.
+   Math: `engine/core/include/Skeleton.md`.
 4. Then it **waits for the browser's next animation frame**. This is where the game's normal
    `while` loop hands control back to the page (Asyncify), so the loop needs no browser-specific
    structure and runs at the display's rate.

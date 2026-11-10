@@ -23,8 +23,9 @@ lists only the components it has, one of each type:
 | `light` | a point light: torch, campfire, crystal (S6) | `world::Light`, `core/Lighting.hpp` |
 | `environment` | the scene's sun, sky, fog and time of day; one per scene (S6) | `world::World::SetEnvironment`, `core/Lighting.hpp` |
 | `post` | the scene's exposure, bloom, color grade and vignette; one per scene (S7) | `world::World::SetPost`, `core/Post.hpp` |
+| `animation` | the animation graph of a rigged model (S8) | `world::World::SetAnimationGraph`, `scene/AnimGraph.hpp` |
 
-Their fields are in `SceneFormat.md`. `light`, `environment` and `post` are described by schemas
+Their fields are in `SceneFormat.md`. `light`, `environment`, `post` and `animation` are described by schemas
 written in code (`EngineComponentSchemas()`), so the editor shows their fields like a project
 component's, and a project may not define a component with any of these names.
 

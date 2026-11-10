@@ -19,12 +19,20 @@ namespace umbra::core
         glm::vec2 uv{};
     };
 
-    // Indexed triangle list with one material color.
+    // Which joints move a vertex, and how much (weights add up to 1). Skinned meshes only (S8).
+    struct SkinVertex final
+    {
+        std::uint16_t joints[4]{};
+        glm::vec4 weights{0.0F};
+    };
+
+    // Indexed triangle list with one material color; `skin` is empty or has one entry per vertex.
     struct MeshData final
     {
         std::vector<Vertex> vertices;
         std::vector<std::uint32_t> indices;
         glm::vec4 baseColor{1.0F};
+        std::vector<SkinVertex> skin;
     };
 
     // Tightly packed 8-bit RGBA pixels, row by row.

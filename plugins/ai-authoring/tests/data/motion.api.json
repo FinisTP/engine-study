@@ -1,0 +1,57 @@
+{
+  "1": {
+    "class_type": "HYMotionLoadLLM",
+    "inputs": {
+      "model_name": "Qwen3-8B",
+      "quantization": "int4",
+      "offload_to_cpu": true
+    }
+  },
+  "2": {
+    "class_type": "HYMotionEncodeText",
+    "inputs": {
+      "llm": [
+        "1",
+        0
+      ],
+      "text": "a person waves"
+    }
+  },
+  "3": {
+    "class_type": "HYMotionLoadNetwork",
+    "inputs": {
+      "model_name": "HY-Motion-1.0-Lite"
+    }
+  },
+  "4": {
+    "class_type": "HYMotionGenerate",
+    "inputs": {
+      "network": [
+        "3",
+        0
+      ],
+      "conditioning": [
+        "2",
+        0
+      ],
+      "duration": 3.0,
+      "seed": 1,
+      "cfg_scale": 5.0,
+      "num_samples": 1
+    }
+  },
+  "5": {
+    "class_type": "HYMotionExportFBX",
+    "inputs": {
+      "motion_data": [
+        "4",
+        0
+      ],
+      "output_dir": "hymotion",
+      "filename_prefix": "motion",
+      "custom_fbx_path": "",
+      "yaw_offset": 0,
+      "scale": 0
+    }
+  }
+}

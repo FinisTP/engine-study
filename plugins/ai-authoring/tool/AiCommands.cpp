@@ -1,4 +1,4 @@
-// UmbraTool draft, texture, model and sound: the AI authoring tools without the editor (local Ollama / ComfyUI only).
+// UmbraTool draft, texture, model, sound, rig and motion: the AI authoring tools without the editor (local Ollama / ComfyUI only).
 
 #include <ToolCommand.hpp>
 
@@ -220,6 +220,30 @@ namespace
             };
         return Finish(args, umbra::localai::CreateModel(options), "model");
     }
+
+    // AI rig (S8): models/<x>.glb -> exported rigging workflow (UniRig) -> models/<x>_rigged.glb.
+    int Rig(const Arguments &args)
+    {
+        if (args.positional.size() != 1 || !args.Has("assets"))
+            return Usage();
+        auto options = Options(args, "");
+        options.source = args.positional[0];
+        options.workflow = args.Path("workflow");
+        return Finish(args, umbra::localai::CreateRig(options), "model");
+    }
+
+    // AI motion (S8): "<what the character does>" -> exported text-to-motion workflow (HY-Motion) -> animations/<name>.glb.
+    int Motion(const Arguments &args)
+    {
+        const float seconds = args.Float("seconds", 4.0F);
+        if (args.positional.size() != 1 || !args.Has("assets") || seconds < 0.5F || seconds > 12.0F)
+            return Usage();
+        auto options = Options(args, args.positional[0]);
+        options.source = args.Text("character");
+        options.seconds = seconds;
+        options.workflow = args.Path("workflow");
+        return Finish(args, umbra::localai::CreateMotion(options), "animation");
+    }
 }
 
 UMBRA_TOOL_COMMAND(Draft, "draft", "draft <rpg file> --npc <npc> (--idea \"<text>\" | --from <draft file>) [--apply] [--json]\n"
@@ -230,3 +254,6 @@ UMBRA_TOOL_COMMAND(Model, "model", "model (--idea \"<text>\" | --image <picture>
                                     "            [--faces <n>] [--seed <n>] [--workflow <api json>] [--model <checkpoint>] [--host <url>] [--json]", Model);
 UMBRA_TOOL_COMMAND(Sound, "sound", "sound \"<idea>\" --assets <folder> [--kind music|effect] [--seconds <s>] [--name <name>] [--count <n>]\n"
                                     "            [--seed <n>] [--bpm <n>] [--key \"D minor\"] [--model <checkpoint>] [--host <url>] [--json]", Sound);
+UMBRA_TOOL_COMMAND(Rig, "rig", "rig <models/x.glb> --assets <folder> [--name <name>] [--seed <n>] [--workflow <api json>] [--host <url>] [--json]", Rig);
+UMBRA_TOOL_COMMAND(Motion, "motion", "motion \"<what the character does>\" --assets <folder> [--character <models/x.glb>] [--seconds <s>]\n"
+                                      "            [--name <name>] [--seed <n>] [--workflow <api json>] [--host <url>] [--json]", Motion);

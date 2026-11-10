@@ -74,7 +74,8 @@ namespace umbra::assets
             {
                 if (!ok || size > bytes.size() - position)
                     return ok = false;
-                std::memcpy(out, bytes.data() + position, size);
+                if (size > 0) // memcpy with a null pointer is undefined even for 0 bytes
+                    std::memcpy(out, bytes.data() + position, size);
                 position += size;
                 return true;
             }
@@ -218,6 +219,38 @@ namespace umbra::assets
             w.Put(texture.height);
             w.PutBytes(texture.rgba.data(), texture.rgba.size());
         }
+        // S8: per-mesh skin, the skeleton, the clips.
+        for (const ModelMesh &mesh : model.meshes)
+        {
+            w.Put(static_cast<std::uint32_t>(mesh.data.skin.size()));
+            w.PutBytes(mesh.data.skin.data(), mesh.data.skin.size() * sizeof(core::SkinVertex));
+        }
+        w.Put(static_cast<std::uint32_t>(model.skeleton ? model.skeleton->joints.size() : 0));
+        if (model.skeleton)
+            for (const core::Joint &joint : model.skeleton->joints)
+            {
+                w.PutString(joint.name);
+                w.Put(joint.parent);
+                w.Put(joint.base);
+                w.Put(joint.inverseBind);
+                w.Put(joint.rest);
+            }
+        w.Put(static_cast<std::uint32_t>(model.clips.size()));
+        for (const core::Clip &clip : model.clips)
+        {
+            w.PutString(clip.name);
+            w.Put(clip.duration);
+            w.Put(static_cast<std::uint32_t>(clip.channels.size()));
+            for (const core::ClipChannel &channel : clip.channels)
+            {
+                w.PutString(channel.joint);
+                w.Put(static_cast<std::uint8_t>(channel.path));
+                w.Put(static_cast<std::uint8_t>(channel.step));
+                w.Put(static_cast<std::uint32_t>(channel.times.size()));
+                w.PutBytes(channel.times.data(), channel.times.size() * sizeof(float));
+                w.PutBytes(channel.values.data(), channel.values.size() * sizeof(glm::vec4));
+            }
+        }
         Fnv1a checksum;
         checksum.Add(w.bytes.data(), w.bytes.size());
         w.Put(checksum.value);
@@ -316,6 +349,45 @@ namespace umbra::assets
             }
             texture.rgba.resize(size);
             r.Take(texture.rgba.data(), size);
+        }
+        for (ModelMesh &mesh : out.meshes)
+        {
+            mesh.data.skin.resize(r.Count(sizeof(core::SkinVertex)));
+            r.Take(mesh.data.skin.data(), mesh.data.skin.size() * sizeof(core::SkinVertex));
+        }
+        if (const std::uint32_t joints = r.Count(4); joints > 0)
+        {
+            core::Skeleton skeleton;
+            skeleton.joints.resize(joints);
+            for (core::Joint &joint : skeleton.joints)
+            {
+                joint.name = r.String();
+                joint.parent = r.Get<std::int32_t>();
+                joint.base = r.Get<glm::mat4>();
+                joint.inverseBind = r.Get<glm::mat4>();
+                joint.rest = r.Get<core::JointPose>();
+            }
+            if (!core::SortJoints(skeleton) || !core::ValidateSkeleton(skeleton).empty())
+                r.ok = false;
+            out.skeleton = std::move(skeleton);
+        }
+        out.clips.resize(r.Count(4));
+        for (core::Clip &clip : out.clips)
+        {
+            clip.name = r.String();
+            clip.duration = r.Get<float>();
+            clip.channels.resize(r.Count(4));
+            for (core::ClipChannel &channel : clip.channels)
+            {
+                channel.joint = r.String();
+                channel.path = static_cast<core::ClipChannel::Path>(std::min<std::uint8_t>(r.Get<std::uint8_t>(), 2));
+                channel.step = r.Get<std::uint8_t>() != 0;
+                const std::uint32_t keys = r.Count(sizeof(float) + sizeof(glm::vec4));
+                channel.times.resize(keys);
+                channel.values.resize(keys);
+                r.Take(channel.times.data(), keys * sizeof(float));
+                r.Take(channel.values.data(), keys * sizeof(glm::vec4));
+            }
         }
         if (!r.ok || r.position != bytes.size())
         {

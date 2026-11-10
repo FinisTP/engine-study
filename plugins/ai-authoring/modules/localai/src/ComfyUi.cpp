@@ -208,6 +208,34 @@ namespace umbra::localai
             return finish();
         }
 
+        // Puts a file into ComfyUI's input folder (subfolder may be ""); its name there, or "" with diagnostics.
+        std::string Upload(const std::string &url, const std::string &bytes, const std::string &name, const std::string &subfolder,
+                           const std::string &mime, Diagnostics &diagnostics)
+        {
+            std::string host;
+            int port = 0;
+            if (!ParseLocalUrl(url, host, port))
+            {
+                Err(diagnostics, "ai.host", "'" + url + "' is not this computer. Umbra only uses a local ComfyUI; there is no cloud fallback.");
+                return "";
+            }
+            httplib::Client client(host, port);
+            client.set_connection_timeout(3);
+            client.set_read_timeout(60);
+            const httplib::UploadFormDataItems form{
+                {"image", bytes, name, mime}, {"overwrite", "true", "", ""}, {"type", "input", "", ""}, {"subfolder", subfolder, "", ""}};
+            const httplib::Result uploaded = client.Post("/upload/image", form);
+            const Json reply = uploaded && uploaded->status == 200 ? Json::parse(uploaded->body, nullptr, false) : Json();
+            if (!reply.is_object() || !reply.contains("name"))
+            {
+                Err(diagnostics, uploaded ? "ai.comfyui" : "ai.connect",
+                    uploaded ? "ComfyUI refused the upload of " + name + "." : "ComfyUI is not running at " + url + ". Start ComfyUI (Desktop: port 8000; command line: 8188).");
+                return "";
+            }
+            const std::string folder = reply.value("subfolder", "");
+            return (folder.empty() ? "" : folder + "/") + reply["name"].get<std::string>();
+        }
+
         bool EndsWithGlb(std::string name)
         {
             std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
@@ -419,22 +447,9 @@ namespace umbra::localai
                 Err(result.diagnostics, "ai.answer", "Couldn't encode the picture.");
                 return result;
             }
-            httplib::Client client(host, port);
-            client.set_connection_timeout(3);
-            client.set_read_timeout(60);
-            const httplib::UploadFormDataItems form{{"image", std::string(png.begin(), png.end()), name, "image/png"},
-                                                    {"overwrite", "true", "", ""},
-                                                    {"type", "input", "", ""}};
-            const httplib::Result uploaded = client.Post("/upload/image", form);
-            const Json reply = uploaded && uploaded->status == 200 ? Json::parse(uploaded->body, nullptr, false) : Json();
-            if (!reply.is_object() || !reply.contains("name"))
-            {
-                Err(result.diagnostics, uploaded ? "ai.comfyui" : "ai.connect",
-                    uploaded ? "ComfyUI refused the picture upload." : "ComfyUI is not running at " + request.host + ". Start ComfyUI (Desktop: port 8000; command line: 8188).");
+            name = Upload(request.host, std::string(png.begin(), png.end()), name, "", "image/png", result.diagnostics);
+            if (name.empty())
                 return result;
-            }
-            const std::string subfolder = reply.value("subfolder", "");
-            name = (subfolder.empty() ? "" : subfolder + "/") + reply["name"].get<std::string>();
         }
 
         // 2. Run the workflow and download the GLB its save node wrote (other GLBs are previews).
@@ -563,5 +578,184 @@ namespace umbra::localai
             return url;
         }
         return "";
+    }
+
+    // ---------------- Rigging and motion (S8, AnimationGen.md) ----------------
+
+    namespace
+    {
+        std::string Lower(std::string text)
+        {
+            std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+            return text;
+        }
+
+        bool IsModelFile(const Json &value)
+        {
+            if (!value.is_string())
+                return false;
+            const std::string name = Lower(value.get<std::string>());
+            return name.ends_with(".glb") || name.ends_with(".fbx") || name.ends_with(".obj");
+        }
+
+        bool IsOutputNode(const std::string &type)
+        {
+            return type.find("Save") != std::string::npos || type.starts_with("Preview") || type.starts_with("Export");
+        }
+
+        // Every (node, input) of a loader that names a model file: where the rigged model goes in.
+        std::vector<std::pair<std::string, std::string>> ModelInputs(const Json &graph)
+        {
+            std::vector<std::pair<std::string, std::string>> found;
+            for (const auto &[id, node] : graph.items())
+                if (!IsOutputNode(node.value("class_type", "")))
+                    for (const auto &[key, value] : node["inputs"].items())
+                        if (IsModelFile(value))
+                            found.emplace_back(id, key);
+            return found;
+        }
+
+        // The downloadable result: a {filename, subfolder, type} entry (or a path string under
+        // "output/") naming a .glb, else an .fbx, anywhere in the run's outputs.
+        Json FindAnimFile(const Json &outputs)
+        {
+            Json glb, fbx;
+            std::function<void(const Json &)> walk = [&](const Json &v) {
+                Json file;
+                if (v.is_object() && v.contains("filename") && v["filename"].is_string())
+                    file = v;
+                else if (v.is_string())
+                {
+                    // A path such as ".../ComfyUI/output/3d/rig_00001.fbx": folder and name under output/.
+                    std::string path = v.get<std::string>();
+                    std::replace(path.begin(), path.end(), '\\', '/');
+                    if (const std::size_t at = path.rfind("output/"); at != std::string::npos)
+                        path = path.substr(at + 7);
+                    else if (path.find(':') != std::string::npos || path.starts_with("/"))
+                        path = path.substr(path.rfind('/') + 1);
+                    const std::size_t slash = path.rfind('/');
+                    file = {{"filename", path.substr(slash == std::string::npos ? 0 : slash + 1)},
+                            {"subfolder", slash == std::string::npos ? "" : path.substr(0, slash)}, {"type", "output"}};
+                }
+                if (!file.is_null())
+                {
+                    const std::string name = Lower(file["filename"].get<std::string>());
+                    if (name.ends_with(".glb") && glb.is_null())
+                        glb = file;
+                    if (name.ends_with(".fbx") && fbx.is_null())
+                        fbx = file;
+                }
+                if (v.is_object() || v.is_array())
+                    for (const Json &child : v)
+                        walk(child);
+            };
+            walk(outputs);
+            return !glb.is_null() ? glb : fbx;
+        }
+    }
+
+    bool LoadAnimWorkflow(const std::filesystem::path &file, AnimKind kind, Json &graph, std::vector<core::Diagnostic> &diagnostics)
+    {
+        auto fail = [&](const std::string &code, const std::string &message) {
+            diagnostics.push_back({core::Severity::Error, code, file.string(), "", message});
+            return false;
+        };
+        const char *what = kind == AnimKind::Rig ? "rigging (UniRig)" : "text-to-motion (HY-Motion)";
+        std::ifstream in(file);
+        if (!in)
+            return fail("workflow.missing", std::string("no workflow file: export the ") + what + " workflow from ComfyUI with Workflow -> Export (API) and save it here");
+        graph = Json::parse(in, nullptr, false);
+        if (graph.is_object() && graph.contains("nodes") && graph["nodes"].is_array())
+            return fail("workflow.format", "this is a ComfyUI UI workflow; export it with Workflow -> Export (API) instead");
+        if (!graph.is_object() || graph.empty())
+            return fail("workflow.format", "not a ComfyUI API workflow (JSON object of nodes)");
+        int texts = 0;
+        for (const auto &[id, node] : graph.items())
+        {
+            if (!node.is_object() || !node.contains("class_type") || !node.contains("inputs") || !node["inputs"].is_object())
+                return fail("workflow.format", "node " + id + " has no class_type/inputs: export with Workflow -> Export (API)");
+            for (const char *key : {"text", "prompt"})
+                texts += node["inputs"].contains(key) && node["inputs"][key].is_string();
+        }
+        if (kind == AnimKind::Rig && ModelInputs(graph).size() != 1)
+            return fail("workflow.model", "the rigging workflow needs exactly one loader naming a .glb/.fbx/.obj file (it has " +
+                                              std::to_string(ModelInputs(graph).size()) + "): Umbra puts the model there");
+        if (kind == AnimKind::Motion && texts == 0)
+            return fail("workflow.text", "the motion workflow has no \"text\" input to put the description in");
+        return true;
+    }
+
+    Json PrepareAnimWorkflow(const AnimRequest &request, const std::string &uploadedModel)
+    {
+        Json graph = request.workflow;
+        ResolveSwitches(graph);
+        long long seed = request.seed;
+        for (auto &[id, node] : graph.items())
+        {
+            Json &inputs = node["inputs"];
+            if (inputs.contains("seed") && inputs["seed"].is_number_integer())
+                inputs["seed"] = seed++;
+            if (request.kind != AnimKind::Motion)
+                continue;
+            // Motion: the description into every text input, the length into every duration.
+            for (const char *key : {"text", "prompt"})
+                if (inputs.contains(key) && inputs[key].is_string())
+                    inputs[key] = request.prompt;
+            if (inputs.contains("duration") && inputs["duration"].is_number())
+                inputs["duration"] = request.seconds;
+            // The character to retarget onto (HY-Motion's Export FBX: custom_fbx_path), if one was given.
+            if (!uploadedModel.empty() && inputs.contains("custom_fbx_path"))
+                inputs["custom_fbx_path"] = uploadedModel;
+        }
+        // Rig: the uploaded model replaces the file the loader named.
+        if (request.kind == AnimKind::Rig && !uploadedModel.empty())
+            for (const auto &[id, key] : ModelInputs(graph))
+                graph[id]["inputs"][key] = uploadedModel;
+        return graph;
+    }
+
+    AnimResult GenerateAnim(const AnimRequest &request, CancelToken &cancel)
+    {
+        AnimResult result;
+        // 1. The model goes where the workflow's loader looked (its folder, e.g. "3d/", is kept).
+        std::string uploaded;
+        if (!request.model.empty())
+        {
+            std::string folder;
+            if (request.kind == AnimKind::Rig)
+                if (const auto inputs = ModelInputs(request.workflow); inputs.size() == 1)
+                {
+                    const std::string old = request.workflow[inputs[0].first]["inputs"][inputs[0].second].get<std::string>();
+                    folder = old.find('/') != std::string::npos ? old.substr(0, old.rfind('/')) : "";
+                }
+            const std::string name = request.modelName.empty() ? "umbra_rig_input.glb" : request.modelName;
+            uploaded = Upload(request.host, std::string(request.model.begin(), request.model.end()), name, folder, "application/octet-stream", result.diagnostics);
+            if (uploaded.empty())
+                return result;
+        }
+        else if (request.kind == AnimKind::Rig)
+        {
+            Err(result.diagnostics, "ai.answer", "No model to rig.");
+            return result;
+        }
+
+        // 2. Run; download the GLB it saved (or an FBX, which the caller converts).
+        result.graph = PrepareAnimWorkflow(request, uploaded);
+        std::string extension;
+        const Pick pick = [&extension](const Json &outputs) {
+            Json file = FindAnimFile(outputs);
+            if (file.is_object())
+                extension = Lower(file["filename"].get<std::string>()).ends_with(".glb") ? ".glb" : ".fbx";
+            return file;
+        };
+        const auto missing = [](const std::string &why) {
+            return why.find("not in") != std::string::npos ? "A model or node the workflow needs isn't installed in ComfyUI: " + why : std::string();
+        };
+        Run run = RunGraph(request.host, result.graph, cancel, request.timeoutSeconds, request.maxBytes, pick, missing);
+        result.diagnostics.insert(result.diagnostics.end(), run.diagnostics.begin(), run.diagnostics.end());
+        result.ok = run.ok;
+        result.extension = extension;
+        result.file.assign(run.bytes.begin(), run.bytes.end());
+        return result;
     }
 }

@@ -9,7 +9,7 @@
   build ran in Chrome on the same SwiftShader under a virtual display.
 - User decisions (2026-11-09): the time of day is saved; a 12-minute day that starts at dusk in
   the settlement; nights moonlit and readable.
-- State: **implemented; verified headlessly and in software-rendered pictures.** The frame time
+- State: **verified** (the user reviewed S6 and S7 on Windows on 2026-11-09: "everything works fine"). Before that: implemented, and verified headlessly and in software-rendered pictures. The frame time
   and the look on a real GPU are for the user on Windows (§4).
 
 ## What was built

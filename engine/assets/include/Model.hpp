@@ -1,11 +1,13 @@
 #pragma once
 
 #include <MeshData.hpp>
+#include <Skeleton.hpp>
 
 #include <glm/gtc/quaternion.hpp>
 #include <glm/vec3.hpp>
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -36,6 +38,8 @@ namespace umbra::assets
         std::vector<ModelNode> nodes;
         std::vector<ModelMesh> meshes;
         std::vector<core::TextureData> textures;
+        std::optional<core::Skeleton> skeleton; // the first skin, if any (S8); skinned meshes index its joints
+        std::vector<core::Clip> clips;          // the file's animations, by name
     };
 
     // True if both models have the same nodes (names, parents, meshes per node).

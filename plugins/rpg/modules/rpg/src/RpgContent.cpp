@@ -155,7 +155,7 @@ namespace umbra::rpg
             });
 
             r.Objects(root, "actors", "", [&](const json &s, const std::string &at) {
-                r.Known(s, at, {"id", "name", "stats", "skills", "equipment", "inventory", "inventorySlots", "skillPoints", "xp", "growth", "model", "color", "size", "policy"});
+                r.Known(s, at, {"id", "name", "stats", "skills", "equipment", "inventory", "inventorySlots", "skillPoints", "xp", "growth", "model", "animation", "color", "size", "policy"});
                 ActorDef def{r.String(s, "id", at), r.String(s, "name", at)};
                 const auto stats = s.find("stats");
                 if (stats == s.end() || !stats->is_object())
@@ -185,6 +185,7 @@ namespace umbra::rpg
                 }
                 // How it looks in the world (optional): model file, tint, half-height in meters.
                 def.model = r.String(s, "model", at);
+                def.animation = r.String(s, "animation", at);
                 if (const auto color = s.find("color"); color != s.end())
                 {
                     if (!color->is_array() || color->size() != 4)

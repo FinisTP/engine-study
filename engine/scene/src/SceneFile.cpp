@@ -51,6 +51,7 @@ namespace umbra::scene
             std::optional<world::Light> light;
             std::optional<core::EnvironmentSettings> environment;
             std::optional<core::PostSettings> post;
+            std::string animationGraph;
             std::shared_ptr<const core::TextureData> postLut;
             std::vector<world::CustomComponent> customs;
         };
@@ -410,7 +411,7 @@ namespace umbra::scene
                     desc.spawner = ParseSpawner(*value, at, report);
                 else if (EngineComponentSchemas().contains(type))
                 {
-                    // "light" or "environment" (Lighting.md): checked, then read with defaults for missing fields.
+                    // An engine component (light, environment, post, animation): checked, then read with defaults.
                     const ComponentSchema &schema = EngineComponentSchemas().at(type);
                     const std::size_t before = report.out.size();
                     CheckComponent(schema, *value, report.file, at, report.out);
@@ -423,7 +424,13 @@ namespace umbra::scene
                     json f = schema.Defaults();
                     f.update(*value);
                     const auto rgb = [](const json &c) { return glm::vec3{c[0].get<float>(), c[1].get<float>(), c[2].get<float>()}; };
-                    if (type == "light")
+                    if (type == "animation")
+                    {
+                        desc.animationGraph = f["graph"].get<std::string>();
+                        if (desc.animationGraph.empty())
+                            report.Error("entity.animation.graph", at + ".graph", "the animation component needs a graph file (animations/*.anim.json)");
+                    }
+                    else if (type == "light")
                         desc.light = world::Light{rgb(f["color"]), f["intensity"].get<float>(), f["range"].get<float>(), f["flicker"].get<float>()};
                     else if (type == "post")
                     {
@@ -715,6 +722,8 @@ namespace umbra::scene
                                                     {"indoor", e.indoor}, {"ambient", Tidy(e.ambient)}, {"fog", Tidy(e.fog)}, {"tint", rgb(e.tint)},
                                                     {"shadows", e.shadows}};
             }
+            if (const std::string *graph = world.GetAnimationGraph(entity))
+                out["components"]["animation"] = {{"graph", *graph}};
             if (world.PostOwner() == entity)
             {
                 const core::PostSettings &p = world.GetPost();
@@ -790,6 +799,8 @@ namespace umbra::scene
                 world.SetSpawner(entity, *desc.spawner);
             if (desc.light)
                 world.SetLight(entity, *desc.light);
+            if (!desc.animationGraph.empty())
+                world.SetAnimationGraph(entity, desc.animationGraph);
             if (desc.environment && !world.EnvironmentOwner())
                 world.SetEnvironment(*desc.environment, entity);
             if (desc.post && !world.PostOwner())

@@ -19,8 +19,10 @@ The source stays in glTF. Tools and AI edits work on readable files. The game lo
 | Node hierarchy, TRS or matrix | `ModelNode` with parent index; matrices are split into T, R, S (`glm::decompose`). Parents are reordered to come before children. |
 | Mesh primitive (triangles) | `ModelMesh`: positions (required), normals, `TEXCOORD_0`, indices (or generated 0..n-1), base color factor, base color texture |
 | Image (8-bit, 1–4 channels) | `core::TextureData`, expanded to RGBA |
+| Skin (S8) | `Model::skeleton`: joints in skin order with parent joint, fixed nodes in between (`base`), inverse bind matrix and rest pose; per vertex `JOINTS_0`/`WEIGHTS_0` as `MeshData::skin` (weights normalised to 1). One skin per model. Math in `engine/core/include/Skeleton.md`. |
+| Animations (S8) | `Model::clips`: channels by joint name (translation, rotation, scale), linear or step; cubic-spline keeps its key values |
 
-**Warnings** (skipped, the model still loads): animations, skins, morph targets, non-triangle primitives, missing normals, `texCoord` other than 0.
+**Warnings** (skipped, the model still loads): morph targets, a second skin, malformed animation channels, non-triangle primitives, missing normals, `texCoord` other than 0. Channels of nodes that are not joints are kept but move nothing.
 
 **Errors** (the build fails and the old cache file is kept): unreadable or malformed JSON, `extensionsRequired`, sparse accessors, wrong accessor types, any accessor that reaches past its buffer view, external paths that are absolute or contain `..`, node cycles or shared children, meshes that fail `core::ValidateMesh`.
 

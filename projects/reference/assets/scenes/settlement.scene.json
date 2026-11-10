@@ -39,7 +39,12 @@
         0.9
       ],
       "model": "models/hero.glb",
-      "mesh": 0
+      "mesh": 0,
+      "components": {
+        "animation": {
+          "graph": "animations/humanoid.anim.json"
+        }
+      }
     },
     {
       "id": "signpost",

@@ -12,6 +12,8 @@ target_sources(
         src/MeshData.cpp
         src/Lighting.cpp
         src/Post.cpp
+        src/Skeleton.cpp
+        src/Animator.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
@@ -25,6 +27,9 @@ target_sources(
             include/Lighting.md
             include/Post.hpp
             include/Post.md
+            include/Skeleton.hpp
+            include/Animator.hpp
+            include/Skeleton.md
             include/Handles.hpp
             include/Diagnostic.hpp
             include/MeshData.hpp

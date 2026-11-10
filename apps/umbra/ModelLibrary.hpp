@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <map>
+#include <memory>
 #include <optional>
 #include <set>
 #include <string>
@@ -17,7 +18,7 @@
 // A model file turned into GPU resources. meshes[i] / textures[i] match model.meshes / model.textures.
 struct LoadedModel final
 {
-    umbra::assets::Model model;
+    std::shared_ptr<umbra::assets::Model> model = std::make_shared<umbra::assets::Model>(); // shared with animators (S8)
     std::vector<umbra::core::MeshHandle> meshes;
     std::vector<umbra::core::TextureHandle> textures;
     std::vector<std::filesystem::path> files; // source + dependencies, for change watching
@@ -49,6 +50,12 @@ public:
 
     // Loads a model once; later calls return the same entry. nullptr on failure (logged once).
     const LoadedModel *Load(const std::string &modelPath);
+    // The same model, shared: animators keep their skeleton and clips alive across reloads. nullptr on failure.
+    std::shared_ptr<const umbra::assets::Model> Shared(const std::string &modelPath)
+    {
+        const LoadedModel *loaded = Load(modelPath);
+        return loaded ? loaded->model : nullptr;
+    }
     // GPU handles for one mesh of a model (loading it if needed). Invalid handles if unknown.
     std::pair<umbra::core::MeshHandle, umbra::core::TextureHandle> Resolve(const std::string &modelPath, std::uint32_t mesh);
 

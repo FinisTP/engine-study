@@ -291,6 +291,44 @@ namespace umbra::world
         return record && record->light ? &*record->light : nullptr;
     }
 
+    bool World::SetAnimationGraph(Entity entity, std::string graph)
+    {
+        Record *record = Get(entity);
+        if (record == nullptr)
+            return false;
+        record->animationGraph = std::move(graph);
+        return true;
+    }
+
+    const std::string *World::GetAnimationGraph(Entity entity) const noexcept
+    {
+        const Record *record = Get(entity);
+        return record && !record->animationGraph.empty() ? &record->animationGraph : nullptr;
+    }
+
+    bool World::SetAnimator(Entity entity, std::optional<core::Animator> animator)
+    {
+        Record *record = Get(entity);
+        if (record == nullptr)
+            return false;
+        record->animator = std::move(animator);
+        return true;
+    }
+
+    core::Animator *World::GetAnimator(Entity entity) noexcept
+    {
+        Record *record = Get(entity);
+        return record && record->animator ? &*record->animator : nullptr;
+    }
+
+    void World::UpdateAnimation(float seconds)
+    {
+        entities_.ForEach([&](core::Handle<EntityTag>, Record &record) {
+            if (record.animator)
+                record.animator->Update(seconds);
+        });
+    }
+
     void World::SetPost(const core::PostSettings &settings, std::shared_ptr<const core::TextureData> lut, Entity owner)
     {
         post_ = settings;
@@ -339,6 +377,14 @@ namespace umbra::world
                 const Renderable &r = *record.renderable;
                 drawList.items.push_back({r.meshHandle, r.textureHandle, record.worldMatrix, r.color * r.tint, r.metersPerRepeat, r.emissive,
                                           drawList.SurfaceIndex(r.surface)});
+                // A skinned entity's joint matrices go into the frame's joint list (Skeleton.md).
+                if (record.animator)
+                {
+                    const std::vector<glm::mat4> &palette = record.animator->Palette();
+                    drawList.items.back().jointOffset = static_cast<std::uint32_t>(drawList.joints.size());
+                    drawList.items.back().jointCount = static_cast<std::uint32_t>(palette.size());
+                    drawList.joints.insert(drawList.joints.end(), palette.begin(), palette.end());
+                }
             }
             if (record.light)
             {

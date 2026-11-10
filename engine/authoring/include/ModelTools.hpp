@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <string>
 #include <vector>
 
 namespace umbra::authoring
@@ -20,6 +21,8 @@ namespace umbra::authoring
         std::uint32_t textureSize = 0; // largest side of its biggest texture
         glm::vec3 min{0.0F};
         glm::vec3 max{0.0F};
+        std::size_t joints = 0;          // 0 = not rigged (S8)
+        std::vector<std::string> clips;  // animation clip names
     };
     bool InspectModel(const std::filesystem::path &file, ModelInfo &info, std::vector<core::Diagnostic> &diagnostics);
 

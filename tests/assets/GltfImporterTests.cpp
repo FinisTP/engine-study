@@ -1,7 +1,10 @@
 #include <catch2/catch_approx.hpp>
+#include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include <GltfImporter.hpp>
+#include <ModelCache.hpp>
+#include <Skeleton.hpp>
 
 #include "TestFiles.hpp"
 
@@ -138,4 +141,53 @@ TEST_CASE("Required extensions, missing and malformed files are reported as erro
     const auto truncated = ImportGltf(dir / "bad.gltf");
     REQUIRE_FALSE(truncated.Ok());
     REQUIRE_FALSE(truncated.errors.front().empty());
+}
+
+TEST_CASE("A rigged character imports with its skeleton, skin and clips, and survives the cache (T87)", "[gltf][animation]")
+{
+    // models/hero.glb: Meshy rig packed by tools/models/pack_animated.py.
+    const auto source = std::filesystem::path(UMBRA_TEST_ASSET_DIRECTORY) / "models/hero.glb";
+    const umbra::assets::ImportResult imported = umbra::assets::ImportGltf(source);
+    INFO((imported.errors.empty() ? std::string() : imported.errors[0]));
+    REQUIRE(imported.errors.empty());
+    const umbra::assets::Model &model = imported.model;
+    REQUIRE(model.skeleton);
+    CHECK(model.skeleton->joints.size() == 24);
+    CHECK(model.skeleton->Find("Hips") >= 0);
+    REQUIRE(model.meshes.size() == 1);
+    const umbra::core::MeshData &mesh = model.meshes[0].data;
+    REQUIRE(mesh.skin.size() == mesh.vertices.size());
+    for (std::size_t i = 0; i < mesh.skin.size(); i += 97)
+    {
+        const glm::vec4 w = mesh.skin[i].weights;
+        CHECK(w.x + w.y + w.z + w.w == Catch::Approx(1.0F).margin(1e-4));
+    }
+    std::vector<std::string> names;
+    for (const umbra::core::Clip &clip : model.clips)
+        names.push_back(clip.name);
+    CHECK(names == std::vector<std::string>{"idle", "walk", "run", "attack", "hit", "death"});
+    CHECK(model.clips[1].duration > 0.5F);
+
+    // At rest, the skinned mesh fits the -1..1 box the scenes expect (pack_animated.py's root).
+    glm::vec3 lo(1e9F), hi(-1e9F);
+    for (const glm::vec3 &p : umbra::core::RestPositions(*model.skeleton, mesh))
+    {
+        lo = glm::min(lo, p);
+        hi = glm::max(hi, p);
+    }
+    CHECK(hi.y == Catch::Approx(1.0F).margin(0.05F));
+    CHECK(lo.y == Catch::Approx(-1.0F).margin(0.05F));
+
+    // The .umodel cache keeps all of it.
+    const auto dir = test::TempDir("skinned-cache");
+    std::string error;
+    REQUIRE(umbra::assets::WriteModelFile(dir / "hero.umodel", model, {1, {}}, error));
+    umbra::assets::Model loaded;
+    umbra::assets::BuildInfo info;
+    REQUIRE(umbra::assets::ReadModelFile(dir / "hero.umodel", loaded, info, error));
+    REQUIRE(loaded.skeleton);
+    CHECK(loaded.skeleton->joints.size() == 24);
+    CHECK(loaded.meshes[0].data.skin.size() == mesh.skin.size());
+    CHECK(loaded.clips.size() == 6);
+    CHECK(loaded.clips[3].channels.size() == model.clips[3].channels.size());
 }

@@ -45,7 +45,9 @@ namespace umbra::render
         [[nodiscard]] VkRenderPass GetRenderPass() const noexcept { return renderPass_; }
         [[nodiscard]] VkPipeline GetHandle() const noexcept { return pipeline_; }
         // A material's custom surface shader (CustomShaders.md); the plain pipeline if it wasn't built.
-        [[nodiscard]] VkPipeline GetSurfacePipeline(const std::string &name) const;
+        // `skinned`: the variant with the skinning vertex shader (S8); plain or skinned default if missing.
+        [[nodiscard]] VkPipeline GetSurfacePipeline(const std::string &name, bool skinned) const;
+        [[nodiscard]] VkPipeline GetSkinnedShadowPipeline() const noexcept { return skinnedShadowPipeline_; }
         [[nodiscard]] VkPipelineLayout GetLayout() const noexcept { return pipelineLayout_; }
         [[nodiscard]] VkDescriptorSetLayout GetDescriptorSetLayout() const noexcept { return descriptorSetLayout_; }
         [[nodiscard]] VkFormat GetDepthFormat() const noexcept { return depthFormat_; }
@@ -61,8 +63,9 @@ namespace umbra::render
         [[nodiscard]] VkSampler GetShadowSampler() const noexcept { return shadowSampler_; }
 
     private:
-        bool CreateShadowMap(VkPhysicalDevice physicalDevice, VulkanAllocator &allocator, VkShaderModule shadowShader, const VkGraphicsPipelineCreateInfo &scene,
-                             const VkPipelineVertexInputStateCreateInfo &vertexInput, const VkPipelineInputAssemblyStateCreateInfo &assembly,
+        bool CreateShadowMap(VkPhysicalDevice physicalDevice, VulkanAllocator &allocator, VkShaderModule shadowShader, VkShaderModule skinnedShadowShader,
+                             const VkGraphicsPipelineCreateInfo &scene, const VkPipelineVertexInputStateCreateInfo &vertexInput,
+                             const VkPipelineVertexInputStateCreateInfo &skinnedInput, const VkPipelineInputAssemblyStateCreateInfo &assembly,
                              const VkPipelineMultisampleStateCreateInfo &multisample, const VkPipelineDepthStencilStateCreateInfo &depthState);
 
         VkDevice device_ = VK_NULL_HANDLE;
@@ -75,6 +78,9 @@ namespace umbra::render
         std::vector<VkFramebuffer> framebuffers_;
         VkPipeline skyPipeline_ = VK_NULL_HANDLE;
         std::map<std::string, VkPipeline> surfaces_; // "water" -> scene pipeline with shaders/surface/water.frag.spv
+        std::map<std::string, VkPipeline> skinnedSurfaces_;
+        VkPipeline skinnedPipeline_ = VK_NULL_HANDLE;       // GetSurfacePipeline("", true)
+        VkPipeline skinnedShadowPipeline_ = VK_NULL_HANDLE;
         VkRenderPass shadowRenderPass_ = VK_NULL_HANDLE;
         VkPipeline shadowPipeline_ = VK_NULL_HANDLE;
         GpuImage shadowImage_;

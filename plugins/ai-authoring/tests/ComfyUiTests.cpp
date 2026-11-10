@@ -1,4 +1,6 @@
+#include <AnimationGen.hpp>
 #include <ComfyUi.hpp>
+#include <Generate.hpp>
 #include <ModelAssistant.hpp>
 #include <TextureAssistant.hpp>
 #include <TextureTools.hpp>
@@ -48,12 +50,23 @@ namespace
                     return;
                 }
                 uploaded = request.form.get_file("image").content;
-                response.set_content(json{{"name", "umbra_model_input.png"}, {"subfolder", ""}, {"type", "input"}}.dump(), "application/json");
+                uploadedFolder = request.form.has_field("subfolder") ? request.form.get_field("subfolder") : "";
+                response.set_content(json{{"name", request.form.get_file("image").filename}, {"subfolder", uploadedFolder}, {"type", "input"}}.dump(),
+                                     "application/json");
             });
             server_.Post("/prompt", [this](const httplib::Request &request, httplib::Response &response) {
                 std::lock_guard lock(mutex_);
                 last = json::parse(request.body);
                 const json &graph = last["prompt"];
+                // The rigging and motion stand-ins (S8): finished after two polls like the others.
+                for (const auto &[node, kind] : {std::pair{"UniRigLoadMesh", "r-1"}, std::pair{"HYMotionGenerate", "h-1"}})
+                    for (const auto &[id, n] : graph.items())
+                        if (n["class_type"] == node)
+                        {
+                            polls_[kind] = 0;
+                            response.set_content(json{{"prompt_id", kind}, {"number", 1}, {"node_errors", json::object()}}.dump(), "application/json");
+                            return;
+                        }
                 if (graph.contains("40")) // the image-to-3D workflow
                 {
                     if (graph["40"]["inputs"]["unet_name"] == "missing.safetensors")
@@ -97,6 +110,11 @@ namespace
                 if (id == "m-1") // a preview GLB listed first, like the template's untextured voxel preview
                     entry["outputs"] = {{"246", {{"3d", {{{"filename", "preview3d_white.glb"}, {"subfolder", ""}, {"type", "temp"}}}}}},
                                         {"322", {{"3d", {{{"filename", "ComfyUI_00001_.glb"}, {"subfolder", "3d"}, {"type", "output"}}}}, {"camera_info", {nullptr}}}}};
+                if (id == "r-1") // a node that reports a path on disk, as some 3D packs do
+                    entry["outputs"] = {{"5", {{"result", {"C:\\ComfyUI\\output\\rigged\\character_00001_.glb"}}}}};
+                if (id == "h-1") // an FBX and a GLB of the same motion: the GLB is taken
+                    entry["outputs"] = {{"5", {{"3d", {{{"filename", "motion_00001_.fbx"}, {"subfolder", "hymotion"}, {"type", "output"}},
+                                                       {{"filename", "motion_00001_.glb"}, {"subfolder", "hymotion"}, {"type", "output"}}}}}}};
                 if (id == "p-error")
                     entry["status"] = {{"status_str", "error"}, {"completed", false},
                                        {"messages", json::array({json::array({"execution_error", {{"exception_message", "CUDA out of memory"}}})})}};
@@ -111,7 +129,8 @@ namespace
                         running.push_back(json::array({1, id, json::object(), json::object(), json::array()}));
                 response.set_content(json{{"queue_running", running}, {"queue_pending", json::array()}}.dump(), "application/json");
             });
-            server_.Get("/view", [](const httplib::Request &request, httplib::Response &response) {
+            server_.Get("/view", [this](const httplib::Request &request, httplib::Response &response) {
+                viewed = request.get_param_value("subfolder") + "/" + request.get_param_value("filename");
                 if (request.get_param_value("filename").starts_with("preview"))
                 {
                     response.set_content("not the finished model", "model/gltf-binary");
@@ -154,7 +173,7 @@ namespace
 
         int port = 0;
         json last, modelGraph;
-        std::string uploaded;
+        std::string uploaded, uploadedFolder, viewed;
         bool oldFormat = false;
         std::atomic<int> interrupts = 0;
         int queued = 0;
@@ -591,4 +610,108 @@ TEST_CASE("An exported workflow is found whatever its name", "[comfyui][model]")
     CHECK(localai::DefaultModelWorkflow(project / "assets") == project / "tools/comfyui/my_trellis_export.json");
     std::filesystem::copy_file(testData / "image-to-3d.api.json", project / "tools/comfyui/image-to-3d.api.json");
     CHECK(localai::DefaultModelWorkflow(project / "assets") == project / "tools/comfyui/image-to-3d.api.json");
+}
+
+// ---------------- Rigging and motion (S8) ----------------
+
+TEST_CASE("Exported rigging and motion workflows are checked before use (T88)", "[comfyui][anim]")
+{
+    json graph;
+    std::vector<core::Diagnostic> diagnostics;
+    CHECK(localai::LoadAnimWorkflow(testData / "rig.api.json", localai::AnimKind::Rig, graph, diagnostics));
+    CHECK(localai::LoadAnimWorkflow(testData / "motion.api.json", localai::AnimKind::Motion, graph, diagnostics));
+    CHECK(diagnostics.empty());
+    // Each kind refuses the other's workflow: no model file to replace, no text to fill in.
+    CHECK_FALSE(localai::LoadAnimWorkflow(testData / "motion.api.json", localai::AnimKind::Rig, graph, diagnostics));
+    CHECK(HasCode(diagnostics, "workflow.model"));
+    CHECK_FALSE(localai::LoadAnimWorkflow(testData / "rig.api.json", localai::AnimKind::Motion, graph, diagnostics));
+    CHECK(HasCode(diagnostics, "workflow.text"));
+    CHECK_FALSE(localai::LoadAnimWorkflow(WriteTemp("ui-rig.json", R"({"nodes":[],"links":[]})"), localai::AnimKind::Rig, graph, diagnostics));
+    CHECK(HasCode(diagnostics, "workflow.format"));
+}
+
+TEST_CASE("A motion workflow gets the description, length, seed and character", "[comfyui][anim]")
+{
+    localai::AnimRequest request;
+    request.kind = localai::AnimKind::Motion;
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(localai::LoadAnimWorkflow(testData / "motion.api.json", request.kind, request.workflow, diagnostics));
+    request.prompt = "swings a sword overhead";
+    request.seconds = 2.5F;
+    request.seed = 77;
+    const json graph = localai::PrepareAnimWorkflow(request, "3d/hero.fbx");
+    CHECK(graph["2"]["inputs"]["text"] == "swings a sword overhead");
+    CHECK(graph["4"]["inputs"]["duration"] == 2.5);
+    CHECK(graph["4"]["inputs"]["seed"] == 77);
+    CHECK(graph["5"]["inputs"]["custom_fbx_path"] == "3d/hero.fbx");
+}
+
+TEST_CASE("A model is rigged and a motion made through ComfyUI, saved and checked (T88)", "[comfyui][anim]")
+{
+    FakeComfyUi comfy;
+    const std::filesystem::path root = std::filesystem::temp_directory_path() / "umbra-tests-anim" / "assets";
+    std::filesystem::remove_all(root.parent_path());
+    std::filesystem::create_directories(root / "models");
+    std::filesystem::copy_file(std::filesystem::path(UMBRA_TEST_ASSET_DIRECTORY) / "models/elder.glb", root / "models/elder.glb");
+    localai::GenerateOptions options;
+    options.assets = assets::AssetFolders(root);
+    options.host = comfy.Url();
+    options.seed = 5;
+
+    SECTION("rig: the model goes into the loader's folder; the rigged GLB is saved with its source")
+    {
+        options.source = "models/elder.glb";
+        options.workflow = testData / "rig.api.json";
+        const localai::GenerateResult result = localai::CreateRig(options);
+        INFO((result.diagnostics.empty() ? "" : core::Format(result.diagnostics[0])));
+        REQUIRE(result.made.size() == 1);
+        CHECK(result.made[0].path == "models/elder_rigged.glb");
+        CHECK(result.made[0].info["joints"].get<int>() > 0);
+        CHECK(comfy.uploadedFolder == "3d");
+        CHECK(comfy.last["prompt"]["1"]["inputs"]["mesh_path"] == "3d/elder.glb");
+        CHECK(comfy.viewed == "rigged/character_00001_.glb");
+        std::ifstream sourceFile(root / "models/elder_rigged.source.json");
+        CHECK(json::parse(sourceFile)["source"] == "models/elder.glb");
+    }
+    SECTION("motion: text in, an animation file out")
+    {
+        options.idea = "waves hello";
+        options.seconds = 3.0F;
+        options.workflow = testData / "motion.api.json";
+        const localai::GenerateResult result = localai::CreateMotion(options);
+        INFO((result.diagnostics.empty() ? "" : core::Format(result.diagnostics[0])));
+        REQUIRE(result.made.size() == 1);
+        CHECK(result.made[0].path == "animations/waves_hello.glb");
+        CHECK_FALSE(result.made[0].info["clips"].empty());
+        CHECK(comfy.viewed == "hymotion/motion_00001_.glb");
+        CHECK(comfy.last["prompt"]["2"]["inputs"]["text"] == "waves hello");
+    }
+    SECTION("a result without a skeleton is not kept")
+    {
+        std::vector<core::Diagnostic> diagnostics;
+        std::ifstream in(root / "models/elder.glb", std::ios::binary);
+        const std::vector<std::uint8_t> plain((std::istreambuf_iterator<char>(in)), {});
+        CHECK(localai::SaveAnimResult(root, localai::AnimKind::Rig, "plain", plain, {}, diagnostics).empty());
+        CHECK(HasCode(diagnostics, "model.rig"));
+        CHECK_FALSE(std::filesystem::exists(root / "models/plain.glb"));
+    }
+}
+
+TEST_CASE("An FBX result needs Blender; without it the error says what to do", "[comfyui][anim]")
+{
+#ifdef _WIN32
+    _putenv_s("UMBRA_BLENDER", "C:/no/such/blender.exe");
+#else
+    setenv("UMBRA_BLENDER", "/no/such/blender", 1);
+#endif
+    std::vector<std::uint8_t> glb;
+    std::vector<core::Diagnostic> diagnostics;
+    CHECK_FALSE(localai::FbxToGlb({'K', 'a', 'y'}, glb, diagnostics));
+    REQUIRE(HasCode(diagnostics, "ai.convert"));
+    CHECK(diagnostics[0].message.find("UMBRA_BLENDER") != std::string::npos);
+#ifdef _WIN32
+    _putenv_s("UMBRA_BLENDER", "");
+#else
+    unsetenv("UMBRA_BLENDER");
+#endif
 }

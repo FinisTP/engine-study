@@ -80,6 +80,10 @@ namespace umbra::render
 
     private:
         static constexpr std::size_t framesInFlight = 2;
+    public:
+        // Joint matrices one frame can hold (64 bytes each: 1 MiB); skinned items past it draw unskinned.
+        static constexpr std::size_t maxFrameJoints = 16384;
+    private:
 
         struct Frame final
         {
@@ -87,6 +91,7 @@ namespace umbra::render
             VkSemaphore imageAvailable = VK_NULL_HANDLE;
             VkFence inFlight = VK_NULL_HANDLE;
             GpuBuffer uniformBuffer;
+            GpuBuffer jointBuffer; // skinning matrices of this frame (S8), set 0 binding 2
             VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
         };
 

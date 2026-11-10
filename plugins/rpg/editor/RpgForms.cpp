@@ -386,6 +386,10 @@ void RpgFormsPanel::EntryForm(const std::string &at, const Json &entry, const st
             models.insert(models.begin(), "");
             if (Combo("Model", entry.value("model", ""), models, text))
                 text.empty() ? remove("/model") : set("/model", text);
+            std::vector<std::string> graphs = host_->AssetList("Animations");
+            graphs.insert(graphs.begin(), "");
+            if (Combo("Animation", entry.value("animation", ""), graphs, text))
+                text.empty() ? remove("/animation") : set("/animation", text);
             floatField("Size (half-height, m)", entry.value("size", Json()), "/size", 0.8F);
             float color[4] = {1, 1, 1, 1};
             if (const Json c = entry.value("color", Json()); c.is_array() && c.size() == 4)

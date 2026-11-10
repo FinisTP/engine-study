@@ -44,7 +44,9 @@ ComfyUI and their models.
 
 | Assets | Origin | Terms |
 |---|---|---|
-| `models/hero.glb`, `elder.glb`, `bandit.glb`, `wolf.glb` | Generated with Meshy (`tools/meshy/README.md`) | Paid Meshy plan: commercial use allowed; free plan: CC BY 4.0 (credit Meshy). Check which plan made them before selling |
+| `models/hero.glb`, `elder.glb`, `bandit.glb` | Generated with Meshy; hero and bandit also rigged and animated with Meshy (`tools/meshy/README.md`) | Paid Meshy plan: commercial use allowed; free plan: CC BY 4.0 (credit Meshy). Check which plan made them before selling |
+| `models/wolf.glb` | "Wolf" from Quaternius' Ultimate Animated Animal Pack (quaternius.com, poly.pizza/m/P1gU3Qkr9r), packed by `tools/models/pack_animated.py` | CC0 1.0 (public domain); credit optional |
+| `animations/*.anim.json` | Written for this project (S8) | Project's own |
 | `models/tower.gltf`, `tower.bin` | Hand-made sample for this project (Phase 3) | Project's own |
 | `audio/*.wav` | Synthesized by `plugins/third-person/tools/make_sounds.py` (sine waves and noise) | Project's own |
 | `ui/fonts/Poppins-*.ttf`, `ui/fonts/Lora.ttf` | Google Fonts (rpg-ui plugin) | SIL Open Font License 1.1 (license files next to the fonts) |

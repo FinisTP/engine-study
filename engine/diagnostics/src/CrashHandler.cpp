@@ -8,6 +8,8 @@
 
 #if defined(_WIN32)
 #include <Windows.h>
+// After Windows.h:
+#include <DbgHelp.h>
 #endif
 
 namespace
@@ -74,9 +76,39 @@ namespace
                                        ? exceptionPointers->ExceptionRecord->ExceptionCode
                                        : 0UL;
 
-        char message[96]{};
-        std::snprintf(message, sizeof(message), "Unhandled Windows exception. Exception code: 0x%08lX", code);
+        // 1. Where it happened: the address and the module (exe or DLL) it belongs to.
+        const void *address = exceptionPointers != nullptr && exceptionPointers->ExceptionRecord != nullptr
+                                  ? exceptionPointers->ExceptionRecord->ExceptionAddress
+                                  : nullptr;
+        char module[MAX_PATH] = "?";
+        HMODULE handle = nullptr;
+        if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                               static_cast<LPCSTR>(address), &handle))
+            GetModuleFileNameA(handle, module, sizeof(module));
+        char message[MAX_PATH + 160]{};
+        std::snprintf(message, sizeof(message), "Unhandled Windows exception. Exception code: 0x%08lX at %p (%s + 0x%llX)", code, address,
+                      module, static_cast<unsigned long long>(static_cast<const char *>(address) - reinterpret_cast<const char *>(handle)));
         ReportCrash(message);
+
+        // 2. A minidump next to the program (crash-<time>.dmp): open it in Visual Studio with the
+        //    .pdb files to see the exact line and call stack.
+        char dumpPath[MAX_PATH]{};
+        SYSTEMTIME time{};
+        GetLocalTime(&time);
+        std::snprintf(dumpPath, sizeof(dumpPath), "crash-%04u%02u%02u-%02u%02u%02u.dmp", time.wYear, time.wMonth, time.wDay, time.wHour,
+                      time.wMinute, time.wSecond);
+        const HANDLE file = CreateFileA(dumpPath, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+        if (file != INVALID_HANDLE_VALUE)
+        {
+            MINIDUMP_EXCEPTION_INFORMATION info{GetCurrentThreadId(), exceptionPointers, FALSE};
+            if (MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), file, MiniDumpWithIndirectlyReferencedMemory, &info, nullptr, nullptr))
+            {
+                char saved[MAX_PATH + 64]{};
+                std::snprintf(saved, sizeof(saved), "Crash dump written: %s (in the working folder)", dumpPath);
+                ReportCrash(saved);
+            }
+            CloseHandle(file);
+        }
         return EXCEPTION_EXECUTE_HANDLER;
     }
 #endif

@@ -74,6 +74,14 @@ namespace umbra::scene
                                   Field("shadows", "bool", "Sun shadows", true)};
             environment.file = "engine: environment";
             out["environment"] = environment;
+            ComponentSchema animation;
+            animation.type = "animation";
+            animation.label = "Animation";
+            animation.description = "Plays the model's clips through an animation graph (*.anim.json): idle, walk, attack... Needs a rigged model.";
+            animation.fields = {Field("graph", "asset", "Animation graph", "")};
+            animation.fields.back().folder = "animations/";
+            animation.file = "engine: animation";
+            out["animation"] = animation;
             ComponentSchema post;
             post.type = "post";
             post.label = "Post-processing";

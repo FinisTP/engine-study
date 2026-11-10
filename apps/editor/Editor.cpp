@@ -1,6 +1,7 @@
 #include "Editor.hpp"
 #include "Widgets.hpp"
 
+#include <AnimGraph.hpp>
 #include <Log.hpp>
 #include <ModelInstance.hpp>
 #include <SceneEdits.hpp>
@@ -218,7 +219,7 @@ bool Editor::OpenScene(const std::string &scenePath)
     options.assetRoot = assetRoot_;
     options.models = [this](const std::string &path) -> const umbra::assets::Model * {
         const LoadedModel *loaded = models_.Load(path);
-        return loaded ? &loaded->model : nullptr;
+        return loaded ? loaded->model.get() : nullptr;
     };
     auto doc = std::make_unique<authoring::Document>(assetRoot_ / FromUtf8(scenePath), authoring::SceneValidator(options));
     std::vector<umbra::core::Diagnostic> diagnostics;
@@ -245,7 +246,7 @@ void Editor::RebuildWorld()
     options.assetRoot = assetRoot_;
     options.models = [&](const std::string &path) -> const umbra::assets::Model * {
         const LoadedModel *loaded = models_.Load(path);
-        return loaded ? &loaded->model : nullptr;
+        return loaded ? loaded->model.get() : nullptr;
     };
     auto fresh = std::make_unique<umbra::world::World>();
     std::vector<umbra::core::Diagnostic> diagnostics;
@@ -257,6 +258,18 @@ void Editor::RebuildWorld()
     fresh->UpdateTransforms();
     umbra::scene::BindRenderables(*fresh, [&](const std::string &model, std::uint32_t mesh) { return models_.Resolve(model, mesh); },
                                   [&](const std::string &material) { return models_.ResolveMaterial(material); });
+    // Rigged models play their graph's first state (idle) in the preview (S8).
+    std::map<std::string, std::shared_ptr<const umbra::core::AnimGraph>> graphs;
+    umbra::scene::BindAnimators(
+        *fresh, [&](const std::string &model) { return models_.Shared(model); },
+        [&](const std::string &path) {
+            if (!graphs.contains(path))
+                graphs[path] = umbra::scene::LoadAnimGraph(assetRoot_ / path, path, diagnostics);
+            return graphs[path];
+        },
+        diagnostics);
+    if (!diagnostics.empty())
+        Report(diagnostics, "Animation problems");
     world_ = std::move(fresh);
     builtRevision_ = scene_->Revision();
 }
@@ -297,7 +310,10 @@ void Editor::Update(float deltaSeconds, umbra::core::DrawList &drawList)
     drawList.camera = camera_.ToCamera();
     drawList.hud.diagnosticsWindow = false;
     if (world_)
+    {
+        world_->UpdateAnimation(deltaSeconds);
         world_->ExtractDrawList(drawList);
+    }
     for (const auto &panel : panels_)
         panel->DecorateView(*this, drawList);
     // The grid is a real (depth-tested) mesh, so objects hide it; selection and colliders are
@@ -385,12 +401,19 @@ bool Editor::MeshBounds(const umbra::world::Renderable &look, glm::vec3 &min, gl
     min = glm::vec3{-1.0F};
     max = glm::vec3{1.0F};
     const LoadedModel *loaded = models_.Load(look.model);
-    if (loaded == nullptr || look.mesh >= loaded->model.meshes.size() || loaded->model.meshes[look.mesh].data.vertices.empty())
+    if (loaded == nullptr || look.mesh >= loaded->model->meshes.size() || loaded->model->meshes[look.mesh].data.vertices.empty())
         return false;
-    const auto &vertices = loaded->model.meshes[look.mesh].data.vertices;
-    min = max = vertices[0].position;
-    for (const auto &v : vertices)
-        min = glm::min(min, v.position), max = glm::max(max, v.position);
+    // A rigged model is measured as drawn at rest (its vertices are in bind space, S8).
+    const umbra::assets::Model &model = *loaded->model;
+    std::vector<glm::vec3> points;
+    if (model.skeleton)
+        points = umbra::core::RestPositions(*model.skeleton, model.meshes[look.mesh].data);
+    else
+        for (const auto &v : model.meshes[look.mesh].data.vertices)
+            points.push_back(v.position);
+    min = max = points[0];
+    for (const glm::vec3 &p : points)
+        min = glm::min(min, p), max = glm::max(max, p);
     return true;
 }
 
@@ -987,6 +1010,8 @@ void Editor::ScanAssets()
             assets_["Sounds"].push_back(path);
             assets_["Music"].push_back(path);
         }
+        else if (name.ends_with(".anim.json"))
+            assets_["Animations"].push_back(path);
         else if (name.ends_with(".policy.json"))
             assets_["Learned AI"].push_back(path);
         else if (name.ends_with(".material.json"))
