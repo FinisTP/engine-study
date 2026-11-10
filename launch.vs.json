@@ -1,0 +1,30 @@
+{
+  "version": "0.2.1",
+  "defaults": {},
+  "configurations": [
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "UmbraEditor.exe (apps\\editor\\Release\\UmbraEditor.exe)",
+      "name": "Umbra Editor (settlement)",
+      "args": [ "scenes/settlement.scene.json" ],
+      "currentDir": "${workspaceRoot}"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "UmbraEditor.exe (apps\\editor\\Release\\UmbraEditor.exe)",
+      "name": "Umbra Editor (dungeon)",
+      "args": [ "scenes/dungeon.scene.json" ],
+      "currentDir": "${workspaceRoot}"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "UmbraEditor.exe (apps\\editor\\Debug\\UmbraEditor.exe)",
+      "name": "Umbra Editor (settlement, Debug build)",
+      "args": [ "scenes/settlement.scene.json" ],
+      "currentDir": "${workspaceRoot}"
+    }
+  ]
+}
