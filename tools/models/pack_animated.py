@@ -2,7 +2,7 @@
 #
 #   python pack_animated.py rigged.glb out.glb [--turn 0] [--texture 1024]
 #                           [--clip idle=idle.glb] [--clip walk=walk.glb#0] [--keep run=Gallop ...]
-#                           [--limit Head=40 ...]
+#                           [--limit Head=40 ...] [--rig-reversed]
 #
 # 1. A new root node turns the model (--turn degrees about Y; Meshy rigs already face -Z like
 #    Umbra), centers it and scales it so its largest half-extent is 1 (the same convention as slim_glb.py and the -1..1 sample cube).
@@ -89,6 +89,7 @@ def main():
     p.add_argument('--clip', action='append', default=[])
     p.add_argument('--keep', action='append', default=[])
     p.add_argument('--limit', action='append', default=[])
+    p.add_argument('--rig-reversed', action='store_true')
     a = p.parse_args()
     j, binb = read_glb(a.model)
 
@@ -142,6 +143,20 @@ def main():
     #    engine will draw it: each vertex moved by its joints (global joint matrix * inverse bind).
     skin0 = j['skins'][j['nodes'][mesh_node]['skin']]
     ibm = accessor(j, binb, skin0['inverseBindMatrices']).reshape(-1, 4, 4).transpose(0, 2, 1)
+    if a.rig_reversed:
+        # The rig was fitted facing the other way (README.md "A rig fitted backward"): turn the mesh
+        # half around inside the skeleton and hand each vertex to the joint of the other side.
+        joint_names = [j['nodes'][n].get('name', '') for n in skin0['joints']]
+        def other(name):
+            return 'Right' + name[4:] if name.startswith('Left') else 'Left' + name[5:] if name.startswith('Right') else name
+        swap = np.array([joint_names.index(other(n)) if other(n) in joint_names else k for k, n in enumerate(joint_names)], dtype=np.uint16)
+        for k, n in enumerate(joint_names):  # toes were fitted to the heels: let them follow the foot
+            if n.endswith('ToeBase') and n[:-7] + 'Foot' in joint_names:
+                swap[swap == k] = joint_names.index(n[:-7] + 'Foot')
+        hips = global_of(skin0['joints'][joint_names.index('Hips')])[:3, 3] if 'Hips' in joint_names else np.zeros(3)
+        pos[:, 0] = 2 * hips[0] - pos[:, 0]; pos[:, 2] = 2 * hips[2] - pos[:, 2]
+        nrm[:, 0] *= -1; nrm[:, 2] *= -1
+        jnt = swap[jnt]
     joint_mats = np.array([global_of(n) @ ibm[k] for k, n in enumerate(skin0['joints'])])
     homog = np.c_[pos, np.ones(len(pos))]
     world = np.zeros((len(pos), 4))

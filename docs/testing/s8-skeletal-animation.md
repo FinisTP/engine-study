@@ -59,6 +59,11 @@ The dungeon at noon: the rigged hero from behind, bandits standing on the floor,
 
 ![dungeon](s8/dungeon-rigged.png)
 
+**Correction (2026-11-10, `#UMBRA-90`, found by the user on Windows):** the check below looked at the
+mesh only. Meshy had fitted the hero's and bandit's skeletons facing the other way (the models
+were uploaded facing −Z), so the clips bent the body backward under a forward-facing mesh. Both
+were repacked with `--rig-reversed --turn 180` (`tools/models/README.md`).
+
 Facing was checked from the rest-pose geometry: the hero's and bandits' feet point to −Z (Umbra's
 front) with `--turn 0`; the wolf's head was at +Z and needed `--turn 180`.
 
