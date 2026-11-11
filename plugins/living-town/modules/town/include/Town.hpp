@@ -54,8 +54,19 @@ namespace umbra::town
         std::int32_t due = 0; // tick an asked favour must be kept by
     };
 
+    // A line a resident said to the player, as it was said (S23: the model's accepted wording is
+    // kept, so a loaded game shows the same words and never asks the model again for them).
+    struct SaidLine final
+    {
+        std::int32_t tick = 0;
+        std::int16_t speaker = 0;
+        std::string text;
+    };
+
     struct TownState final
     {
+        std::vector<SaidLine> said; // the most recent news told to the player (at most maxSaid)
+        static constexpr std::size_t maxSaid = 64;
         std::vector<Fact> facts;           // the most recent (at most maxFacts), oldest first
         std::vector<std::int16_t> regard;  // per resident: what they think of the player, -1000..1000
         std::vector<FavourState> favours;
@@ -106,12 +117,17 @@ namespace umbra::town
     // Memory and talk (S22, Town.md "Memory and rumours").
     // The player talks to a resident: a favour asked or thanked, else the newest thing they know
     // and have not told yet, else a greeting. Changes the state (favours, who told what).
-    std::string TalkTo(const TownDef &def, TownState &state, int resident);
+    // `worded`: another wording for the news (step 3), e.g. the model's; empty = the template.
+    std::string TalkTo(const TownDef &def, TownState &state, int resident, const std::string &worded = {});
+    // What TalkTo would do next, without doing it: the index in `facts` of the news this resident
+    // would tell (-1 = they would ask, thank or just greet). Used to have the wording ready.
+    [[nodiscard]] int NextNews(const TownDef &def, const TownState &state, int resident);
     // A fact as a plain sentence, for the chronicle and the tool.
     [[nodiscard]] std::string Sentence(const TownDef &def, const Fact &fact);
     // The same fact as `resident` would say it to the player.
     [[nodiscard]] std::string Says(const TownDef &def, const Fact &fact, int resident);
-    // What the player has learned so far: facts someone told them, oldest first.
+    // What the player has learned so far, oldest first: favours settled in person and what
+    // residents said (their words, with who said it).
     [[nodiscard]] std::vector<std::string> Chronicle(const TownDef &def, const TownState &state);
 
     // One number for the whole state: equal states give equal numbers on every compiler.

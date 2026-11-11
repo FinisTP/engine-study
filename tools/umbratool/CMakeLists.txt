@@ -8,6 +8,7 @@ target_compile_definitions(UmbraTool PRIVATE "UMBRA_PLUGIN_ASSET_DIRS=\"${UMBRA_
 target_link_libraries(
     UmbraTool
     PRIVATE
+        $<TARGET_NAME_IF_EXISTS:Umbra::TownLlama>
         Umbra::Authoring
         Umbra::Ui
         nlohmann_json::nlohmann_json

@@ -9,9 +9,11 @@
     "rpg"
   ],
   "modules": [
-    "town"
+    "town",
+    "mind"
   ],
   "links": [
-    "Umbra::Town"
+    "Umbra::Town",
+    "Umbra::TownMind"
   ]
 }

@@ -271,6 +271,8 @@ void GameFlow::UpdateExploring(const umbra::platform::Input &input)
     const int inReach = town_->Near(scene_.GetPlayerSpot().feet);
     if (inReach >= 0 && inReach != nearResident_)
         Say("[E] Talk to " + town_->NameOf(inReach));
+    if (inReach >= 0)
+        town_->Approach(inReach);
     if (inReach >= 0 && input.IsKeyPressed(InputKey::E))
         Say(town_->Talk(inReach));
     nearResident_ = inReach;

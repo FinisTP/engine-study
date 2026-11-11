@@ -197,7 +197,7 @@ days per second for seven residents).
 
 ## Limits (S21)
 
-- No model (S23): every line is a template. No storyteller or story beats (S24).
+- Lines are templates unless a model file is present (S23, `../../mind/include/Mind.md`). No storyteller or story beats (S24).
 - Residents do not walk between places: one who is shown vanishes when the town moves them.
 - A resident tells one thing per talk and never repeats it; there is no conversation screen.
 - Favours are of one kind (go and see someone) and each is asked once.

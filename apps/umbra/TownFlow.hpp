@@ -5,6 +5,7 @@
 #include "SceneRuntime.hpp"
 
 #include <Town.hpp>
+#include <TownMind.hpp>
 
 #include <nlohmann/json.hpp>
 
@@ -34,7 +35,13 @@ public:
     // the line they say. Talking can ask or settle a favour and adds to the chronicle.
     [[nodiscard]] int Near(glm::vec3 feet) const;
     [[nodiscard]] std::string NameOf(int resident) const { return def_.residents[static_cast<std::size_t>(resident)].name; }
-    std::string Talk(int resident) { return umbra::town::TalkTo(def_, state_, resident); }
+    std::string Talk(int resident) { return mind_ ? mind_->Talk(def_, state_, resident) : umbra::town::TalkTo(def_, state_, resident); }
+    // Coming near someone: their next line is worded ahead by the model, if there is one (S23).
+    void Approach(int resident)
+    {
+        if (mind_)
+            mind_->Prepare(def_, state_, resident);
+    }
     // For screens: {"day", "time", "residents": [{"name", "doing", "place", "money", "level"}],
     // "chronicle": [lines, newest first], "noChronicle"}.
     [[nodiscard]] nlohmann::json UiData() const;
@@ -47,6 +54,7 @@ private:
     umbra::town::TownDef def_;
     umbra::town::TownState state_;
     bool ready_ = false;
+    std::unique_ptr<umbra::town::TownMind> mind_; // the built-in model, when its file is there (S23)
     std::vector<std::string> problems_;
     float lastHour_ = -1.0F; // the world's hour at the last update (-1 = none yet)
     float owed_ = 0.0F;      // parts of a tick not lived yet

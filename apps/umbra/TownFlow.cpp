@@ -3,6 +3,9 @@
 #if UMBRA_PLUGIN_LIVING_TOWN
 
 #include <Log.hpp>
+#if UMBRA_TOWN_LLAMA
+#include <LlamaMind.hpp>
+#endif
 
 #include <algorithm>
 #include <chrono>
@@ -29,6 +32,25 @@ TownFlow::TownFlow(const std::filesystem::path &assets, const umbra::rpg::Conten
         problems_.push_back(umbra::core::Format(diagnostic));
         umbra::diagnostics::Error(problems_.back());
     }
+#if UMBRA_TOWN_LLAMA
+    // The built-in model: <project>/models/town.gguf (beside assets, not packed with them).
+    // Without the file the town runs on its rules and template lines.
+    if (ready_)
+    {
+        LineGuard guard;
+        LoadLineRules(assets / "town/lines.rules.json", guard.rules, diagnostics);
+        LlamaOptions options;
+        options.threads = std::max(2, static_cast<int>(std::thread::hardware_concurrency()) / 2);
+        std::string error;
+        if (std::unique_ptr<Mind> model = LoadLlamaMind(assets.parent_path() / "models/town.gguf", options, error))
+        {
+            mind_ = std::make_unique<TownMind>(std::move(model), std::move(guard));
+            umbra::diagnostics::Info("Living town: model " + mind_->ModelName() + " loaded");
+        }
+        else
+            umbra::diagnostics::Info("Living town: no model (" + error + "); residents use rules and template lines");
+    }
+#endif
     if (ready_)
         NewGame();
 }
@@ -45,6 +67,8 @@ void TownFlow::NewGame()
     lastHour_ = hour;
     owed_ = 0.0F;
     generation_ = -1; // bodies are placed again
+    if (mind_)
+        mind_->Forget();
 }
 
 void TownFlow::Update()
@@ -61,8 +85,15 @@ void TownFlow::Update()
     if (passed <= 1.0F)
         owed_ += passed * static_cast<float>(ticksPerHour);
     // 2. Whole ticks are lived; the rest waits.
+    //    With a model, residents about to be free are asked what to do; its legal picks are used.
+    if (mind_)
+        mind_->Collect();
     for (; owed_ >= 1.0F; owed_ -= 1.0F)
-        Tick(def_, state_);
+    {
+        if (mind_)
+            mind_->Think(def_, state_);
+        Tick(def_, state_, mind_ ? TownMind::Decide : nullptr, mind_.get());
+    }
     ShowResidents();
 }
 
@@ -128,6 +159,8 @@ bool TownFlow::Load(const std::string &text)
     lastHour_ = -1.0F;
     owed_ = 0.0F;
     generation_ = -1;
+    if (mind_)
+        mind_->Forget();
     return ok;
 }
 

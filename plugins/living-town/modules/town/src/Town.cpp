@@ -348,6 +348,12 @@ namespace umbra::town
             number(f.tick), number(static_cast<int>(f.kind)), number(f.who), number(f.other), number(f.what), mix(f.saw), mix(f.knows), mix(f.told);
         for (const std::int16_t regard : state.regard)
             number(regard);
+        for (const SaidLine &line : state.said)
+        {
+            number(line.tick), number(line.speaker);
+            for (const char c : line.text)
+                number(static_cast<unsigned char>(c));
+        }
         for (const FavourState &f : state.favours)
             number(static_cast<int>(f.status)), number(f.due);
         return hash;
@@ -389,7 +395,34 @@ namespace umbra::town
         return ((fact.saw & Bit(resident)) ? "I saw it myself: " : "They say ") + text + ".";
     }
 
-    std::string TalkTo(const TownDef &def, TownState &state, int resident)
+    namespace
+    {
+        bool AboutPlayer(const Fact &fact) { return fact.kind == FactKind::FavourKept || fact.kind == FactKind::FavourSkipped; }
+
+        // The news a resident tells next: the newest they know and have not told; about the player first.
+        int News(const TownState &state, int resident)
+        {
+            int news = -1;
+            for (std::size_t i = 0; i < state.facts.size(); ++i)
+                if ((state.facts[i].knows & Bit(resident)) && !(state.facts[i].told & Bit(resident)) &&
+                    (news < 0 || AboutPlayer(state.facts[i]) || !AboutPlayer(state.facts[static_cast<std::size_t>(news)])))
+                    news = static_cast<int>(i);
+            return news;
+        }
+    }
+
+    int NextNews(const TownDef &def, const TownState &state, int resident)
+    {
+        if (resident < 0 || static_cast<std::size_t>(resident) >= state.residents.size())
+            return -1;
+        for (std::size_t f = 0; f < state.favours.size(); ++f)
+            if ((state.favours[f].status == FavourStatus::Asked && def.favours[f].target == resident) ||
+                (state.favours[f].status == FavourStatus::Open && def.favours[f].resident == resident && state.regard[static_cast<std::size_t>(resident)] > -200))
+                return -1;
+        return News(state, resident);
+    }
+
+    std::string TalkTo(const TownDef &def, TownState &state, int resident, const std::string &worded)
     {
         if (resident < 0 || static_cast<std::size_t>(resident) >= state.residents.size())
             return {};
@@ -414,19 +447,15 @@ namespace umbra::town
                 return who.name + ": " + def.favours[f].ask;
             }
         // 3. The newest thing they know and have not told the player; news about the player first.
-        Fact *news = nullptr;
-        for (Fact &fact : state.facts)
-            if ((fact.knows & Bit(resident)) && !(fact.told & Bit(resident)))
-            {
-                const bool aboutPlayer = fact.kind == FactKind::FavourKept || fact.kind == FactKind::FavourSkipped;
-                const bool newsAboutPlayer = news && (news->kind == FactKind::FavourKept || news->kind == FactKind::FavourSkipped);
-                if (news == nullptr || aboutPlayer || !newsAboutPlayer)
-                    news = &fact;
-            }
-        if (news != nullptr)
+        if (const int news = News(state, resident); news >= 0)
         {
-            news->told |= Bit(resident);
-            return who.name + ": " + Says(def, *news, resident);
+            Fact &fact = state.facts[static_cast<std::size_t>(news)];
+            fact.told |= Bit(resident);
+            // Kept as it was said, for the chronicle.
+            if (state.said.size() == TownState::maxSaid)
+                state.said.erase(state.said.begin());
+            state.said.push_back({state.tick, static_cast<std::int16_t>(resident), worded.empty() ? Says(def, fact, resident) : worded});
+            return who.name + ": " + state.said.back().text;
         }
         // 4. Nothing new: a greeting that shows what they think of the player, and what they are doing.
         const int regard = state.regard[static_cast<std::size_t>(resident)];
@@ -436,10 +465,17 @@ namespace umbra::town
 
     std::vector<std::string> Chronicle(const TownDef &def, const TownState &state)
     {
-        std::vector<std::string> lines;
+        // Two lists in time order, merged: what the player did, and what people said.
+        std::vector<std::pair<std::int32_t, std::string>> entries;
         for (const Fact &fact : state.facts)
-            if (fact.told != 0)
-                lines.push_back("Day " + std::to_string(fact.tick / ticksPerDay + 1) + ": " + Sentence(def, fact) + ".");
+            if (fact.told != 0 && AboutPlayer(fact))
+                entries.emplace_back(fact.tick, Sentence(def, fact) + ".");
+        for (const SaidLine &line : state.said)
+            entries.emplace_back(line.tick, def.residents[static_cast<std::size_t>(line.speaker)].name + ": \"" + line.text + "\"");
+        std::stable_sort(entries.begin(), entries.end(), [](const auto &a, const auto &b) { return a.first < b.first; });
+        std::vector<std::string> lines;
+        for (const auto &[tick, text] : entries)
+            lines.push_back("Day " + std::to_string(tick / ticksPerDay + 1) + ": " + text);
         return lines;
     }
 }

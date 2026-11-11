@@ -69,6 +69,8 @@ target_link_libraries(
         Umbra::Game
         $<TARGET_NAME_IF_EXISTS:Umbra::Policy>
         $<TARGET_NAME_IF_EXISTS:Umbra::Town>
+        $<TARGET_NAME_IF_EXISTS:Umbra::TownMind>
+        $<TARGET_NAME_IF_EXISTS:Umbra::TownLlama>
         Umbra::Warnings
         Umbra::Sanitizers
 )

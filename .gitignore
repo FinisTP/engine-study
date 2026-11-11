@@ -30,3 +30,5 @@ vcpkg_installed/
 # Operating systems
 .DS_Store
 Thumbs.db
+# The living town's model file (large; downloaded once, see plugins/living-town Mind.md)
+projects/*/models/*.gguf

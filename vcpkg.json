@@ -26,5 +26,13 @@
     "volk",
     "tinygltf",
     "vulkan-memory-allocator"
-  ]
+  ],
+  "features": {
+    "town-model": {
+      "description": "The living town's built-in language model (llama.cpp); without it residents use rules and template lines",
+      "dependencies": [
+        "llama-cpp"
+      ]
+    }
+  }
 }
