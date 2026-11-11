@@ -101,6 +101,8 @@ namespace umbra::town
         };
     }
 
+    bool LlamaHasGpu() { return llama_supports_gpu_offload(); }
+
     std::unique_ptr<Mind> LoadLlamaMind(const std::filesystem::path &file, const LlamaOptions &options, std::string &error)
     {
         std::error_code ignored;
@@ -112,7 +114,7 @@ namespace umbra::town
         llama_log_set(Quiet, nullptr);
         llama_backend_init();
         llama_model_params modelParams = llama_model_default_params();
-        modelParams.n_gpu_layers = options.gpuLayers;
+        modelParams.n_gpu_layers = options.gpuLayers < 0 ? (llama_supports_gpu_offload() ? 999 : 0) : options.gpuLayers;
         llama_model *model = llama_model_load_from_file(file.string().c_str(), modelParams);
         if (model == nullptr)
         {

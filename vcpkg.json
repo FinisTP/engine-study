@@ -33,6 +33,18 @@
       "dependencies": [
         "llama-cpp"
       ]
+    },
+    "town-model-gpu": {
+      "description": "Runs the town's model on the graphics card through Vulkan (needs the Vulkan SDK; builds shaderc once)",
+      "dependencies": [
+        "llama-cpp",
+        {
+          "name": "ggml",
+          "features": [
+            "vulkan"
+          ]
+        }
+      ]
     }
   }
 }

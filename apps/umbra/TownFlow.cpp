@@ -45,7 +45,7 @@ TownFlow::TownFlow(const std::filesystem::path &assets, const umbra::rpg::Conten
         if (std::unique_ptr<Mind> model = LoadLlamaMind(assets.parent_path() / "models/town.gguf", options, error))
         {
             mind_ = std::make_unique<TownMind>(std::move(model), std::move(guard));
-            umbra::diagnostics::Info("Living town: model " + mind_->ModelName() + " loaded");
+            umbra::diagnostics::Info("Living town: model " + mind_->ModelName() + " loaded (" + (LlamaHasGpu() ? "graphics card" : "CPU") + ")");
         }
         else
             umbra::diagnostics::Info("Living town: no model (" + error + "); residents use rules and template lines");

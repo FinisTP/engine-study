@@ -125,7 +125,22 @@ namespace umbra::town
         }
     }
 
-    LineGuard::LineGuard() : filters{CleanText, Length, Banned, OnlyTheirNames, KeepsTheirNames, NotShouting, SameYesOrNo, SawOnlyIfThere} {}
+    namespace
+    {
+        // 9. No invented sources: "I heard it from the miller" adds a person the town does not
+        //    have. Who told whom is the town's business (rumours), not the model's.
+        std::string NoNewSource(const LineContext &context, const LineRules &, const std::string &line)
+        {
+            const std::string lower = " " + Lower(line) + " ";
+            const std::string model = " " + Lower(context.templated) + " ";
+            for (const char *source : {" from the ", " told me", " tells me", " according to ", " heard it from ", " said so", " says so"})
+                if (lower.find(source) != std::string::npos && model.find(source) == std::string::npos)
+                    return "names a source the fact does not have";
+            return {};
+        }
+    }
+
+    LineGuard::LineGuard() : filters{CleanText, Length, Banned, OnlyTheirNames, KeepsTheirNames, NotShouting, SameYesOrNo, SawOnlyIfThere, NoNewSource} {}
 
     std::string LineGuard::Objection(const LineContext &context, const std::string &line) const
     {

@@ -96,6 +96,9 @@ TEST_CASE("The guard: plain, short, clean lines about the fact's own people pass
     Fact seen = fact;
     seen.saw = 1ULL << hale;
     CHECK(guard.Objection(LineContext{def, seen, hale, "I saw it myself: Tobin now counts Edda as a friend."}, "Tobin and Edda are friends, I watched them myself.").empty());
+    CHECK(guard.Objection(compared, "Tobin and Edda are friends, I heard it from the miller.") == "names a source the fact does not have");
+    CHECK(guard.Objection(compared, "Tobin and Edda are friends, a little bird told me.") == "names a source the fact does not have");
+    CHECK(guard.Objection(compared, "Tobin and Edda are friends, from what I hear.").empty());
     const LineContext denied{def, fact, hale, "Tobin and Edda are not speaking."};
     CHECK(guard.Objection(denied, "Tobin and Edda get on well.") == "turns the meaning around");
     CHECK(guard.Objection(denied, "Tobin will not talk to Edda.").empty());

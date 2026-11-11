@@ -30,7 +30,7 @@ namespace
             return umbra::tool::Report(diagnostics, 1, args.json);
         LlamaOptions options;
         options.threads = args.Int("threads", std::max(2, static_cast<int>(std::thread::hardware_concurrency()) / 2));
-        options.gpuLayers = args.Int("gpu", 0);
+        options.gpuLayers = args.Int("gpu", -1);
         options.showPrompt = args.Has("show-prompt");
         std::string error;
         const auto loadStart = std::chrono::steady_clock::now();
@@ -41,7 +41,8 @@ namespace
             return 1;
         }
         const auto ms = [](auto from) { return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - from).count(); };
-        std::cout << "model " << model->Name() << " loaded in " << ms(loadStart) << " ms, " << options.threads << " threads, " << options.gpuLayers << " GPU layers\n\n";
+        std::cout << "model " << model->Name() << " loaded in " << ms(loadStart) << " ms, " << options.threads << " threads, graphics card: "
+                  << (!LlamaHasGpu() ? "not in this build (CPU only)" : options.gpuLayers < 0 ? "all layers" : std::to_string(options.gpuLayers) + " layers") << "\n\n";
 
         // 1. A town some days in, so people have news.
         TownState state = NewTown(def, static_cast<std::uint64_t>(args.Long("seed", 1)));
@@ -97,4 +98,4 @@ namespace
     }
 }
 
-UMBRA_TOOL_COMMAND(TownMindCommand, "town-mind", "town-mind <town file> --model <gguf file> [--days 9] [--seed 1] [--lines 3] [--threads n] [--gpu layers] [--show-prompt 1]", TownMindCommand);
+UMBRA_TOOL_COMMAND(TownMindCommand, "town-mind", "town-mind <town file> --model <gguf file> [--days 9] [--seed 1] [--lines 3] [--threads n] [--gpu layers (default all, 0 = CPU)] [--show-prompt 1]", TownMindCommand);

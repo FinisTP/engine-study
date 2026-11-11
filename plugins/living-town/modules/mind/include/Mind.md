@@ -86,6 +86,7 @@ run in order; the first that objects wins, the reason is counted and kept
 | 6 | not shouting | a line that is mostly capital letters |
 | 7 | same yes or no | a line that denies ("not", "no longer", "never", ...) where the template does not, or the other way round |
 | 8 | no false witness | "I saw", "I watched", "myself" from someone who only heard of it |
+| 9 | no new source | "I heard it from the miller", "... told me", "according to ...": a person or source the fact does not have |
 
 The list and the limit are data: `town/lines.rules.json` (`{"maxLength": 160, "banned": [...]}`).
 A project adds its own checks in code: `guard.filters.push_back(myCheck)`; a check is a function
@@ -145,8 +146,23 @@ the milliseconds; then every resident's pick; then the totals. A model is good e
 lines are accepted and read well, picks are all valid, and a line takes well under the second or
 two a player needs to walk up to someone.
 
-`--gpu` only helps if llama.cpp was built for a GPU; the vcpkg package is CPU-only by default,
-which a small model does not need more than.
+### On the graphics card
+
+Measured on the user's PC (2026-11-11, CPU, 8 threads): Qwen3 1.7B 2.4 s a line but it only
+copies the examples; Qwen3 4B writes its own lines ("Edda's getting the hang of things, I
+suppose") but takes 6.0 s a line and 2.4 s a pick. So the 4B model needs the graphics card.
+
+The vcpkg feature `town-model-gpu` builds llama.cpp's engine (ggml) with **Vulkan**, the same
+graphics interface the game draws with, so it works on NVIDIA, AMD and Intel cards and needs no
+extra SDK beyond the Vulkan SDK the project already uses. The first build also compiles shaderc
+(a shader compiler), once. The `windows-msvc` preset switches it on
+(`"VCPKG_MANIFEST_FEATURES": "town-model;town-model-gpu"`); if it fails to build, remove
+`;town-model-gpu` and the model runs on the CPU as before.
+
+By default every layer of the model goes to the card (`LlamaOptions::gpuLayers = -1`). The model
+then shares video memory with the game: a 2.5 GB model on a 4 GB card leaves little. If loading
+fails or the game stutters, `--gpu 20` (or another number of layers) keeps part of the model on
+the CPU; `--gpu 0` is CPU only. `UmbraTool town-mind` prints which it used.
 
 ## Tests
 

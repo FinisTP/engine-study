@@ -90,6 +90,29 @@ three residents who had only heard a thing said "I watched her myself" (`#UMBRA-
 for that). Conclusion for Qwen3 1.7B on CPU: safe behind the guard, valid picks, but it copies
 rather than writes, at 2.4 s a line. Model size and CPU/GPU are the user's decision.
 
+## 2e. Qwen3 4B on CPU (user's PC, 2026-11-11)
+
+| Measure | Result |
+|---|---|
+| Picks | 7 of 7 valid, about 2.4 s each |
+| Lines | 15 of 15 accepted, **6.0 s each** (slowest 6.9 s); loaded in 4.4 s |
+
+The 4B model writes its own lines in the residents' voices where the 1.7B copied. One line
+invented a source ("I heard it from the miller"); `#UMBRA-97` adds a ninth check for that.
+Decision (user, 2026-11-11): use the 4B model and run it on the graphics card. `#UMBRA-97` adds
+the vcpkg feature `town-model-gpu` (ggml with Vulkan) and offloads all layers by default.
+**Not yet built or measured on the user's PC.**
+
+## 2f. Checklist for the graphics-card build (user)
+
+1. Rebuild with the `windows-msvc` preset: vcpkg rebuilds ggml with Vulkan and builds shaderc
+   (long, once). If it fails, send the error and remove `;town-model-gpu` from `CMakePresets.json`.
+2. Run `town-mind` with the 4B file: the first line must say `graphics card: all layers`.
+   Send the output (times per line and per pick).
+3. If loading fails or it is slow, try `--gpu 20`, then `--gpu 10` (part of the model on the CPU).
+4. Start the game with the 4B file as `models\town.gguf` and watch for stutter while walking up
+   to residents: the model and the game now share the card's memory.
+
 ## 3. Windows checklist (user)
 
 1. Build with the `windows-msvc` preset. The first configure now also builds llama.cpp through
