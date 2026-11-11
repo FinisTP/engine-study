@@ -23,7 +23,7 @@
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       },
       "environment": {
-        "VCPKG_MAX_CONCURRENCY": "4"
+        "VCPKG_MAX_CONCURRENCY": "1"
       }
     },
     {
