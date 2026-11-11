@@ -92,7 +92,25 @@ namespace umbra::town
         }
     }
 
-    LineGuard::LineGuard() : filters{CleanText, Length, Banned, OnlyTheirNames, KeepsTheirNames, NotShouting} {}
+    namespace
+    {
+        // 7. The same yes or no: a line that says "no longer", "not", "never" where the template
+        //    does not (or the other way round) has most likely turned the fact upside down.
+        bool Denies(const std::string &line)
+        {
+            const std::string lower = " " + Lower(line) + " ";
+            for (const char *word : {" not ", "n't ", " no longer ", " never ", " no more ", " nobody ", " neither ", " former "})
+                if (lower.find(word) != std::string::npos)
+                    return true;
+            return false;
+        }
+        std::string SameYesOrNo(const LineContext &context, const LineRules &, const std::string &line)
+        {
+            return !context.templated.empty() && Denies(context.templated) != Denies(line) ? "turns the meaning around" : "";
+        }
+    }
+
+    LineGuard::LineGuard() : filters{CleanText, Length, Banned, OnlyTheirNames, KeepsTheirNames, NotShouting, SameYesOrNo} {}
 
     std::string LineGuard::Objection(const LineContext &context, const std::string &line) const
     {

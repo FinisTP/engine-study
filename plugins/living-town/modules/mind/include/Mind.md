@@ -30,8 +30,8 @@ never "almost" right.
 
 ### The prompt
 
-A small model follows an example far better than a description, so the wording request is one
-worked example and then the real line:
+A small model follows examples far better than a description, so the wording request is worked
+examples and then the real line (shown here with one example; there are three):
 
 ```
 Reword one line of dialogue for a villager in a game. Keep every name and the meaning, add
@@ -55,6 +55,13 @@ accepted, most starting with nonsense like "INGLESE,"):
 - **Describing the speaker** ("You are ..., troubled by ...") leaked into the lines. The prompt
   now gives one word of tone and nothing else about them.
 
+The second run (same model, `#UMBRA-94`): 13 of 15 accepted, 1.7 s a line. But the single example
+was about a falling-out, and three residents then said "Tobin and Edda are no longer friends" for
+a *new* friendship: the guard passed a line that said the opposite. So (`#UMBRA-95`) there are
+now three examples of different kinds whose order turns with the speaker and the fact, a
+resident may have a `voice` in the town file (`"voice": "gruff, few words"`), and the guard has a
+seventh check that compares yes-and-no with the template.
+
 `UmbraTool town-mind ... --show-prompt 1` prints the first prompt exactly as the model gets it.
 
 ## The guard (`LineGuard`)
@@ -71,6 +78,7 @@ run in order; the first that objects wins, the reason is counted and kept
 | 4 | only their names | naming a resident who is neither part of the fact nor the speaker (inventing) |
 | 5 | keeps their names | not naming someone the fact is about (the line lost its fact) |
 | 6 | not shouting | a line that is mostly capital letters |
+| 7 | same yes or no | a line that denies ("not", "no longer", "never", ...) where the template does not, or the other way round |
 
 The list and the limit are data: `town/lines.rules.json` (`{"maxLength": 160, "banned": [...]}`).
 A project adds its own checks in code: `guard.filters.push_back(myCheck)`; a check is a function

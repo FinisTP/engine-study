@@ -15,6 +15,7 @@ namespace umbra::town
         const TownDef &def;
         const Fact &fact;  // what the line is about
         int speaker = 0;
+        std::string templated = {}; // the template line it rewords (for checks that compare with it)
     };
 
     struct LineRules final
@@ -33,7 +34,7 @@ namespace umbra::town
         LineRules rules;
         std::vector<LineFilter> filters; // run in order; add your own with push_back
 
-        LineGuard(); // the built-in checks: clean text, length, banned words, only the fact's people, all of them, no shouting
+        LineGuard(); // the built-in checks: clean text, length, banned words, only the fact's people, all of them, no shouting, same yes-or-no
         [[nodiscard]] std::string Objection(const LineContext &context, const std::string &line) const;
     };
 

@@ -20,12 +20,21 @@ namespace umbra::town
     {
         const std::string &name = def.residents[static_cast<std::size_t>(speaker)].name;
         MindRequest request;
-        // A small model follows an example far better than a description: one worked line, then ours.
-        // (The example's people are not residents, so the guard would catch them being copied.)
-        request.prompt = "Reword one line of dialogue for a villager in a game. Keep every name and the meaning, add nothing. "
-                         "Reply with the new line only: one short spoken sentence.\n\n"
-                         "Speaker: Marta (tone: plain)\nLine: They say Jonas has fallen out with Petra.\nReworded: Word is Jonas and Petra are not speaking any more.\n\n"
-                         "Speaker: " + name + " (tone: " + Tone(state, speaker) + ")\nLine: " + Says(def, fact, speaker) + "\nReworded:";
+        // A small model follows examples far better than a description: three worked lines of
+        // different kinds (so it copies neither one's opening nor one's meaning), then ours.
+        // Their order turns with the speaker and the fact, so residents do not all sound alike.
+        // (The examples' people are not residents: the guard catches them being copied.)
+        static const char *const examples[3] = {
+            "Speaker: Marta (warm, talkative; tone: plain)\nLine: They say Jonas now counts Petra as a friend.\nReworded: Jonas and Petra have become good friends, from what I hear.\n\n",
+            "Speaker: Old Anselm (gruff, few words; tone: cold)\nLine: I saw it myself: Petra has grown better at their work.\nReworded: Petra knows her trade now, I watched her myself.\n\n",
+            "Speaker: Lise (shy; tone: warm)\nLine: They say Jonas has fallen out with Anselm.\nReworded: I heard Jonas and Anselm had a falling out, sadly.\n\n"};
+        const std::size_t first = static_cast<std::size_t>(speaker + fact.tick) % 3;
+        const std::string &voice = def.residents[static_cast<std::size_t>(speaker)].voice;
+        request.prompt = "Reword one line of dialogue for a villager in a game, in the speaker's own voice. Keep every name and the exact meaning, add nothing. "
+                         "Reply with the new line only: one short spoken sentence.\n\n";
+        for (std::size_t i = 0; i < 3; ++i)
+            request.prompt += examples[(first + i) % 3];
+        request.prompt += "Speaker: " + name + " (" + (voice.empty() ? "" : voice + "; ") + "tone: " + Tone(state, speaker) + ")\nLine: " + Says(def, fact, speaker) + "\nReworded:";
         // One plain sentence: a capital letter, then letters, spaces, commas and apostrophes, ending properly.
         request.grammar = "root ::= \" \"? [A-Z] [a-zA-Z ,'-]{8,110} [.!?]\n";
         request.maxTokens = 40;
@@ -148,7 +157,7 @@ namespace umbra::town
         if (!ready.asked || !SameFact(ready.fact, job.fact))
             return; // they have other news by now
         const std::string line = Tidy(job.answer);
-        const std::string objection = line.empty() ? "no answer" : guard_.Objection({*def_, job.fact, job.resident}, line);
+        const std::string objection = line.empty() ? "no answer" : guard_.Objection({*def_, job.fact, job.resident, Says(*def_, job.fact, job.resident)}, line);
         if (!objection.empty())
         {
             ++stats_.refused;

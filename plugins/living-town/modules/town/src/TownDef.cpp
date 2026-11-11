@@ -133,6 +133,7 @@ namespace umbra::town
             resident.id = id_of(r, field);
             resident.name = text_of(r, "name");
             resident.actor = text_of(r, "actor");
+            resident.voice = text_of(r, "voice");
             if (content != nullptr && content->FindActor(resident.actor) == nullptr)
                 bad("actor", field + ".actor", "no actor \"" + resident.actor + "\" in the RPG content");
             resident.home = def.Place(text_of(r, "home"));

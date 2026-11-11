@@ -62,7 +62,7 @@ namespace
                 const auto start = std::chrono::steady_clock::now();
                 const std::string line = Tidy(model->Complete(WordingRequest(def, state, fact, resident)));
                 const long long took = ms(start);
-                const std::string objection = line.empty() ? "no answer" : guard.Objection({def, fact, resident}, line);
+                const std::string objection = line.empty() ? "no answer" : guard.Objection({def, fact, resident, Says(def, fact, resident)}, line);
                 std::cout << def.residents[static_cast<std::size_t>(resident)].name << "\n  template: " << Says(def, fact, resident) << "\n  model:    " << line
                           << "\n  " << (objection.empty() ? "accepted" : "REFUSED (" + objection + ")") << ", " << took << " ms\n";
                 ++lines, passed += objection.empty(), lineMs += took, slowest = std::max(slowest, took);

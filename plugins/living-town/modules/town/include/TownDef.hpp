@@ -54,6 +54,7 @@ namespace umbra::town
     {
         std::string id, name;
         std::string actor; // the RPG actor this person is (stats, skills, look)
+        std::string voice; // a few words on how they talk ("gruff, few words"), for the model (S23)
         int home = 0, work = 0;
         int money = 0;
         std::vector<ScheduleEntry> schedule; // first matching entry is what they plan to do

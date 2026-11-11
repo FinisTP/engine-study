@@ -86,6 +86,14 @@ TEST_CASE("The guard: plain, short, clean lines about the fact's own people pass
     CHECK(guard.Objection(context, "Tobin has found a friend, I hear.") == "does not name Edda");
     CHECK(guard.Objection(context, "Some people get on well these days.") == "does not name Tobin");
     CHECK(guard.Objection(context, "TOBIN AND EDDA ARE FRIENDS NOW, I HEAR.") == "shouting");
+    // With the template to compare against: a line that turns the fact around is refused.
+    const LineContext compared{def, fact, hale, "They say Tobin now counts Edda as a friend."};
+    CHECK(guard.Objection(compared, "Word is Tobin and Edda are no longer friends.") == "turns the meaning around");
+    CHECK(guard.Objection(compared, "Tobin and Edda aren't friends, they say.") == "turns the meaning around");
+    CHECK(guard.Objection(compared, "Tobin and Edda have become friends, I hear.").empty());
+    const LineContext denied{def, fact, hale, "Tobin and Edda are not speaking."};
+    CHECK(guard.Objection(denied, "Tobin and Edda get on well.") == "turns the meaning around");
+    CHECK(guard.Objection(denied, "Tobin will not talk to Edda.").empty());
     // A project adds its own check.
     guard.filters.push_back([](const LineContext &, const LineRules &, const std::string &line) { return line.find('!') != std::string::npos ? std::string("shouting") : std::string(); });
     CHECK(guard.Objection(context, "Tobin and Edda are friends!") == "shouting");
@@ -115,7 +123,8 @@ TEST_CASE("News in the model's words when a checked line is ready; else the temp
         std::string prompt, grammar;
         auto mind = Make([&](const MindRequest &r) { prompt = r.prompt, grammar = r.grammar; return " \"" + good + "\" "; });
         mind->Prepare(def, state, speaker);
-        CHECK(prompt.find("Speaker: " + name + " (tone: plain)") != std::string::npos);
+        CHECK(prompt.find("Speaker: " + name + " (") != std::string::npos);
+        CHECK(prompt.find("tone: plain)\nLine: ") != std::string::npos);
         CHECK(prompt.ends_with(Says(def, news, speaker) + "\nReworded:"));
         CHECK(grammar.starts_with("root ::= "));
         CHECK(mind->Talk(def, state, speaker) == name + ": " + good);

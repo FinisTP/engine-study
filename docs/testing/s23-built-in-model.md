@@ -64,6 +64,20 @@ something else (an empty think block is now added); the prompt described the spe
 "not shouting"). The safety side held: nothing refused reached the player, and every pick was
 legal. **To be measured again by the user.**
 
+## 2c. Second real run (user's PC, 2026-11-11, after `#UMBRA-94`)
+
+| Measure | Result |
+|---|---|
+| Picks | 7 of 7 valid, about 880 ms each |
+| Lines | **13 of 15 accepted**, 1.7 s each (slowest 2.0 s) |
+
+The nonsense openings are gone. Remaining faults: three accepted lines said the opposite of the
+fact ("Tobin and Edda are no longer friends" for a new friendship, copied from the one example,
+which was about a falling-out); two lines dropped the fact ("I saw it myself.", refused by the
+guard); nearly every line began "Word is". Fixes in `#UMBRA-95`: three examples of different
+kinds in turning order, an optional `voice` per resident, a seventh guard check that compares
+yes-and-no with the template. **To be measured again.**
+
 ## 3. Windows checklist (user)
 
 1. Build with the `windows-msvc` preset. The first configure now also builds llama.cpp through

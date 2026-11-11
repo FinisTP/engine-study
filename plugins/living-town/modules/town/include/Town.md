@@ -31,7 +31,7 @@ Code: `TownDef.hpp` (the town as written, never changes), `Town.hpp` (the state 
 | need | `id`, `name`, `risePerDay`: how much it grows in a day if nothing is done (a need runs 0..1000) |
 | place | `id`, `name`; `owner` (the resident paid for what is bought here); `scene` + `marker` (where it is in the game world; without them the place is off screen) |
 | activity | `id`, `name`, `where` (`home`, `work` or a place id), `hours`, `openFrom`/`openTo` (hours of the day; from > to wraps midnight), `relief` (per need, per hour), `cost` and `wage` (coins per hour), `xp` per hour, `social` |
-| resident | `id`, `name`, `actor` (their RPG actor: stats, skills, look), `home`, `work`, `money`, `schedule` (first entry matching the hour is the plan), `bonds` (starting feelings, −1000..1000) |
+| resident | `id`, `name`, `actor` (their RPG actor: stats, skills, look), `voice` (a few words on how they talk, for the model), `home`, `work`, `money`, `schedule` (first entry matching the hour is the plan), `bonds` (starting feelings, −1000..1000) |
 
 The first activity must be free, at home and always open: it is what anyone can always do.
 Nothing says "fantasy": a modern town has other needs, places and activities, the same rules.
