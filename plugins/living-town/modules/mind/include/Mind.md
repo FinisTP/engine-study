@@ -62,6 +62,12 @@ now three examples of different kinds whose order turns with the speaker and the
 resident may have a `voice` in the town file (`"voice": "gruff, few words"`), and the guard has a
 seventh check that compares yes-and-no with the template.
 
+The third run (`#UMBRA-95`): 15 of 15 accepted, 2.4 s a line, nothing turned around. But the
+lines are the examples with the names changed ("... have become good friends, from what I hear",
+"... knows her trade now, I watched her myself"), also from residents who had only heard: a
+1.7B model copies rather than writes. An eighth check now refuses a claim to have seen something
+from someone who was not there. Whether a larger model writes its own lines is the open question.
+
 `UmbraTool town-mind ... --show-prompt 1` prints the first prompt exactly as the model gets it.
 
 ## The guard (`LineGuard`)
@@ -79,6 +85,7 @@ run in order; the first that objects wins, the reason is counted and kept
 | 5 | keeps their names | not naming someone the fact is about (the line lost its fact) |
 | 6 | not shouting | a line that is mostly capital letters |
 | 7 | same yes or no | a line that denies ("not", "no longer", "never", ...) where the template does not, or the other way round |
+| 8 | no false witness | "I saw", "I watched", "myself" from someone who only heard of it |
 
 The list and the limit are data: `town/lines.rules.json` (`{"maxLength": 160, "banned": [...]}`).
 A project adds its own checks in code: `guard.filters.push_back(myCheck)`; a check is a function

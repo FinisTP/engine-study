@@ -110,7 +110,22 @@ namespace umbra::town
         }
     }
 
-    LineGuard::LineGuard() : filters{CleanText, Length, Banned, OnlyTheirNames, KeepsTheirNames, NotShouting, SameYesOrNo} {}
+    namespace
+    {
+        // 8. No false witness: only someone who was there may say they saw it.
+        std::string SawOnlyIfThere(const LineContext &context, const LineRules &, const std::string &line)
+        {
+            if (context.speaker == context.fact.who || (context.fact.saw & (1ULL << context.speaker)))
+                return {};
+            const std::string lower = " " + Lower(line) + " ";
+            for (const char *claim : {" i saw ", " i watched ", " i was there", " myself", " my own eyes", " i witnessed "})
+                if (lower.find(claim) != std::string::npos)
+                    return "claims to have seen it";
+            return {};
+        }
+    }
+
+    LineGuard::LineGuard() : filters{CleanText, Length, Banned, OnlyTheirNames, KeepsTheirNames, NotShouting, SameYesOrNo, SawOnlyIfThere} {}
 
     std::string LineGuard::Objection(const LineContext &context, const std::string &line) const
     {

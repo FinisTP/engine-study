@@ -78,6 +78,18 @@ guard); nearly every line began "Word is". Fixes in `#UMBRA-95`: three examples 
 kinds in turning order, an optional `voice` per resident, a seventh guard check that compares
 yes-and-no with the template. **To be measured again.**
 
+## 2d. Third real run (user's PC, 2026-11-11, after `#UMBRA-95`)
+
+| Measure | Result |
+|---|---|
+| Picks | 7 of 7 valid, about 820 ms each |
+| Lines | **15 of 15 accepted**, 2.4 s each (slowest 2.8 s) |
+
+No line turned its fact around. The lines are the worked examples with the names changed, and
+three residents who had only heard a thing said "I watched her myself" (`#UMBRA-96` adds a check
+for that). Conclusion for Qwen3 1.7B on CPU: safe behind the guard, valid picks, but it copies
+rather than writes, at 2.4 s a line. Model size and CPU/GPU are the user's decision.
+
 ## 3. Windows checklist (user)
 
 1. Build with the `windows-msvc` preset. The first configure now also builds llama.cpp through

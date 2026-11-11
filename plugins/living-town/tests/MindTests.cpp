@@ -91,6 +91,11 @@ TEST_CASE("The guard: plain, short, clean lines about the fact's own people pass
     CHECK(guard.Objection(compared, "Word is Tobin and Edda are no longer friends.") == "turns the meaning around");
     CHECK(guard.Objection(compared, "Tobin and Edda aren't friends, they say.") == "turns the meaning around");
     CHECK(guard.Objection(compared, "Tobin and Edda have become friends, I hear.").empty());
+    // Hale was not there (the fact's `saw` is empty): he may not claim to have seen it.
+    CHECK(guard.Objection(compared, "Tobin and Edda are friends, I watched them myself.") == "claims to have seen it");
+    Fact seen = fact;
+    seen.saw = 1ULL << hale;
+    CHECK(guard.Objection(LineContext{def, seen, hale, "I saw it myself: Tobin now counts Edda as a friend."}, "Tobin and Edda are friends, I watched them myself.").empty());
     const LineContext denied{def, fact, hale, "Tobin and Edda are not speaking."};
     CHECK(guard.Objection(denied, "Tobin and Edda get on well.") == "turns the meaning around");
     CHECK(guard.Objection(denied, "Tobin will not talk to Edda.").empty());
