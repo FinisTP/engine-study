@@ -21,6 +21,9 @@
         "VCPKG_MANIFEST_FEATURES": "town-model;town-model-gpu",
         "BUILD_TESTING": "ON",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      },
+      "environment": {
+        "VCPKG_MAX_CONCURRENCY": "4"
       }
     },
     {
