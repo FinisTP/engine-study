@@ -8,16 +8,11 @@ namespace umbra::town
 {
     namespace
     {
-        // The few facts about a person the model gets, so the voice fits.
-        std::string Mood(const TownDef &def, const TownState &state, int resident)
+        // One word for how the speaker feels towards the player, so the voice fits.
+        const char *Tone(const TownState &state, int resident)
         {
             const int regard = state.regard[static_cast<std::size_t>(resident)];
-            std::string worst = "nothing much";
-            int most = def.urgent / 2;
-            for (std::size_t n = 0; n < def.needs.size(); ++n)
-                if (state.Need(static_cast<std::size_t>(resident), n) > most)
-                    most = state.Need(static_cast<std::size_t>(resident), n), worst = def.needs[n].name;
-            return std::string(regard >= 60 ? "likes" : regard <= -60 ? "dislikes" : "has no opinion of") + " the newcomer; troubled by: " + worst;
+            return regard >= 60 ? "warm" : regard <= -60 ? "cold" : "plain";
         }
     }
 
@@ -25,12 +20,15 @@ namespace umbra::town
     {
         const std::string &name = def.residents[static_cast<std::size_t>(speaker)].name;
         MindRequest request;
-        request.prompt = "You are " + name + ", who lives in a small town. You " + Mood(def, state, speaker) +
-                         ".\nSay the following to the newcomer in your own words, as one short spoken sentence. Keep every name. Add no new facts.\n" +
-                         "What to say: " + Says(def, fact, speaker) + "\n" + name + " says: ";
-        // One or two plain sentences: a capital letter, then letters, spaces and light punctuation, ending properly.
-        request.grammar = "root ::= [A-Z] [a-zA-Z ,;:'-]{8,150} [.!?]\n";
-        request.maxTokens = 60;
+        // A small model follows an example far better than a description: one worked line, then ours.
+        // (The example's people are not residents, so the guard would catch them being copied.)
+        request.prompt = "Reword one line of dialogue for a villager in a game. Keep every name and the meaning, add nothing. "
+                         "Reply with the new line only: one short spoken sentence.\n\n"
+                         "Speaker: Marta (tone: plain)\nLine: They say Jonas has fallen out with Petra.\nReworded: Word is Jonas and Petra are not speaking any more.\n\n"
+                         "Speaker: " + name + " (tone: " + Tone(state, speaker) + ")\nLine: " + Says(def, fact, speaker) + "\nReworded:";
+        // One plain sentence: a capital letter, then letters, spaces, commas and apostrophes, ending properly.
+        request.grammar = "root ::= \" \"? [A-Z] [a-zA-Z ,'-]{8,110} [.!?]\n";
+        request.maxTokens = 40;
         request.seed = static_cast<std::uint32_t>(state.seed ^ static_cast<std::uint64_t>(fact.tick * 31 + speaker));
         return request;
     }

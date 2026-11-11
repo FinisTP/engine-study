@@ -14,7 +14,8 @@ namespace umbra::town
         int threads = 4;       // CPU threads for one answer
         int gpuLayers = 0;     // layers on the GPU (0 = CPU only; 99 = all, if llama.cpp was built for a GPU)
         int context = 1024;    // tokens the model sees at once: a prompt here is about 150
-        float temperature = 0.7F;
+        float temperature = 0.6F;
+        bool showPrompt = false; // print the first prompt exactly as the model gets it (for tuning)
     };
 
     // Loads the model; null with `error` set if the file is missing or not a usable GGUF.

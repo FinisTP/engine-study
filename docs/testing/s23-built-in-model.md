@@ -47,6 +47,23 @@ ending in `.`, `!` or `?`), every pick was a valid number, about 170 ms a line a
 the cloud CPU. The lines are gibberish, as random weights must give; the guard refused four of
 five (they did not name the fact's people). This proves the plumbing, not the quality.
 
+## 2b. First real run (user's PC, 2026-11-11)
+
+Qwen3 1.7B Q4_K_M, 8 CPU threads, MSVC Release; vcpkg's llama-cpp built and loaded (1.2 s).
+
+| Measure | Result |
+|---|---|
+| Picks | 7 of 7 valid, about 770 ms each |
+| Lines | **5 of 15 accepted**, 2.9 s each (slowest 5.1 s) |
+
+Most lines began with nonsense ("INGLESE,", "AdapterFactory:", "UPPORTED BY ...") and several
+repeated the description of the speaker. Causes and fixes (`#UMBRA-94`, `Mind.md` "The prompt"):
+the model's `<think>` opening was forbidden by the grammar, so its first token was forced to be
+something else (an empty think block is now added); the prompt described the speaker at length
+(now one worked example and one word of tone); lines in capitals passed the guard (a sixth check,
+"not shouting"). The safety side held: nothing refused reached the player, and every pick was
+legal. **To be measured again by the user.**
+
 ## 3. Windows checklist (user)
 
 1. Build with the `windows-msvc` preset. The first configure now also builds llama.cpp through

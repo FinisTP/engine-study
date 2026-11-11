@@ -31,6 +31,7 @@ namespace
         LlamaOptions options;
         options.threads = args.Int("threads", std::max(2, static_cast<int>(std::thread::hardware_concurrency()) / 2));
         options.gpuLayers = args.Int("gpu", 0);
+        options.showPrompt = args.Has("show-prompt");
         std::string error;
         const auto loadStart = std::chrono::steady_clock::now();
         std::unique_ptr<Mind> model = LoadLlamaMind(args.Path("model"), options, error);
@@ -96,4 +97,4 @@ namespace
     }
 }
 
-UMBRA_TOOL_COMMAND(TownMindCommand, "town-mind", "town-mind <town file> --model <gguf file> [--days 9] [--seed 1] [--lines 3] [--threads n] [--gpu layers]", TownMindCommand);
+UMBRA_TOOL_COMMAND(TownMindCommand, "town-mind", "town-mind <town file> --model <gguf file> [--days 9] [--seed 1] [--lines 3] [--threads n] [--gpu layers] [--show-prompt 1]", TownMindCommand);

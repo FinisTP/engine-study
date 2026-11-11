@@ -25,8 +25,37 @@ never "almost" right.
 
 - A choice among three: `root ::= "1" | "2" | "3"`. Nothing else can come out.
 - A line: a capital letter, then letters, spaces and light punctuation, then `.`, `!` or `?`
-  (`root ::= [A-Z] [a-zA-Z ,;:'-]{8,150} [.!?]`). No digits, quotes, brackets, line breaks or
+  (`root ::= [A-Z] [a-zA-Z ,'-]{8,110} [.!?]`). No digits, quotes, brackets, line breaks or
   markup can come out, so a line cannot carry instructions, tags or code.
+
+### The prompt
+
+A small model follows an example far better than a description, so the wording request is one
+worked example and then the real line:
+
+```
+Reword one line of dialogue for a villager in a game. Keep every name and the meaning, add
+nothing. Reply with the new line only: one short spoken sentence.
+
+Speaker: Marta (tone: plain)
+Line: They say Jonas has fallen out with Petra.
+Reworded: Word is Jonas and Petra are not speaking any more.
+
+Speaker: Old Bren (tone: warm)
+Line: They say Tobin now counts Edda as a friend.
+Reworded:
+```
+
+Two things learned from the first real run (Qwen3 1.7B, user's PC, 2026-11-11: 5 of 15 lines
+accepted, most starting with nonsense like "INGLESE,"):
+
+- **Thinking models.** Qwen3 begins its turn with a `<think>` block. The grammar forbids it, so
+  the model was forced to start with some other token and derailed. `LlamaMind` now adds an empty
+  `<think></think>` block after the chat template when the model's template mentions one.
+- **Describing the speaker** ("You are ..., troubled by ...") leaked into the lines. The prompt
+  now gives one word of tone and nothing else about them.
+
+`UmbraTool town-mind ... --show-prompt 1` prints the first prompt exactly as the model gets it.
 
 ## The guard (`LineGuard`)
 
@@ -41,6 +70,7 @@ run in order; the first that objects wins, the reason is counted and kept
 | 3 | banned words | any word or phrase in the project's list, whatever the case |
 | 4 | only their names | naming a resident who is neither part of the fact nor the speaker (inventing) |
 | 5 | keeps their names | not naming someone the fact is about (the line lost its fact) |
+| 6 | not shouting | a line that is mostly capital letters |
 
 The list and the limit are data: `town/lines.rules.json` (`{"maxLength": 160, "banned": [...]}`).
 A project adds its own checks in code: `guard.filters.push_back(myCheck)`; a check is a function

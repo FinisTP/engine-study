@@ -80,7 +80,19 @@ namespace umbra::town
         }
     }
 
-    LineGuard::LineGuard() : filters{CleanText, Length, Banned, OnlyTheirNames, KeepsTheirNames} {}
+    namespace
+    {
+        // 6. Spoken, not shouted: a line that is mostly capitals is a model gone wrong.
+        std::string NotShouting(const LineContext &, const LineRules &, const std::string &line)
+        {
+            int letters = 0, capitals = 0;
+            for (const char c : line)
+                letters += std::isalpha(static_cast<unsigned char>(c)) ? 1 : 0, capitals += std::isupper(static_cast<unsigned char>(c)) ? 1 : 0;
+            return capitals * 2 > letters ? "shouting" : "";
+        }
+    }
+
+    LineGuard::LineGuard() : filters{CleanText, Length, Banned, OnlyTheirNames, KeepsTheirNames, NotShouting} {}
 
     std::string LineGuard::Objection(const LineContext &context, const std::string &line) const
     {

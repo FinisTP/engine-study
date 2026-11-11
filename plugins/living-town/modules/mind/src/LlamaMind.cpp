@@ -2,6 +2,7 @@
 
 #include <llama.h>
 
+#include <cstdio>
 #include <vector>
 
 namespace umbra::town
@@ -13,8 +14,8 @@ namespace umbra::town
         class LlamaMind final : public Mind
         {
         public:
-            LlamaMind(llama_model *model, llama_context *context, std::string name, float temperature)
-                : model_(model), context_(context), name_(std::move(name)), temperature_(temperature)
+            LlamaMind(llama_model *model, llama_context *context, std::string name, float temperature, bool showPrompt)
+                : model_(model), context_(context), name_(std::move(name)), temperature_(temperature), showPrompt_(showPrompt)
             {
             }
             ~LlamaMind() override
@@ -36,6 +37,16 @@ namespace umbra::town
                     const int32_t length = llama_chat_apply_template(chat, &message, 1, true, text.data(), static_cast<int32_t>(text.size()));
                     if (length > 0 && static_cast<std::size_t>(length) <= text.size())
                         prompt.assign(text.data(), static_cast<std::size_t>(length));
+                    // Models that "think" first (Qwen3 and others) begin their turn with a <think>
+                    // block. The grammar does not allow one, and without it the first word comes
+                    // out as nonsense. An empty block tells the model its thinking is done.
+                    if (std::string(chat).find("<think>") != std::string::npos)
+                        prompt += "<think>\n\n</think>\n\n";
+                }
+                if (showPrompt_)
+                {
+                    std::fprintf(stderr, "---- the prompt as the model gets it ----\n%s\n----\n", prompt.c_str());
+                    showPrompt_ = false;
                 }
                 // 2. To tokens.
                 std::vector<llama_token> tokens(prompt.size() + 16);
@@ -86,6 +97,7 @@ namespace umbra::town
             llama_context *context_;
             std::string name_;
             float temperature_;
+            bool showPrompt_; // print the first prompt once (UmbraTool town-mind --show-prompt 1)
         };
     }
 
@@ -120,6 +132,6 @@ namespace umbra::town
             error = "cannot start the model (not enough memory?)";
             return nullptr;
         }
-        return std::make_unique<LlamaMind>(model, context, file.filename().string(), options.temperature);
+        return std::make_unique<LlamaMind>(model, context, file.filename().string(), options.temperature, options.showPrompt);
     }
 }
