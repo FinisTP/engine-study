@@ -34,7 +34,7 @@ namespace umbra::town
         LineRules rules;
         std::vector<LineFilter> filters; // run in order; add your own with push_back
 
-        LineGuard(); // the built-in checks: clean text, length, banned words, only the fact's people, all of them, no shouting, same yes-or-no, no false witness
+        LineGuard(); // the built-in checks: clean text, length, banned words, only the fact's people, all of them, no shouting, same yes-or-no, no false witness, no invented source, right pronouns
         [[nodiscard]] std::string Objection(const LineContext &context, const std::string &line) const;
     };
 

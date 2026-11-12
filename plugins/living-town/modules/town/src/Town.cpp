@@ -1,4 +1,4 @@
-#include "Town.hpp"
+#include "TownInner.hpp"
 
 #include <algorithm>
 
@@ -8,7 +8,6 @@ namespace umbra::town
     {
         constexpr int needLimit = needFull * ticksPerDay; // needs are stored times ticksPerDay
         constexpr int xpPerLevel = 100;
-        constexpr int friendsAt = 300, rivalsAt = -300;
 
         // xorshift64*: three shifts and a multiply, the same on every compiler.
         std::uint64_t Next(TownState &state)
@@ -19,13 +18,6 @@ namespace umbra::town
             return state.random * 2685821657736338717ULL;
         }
         int Below(TownState &state, int count) { return static_cast<int>((Next(state) >> 33) % static_cast<std::uint64_t>(count)); }
-
-        void Log(TownState &state, EventKind kind, int who, int other, int what)
-        {
-            if (state.events.size() == TownState::maxEvents)
-                state.events.erase(state.events.begin());
-            state.events.push_back({state.tick, kind, static_cast<std::int16_t>(who), static_cast<std::int16_t>(other), what});
-        }
 
         int PlaceOf(const TownDef &def, int resident, const ActivityDef &activity)
         {
@@ -49,16 +41,24 @@ namespace umbra::town
             return std::min(full, left);
         }
         int HoursOf(int ticks) { return (ticks + ticksPerHour - 1) / ticksPerHour; } // started hours are paid in full
+    }
+
+    namespace inner
+    {
+        void Log(TownState &state, EventKind kind, int who, int other, int what)
+        {
+            if (state.events.size() == TownState::maxEvents)
+                state.events.erase(state.events.begin());
+            state.events.push_back({state.tick, kind, static_cast<std::int16_t>(who), static_cast<std::int16_t>(other), what});
+        }
 
         constexpr int keptRegard = 80, skippedRegard = -120;
 
-        std::uint64_t Bit(int resident) { return 1ULL << resident; }
-
-        // A resident learns a fact (saw it or was told). News about the player changes what they
-        // think of the player: fully for the one who asked, half for everybody else.
+        // News about the player changes what they think of the player: fully for the one who
+        // asked, half for everybody else. Someone who is gone learns nothing.
         void Learn(TownState &state, Fact &fact, int resident)
         {
-            if (fact.knows & Bit(resident))
+            if ((fact.knows & Bit(resident)) || state.residents[static_cast<std::size_t>(resident)].gone != Gone::No)
                 return;
             fact.knows |= Bit(resident);
             if (fact.kind != FactKind::FavourKept && fact.kind != FactKind::FavourSkipped)
@@ -68,7 +68,6 @@ namespace umbra::town
             regard = static_cast<std::int16_t>(std::clamp(regard + change, -1000, 1000));
         }
 
-        // Something happened: remembered by those named and (if `seen`) everyone at the first one's place.
         void Remember(TownState &state, FactKind kind, int who, int other, int what, bool seen)
         {
             if (state.facts.size() == TownState::maxFacts)
@@ -109,6 +108,7 @@ namespace umbra::town
             }
         }
     }
+    using namespace inner;
 
     TownState NewTown(const TownDef &def, std::uint64_t seed)
     {
@@ -143,8 +143,12 @@ namespace umbra::town
             return Refusal::UnknownActivity;
         const ResidentState &r = state.residents[static_cast<std::size_t>(intent.resident)];
         const ActivityDef &a = def.activities[static_cast<std::size_t>(intent.activity)];
+        if (r.gone != Gone::No)
+            return Refusal::Gone;
         if (state.tick < r.until)
             return Refusal::Busy;
+        if (state.tick < r.illUntil && a.where != "home")
+            return Refusal::Ill; // the ill stay in
         if (!OpenAt(a, state.Hour()))
             return Refusal::Closed;
         // Paying yourself (the owner eating at their own inn) costs nothing.
@@ -215,7 +219,9 @@ namespace umbra::town
         ResidentState &r = state.residents[static_cast<std::size_t>(intent.resident)];
         const ActivityDef &a = def.activities[static_cast<std::size_t>(intent.activity)];
         const int place = PlaceOf(def, intent.resident, a);
-        const int owner = def.places[static_cast<std::size_t>(place)].owner;
+        int owner = def.places[static_cast<std::size_t>(place)].owner;
+        if (owner >= 0 && state.residents[static_cast<std::size_t>(owner)].gone != Gone::No)
+            owner = -1; // nobody keeps the place now: the coins leave the town
         // 1. Go there and start (logged only when it is a change, so resting all night is one line).
         if (r.activity != intent.activity || r.place != place)
             Log(state, EventKind::Started, intent.resident, -1, intent.activity);
@@ -259,7 +265,7 @@ namespace umbra::town
         // 1. Whoever is free decides what to do next (in resident order: the order is part of the rules).
         for (int i = 0; i < count; ++i)
         {
-            if (state.tick < state.residents[static_cast<std::size_t>(i)].until)
+            if (state.tick < state.residents[static_cast<std::size_t>(i)].until || state.residents[static_cast<std::size_t>(i)].gone != Gone::No)
                 continue;
             const std::optional<Intent> asked = decide ? decide(def, state, i, user) : std::nullopt;
             if (!asked || asked->resident != i || Apply(def, state, *asked) != Refusal::None)
@@ -269,6 +275,8 @@ namespace umbra::town
         for (int i = 0; i < count; ++i)
         {
             ResidentState &r = state.residents[static_cast<std::size_t>(i)];
+            if (r.gone != Gone::No)
+                continue;
             const ActivityDef &a = def.activities[static_cast<std::size_t>(r.activity)];
             for (std::size_t n = 0; n < def.needs.size(); ++n)
             {
@@ -290,13 +298,13 @@ namespace umbra::town
             for (int i = 0; i < count; ++i)
             {
                 const ResidentState &r = state.residents[static_cast<std::size_t>(i)];
-                if (!def.activities[static_cast<std::size_t>(r.activity)].social)
+                if (!def.activities[static_cast<std::size_t>(r.activity)].social || r.gone != Gone::No)
                     continue;
                 int partner = -1, seen = 0;
                 for (int other = 0; other < count; ++other)
                 {
                     const ResidentState &o = state.residents[static_cast<std::size_t>(other)];
-                    if (other != i && o.place == r.place && def.activities[static_cast<std::size_t>(o.activity)].social && Below(state, ++seen) == 0)
+                    if (other != i && o.gone == Gone::No && o.place == r.place && def.activities[static_cast<std::size_t>(o.activity)].social && Below(state, ++seen) == 0)
                         partner = other;
                 }
                 if (partner < 0)
@@ -336,7 +344,7 @@ namespace umbra::town
         mix(state.seed), mix(state.random), number(state.tick), number(state.minted);
         for (const ResidentState &r : state.residents)
         {
-            number(r.place), number(r.activity), number(r.until), number(r.money), number(r.xp), number(r.level), number(r.crisis);
+            number(r.place), number(r.activity), number(r.until), number(r.money), number(r.xp), number(r.level), number(r.crisis), number(r.illUntil), number(static_cast<int>(r.gone));
             for (const std::int32_t need : r.needs)
                 number(need);
         }
@@ -362,9 +370,17 @@ namespace umbra::town
     std::string Sentence(const TownDef &def, const Fact &fact)
     {
         const auto name = [&](int resident) { return resident >= 0 ? def.residents[static_cast<std::size_t>(resident)].name : std::string("someone"); };
+        // "his", "her" or "their", from the resident's pronoun in the town file.
+        const std::string &pronoun = def.residents[static_cast<std::size_t>(std::max<int>(fact.who, 0))].pronoun;
+        const std::string their = pronoun == "he" ? "his" : pronoun == "she" ? "her" : "their";
         switch (fact.kind)
         {
-        case FactKind::LevelUp: return name(fact.who) + " has grown better at their work (level " + std::to_string(fact.what) + ")";
+        case FactKind::Ill: return name(fact.who) + " has taken ill";
+        case FactKind::Theft: return name(fact.who) + " stole coins from " + name(fact.other);
+        case FactKind::Feud: return name(fact.who) + " and " + name(fact.other) + " had a row in front of everyone";
+        case FactKind::Left: return name(fact.who) + " has left town for good";
+        case FactKind::Died: return name(fact.who) + " has died";
+        case FactKind::LevelUp: return name(fact.who) + " has grown better at " + their + " work (level " + std::to_string(fact.what) + ")";
         case FactKind::Crisis: return name(fact.who) + " was in a bad way: " + def.needs[static_cast<std::size_t>(fact.what)].name;
         case FactKind::Friends: return name(fact.who) + " now counts " + name(fact.other) + " as a friend";
         case FactKind::Rivals: return name(fact.who) + " has fallen out with " + name(fact.other);
@@ -387,7 +403,16 @@ namespace umbra::town
             case FactKind::Rivals: return "I've had enough of " + name(fact.other) + ".";
             case FactKind::FavourKept: return "You went to see " + name(fact.other) + ", as I asked. Thank you.";
             case FactKind::FavourSkipped: return "I asked you one thing: to look in on " + name(fact.other) + ". You never went.";
+            case FactKind::Ill: return "I've been unwell. Don't come too close.";
+            case FactKind::Theft: return "I took what I needed from " + name(fact.other) + ". Leave it be.";
+            case FactKind::Feud: return name(fact.other) + " and I had words. I meant every one.";
+            case FactKind::Left:
+            case FactKind::Died: break; // they are not here to say it
             }
+        if (fact.other == resident && fact.kind == FactKind::Theft)
+            return name(fact.who) + " robbed me. My own neighbour.";
+        if (fact.other == resident && fact.kind == FactKind::Feud)
+            return name(fact.who) + " and I had words. I meant every one.";
         // 2. About others: seen with their own eyes, or heard.
         std::string text = Sentence(def, fact);
         if (fact.kind == FactKind::FavourKept || fact.kind == FactKind::FavourSkipped)
@@ -413,18 +438,19 @@ namespace umbra::town
 
     int NextNews(const TownDef &def, const TownState &state, int resident)
     {
-        if (resident < 0 || static_cast<std::size_t>(resident) >= state.residents.size())
+        if (resident < 0 || static_cast<std::size_t>(resident) >= state.residents.size() || state.residents[static_cast<std::size_t>(resident)].gone != Gone::No)
             return -1;
         for (std::size_t f = 0; f < state.favours.size(); ++f)
             if ((state.favours[f].status == FavourStatus::Asked && def.favours[f].target == resident) ||
-                (state.favours[f].status == FavourStatus::Open && def.favours[f].resident == resident && state.regard[static_cast<std::size_t>(resident)] > -200))
+                (state.favours[f].status == FavourStatus::Open && def.favours[f].resident == resident && state.regard[static_cast<std::size_t>(resident)] > -200 &&
+                 state.residents[static_cast<std::size_t>(def.favours[f].target)].gone == Gone::No))
                 return -1;
         return News(state, resident);
     }
 
     std::string TalkTo(const TownDef &def, TownState &state, int resident, const std::string &worded)
     {
-        if (resident < 0 || static_cast<std::size_t>(resident) >= state.residents.size())
+        if (resident < 0 || static_cast<std::size_t>(resident) >= state.residents.size() || state.residents[static_cast<std::size_t>(resident)].gone != Gone::No)
             return {};
         const ResidentDef &who = def.residents[static_cast<std::size_t>(resident)];
         // 1. The player was sent here: the favour is kept. Those here see it; the asker hears in time.
@@ -441,7 +467,8 @@ namespace umbra::town
             }
         // 2. This resident has something to ask (not of someone they think badly of).
         for (std::size_t f = 0; f < state.favours.size(); ++f)
-            if (state.favours[f].status == FavourStatus::Open && def.favours[f].resident == resident && state.regard[static_cast<std::size_t>(resident)] > -200)
+            if (state.favours[f].status == FavourStatus::Open && def.favours[f].resident == resident && state.regard[static_cast<std::size_t>(resident)] > -200 &&
+                state.residents[static_cast<std::size_t>(def.favours[f].target)].gone == Gone::No)
             {
                 state.favours[f] = {FavourStatus::Asked, state.tick + def.favours[f].hours * ticksPerHour};
                 return who.name + ": " + def.favours[f].ask;

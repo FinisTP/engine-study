@@ -4,6 +4,7 @@
 
 #include "SceneRuntime.hpp"
 
+#include <Storyteller.hpp>
 #include <Town.hpp>
 #include <TownMind.hpp>
 
@@ -46,6 +47,7 @@ public:
     // "chronicle": [lines, newest first], "noChronicle"}.
     [[nodiscard]] nlohmann::json UiData() const;
     [[nodiscard]] const umbra::town::TownState &State() const { return state_; }
+    [[nodiscard]] const umbra::town::StoryState &Story() const { return story_; }
 
 private:
     void ShowResidents();
@@ -54,6 +56,9 @@ private:
     umbra::town::TownDef def_;
     umbra::town::TownState state_;
     bool ready_ = false;
+    umbra::town::PlanDef plan_; // the outcome plan and how far its plot is (S24); no plan file = no beats
+    umbra::town::StoryState story_;
+    bool hasPlan_ = false;
     std::unique_ptr<umbra::town::TownMind> mind_; // the built-in model, when its file is there (S23)
     std::vector<std::string> problems_;
     float lastHour_ = -1.0F; // the world's hour at the last update (-1 = none yet)

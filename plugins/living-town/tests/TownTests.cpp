@@ -108,7 +108,7 @@ TEST_CASE("The same seed gives the same week on every compiler; another seed ano
     // The golden number: GCC, Clang and MSVC must all get it (integer rules, the town's own dice).
     // It changes when the rules or town/settlement.town.json change: then run
     // `UmbraTool town-run <town file>` and put the fingerprint it prints here.
-    CHECK(Fingerprint(a) == 5492929141690153105ULL);
+    CHECK(Fingerprint(a) == 11171925813610364305ULL);
 }
 
 TEST_CASE("A fork run forward equals the original run forward, and never changes it (T90)", "[town]")

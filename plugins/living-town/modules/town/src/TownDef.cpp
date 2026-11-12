@@ -134,6 +134,10 @@ namespace umbra::town
             resident.name = text_of(r, "name");
             resident.actor = text_of(r, "actor");
             resident.voice = text_of(r, "voice");
+            if (r.contains("pronoun"))
+                resident.pronoun = text_of(r, "pronoun");
+            if (resident.pronoun != "he" && resident.pronoun != "she" && resident.pronoun != "they")
+                bad("pronoun", field + ".pronoun", "\"he\", \"she\" or \"they\"");
             if (content != nullptr && content->FindActor(resident.actor) == nullptr)
                 bad("actor", field + ".actor", "no actor \"" + resident.actor + "\" in the RPG content");
             resident.home = def.Place(text_of(r, "home"));

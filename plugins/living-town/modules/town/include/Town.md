@@ -31,7 +31,7 @@ Code: `TownDef.hpp` (the town as written, never changes), `Town.hpp` (the state 
 | need | `id`, `name`, `risePerDay`: how much it grows in a day if nothing is done (a need runs 0..1000) |
 | place | `id`, `name`; `owner` (the resident paid for what is bought here); `scene` + `marker` (where it is in the game world; without them the place is off screen) |
 | activity | `id`, `name`, `where` (`home`, `work` or a place id), `hours`, `openFrom`/`openTo` (hours of the day; from > to wraps midnight), `relief` (per need, per hour), `cost` and `wage` (coins per hour), `xp` per hour, `social` |
-| resident | `id`, `name`, `actor` (their RPG actor: stats, skills, look), `voice` (a few words on how they talk, for the model), `home`, `work`, `money`, `schedule` (first entry matching the hour is the plan), `bonds` (starting feelings, −1000..1000) |
+| resident | `id`, `name`, `actor` (their RPG actor: stats, skills, look), `voice` (a few words on how they talk, for the model), `pronoun` (`he`, `she` or `they`, the default: how lines speak of them), `home`, `work`, `money`, `schedule` (first entry matching the hour is the plan), `bonds` (starting feelings, −1000..1000) |
 
 The first activity must be free, at home and always open: it is what anyone can always do.
 Nothing says "fantasy": a modern town has other needs, places and activities, the same rules.
@@ -98,6 +98,29 @@ statics or files.
 The state keeps the latest 512 events: started an activity, paid, earned, reached a level, a need
 at its limit, became friends (a bond crossing +300) or fell out (−300). `UmbraTool town-run`
 prints the notable ones as sentences. S22 turns this into memory, rumours and the chronicle.
+
+## Trouble (S24)
+
+Five things can go wrong (`Trouble`, `src/Trouble.cpp`). The rules never start one: they say
+what the town has led up to (`Proposals`) and what it does (`Happen`). Who decides is the
+storyteller (`../../story/include/Storyteller.md`); with no storyteller nothing goes wrong.
+
+| Kind | Proposed when | What it does |
+|---|---|---|
+| ill | not ill, and some need is at `urgent` or worse | at home for 2 days (only activities `where: home` are legal) |
+| theft | thief has under 10 coins, the other at least 20, same place, not friends | a quarter of the victim's coins, 10 to 60, change hands; the victim's bond to the thief −400, each witness −100 |
+| feud | same place, and one of the two already feels below 0 about the other | both bonds −350 |
+| leave | has fallen out with someone (a bond at −300 or less), or is under 10 coins and in a crisis | gone for good; their coins leave the town with them |
+| death | ill, in the second day of it | gone for good; coins as above |
+
+`Possible` is the weaker test used when a beat is forced: the people must be here (and the
+victim must have a coin). `Likely` scores how much the town has led up to it.
+
+Someone gone (`ResidentState::gone`) is skipped by every rule: no choices, needs, talk or
+rumours, `Legal` answers `Gone`, `TalkTo` nothing. A favour the player was on that involved them
+is open again and never asked while they are gone. Each trouble is logged (`EventKind::Trouble`)
+and remembered as a fact (ill, theft, feud, left, died) seen by those at the place, so it travels
+by talk like everything else. Money still adds up: a theft moves coins, the gone take theirs out.
 
 ## Memory and rumours (S22)
 
@@ -190,6 +213,7 @@ without one starts a new town.
 ```
 UmbraTool town-run projects/reference/assets/town/settlement.town.json --days 30 --seed 1
                    [--content projects/reference/assets/rpg/reference.rpg.json] [--json]
+                   [--plan projects/reference/assets/town/settlement.plan.json]
 ```
 
 prints the notable events, where everyone ended up, the fingerprint and the speed (thousands of
@@ -197,7 +221,7 @@ days per second for seven residents).
 
 ## Limits (S21)
 
-- Lines are templates unless a model file is present (S23, `../../mind/include/Mind.md`). No storyteller or story beats (S24).
+- Lines are templates unless a model file is present (S23, `../../mind/include/Mind.md`). Trouble happens only with an outcome plan (S24, `../../story/include/Storyteller.md`).
 - Residents do not walk between places: one who is shown vanishes when the town moves them.
 - A resident tells one thing per talk and never repeats it; there is no conversation screen.
 - Favours are of one kind (go and see someone) and each is asked once.

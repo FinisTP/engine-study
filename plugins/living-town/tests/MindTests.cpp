@@ -99,6 +99,14 @@ TEST_CASE("The guard: plain, short, clean lines about the fact's own people pass
     CHECK(guard.Objection(compared, "Tobin and Edda are friends, I heard it from the miller.") == "names a source the fact does not have");
     CHECK(guard.Objection(compared, "Tobin and Edda are friends, a little bird told me.") == "names a source the fact does not have");
     CHECK(guard.Objection(compared, "Tobin and Edda are friends, from what I hear.").empty());
+    // Pronouns come from the town file: Tobin is "he", Edda "she", and the speaker Hale "he".
+    CHECK(guard.Objection(compared, "Tobin has found his friend in Edda, and she in him.").empty());
+    const Fact wynn{0, FactKind::LevelUp, static_cast<std::int16_t>(def.Resident("wynn")), -1, 2, 0, 0, 0};
+    CHECK(guard.Objection(LineContext{def, wynn, edda}, "Wynn knows his trade now, they say.") == "says \"he\" of someone who is not");
+    CHECK(guard.Objection(LineContext{def, wynn, edda}, "Wynn knows her trade now, they say.").empty());
+    CHECK(guard.Objection(LineContext{def, wynn, edda}, "Wynn knows their trade now, they say.").empty());
+    const Fact garrick{0, FactKind::LevelUp, static_cast<std::int16_t>(def.Resident("garrick")), -1, 2, 0, 0, 0};
+    CHECK(guard.Objection(LineContext{def, garrick, hale}, "Garrick knows her trade now, they say.") == "says \"she\" of someone who is not");
     const LineContext denied{def, fact, hale, "Tobin and Edda are not speaking."};
     CHECK(guard.Objection(denied, "Tobin and Edda get on well.") == "turns the meaning around");
     CHECK(guard.Objection(denied, "Tobin will not talk to Edda.").empty());
@@ -132,7 +140,8 @@ TEST_CASE("News in the model's words when a checked line is ready; else the temp
         auto mind = Make([&](const MindRequest &r) { prompt = r.prompt, grammar = r.grammar; return " \"" + good + "\" "; });
         mind->Prepare(def, state, speaker);
         CHECK(prompt.find("Speaker: " + name + " (") != std::string::npos);
-        CHECK(prompt.find("tone: plain)\nLine: ") != std::string::npos);
+        CHECK(prompt.find("tone: plain)\n") != std::string::npos);
+        CHECK((news.who == speaker || prompt.find("About: " + def.residents[static_cast<std::size_t>(news.who)].name + " (" + def.residents[static_cast<std::size_t>(news.who)].pronoun + ")") != std::string::npos));
         CHECK(prompt.ends_with(Says(def, news, speaker) + "\nReworded:"));
         CHECK(grammar.starts_with("root ::= "));
         CHECK(mind->Talk(def, state, speaker) == name + ": " + good);

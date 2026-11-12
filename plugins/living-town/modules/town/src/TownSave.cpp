@@ -22,7 +22,8 @@ namespace umbra::town
                     bonds[def.residents[other].id] = state.Bond(i, other);
             out["residents"].push_back({{"id", def.residents[i].id}, {"place", def.places[static_cast<std::size_t>(r.place)].id},
                                         {"activity", def.activities[static_cast<std::size_t>(r.activity)].id}, {"until", r.until}, {"money", r.money},
-                                        {"xp", r.xp}, {"level", r.level}, {"crisis", r.crisis}, {"needs", needs}, {"bonds", bonds}});
+                                        {"xp", r.xp}, {"level", r.level}, {"crisis", r.crisis}, {"needs", needs}, {"bonds", bonds},
+                                        {"ill", r.illUntil}, {"gone", static_cast<int>(r.gone)}});
         }
         out["events"] = json::array();
         for (const TownEvent &e : state.events)
@@ -77,6 +78,8 @@ namespace umbra::town
                 r.xp = from.at("xp").get<std::int32_t>();
                 r.level = from.at("level").get<std::int16_t>();
                 r.crisis = from.at("crisis").get<std::uint16_t>();
+                r.illUntil = from.value("ill", 0); // S24 parts: a save from before has nobody ill or gone
+                r.gone = static_cast<Gone>(std::clamp(from.value("gone", 0), 0, 2));
                 for (std::size_t n = 0; n < def.needs.size(); ++n)
                     r.needs[n] = std::clamp(from.at("needs").at(def.needs[n].id).get<std::int32_t>(), 0, needFull * ticksPerDay);
                 for (const auto &[other, value] : from.at("bonds").items())

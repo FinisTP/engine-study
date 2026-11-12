@@ -10,10 +10,12 @@
   ],
   "modules": [
     "town",
-    "mind"
+    "mind",
+    "story"
   ],
   "links": [
     "Umbra::Town",
-    "Umbra::TownMind"
+    "Umbra::TownMind",
+    "Umbra::TownStory"
   ]
 }

@@ -138,9 +138,31 @@ namespace umbra::town
                     return "names a source the fact does not have";
             return {};
         }
+
+        // 10. "He" and "she" only for someone in the fact who is one (the town file's "pronoun").
+        //     A model guesses from the name alone; "they" and "their" are always fine.
+        std::string RightPronouns(const LineContext &context, const LineRules &, const std::string &line)
+        {
+            std::string lower = " " + Lower(line) + " ";
+            for (char &c : lower)
+                c = (c >= 'a' && c <= 'z') ? c : ' '; // words only: "her," counts as "her"
+            const auto about = [&](const char *pronoun) {
+                for (const int resident : {static_cast<int>(context.fact.who), static_cast<int>(context.fact.other), context.speaker})
+                    if (resident >= 0 && context.def.residents[static_cast<std::size_t>(resident)].pronoun == pronoun)
+                        return true;
+                return false;
+            };
+            for (const char *word : {" he ", " him ", " his "})
+                if (lower.find(word) != std::string::npos && !about("he"))
+                    return "says \"he\" of someone who is not";
+            for (const char *word : {" she ", " her ", " hers "})
+                if (lower.find(word) != std::string::npos && !about("she"))
+                    return "says \"she\" of someone who is not";
+            return {};
+        }
     }
 
-    LineGuard::LineGuard() : filters{CleanText, Length, Banned, OnlyTheirNames, KeepsTheirNames, NotShouting, SameYesOrNo, SawOnlyIfThere, NoNewSource} {}
+    LineGuard::LineGuard() : filters{CleanText, Length, Banned, OnlyTheirNames, KeepsTheirNames, NotShouting, SameYesOrNo, SawOnlyIfThere, NoNewSource, RightPronouns} {}
 
     std::string LineGuard::Objection(const LineContext &context, const std::string &line) const
     {

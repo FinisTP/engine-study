@@ -1,0 +1,19 @@
+{
+  "format": "umbra.town.plan",
+  "version": 1,
+  "pacing": { "quietDays": 1, "maxIll": 2, "maxGone": 1, "lookAhead": 2, "hour": 12 },
+  "never": [
+    { "kind": "death", "who": "pip" },
+    { "kind": "leave", "who": "pip" },
+    { "kind": "leave", "who": "bren" },
+    { "kind": "leave", "who": "edda" }
+  ],
+  "beats": [
+    { "id": "missing", "name": "Something goes missing", "from": 2, "to": 4,
+      "outcomes": [ { "kind": "theft" } ] },
+    { "id": "bad_blood", "name": "Bad blood", "from": 4, "to": 8,
+      "outcomes": [ { "kind": "feud" } ] },
+    { "id": "reckoning", "name": "The reckoning", "from": 8, "to": 12,
+      "outcomes": [ { "kind": "leave" }, { "kind": "death", "who": "bren" } ] }
+  ]
+}

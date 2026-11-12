@@ -25,16 +25,23 @@ namespace umbra::town
         // Their order turns with the speaker and the fact, so residents do not all sound alike.
         // (The examples' people are not residents: the guard catches them being copied.)
         static const char *const examples[3] = {
-            "Speaker: Marta (warm, talkative; tone: plain)\nLine: They say Jonas now counts Petra as a friend.\nReworded: Jonas and Petra have become good friends, from what I hear.\n\n",
-            "Speaker: Old Anselm (gruff, few words; tone: cold)\nLine: I saw it myself: Petra has grown better at their work.\nReworded: Petra knows her trade now, I watched her myself.\n\n",
-            "Speaker: Lise (shy; tone: warm)\nLine: They say Jonas has fallen out with Anselm.\nReworded: I heard Jonas and Anselm had a falling out, sadly.\n\n"};
+            "Speaker: Marta (warm, talkative; tone: plain)\nAbout: Jonas (he), Petra (she)\nLine: They say Jonas now counts Petra as a friend.\nReworded: Jonas and Petra have become good friends, from what I hear.\n\n",
+            "Speaker: Old Anselm (gruff, few words; tone: cold)\nAbout: Petra (she)\nLine: I saw it myself: Petra has grown better at her work.\nReworded: Petra knows her trade now, I watched her myself.\n\n",
+            "Speaker: Lise (shy; tone: warm)\nAbout: Jonas (he), Anselm (he)\nLine: They say Jonas has fallen out with Anselm.\nReworded: I heard Jonas and Anselm had a falling out, sadly.\n\n"};
+        // Who the line is about and how to speak of them ("he", "she" or "they"), so the model
+        // does not guess from the name.
+        std::string about;
+        for (const int resident : {static_cast<int>(fact.who), static_cast<int>(fact.other)})
+            if (resident >= 0 && resident != speaker)
+                about += (about.empty() ? "About: " : ", ") + def.residents[static_cast<std::size_t>(resident)].name + " (" + def.residents[static_cast<std::size_t>(resident)].pronoun + ")";
+        about += about.empty() ? "" : "\n";
         const std::size_t first = static_cast<std::size_t>(speaker + fact.tick) % 3;
         const std::string &voice = def.residents[static_cast<std::size_t>(speaker)].voice;
         request.prompt = "Reword one line of dialogue for a villager in a game, in the speaker's own voice. Keep every name and the exact meaning, add nothing. "
                          "Reply with the new line only: one short spoken sentence.\n\n";
         for (std::size_t i = 0; i < 3; ++i)
             request.prompt += examples[(first + i) % 3];
-        request.prompt += "Speaker: " + name + " (" + (voice.empty() ? "" : voice + "; ") + "tone: " + Tone(state, speaker) + ")\nLine: " + Says(def, fact, speaker) + "\nReworded:";
+        request.prompt += "Speaker: " + name + " (" + (voice.empty() ? "" : voice + "; ") + "tone: " + Tone(state, speaker) + ")\n" + about + "Line: " + Says(def, fact, speaker) + "\nReworded:";
         // One plain sentence: a capital letter, then letters, spaces, commas and apostrophes, ending properly.
         request.grammar = "root ::= \" \"? [A-Z] [a-zA-Z ,'-]{8,110} [.!?]\n";
         request.maxTokens = 40;

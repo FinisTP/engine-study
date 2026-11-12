@@ -37,14 +37,19 @@ examples and then the real line (shown here with one example; there are three):
 Reword one line of dialogue for a villager in a game. Keep every name and the meaning, add
 nothing. Reply with the new line only: one short spoken sentence.
 
-Speaker: Marta (tone: plain)
-Line: They say Jonas has fallen out with Petra.
-Reworded: Word is Jonas and Petra are not speaking any more.
+Speaker: Marta (warm, talkative; tone: plain)
+About: Jonas (he), Petra (she)
+Line: They say Jonas now counts Petra as a friend.
+Reworded: Jonas and Petra have become good friends, from what I hear.
 
-Speaker: Old Bren (tone: warm)
+Speaker: Old Bren (old, kindly, a little sharp; tone: warm)
+About: Tobin (he), Edda (she)
 Line: They say Tobin now counts Edda as a friend.
 Reworded:
 ```
+
+The `About:` line (S24) names who the line is about with their `pronoun` from the town file, so
+the model does not guess "her" or "his" from a name; check 10 below refuses a wrong guess.
 
 Two things learned from the first real run (Qwen3 1.7B, user's PC, 2026-11-11: 5 of 15 lines
 accepted, most starting with nonsense like "INGLESE,"):
@@ -87,6 +92,7 @@ run in order; the first that objects wins, the reason is counted and kept
 | 7 | same yes or no | a line that denies ("not", "no longer", "never", ...) where the template does not, or the other way round |
 | 8 | no false witness | "I saw", "I watched", "myself" from someone who only heard of it |
 | 9 | no new source | "I heard it from the miller", "... told me", "according to ...": a person or source the fact does not have |
+| 10 | right pronouns | "he/him/his" or "she/her/hers" when nobody in the fact (or the speaker) has that `pronoun` in the town file; "they/their" always passes |
 
 The list and the limit are data: `town/lines.rules.json` (`{"maxLength": 160, "banned": [...]}`).
 A project adds its own checks in code: `guard.filters.push_back(myCheck)`; a check is a function

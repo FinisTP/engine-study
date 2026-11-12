@@ -7,6 +7,7 @@ target_sources(
         src/TownDef.cpp
         src/Town.cpp
         src/TownSave.cpp
+        src/Trouble.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include

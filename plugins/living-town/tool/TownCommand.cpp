@@ -2,6 +2,7 @@
 
 #include <ToolCommand.hpp>
 
+#include <Storyteller.hpp>
 #include <Town.hpp>
 
 #include <nlohmann/json.hpp>
@@ -36,6 +37,7 @@ namespace
         case EventKind::Crisis: return name(e.who) + " cannot bear it: " + def.needs[static_cast<std::size_t>(e.what)].name;
         case EventKind::Friends: return name(e.who) + " now counts " + name(e.other) + " as a friend";
         case EventKind::Rivals: return name(e.who) + " has fallen out with " + name(e.other);
+        case EventKind::Trouble: return umbra::town::Sentence(def, Trouble{static_cast<TroubleKind>(e.what), e.who, e.other});
         }
         return {};
     }
@@ -55,6 +57,12 @@ namespace
         // 2. Live the days. Only the notable events are printed (not every change of activity).
         const int days = args.Int("days", 7);
         TownState state = NewTown(def, static_cast<std::uint64_t>(args.Long("seed", 1)));
+        // With --plan the storyteller lives along (S24); without, nothing goes wrong in the town.
+        PlanDef plan;
+        const bool withPlan = args.Has("plan");
+        if (withPlan && !LoadPlan(args.Path("plan"), def, plan, diagnostics))
+            return umbra::tool::Report(diagnostics, 1, args.json);
+        StoryState story = NewStory(plan);
         nlohmann::json diary = nlohmann::json::array();
         const auto start = std::chrono::steady_clock::now();
         for (int tick = 0; tick < days * ticksPerDay; ++tick)
@@ -62,11 +70,13 @@ namespace
             const std::size_t before = state.events.size();
             const std::int32_t last = state.events.empty() ? -1 : state.events.back().tick;
             Tick(def, state);
+            if (withPlan)
+                StoryStep(def, plan, state, story);
             // New events are at the end (the list drops old ones from the front when it is full).
             for (std::size_t i = 0; i < state.events.size(); ++i)
             {
                 const TownEvent &e = state.events[i];
-                const bool fresh = e.tick == tick && (e.tick > last || i >= before);
+                const bool fresh = e.tick >= tick && (e.tick > last || i >= before); // the storyteller's are stamped one tick on
                 if (!fresh || e.kind == EventKind::Started || e.kind == EventKind::Paid || e.kind == EventKind::Earned)
                     continue;
                 if (args.json)
@@ -88,8 +98,9 @@ namespace
             people.push_back({{"name", def.residents[i].name}, {"money", r.money}, {"level", r.level}, {"place", def.places[static_cast<std::size_t>(r.place)].name},
                               {"doing", def.activities[static_cast<std::size_t>(r.activity)].name}, {"needs", needs}});
             if (!args.json)
-                std::cout << def.residents[i].name << ": " << r.money << " coins, level " << r.level << ", " << def.activities[static_cast<std::size_t>(r.activity)].name
-                          << " at " << def.places[static_cast<std::size_t>(r.place)].name << "\n";
+                std::cout << def.residents[i].name << ": " << r.money << " coins, level " << r.level << ", "
+                          << (r.gone == Gone::Left ? "left town" : r.gone == Gone::Dead ? "dead" : def.activities[static_cast<std::size_t>(r.activity)].name + " at " + def.places[static_cast<std::size_t>(r.place)].name)
+                          << (r.gone == Gone::No && state.tick < r.illUntil ? " (ill)" : "") << "\n";
         }
         // 4. What is remembered, and by how many (--facts).
         if (args.Has("facts") || args.positional.size() > 1)
@@ -100,6 +111,16 @@ namespace
                     knows += (f.knows >> i) & 1U;
                 std::cout << Clock(f.tick) << "  " << Sentence(def, f) << "  (known to " << knows << ")\n";
             }
+        // 5. The plot: what became of each beat, and the storyteller's warnings.
+        if (withPlan && !args.json)
+        {
+            static const char *const how[] = {"waiting", "came by itself", "FORCED", "MISSED"};
+            for (std::size_t b = 0; b < plan.beats.size(); ++b)
+                std::cout << "beat \"" << plan.beats[b].id << "\": " << how[static_cast<int>(story.beats[b].how)]
+                          << (story.beats[b].how == BeatHow::Natural || story.beats[b].how == BeatHow::Forced ? ", " + Clock(story.beats[b].tick) + ": " + umbra::town::Sentence(def, story.beats[b].outcome) : "") << "\n";
+            for (const std::string &warning : story.warnings)
+                std::cout << "warning: " << warning << "\n";
+        }
         const std::string print = std::to_string(Fingerprint(state));
         const double daysPerSecond = seconds > 0.0 ? days / seconds : 0.0;
         if (args.json)
@@ -113,4 +134,4 @@ namespace
     }
 }
 
-UMBRA_TOOL_COMMAND(TownRun, "town-run", "town-run <town file> [--days 7] [--seed 1] [--content <rpg file>] [--json] [--facts 1]", TownRun);
+UMBRA_TOOL_COMMAND(TownRun, "town-run", "town-run <town file> [--days 7] [--seed 1] [--plan <plan file>] [--content <rpg file>] [--json] [--facts 1]", TownRun);
