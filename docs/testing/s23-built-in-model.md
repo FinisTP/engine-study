@@ -7,7 +7,7 @@
 - Tester: Claude (remote session), Linux cloud workspace (GCC 13, Clang 18, ASan/UBSan);
   llama.cpp b9030 built from source there. The cloud cannot download model files, so **no real
   model has answered yet**: the llama.cpp path ran with a tiny random-weights model only.
-- State: **implemented, not measured**. The model choice and the numbers ADR 0011 asks for
+- State: **measured 2026-11-12 (§2g)**; in-game stutter check and packaging open. Was: implemented, not measured. The model choice and the numbers ADR 0011 asks for
   (accepted lines, valid picks, milliseconds, memory) are the user's run in §3.
 - User decisions (2026-11-11): up to 4-5 GB for the model is acceptable; the user downloads the
   file; English only for now; lines must stay on the fact, with filter layers that can grow.
@@ -101,7 +101,32 @@ The 4B model writes its own lines in the residents' voices where the 1.7B copied
 invented a source ("I heard it from the miller"); `#UMBRA-97` adds a ninth check for that.
 Decision (user, 2026-11-11): use the 4B model and run it on the graphics card. `#UMBRA-97` adds
 the vcpkg feature `town-model-gpu` (ggml with Vulkan) and offloads all layers by default.
-**Not yet built or measured on the user's PC.**
+Built and measured in §2g.
+
+## 2g. Qwen3 4B on the graphics card (user's PC, 2026-11-12, `#UMBRA-99` build)
+
+RTX 3050 Laptop (4 GB), Vulkan, all layers on the card, 8 threads. vcpkg built ggml with Vulkan
+at `VCPKG_MAX_CONCURRENCY` 1 (`#UMBRA-98`, `#UMBRA-99`).
+
+| Measure | CPU (§2e) | Graphics card |
+|---|---|---|
+| Load | 4.4 s | 2.1 s |
+| First line | 6 s | **18.5 s** (first use, once) |
+| Lines after the first | 6.0 s | **0.7-1.0 s** (14 lines, 0.8 s average) |
+| Picks | 2.4 s | **0.15 s** |
+| Accepted | 15 of 15 | 14 of 15 |
+
+- The refused line is the invented source again ("I heard it from the miller"); the ninth check
+  (`#UMBRA-97`) caught it and the template was used. The guard works as meant.
+- The 18.5 s is the card's first-use cost. `#UMBRA-100` adds `Mind::WarmUp`: the worker thread
+  pays it right after the game starts, `town-mind` prints it as its own line. **To confirm on the
+  user's PC:** the warm-up line takes the long time and the first real line under 2 s.
+- Still copied from the examples: "knows her trade now, I watched her myself" (3 lines). The
+  model guesses "her"/"their" from the name alone; a gender in the town file would settle it
+  (open question to the user).
+- **Decision:** Qwen3 4B Q4_K_M on the graphics card is the default built-in model.
+- Open: stutter and video memory in the game itself (§2f step 4), and packaging of the model and
+  the llama DLLs.
 
 ## 2f. Checklist for the graphics-card build (user)
 

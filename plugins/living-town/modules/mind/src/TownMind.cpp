@@ -84,6 +84,7 @@ namespace umbra::town
 
     void TownMind::Work()
     {
+        mind_->WarmUp(); // here, not at load: the game keeps running meanwhile
         for (;;)
         {
             Job job;

@@ -23,5 +23,8 @@ namespace umbra::town
         // Answers one request. Called on the town's worker thread, never on the frame.
         // An empty answer means it failed.
         virtual std::string Complete(const MindRequest &request) = 0;
+        // Pays the first-use cost now (a graphics card builds its programs on the first answer),
+        // so the first real line is not the slow one. Same thread as Complete.
+        virtual void WarmUp() {}
     };
 }

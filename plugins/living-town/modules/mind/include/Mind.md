@@ -164,6 +164,14 @@ then shares video memory with the game: a 2.5 GB model on a 4 GB card leaves lit
 fails or the game stutters, `--gpu 20` (or another number of layers) keeps part of the model on
 the CPU; `--gpu 0` is CPU only. `UmbraTool town-mind` prints which it used.
 
+Measured on the same PC on the card (2026-11-12, RTX 3050 Laptop 4 GB, all layers): 0.8 s a line
+and 0.15 s a pick, 14 of 15 lines accepted. Qwen3 4B Q4_K_M on the card is the default model.
+
+**Warm-up.** The card's first answer took 18.5 s (it builds its programs on first use).
+`Mind::WarmUp` asks one throwaway question so that cost is paid early: the town's worker thread
+calls it as soon as it starts, while the game already runs; lines asked meanwhile fall back to
+the template (`late`) as usual.
+
 ## Tests
 
 `Umbra.Town` (T92) uses a scripted stand-in model: a function that returns what the test says.

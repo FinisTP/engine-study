@@ -25,6 +25,15 @@ namespace umbra::town
             }
             std::string Name() const override { return name_; }
 
+            void WarmUp() override
+            {
+                // A prompt of many tokens, then one token alone: the two shapes every answer uses.
+                const bool show = showPrompt_;
+                showPrompt_ = false;
+                Complete({"Reword one line of dialogue for a villager in a game. Line: They say it will rain. Reworded:", "", 2, 0});
+                showPrompt_ = show;
+            }
+
             std::string Complete(const MindRequest &request) override
             {
                 const llama_vocab *vocab = llama_model_get_vocab(model_);
