@@ -88,6 +88,14 @@ namespace umbra::night
         bool omen = false, fail = false;
     };
 
+    // The marked guest after midnight. Its cell and HP are its Guest record's.
+    struct Taken
+    {
+        bool present = false;
+        std::int8_t guest = -1, cooldown = 0;
+        bool reflect = false;
+    };
+
     struct Monster
     {
         std::int8_t kind = -1, cell = -1, leavesRound = 0; // kind: monsters.csv row
@@ -133,6 +141,7 @@ namespace umbra::night
         std::int8_t omenOffer = -1;          // the cell whose omen the board guest must take or leave
         std::uint8_t omensUsed = 0;          // omens.csv rows already drawn (bits)
         Outcome outcome = Outcome::Running;
+        Taken taken;
         Battle battle;
         std::vector<Monster> monsters;
         std::uint64_t eventsUsed = 0, itemsUsed = 0; // events.csv / items.csv rows already drawn
@@ -157,6 +166,7 @@ namespace umbra::night
     // What `viewer` saw of `guest`: an omen taken, a roll failed. Nothing else about omens is visible.
     Seen Knows(const NightState &state, int viewer, int guest);
     Outcome Result(const NightState &state);
+    bool IsTaken(const NightState &state, int guest);
 
     // A hit in battle (Battle.cpp): data formula, resistance, armour, guard; never below minDamage.
     int Damage(const NightDef &def, const NightState &state, const Fighter &attacker, const Fighter &defender);

@@ -50,6 +50,13 @@ namespace umbra::night
             const Guest &other = state.guests[U(o)];
             if (o == g || other.cell != me.cell || !Up(other))
                 continue;
+            // After midnight the only fight between guests is with the Taken.
+            if (state.taken.present)
+            {
+                if (IsTaken(state, g) || IsTaken(state, o))
+                    legal.push_back({ActionKind::Attack, -1, I8(o)});
+                continue;
+            }
             // 1. Anyone may attack anyone in the room but an ally.
             if (!Allies(state, g, o))
                 legal.push_back({ActionKind::Attack, -1, I8(o)});
@@ -61,8 +68,10 @@ namespace umbra::night
 
     void inner::AttackGuest(const NightDef &def, NightState &state, int attacker, int defender)
     {
-        // 1. Everyone whose light reaches the room thinks worse of the attacker.
         const int cell = state.guests[U(defender)].cell;
+        if (state.taken.present && ContactBattle(def, state, attacker, cell))
+            return;
+        // 1. Everyone whose light reaches the room thinks worse of the attacker.
         for (int w = 0; w < state.count; ++w)
         {
             const Guest &watcher = state.guests[U(w)];

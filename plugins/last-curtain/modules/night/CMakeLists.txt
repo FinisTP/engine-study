@@ -11,6 +11,7 @@ target_sources(
         src/Turn.cpp
         src/Battle.cpp
         src/Company.cpp
+        src/Hunt.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include

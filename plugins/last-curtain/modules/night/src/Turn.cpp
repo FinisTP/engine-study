@@ -32,6 +32,8 @@ namespace umbra::night
             Guest &guest = G(state, g);
             guest.cell = I8(cell);
             const Cell &c = state.cells[U(cell)];
+            if (IsTaken(state, g))
+                return;
             switch (RoomOf(def, state, cell).kind)
             {
             case RoomKind::Item:
@@ -238,8 +240,12 @@ namespace umbra::night
             {
                 state.turn = 0;
                 ++state.round;
+                if (state.round == def.rules.clock.turnAfterRound + 1 && !state.taken.present)
+                    TheTurn(def, state);
                 if (state.round > def.rules.clock.rounds)
                 {
+                    if (state.outcome == Outcome::Running)
+                        EndNight(state, state.taken.present ? Outcome::Taken : Outcome::Running);
                     state.over = true;
                     return;
                 }
@@ -306,7 +312,8 @@ namespace umbra::night
         }
 
         // 2. Items, all free: heal items used, any item dropped, a floor item picked up.
-        for (std::int8_t s = 0; s < maxCarry; ++s)
+        const bool taken = IsTaken(state, g);
+        for (std::int8_t s = 0; s < maxCarry && !taken; ++s)
         {
             if (guest.items[U(s)] < 0)
                 continue;
@@ -319,14 +326,14 @@ namespace umbra::night
                         legal.push_back({ActionKind::UseItem, s, I8(o)});
             legal.push_back({ActionKind::DropItem, s});
         }
-        if (Carried(guest) < def.rules.carry)
+        if (Carried(guest) < def.rules.carry && !taken)
             for (std::size_t f = 0; f < state.floor.size(); ++f)
                 if (state.floor[f].cell == guest.cell)
                     legal.push_back({ActionKind::PickUp, I8(f)});
 
         // 3. Fighting a monster in the room.
         const int monster = MonsterAt(state, guest.cell);
-        if (monster >= 0)
+        if (monster >= 0 && !taken)
             legal.push_back({ActionKind::Attack, I8(monster)});
         CompanyLegal(def, state, g, legal);
 
@@ -382,6 +389,14 @@ namespace umbra::night
             }
             --guest.movesLeft;
             Enter(def, state, g, to);
+            // After midnight: the Taken and the company meet; the Taken passes monsters and rooms by.
+            if (state.taken.present && ContactBattle(def, state, g, to))
+            {
+                guest.movesLeft = 0;
+                break;
+            }
+            if (IsTaken(state, g))
+                break;
             // A monster in the room: a fight at once, the monster's side first.
             if (const int monster = MonsterAt(state, to); monster >= 0)
             {
@@ -434,11 +449,25 @@ namespace umbra::night
     void Hurt(const NightDef &, NightState &state, int g, int amount, int byGuest)
     {
         Guest &guest = G(state, g);
-        if (guest.down || guest.dead || amount <= 0)
+        if (guest.down || guest.dead || amount <= 0 || (IsTaken(state, g) && byGuest < 0))
             return;
         guest.hp = I16(std::max(0, guest.hp - amount));
         if (guest.hp > 0)
             return;
+        if (state.taken.present)
+        {
+            // After midnight 0 HP is death: items fall; the night may end.
+            guest.dead = true;
+            for (std::int8_t &item : guest.items)
+                if (item >= 0)
+                    state.floor.push_back({guest.cell, item}), item = -1;
+            Log(state, LogKind::Died, g, byGuest);
+            if (IsTaken(state, g))
+                EndNight(state, CompanyAlive(state) ? Outcome::Company : Outcome::Taken);
+            else if (!CompanyAlive(state))
+                EndNight(state, Outcome::Taken);
+            return;
+        }
         guest.down = true;
         guest.downedBy = I8(byGuest);
         Log(state, LogKind::Down, g, byGuest);
@@ -467,6 +496,13 @@ namespace umbra::night
     {
         const Guest &guest = state.guests[U(g)];
         int value = BuffBonus(def, state, g, kind);
+        if (IsTaken(state, g))
+        {
+            // The Taken's strength is its form's, fixed.
+            const GuestDef &d = def.guests[U(g)];
+            return value + (kind == StatKind::Might ? d.takenMight : kind == StatKind::Sanity ? d.takenSanity : kind == StatKind::Speed ? d.takenSpeed
+                          : kind == StatKind::MaxHp ? d.takenHp : kind == StatKind::Light ? def.rules.light.steps : 0);
+        }
         value += kind == StatKind::Might ? guest.might : kind == StatKind::Sanity ? guest.sanity : kind == StatKind::Speed ? guest.speed
                : kind == StatKind::MaxHp ? guest.maxHp : kind == StatKind::Light ? def.rules.light.steps : 0;
         // 1. Worn items while carried.
