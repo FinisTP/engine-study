@@ -1,0 +1,6 @@
+id,name,stat,amount,rounds
+guarded,Guarded,guard,0,0
+strengthened,Strengthened,might,2,0
+focused,Focused,sanity,2,0
+weakened,Weakened,might,-2,2
+shaken,Shaken,sanity,-2,2

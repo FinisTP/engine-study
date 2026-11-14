@@ -1,0 +1,15 @@
+{
+  "format": "umbra.plugin",
+  "version": 1,
+  "name": "last-curtain",
+  "label": "The Last Curtain",
+  "description": "One night in the Saigon Opera House as a headless, data-driven board game (ADR 0012): seven guests, omens, the Turn and the hunt.",
+  "kind": "game",
+  "requires": [],
+  "modules": [
+    "night"
+  ],
+  "links": [
+    "Umbra::Night"
+  ]
+}

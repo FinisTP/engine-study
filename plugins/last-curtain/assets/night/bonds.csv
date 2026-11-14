@@ -1,0 +1,15 @@
+from,to,bond
+nhi,mai,300
+nhi,khang,-300
+thanh,lan,-300
+thanh,bao,300
+bao,nhi,300
+bao,mai,-300
+khang,huy,300
+khang,nhi,-300
+mai,nhi,300
+mai,lan,-300
+huy,thanh,300
+huy,khang,300
+lan,thanh,300
+lan,khang,-300

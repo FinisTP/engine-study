@@ -1,0 +1,29 @@
+id,name,kind,doors,stat,amount,count
+foyer,Grand foyer,foyer,NEW,none,0,1
+understage,Under-stage,understage,NESW,none,0,1
+auditorium,Auditorium,plain,NESW,none,0,1
+pit,Orchestra pit,plain,EW,none,0,1
+corridor,Back corridor,plain,NS,none,0,2
+stairwell,Service stairwell,plain,NE,none,0,1
+boxes,Box seats,plain,NEW,none,0,1
+balcony,Upper balcony,plain,NESW,none,0,1
+costumes,Costume store,item,NES,none,0,1
+props,Prop room,item,NW,none,0,1
+dressing,Dressing room,item,NS,none,0,2
+lighting,Lighting box,event,NE,none,0,1
+green,Green room,event,NESW,none,0,1
+archive,Programme archive,event,NEW,none,0,1
+mirrors,Hall of mirrors,event,NS,none,0,1
+fly,Fly loft,trap,NESW,none,0,1
+boards,Rotten boards,trap,NE,none,0,1
+rigging,Rigging pit,trap,NSW,none,0,1
+patronbox,Patron's box,omen,NE,none,0,1
+prompter,Prompter's box,omen,NS,none,0,1
+maskcabinet,Mask cabinet,omen,NESW,none,0,1
+office,Shuttered office,omen,NEW,none,0,1
+vault,Dusty vault,omen,NW,none,0,1
+trapdoor,Stage trapdoor,transport,NESW,none,0,1
+catwalk,Catwalk,transport,NS,none,0,1
+rehearsal,Rehearsal room,bonus,NEW,might,1,1
+chapel,Chapel of the stage ancestors,bonus,NS,sanity,1,1
+gallery,Rigging gallery,bonus,NESW,speed,1,1
