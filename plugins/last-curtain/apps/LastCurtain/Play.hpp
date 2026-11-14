@@ -24,7 +24,7 @@ public:
     // An action from a screen; true when it did something.
     bool HandleUi(const std::string &screen, const std::string &action, const std::string &arg);
     [[nodiscard]] nlohmann::json UiData() const;
-    // "", "caption", "event", "dice", "chat", "omen", "actions" or "bag"
+    // "", "end", "caption", "event", "dice", "turn", "chat", "omen", "battle", "actions" or "bag"
     [[nodiscard]] std::string Screen() const;
     // Bots act one action at a time: a beat the player sees holds 1.5 s (0.3 s after Space), an
     // unseen one 0.2 s. dt 0 (a minimised window) changes nothing.
@@ -33,6 +33,12 @@ public:
     [[nodiscard]] const umbra::night::Beat &LastBeat() const { return beat_; }
     [[nodiscard]] int Beats() const { return beats_; } // bot actions so far
     [[nodiscard]] const umbra::night::NightState &State() const { return state_; }
+
+    // Saves (plan 1's SaveNight); Restore refuses a damaged save or one from other data.
+    [[nodiscard]] nlohmann::json Save() const;
+    static bool Restore(const umbra::night::NightDef &def, const nlohmann::json &saved, umbra::night::NightState &out);
+    // The start screen's data: the guests to pick, and whether Continue shows.
+    static nlohmann::json StartData(const umbra::night::NightDef &def, bool canContinue);
 
 private:
     // A roll the player made, shown on the dice screen.
@@ -47,6 +53,9 @@ private:
     [[nodiscard]] int Me() const;                // the guest the screens show
     [[nodiscard]] std::string Label(const umbra::night::Action &action) const;
     [[nodiscard]] nlohmann::json BattleData() const;
+    [[nodiscard]] nlohmann::json TurnData() const;
+    [[nodiscard]] nlohmann::json EndData() const;
+    void Notice(std::uint32_t since); // the Turn in new log entries
 
     const umbra::night::NightDef &def_;
     umbra::night::NightState state_;
@@ -58,4 +67,5 @@ private:
     int beats_ = 0;
     int event_ = -1, eventCell_ = -1, eventStat_ = 0; // the event to show before its dice (events.csv row)
     std::deque<Dice> dice_;
+    bool turn_ = false; // the Turn happened and its screen waits
 };

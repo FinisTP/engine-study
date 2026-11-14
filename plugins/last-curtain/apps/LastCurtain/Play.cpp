@@ -2,6 +2,7 @@
 
 #include <BoardView.hpp>
 #include <NightBots.hpp>
+#include <NightSave.hpp>
 
 #include <algorithm>
 #include <bit>
@@ -50,6 +51,23 @@ namespace
         }
     }
 
+    // A Taken's power in a line (powers.json).
+    std::string PowerText(const PowerDef &p)
+    {
+        const std::string damage = std::to_string(p.damage), range = std::to_string(p.range);
+        switch (p.kind)
+        {
+        case PowerKind::Line: return damage + " damage to a guest in a straight line of open passages";
+        case PowerKind::Area: return damage + " damage to everyone within " + range + " rooms";
+        case PowerKind::Flood: return "floods the rooms within " + range + "; " + damage + " damage to whoever ends a turn there";
+        case PowerKind::Pull: return "drags a guest within " + range + " rooms to its side";
+        case PowerKind::Seal: return "seals a passage within " + range + " rooms for " + std::to_string(p.rounds) + " rounds";
+        case PowerKind::Swap: return "trades places with a guest";
+        case PowerKind::Reflect: return "turns the next blow back on the striker";
+        }
+        return "";
+    }
+
     const char *KindName(ItemKind kind)
     {
         switch (kind)
@@ -84,6 +102,7 @@ bool Play::Do(const Action &action)
     const NightState before = state_;
     if (!Apply(def_, state_, action))
         return false;
+    Notice(before.logCount);
     // 2. An event drawn on this move: shown before its roll (a new bit in eventsUsed).
     const std::uint64_t drawn = state_.eventsUsed & ~before.eventsUsed;
     if (drawn)
@@ -158,6 +177,11 @@ bool Play::HandleUi(const std::string &, const std::string &action, const std::s
         dice_.pop_front();
         return true;
     }
+    if (action == "begin" && turn_)
+    {
+        turn_ = false;
+        return true;
+    }
     if (!PlayerTurn())
         return false;
     // 2. Choices: answers, the omen.
@@ -189,11 +213,13 @@ bool Play::HandleUi(const std::string &, const std::string &action, const std::s
 std::string Play::Screen() const
 {
     if (state_.over)
-        return "";
+        return "end";
     if (event_ >= 0)
         return "event";
     if (!dice_.empty())
         return "dice";
+    if (turn_)
+        return "turn";
     if (!PlayerTurn())
         return hold_ > 0.0F && beat_.seen ? "caption" : "";
     if (state_.chat.active)
@@ -208,7 +234,7 @@ std::string Play::Screen() const
 void Play::Update(float dt)
 {
     // 1. Wait out the beat on show and the player's rolls; nothing moves without time.
-    if (dt <= 0.0F || event_ >= 0 || !dice_.empty())
+    if (dt <= 0.0F || event_ >= 0 || !dice_.empty() || turn_)
         return;
     hold_ -= dt;
     if (hold_ > 0.0F)
@@ -227,6 +253,7 @@ void Play::Update(float dt)
     const Action action = ChooseAction(def_, state_, acting);
     if (!Apply(def_, state_, action))
         return;
+    Notice(before.logCount);
     ++beats_;
     beat_ = captions_.lines.empty() ? Beat{} : Narrate(def_, before, state_, NewLog(state_, before.logCount), action, acting, state_.player, captions_);
     hold_ = beat_.seen ? (fast_ ? 0.3F : 1.5F) : 0.2F;
@@ -265,6 +292,10 @@ std::string Play::Label(const Action &action) const
 nlohmann::json Play::UiData() const
 {
     nlohmann::json data;
+    if (state_.over)
+        data["end"] = EndData();
+    if (turn_ && !state_.over)
+        data["turn"] = TurnData();
     if (beat_.seen && hold_ > 0.0F)
         data["caption"] = {{"guest", def_.guests[U(beat_.guest)].name}, {"line", beat_.caption}, {"result", beat_.result}};
     const int me = Me();
@@ -468,4 +499,86 @@ nlohmann::json Play::BattleData() const
         canLeave = canLeave || a.kind == ActionKind::Leave;
     return {{"room", def_.rooms[U(state_.cells[U(b.cell)].room)].name}, {"round", b.round}, {"rounds", def_.rules.battle.rounds},
             {"company", company}, {"enemies", enemies}, {"canLeave", canLeave}, {"cannotLeave", !canLeave}, {"last", last}};
+}
+
+void Play::Notice(std::uint32_t since)
+{
+    for (const LogEntry &e : NewLog(state_, since))
+        if (e.kind == LogKind::Turned)
+            turn_ = true;
+}
+
+nlohmann::json Play::Save() const { return SaveNight(def_, state_); }
+
+bool Play::Restore(const NightDef &def, const nlohmann::json &saved, NightState &out)
+{
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    try
+    {
+        return saved.is_object() && LoadNightState(def, saved, out, diagnostics);
+    }
+    catch (const nlohmann::json::exception &)
+    {
+        return false; // a damaged save
+    }
+}
+
+nlohmann::json Play::StartData(const NightDef &def, bool canContinue)
+{
+    nlohmann::json guests = nlohmann::json::array();
+    for (const GuestDef &g : def.guests)
+        guests.push_back({{"id", g.id}, {"name", g.name}, {"style", def.styles[U(g.style)].id}, {"hp", g.hp},
+                          {"might", g.might}, {"sanity", g.sanity}, {"speed", g.speed}});
+    return {{"start", {{"guests", guests}, {"canContinue", canContinue}}}};
+}
+
+nlohmann::json Play::TurnData() const
+{
+    // The curse takes a guest: who, as what, how strong, and the minions whose deaths weaken it.
+    const int t = state_.taken.guest;
+    const GuestDef &g = def_.guests[U(t)];
+    int minions = 0, share = 0;
+    std::string minionName;
+    for (const Monster &m : state_.monsters)
+        if (def_.monsters[U(m.kind)].taken == t)
+            ++minions, minionName = def_.monsters[U(m.kind)].name, share = def_.monsters[U(m.kind)].hpShare;
+    char clock[8];
+    std::snprintf(clock, sizeof(clock), "%d:%02d", Hour(def_, state_), Minute(def_, state_));
+    const PowerDef &power = def_.powers[U(g.power)];
+    return {{"who", g.name}, {"isYou", t == state_.player}, {"form", g.taken}, {"hp", state_.guests[U(t)].hp},
+            {"power", power.id + ": " + PowerText(power)}, {"minions", minions}, {"minionName", minionName},
+            {"minionShare", share}, {"clock", clock}};
+}
+
+nlohmann::json Play::EndData() const
+{
+    // 1. Who won.
+    std::string outcome = "The night ends.";
+    if (state_.outcome == Outcome::Company)
+        outcome = "Dawn comes. The company survives the night.";
+    if (state_.outcome == Outcome::Taken)
+        outcome = "The Taken wins. The theatre keeps its guests.";
+    // 2. A few lines from the night.
+    int rooms = 0;
+    for (const Cell &c : state_.cells)
+        rooms += c.opened ? 1 : 0;
+    nlohmann::json lines = nlohmann::json::array();
+    lines.push_back("Rounds played: " + std::to_string(std::min<int>(state_.round, def_.rules.clock.rounds)));
+    lines.push_back("Rooms opened: " + std::to_string(rooms));
+    lines.push_back("Omens taken: " + std::to_string(state_.omensTaken));
+    if (state_.taken.guest >= 0)
+        lines.push_back("The curse took " + def_.guests[U(state_.taken.guest)].name + ", who rose as " + def_.guests[U(state_.taken.guest)].taken + ".");
+    std::string fallen, allies;
+    for (int g = 0; g < state_.count; ++g)
+    {
+        if (state_.guests[U(g)].dead)
+            fallen += (fallen.empty() ? "" : ", ") + def_.guests[U(g)].name;
+        else if (g != state_.player && state_.player >= 0 && Controls(state_, state_.player, g))
+            allies += (allies.empty() ? "" : ", ") + def_.guests[U(g)].name;
+    }
+    if (!fallen.empty())
+        lines.push_back("Fallen: " + fallen + ".");
+    if (!allies.empty())
+        lines.push_back("At your side at the end: " + allies + ".");
+    return {{"outcome", outcome}, {"lines", lines}};
 }

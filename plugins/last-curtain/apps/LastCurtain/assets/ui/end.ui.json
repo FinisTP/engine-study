@@ -1,0 +1,14 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "dim": true,
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [640, 0], "align": "stretch", "gap": 12, "children": [
+    { "type": "text", "style": "title", "text": "{end.outcome}", "wrap": true, "size": [600, 0] },
+    { "type": "list", "items": "{end.lines}", "as": "line", "gap": 4, "entry": { "type": "text", "style": "small", "text": "{line}", "wrap": true, "size": [600, 0] } },
+    { "type": "stack", "direction": "horizontal", "gap": 12, "children": [
+      { "type": "button", "size": [200, 44], "text": "A new night", "action": "new" },
+      { "type": "button", "size": [200, 44], "text": "Quit", "action": "quit" }
+    ] }
+  ] }
+}

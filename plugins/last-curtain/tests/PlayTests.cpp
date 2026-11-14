@@ -3,6 +3,7 @@
 #include <BoardView.hpp>
 #include <Narrate.hpp>
 #include <NightBots.hpp>
+#include <NightSave.hpp>
 #include <Play.hpp>
 
 #include <algorithm>
@@ -335,7 +336,7 @@ TEST_CASE("No screen waits after the night ended (T113)", "[night][play]")
     state.over = true;
     state.outcome = Outcome::Company;
     Play play(def, state);
-    CHECK(play.Screen() == "");
+    CHECK(play.Screen() == "end"); // the end screen only, no chat or omen
     CHECK_FALSE(play.UiData().contains("chat"));
     CHECK_FALSE(play.UiData().contains("omen"));
     CHECK_FALSE(play.HandleUi("chat", "answer", "0"));
@@ -420,4 +421,127 @@ TEST_CASE("The player's death mid-battle ends the screen and the watching begins
     const int beats = play.Beats();
     play.Update(10.0F);
     CHECK((play.Beats() > beats || play.State().over));
+}
+
+namespace
+{
+    // Plays (bots, and the player ending turns) until `done`; event, dice and Turn screens are dismissed.
+    template <class Done> void PlayUntil(Play &play, Done done)
+    {
+        for (int i = 0; i < 3000 && !done() && !play.State().over; ++i)
+        {
+            Settle(play);
+            if (play.Screen() == "turn")
+                play.HandleUi("turn", "begin", "");
+            else if (play.State().chat.active && play.PlayerTurn())
+                play.HandleUi("chat", "answer", "0");
+            else if (play.State().omenOffer >= 0 && play.PlayerTurn())
+                play.HandleUi("omen", "leave", "");
+            else if (play.PlayerTurn() && play.State().battle.active)
+                play.HandleUi("battle", "guard", "");
+            else if (play.PlayerTurn())
+            {
+                const nlohmann::json actions = play.UiData()["actions"];
+                if (!actions.empty() && actions.back()["label"] == "End turn")
+                    play.Key(InputKey::Enter);
+                else if (!actions.empty())
+                    play.HandleUi("actions", actions.front()["action"], actions.front()["arg"]); // a level up, say
+            }
+            else
+                play.Update(10.0F);
+        }
+    }
+}
+
+TEST_CASE("A save and Continue give the same night (T115)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play(def, 11, 2);
+    PlayUntil(play, [&] { return play.State().round >= 4; });
+    const nlohmann::json saved = play.Save();
+    NightState restored;
+    REQUIRE(Play::Restore(def, saved, restored));
+    CHECK(Fingerprint(restored) == Fingerprint(play.State()));
+    CHECK(Play::StartData(def, true)["start"]["canContinue"] == true);
+    Play again(def, restored);
+    PlayUntil(play, [&] { return play.State().round >= 7; });
+    PlayUntil(again, [&] { return again.State().round >= 7; });
+    CHECK(Fingerprint(again.State()) == Fingerprint(play.State()));
+}
+
+TEST_CASE("A save from other data hides Continue (T115)", "[night][play]")
+{
+    const NightDef def = Data();
+    const nlohmann::json saved = Play(def, 11, 2).Save();
+    NightDef other = def;
+    other.rules.battle.rounds += 1;
+    other.fingerprint ^= 1; // other data
+    NightState state;
+    CHECK_FALSE(Play::Restore(other, saved, state));
+    CHECK_FALSE(Play::Restore(def, nlohmann::json::parse("{\"broken\": true}"), state));
+    CHECK_FALSE(Play::Restore(def, nlohmann::json(), state));
+    const nlohmann::json start = Play::StartData(def, false)["start"];
+    CHECK(start["canContinue"] == false);
+    REQUIRE(start["guests"].size() == def.guests.size());
+    CHECK(start["guests"][0]["id"] == def.guests[0].id);
+    CHECK(start["guests"][0]["hp"] == def.guests[0].hp);
+}
+
+TEST_CASE("The Turn screen names the form and its numbers (T115)", "[night][play]")
+{
+    const NightDef def = Data();
+    NightState state = NewNight(def, 11, 0);
+    state.marked = 3;
+    state.round = static_cast<std::int8_t>(def.rules.clock.turnAfterRound);
+    Play play(def, state);
+    for (int i = 0; i < 3000 && !play.State().taken.present; ++i)
+    {
+        Settle(play);
+        if (play.State().chat.active && play.PlayerTurn())
+            play.HandleUi("chat", "answer", "0");
+        else if (play.State().omenOffer >= 0 && play.PlayerTurn())
+            play.HandleUi("omen", "leave", "");
+        else if (play.PlayerTurn())
+            play.Key(InputKey::Enter);
+        else
+            play.Update(10.0F);
+    }
+    REQUIRE(play.State().taken.present);
+    REQUIRE(play.Screen() == "turn");
+    const nlohmann::json turn = play.UiData()["turn"];
+    CHECK(turn["who"] == def.guests[3].name);
+    CHECK(turn["form"] == def.guests[3].taken);
+    CHECK(turn["hp"] == def.guests[3].takenHp);
+    int minions = 0;
+    for (const MonsterDef &m : def.monsters)
+        minions += m.taken == 3 ? m.count : 0;
+    CHECK(turn["minions"] == minions);
+    CHECK_FALSE(turn["power"].get<std::string>().empty());
+    const int beats = play.Beats();
+    play.Update(10.0F); // the bots wait for the player to read it
+    CHECK(play.Beats() == beats);
+    CHECK(play.HandleUi("turn", "begin", ""));
+    CHECK(play.Screen() != "turn");
+}
+
+TEST_CASE("The player as the Taken plays on (T115)", "[night][play]")
+{
+    const NightDef def = Data();
+    NightState state = NewNight(def, 11, 0);
+    state.marked = 0;
+    state.round = static_cast<std::int8_t>(def.rules.clock.turnAfterRound);
+    Play play(def, state);
+    PlayUntil(play, [&] { return play.State().taken.present; });
+    REQUIRE(play.State().taken.present);
+    REQUIRE(play.State().taken.guest == 0);
+    CHECK(play.UiData()["turn"]["isYou"] == true);
+    play.HandleUi("turn", "begin", "");
+    for (int i = 0; i < 400 && Current(play.State()) != 0 && !play.State().over; ++i)
+        if (Settle(play); !play.PlayerTurn())
+            play.Update(10.0F);
+    REQUIRE(Current(play.State()) == 0);
+    CHECK(play.PlayerTurn());
+    const BoardView view = MakeView(def, play.State(), 0);
+    CHECK(view.cells[static_cast<std::size_t>(play.State().guests[0].cell)].lit);
+    CHECK(play.UiData()["me"]["name"] == def.guests[0].name);
 }

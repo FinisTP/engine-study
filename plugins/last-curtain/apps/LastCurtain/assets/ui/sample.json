@@ -205,5 +205,58 @@
         "note": "A minion: killing it takes 25% of the Taken's HP."
       }
     ]
+  },
+  "start": {
+    "canContinue": true,
+    "guests": [
+      {
+        "id": "nhi",
+        "name": "Truong Uyen Nhi",
+        "style": "explorer",
+        "hp": 16,
+        "might": 3,
+        "sanity": 6,
+        "speed": 5
+      },
+      {
+        "id": "khang",
+        "name": "Vo Minh Khang",
+        "style": "fighter",
+        "hp": 30,
+        "might": 7,
+        "sanity": 2,
+        "speed": 3
+      },
+      {
+        "id": "mai",
+        "name": "Phan Thi Mai",
+        "style": "protector",
+        "hp": 18,
+        "might": 3,
+        "sanity": 6,
+        "speed": 3
+      }
+    ]
+  },
+  "turn": {
+    "who": "Hoang Gia Huy",
+    "isYou": false,
+    "form": "the Opera Specter",
+    "hp": 90,
+    "power": "area: 5 damage to everyone within 2 rooms",
+    "minions": 3,
+    "minionName": "Ember chorister",
+    "minionShare": 25,
+    "clock": "0:00"
+  },
+  "end": {
+    "outcome": "Dawn comes. The company survives the night.",
+    "lines": [
+      "Rounds played: 18",
+      "Rooms opened: 17",
+      "Omens taken: 2",
+      "The curse took Hoang Gia Huy, who rose as the Opera Specter.",
+      "At your side at the end: Dinh Quoc Bao."
+    ]
   }
 }

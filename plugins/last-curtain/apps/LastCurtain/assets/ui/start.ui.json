@@ -1,0 +1,22 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "dim": true,
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [900, 0], "align": "stretch", "gap": 14, "children": [
+    { "type": "text", "style": "title", "text": "The Last Curtain" },
+    { "type": "text", "style": "small", "text": "One night in the Saigon Opera House. Choose the guest you will be; the other six are played by the house.", "wrap": true, "size": [860, 0] },
+    { "type": "list", "items": "{start.guests}", "as": "g", "columns": 4, "gap": 10, "action": "pick", "arg": "{g.id}",
+      "entry": { "type": "stack", "style": "slot", "size": [205, 0], "gap": 4, "children": [
+        { "type": "text", "style": "strong", "text": "{g.name}", "wrap": true, "size": [185, 0] },
+        { "type": "text", "style": "muted", "text": "{g.style}" },
+        { "type": "text", "style": "small", "text": "HP {g.hp}  Might {g.might}" },
+        { "type": "text", "style": "small", "text": "Sanity {g.sanity}  Speed {g.speed}" }
+      ] } },
+    { "type": "stack", "direction": "horizontal", "gap": 12, "children": [
+      { "type": "button", "size": [200, 44], "text": "A random guest", "action": "random" },
+      { "type": "button", "size": [200, 44], "text": "Continue the night", "action": "continue", "visible": "{start.canContinue}" },
+      { "type": "button", "size": [200, 44], "text": "Quit", "action": "quit" }
+    ] }
+  ] }
+}

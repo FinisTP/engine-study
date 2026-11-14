@@ -1,0 +1,15 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "dim": true,
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [680, 0], "align": "stretch", "gap": 12, "children": [
+    { "type": "text", "style": "muted", "text": "{turn.clock}  |  THE CURSE TAKES A GUEST" },
+    { "type": "text", "style": "title", "text": "{turn.who} rises as {turn.form}" },
+    { "type": "text", "style": "bad", "text": "It is you. Hunt them down before dawn.", "visible": "{turn.isYou}" },
+    { "type": "text", "style": "text", "text": "Time shifts: the whole house wakes at midnight. The company gathers in the foyer; the Taken waits under the stage.", "wrap": true, "size": [640, 0] },
+    { "type": "text", "style": "strong", "text": "HP {turn.hp}   |   power: {turn.power}", "wrap": true, "size": [640, 0] },
+    { "type": "text", "style": "small", "text": "{turn.minions} minions ({turn.minionName}) wait in the far rooms. Each one destroyed takes {turn.minionShare}% of the Taken's HP.", "visible": "{turn.minions}", "wrap": true, "size": [640, 0] },
+    { "type": "button", "size": [220, 44], "text": "Begin the hunt", "action": "begin" }
+  ] }
+}
