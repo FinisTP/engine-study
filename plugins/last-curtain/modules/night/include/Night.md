@@ -51,7 +51,9 @@ code holds only the mechanics. Design: `docs/design/game-design.md` (GDD); bots 
 
 ## A turn (`Turn.cpp`)
 
-- Moves = Speed. Passage: 1 move. Doorway: opens the room. Item, event and trap rooms stop
+- Moves = Speed. Passage: 1 move. Stepping back into the cell a plain last step came from (no
+  room opened, nothing rolled, fought or picked up) undoes it: the move comes back, and the cell
+  just left is barred for the rest of the turn (`Guest::undo`, `barred`), so no pacing. Doorway: opens the room. Item, event and trap rooms stop
   movement until resolved; an unused bonus room stops it too. Transport rooms move you to the
   other one of the pair for 1 move (`Action{Move, transportMove}`).
 - Items, drop and pick up are free. Resolving an item, event or trap room ends the turn; so does

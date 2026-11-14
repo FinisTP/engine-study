@@ -221,7 +221,12 @@ namespace umbra::night
         if (IsTaken(state, g))
             TakenTurnStart(state);
         if (g >= 0)
-            G(state, g).movesLeft = I8(Stat(def, state, g, StatKind::Speed));
+        {
+            Guest &guest = G(state, g);
+            guest.movesLeft = I8(Stat(def, state, g, StatKind::Speed));
+            guest.undo = -1;
+            guest.barred.reset();
+        }
     }
 
     void inner::EndTurn(const NightDef &def, NightState &state)
@@ -316,10 +321,11 @@ namespace umbra::night
         // 1. Moving: through passages and doorways, and between the transport pair.
         if (guest.movesLeft > 0)
         {
+            // Not into the room an undo just left (no pacing back and forth).
             for (std::int8_t d = 0; d < 4; ++d)
-                if (Passage(def, state, guest.cell, d) || Doorway(def, state, guest.cell, d))
+                if ((Passage(def, state, guest.cell, d) || Doorway(def, state, guest.cell, d)) && !(Neighbour(def, guest.cell, d) >= 0 && guest.barred[U(Neighbour(def, guest.cell, d))]))
                     legal.push_back({ActionKind::Move, d});
-            if (Pair(def, state, guest.cell) >= 0)
+            if (const int pair = Pair(def, state, guest.cell); pair >= 0 && !guest.barred[U(pair)])
                 legal.push_back({ActionKind::Move, transportMove});
         }
 
@@ -402,6 +408,7 @@ namespace umbra::night
         }
         case ActionKind::Move:
         {
+            const std::uint32_t logBefore = state.logCount; // nothing logged by the move: a plain step
             int to = action.a == transportMove ? Pair(def, state, guest.cell) : Neighbour(def, guest.cell, action.a);
             if (action.a != transportMove && !Passage(def, state, guest.cell, action.a))
             {
@@ -409,7 +416,14 @@ namespace umbra::night
                 Log(state, LogKind::Opened, g, -1, to);
                 PlaceKeepsake(def, state, to);
             }
-            --guest.movesLeft;
+            // 1. A step back into the cell the last plain step came from undoes it: both moves back,
+            //    and the cell just left is barred for the rest of the turn.
+            const int was = guest.cell;
+            const bool undo = to == guest.undo;
+            guest.movesLeft = I8(guest.movesLeft + (undo ? 1 : -1));
+            if (undo)
+                guest.barred.set(U(was));
+            guest.undo = -1;
             guest.from = guest.cell;
             Enter(def, state, g, to);
             // After midnight: the Taken and the company meet; the Taken passes monsters and rooms by.
@@ -434,17 +448,23 @@ namespace umbra::night
                 Resolve(def, state, g, to);
                 inner::EndTurn(def, state);
             }
+            // 2. A plain step (nothing opened, rolled or fought: nothing logged) may be undone next.
+            else if (!undo && state.logCount == logBefore)
+                guest.undo = I8(was);
             break;
         }
         case ActionKind::UseItem:
             UseItem(def, state, g, action.a, action.b);
+            guest.undo = -1;
             break;
         case ActionKind::DropItem:
+            guest.undo = -1;
             state.floor.push_back({guest.cell, guest.items[U(action.a)]});
             guest.items[U(action.a)] = -1;
             break;
         case ActionKind::PickUp:
         {
+            guest.undo = -1;
             auto slot = std::find(guest.items.begin(), guest.items.end(), std::int8_t(-1));
             *slot = state.floor[U(action.a)].item;
             state.floor.erase(state.floor.begin() + action.a);

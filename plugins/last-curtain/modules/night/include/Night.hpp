@@ -36,6 +36,8 @@ namespace umbra::night
         std::uint8_t asked = 0;     // this guest's own questions already asked (bits of its pool)
         std::int8_t chatRound = -1; // the round this guest last opened a chat with the player
         std::int8_t movesLeft = 0;
+        std::int8_t undo = -1;          // this turn: the cell a plain last step came from (-1 none)
+        std::bitset<maxCells> barred;   // this turn: cells left by an undo, not to be entered again
         std::int8_t goal = -1, goalCount = 0; // goals.csv row drawn tonight; events passed or monsters destroyed for it
         bool goalRoomSeen = false;           // a room goal: the room was entered
         std::uint8_t knows = 0;              // guests whose goal this guest knows, as bits
