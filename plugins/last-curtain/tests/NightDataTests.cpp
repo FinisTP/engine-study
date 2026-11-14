@@ -2,6 +2,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 
@@ -67,6 +68,19 @@ TEST_CASE("The shipped data loads and is complete (T94)", "[night][data]")
     for (const RoomDef &room : def.rooms)
         rooms += room.count;
     CHECK(rooms >= def.rules.board.rooms);
+}
+
+TEST_CASE("Every guest has two or three goals (T117)", "[night][data]")
+{
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    NightDef def;
+    REQUIRE(LoadNight(UMBRA_NIGHT_DATA, def, diagnostics));
+    for (int g = 0; g < static_cast<int>(def.guests.size()); ++g)
+    {
+        const auto n = std::count_if(def.goals.begin(), def.goals.end(), [&](const GoalDef &goal) { return goal.guest == g; });
+        CHECK(n >= 2);
+        CHECK(n <= 3);
+    }
 }
 
 TEST_CASE("Bad data is refused with file, row and column (T94)", "[night][data]")
@@ -135,6 +149,23 @@ TEST_CASE("Bad data is refused with file, row and column (T94)", "[night][data]"
         NightDef def;
         REQUIRE(LoadNight(folder, def, diagnostics));
         CHECK(def.items[0].name == "Bandage, clean");
+    }
+    SECTION("a goal with an unknown target, kind or count, or an item that is not a keepsake")
+    {
+        const fs::path folder = CopyData("goals");
+        Replace(folder / "goals.csv", "nhi,nhi-box,room,patronbox", "nhi,nhi-box,room,nowhere");
+        const auto d = Refused(folder);
+        CHECK(d.code == "night.goals");
+        CHECK(d.field.rfind("goals.csv:1:", 0) == 0);
+        const fs::path kind = CopyData("goalkind");
+        Replace(kind / "goals.csv", "nhi,nhi-box,room,", "nhi,nhi-box,wish,");
+        CHECK(Refused(kind).code == "night.goals");
+        const fs::path count = CopyData("goalcount");
+        Replace(count / "goals.csv", "huy,huy-events,events,none,3", "huy,huy-events,events,none,0");
+        CHECK(Refused(count).code == "night.goals");
+        const fs::path item = CopyData("goalitem");
+        Replace(item / "goals.csv", "khang,khang-ledger,item,ledger", "khang,khang-ledger,item,bandage");
+        CHECK(Refused(item).code == "night.goals");
     }
     SECTION("omen rooms are gone")
     {

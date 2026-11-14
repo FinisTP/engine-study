@@ -16,7 +16,8 @@ namespace umbra::night
     enum class Weapon : std::uint8_t { Physical, Magical };
     enum class RoomKind : std::uint8_t { Foyer, UnderStage, Plain, Item, Event, Trap, Transport, Bonus };
     enum class Effect : std::uint8_t { None, Hp, HpRoom, MaxHp, Might, Sanity, Speed, Item, Xp, Buff, Armor, Light, Revive, Back };
-    enum class ItemKind : std::uint8_t { Heal, Boost, Worn, Relic };
+    enum class ItemKind : std::uint8_t { Heal, Boost, Worn, Relic, Keepsake };
+    enum class GoalKind : std::uint8_t { Room, Item, Ally, Events, Monsters };
     enum class BuffStat : std::uint8_t { Guard, Might, Sanity };
     enum class PowerKind : std::uint8_t { Line, Area, Flood, Pull, Seal, Swap, Reflect };
 
@@ -30,6 +31,7 @@ namespace umbra::night
         struct { int rounds = 3, minDamage = 1, base = 3, defenseDivisor = 2, guardDivisor = 2; } battle;
         struct { std::vector<int> xp; int hp = 4, stat = 1; } levels;
         struct { int fromRound = 3, chancePercent = 35, stayRounds = 3, max = 2; } monsters;
+        struct { int failHp = 1, earlyRooms = 35; } goals; // HP a failed guest keeps at midnight; goal rooms come out within this many
         struct { int approvals = 3, bond = 3; } persuade; // approvals that make an ally; the bond's pull on a target
         struct { int downedReturnHp = 1, attackBondLoss = 300; } guests;
         struct { int companyWinMin = 40, companyWinMax = 60; } balance;
@@ -83,6 +85,16 @@ namespace umbra::night
         int amount = 0;
         int buff = -1; // buffs.csv row
         int weight = 1;
+        std::string text;
+        int room = -1; // a keepsake: the rooms.csv row where it waits
+    };
+    // A reason a guest came tonight (goals.csv). target: a rooms.csv, items.csv or guests.csv row; -1 for events and monsters.
+    struct GoalDef
+    {
+        int guest = 0;
+        std::string id;
+        GoalKind kind = GoalKind::Room;
+        int target = -1, count = 1;
         std::string text;
     };
 
@@ -140,6 +152,7 @@ namespace umbra::night
         std::vector<MonsterDef> monsters; // ordinary monsters, then the minions of minions.csv
         std::vector<StyleDef> styles;
         std::vector<QuestionDef> questions; // five per guest
+        std::vector<GoalDef> goals;         // two or three per guest
         std::uint64_t fingerprint = 0; // a hash of every data file, so saves match their data
 
         // The index of the row with this id, or -1.

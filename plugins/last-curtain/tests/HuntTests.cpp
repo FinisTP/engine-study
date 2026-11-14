@@ -16,14 +16,21 @@ namespace
         return def;
     }
 
-    // Every guest passes until the hunt begins (round turnAfterRound + 1).
+    // Every guest passes until the hunt begins (round turnAfterRound + 1). The failed-goal penalty
+    // (1 HP, GoalTests) is undone so these tests see the hunt at the HP the evening left.
     void PassToMidnight(const NightDef &def, NightState &state)
     {
+        std::array<int, maxGuests> hp{};
+        for (int g = 0; g < state.count; ++g)
+            hp[U(g)] = state.guests[U(g)].hp;
         while (Current(state) >= 0 && state.round <= def.rules.clock.turnAfterRound)
         {
             const auto legal = LegalActions(def, state);
             REQUIRE(Apply(def, state, legal[0].kind == ActionKind::LevelUp ? legal[0] : Action{ActionKind::EndTurn}));
         }
+        for (int g = 0; g < state.count; ++g)
+            if (!IsTaken(state, g) && !state.guests[U(g)].dead)
+                state.guests[U(g)].hp = static_cast<std::int16_t>(std::max<int>(state.guests[U(g)].hp, hp[U(g)]));
     }
 
     // A board built far enough to hold the under-stage.

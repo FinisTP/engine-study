@@ -36,6 +36,9 @@ namespace umbra::night
         std::uint8_t asked = 0;     // this guest's own questions already asked (bits of its pool)
         std::int8_t chatRound = -1; // the round this guest last opened a chat with the player
         std::int8_t movesLeft = 0;
+        std::int8_t goal = -1, goalCount = 0; // goals.csv row drawn tonight; events passed or monsters destroyed for it
+        bool goalRoomSeen = false;           // a room goal: the room was entered
+        std::uint8_t knows = 0;              // guests whose goal this guest knows, as bits
     };
 
     struct FloorItem
@@ -65,13 +68,13 @@ namespace umbra::night
     enum class LogKind : std::uint8_t
     {
         Opened, Check, Effect, Item, Down, Woke,
-        Battle, Hit, Turned, Power, Died, Ended, Monster, Level, Persuade
+        Battle, Hit, Turned, Power, Died, Ended, Monster, Level, Persuade, Goal
     };
 
     // One thing that happened. Check: a = die, other = stat, b = target. Effect: a = Effect, b = amount.
     // Item: a = item. Down/Died: other = by whom (-1 house). Woke: other = helper. Opened: a = cell.
     // Monster: a = monsters.csv row (minions after the monsters); other -1 = appeared (b = cell), other 1 = killed by `who`.
-    // Battle: who/other = first guest of each side.
+    // Battle: who/other = first guest of each side. Goal: who = guest, a = 1 done / 0 failed (at midnight).
     // Hit: who = striker (-1 monster), other = struck (-1 monster), a = damage, b = HP left. Ended: a = Outcome.
     struct LogEntry
     {
@@ -182,6 +185,8 @@ namespace umbra::night
     int ChancePercent(int stat, int target);
 
     bool IsTaken(const NightState &state, int guest);
+    // The guest's goal is done now (a room seen, a keepsake carried, an ally in its group, the count reached).
+    bool GoalDone(const NightDef &def, const NightState &state, int guest);
 
     // A hit in battle (Battle.cpp): data formula, resistance, armour, guard; never below minDamage.
     int Damage(const NightDef &def, const NightState &state, const Fighter &attacker, const Fighter &defender);

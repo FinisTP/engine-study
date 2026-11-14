@@ -127,6 +127,12 @@ namespace umbra::night
                 if (m.hp == 0)
                 {
                     Log(state, LogKind::Monster, attacker.guest, 1, m.kind, target.monster); // other 1: killed
+                    if (attacker.guest >= 0 && def.monsters[U(m.kind)].taken < 0)
+                    {
+                        Guest &killer = state.guests[U(attacker.guest)];
+                        if (killer.goal >= 0 && def.goals[U(killer.goal)].kind == GoalKind::Monsters)
+                            killer.goalCount = I8(killer.goalCount + 1);
+                    }
                     // A minion takes its share of the Taken's life with it.
                     const MonsterDef &md = def.monsters[U(m.kind)];
                     if (md.taken >= 0 && state.taken.present && attacker.guest >= 0)

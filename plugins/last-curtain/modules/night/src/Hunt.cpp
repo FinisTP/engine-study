@@ -19,9 +19,24 @@ namespace umbra::night
 
     void inner::TheTurn(const NightDef &def, NightState &state)
     {
-        // 1. Chance picks the guest who turns, among everyone.
+        // 1. Goals: each living guest's is done or failed. All done: the company wins now. Else chance picks
+        //    the Taken among the failed, and the other failed keep at most failHp (the downed are left as they are).
+        std::vector<int> failed;
+        for (int g = 0; g < state.count; ++g)
+            if (!state.guests[U(g)].dead)
+            {
+                const bool done = GoalDone(def, state, g);
+                Log(state, LogKind::Goal, g, -1, done ? 1 : 0);
+                if (!done)
+                    failed.push_back(g);
+            }
+        if (failed.empty() && state.marked < 0)
+            return EndNight(state, Outcome::Company);
         if (state.marked < 0)
-            state.marked = I8(Below(state, state.count));
+            state.marked = I8(failed[U(Below(state, static_cast<int>(failed.size())))]);
+        for (const int g : failed)
+            if (g != state.marked && !state.guests[U(g)].down)
+                state.guests[U(g)].hp = I16(std::min<int>(state.guests[U(g)].hp, def.rules.goals.failHp));
         // 2. The marked guest leaves every group and rises as the Taken in the under-stage, at full HP.
         if (state.understage < 0)
             ForceUnderStage(def, state);

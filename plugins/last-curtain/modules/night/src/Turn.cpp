@@ -32,6 +32,8 @@ namespace umbra::night
             Guest &guest = G(state, g);
             guest.cell = I8(cell);
             const Cell &c = state.cells[U(cell)];
+            if (guest.goal >= 0 && def.goals[U(guest.goal)].kind == GoalKind::Room && def.goals[U(guest.goal)].target == c.room)
+                guest.goalRoomSeen = true;
             if (IsTaken(state, g))
                 return;
             switch (RoomOf(def, state, cell).kind)
@@ -145,6 +147,9 @@ namespace umbra::night
                 return;
             const EventDef &event = def.events[U(e)];
             const Check check = RollCheck(def, state, g, event.stat, event.target);
+            Guest &guest = G(state, g);
+            if (check.passed && !event.trap && guest.goal >= 0 && def.goals[U(guest.goal)].kind == GoalKind::Events)
+                guest.goalCount = I8(guest.goalCount + 1);
             if (check.passed)
                 ApplyEffect(def, state, g, event.passEffect, event.passAmount);
             else
@@ -250,6 +255,8 @@ namespace umbra::night
                 ++state.round;
                 if (state.round == def.rules.clock.turnAfterRound + 1 && !state.taken.present)
                     TheTurn(def, state);
+                if (state.over)
+                    return; // every goal was done: the company won at midnight
                 if (state.round > def.rules.clock.rounds)
                 {
                     if (state.outcome == Outcome::Running)
@@ -400,6 +407,7 @@ namespace umbra::night
             {
                 to = Open(def, state, guest.cell, action.a);
                 Log(state, LogKind::Opened, g, -1, to);
+                PlaceKeepsake(def, state, to);
             }
             --guest.movesLeft;
             guest.from = guest.cell;

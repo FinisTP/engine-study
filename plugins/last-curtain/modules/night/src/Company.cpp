@@ -88,11 +88,48 @@ namespace umbra::night
         const Check check = RollCheck(def, state, player, answer == 0 ? StatKind::Might : StatKind::Sanity, AnswerTarget(def, state, answer));
         Guest &guest = state.guests[U(asker)];
         if (check.passed)
+        {
             guest.approvals = I8(std::min<int>(guest.approvals + 1, def.rules.persuade.approvals));
+            state.guests[U(player)].knows = static_cast<std::uint8_t>(state.guests[U(player)].knows | (1u << asker)); // its goal is told
+        }
         if (guest.approvals >= def.rules.persuade.approvals && GroupSize(state, 0) < 3)
             state.guests[U(player)].group = guest.group = 0;
         Log(state, LogKind::Persuade, player, asker, check.passed ? 1 : 0, guest.approvals);
         state.chat.active = false;
+    }
+
+    bool GoalDone(const NightDef &def, const NightState &state, int g)
+    {
+        const Guest &guest = state.guests[U(g)];
+        if (guest.goal < 0)
+            return false;
+        const GoalDef &goal = def.goals[U(guest.goal)];
+        switch (goal.kind)
+        {
+        case GoalKind::Room: return guest.goalRoomSeen;
+        case GoalKind::Item: return std::find(guest.items.begin(), guest.items.end(), I8(goal.target)) != guest.items.end();
+        case GoalKind::Ally: return guest.group >= 0 && state.guests[U(goal.target)].group == guest.group && goal.target != g;
+        case GoalKind::Events:
+        case GoalKind::Monsters: return guest.goalCount >= goal.count;
+        }
+        return false;
+    }
+
+    void inner::PlaceKeepsake(const NightDef &def, NightState &state, int cell)
+    {
+        // The keepsake of this room lies on its floor when someone's drawn goal asks for it.
+        const int room = state.cells[U(cell)].room;
+        for (std::size_t i = 0; i < def.items.size(); ++i)
+        {
+            if (def.items[i].room != room)
+                continue;
+            for (int g = 0; g < state.count; ++g)
+                if (const int goal = state.guests[U(g)].goal; goal >= 0 && def.goals[U(goal)].kind == GoalKind::Item && def.goals[U(goal)].target == static_cast<int>(i))
+                {
+                    state.floor.push_back({I8(cell), I8(i)});
+                    break;
+                }
+        }
     }
 
     void inner::EndNight(NightState &state, Outcome outcome)

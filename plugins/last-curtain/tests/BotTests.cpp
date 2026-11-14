@@ -97,6 +97,9 @@ TEST_CASE("In the hunt a strong bot goes for a minion first (T104)", "[night][bo
     while (!state.taken.present)
         REQUIRE(Apply(def, state, Current(state) >= 0 && LegalActions(def, state)[0].kind == ActionKind::LevelUp ? LegalActions(def, state)[0]
                                                                                                             : Action{ActionKind::EndTurn}));
+    for (int o = 0; o < state.count; ++o) // healthy: this test is about minions, not the failed-goal penalty
+        if (o != 6)
+            state.guests[U(o)].hp = state.guests[U(o)].maxHp;
     const int g = Current(state);
     REQUIRE(!state.monsters.empty());
     // A minion in the room: attack it.

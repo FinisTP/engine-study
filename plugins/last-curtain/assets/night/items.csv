@@ -1,15 +1,20 @@
-id,name,kind,effect,amount,buff,weight,text
-bandage,Bandage,heal,hp,6,none,6,Heals 6 HP.
-tonic,Tonic,heal,hp,12,none,6,Heals 12 HP.
-brandy,Stage brandy,heal,hproom,4,none,6,Heals 4 HP to you and every ally in the room.
-whetstone,Whetstone,boost,buff,0,strengthened,6,In battle: Strengthened (+2 Might) for the battle.
-incense,Incense,boost,buff,0,focused,6,In battle: Focused (+2 Sanity) for the battle.
-coat,Padded coat,boost,buff,0,guarded,6,In battle: Guarded (the next hit is halved).
-sword,Prop sword,worn,might,1,none,6,+1 Might while carried.
-fan,Opera fan,worn,sanity,1,none,6,+1 Sanity while carried.
-shoes,Dancer's shoes,worn,speed,1,none,6,+1 Speed while carried.
-amulet,Brass amulet,worn,maxhp,4,none,6,+4 max HP while carried.
-armour,Stage armour,worn,armor,1,none,6,-1 physical damage taken while carried.
-lantern,Lantern,worn,light,1,none,6,Your light reaches one step further.
-crucifix,Crucifix,relic,revive,0,none,1,Wakes a downed guest in your room. Used up.
-rosary,Rosary,relic,revive,0,none,1,Wakes a downed guest in your room. Used up.
+id,name,kind,effect,amount,buff,weight,text,room
+bandage,Bandage,heal,hp,6,none,6,Heals 6 HP.,none
+tonic,Tonic,heal,hp,12,none,6,Heals 12 HP.,none
+brandy,Stage brandy,heal,hproom,4,none,6,Heals 4 HP to you and every ally in the room.,none
+whetstone,Whetstone,boost,buff,0,strengthened,6,In battle: Strengthened (+2 Might) for the battle.,none
+incense,Incense,boost,buff,0,focused,6,In battle: Focused (+2 Sanity) for the battle.,none
+coat,Padded coat,boost,buff,0,guarded,6,In battle: Guarded (the next hit is halved).,none
+sword,Prop sword,worn,might,1,none,6,+1 Might while carried.,none
+fan,Opera fan,worn,sanity,1,none,6,+1 Sanity while carried.,none
+shoes,Dancer's shoes,worn,speed,1,none,6,+1 Speed while carried.,none
+amulet,Brass amulet,worn,maxhp,4,none,6,+4 max HP while carried.,none
+armour,Stage armour,worn,armor,1,none,6,-1 physical damage taken while carried.,none
+lantern,Lantern,worn,light,1,none,6,Your light reaches one step further.,none
+crucifix,Crucifix,relic,revive,0,none,1,Wakes a downed guest in your room. Used up.,none
+rosary,Rosary,relic,revive,0,none,1,Wakes a downed guest in your room. Used up.,none
+crown,Phoenix crown,keepsake,none,0,none,0,"A singer's crown of gilt phoenixes, made for the house's last great opening night.",costumes
+ledger,The patron's Ledger,keepsake,none,0,none,0,"A black ledger of what the house owes, and to whom.",office
+mask,Gilded mask,keepsake,none,0,none,0,The jewel of the patron's collection: a mask with tears of gold leaf.,maskcabinet
+watch,A pocket watch,keepsake,none,0,none,0,"A father's watch, engraved with a daughter's name. It stopped at seven.",boxes
+keys,A ring of keys,keepsake,none,0,none,0,Forty years of doors on one iron ring.,corridor

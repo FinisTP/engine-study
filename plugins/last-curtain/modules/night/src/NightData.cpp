@@ -163,6 +163,8 @@ namespace umbra::night
             get("monsters", "chancePercent", r.monsters.chancePercent);
             get("monsters", "stayRounds", r.monsters.stayRounds);
             get("monsters", "max", r.monsters.max);
+            get("goals", "failHp", r.goals.failHp);
+            get("goals", "earlyRooms", r.goals.earlyRooms);
             get("persuade", "approvals", r.persuade.approvals);
             get("persuade", "bond", r.persuade.bond);
             get("guests", "downedReturnHp", r.guests.downedReturnHp);
@@ -183,6 +185,7 @@ namespace umbra::night
             check(r.battle.rounds >= 1 && r.battle.minDamage >= 0, "battle", "rounds must be 1 or more, minDamage 0 or more");
             check(r.battle.defenseDivisor >= 1 && r.battle.guardDivisor >= 1, "battle", "divisors must be 1 or more");
             check(r.light.steps >= 0 && r.monsters.max >= 0 && r.monsters.max <= 8, "monsters.max", "must be 0 to 8");
+            check(r.goals.failHp >= 1 && r.goals.earlyRooms >= 8 && r.goals.earlyRooms <= r.board.rooms, "goals", "failHp 1 or more; earlyRooms 8 to board.rooms");
             check(r.balance.companyWinMin <= r.balance.companyWinMax, "balance", "companyWinMin must not exceed companyWinMax");
             for (std::size_t i = 1; i < r.levels.xp.size(); ++i)
                 check(r.levels.xp[i] > r.levels.xp[i - 1], "levels.xp", "the steps must rise");
@@ -245,13 +248,13 @@ namespace umbra::night
                                 styles.Int(r, "healBelowPercent"), styles.Int(r, "huntHpPercent"), styles.Int(r, "huntNearSteps"), styles.Int(r, "crowd"),
                                 styles.Int(r, "chatty")});
 
-        Sheet items(diagnostics, folder, "items.csv", {"id", "name", "kind", "effect", "amount", "buff", "weight", "text"});
+        Sheet items(diagnostics, folder, "items.csv", {"id", "name", "kind", "effect", "amount", "buff", "weight", "text", "room"});
         for (int r = 0; r < items.Rows(); ++r)
         {
             ItemDef i;
             i.id = items.Text(r, "id");
             i.name = items.Text(r, "name");
-            i.kind = static_cast<ItemKind>(items.Pick(r, "kind", {"heal", "boost", "worn", "relic"}));
+            i.kind = static_cast<ItemKind>(items.Pick(r, "kind", {"heal", "boost", "worn", "relic", "keepsake"}));
             i.effect = static_cast<Effect>(items.Pick(r, "effect", {"none", "hp", "hproom", "maxhp", "might", "sanity", "speed", "item", "xp", "buff", "armor", "light", "revive"}));
             i.amount = items.Int(r, "amount");
             i.buff = items.Ref(r, "buff", d.buffs, true);
@@ -259,8 +262,8 @@ namespace umbra::night
             i.text = items.Text(r, "text");
             if (i.effect == Effect::Buff && i.buff < 0)
                 items.Bad(items.Where(r, "buff"), "a buff item names a buff");
-            if (i.weight < 1)
-                items.Bad(items.Where(r, "weight"), "must be 1 or more");
+            if (i.weight < (i.kind == ItemKind::Keepsake ? 0 : 1))
+                items.Bad(items.Where(r, "weight"), "must be 1 or more (a keepsake's is 0: it is never drawn)");
             d.items.push_back(i);
         }
 
@@ -416,12 +419,50 @@ namespace umbra::night
             d.bonds.push_back(b);
         }
 
+        // Keepsakes wait in a room (named in items.csv `room`, once the rooms are known).
+        for (int r = 0; r < items.Rows() && items.ok && rooms.ok; ++r)
+        {
+            ItemDef &i = d.items[static_cast<std::size_t>(r)];
+            i.room = items.Ref(r, "room", d.rooms, true);
+            if ((i.kind == ItemKind::Keepsake) != (i.room >= 0))
+                items.Bad(items.Where(r, "room"), "a keepsake names its room; other items say none");
+        }
+
+        // Goals: two or three per guest; the target fits the kind.
+        Sheet goals(diagnostics, folder, "goals.csv", {"guest", "id", "kind", "target", "count", "text"});
+        for (int r = 0; r < goals.Rows() && guests.ok && items.ok && rooms.ok; ++r)
+        {
+            GoalDef g;
+            g.guest = goals.Ref(r, "guest", d.guests);
+            g.id = goals.Text(r, "id");
+            g.kind = static_cast<GoalKind>(goals.Pick(r, "kind", {"room", "item", "ally", "events", "monsters"}));
+            g.count = goals.Int(r, "count");
+            g.text = goals.Text(r, "text");
+            if (g.kind == GoalKind::Room)
+                g.target = goals.Ref(r, "target", d.rooms);
+            else if (g.kind == GoalKind::Item)
+                g.target = goals.Ref(r, "target", d.items);
+            else if (g.kind == GoalKind::Ally)
+                g.target = goals.Ref(r, "target", d.guests);
+            if (g.kind == GoalKind::Item && g.target >= 0 && d.items[static_cast<std::size_t>(g.target)].kind != ItemKind::Keepsake)
+                goals.Bad(goals.Where(r, "target"), "an item goal names a keepsake");
+            if (g.count < 1)
+                goals.Bad(goals.Where(r, "count"), "must be 1 or more");
+            d.goals.push_back(g);
+        }
+        for (std::size_t g = 0; g < d.guests.size() && goals.ok && guests.ok; ++g)
+        {
+            const auto n = std::count_if(d.goals.begin(), d.goals.end(), [&](const GoalDef &goal) { return goal.guest == static_cast<int>(g); });
+            if (n < 2 || n > 3)
+                goals.Bad(goals.file, d.guests[g].id + " needs two or three goals");
+        }
+
         if (diagnostics.size() != before)
             return false;
         // The fingerprint: every file's bytes, in a fixed order.
         d.fingerprint = 14695981039346656037ULL;
         for (const char *name : {"rules.json", "powers.json", "buffs.csv", "styles.csv", "items.csv", "monsters.csv", "rooms.csv",
-                                 "events.csv", "guests.csv", "minions.csv", "questions.csv", "bonds.csv"})
+                                 "events.csv", "guests.csv", "minions.csv", "questions.csv", "bonds.csv", "goals.csv"})
         {
             std::ifstream file(folder / name, std::ios::binary);
             for (char c; file.get(c);)

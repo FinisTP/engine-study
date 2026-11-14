@@ -26,7 +26,8 @@ namespace umbra::night
     // Field lists: every member of every struct in the state.
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Cell, room, doors, opened, resolved)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Guest, hp, maxHp, might, sanity, speed, cell, from, level, group, xp, items, bonusUsed, down, dead,
-                                       downedBy, pending, approvals, asked, chatRound, movesLeft)
+                                       downedBy, pending, approvals, asked, chatRound, movesLeft, goal, goalCount,
+                                       goalRoomSeen, knows)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FloorItem, cell, item)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LogEntry, tick, kind, who, other, a, b)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Monster, kind, cell, leavesRound, hp, might, sanity)
@@ -67,7 +68,7 @@ namespace umbra::night
             {
                 const Guest &guest = s.guests[inner::U(g)];
                 if (!in(guest.cell, 0, maxCells) || !s.cells[inner::U(guest.cell)].opened || !in(s.order[inner::U(g)], 0, s.count) ||
-                    !in(guest.downedBy, -1, s.count))
+                    !in(guest.downedBy, -1, s.count) || !in(guest.goal, -1, static_cast<int>(def.goals.size())))
                     return "guest " + std::to_string(g) + " is out of range (cell " + std::to_string(guest.cell) + ", downedBy " +
                            std::to_string(guest.downedBy) + ")";
                 for (std::int8_t i : guest.items)

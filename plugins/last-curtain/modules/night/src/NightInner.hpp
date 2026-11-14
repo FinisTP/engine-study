@@ -46,6 +46,7 @@ namespace umbra::night::inner
     void AnswerChat(const NightDef &def, NightState &state, int answer);
     void EndNight(NightState &state, Outcome outcome);
     // Hunt.cpp
+    void PlaceKeepsake(const NightDef &def, NightState &state, int cell); // a just-opened room's keepsake, if a drawn goal needs it
     void TheTurn(const NightDef &def, NightState &state);
     bool ContactBattle(const NightDef &def, NightState &state, int mover, int cell); // the Taken meets the company
     bool CompanyAlive(const NightState &state);

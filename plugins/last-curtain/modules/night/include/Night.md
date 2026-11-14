@@ -21,6 +21,7 @@ code holds only the mechanics. Design: `docs/design/game-design.md` (GDD); bots 
 | `rules.json` | clock (start hour, 20 rounds, the Turn after round 10), grid size and rooms placed, check targets, light steps, carry limit, battle formula, level steps, curse targets and their rise per hour, monster spawning, persuading, downed HP, the balance band |
 | `guests.csv` | the seven guests: stats, weapon type, style, Taken form stats and power |
 | `questions.csv` | five questions per guest: text, a physical and a magical answer, each with its target word |
+| `goals.csv` | two or three goals per guest: kind (room, item, ally, events, monsters), target, count, text |
 | `minions.csv` | each Taken form's minions: stats, attack, resistance, XP, debuff, share of the Taken's HP, how many |
 | `bonds.csv` | starting bonds, -1000..1000 |
 | `powers.json` | each power's kind and numbers (damage, range, rounds, cooldown) |
@@ -90,10 +91,22 @@ Winning a guest over (before midnight, while group 0 has fewer than 3): the play
 harder if not (`AnswerTarget`). A pass is one approval; `persuade.approvals` of them and the guest
 joins group 0. `ChancePercent(stat, target)` is what the screens show.
 
+## Goals (`Company.cpp`, `Turn.cpp`, `Battle.cpp`)
+
+Each guest draws one of its own `goals.csv` rows at `NewNight`, before the board; it knows only
+its own (`Guest::knows`, bits). A passed chat answer tells the player the asker's goal. Kinds:
+`room` (entering the room sets `goalRoomSeen`), `item` (a keepsake carried at midnight), `ally`
+(the named guest in the same group), `events` (passed event rolls, traps not counted) and
+`monsters` (ordinary monsters this guest destroyed): `goalCount` against `count`. A keepsake
+(`items.csv` kind `keepsake`, weight 0, `room`) lies on the floor of its room when the room is
+opened, only if a drawn goal asks for it.
+
 ## The Turn and the hunt (`Hunt.cpp`)
 
-At the end of round `turnAfterRound` chance picks the guest who turns, among everyone (plan 2b
-replaces this with personal goals): that guest leaves every group and
+At the end of round `turnAfterRound` every living guest's goal is checked (`GoalDone`, a `Goal` log
+entry each). If all are done, the company wins at once. Otherwise chance picks the Taken among
+the failed, and every other failed guest keeps at most `goals.failHp` HP (the downed are left as
+they are). The Taken leaves every group and
 rises as the Taken in the under-stage at its form's HP; everyone else gathers in the foyer, the
 downed stand with `downedReturnHp`; the Taken moves to the end of the order. Ordinary monsters
 vanish and stop appearing; the form's minions (`minions.csv`, `count` of each) wait in the opened

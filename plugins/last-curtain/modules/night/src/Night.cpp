@@ -14,10 +14,21 @@ namespace umbra::night
         z = (z ^ (z >> 27)) * 0x94D049BB133111EBULL;
         state.random = (z ^ (z >> 31)) | 1u;
         state.player = I8(player);
+        state.count = I8(def.guests.size());
+        // 1. Each guest draws one of its own goals, secretly: it knows only its own.
+        for (int g = 0; g < state.count; ++g)
+        {
+            std::vector<int> mine;
+            for (std::size_t i = 0; i < def.goals.size(); ++i)
+                if (def.goals[i].guest == g)
+                    mine.push_back(static_cast<int>(i));
+            Guest &guest = state.guests[U(g)];
+            guest.goal = mine.empty() ? I8(-1) : I8(mine[U(Below(state, static_cast<int>(mine.size())))]);
+            guest.knows = static_cast<std::uint8_t>(1u << g);
+        }
         BuildBoard(def, state);
 
-        // Every guest in the foyer at full HP; a d20 each sets the order for the night.
-        state.count = I8(def.guests.size());
+        // 2. Every guest in the foyer at full HP; a d20 each sets the order for the night.
         std::array<int, maxGuests> rolls{}, speeds{};
         for (int g = 0; g < state.count; ++g)
         {

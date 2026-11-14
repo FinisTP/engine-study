@@ -7,6 +7,7 @@
   "battle": { "rounds": 3, "minDamage": 1, "base": 3, "defenseDivisor": 2, "guardDivisor": 2 },
   "levels": { "xp": [1, 3, 6, 10], "hp": 4, "stat": 1 },
   "monsters": { "fromRound": 2, "chancePercent": 50, "stayRounds": 3, "max": 2 },
+  "goals": { "failHp": 1, "earlyRooms": 35 },
   "persuade": { "approvals": 3, "bond": 3 },
   "guests": { "downedReturnHp": 1, "attackBondLoss": 300 },
   "balance": { "companyWinMin": 40, "companyWinMax": 60 }
