@@ -1,6 +1,6 @@
 # The Last Curtain, plan 2: the board on screen — design
 
-Date: 2026-11-14. Status: **written, waiting for the user's approval.** Builds on plan 1 (the night
+Date: 2026-11-14. Status: **approved by the user 2026-11-14** (layout and rules; mockups reviewed). Builds on plan 1 (the night
 as a simulation, `plugins/last-curtain`, `#UMBRA-104`-`#UMBRA-118`) and the game design
 (`game-design.md`, `cast.md`). Plan 3 (the model's lines) and plan 4 (art) come after.
 
@@ -90,6 +90,21 @@ Data: `questions.csv` with `guest,id,text,physicalText,physicalTarget,magicalTex
 `target` and `retryRounds`. The 35 questions are written in each guest's voice from `cast.md`, for
 the user to review; no text from the board game.
 
+## Events (user, 2026-11-14)
+
+An event stays one roll on one fixed stat against one target. Its pass and fail outcomes may be
+any effect, including a new one: **pushed back** to the room the guest came from (`events.csv`
+effect `back`). Example: pass, you take an item; fail, you stagger back one room. Traps are
+unchanged. The event screen shows the stat, the target, the chance and both outcomes before the
+roll; the dice screen shows the roll.
+
+## Screen review (2026-11-14, mockups)
+
+Every roll shows its chance as a percentage; rooms you may step into carry a numbered badge, not
+only a colour; text at least 11 px and buttons at least 44 px with a visible focus ring; bot
+captions say what happened, not only what was meant; battle targets are buttons with the expected
+damage; each screen shows its keys.
+
 ## The design (the how)
 
 ### Parts
@@ -124,7 +139,11 @@ plugins/last-curtain/
 | `hud` | clock and round; the acting guest; the player's HP, Might, Sanity, Speed, level, buffs; moves left; bag | bag, end turn |
 | `actions` | the legal actions for the current guest, besides moving | each action; End turn always |
 | `chat` | the guest's question, the two answers with their stat and target, approvals so far | answer |
-| `omen` | the omen and its gift; the curse target | take, leave |
+| `bag` | four slots: kind, one-line effect; the room's floor items; free, the turn goes on | use, drop, pick up, close |
+| `event` | the event's text; its one stat, target and chance; what passing and failing do | roll |
+| `dice` | the d20, + stat = total, the target, passed or failed, the result (events, traps, chats, the curse) | continue |
+| `omen` | the omen and its gift; the curse: "below N it takes you", as a chance; grows with omens and hours | take, leave |
+| `turn` | the curse takes a guest: the time shift, the Taken's form, HP, power, minions | begin the hunt |
 | `battle` | both sides with HP and buffs, round of 3, the log | strike (target), item, guard, leave |
 | `caption` | the acting bot's decision line | none |
 | `end` | the outcome and a short summary from the log | new night, quit |
