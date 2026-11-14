@@ -115,6 +115,10 @@ namespace umbra::night
     {
         std::string id;
         int explore = 0, fight = 0, loot = 0, omen = 0, bonus = 0, fleeBelowHpPercent = 0, avoidGuests = 0;
+        int healBelowPercent = 40; // in battle, heal below this share of max HP
+        int huntHpPercent = 50;    // in the hunt, go for the Taken only above this share of max HP
+        int huntNearSteps = 2;     // ... and with another guest this near
+        int crowd = 3;             // the Taken keeps away from this many guests together
     };
 
     struct NightDef

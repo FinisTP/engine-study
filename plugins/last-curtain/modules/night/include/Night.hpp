@@ -34,6 +34,7 @@ namespace umbra::night
         std::int8_t pending = 0;   // levels earned and not yet chosen
         std::array<std::int8_t, maxGuests> askedUntilRound{}; // may not persuade that guest again before
         std::uint8_t sawOmen = 0, sawFail = 0; // guests seen taking an omen / failing its roll (bits)
+        std::uint8_t attackedBy = 0;           // guests who attacked this one (bits)
         std::int8_t movesLeft = 0;
     };
 

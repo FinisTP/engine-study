@@ -1,0 +1,13 @@
+#pragma once
+
+#include <Night.hpp>
+
+// The bots: rules, not the model (NightBots.md). A bot reads only what its guest could know.
+namespace umbra::night
+{
+    // The action the bot of `guest` takes now (guest must be Current()).
+    Action ChooseAction(const NightDef &def, const NightState &state, int guest);
+
+    // Every guest by its bot until the night ends; at most 5,000 Applies. Returns how many were made.
+    int PlayNight(const NightDef &def, NightState &state);
+}

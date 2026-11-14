@@ -81,6 +81,7 @@ namespace umbra::night
                 bond = I16(std::max(-1000, bond - def.rules.guests.attackBondLoss));
             }
         }
+        state.guests[U(defender)].attackedBy = static_cast<std::uint8_t>(state.guests[U(defender)].attackedBy | (1u << attacker));
         // 2. The battle; bystanders are asked first.
         std::uint8_t asking = 0;
         for (int g : Joiners(def, state, attacker, defender))

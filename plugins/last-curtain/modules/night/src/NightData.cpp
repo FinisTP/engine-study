@@ -238,10 +238,12 @@ namespace umbra::night
                                static_cast<BuffStat>(buffs.Pick(r, "stat", {"guard", "might", "sanity"})),
                                buffs.Int(r, "amount"), buffs.Int(r, "rounds")});
 
-        Sheet styles(diagnostics, folder, "styles.csv", {"style", "explore", "fight", "loot", "omen", "bonus", "fleeBelowHpPercent", "avoidGuests"});
+        Sheet styles(diagnostics, folder, "styles.csv", {"style", "explore", "fight", "loot", "omen", "bonus", "fleeBelowHpPercent", "avoidGuests",
+                                                         "healBelowPercent", "huntHpPercent", "huntNearSteps", "crowd"});
         for (int r = 0; r < styles.Rows(); ++r)
             d.styles.push_back({styles.Text(r, "style"), styles.Int(r, "explore"), styles.Int(r, "fight"), styles.Int(r, "loot"),
-                                styles.Int(r, "omen"), styles.Int(r, "bonus"), styles.Int(r, "fleeBelowHpPercent"), styles.Int(r, "avoidGuests")});
+                                styles.Int(r, "omen"), styles.Int(r, "bonus"), styles.Int(r, "fleeBelowHpPercent"), styles.Int(r, "avoidGuests"),
+                                styles.Int(r, "healBelowPercent"), styles.Int(r, "huntHpPercent"), styles.Int(r, "huntNearSteps"), styles.Int(r, "crowd")});
 
         Sheet items(diagnostics, folder, "items.csv", {"id", "name", "kind", "effect", "amount", "buff", "weight", "text"});
         for (int r = 0; r < items.Rows(); ++r)

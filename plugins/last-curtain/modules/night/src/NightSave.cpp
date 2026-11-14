@@ -9,7 +9,7 @@ namespace umbra::night
     // Field lists: every member of every struct in the state.
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Cell, room, doors, opened, resolved, omen)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Guest, hp, maxHp, might, sanity, speed, cell, level, group, xp, items, omens, bonusUsed, down, dead,
-                                       downedBy, pending, askedUntilRound, sawOmen, sawFail, movesLeft)
+                                       downedBy, pending, askedUntilRound, sawOmen, sawFail, attackedBy, movesLeft)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FloorItem, cell, item)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LogEntry, tick, kind, who, other, a, b)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Monster, kind, cell, leavesRound, hp, might, sanity)
