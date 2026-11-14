@@ -8,6 +8,7 @@
 #include <nlohmann/json.hpp>
 
 #include <deque>
+#include <vector>
 #include <string>
 
 // One night as the person plays it, without a window (tested): clicks, keys and screen actions in,
@@ -18,13 +19,33 @@ public:
     Play(const umbra::night::NightDef &def, std::uint64_t seed, int player); // player -1: all bots
     Play(const umbra::night::NightDef &def, const umbra::night::NightState &state);
 
+    // The player's turn: the menu, picking a square (and walking to it), or Stay/Back at a door.
+    enum class Mode { Menu, Picking, Confirm };
+    // A pawn sliding from one cell to the next; t runs 0 to 1. guest -1: none.
+    struct Slide
+    {
+        int guest = -1, from = -1, to = -1;
+        float t = 0.0F;
+    };
+    // The walk to the square under the mouse while picking; steps past `affordable` show red.
+    struct Preview
+    {
+        std::vector<int> path;
+        int affordable = 0;
+    };
+    static constexpr float slideSeconds = 0.25F;
+
     [[nodiscard]] bool PlayerTurn() const; // the acting guest is the player's or an ally's
-    void Click(int cell);                  // moves there if it is a step cell
-    void Key(umbra::platform::InputKey key); // arrows move, Enter ends the turn, I opens the bag
+    [[nodiscard]] Mode TurnMode() const { return mode_; }
+    void Click(int cell, bool right = false); // left: walk to a lit square, one step at a time
+    void Hover(int cell) { hover_ = cell; }
+    [[nodiscard]] Slide Sliding() const { return slide_; }
+    [[nodiscard]] Preview Previewed() const;
+    void Key(umbra::platform::InputKey key); // arrows step, Enter ends the turn, I opens the bag
     // An action from a screen; true when it did something.
     bool HandleUi(const std::string &screen, const std::string &action, const std::string &arg);
     [[nodiscard]] nlohmann::json UiData() const;
-    // "", "end", "caption", "event", "dice", "turn", "chat", "battle", "actions" or "bag"
+    // "", "end", "caption", "event", "dice", "turn", "chat", "battle", "menu", "picking", "confirm" or "bag"
     [[nodiscard]] std::string Screen() const;
     // Bots act one action at a time: a beat the player sees holds 1.5 s (0.3 s after Space), an
     // unseen one 0.2 s. dt 0 (a minimised window) changes nothing.
@@ -50,6 +71,8 @@ private:
     };
 
     bool Do(const umbra::night::Action &action); // applies a legal action on the player's turn
+    bool Step(int to);                           // the legal Move into a neighbouring cell, with its slide
+    void WalkOn();                               // the next step of the walk, on the player's turn
     [[nodiscard]] int Me() const;                // the guest the screens show
     [[nodiscard]] std::string Label(const umbra::night::Action &action) const;
     [[nodiscard]] nlohmann::json BattleData() const;
@@ -68,4 +91,9 @@ private:
     int event_ = -1, eventCell_ = -1, eventStat_ = 0; // the event to show before its dice (events.csv row)
     std::deque<Dice> dice_;
     bool turn_ = false; // the Turn happened and its screen waits
+    Mode mode_ = Mode::Menu;
+    std::vector<int> walk_; // cells still to walk, in order
+    bool walking_ = false;  // a walk is under way (the menu returns when it ends)
+    int hover_ = -1;
+    Slide slide_;
 };

@@ -1,0 +1,9 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "root": { "type": "stack", "anchor": "top-right", "offset": [-24, 76], "style": "panel", "size": [290, 0], "gap": 8, "children": [
+    { "type": "text", "style": "heading", "text": "Move" },
+    { "type": "text", "style": "small", "text": "{moves} moves left. Click a lit square or use the arrows.", "wrap": true, "size": [250, 0] },
+    { "type": "text", "style": "muted", "text": "A red path is too far this turn. Esc: back to the menu.", "wrap": true, "size": [250, 0] }
+  ] }
+}

@@ -25,7 +25,7 @@ namespace
     // Bots play until it is the player's own turn; a chat a bot opened is answered first.
     void ToPlayer(Play &play)
     {
-        for (int i = 0; i < 400 && (!play.PlayerTurn() || play.State().chat.active || play.Screen() != "actions"); ++i)
+        for (int i = 0; i < 400 && (!play.PlayerTurn() || play.State().chat.active || play.Screen() != "menu"); ++i)
         {
             Settle(play);
             if (play.State().chat.active && play.PlayerTurn())
@@ -34,6 +34,17 @@ namespace
                 play.Update(10.0F);
         }
         REQUIRE(play.PlayerTurn());
+    }
+
+    // A click on `cell`, then the walk there played out (a closed door: Stay).
+    void GoTo(Play &play, int cell)
+    {
+        play.Click(cell);
+        for (int i = 0; i < 40 && (play.Sliding().guest >= 0 || play.Screen() == "picking" || play.Screen() == "confirm"); ++i)
+            if (play.Screen() == "confirm")
+                play.HandleUi("confirm", "stay", "");
+            else
+                play.Update(Play::slideSeconds);
     }
 
     int StepCell(const NightDef &def, const Play &play)
@@ -63,7 +74,7 @@ TEST_CASE("A click on a step cell moves; elsewhere nothing (T111)", "[night][pla
     // 2. A step cell moves the pawn there.
     const int step = StepCell(def, play);
     REQUIRE(step >= 0);
-    play.Click(step);
+    GoTo(play, step);
     CHECK(play.State().guests[static_cast<std::size_t>(me)].cell == step);
 }
 
@@ -99,7 +110,7 @@ TEST_CASE("End turn works with moves left (T111)", "[night][play]")
     const nlohmann::json data = play.UiData();
     const nlohmann::json &end = data["actions"].back();
     CHECK(end["label"] == "End turn");
-    CHECK(play.HandleUi("actions", end["action"], end["arg"]));
+    CHECK(play.HandleUi("menu", end["action"], end["arg"]));
     CHECK(play.State().turn != turn2);
 }
 
@@ -113,7 +124,7 @@ TEST_CASE("An ally is the player's to move (T111)", "[night][play]")
     Play play(def, state);
     for (int i = 0; i < 400 && Current(play.State()) != 1; ++i)
         if (Settle(play); play.PlayerTurn())
-            play.HandleUi("actions", "act", play.UiData()["actions"].back()["arg"]);
+            play.HandleUi("menu", "act", play.UiData()["actions"].back()["arg"]);
         else
             play.Update(10.0F);
     REQUIRE(Current(play.State()) == 1);
@@ -123,7 +134,7 @@ TEST_CASE("An ally is the player's to move (T111)", "[night][play]")
     CHECK(play.UiData()["me"]["name"] == def.guests[1].name);
     const int step = StepCell(def, play);
     REQUIRE(step >= 0);
-    play.Click(step);
+    GoTo(play, step);
     CHECK(play.State().guests[1].cell == step);
 }
 
@@ -139,17 +150,17 @@ TEST_CASE("UiData has the keys the screens bind (T111)", "[night][play]")
         CHECK(data["me"].contains(key));
     REQUIRE(data["actions"].is_array());
     CHECK(data["actions"].back()["label"] == "End turn");
-    CHECK(play.Screen() == "actions");
+    CHECK(play.Screen() == "menu");
     // The bag opens and closes; it is free and does not end the turn.
     const int turn = play.State().turn;
-    CHECK(play.HandleUi("actions", "bag", ""));
+    CHECK(play.HandleUi("menu", "bag", ""));
     CHECK(play.Screen() == "bag");
     CHECK(play.HandleUi("bag", "close", ""));
-    CHECK(play.Screen() == "actions");
+    CHECK(play.Screen() == "menu");
     CHECK(play.State().turn == turn);
     CHECK_FALSE(play.HandleUi("bag", "use", "9")); // an empty or unknown slot
-    CHECK_FALSE(play.HandleUi("actions", "act", "999"));
-    CHECK_FALSE(play.HandleUi("actions", "act", "x"));
+    CHECK_FALSE(play.HandleUi("menu", "act", "999"));
+    CHECK_FALSE(play.HandleUi("menu", "act", "x"));
 }
 
 TEST_CASE("Only recruited guests are allies (T111)", "[night][play]")
@@ -272,7 +283,7 @@ TEST_CASE("Every chance shown matches the rules (T113)", "[night][play]")
         Play play(def, PlayerFirst(def));
         const int step = StepCell(def, play);
         REQUIRE(step >= 0);
-        play.Click(step);
+        GoTo(play, step);
         REQUIRE(play.Screen() == "event");
         const nlohmann::json event = play.UiData()["event"];
         CHECK(event["chance"] == ChancePercent(event["statValue"], event["target"]));
@@ -290,7 +301,7 @@ TEST_CASE("The dice screen shows the logged roll (T113)", "[night][play]")
             room.kind = RoomKind::Event, room.doors = 15;
     Play play(def, PlayerFirst(def));
     const std::uint32_t since = play.State().logCount;
-    play.Click(StepCell(def, play));
+    GoTo(play, StepCell(def, play));
     REQUIRE(play.HandleUi("event", "roll", ""));
     REQUIRE(play.Screen() == "dice");
     LogEntry check{};
@@ -335,7 +346,7 @@ namespace
         const std::vector<Action> legal = LegalActions(def, play.State());
         for (std::size_t i = 0; i < legal.size(); ++i)
             if (legal[i].kind == ActionKind::Attack && legal[i].a == 0)
-                REQUIRE(play.HandleUi("actions", "act", std::to_string(i)));
+                REQUIRE(play.HandleUi("menu", "act", std::to_string(i)));
         REQUIRE(play.State().battle.active);
         return play;
     }
@@ -424,7 +435,7 @@ namespace
                 if (!actions.empty() && actions.back()["label"] == "End turn")
                     play.Key(InputKey::Enter);
                 else if (!actions.empty())
-                    play.HandleUi("actions", actions.front()["action"], actions.front()["arg"]); // a level up, say
+                    play.HandleUi("menu", actions.front()["action"], actions.front()["arg"]); // a level up, say
             }
             else
                 play.Update(10.0F);
@@ -548,7 +559,7 @@ TEST_CASE("Clicks and keys do nothing while a dialog shows (final review)", "[ni
             continue;
         tested = true;
         const int cell = play.State().guests[0].cell;
-        play.Click(StepCell(def, play));
+        GoTo(play, StepCell(def, play));
         for (const InputKey key : {InputKey::Up, InputKey::Right, InputKey::Down, InputKey::Left, InputKey::Enter, InputKey::I})
             play.Key(key);
         CHECK(play.State().guests[0].cell == cell);
@@ -567,7 +578,7 @@ TEST_CASE("A push-back event names the room it happened in (final review)", "[ni
         event.passEffect = event.failEffect = Effect::Back;
     Play play(def, PlayerFirst(def));
     const int step = StepCell(def, play);
-    play.Click(step);
+    GoTo(play, step);
     REQUIRE(play.Screen() == "event");
     CHECK(play.State().guests[0].cell == play.State().foyer); // pushed back
     CHECK(play.UiData()["event"]["room"] == def.rooms[static_cast<std::size_t>(play.State().cells[static_cast<std::size_t>(step)].room)].name);
@@ -586,4 +597,174 @@ TEST_CASE("The HUD data carries the player's goal (T122)", "[night][play]")
     REQUIRE(data["knownGoals"].size() == 1);
     CHECK(data["knownGoals"][0]["name"] == def.guests[2].name);
     CHECK(data["knownGoals"][0]["text"] == def.goals[static_cast<std::size_t>(state.guests[2].goal)].text);
+}
+
+namespace
+{
+    // The cell `n` steps west of the foyer, on its row.
+    int West(const NightDef &def, int n) { return CellAt(def, def.rules.board.width / 2 - n, def.rules.board.height - 1); }
+
+    // The player's turn in the foyer with `rooms` plain rooms in a row to the west (doors E and W),
+    // and `moves` moves left; every bot elsewhere so no chat or fight gets in the way.
+    NightState PlayerCorridor(const NightDef &def, int rooms, int moves)
+    {
+        NightState state = FoyerNight(def, 4, 0);
+        while (Current(state) != 0)
+            REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
+        const int room = NightDef::Find(def.rooms, "hallway");
+        for (int n = 1; n <= rooms; ++n)
+            state.cells[static_cast<std::size_t>(West(def, n))] = {static_cast<std::int8_t>(room), 2 | 8, true, true};
+        state.cells[static_cast<std::size_t>(state.foyer)].doors |= 8;
+        Closet(def, state, 0);
+        for (int g = 1; g < state.count; ++g)
+            state.guests[static_cast<std::size_t>(g)].cell = 0;
+        state.guests[0].movesLeft = static_cast<std::int8_t>(moves);
+        return state;
+    }
+
+    // Updates in slide-sized steps until the walk is over (or `limit` steps); the cells after each.
+    std::vector<int> Walk(Play &play, int limit = 20)
+    {
+        std::vector<int> cells;
+        for (int i = 0; i < limit && (play.Sliding().guest >= 0 || play.Screen() == "picking"); ++i)
+        {
+            play.Update(Play::slideSeconds);
+            cells.push_back(play.State().guests[0].cell);
+        }
+        return cells;
+    }
+}
+
+TEST_CASE("A click walks a lit square three steps away, one sliding step at a time (T125)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play(def, PlayerCorridor(def, 3, 4));
+    REQUIRE(play.Screen() == "menu");
+    play.Click(West(def, 3));
+    std::vector<int> seen;
+    bool slid = false;
+    for (int i = 0; i < 20 && (play.Sliding().guest >= 0 || play.Screen() == "picking"); ++i)
+    {
+        play.Update(Play::slideSeconds);
+        slid = slid || play.Sliding().guest == 0;
+        if (seen.empty() || seen.back() != play.State().guests[0].cell)
+            seen.push_back(play.State().guests[0].cell);
+    }
+    CHECK(seen == std::vector<int>{West(def, 1), West(def, 2), West(def, 3)});
+    CHECK(slid);
+    CHECK(play.State().guests[0].movesLeft == 1);
+    CHECK(play.TurnMode() == Play::Mode::Menu);
+    CHECK(play.Screen() == "menu");
+}
+
+TEST_CASE("A square beyond the moves left is ignored; its path shows red past the last affordable step (T125)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play(def, PlayerCorridor(def, 3, 2));
+    REQUIRE(play.HandleUi("menu", "move", ""));
+    CHECK(play.TurnMode() == Play::Mode::Picking);
+    play.Hover(West(def, 3));
+    CHECK(play.Previewed().path.size() == 3);
+    CHECK(play.Previewed().affordable == 2);
+    const NightState before = play.State();
+    play.Click(West(def, 3));
+    play.Update(Play::slideSeconds);
+    CHECK(play.State().guests[0].cell == before.guests[0].cell);
+    CHECK(play.State().guests[0].movesLeft == 2);
+}
+
+TEST_CASE("Illegal squares are ignored in the menu and in picking (T125)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play(def, PlayerCorridor(def, 2, 4));
+    for (int pass = 0; pass < 2; ++pass)
+    {
+        if (pass == 1)
+            REQUIRE(play.HandleUi("menu", "move", ""));
+        for (const int cell : {0, static_cast<int>(play.State().foyer), -1, maxCells})
+        {
+            play.Click(cell);
+            play.Update(Play::slideSeconds);
+            CHECK(play.State().guests[0].cell == play.State().foyer);
+            CHECK(play.Sliding().guest < 0);
+        }
+    }
+}
+
+TEST_CASE("The walk stops at a new room's door with Stay/Back (T125)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play(def, PlayerCorridor(def, 2, 4));
+    const int door = West(def, 3);
+    REQUIRE_FALSE(play.State().cells[static_cast<std::size_t>(door)].opened);
+    play.Click(door);
+    Walk(play);
+    CHECK(play.Screen() == "confirm");
+    CHECK(play.State().guests[0].cell == West(def, 2));
+    REQUIRE(play.HandleUi("confirm", "back", ""));
+    CHECK(play.TurnMode() == Play::Mode::Picking);
+    CHECK_FALSE(play.State().cells[static_cast<std::size_t>(door)].opened);
+    CHECK(play.State().guests[0].movesLeft == 2);
+    play.Click(door);
+    Walk(play);
+    REQUIRE(play.Screen() == "confirm");
+    const std::uint32_t logBefore = play.State().logCount;
+    REQUIRE(play.HandleUi("confirm", "stay", ""));
+    CHECK(play.State().cells[static_cast<std::size_t>(door)].opened);
+    bool opened = false;
+    for (const LogEntry &e : NewLog(play.State(), logBefore))
+        opened = opened || e.kind == LogKind::Opened;
+    CHECK(opened);
+    for (int i = 0; i < 10 && play.Sliding().guest >= 0; ++i)
+        play.Update(Play::slideSeconds);
+    CHECK(play.TurnMode() == Play::Mode::Menu);
+}
+
+TEST_CASE("A dialog part-way along a walk drops the rest of the walk (T125)", "[night][play]")
+{
+    const NightDef def = Data();
+    NightState state = PlayerCorridor(def, 3, 4);
+    state.cells[static_cast<std::size_t>(West(def, 1))].room = static_cast<std::int8_t>(NightDef::Find(def.rooms, "lighting")); // an event room
+    state.cells[static_cast<std::size_t>(West(def, 1))].resolved = false;
+    Play play(def, state);
+    play.Click(West(def, 3));
+    Walk(play);
+    CHECK(play.Screen() == "event");
+    play.HandleUi("event", "roll", "");
+    while (play.Screen() == "dice")
+        play.HandleUi("dice", "continue", "");
+    play.Update(Play::slideSeconds);
+    CHECK(play.TurnMode() == Play::Mode::Menu);
+    CHECK(play.State().guests[0].cell != West(def, 2));
+    CHECK(play.State().guests[0].cell != West(def, 3));
+}
+
+TEST_CASE("dt 0 changes nothing mid-walk (T125)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play(def, PlayerCorridor(def, 3, 4));
+    play.Click(West(def, 3));
+    play.Update(Play::slideSeconds); // the first step starts sliding
+    const int cell = play.State().guests[0].cell;
+    const float t = play.Sliding().t;
+    play.Update(0.0F);
+    CHECK(play.State().guests[0].cell == cell);
+    CHECK(play.Sliding().t == t);
+    CHECK(play.TurnMode() == Play::Mode::Picking);
+    Walk(play);
+    CHECK(play.State().guests[0].cell == West(def, 3));
+}
+
+TEST_CASE("Continue mid-walk opens the menu with the moves that were left (T125)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play(def, PlayerCorridor(def, 3, 4));
+    play.Click(West(def, 3));
+    play.Update(Play::slideSeconds);
+    NightState restored;
+    REQUIRE(Play::Restore(def, play.Save(), restored));
+    Play again(def, restored);
+    CHECK(again.Screen() == "menu");
+    CHECK(again.State().guests[0].movesLeft == 3);
+    CHECK(again.State().guests[0].cell == West(def, 1));
 }

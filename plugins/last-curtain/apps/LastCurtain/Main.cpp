@@ -89,6 +89,9 @@ namespace
             umbra::diagnostics::Error("Could not save the night: " + error.message());
     }
 
+    // Play's slide as the table draws it.
+    Table::Slide ToDraw(const Play::Slide &s) { return {s.guest, s.from, s.to, s.t}; }
+
     int Run(const Options &options)
     {
         umbra::platform::Platform platform;
@@ -181,7 +184,7 @@ namespace
                 pump.PumpEvents(input, events);
                 using umbra::platform::ApplicationEventType;
                 const std::string screen = play ? play->Screen() : "start";
-                const bool board = screen.empty() || screen == "actions" || screen == "caption"; // else a dialog has the keys
+                const bool board = screen.empty() || screen == "menu" || screen == "picking" || screen == "confirm" || screen == "caption"; // else a dialog has the keys
                 if (events.IsEventRequested(ApplicationEventType::Quit) || events.IsEventRequested(ApplicationEventType::WindowClose) ||
                     (input.IsKeyPressed(InputKey::Escape) && (board || screen == "start")))
                     break;
@@ -235,7 +238,8 @@ namespace
                             if (input.IsKeyPressed(key))
                                 play->Key(key);
                     }
-                    table.Draw(def, MakeView(def, state, state.player), drawList);
+                    play->Hover(table.Pick(def, uiInput.mouse, pixels));
+                    table.Draw(def, MakeView(def, state, state.player), play->Previewed().path, play->Previewed().affordable, ToDraw(play->Sliding()), drawList);
                     // Saves: at each new round, and gone once the night is over.
                     if (state.player >= 0 && !state.over && state.round != savedRound)
                         WriteSave(*play), savedRound = state.round;
@@ -247,7 +251,7 @@ namespace
                     }
                 }
                 else
-                    table.Draw(def, BoardView{}, drawList); // the dark room behind the start screen
+                    table.Draw(def, BoardView{}, {}, 0, {}, drawList); // the dark room behind the start screen
                 show(play ? play->Screen() : "start");
 
                 // 6. The screens; their actions; a click no screen took goes to the board.

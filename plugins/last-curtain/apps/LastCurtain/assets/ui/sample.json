@@ -27,6 +27,11 @@
   "turnTitle": "Your turn",
   "actions": [
     {
+      "label": "Move",
+      "action": "move",
+      "arg": ""
+    },
+    {
       "label": "Chat with Dinh Quoc Bao",
       "action": "act",
       "arg": "3"
@@ -37,7 +42,7 @@
       "arg": "4"
     },
     {
-      "label": "Bag (3 of 4)",
+      "label": "Use item (3 of 4)",
       "action": "bag",
       "arg": ""
     },

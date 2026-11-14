@@ -4,9 +4,9 @@
   "modal": true,
   "root": { "type": "stack", "anchor": "top-right", "offset": [-24, 76], "style": "panel", "size": [290, 0], "align": "stretch", "gap": 10, "children": [
     { "type": "text", "style": "heading", "text": "{turnTitle}" },
-    { "type": "text", "style": "small", "text": "{moves} moves left. Step into a lit room.", "wrap": true, "size": [250, 0] },
+    { "type": "text", "style": "small", "text": "{moves} moves left.", "wrap": true, "size": [250, 0] },
     { "type": "list", "items": "{actions}", "as": "a", "gap": 8, "action": "{a.action}", "arg": "{a.arg}",
       "entry": { "type": "button", "size": [254, 44], "text": "{a.label}" } },
-    { "type": "text", "style": "muted", "text": "You may end your turn at any time, with moves left.", "wrap": true, "size": [250, 0] }
+    { "type": "text", "style": "muted", "text": "Move, then click a lit square or use the arrows. You may end your turn at any time.", "wrap": true, "size": [250, 0] }
   ] }
 }

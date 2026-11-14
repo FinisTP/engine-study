@@ -76,7 +76,8 @@ Table::~Table()
         renderer_.DestroyMesh(box_);
 }
 
-void Table::Draw(const NightDef &def, const BoardView &view, umbra::core::DrawList &out) const
+void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<int> &path, int affordable, const Slide &slide,
+                 umbra::core::DrawList &out) const
 {
     // 1. Light: indoors, dim ambient (red in the hunt), one warm lamp over the middle of the table.
     umbra::core::EnvironmentSettings settings;
@@ -112,7 +113,12 @@ void Table::Draw(const NightDef &def, const BoardView &view, umbra::core::DrawLi
         }
     }
 
-    // 3. Pawns, spread around their cell; a ring under the player and allies, a red one under the Taken.
+    // 3. The walk being picked: a gold dot per affordable step, red beyond.
+    for (std::size_t i = 0; i < path.size(); ++i)
+        Box(out, box_, CellCenter(def, path[i]) + glm::vec3{0, 0.03F, 0}, {0.35F, 0.04F, 0.35F},
+            static_cast<int>(i) < affordable ? Hex(0xF2D58A) : Hex(0xD62828));
+
+    // 4. Pawns, spread around their cell; a ring under the player and allies, a red one under the Taken.
     std::map<int, int> inCell;
     const auto spot = [&](int cell) {
         const int i = inCell[cell]++;
@@ -121,7 +127,12 @@ void Table::Draw(const NightDef &def, const BoardView &view, umbra::core::DrawLi
     };
     for (const PawnView &pawn : view.pawns)
     {
-        const glm::vec3 at = spot(pawn.cell);
+        glm::vec3 at = spot(pawn.cell);
+        if (pawn.guest == slide.guest && slide.from >= 0 && slide.to >= 0) // between two cells, eased (Table.md)
+        {
+            const float t = std::clamp(slide.t, 0.0F, 1.0F), eased = t * t * (3.0F - 2.0F * t);
+            at = CellCenter(def, slide.from) + (CellCenter(def, slide.to) - CellCenter(def, slide.from)) * eased;
+        }
         Box(out, box_, at + glm::vec3{0, 0.45F, 0}, {0.5F, 0.9F, 0.5F}, Hex(guestColors[static_cast<std::size_t>(pawn.guest) % guestColors.size()]));
         if (pawn.player || pawn.ally || pawn.taken)
             Box(out, box_, at + glm::vec3{0, 0.02F, 0}, {0.75F, 0.04F, 0.75F}, pawn.taken ? Hex(0xD62828) : pawn.player ? Hex(0xF2D58A) : Hex(0x8FD48A));

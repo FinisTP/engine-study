@@ -136,13 +136,65 @@ bool Play::Do(const Action &action)
     return true;
 }
 
-void Play::Click(int cell)
+void Play::Click(int cell, bool)
 {
-    if (Screen() != "actions" || cell < 0 || cell >= maxCells) // never behind a dialog
+    // A walk to a lit square the moves left can pay for, from the menu or while picking; never behind a dialog.
+    const std::string screen = Screen();
+    if ((screen != "menu" && screen != "picking") || walking_ || slide_.guest >= 0)
         return;
-    const int step = MakeView(def_, state_, state_.player).cells[U(cell)].step;
-    if (step >= 0)
-        (void)Do(LegalActions(def_, state_)[U(step)]);
+    const int me = Current(state_);
+    std::vector<int> path = PathTo(def_, state_, me, cell);
+    if (path.empty() || static_cast<int>(path.size()) > state_.guests[U(me)].movesLeft)
+        return;
+    walk_ = std::move(path);
+    walking_ = true;
+    mode_ = Mode::Picking;
+}
+
+Play::Preview Play::Previewed() const
+{
+    if (mode_ != Mode::Picking || walking_ || !PlayerTurn())
+        return {};
+    const int me = Current(state_);
+    Preview p{PathTo(def_, state_, me, hover_), 0};
+    p.affordable = std::min<int>(static_cast<int>(p.path.size()), state_.guests[U(me)].movesLeft);
+    return p;
+}
+
+bool Play::Step(int to)
+{
+    // The legal Move from the acting guest's cell into `to`, then its slide.
+    const int me = Current(state_), from = state_.guests[U(me)].cell;
+    for (const Action &a : LegalActions(def_, state_))
+        if (a.kind == ActionKind::Move && a.a < transportMove && Neighbour(def_, from, a.a) == to && Do(a))
+        {
+            slide_ = {me, from, state_.guests[U(me)].cell, 0.0F};
+            return true;
+        }
+    return false;
+}
+
+void Play::WalkOn()
+{
+    // 1. The walk ended: back to the menu.
+    if (walk_.empty())
+    {
+        if (walking_)
+            walking_ = false, mode_ = Mode::Menu;
+        return;
+    }
+    // 2. A door to a room not yet opened: Stay or Back.
+    const int next = walk_.front();
+    if (!state_.cells[U(next)].opened)
+    {
+        mode_ = Mode::Confirm;
+        return;
+    }
+    // 3. A plain step; anything the step wrote (a roll, a fight, an item) or no moves left ends the walk.
+    const std::uint32_t logBefore = state_.logCount;
+    walk_.erase(walk_.begin());
+    if (!Step(next) || state_.logCount != logBefore || state_.guests[U(Current(state_))].movesLeft <= 0 || Screen() != "picking")
+        walk_.clear();
 }
 
 void Play::Key(umbra::platform::InputKey key)
@@ -157,14 +209,26 @@ void Play::Key(umbra::platform::InputKey key)
     // 2. Each key does what a legal action of this turn allows, or nothing; never behind a dialog.
     if (key == InputKey::Space && !PlayerTurn())
         fast_ = true;
-    if (key == InputKey::I && (Screen() == "actions" || Screen() == "bag") && !state_.chat.active)
+    if (key == InputKey::I && (Screen() == "menu" || Screen() == "bag") && !state_.chat.active)
         bag_ = !bag_;
-    if (Screen() != "actions")
+    const std::string screen = Screen();
+    if (screen == "confirm" && key == InputKey::Enter)
+        (void)HandleUi("confirm", "stay", "");
+    if ((screen != "menu" && screen != "picking") || walking_ || slide_.guest >= 0)
         return;
+    // 3. Arrows: one step that way (picking); Enter: End turn in the menu, the hovered square while picking.
+    if (direction >= 0)
+    {
+        const int me = Current(state_), to = Neighbour(def_, state_.guests[U(me)].cell, direction);
+        if (to >= 0 && (Passage(def_, state_, state_.guests[U(me)].cell, direction) || Doorway(def_, state_, state_.guests[U(me)].cell, direction)))
+            walk_ = {to}, walking_ = true, mode_ = Mode::Picking;
+        return;
+    }
+    if (key == InputKey::Enter && screen == "picking")
+        return Click(hover_);
     for (const Action &action : LegalActions(def_, state_))
-        if ((action.kind == ActionKind::Move && action.a == direction) || (key == InputKey::Enter && action.kind == ActionKind::EndTurn))
-            if (Do(action))
-                return;
+        if (key == InputKey::Enter && action.kind == ActionKind::EndTurn && Do(action))
+            return;
 }
 
 bool Play::HandleUi(const std::string &, const std::string &action, const std::string &arg)
@@ -193,6 +257,20 @@ bool Play::HandleUi(const std::string &, const std::string &action, const std::s
             (action == "strike" && a.kind == ActionKind::Strike && std::to_string(a.a) == arg) ||
             (action == "guard" && a.kind == ActionKind::Guard) || (action == "leave" && a.kind == ActionKind::Leave))
             return Do(a);
+    // 2. The turn menu and the door.
+    if (action == "move" && Screen() == "menu")
+        return (mode_ = Mode::Picking), true;
+    if (action == "back" && mode_ == Mode::Confirm)
+    {
+        walk_.clear(), walking_ = false, mode_ = Mode::Picking;
+        return true;
+    }
+    if (action == "stay" && mode_ == Mode::Confirm && !walk_.empty())
+    {
+        const int door = walk_.front();
+        walk_.clear(), mode_ = Mode::Picking;
+        return Step(door);
+    }
     if (action == "bag")
         return bag_ = true;
     if (action == "close")
@@ -216,6 +294,8 @@ std::string Play::Screen() const
 {
     if (state_.over)
         return "end";
+    if (slide_.guest >= 0 && PlayerTurn()) // a slide takes its time; a dialog waits for it
+        return "picking";
     if (event_ >= 0)
         return "event";
     if (!dice_.empty())
@@ -228,13 +308,24 @@ std::string Play::Screen() const
         return "chat";
     if (state_.battle.active)
         return bag_ ? "bag" : "battle";
-    return bag_ ? "bag" : "actions";
+    if (bag_)
+        return "bag";
+    return mode_ == Mode::Confirm ? "confirm" : mode_ == Mode::Picking ? "picking" : "menu";
 }
 
 void Play::Update(float dt)
 {
-    // 1. Wait out the beat on show and the player's rolls; nothing moves without time.
-    if (dt <= 0.0F || event_ >= 0 || !dice_.empty() || turn_)
+    // 1. Nothing moves without time; a slide plays out first; then the player's rolls wait.
+    if (dt <= 0.0F)
+        return;
+    if (slide_.guest >= 0)
+    {
+        slide_.t += dt / slideSeconds;
+        if (slide_.t < 1.0F)
+            return;
+        slide_ = {};
+    }
+    if (event_ >= 0 || !dice_.empty() || turn_)
         return;
     hold_ -= dt;
     if (hold_ > 0.0F)
@@ -245,8 +336,11 @@ void Play::Update(float dt)
     {
         beat_ = {};
         fast_ = false;
+        if (acting >= 0 && !state_.chat.active && !state_.battle.active && !bag_ && mode_ != Mode::Confirm)
+            WalkOn();
         return;
     }
+    walk_.clear(), walking_ = false, mode_ = Mode::Menu; // a bot's turn
     // 3. A bot acts; the narrator says what the player could see of it.
     bag_ = false;
     const NightState before = state_;
@@ -329,9 +423,11 @@ nlohmann::json Play::UiData() const
     }
     data["turnTitle"] = me == state_.player ? std::string{"Your turn"} : def_.guests[U(me)].name + "'s turn";
 
-    // 2. What the turn allows besides walking; the bag before End turn, End turn last.
+    // 2. The turn menu: Move first, then fights, chats and the rest, Use item, End turn last.
     data["actions"] = nlohmann::json::array();
     const std::vector<Action> legal = PlayerTurn() ? LegalActions(def_, state_) : std::vector<Action>{};
+    if (std::any_of(legal.begin(), legal.end(), [](const Action &a) { return a.kind == ActionKind::Move && a.a < transportMove; }))
+        data["actions"].push_back({{"label", "Move"}, {"action", "move"}, {"arg", ""}});
     int endTurn = -1;
     for (std::size_t i = 0; i < legal.size(); ++i)
     {
@@ -347,7 +443,7 @@ nlohmann::json Play::UiData() const
     for (int s = 0; s < def_.rules.carry; ++s)
         used += guest.items[U(s)] >= 0 ? 1 : 0;
     if (PlayerTurn() && !state_.battle.active && !state_.chat.active)
-        data["actions"].push_back({{"label", "Bag (" + std::to_string(used) + " of " + std::to_string(def_.rules.carry) + ")"}, {"action", "bag"}, {"arg", ""}});
+        data["actions"].push_back({{"label", "Use item (" + std::to_string(used) + " of " + std::to_string(def_.rules.carry) + ")"}, {"action", "bag"}, {"arg", ""}});
     if (endTurn >= 0)
         data["actions"].push_back({{"label", "End turn"}, {"action", "act"}, {"arg", std::to_string(endTurn)}});
 

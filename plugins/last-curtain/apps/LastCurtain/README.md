@@ -17,8 +17,11 @@ saves frame N and quits.
 
 ## Playing
 
-Arrows or a click on a gold square move; I opens the bag; Enter ends the turn (moves may be left);
-the wheel zooms; Space shortens the bots' turns; Esc quits. Quitting mid-night saves to
+Your turn opens with a menu (Move, fights, chats, Use item, End turn). A click on a lit square
+walks there one sliding step at a time (Move first shows the path: gold for the steps you can pay
+for, red beyond); the arrows take one step. A closed door asks Stay (open it) or Back. I opens the
+bag; Enter ends the turn from the menu (moves may be left); the wheel zooms; Space shortens the
+bots' turns; Esc quits. Quitting mid-night saves to
 `<preferences>/last-curtain/night.json`; the start screen offers Continue.
 
 ## Files
