@@ -258,7 +258,12 @@ namespace umbra::night
             return -1;
         // 1. A battle: the guest fighter to act. 2. A level to choose. 3. The board.
         if (state.battle.active)
+        {
+            for (int g = 0; g < maxGuests; ++g)
+                if ((state.battle.asking >> g) & 1u)
+                    return g;
             return state.battle.fighters[U(state.battle.turn)].guest;
+        }
         for (int g = 0; g < state.count; ++g)
             if (state.guests[U(g)].pending > 0 && !state.guests[U(g)].dead)
                 return g;
@@ -317,6 +322,7 @@ namespace umbra::night
         const int monster = MonsterAt(state, guest.cell);
         if (monster >= 0)
             legal.push_back({ActionKind::Attack, I8(monster)});
+        CompanyLegal(def, state, g, legal);
 
         legal.push_back({ActionKind::EndTurn});
         return legal;
@@ -344,7 +350,14 @@ namespace umbra::night
             Log(state, LogKind::Level, g, -1, guest.level);
             break;
         case ActionKind::Attack:
-            StartBattle(def, state, guest.cell, {Fighter{I8(g)}}, {Fighter{-1, action.a}});
+            if (action.b >= 0)
+                AttackGuest(def, state, g, action.b);
+            else
+                StartBattle(def, state, guest.cell, Side(state, g), {Fighter{-1, action.a}});
+            break;
+        case ActionKind::Persuade:
+            Persuade(def, state, g, action.a);
+            inner::EndTurn(def, state);
             break;
         case ActionKind::Move:
         {
@@ -360,7 +373,7 @@ namespace umbra::night
             if (const int monster = MonsterAt(state, to); monster >= 0)
             {
                 guest.movesLeft = 0;
-                StartBattle(def, state, to, {Fighter{-1, I8(monster)}}, {Fighter{I8(g)}});
+                StartBattle(def, state, to, {Fighter{-1, I8(monster)}}, Side(state, g));
                 break;
             }
             // Resolving an item, event or trap room ends the turn.

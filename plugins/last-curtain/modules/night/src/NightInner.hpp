@@ -36,7 +36,14 @@ namespace umbra::night::inner
     int BoardGuest(const NightState &state); // whose board turn it is, ignoring battles and levels
     int MonsterAt(const NightState &state, int cell); // a living monster there, or -1
     // Battle.cpp
-    void StartBattle(const NightDef &def, NightState &state, int cell, const std::vector<Fighter> &starters, const std::vector<Fighter> &others);
+    void StartBattle(const NightDef &def, NightState &state, int cell, const std::vector<Fighter> &starters, const std::vector<Fighter> &others,
+                     std::uint8_t asking = 0);
+    void BeginRounds(const NightDef &def, NightState &state); // after the bystanders chose
+    std::vector<Fighter> Side(const NightState &state, int guest); // a guest and their allies in the room
+    // Company.cpp
+    void CompanyLegal(const NightDef &def, const NightState &state, int guest, std::vector<Action> &legal);
+    void AttackGuest(const NightDef &def, NightState &state, int attacker, int defender);
+    void Persuade(const NightDef &def, NightState &state, int asker, int target);
     void BattleLegal(const NightDef &def, const NightState &state, std::vector<Action> &legal);
     void BattleApply(const NightDef &def, NightState &state, const Action &action);
     void RoundStart(const NightDef &def, NightState &state); // monsters leave and appear

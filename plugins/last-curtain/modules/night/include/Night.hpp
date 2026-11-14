@@ -31,6 +31,7 @@ namespace umbra::night
         bool down = false, dead = false;
         std::int8_t downedBy = -1; // the guest who brought them down; -1 = the house
         std::int8_t pending = 0;   // levels earned and not yet chosen
+        std::array<std::int8_t, maxGuests> askedUntilRound{}; // may not persuade that guest again before
         std::int8_t movesLeft = 0;
     };
 
@@ -47,7 +48,7 @@ namespace umbra::night
 
     // Move: a = direction 0-3, or transportMove. UseItem/DropItem: a = slot (relic: b = the downed guest).
     // PickUp: a = index in `floor`. Attack: a = monster index or -1, b = guest or -1. Strike: a = fighter index.
-    // LevelUp: a = 0 Might, 1 Sanity.
+    // LevelUp: a = 0 Might, 1 Sanity. Persuade: a = guest. Join / EndTurn: a bystander's choice before a battle.
     inline constexpr std::int8_t transportMove = 4;
     struct Action
     {
@@ -99,6 +100,7 @@ namespace umbra::night
         std::int8_t round = 1, turn = 0, count = 0; // turn: index in fighters
         std::array<Fighter, 8> fighters{};
         std::int8_t cell = -1, owner = -1; // owner: the guest whose board turn it is
+        std::uint8_t asking = 0;           // bystanders still to choose whether to join the defender (bits)
     };
 
     // Everything that changes during a night. No pointers, strings or maps: bots copy it to look ahead.
@@ -117,6 +119,7 @@ namespace umbra::night
         std::int8_t player = -1;
         bool over = false; // the night has ended
         std::vector<FloorItem> floor;
+        std::array<std::int16_t, maxGuests * maxGuests> bonds{}; // from * maxGuests + to, -1000..1000
         Battle battle;
         std::vector<Monster> monsters;
         std::uint64_t eventsUsed = 0, itemsUsed = 0; // events.csv / items.csv rows already drawn
@@ -133,6 +136,11 @@ namespace umbra::night
     bool Apply(const NightDef &def, NightState &state, const Action &action); // false and no change if not legal
     int Hour(const NightDef &def, const NightState &state);
     int Minute(const NightDef &def, const NightState &state);
+    // The company (Company.cpp).
+    int Bond(const NightState &state, int from, int to);
+    bool Controls(const NightState &state, int controller, int guest); // the player's guest and their group 0
+    std::vector<int> Joiners(const NightDef &def, const NightState &state, int attacker, int defender);
+
     // A hit in battle (Battle.cpp): data formula, resistance, armour, guard; never below minDamage.
     int Damage(const NightDef &def, const NightState &state, const Fighter &attacker, const Fighter &defender);
 

@@ -93,7 +93,7 @@ namespace umbra::night
             state.monsters.erase(std::remove_if(state.monsters.begin(), state.monsters.end(), [](const Monster &m) { return m.hp <= 0; }),
                                  state.monsters.end());
             b = {};
-            if (owner >= 0 && BoardGuest(state) == owner)
+            if (owner >= 0 && !state.over && state.order[U(state.turn)] == owner) // even if the owner fell
                 EndTurn(def, state);
         }
 
@@ -207,7 +207,27 @@ namespace umbra::night
         return std::max(rules.minDamage, damage);
     }
 
-    void inner::StartBattle(const NightDef &def, NightState &state, int cell, const std::vector<Fighter> &starters, const std::vector<Fighter> &others)
+    std::vector<Fighter> inner::Side(const NightState &state, int guest)
+    {
+        std::vector<Fighter> side{Fighter{I8(guest)}};
+        const Guest &me = state.guests[U(guest)];
+        for (int o = 0; o < state.count; ++o)
+        {
+            const Guest &ally = state.guests[U(o)];
+            if (o != guest && me.group >= 0 && ally.group == me.group && ally.cell == me.cell && !ally.down && !ally.dead)
+                side.push_back(Fighter{I8(o)});
+        }
+        return side;
+    }
+
+    void inner::BeginRounds(const NightDef &def, NightState &state)
+    {
+        state.battle.turn = -1;
+        Advance(def, state);
+    }
+
+    void inner::StartBattle(const NightDef &def, NightState &state, int cell, const std::vector<Fighter> &starters, const std::vector<Fighter> &others,
+                            std::uint8_t asking)
     {
         Battle &b = state.battle;
         b = {};
@@ -220,14 +240,21 @@ namespace umbra::night
             if (b.count < 8)
                 f.side = 1, b.fighters[U(b.count++)] = f;
         Log(state, LogKind::Battle, starters.front().guest, others.front().guest, cell);
-        // The first fighter may be a monster: let it act.
-        b.turn = -1;
-        Advance(def, state);
+        // Bystanders choose first; then the first fighter (perhaps a monster) acts.
+        b.asking = asking;
+        if (!asking)
+            BeginRounds(def, state);
     }
 
     void inner::BattleLegal(const NightDef &def, const NightState &state, std::vector<Action> &legal)
     {
         const Battle &b = state.battle;
+        if (b.asking)
+        {
+            legal.push_back({ActionKind::Join});
+            legal.push_back({ActionKind::EndTurn});
+            return;
+        }
         const Fighter &me = b.fighters[U(b.turn)];
         for (int f = 0; f < b.count; ++f)
             if (b.fighters[U(f)].side != me.side && Standing(state, b.fighters[U(f)]))
@@ -248,6 +275,22 @@ namespace umbra::night
 
     void inner::BattleApply(const NightDef &def, NightState &state, const Action &action)
     {
+        Battle &b = state.battle;
+        if (b.asking)
+        {
+            // A bystander joins the defender's side or stays out; neither uses their own turn.
+            const int g = Current(state);
+            if (action.kind == ActionKind::Join && b.count < 8)
+            {
+                Fighter f{I8(g)};
+                f.side = 1;
+                b.fighters[U(b.count++)] = f;
+            }
+            b.asking = static_cast<std::uint8_t>(b.asking & ~(1u << g));
+            if (!b.asking)
+                BeginRounds(def, state);
+            return;
+        }
         Fighter &me = At(state, state.battle.turn);
         Guest &guest = state.guests[U(me.guest)];
         switch (action.kind)

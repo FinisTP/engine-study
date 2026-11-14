@@ -28,6 +28,8 @@ namespace umbra::night
             speeds[U(g)] = d.speed;
         }
         state.order = Order(rolls, speeds, state.count);
+        for (const BondDef &b : def.bonds)
+            state.bonds[U(b.from * maxGuests + b.to)] = I16(b.bond);
         StartTurn(def, state);
         return state;
     }
