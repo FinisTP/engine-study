@@ -24,6 +24,11 @@ namespace umbra::night::inner
     template <class T> std::int8_t I8(T v) { return static_cast<std::int8_t>(v); }
     template <class T> std::int16_t I16(T v) { return static_cast<std::int16_t>(v); }
 
+    inline void Log(NightState &state, LogKind kind, int who, int other = -1, int a = 0, int b = 0)
+    {
+        state.log[state.logCount++ % state.log.size()] = {I16(state.round * 8 + state.turn), kind, I8(who), I8(other), I16(a), I16(b)};
+    }
+
     void BuildBoard(const NightDef &def, NightState &state); // Board.cpp: deck and foyer
 
     // Turn order: high roll first, then higher speed, then lower index (Turn.cpp).

@@ -56,11 +56,112 @@ namespace umbra::night
             guest.hp = I16(std::min(guest.hp + amount, Stat(def, state, g, StatKind::MaxHp)));
         }
 
-        void UseItem(const NightDef &def, NightState &state, int g, int slot)
+        // An unused row, uniformly (events) or by weight (items); -1 when none is left.
+        int DrawEvent(const NightDef &def, NightState &state, bool trap)
+        {
+            std::vector<int> rows;
+            for (std::size_t e = 0; e < def.events.size() && e < 64; ++e)
+                if (def.events[e].trap == trap && !((state.eventsUsed >> e) & 1u))
+                    rows.push_back(static_cast<int>(e));
+            if (rows.empty())
+                return -1;
+            const int e = rows[U(Below(state, static_cast<int>(rows.size())))];
+            state.eventsUsed |= 1ULL << e;
+            return e;
+        }
+
+        int DrawItem(const NightDef &def, NightState &state)
+        {
+            int total = 0;
+            for (std::size_t i = 0; i < def.items.size() && i < 64; ++i)
+                total += (state.itemsUsed >> i) & 1u ? 0 : def.items[i].weight;
+            if (total == 0)
+                return -1;
+            int pick = Below(state, total);
+            for (std::size_t i = 0; i < def.items.size() && i < 64; ++i)
+                if (!((state.itemsUsed >> i) & 1u) && (pick -= def.items[i].weight) < 0)
+                {
+                    state.itemsUsed |= 1ULL << i;
+                    return static_cast<int>(i);
+                }
+            return -1;
+        }
+
+        // Into a free slot, or onto the floor when the guest carries all they may.
+        void GiveItem(const NightDef &def, NightState &state, int g, int item)
+        {
+            if (item < 0)
+                return;
+            Guest &guest = G(state, g);
+            auto slot = std::find(guest.items.begin(), guest.items.end(), std::int8_t(-1));
+            if (Carried(guest) < def.rules.carry && slot != guest.items.end())
+                *slot = I8(item);
+            else
+                state.floor.push_back({guest.cell, I8(item)});
+            Log(state, LogKind::Item, g, -1, item);
+        }
+
+        void ApplyEffect(const NightDef &def, NightState &state, int g, Effect effect, int amount)
+        {
+            Guest &guest = G(state, g);
+            auto raise = [&](std::int16_t &stat) { stat = I16(std::max(0, stat + amount)); };
+            switch (effect)
+            {
+            case Effect::Hp:
+                if (amount < 0)
+                    Hurt(def, state, g, -amount, -1);
+                else
+                    Heal(def, state, g, amount);
+                break;
+            case Effect::MaxHp:
+                raise(guest.maxHp);
+                guest.hp = I16(std::clamp(guest.hp + std::max(0, amount), 0, Stat(def, state, g, StatKind::MaxHp)));
+                break;
+            case Effect::Might: raise(guest.might); break;
+            case Effect::Sanity: raise(guest.sanity); break;
+            case Effect::Speed: raise(guest.speed); break;
+            case Effect::Xp: guest.xp = I16(guest.xp + amount); break;
+            case Effect::Item:
+                for (int n = 0; n < amount; ++n)
+                    GiveItem(def, state, g, DrawItem(def, state));
+                break;
+            default:
+                return;
+            }
+            Log(state, LogKind::Effect, g, -1, static_cast<int>(effect), amount);
+        }
+
+        // The first guest into an item, event or trap room takes care of it.
+        void Resolve(const NightDef &def, NightState &state, int g, int cell)
+        {
+            Cell &c = state.cells[U(cell)];
+            c.resolved = true;
+            const RoomKind kind = RoomOf(def, state, cell).kind;
+            if (kind == RoomKind::Item)
+                return GiveItem(def, state, g, DrawItem(def, state));
+            const int e = DrawEvent(def, state, kind == RoomKind::Trap);
+            if (e < 0)
+                return;
+            const EventDef &event = def.events[U(e)];
+            const Check check = RollCheck(def, state, g, event.stat, event.target);
+            if (check.passed)
+                ApplyEffect(def, state, g, event.passEffect, event.passAmount);
+            else
+                ApplyEffect(def, state, g, event.failEffect, event.failAmount);
+        }
+
+        void UseItem(const NightDef &def, NightState &state, int g, int slot, int target)
         {
             Guest &guest = G(state, g);
             const ItemDef &item = def.items[U(guest.items[U(slot)])];
-            if (item.effect == Effect::HpRoom)
+            if (item.kind == ItemKind::Relic)
+            {
+                Guest &fallen = G(state, target);
+                fallen.down = false;
+                fallen.hp = I16(def.rules.guests.downedReturnHp);
+                Log(state, LogKind::Woke, target, g);
+            }
+            else if (item.effect == Effect::HpRoom)
             {
                 // Self and every ally of the same group in the room.
                 for (int o = 0; o < state.count; ++o)
@@ -167,6 +268,10 @@ namespace umbra::night
             const ItemDef &item = def.items[U(guest.items[U(s)])];
             if (item.kind == ItemKind::Heal)
                 legal.push_back({ActionKind::UseItem, s});
+            if (item.kind == ItemKind::Relic)
+                for (int o = 0; o < state.count; ++o)
+                    if (state.guests[U(o)].down && !state.guests[U(o)].dead && state.guests[U(o)].cell == guest.cell)
+                        legal.push_back({ActionKind::UseItem, s, I8(o)});
             legal.push_back({ActionKind::DropItem, s});
         }
         if (Carried(guest) < def.rules.carry)
@@ -191,13 +296,23 @@ namespace umbra::night
         {
             int to = action.a == transportMove ? Pair(def, state, guest.cell) : Neighbour(def, guest.cell, action.a);
             if (action.a != transportMove && !Passage(def, state, guest.cell, action.a))
+            {
                 to = Open(def, state, guest.cell, action.a);
+                Log(state, LogKind::Opened, g, -1, to);
+            }
             --guest.movesLeft;
             Enter(def, state, g, to);
+            // Resolving an item, event or trap room ends the turn.
+            const RoomKind kind = RoomOf(def, state, to).kind;
+            if (!state.cells[U(to)].resolved && (kind == RoomKind::Item || kind == RoomKind::Event || kind == RoomKind::Trap))
+            {
+                Resolve(def, state, g, to);
+                inner::EndTurn(def, state);
+            }
             break;
         }
         case ActionKind::UseItem:
-            UseItem(def, state, g, action.a);
+            UseItem(def, state, g, action.a, action.b);
             break;
         case ActionKind::DropItem:
             state.floor.push_back({guest.cell, guest.items[U(action.a)]});
@@ -217,6 +332,36 @@ namespace umbra::night
             return false;
         }
         return true;
+    }
+
+    Check RollCheck(const NightDef &def, NightState &state, int g, StatKind stat, int target)
+    {
+        Check check{Roll(state, 20), Stat(def, state, g, stat), target, false};
+        check.passed = check.die + check.stat >= target;
+        Log(state, LogKind::Check, g, check.stat, check.die, target);
+        return check;
+    }
+
+    void Hurt(const NightDef &, NightState &state, int g, int amount, int byGuest)
+    {
+        Guest &guest = G(state, g);
+        if (guest.down || guest.dead || amount <= 0)
+            return;
+        guest.hp = I16(std::max(0, guest.hp - amount));
+        if (guest.hp > 0)
+            return;
+        guest.down = true;
+        guest.downedBy = I8(byGuest);
+        Log(state, LogKind::Down, g, byGuest);
+    }
+
+    std::vector<LogEntry> NewLog(const NightState &state, std::size_t since)
+    {
+        std::vector<LogEntry> entries;
+        const std::size_t size = state.log.size();
+        for (std::size_t i = std::max<std::size_t>(since, state.logCount > size ? state.logCount - size : 0); i < state.logCount; ++i)
+            entries.push_back(state.log[i % size]);
+        return entries;
     }
 
     int Hour(const NightDef &def, const NightState &state)

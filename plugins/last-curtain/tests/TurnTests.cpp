@@ -178,3 +178,158 @@ TEST_CASE("Twenty rounds run from 19:00 to 04:30 (T96)", "[night][turn]")
     CHECK(applied == 140);
     CHECK(LegalActions(def, state).empty());
 }
+
+namespace
+{
+    // One event (or trap) row, every other room of that kind.
+    NightDef OneEvent(RoomKind kind, StatKind stat, int target, Effect pass, int passAmount, Effect fail, int failAmount)
+    {
+        NightDef def = AllRooms(kind);
+        EventDef e;
+        e.id = "test";
+        e.name = "Test";
+        e.trap = kind == RoomKind::Trap;
+        e.stat = stat;
+        e.target = target;
+        e.passEffect = pass;
+        e.passAmount = passAmount;
+        e.failEffect = fail;
+        e.failAmount = failAmount;
+        def.events = {e};
+        return def;
+    }
+
+    int Items(const Guest &guest)
+    {
+        return static_cast<int>(std::count_if(guest.items.begin(), guest.items.end(), [](std::int8_t i) { return i >= 0; }));
+    }
+}
+
+TEST_CASE("A check is d20 plus the stat against the target (T97)", "[night][check]")
+{
+    NightDef def = Data();
+    def.guests[0].sanity = 5;
+    NightState state = NewNight(def, 11);
+    int passed = 0;
+    for (int i = 0; i < 2000; ++i)
+    {
+        const Check check = RollCheck(def, state, 0, StatKind::Sanity, 13);
+        CHECK(check.stat == 5);
+        CHECK(check.target == 13);
+        CHECK(check.die >= 1);
+        CHECK(check.die <= 20);
+        CHECK(check.passed == (check.die + 5 >= 13));
+        passed += check.passed ? 1 : 0;
+    }
+    CHECK(passed >= 1200);
+    CHECK(passed <= 1400);
+}
+
+TEST_CASE("An event applies its pass or its fail effect, once (T97)", "[night][check]")
+{
+    const NightDef def = OneEvent(RoomKind::Event, StatKind::Sanity, 13, Effect::Item, 1, Effect::Hp, -4);
+    int passes = 0, fails = 0;
+    for (std::uint64_t seed = 1; seed <= 40; ++seed)
+    {
+        NightState state = NewNight(def, seed);
+        const int g = Current(state);
+        const Guest before = state.guests[static_cast<std::size_t>(g)];
+        const Action move = First(LegalActions(def, state), ActionKind::Move);
+        const std::size_t since = state.logCount;
+        REQUIRE(Apply(def, state, move));
+        const Guest &after = state.guests[static_cast<std::size_t>(g)];
+        bool passed = false, found = false;
+        for (const LogEntry &e : NewLog(state, since))
+            if (e.kind == LogKind::Check)
+                passed = e.a + e.other >= e.b, found = true;
+        REQUIRE(found);
+        if (passed)
+        {
+            CHECK(Items(after) == Items(before) + 1);
+            ++passes;
+        }
+        else
+        {
+            CHECK(after.hp == before.hp - 4);
+            ++fails;
+        }
+        // Resolving ended the turn; the next guest walks in and gets nothing, and may move on.
+        CHECK(Current(state) != g);
+        const int next = Current(state);
+        const Guest nextBefore = state.guests[static_cast<std::size_t>(next)];
+        REQUIRE(Apply(def, state, move));
+        CHECK(Current(state) == next);
+        CHECK(state.guests[static_cast<std::size_t>(next)].hp == nextBefore.hp);
+        CHECK(Items(state.guests[static_cast<std::size_t>(next)]) == Items(nextBefore));
+    }
+    CHECK(passes > 0);
+    CHECK(fails > 0);
+}
+
+TEST_CASE("A trap can bring a guest down but not kill before midnight (T97)", "[night][check]")
+{
+    const NightDef def = OneEvent(RoomKind::Trap, StatKind::Speed, 99, Effect::None, 0, Effect::Hp, -99);
+    NightState state = NewNight(def, 2);
+    const int g = Current(state);
+    REQUIRE(Apply(def, state, First(LegalActions(def, state), ActionKind::Move)));
+    const Guest &guest = state.guests[static_cast<std::size_t>(g)];
+    CHECK(guest.down);
+    CHECK_FALSE(guest.dead);
+    CHECK(guest.hp == 0);
+    CHECK(guest.downedBy == -1);
+    // A down guest takes no turns.
+    for (int i = 0; i < 20; ++i)
+    {
+        CHECK(Current(state) != g);
+        REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
+    }
+}
+
+TEST_CASE("A relic wakes a downed guest in the same room and is used up (T97)", "[night][check]")
+{
+    const NightDef def = Data();
+    NightState state = NewNight(def, 2);
+    const int g = Current(state), other = state.order[1];
+    Guest &helper = state.guests[static_cast<std::size_t>(g)];
+    helper.items[0] = static_cast<std::int8_t>(Slot(def, "crucifix"));
+    const Action wake{ActionKind::UseItem, 0, static_cast<std::int8_t>(other)};
+    CHECK_FALSE(Apply(def, state, wake)); // nobody down
+    Guest &fallen = state.guests[static_cast<std::size_t>(other)];
+    fallen.down = true;
+    fallen.hp = 0;
+    fallen.cell = state.foyer;
+    REQUIRE(Apply(def, state, wake));
+    CHECK_FALSE(fallen.down);
+    CHECK(fallen.hp == def.rules.guests.downedReturnHp);
+    CHECK(helper.items[0] == -1);
+    // Not in the same room: no.
+    helper.items[0] = static_cast<std::int8_t>(Slot(def, "rosary"));
+    fallen.down = true;
+    fallen.hp = 0;
+    fallen.cell = static_cast<std::int8_t>(state.foyer - 1);
+    CHECK_FALSE(Apply(def, state, wake));
+}
+
+TEST_CASE("An item room gives one item; a full guest finds it on the floor (T97)", "[night][check]")
+{
+    const NightDef def = AllRooms(RoomKind::Item);
+    NightState state = NewNight(def, 4);
+    int g = Current(state);
+    REQUIRE(Apply(def, state, First(LegalActions(def, state), ActionKind::Move)));
+    CHECK(Items(state.guests[static_cast<std::size_t>(g)]) == 1);
+    CHECK(state.floor.empty());
+
+    g = Current(state);
+    Guest &full = state.guests[static_cast<std::size_t>(g)];
+    full.items = {0, 0, 0, 0, -1, -1};
+    // A different doorway, into a new item room.
+    const auto legal = LegalActions(def, state);
+    Action fresh{};
+    for (const Action &a : legal)
+        if (a.kind == ActionKind::Move && Doorway(def, state, full.cell, a.a))
+            fresh = a;
+    REQUIRE(fresh.kind == ActionKind::Move);
+    REQUIRE(Apply(def, state, fresh));
+    CHECK(Items(full) == 4);
+    CHECK(state.floor.size() == 1);
+}

@@ -262,6 +262,9 @@ namespace umbra::night
             d.items.push_back(i);
         }
 
+        if (d.items.size() > 64)
+            items.Bad(items.file, "at most 64 items");
+
         Sheet monsters(diagnostics, folder, "monsters.csv", {"id", "name", "hp", "might", "sanity", "attack", "resist", "xp", "debuff", "hpPerHour", "statPerHour"});
         for (int r = 0; r < monsters.Rows(); ++r)
         {
@@ -341,6 +344,9 @@ namespace umbra::night
             e.failAmount = events.Int(r, "failAmount");
             d.events.push_back(e);
         }
+
+        if (d.events.size() > 64)
+            events.Bad(events.file, "at most 64 events and traps");
 
         Sheet guests(diagnostics, folder, "guests.csv", {"id", "name", "pronoun", "weapon", "hp", "might", "sanity", "speed", "style", "temper",
                                                          "taken", "takenHp", "takenMight", "takenSanity", "takenSpeed", "power"});

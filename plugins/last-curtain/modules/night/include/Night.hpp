@@ -29,6 +29,7 @@ namespace umbra::night
         std::uint8_t omens = 0;        // omens.csv rows held, as bits
         std::uint64_t bonusUsed = 0;   // cells whose bonus this guest has had, as bits
         bool down = false, dead = false;
+        std::int8_t downedBy = -1; // the guest who brought them down; -1 = the house
         std::int8_t movesLeft = 0;
     };
 
@@ -52,6 +53,28 @@ namespace umbra::night
         bool operator==(const Action &) const = default;
     };
 
+    enum class LogKind : std::uint8_t
+    {
+        Opened, Check, Effect, Item, Down, Woke,
+        Battle, Hit, Omen, Marked, Turned, Power, Died, Ended, Monster, Level, Persuade
+    };
+
+    // One thing that happened. Check: a = die, other = stat, b = target. Effect: a = Effect, b = amount.
+    // Item: a = item. Down: other = by whom (-1 house). Woke: other = helper. Opened: a = cell.
+    struct LogEntry
+    {
+        std::int16_t tick = 0; // round * 8 + turn
+        LogKind kind = LogKind::Opened;
+        std::int8_t who = -1, other = -1;
+        std::int16_t a = 0, b = 0;
+    };
+
+    struct Check
+    {
+        int die = 0, stat = 0, target = 0;
+        bool passed = false;
+    };
+
     // Everything that changes during a night. No pointers, strings or maps: bots copy it to look ahead.
     struct NightState
     {
@@ -68,6 +91,9 @@ namespace umbra::night
         std::int8_t player = -1;
         bool over = false; // the night has ended
         std::vector<FloorItem> floor;
+        std::uint64_t eventsUsed = 0, itemsUsed = 0; // events.csv / items.csv rows already drawn
+        std::array<LogEntry, 256> log{};             // a ring of the last 256
+        std::uint32_t logCount = 0;                  // entries ever written
     };
 
     // A night with every guest in the foyer; `player` is the guest a person plays (-1: bots only).
@@ -79,6 +105,13 @@ namespace umbra::night
     bool Apply(const NightDef &def, NightState &state, const Action &action); // false and no change if not legal
     int Hour(const NightDef &def, const NightState &state);
     int Minute(const NightDef &def, const NightState &state);
+    // d20 + the guest's stat against the target; no rule for 1 or 20.
+    Check RollCheck(const NightDef &def, NightState &state, int guest, StatKind stat, int target);
+    // Damage from a guest (byGuest) or the house (-1). Before the Turn 0 HP is down, after it death.
+    void Hurt(const NightDef &def, NightState &state, int guest, int amount, int byGuest);
+    // Entries written since `since` (a logCount value), oldest first; at most the last 256.
+    std::vector<LogEntry> NewLog(const NightState &state, std::size_t since);
+
     // Base + worn items + omens (+ buffs in battle). Light: how many steps the guest's light reaches.
     int Stat(const NightDef &def, const NightState &state, int guest, StatKind kind);
 
