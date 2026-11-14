@@ -11,13 +11,18 @@ namespace
     std::size_t U(int i) { return static_cast<std::size_t>(i); }
     std::int8_t I8(int i) { return static_cast<std::int8_t>(i); }
 
-    // A corridor along row 4 to the left of the foyer, every guest in the foyer, guest 0 the player.
+    // The cell `n` steps left of the foyer, on its row.
+    int Left(const NightDef &def, int n) { return CellAt(def, def.rules.board.width / 2 - n, def.rules.board.height - 1); }
+
+    // A two-room corridor to the left of the foyer, every guest in the foyer, guest 0 the player.
     NightState Corridor(const NightDef &def)
     {
         NightState state = NewNight(def, 1, 0);
+        for (int g = 0; g < state.count; ++g)
+            state.guests[U(g)].cell = state.foyer;
         const int room = NightDef::Find(def.rooms, "auditorium");
-        for (int x = 0; x < 2; ++x)
-            state.cells[U(CellAt(def, x, 4))] = {I8(room), 2 | 8, true}; // E and W doors
+        for (int n = 1; n <= 2; ++n)
+            state.cells[U(Left(def, n))] = {I8(room), 2 | 8, true}; // E and W doors
         state.cells[U(state.foyer)].doors |= 8;
         return state;
     }
@@ -33,15 +38,15 @@ TEST_CASE("Only lit rooms show who is in them (T108)", "[night][board]")
     NightDef def = Data();
     def.rules.light.steps = 1;
     NightState state = Corridor(def);
-    state.guests[1].cell = I8(CellAt(def, 1, 4)); // one step from the player: lit
-    state.guests[2].cell = I8(CellAt(def, 0, 4)); // two steps: dark
+    state.guests[1].cell = I8(Left(def, 1)); // one step from the player: lit
+    state.guests[2].cell = I8(Left(def, 2)); // two steps: dark
     const BoardView view = MakeView(def, state, 0);
     CHECK(Shows(view, 0));
     CHECK(Shows(view, 1));
     CHECK_FALSE(Shows(view, 2));
-    CHECK(view.cells[U(CellAt(def, 1, 4))].lit);
-    CHECK_FALSE(view.cells[U(CellAt(def, 0, 4))].lit);
-    CHECK(view.cells[U(CellAt(def, 0, 4))].opened); // its shape is known
+    CHECK(view.cells[U(Left(def, 1))].lit);
+    CHECK_FALSE(view.cells[U(Left(def, 2))].lit);
+    CHECK(view.cells[U(Left(def, 2))].opened); // its shape is known
 }
 
 TEST_CASE("Allies' light counts (T108)", "[night][board]")
@@ -49,11 +54,11 @@ TEST_CASE("Allies' light counts (T108)", "[night][board]")
     NightDef def = Data();
     def.rules.light.steps = 1;
     NightState state = Corridor(def);
-    state.guests[1].cell = I8(CellAt(def, 1, 4));
-    state.guests[2].cell = I8(CellAt(def, 0, 4));
+    state.guests[1].cell = I8(Left(def, 1));
+    state.guests[2].cell = I8(Left(def, 2));
     state.guests[0].group = state.guests[1].group = 0;
     const BoardView view = MakeView(def, state, 0);
-    CHECK(view.cells[U(CellAt(def, 0, 4))].lit);
+    CHECK(view.cells[U(Left(def, 2))].lit);
     CHECK(Shows(view, 2));
     const auto ally = std::find_if(view.pawns.begin(), view.pawns.end(), [](const PawnView &p) { return p.guest == 1; });
     REQUIRE(ally != view.pawns.end());
@@ -66,14 +71,14 @@ TEST_CASE("Minions and the Taken show only in light (T108)", "[night][board]")
     def.rules.light.steps = 1;
     NightState state = Corridor(def);
     state.taken = {true, 3, 0, false};
-    state.guests[3].cell = I8(CellAt(def, 0, 4));
-    state.monsters.push_back({0, I8(CellAt(def, 0, 4)), 99, 5, 1, 1});
-    state.monsters.push_back({0, I8(CellAt(def, 1, 4)), 99, 5, 1, 1});
+    state.guests[3].cell = I8(Left(def, 2));
+    state.monsters.push_back({0, I8(Left(def, 2)), 99, 5, 1, 1});
+    state.monsters.push_back({0, I8(Left(def, 1)), 99, 5, 1, 1});
     BoardView view = MakeView(def, state, 0);
     CHECK_FALSE(Shows(view, 3));
     REQUIRE(view.monsters.size() == 1);
     CHECK(view.monsters[0].monster == 1);
-    state.guests[3].cell = I8(CellAt(def, 1, 4));
+    state.guests[3].cell = I8(Left(def, 1));
     view = MakeView(def, state, 0);
     const auto taken = std::find_if(view.pawns.begin(), view.pawns.end(), [](const PawnView &p) { return p.guest == 3; });
     REQUIRE(taken != view.pawns.end());
@@ -109,7 +114,7 @@ TEST_CASE("Cells and points agree (T108)", "[night][board]")
     for (int c = 0; c < def.rules.board.width * def.rules.board.height; ++c)
         CHECK(CellAtPoint(def, CellCenter(def, c)) == c);
     CHECK(CellAtPoint(def, {100.0F, 0.0F, 0.0F}) == -1);
-    CHECK(CellCenter(def, CellAt(def, 2, 2)).x == 0.0F); // the board is centred
+    CHECK(CellCenter(def, CellAt(def, def.rules.board.width / 2, def.rules.board.height / 2)).x == 0.0F); // the board is centred
 }
 
 TEST_CASE("A dead player sees everything (T108)", "[night][board]")
@@ -117,7 +122,7 @@ TEST_CASE("A dead player sees everything (T108)", "[night][board]")
     NightDef def = Data();
     def.rules.light.steps = 0;
     NightState state = Corridor(def);
-    state.guests[2].cell = I8(CellAt(def, 0, 4));
+    state.guests[2].cell = I8(Left(def, 2));
     state.guests[0].dead = true;
     CHECK(Shows(MakeView(def, state, -1), 2));
     CHECK(Shows(MakeView(def, state, 0), 2)); // a dead viewer watches with everyone's eyes

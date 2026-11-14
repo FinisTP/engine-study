@@ -1,4 +1,4 @@
-#include <NightDef.hpp>
+#include <Night.hpp>
 
 #include "Csv.hpp"
 
@@ -176,7 +176,7 @@ namespace umbra::night
                     Fail(out, file, file + ":" + field, message);
             };
             check(r.carry >= 1 && r.carry <= maxCarry, "carry", "must be 1 to 6 (a guest has 6 item slots)");
-            check(r.board.width >= 1 && r.board.height >= 1 && r.board.width * r.board.height <= 49, "board", "the grid holds at most 49 cells");
+            check(r.board.width >= 1 && r.board.height >= 1 && r.board.width * r.board.height <= maxCells, "board", "the grid holds at most 81 cells");
             check(r.board.rooms >= 2 && r.board.rooms <= r.board.width * r.board.height, "board.rooms", "must fit the grid and hold the foyer and the under-stage");
             check(r.clock.rounds >= 1 && r.clock.rounds <= 100, "clock.rounds", "must be 1 to 100");
             check(r.clock.turnAfterRound >= 1 && r.clock.turnAfterRound < r.clock.rounds, "clock.turnAfterRound", "must come before the last round");

@@ -250,7 +250,7 @@ namespace umbra::night
                         for (int d = 0; d < 4; ++d)
                             if (Doorway(def, state, c, d))
                                 goal(c, style.explore);
-                        if (def.rooms[U(state.cells[U(c)].room)].kind == RoomKind::Bonus && !((me.bonusUsed >> c) & 1u))
+                        if (def.rooms[U(state.cells[U(c)].room)].kind == RoomKind::Bonus && !me.bonusUsed[U(c)])
                             goal(c, style.bonus);
                     }
                     for (const FloorItem &f : state.floor)
@@ -274,7 +274,7 @@ namespace umbra::night
                 case ActionKind::EndTurn:
                 {
                     const RoomDef &room = def.rooms[U(state.cells[U(me.cell)].room)];
-                    return room.kind == RoomKind::Bonus && !((me.bonusUsed >> me.cell) & 1u) ? style.bonus * 10 + 5 : 0;
+                    return room.kind == RoomKind::Bonus && !me.bonusUsed[U(me.cell)] ? style.bonus * 10 + 5 : 0;
                 }
                 default:
                     return -100;

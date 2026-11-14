@@ -43,7 +43,7 @@ namespace umbra::night
                     guest.movesLeft = 0;
                 break;
             case RoomKind::Bonus:
-                if (!((guest.bonusUsed >> cell) & 1u))
+                if (!guest.bonusUsed[U(cell)])
                     guest.movesLeft = 0;
                 break;
             default:
@@ -227,9 +227,9 @@ namespace umbra::night
         {
             Guest &guest = G(state, g);
             const RoomDef &room = RoomOf(def, state, guest.cell);
-            if (room.kind == RoomKind::Bonus && !((guest.bonusUsed >> guest.cell) & 1u))
+            if (room.kind == RoomKind::Bonus && !guest.bonusUsed[U(guest.cell)])
             {
-                guest.bonusUsed |= 1ULL << guest.cell;
+                guest.bonusUsed.set(U(guest.cell));
                 std::int16_t *stat = room.stat == StatKind::Might ? &guest.might : room.stat == StatKind::Sanity ? &guest.sanity
                                    : room.stat == StatKind::Speed ? &guest.speed : room.stat == StatKind::MaxHp ? &guest.maxHp : nullptr;
                 if (stat)

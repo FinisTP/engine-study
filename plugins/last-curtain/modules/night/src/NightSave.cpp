@@ -4,6 +4,23 @@
 
 #include <nlohmann/json.hpp>
 
+// A bitset is saved as its string of 0s and 1s.
+namespace nlohmann
+{
+    template <std::size_t N> struct adl_serializer<std::bitset<N>>
+    {
+        static void to_json(json &j, const std::bitset<N> &b) { j = b.to_string(); }
+        static void from_json(const json &j, std::bitset<N> &b)
+        {
+            // The last character is bit 0, as to_string writes it; anything but '1' reads as 0.
+            const std::string text = j.get<std::string>();
+            b.reset();
+            for (std::size_t i = 0; i < text.size() && i < N; ++i)
+                b[i] = text[text.size() - 1 - i] == '1';
+        }
+    };
+}
+
 namespace umbra::night
 {
     // Field lists: every member of every struct in the state.
@@ -37,7 +54,7 @@ namespace umbra::night
         {
             auto in = [](int v, int lo, int hi) { return v >= lo && v < hi; };
             const int rooms = static_cast<int>(def.rooms.size()), items = static_cast<int>(def.items.size());
-            if (s.count != static_cast<int>(def.guests.size()) || !in(s.turn, 0, s.count) || !in(s.foyer, 0, maxCells) || !in(s.deckSize, 0, 65) ||
+            if (s.count != static_cast<int>(def.guests.size()) || !in(s.turn, 0, s.count) || !in(s.foyer, 0, maxCells) || !in(s.deckSize, 0, maxDeck + 1) ||
                 !in(s.deckNext, 0, s.deckSize + 1) || !in(s.marked, -1, s.count) || !in(s.player, -1, s.count))
                 return "the night's counters are out of range";
             for (const Cell &c : s.cells)

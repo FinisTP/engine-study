@@ -17,3 +17,12 @@ wire,A snapped wire,trap,speed,hard,none,0,hp,-4,A lighting wire snaps and whips
 smoke,Smoke from the wings,trap,sanity,normal,none,0,hp,-4,"Thick smoke pours from the wings, and in it you hear your name."
 spotlight,A falling spotlight,trap,speed,easy,none,0,hp,-7,A spotlight tears loose from the rig above you.
 hook,A loose hook,trap,might,easy,none,0,hp,-5,A loose scenery hook swings out of the dark.
+ticket,A ticket for tonight,event,sanity,normal,xp,1,hp,-2,"A ticket lies on the counter, for tonight's show, row A, your seat. The ink is still wet."
+dancers,Dancers in the dark,event,speed,normal,speed,1,back,0,"Footsteps whirl around you in a waltz you cannot see. Keep pace, or be swept back the way you came."
+letter,An unsent letter,event,sanity,hard,item,0,sanity,-1,"A love letter, never sent, signed with a name from the old programme. Reading it is like hearing the voice."
+costume,The costume that fits,event,might,normal,maxhp,2,hp,-3,"A costume hangs exactly your size. Putting it on is warm, then very tight."
+reel,A film reel turning,event,sanity,normal,sanity,1,hp,-3,"A projector runs by itself, showing this room, now, with one more person in it than there is."
+bell2,The prompt bell,event,might,easy,xp,1,back,0,"A bell rings for a cue nobody gave. Answer it on the stage, or retreat before the next one."
+stairs,Stairs that give,trap,speed,normal,none,0,hp,-4,"The steps tilt under you, one after another."
+steam,A burst of steam,trap,might,normal,none,0,hp,-5,An old pipe bursts across the room.
+pitfall,The pit cover,trap,speed,hard,none,0,hp,-4,The cover over the orchestra pit cracks in two.

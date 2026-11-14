@@ -1,6 +1,6 @@
 {
   "clock": { "startHour": 19, "rounds": 20, "turnAfterRound": 10 },
-  "board": { "width": 5, "height": 5, "rooms": 20 },
+  "board": { "width": 9, "height": 9, "rooms": 70 },
   "checks": { "easy": 10, "normal": 13, "hard": 16 },
   "light": { "steps": 4 },
   "carry": 4,

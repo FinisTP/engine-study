@@ -27,3 +27,37 @@ catwalk,Catwalk,transport,NS,none,0,1
 rehearsal,Rehearsal room,bonus,NEW,might,1,1
 chapel,Chapel of the stage ancestors,bonus,NS,sanity,1,1
 gallery,Rigging gallery,bonus,NESW,speed,1,1
+hallway,Hallway,plain,NESW,none,0,4
+passage,Passageway,plain,NS,none,0,4
+sidecorridor,Side corridor,plain,EW,none,0,3
+landing,Landing,plain,NE,none,0,3
+emptyroom,Empty room,plain,NEW,none,0,3
+cloakroom,Cloakroom,plain,ES,none,0,2
+storeroom,Storeroom,plain,NESW,none,0,2
+servantstair,Servants' stair,plain,NS,none,0,2
+ticketlobby,Ticket lobby,plain,NEW,none,0,1
+bar,Interval bar,plain,NES,none,0,1
+orchestraroom,Orchestra room,plain,NW,none,0,1
+wigroom,Wig room,item,NS,none,0,2
+armoury,Stage armoury,item,NEW,none,0,2
+sewing,Sewing room,item,NE,none,0,2
+paintshop,Paint shop,item,NESW,none,0,2
+lostfound,Lost property,item,EW,none,0,1
+pantry,Old pantry,item,NW,none,0,1
+flytower,Fly tower,event,NS,none,0,1
+flyloft2,Rope room,event,NEW,none,0,1
+recording,Recording booth,event,NE,none,0,1
+boxoffice,Box office,event,NESW,none,0,1
+dimmer,Dimmer room,event,EW,none,0,1
+projection,Projection room,event,NS,none,0,1
+balletroom,Ballet room,event,NESW,none,0,2
+shrine,Little shrine,event,NW,none,0,1
+royalbox,Royal box,event,NES,none,0,1
+waitingroom,Artists' waiting room,event,NEW,none,0,2
+loosestairs,Loose stairs,trap,NS,none,0,2
+pitcover,Broken pit cover,trap,NESW,none,0,2
+boilerroom,Boiler room,trap,NE,none,0,1
+roofterrace,Roof terrace,bonus,NS,speed,1,1
+composer,Composer's room,bonus,NE,sanity,1,1
+weaponrack,Fencing hall,bonus,NESW,might,1,1
+infirmary,Old infirmary,bonus,NEW,maxhp,2,1

@@ -45,7 +45,7 @@ namespace umbra::night
             if (room.kind == RoomKind::Foyer)
                 foyerRoom = static_cast<int>(r);
             else if (room.kind != RoomKind::UnderStage)
-                for (int n = 0; n < room.count && state.deckSize < 64; ++n)
+                for (int n = 0; n < room.count && state.deckSize < maxDeck; ++n)
                     state.deck[U(state.deckSize++)] = I8(r);
         }
         for (int i = state.deckSize - 1; i > 0; --i)

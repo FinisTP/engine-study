@@ -176,3 +176,24 @@ TEST_CASE("The same seed builds the same board (T95)", "[night][board]")
     CHECK(same);
     CHECK(differs);
 }
+
+TEST_CASE("The deck fills a 70-room night on a 9x9 board (T116)", "[night][board]")
+{
+    const NightDef def = Data();
+    CHECK(def.rules.board.width == 9);
+    CHECK(def.rules.board.height == 9);
+    CHECK(def.rules.board.rooms == 70);
+    CHECK(NewNight(def, 1).deckSize >= 85);
+}
+
+TEST_CASE("Every event and trap room has an event to draw (T116)", "[night][board]")
+{
+    const NightDef def = Data();
+    int eventRooms = 0, trapRooms = 0, events = 0, traps = 0;
+    for (const RoomDef &room : def.rooms)
+        eventRooms += room.kind == RoomKind::Event ? room.count : 0, trapRooms += room.kind == RoomKind::Trap ? room.count : 0;
+    for (const EventDef &e : def.events)
+        (e.trap ? traps : events) += 1;
+    CHECK(eventRooms <= events);
+    CHECK(trapRooms <= traps);
+}

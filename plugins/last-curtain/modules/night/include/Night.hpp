@@ -3,13 +3,14 @@
 #include <NightDef.hpp>
 
 #include <array>
+#include <bitset>
 #include <cstdint>
 #include <vector>
 
 // The night as one copyable value and the rules that change it (Night.md).
 namespace umbra::night
 {
-    inline constexpr int maxGuests = 7, maxCells = 49;
+    inline constexpr int maxGuests = 7, maxCells = 81, maxDeck = 120; // maxDeck fits an int8 count
 
     // One square of the board. `room` is a rooms.csv row; `doors` the rotated NESW mask, bit 0 = N.
     struct Cell
@@ -27,7 +28,7 @@ namespace umbra::night
         std::int8_t from = -1; // the cell before the last move (an event may push the guest back)
         std::int16_t xp = 0;
         std::array<std::int8_t, maxCarry> items{-1, -1, -1, -1, -1, -1}; // items.csv rows, -1 = empty
-        std::uint64_t bonusUsed = 0;   // cells whose bonus this guest has had, as bits
+        std::bitset<maxCells> bonusUsed; // cells whose bonus this guest has had
         bool down = false, dead = false;
         std::int8_t downedBy = -1; // the guest who brought them down; -1 = the house
         std::int8_t pending = 0;   // levels earned and not yet chosen
@@ -137,7 +138,7 @@ namespace umbra::night
     {
         std::uint64_t seed = 0, random = 0;
         std::array<Cell, maxCells> cells{};
-        std::array<std::int8_t, 64> deck{}; // rooms.csv rows still to place, shuffled
+        std::array<std::int8_t, maxDeck> deck{}; // rooms.csv rows still to place, shuffled
         std::int8_t deckSize = 0, deckNext = 0, placed = 0;
         std::int8_t foyer = -1, understage = -1; // cells
 
