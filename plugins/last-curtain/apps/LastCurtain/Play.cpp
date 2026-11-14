@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <bit>
 #include <charconv>
+#include <chrono>
 #include <cstdio>
 
 using namespace umbra::night;
@@ -82,9 +83,23 @@ namespace
     }
 }
 
-Play::Play(const NightDef &def, std::uint64_t seed, int player) : def_(def), state_(NewNight(def, seed, player)) {}
+namespace
+{
+    // The bots' own choice, timed.
+    Play::Decider Timed(const NightDef &def)
+    {
+        return [&def](const NightState &state, int guest, float &seconds) {
+            const auto start = std::chrono::steady_clock::now();
+            const Action action = ChooseAction(def, state, guest);
+            seconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - start).count();
+            return action;
+        };
+    }
+}
 
-Play::Play(const NightDef &def, const NightState &state) : def_(def), state_(state) {}
+Play::Play(const NightDef &def, std::uint64_t seed, int player) : def_(def), state_(NewNight(def, seed, player)), decider_(Timed(def)) {}
+
+Play::Play(const NightDef &def, const NightState &state) : def_(def), state_(state), decider_(Timed(def)) {}
 
 bool Play::PlayerTurn() const
 {
@@ -374,16 +389,45 @@ void Play::Update(float dt)
         return;
     }
     walk_.clear(), walking_ = false, mode_ = Mode::Menu; // a bot's turn
-    // 3. A bot acts; the narrator says what the player could see of it.
+    // 3. A bot decides; before its first action of a turn, a bot in view thinks for
+    //    max(thinkSeconds, the decision's own time) (user).
     bag_ = false;
+    if (!pending_ || pendingGuest_ != acting)
+    {
+        float took = 0.0F;
+        pendingAction_ = decider_(state_, acting, took);
+        pending_ = true, pendingGuest_ = acting;
+        const int turnKey = state_.round * 8 + state_.turn;
+        const auto pawns = MakeView(def_, state_, state_.player).pawns;
+        const bool seen = std::any_of(pawns.begin(), pawns.end(), [&](const PawnView &p) { return p.guest == acting; });
+        if (turnKey != thoughtTurn_ && seen && !state_.battle.active && !state_.chat.active)
+        {
+            thoughtTurn_ = turnKey;
+            think_ = std::max(thinkSeconds, took);
+            return;
+        }
+    }
+    if (think_ > 0.0F)
+    {
+        think_ -= dt;
+        if (think_ > 0.0F)
+            return;
+        think_ = 0.0F;
+    }
+    // 4. It acts; the narrator says what the player could see of it; a step slides.
+    pending_ = false;
     const NightState before = state_;
-    const Action action = ChooseAction(def_, state_, acting);
+    const Action action = pendingAction_;
     if (!Apply(def_, state_, action))
         return;
+    if (action.kind == ActionKind::Move && before.guests[U(acting)].cell != state_.guests[U(acting)].cell)
+        slide_ = {acting, before.guests[U(acting)].cell, state_.guests[U(acting)].cell, 0.0F};
     Notice(before.logCount);
     ++beats_;
     beat_ = captions_.lines.empty() ? Beat{} : Narrate(def_, before, state_, NewLog(state_, before.logCount), action, acting, state_.player, captions_);
     hold_ = beat_.seen ? (fast_ ? 0.3F : 1.5F) : 0.2F;
+    if (!beat_.seen)
+        slide_ = {}; // only what the player sees slides
 }
 
 std::string Play::Label(const Action &action) const

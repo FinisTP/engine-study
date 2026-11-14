@@ -8,6 +8,7 @@
 #include <nlohmann/json.hpp>
 
 #include <deque>
+#include <functional>
 #include <vector>
 #include <string>
 
@@ -34,6 +35,9 @@ public:
         int affordable = 0;
     };
     static constexpr float slideSeconds = 0.25F;
+    static constexpr float thinkSeconds = 0.4F; // the shortest "thinking..." (user)
+    // How a bot decides; `seconds` is how long the decision took (it sets the thinking pause).
+    using Decider = std::function<umbra::night::Action(const umbra::night::NightState &, int guest, float &seconds)>;
 
     [[nodiscard]] bool PlayerTurn() const; // the acting guest is the player's or an ally's
     [[nodiscard]] Mode TurnMode() const { return mode_; }
@@ -53,6 +57,9 @@ public:
     // unseen one 0.2 s. dt 0 (a minimised window) changes nothing.
     void Update(float dt);
     void SetCaptions(umbra::night::Captions captions) { captions_ = std::move(captions); }
+    void SetDecider(Decider decider) { decider_ = std::move(decider); }
+    [[nodiscard]] float Thinking() const { return think_; }      // seconds of "thinking..." left
+    [[nodiscard]] int ThinkingGuest() const { return think_ > 0.0F ? pendingGuest_ : -1; }
     [[nodiscard]] const umbra::night::Beat &LastBeat() const { return beat_; }
     [[nodiscard]] int Beats() const { return beats_; } // bot actions so far
     [[nodiscard]] const umbra::night::NightState &State() const { return state_; }
@@ -101,4 +108,10 @@ private:
     bool pause_ = false; // the save menu; the night waits
     int inspect_ = -1;   // the cell being inspected; the night waits
     Slide slide_;
+    Decider decider_;
+    bool pending_ = false; // a bot's decision waits for its thinking pause
+    umbra::night::Action pendingAction_;
+    int pendingGuest_ = -1;
+    float think_ = 0.0F;
+    int thoughtTurn_ = -1; // round * 8 + turn of the last bot turn that thought
 };

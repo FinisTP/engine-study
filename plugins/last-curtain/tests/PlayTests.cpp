@@ -201,11 +201,21 @@ namespace
     }
 }
 
+namespace
+{
+    // A seen bot's first action: it decides, thinks (Play::thinkSeconds), then acts.
+    void Think(Play &play)
+    {
+        play.Update(0.01F);
+        play.Update(Play::thinkSeconds + 0.01F);
+    }
+}
+
 TEST_CASE("Bot turns advance with time and hold on seen beats (T112)", "[night][play]")
 {
     const NightDef def = Data();
     Play play = BotFirst(def);
-    play.Update(0.01F); // the bot acts in the foyer, in the player's light
+    Think(play); // the bot acts in the foyer, in the player's light
     REQUIRE(play.Beats() == 1);
     CHECK(play.Screen() == "caption");
     CHECK_FALSE(play.UiData()["caption"]["line"].get<std::string>().empty());
@@ -220,7 +230,7 @@ TEST_CASE("Space makes the bots' beats short (T112)", "[night][play]")
     const NightDef def = Data();
     Play play = BotFirst(def);
     play.Key(InputKey::Space);
-    play.Update(0.01F);
+    Think(play);
     REQUIRE(play.Beats() == 1);
     play.Update(0.35F);
     CHECK((play.Beats() == 2 || play.PlayerTurn()));
@@ -233,7 +243,7 @@ TEST_CASE("A minimised window does not lose a beat (T112)", "[night][play]")
     for (int i = 0; i < 100; ++i)
         play.Update(0.0F);
     CHECK(play.Beats() == 0);
-    play.Update(0.01F);
+    Think(play);
     const std::uint32_t log = play.State().logCount;
     for (int i = 0; i < 100; ++i)
         play.Update(0.0F);
@@ -411,6 +421,7 @@ TEST_CASE("The player's death mid-battle ends the screen and the watching begins
     CHECK(play.Screen() != "battle");
     CHECK_FALSE(play.UiData().contains("battle"));
     const int beats = play.Beats();
+    play.Update(10.0F);
     play.Update(10.0F);
     CHECK((play.Beats() > beats || play.State().over));
 }
@@ -931,4 +942,88 @@ TEST_CASE("Inspect shows only what the player may know (T126)", "[night][play]")
     learnt.HandleUi("inspect", "close", "");
     learnt.Click(state.foyer, true);
     CHECK(learnt.UiData()["inspect"]["guests"][0]["goal"] == def.goals[static_cast<std::size_t>(state.guests[0].goal)].text);
+}
+
+namespace
+{
+    // A decider that plays the bots' choice but says it took `seconds`.
+    Play::Decider Slow(const NightDef &def, float seconds)
+    {
+        return [&def, seconds](const NightState &state, int guest, float &took) {
+            took = seconds;
+            return ChooseAction(def, state, guest);
+        };
+    }
+
+    // A night where a bot the player sees acts first, with captions.
+    Play SeenBotFirst(const NightDef &def)
+    {
+        NightState state = PlayerCorridor(def, 1, 4);
+        Apply(def, state, {ActionKind::EndTurn});
+        const int bot = Current(state);
+        REQUIRE(bot != 0);
+        state.guests[static_cast<std::size_t>(bot)].cell = state.foyer; // in the player's light
+        Play play(def, state);
+        std::vector<umbra::core::Diagnostic> diagnostics;
+        Captions captions;
+        REQUIRE(LoadCaptions(std::filesystem::path(UMBRA_NIGHT_DATA) / "captions.json", captions, diagnostics));
+        play.SetCaptions(captions);
+        return play;
+    }
+}
+
+TEST_CASE("A bot in view thinks max(0.4 s, its decision time) before its first action (T127)", "[night][play]")
+{
+    const NightDef def = Data();
+    for (const float took : {0.1F, 0.9F})
+    {
+        Play play = SeenBotFirst(def);
+        play.SetDecider(Slow(def, took));
+        const int bot = Current(play.State());
+        play.Update(0.01F); // decides
+        const float pause = std::max(0.4F, took);
+        CHECK(std::abs(play.Thinking() - pause) < 1e-4F);
+        CHECK(play.ThinkingGuest() == bot);
+        CHECK(play.Beats() == 0);
+        play.Update(pause - 0.05F);
+        CHECK(play.Beats() == 0);
+        play.Update(0.06F);
+        CHECK(play.Beats() == 1);
+        CHECK(play.Thinking() == 0.0F);
+        // The second action of the same turn: no pause.
+        if (Current(play.State()) == bot)
+        {
+            for (int i = 0; i < 100 && play.Beats() == 1; ++i)
+                play.Update(0.1F);
+            CHECK(play.Thinking() == 0.0F);
+        }
+    }
+}
+
+TEST_CASE("A bot the player cannot see does not think on screen (T127)", "[night][play]")
+{
+    const NightDef def = Data();
+    NightState state = PlayerCorridor(def, 1, 4);
+    Apply(def, state, {ActionKind::EndTurn}); // the bots stand in the dark closet
+    Play play(def, state);
+    play.SetDecider(Slow(def, 0.9F));
+    play.Update(0.01F);
+    CHECK(play.Thinking() == 0.0F);
+    CHECK(play.Beats() == 1);
+}
+
+TEST_CASE("A bot's step slides (T127)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play = SeenBotFirst(def);
+    const int bot = Current(play.State());
+    bool slid = false;
+    for (int i = 0; i < 200 && !slid && Current(play.State()) == bot; ++i)
+    {
+        const int before = play.State().guests[static_cast<std::size_t>(bot)].cell;
+        play.Update(0.05F);
+        if (play.State().guests[static_cast<std::size_t>(bot)].cell != before && play.Sliding().guest == bot)
+            slid = play.Sliding().from == before;
+    }
+    CHECK(slid);
 }
