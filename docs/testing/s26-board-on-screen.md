@@ -3,7 +3,7 @@
 ## Record
 
 - Date: 2026-11-14
-- Commits: `issue #UMBRA-121` … `issue #UMBRA-131` (built in a cloud copy of the checkout; delivered to the
+- Commits: `issue #UMBRA-121` … `issue #UMBRA-132` (#132: fixes from the final review) (built in a cloud copy of the checkout; delivered to the
   PC with `git am`). Design `docs/design/2026-11-14-board-on-screen.md`; plan
   `docs/design/plans/2026-11-14-board-on-screen-plan.md`.
 - Tester: Claude (remote session), Linux cloud workspace (GCC 13, Clang 18, GCC ASan+UBSan), every
@@ -33,8 +33,9 @@
 | Check | Result |
 |---|---|
 | Linux GCC / Clang / GCC ASan+UBSan: every CTest of the project (`verify.sh`) | **55/55** each |
-| `Umbra.Night`: 100 cases, 153,345 assertions (adds T106 push back, T107 conversation, T108-T110 view and picking, T109 narration, T111-T115 play) | pass |
-| A click or key does nothing outside the player's turn or off a step cell | pass |
+| `Umbra.Night`: 102 cases, 153,353 assertions (adds T106 push back, T107 conversation, T108-T110 view and picking, T109 narration, T111-T115 play) | pass |
+| A click or key does nothing outside the player's turn, off a step cell, or behind a dialog (final review) | pass |
+| An event that pushes the guest back still names the room it happened in (final review) | pass |
 | Allies are recruited guests only; an ally is the player's to move; a dead player only watches | pass |
 | Bot beats hold 1.5 s (0.3 s after Space), 0.2 s unseen; dt 0 changes nothing | pass |
 | Every chance on screen equals the rules (answers, events, the curse); the dice show the logged roll | pass |
