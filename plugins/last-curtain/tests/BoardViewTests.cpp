@@ -148,3 +148,48 @@ TEST_CASE("A door facing a wall is drawn as a wall on both sides (T123)", "[nigh
     CHECK((view.cells[U(state.foyer)].walls & (1u << 3)) != 0);
     CHECK((view.cells[U(a)].walls & (1u << 1)) != 0);
 }
+
+TEST_CASE("A path walks cardinal steps through passages (T124)", "[night][view]")
+{
+    const NightDef def = Data();
+    NightState state = Corridor(def);
+    const int a = Left(def, 1), b = Left(def, 2);
+    CHECK(PathTo(def, state, 0, b) == std::vector<int>{a, b});
+    CHECK(PathTo(def, state, 0, a) == std::vector<int>{a});
+}
+
+TEST_CASE("A path may end through a doorway (T124)", "[night][view]")
+{
+    const NightDef def = Data();
+    NightState state = Corridor(def);
+    const int a = Left(def, 1), b = Left(def, 2), beyond = Left(def, 3);
+    REQUIRE(Doorway(def, state, b, 3));
+    CHECK(PathTo(def, state, 0, beyond) == std::vector<int>{a, b, beyond});
+}
+
+TEST_CASE("No path to a dark, walled-off, barred or own cell (T124)", "[night][view]")
+{
+    const NightDef def = Data();
+    NightState state = Corridor(def);
+    const int a = Left(def, 1), b = Left(def, 2);
+    Closet(def, state, 0); // cell 0: opened, no doors
+    CHECK(PathTo(def, state, 0, 0).empty());
+    CHECK(PathTo(def, state, 0, state.foyer).empty());
+    CHECK(PathTo(def, state, 0, -1).empty());
+    CHECK(PathTo(def, state, 0, maxCells).empty());
+    NightState barred = state;
+    barred.guests[0].barred.set(U(a));
+    CHECK(PathTo(def, barred, 0, b).empty());
+    // A room beyond the guest's light is not a lit square, even with a way there.
+    for (std::uint64_t seed = 1;; ++seed)
+    {
+        NightState chain = FoyerNight(def, seed);
+        const std::vector<int> cells = Chain(def, chain, chain.foyer, 7);
+        if (cells.size() < 7)
+            continue;
+        const int g = Current(chain);
+        REQUIRE_FALSE(Lit(def, chain, chain.foyer, cells.back(), Stat(def, chain, g, StatKind::Light)));
+        CHECK(PathTo(def, chain, g, cells.back()).empty());
+        break;
+    }
+}

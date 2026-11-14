@@ -43,6 +43,11 @@ namespace umbra::night
     // viewer: the player's guest; -1 (or a dead viewer) sees everything.
     BoardView MakeView(const NightDef &def, const NightState &state, int viewer);
 
+    // The shortest walk of cardinal steps from the guest's cell to `cell` (start left out): through
+    // passages, never into a cell barred this turn; the last step may go through a doorway. Empty
+    // when there is none, for the guest's own cell, or for an opened cell the guest does not light.
+    std::vector<int> PathTo(const NightDef &def, const NightState &state, int guest, int cell);
+
     inline constexpr float cellSize = 2.4F; // metres from one cell's centre to the next
 
     // The centre of a cell on the table (y = 0), the board centred on the origin, row 0 at -z.

@@ -1,5 +1,6 @@
 #include <BoardView.hpp>
 
+#include <array>
 #include <cmath>
 
 namespace umbra::night
@@ -64,6 +65,45 @@ namespace umbra::night
                 view.monsters.push_back({static_cast<int>(m), monster.cell, def.monsters[U(monster.kind)].taken >= 0});
         }
         return view;
+    }
+
+    std::vector<int> PathTo(const NightDef &def, const NightState &state, int guest, int cell)
+    {
+        const Guest &me = state.guests[U(guest)];
+        if (cell < 0 || cell >= maxCells || cell == me.cell)
+            return {};
+        const bool open = state.cells[U(cell)].opened;
+        if (open && !Lit(def, state, me.cell, cell, Stat(def, state, guest, StatKind::Light)))
+            return {};
+        // 1. Breadth-first from the guest through passages; `from` remembers the way back.
+        std::array<int, maxCells> from;
+        from.fill(-2);
+        std::array<int, maxCells> queue{};
+        int head = 0, tail = 0, end = -1;
+        from[U(me.cell)] = -1;
+        queue[U(tail++)] = me.cell;
+        while (head < tail && end < 0)
+        {
+            const int at = queue[U(head++)];
+            for (int d = 0; d < 4 && end < 0; ++d)
+            {
+                const int next = Neighbour(def, at, d);
+                // 2. An unopened target: reached through a doorway of a cell on the way.
+                if (!open && next == cell && Doorway(def, state, at, d))
+                    from[U(cell)] = at, end = cell;
+                else if (Passage(def, state, at, d) && from[U(next)] == -2 && !me.barred.test(U(next)))
+                {
+                    from[U(next)] = at, queue[U(tail++)] = next;
+                    if (next == cell)
+                        end = cell;
+                }
+            }
+        }
+        // 3. The way back, turned round.
+        std::vector<int> path;
+        for (int c = end; c >= 0 && c != me.cell; c = from[U(c)])
+            path.insert(path.begin(), c);
+        return path;
     }
 
     glm::vec3 CellCenter(const NightDef &def, int cell)

@@ -147,23 +147,6 @@ TEST_CASE("The shipped data is balanced (T105)", "[.][night][soak][balance]")
 
 namespace
 {
-    // Opens `n` rooms in a row from `from`; fewer if a room has no door onward.
-    std::vector<int> Chain(const NightDef &def, NightState &state, int from, int n)
-    {
-        std::vector<int> cells;
-        for (int at = from; static_cast<int>(cells.size()) < n;)
-        {
-            int next = -1;
-            for (int d = 0; d < 4 && next < 0; ++d)
-                if (Doorway(def, state, at, d))
-                    next = Open(def, state, at, d);
-            if (next < 0)
-                break;
-            cells.push_back(at = next);
-        }
-        return cells;
-    }
-
     // A night whose first guest stands in the foyer with a chain of `n` rooms ahead.
     NightState ChainNight(const NightDef &def, int n, std::vector<int> &cells)
     {

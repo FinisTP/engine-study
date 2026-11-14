@@ -18,6 +18,15 @@ doors facing, not sealed), a **doorway** (`Doorway`: a door to a cell not opened
 remain) or a **wall** (everything else, `CellView::walls`): a door that faces another room's
 wall is a wall, so the table never shows a gap a guest cannot pass.
 
+## Paths
+
+`PathTo(def, state, guest, cell)` is what a click on a square walks: a breadth-first search from
+the guest's cell through passages (cells barred this turn left out), so the first time it reaches
+the square is a shortest walk. Each cell remembers the cell it was reached from; following those
+back from the square and turning the list round gives the steps in order. An unopened square is
+reached through a doorway of a cell on the way (the last step opens it); an opened square must be
+lit for the guest.
+
 ## Steps
 
 On a turn the viewer plays (their guest or an ally, not in battle), every legal `Move` through a

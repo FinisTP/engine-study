@@ -39,3 +39,20 @@ inline umbra::night::NightState FoyerNight(const umbra::night::NightDef &def, st
     }
     return state;
 }
+
+// Opens `n` rooms in a row from `from`; fewer if a room has no door onward.
+inline std::vector<int> Chain(const umbra::night::NightDef &def, umbra::night::NightState &state, int from, int n)
+{
+    std::vector<int> cells;
+    for (int at = from; static_cast<int>(cells.size()) < n;)
+    {
+        int next = -1;
+        for (int d = 0; d < 4 && next < 0; ++d)
+            if (umbra::night::Doorway(def, state, at, d))
+                next = umbra::night::Open(def, state, at, d);
+        if (next < 0)
+            break;
+        cells.push_back(at = next);
+    }
+    return cells;
+}
