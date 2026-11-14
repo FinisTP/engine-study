@@ -261,7 +261,8 @@ void Play::Key(umbra::platform::InputKey key)
     if (direction >= 0)
     {
         const int me = Current(state_), to = Neighbour(def_, state_.guests[U(me)].cell, direction);
-        if (to >= 0 && (Passage(def_, state_, state_.guests[U(me)].cell, direction) || Doorway(def_, state_, state_.guests[U(me)].cell, direction)))
+        const std::vector<Action> legal = LegalActions(def_, state_);
+        if (std::find(legal.begin(), legal.end(), Action{ActionKind::Move, static_cast<std::int8_t>(direction)}) != legal.end())
             walk_ = {to}, walking_ = true, mode_ = Mode::Picking;
         return;
     }

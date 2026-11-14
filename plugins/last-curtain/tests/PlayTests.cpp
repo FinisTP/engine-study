@@ -1108,3 +1108,13 @@ TEST_CASE("The HUD shows a goal's progress (T129)", "[night][play]")
     Play room(def, state);
     CHECK(room.UiData()["goal"]["progress"] == "");
 }
+
+TEST_CASE("An arrow with no move left does nothing, not even the door's question (final review)", "[night][play]")
+{
+    const NightDef def = Data();
+    NightState state = PlayerCorridor(def, 0, 0); // the foyer's west door leads to an unopened cell
+    Play play(def, state);
+    play.Key(InputKey::Left);
+    play.Update(Play::slideSeconds);
+    CHECK(play.Screen() == "menu");
+}
