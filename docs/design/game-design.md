@@ -270,8 +270,8 @@ Before midnight nobody dies:
 ## 12. Personal goals (replace omens, user 2026-11-14)
 
 - Each guest has two or three goals that fit their story (`goals.csv`, `cast.md`); one is drawn
-  secretly each night. Kinds: reach a room, carry a keepsake at midnight, have a named guest as an
-  ally, pass N event rolls, destroy N monsters.
+  secretly each night. Kinds: reach a room, carry a keepsake at midnight, pass N event rolls,
+  destroy N monsters. An ally is never a personal goal (user, 2026-11-15).
 - Every goal is about equally hard and depends on the board and the dice: held by a bot, each is
   finished in 45-65% of nights (soak).
 - Keepsakes are unique items waiting in a fixed room, there only when a drawn goal needs it; they
@@ -473,6 +473,7 @@ build phases.
 | 2026-11-14 | An event stays one roll on one stat; its outcomes may push the guest back a room | user |
 | 2026-11-14 | Level 5 out of reach in a night is intended: levels build the character, not min-maxing | user |
 | 2026-11-15 | Omens removed; each guest draws a secret personal goal (2-3 per guest, even difficulty); the Taken is drawn from those who failed, the others who failed drop to 1 HP; all finished = the company wins at midnight | user |
+| 2026-11-15 | No ally goals: winning a guest over is never a personal goal | user |
 | 2026-11-15 | A 9x9 board of 70 rooms; seven start rooms, one per guest; a free step back without pacing; guests chat with each other and form groups that help members' goals | user |
 | 2026-11-14 | After midnight the Taken's own minions (one kind per form, a fixed set at the Turn) replace ordinary monsters; destroying one takes a share of the Taken's HP | user |
 

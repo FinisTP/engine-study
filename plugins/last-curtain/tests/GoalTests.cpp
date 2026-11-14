@@ -82,13 +82,6 @@ TEST_CASE("Each goal kind is checked (T117)", "[night][goal]")
         state.guests[3].items[1] = -1;
         CHECK_FALSE(GoalDone(def, state, 3));
     }
-    SECTION("ally: only while in the same group")
-    {
-        SetGoal(def, state, 2, "bao-nhi");
-        CHECK_FALSE(GoalDone(def, state, 2));
-        state.guests[0].group = state.guests[2].group = 3;
-        CHECK(GoalDone(def, state, 2));
-    }
     SECTION("events and monsters: the count")
     {
         SetGoal(def, state, 5, "huy-events");

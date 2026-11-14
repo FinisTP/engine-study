@@ -17,7 +17,7 @@ namespace umbra::night
     enum class RoomKind : std::uint8_t { Foyer, UnderStage, Plain, Item, Event, Trap, Transport, Bonus };
     enum class Effect : std::uint8_t { None, Hp, HpRoom, MaxHp, Might, Sanity, Speed, Item, Xp, Buff, Armor, Light, Revive, Back };
     enum class ItemKind : std::uint8_t { Heal, Boost, Worn, Relic, Keepsake };
-    enum class GoalKind : std::uint8_t { Room, Item, Ally, Events, Monsters };
+    enum class GoalKind : std::uint8_t { Room, Item, Events, Monsters }; // no ally goals (user)
     enum class BuffStat : std::uint8_t { Guard, Might, Sanity };
     enum class PowerKind : std::uint8_t { Line, Area, Flood, Pull, Seal, Swap, Reflect };
 
@@ -144,7 +144,7 @@ namespace umbra::night
         int huntHpPercent = 50;    // in the hunt, go for the Taken only above this share of max HP
         int huntNearSteps = 2;     // ... and with another guest this near
         int crowd = 3;             // the Taken keeps away from this many guests together
-        int chatty = 0;            // how readily it opens chats (Balance.md "The bots")
+        int chatty = 0;            // how readily it talks (Balance.md "The bots"; 6+: before moving once its goal is done, 7+: asks the player)
         int greed = 10;            // 0: picks up only healing and needed keepsakes; 10: everything
     };
 

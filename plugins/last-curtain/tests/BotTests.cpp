@@ -269,18 +269,6 @@ TEST_CASE("A bot with greed 0 leaves a worn item on the floor (T121)", "[night][
     CHECK(ChooseAction(def, state, g).kind == ActionKind::PickUp);
 }
 
-TEST_CASE("A bot whose ally goal is the player opens a chat with the player (T121)", "[night][bots]")
-{
-    NightDef def = Data();
-    NightState state = FoyerNight(def, 4, 0);
-    while (Current(state) == 0)
-        REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
-    const int g = Current(state);
-    def.styles[U(def.guests[U(g)].style)].chatty = 0; // the goal alone asks for it
-    GiveGoal(def, state, g, GoalKind::Ally, 0);
-    CHECK(ChooseAction(def, state, g) == Action{ActionKind::OpenChat, 0});
-}
-
 TEST_CASE("A bot helps a group member's known goal (T121)", "[night][bots]")
 {
     NightDef def = Data();
@@ -315,4 +303,17 @@ TEST_CASE("A bot does not chase a keepsake holder it cannot see (T121)", "[night
     NightState carrying = state;
     carrying.guests[U(holder)].items[0] = I8(keepsake);
     CHECK(ChooseAction(def, carrying, g) == ChooseAction(def, state, g));
+}
+
+TEST_CASE("A very chatty bot talks before moving only once its goal is done (T121)", "[night][bots]")
+{
+    NightDef def = Data();
+    NightState state = FoyerNight(def, 3);
+    const int g = Current(state);
+    def.styles[U(def.guests[U(g)].style)].chatty = 8;
+    GiveGoal(def, state, g, GoalKind::Events, -1);
+    def.goals.back().count = 2;
+    CHECK_FALSE(ChooseAction(def, state, g).kind == ActionKind::Chat); // a test still to pass: it goes looking
+    state.guests[U(g)].goalCount = 2;
+    CHECK(ChooseAction(def, state, g).kind == ActionKind::Chat);
 }

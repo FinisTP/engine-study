@@ -29,15 +29,6 @@ namespace
                 state.guests[U(g)].cell = 0;
     }
 
-    // The last Check logged since `since`.
-    LogEntry LastCheck(const NightState &state, std::size_t since)
-    {
-        LogEntry found{};
-        for (const LogEntry &e : NewLog(state, since))
-            if (e.kind == LogKind::Check)
-                found = e;
-        return found;
-    }
 }
 
 TEST_CASE("No guest fights another before midnight (T99)", "[night][company]")
@@ -243,8 +234,6 @@ TEST_CASE("Two bots can chat; three passes bring the other into the opener's gro
     }
     CHECK(state.guests[static_cast<std::size_t>(g)].group == 1 + g);
     CHECK(state.guests[static_cast<std::size_t>(o)].group == 1 + g);
-    CHECK(GoalDone(def, state, g) == (def.goals[static_cast<std::size_t>(state.guests[static_cast<std::size_t>(g)].goal)].kind == GoalKind::Ally &&
-                                      def.goals[static_cast<std::size_t>(state.guests[static_cast<std::size_t>(g)].goal)].target == o));
 }
 
 TEST_CASE("Both bots learn each other's goal on a pass (T120)", "[night][company]")

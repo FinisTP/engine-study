@@ -129,7 +129,6 @@ namespace umbra::night
         {
         case GoalKind::Room: return guest.goalRoomSeen;
         case GoalKind::Item: return std::find(guest.items.begin(), guest.items.end(), I8(goal.target)) != guest.items.end();
-        case GoalKind::Ally: return guest.group >= 0 && state.guests[U(goal.target)].group == guest.group && goal.target != g;
         case GoalKind::Events:
         case GoalKind::Monsters: return guest.goalCount >= goal.count;
         }

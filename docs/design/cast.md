@@ -187,13 +187,13 @@ Stats: Might and Sanity run 1-8, Speed is tiles per turn, HP is plain points.
 
 | Guest | Goals |
 |---|---|
-| Truong Uyen Nhi | reach the Patron's box (her father's seat) · carry her father's pocket watch · have Phan Thi Mai as an ally |
+| Truong Uyen Nhi | reach the Patron's box (her father's seat) · carry her father's pocket watch · pass two of the house's tests (what became of her father) |
 | Le Thanh | carry the Phoenix crown · reach the Auditorium · pass 2 event rolls |
-| Dinh Quoc Bao | have Truong Uyen Nhi as an ally · reach the Green room (the old infirmary) · destroy 1 monster |
+| Dinh Quoc Bao | pass two of the house's tests (steady hands) · reach the Green room (the old infirmary) · destroy 1 monster |
 | Vo Minh Khang | carry the patron's Ledger · destroy 2 monsters · reach the Shuttered office |
-| Phan Thi Mai | reach the Chapel of the stage ancestors · have Le Thanh as an ally · carry the ring of keys she lost |
+| Phan Thi Mai | reach the Chapel of the stage ancestors · sit in the Royal box, where her mistress sat · carry the ring of keys she lost |
 | Hoang Gia Huy | pass 2 event rolls · reach the Fly loft · destroy 1 monster |
-| Tran Ngoc Lan | carry the Gilded mask · carry the Phoenix crown · have Vo Minh Khang as an ally |
+| Tran Ngoc Lan | carry the Gilded mask · carry the Phoenix crown · face herself in the Hall of mirrors |
 
 Keepsakes lie where the soak put them (plan 2b): the Phoenix crown in the Interval bar, the Ledger
 on the Service stairwell, the Gilded mask in the Orchestra room, the pocket watch in the Box seats,

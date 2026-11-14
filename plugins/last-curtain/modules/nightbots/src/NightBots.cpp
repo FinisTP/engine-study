@@ -263,10 +263,6 @@ namespace umbra::night
                             std::find(state.guests[U(o)].items.begin(), state.guests[U(o)].items.end(), goal.target) != state.guests[U(o)].items.end())
                             consider(state.guests[U(o)].cell);
                     break;
-                case GoalKind::Ally:
-                    if (mine && Up(goal.target) && Sees(state.guests[U(goal.target)].cell))
-                        consider(state.guests[U(goal.target)].cell);
-                    break;
                 case GoalKind::Events: // a room with a test still in it
                     for (int c = 0; mine && c < maxCells; ++c)
                         if (state.cells[U(c)].opened && !state.cells[U(c)].resolved && def.rooms[U(state.cells[U(c)].room)].kind == RoomKind::Event)
@@ -292,10 +288,6 @@ namespace umbra::night
                 if (goal >= 0)
                 {
                     const GoalDef &def0 = def.goals[U(goal)];
-                    if (def0.kind == GoalKind::Ally && def0.target == state.player && Has({ActionKind::OpenChat, I8(def0.target)}))
-                        return {ActionKind::OpenChat, I8(def0.target)};
-                    if (def0.kind == GoalKind::Ally && Has({ActionKind::Chat, I8(def0.target)}))
-                        return {ActionKind::Chat, I8(def0.target)};
                     if (def0.kind == GoalKind::Monsters)
                         for (const Action &a : legal)
                             if (a.kind == ActionKind::Attack && a.a >= 0 && Beatable(a.a))
@@ -355,7 +347,7 @@ namespace umbra::night
                     for (int o = 0; o < state.count; ++o) // someone to talk with
                         if (o != g && Up(o) && Bond(state, g, o) >= 0 && me.chatRound != state.round && Sees(state.guests[U(o)].cell) &&
                             (me.group < 0 || state.guests[U(o)].group != me.group))
-                            goal(state.guests[U(o)].cell, style.chatty);
+                            goal(state.guests[U(o)].cell, style.chatty + (me.goal < 0 || GoalDone(def, state, g) ? 5 : 0)); // idle: seek company
                     for (int o = 0; o < state.count; ++o)
                         if (o != g && Up(o) && Bond(state, g, o) < 0 && Sees(state.guests[U(o)].cell) &&
                             fromNext[U(state.guests[U(o)].cell)] < fromHere[U(state.guests[U(o)].cell)])
@@ -414,13 +406,13 @@ namespace umbra::night
                 // 3. Goal work: its own, then a group member's.
                 if (const Action purpose = Purpose(); purpose.kind != ActionKind::EndTurn)
                     return purpose;
-                // 4. A very chatty bot talks with someone in the room before it moves.
-                if (style.chatty >= 6 && me.movesLeft == Stat(def, state, g, StatKind::Speed))
+                // 4. A very chatty bot whose goal is done talks with someone in the room before it moves.
+                if (style.chatty >= 6 && (me.goal < 0 || GoalDone(def, state, g)) && me.movesLeft == Stat(def, state, g, StatKind::Speed))
                     for (const Action &a : legal)
                         if (a.kind == ActionKind::Chat)
                             return a;
                 // 5. A chatty bot, or one fond of the player, asks the player a question first.
-                if (state.player >= 0 && Has({ActionKind::OpenChat, I8(state.player)}) && (style.chatty >= 5 || Bond(state, g, state.player) > 0))
+                if (state.player >= 0 && Has({ActionKind::OpenChat, I8(state.player)}) && (style.chatty >= 7 || Bond(state, g, state.player) > 0))
                     return {ActionKind::OpenChat, I8(state.player)};
                 // 6. Otherwise the best score; ties to the first.
                 Action best = legal.front();

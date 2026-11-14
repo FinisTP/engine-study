@@ -446,15 +446,13 @@ namespace umbra::night
             GoalDef g;
             g.guest = goals.Ref(r, "guest", d.guests);
             g.id = goals.Text(r, "id");
-            g.kind = static_cast<GoalKind>(goals.Pick(r, "kind", {"room", "item", "ally", "events", "monsters"}));
+            g.kind = static_cast<GoalKind>(goals.Pick(r, "kind", {"room", "item", "events", "monsters"}));
             g.count = goals.Int(r, "count");
             g.text = goals.Text(r, "text");
             if (g.kind == GoalKind::Room)
                 g.target = goals.Ref(r, "target", d.rooms);
             else if (g.kind == GoalKind::Item)
                 g.target = goals.Ref(r, "target", d.items);
-            else if (g.kind == GoalKind::Ally)
-                g.target = goals.Ref(r, "target", d.guests);
             if (g.kind == GoalKind::Item && g.target >= 0 && d.items[static_cast<std::size_t>(g.target)].kind != ItemKind::Keepsake)
                 goals.Bad(goals.Where(r, "target"), "an item goal names a keepsake");
             if (g.count < 1)

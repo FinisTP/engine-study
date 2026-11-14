@@ -25,7 +25,7 @@ code holds only the mechanics. Design: `docs/design/game-design.md` (GDD); bots 
 | `rules.json` | clock (start hour, 20 rounds, the Turn after round 10), grid size and rooms placed, check targets, light steps, carry limit, battle formula, level steps, curse targets and their rise per hour, monster spawning, persuading, downed HP, the balance band |
 | `guests.csv` | the seven guests: stats, weapon type, style, Taken form stats and power |
 | `questions.csv` | five questions per guest: text, a physical and a magical answer, each with its target word |
-| `goals.csv` | two or three goals per guest: kind (room, item, ally, events, monsters), target, count, text |
+| `goals.csv` | two or three goals per guest: kind (room, item, events, monsters; no ally goals, user), target, count, text |
 | `minions.csv` | each Taken form's minions: stats, attack, resistance, XP, debuff, share of the Taken's HP, how many |
 | `bonds.csv` | starting bonds, -1000..1000 |
 | `powers.json` | each power's kind and numbers (damage, range, rounds, cooldown) |
@@ -104,8 +104,7 @@ what the screens show.
 
 Each guest draws one of its own `goals.csv` rows at `NewNight`, before the board; it knows only
 its own (`Guest::knows`, bits). A passed chat answer tells the answerer the asker's goal (see Talking). Kinds:
-`room` (entering the room sets `goalRoomSeen`), `item` (a keepsake carried at midnight), `ally`
-(the named guest in the same group), `events` (passed event rolls, traps not counted) and
+`room` (entering the room sets `goalRoomSeen`), `item` (a keepsake carried at midnight), `events` (passed event rolls, traps not counted) and
 `monsters` (ordinary monsters this guest destroyed): `goalCount` against `count`. A keepsake
 (`items.csv` kind `keepsake`, weight 0, `room`) lies on the floor of its room when the room is
 opened, only if a drawn goal asks for it.

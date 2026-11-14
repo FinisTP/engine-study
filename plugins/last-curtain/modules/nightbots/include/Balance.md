@@ -21,15 +21,15 @@ the same choice.
    away from `crowd` or more guests together.
 7. Purpose (the evening), recomputed every action from what the guest knows:
    - pick up healing, or a keepsake its own goal or a known group member's goal needs;
-   - an ally goal: `OpenChat` if the ally is the player, `Chat` if the ally is in the room;
-     a monsters goal: attack a beatable monster in the room;
+   - a monsters goal: attack a beatable monster in the room;
    - else walk the shortest path to the nearest target of its own goal (the goal room once opened;
-     the keepsake on its room's floor, or a holder only while lit; the ally while lit; an unresolved
+     the keepsake on its room's floor, or a holder only while lit; an unresolved
      event room; a lit beatable monster), then of a known group member's keepsake.
-8. A chat with the player: when `chatty` is 5 or more, or the bot likes the player.
+8. A chat before moving: `chatty` 6 or more, once its own goal is done. A chat with the player:
+   `chatty` 7 or more, or the bot likes the player.
 9. Otherwise the best score: new rooms `explore`, floor items `loot` x `greed` (greed 0: none),
-   beatable monsters `fight`, unused bonus rooms `bonus`, minus `avoidGuests` for walking toward a
-   disliked guest. If that is to wait, a bot with `chatty` above 0 talks with someone in the room.
+   beatable monsters `fight`, unused bonus rooms `bonus`, `chatty` toward lit guests to talk with
+   (+5 once its goal is done), minus `avoidGuests` for walking toward a disliked guest. If that is to wait, a bot with `chatty` above 0 talks with someone in the room.
 
 In the evening no bot steps back into the cell it just left during the same turn.
 
@@ -59,7 +59,7 @@ minions alone (must lose clearly more often).
 | all finished (no hunt) | every goal's difficulty together |
 | rooms open by midnight (the foyer and start rooms count) | `styles.csv` `explore`, guests' `speed`; chats and goal walks lower it |
 | evening rounds with a chat between bots | `styles.csv` `chatty` (6 or more: a chat before moving; any above 0: walks toward lit guests and talks instead of waiting) |
-| goals finished, per goal | room goals: `goals.roomGoalRooms`; keepsakes: the item's `room` in `items.csv` (plain rooms are harder than rooms that stop movement), `goals.earlyRooms`; events / monsters: the goal's `count`, event rooms' `count` in `rooms.csv`, `monsters` in `rules.json`; ally goals: `questions.csv` targets and `bonds.csv` of the asker |
+| goals finished, per goal | room goals: `goals.roomGoalRooms`; keepsakes: the item's `room` in `items.csv` (plain rooms are harder than rooms that stop movement), `goals.earlyRooms`; events / monsters: the goal's `count`, event rooms' `count` in `rooms.csv`, `monsters` in `rules.json` |
 
 ## Tuning order
 
@@ -72,7 +72,7 @@ minions alone (must lose clearly more often).
 Check on more than one seed range (`--seed 1`, `--seed 20001`, `--seed 50001`): a form's share
 moves about 3 points either way between ranges of 2,000 nights.
 
-Goals of guest 0, and ally goals that name guest 0, are reported but not banded: in the soak it
+Goals of guest 0 are reported but not banded: in the soak it
 is the player's seat, which bots treat as the player (they ask it questions first).
 
 ## Tuning record
@@ -96,3 +96,11 @@ room goals 95%, monster goals 5-8%, 42 rooms by midnight, 58% of rounds with a b
    player's group fills first) and left the band with Nhi's own goals. `takenHp` mai 23, thanh 19.
 Result on seeds 1, 20001 and 80001 (2,000 nights each): the data holds; the hunt 48-51%,
 every form 44-56%, rooms 47.2-47.3, bot chats 78-79%, banded goals 49-62%.
+
+**Plan 2c, task 0 (2026-11-15): no ally goals (user).** Nhi and Bao: pass two tests; Mai: the
+Royal box; Lan: the Hall of mirrors [call]. Bots: a chat before moving only once the goal is done
+(it cost events goals their turns); a bot whose goal is done seeks company (+5); asking the player
+needs `chatty` 7. Chatty: explorer 6, fighter 6, loner 5, protector 5; protector explore 8.
+`roomGoalRooms` 70. `takenHp` re-measured: nhi 34, thanh 24, bao 42, khang 53, mai 28, huy 59,
+lan 29. Result on the three seed ranges: the data holds; every form 46-60%, rooms 49, bot chats
+73-75%, banded goals 47-62%.

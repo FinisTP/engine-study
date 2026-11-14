@@ -160,6 +160,9 @@ TEST_CASE("Bad data is refused with file, row and column (T94)", "[night][data]"
         const fs::path kind = CopyData("goalkind");
         Replace(kind / "goals.csv", "nhi,nhi-box,room,", "nhi,nhi-box,wish,");
         CHECK(Refused(kind).code == "night.goals");
+        const fs::path ally = CopyData("goalally"); // an ally is not a personal goal (user, 2026-11-15)
+        Replace(ally / "goals.csv", "nhi,nhi-box,room,patronbox", "nhi,nhi-box,ally,mai");
+        CHECK(Refused(ally).code == "night.goals");
         const fs::path count = CopyData("goalcount");
         Replace(count / "goals.csv", "huy,huy-events,events,none,2", "huy,huy-events,events,none,0");
         CHECK(Refused(count).code == "night.goals");

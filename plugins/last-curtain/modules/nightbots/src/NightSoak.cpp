@@ -15,9 +15,8 @@ namespace umbra::night
     {
         std::size_t U(int i) { return static_cast<std::size_t>(i); }
 
-        // Goals of the player's seat (guest 0), or that need it as an ally, hang on the player's
-        // choices: reported, not banded.
-        bool Seat(const GoalDef &goal) { return goal.guest == 0 || (goal.kind == GoalKind::Ally && goal.target == 0); }
+        // Goals of the player's seat (guest 0) hang on the player's choices: reported, not banded.
+        bool Seat(const GoalDef &goal) { return goal.guest == 0; }
 
         // The chooser under a test strategy: 1 the company leaves minions alone.
         Action Strategy(const NightDef &def, const NightState &state, int g, int strategy)
