@@ -1,0 +1,13 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "dim": true,
+  "back": "resume",
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [340, 0], "align": "stretch", "gap": 10, "children": [
+    { "type": "text", "style": "title", "text": "The night waits" },
+    { "type": "button", "size": [300, 44], "text": "Save", "action": "save" },
+    { "type": "button", "size": [300, 44], "text": "Resume", "action": "resume" },
+    { "type": "button", "size": [300, 44], "text": "Save and quit", "action": "savequit" }
+  ] }
+}

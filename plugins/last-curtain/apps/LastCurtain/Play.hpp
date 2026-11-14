@@ -37,7 +37,8 @@ public:
 
     [[nodiscard]] bool PlayerTurn() const; // the acting guest is the player's or an ally's
     [[nodiscard]] Mode TurnMode() const { return mode_; }
-    void Click(int cell, bool right = false); // left: walk to a lit square, one step at a time
+    // Left: walk to a lit square, one step at a time (on a bot's turn: inspect); right: inspect.
+    void Click(int cell, bool right = false);
     void Hover(int cell) { hover_ = cell; }
     [[nodiscard]] Slide Sliding() const { return slide_; }
     [[nodiscard]] Preview Previewed() const;
@@ -45,7 +46,8 @@ public:
     // An action from a screen; true when it did something.
     bool HandleUi(const std::string &screen, const std::string &action, const std::string &arg);
     [[nodiscard]] nlohmann::json UiData() const;
-    // "", "end", "caption", "event", "dice", "turn", "chat", "battle", "menu", "picking", "confirm" or "bag"
+    // "", "end", "pause", "inspect", "caption", "event", "dice", "turn", "chat", "battle", "menu",
+    // "picking", "confirm" or "bag"
     [[nodiscard]] std::string Screen() const;
     // Bots act one action at a time: a beat the player sees holds 1.5 s (0.3 s after Space), an
     // unseen one 0.2 s. dt 0 (a minimised window) changes nothing.
@@ -78,6 +80,7 @@ private:
     [[nodiscard]] nlohmann::json BattleData() const;
     [[nodiscard]] nlohmann::json TurnData() const;
     [[nodiscard]] nlohmann::json EndData() const;
+    [[nodiscard]] nlohmann::json InspectData() const;
     void Notice(std::uint32_t since); // the Turn in new log entries
 
     const umbra::night::NightDef &def_;
@@ -95,5 +98,7 @@ private:
     std::vector<int> walk_; // cells still to walk, in order
     bool walking_ = false;  // a walk is under way (the menu returns when it ends)
     int hover_ = -1;
+    bool pause_ = false; // the save menu; the night waits
+    int inspect_ = -1;   // the cell being inspected; the night waits
     Slide slide_;
 };

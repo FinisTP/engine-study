@@ -136,10 +136,18 @@ bool Play::Do(const Action &action)
     return true;
 }
 
-void Play::Click(int cell, bool)
+void Play::Click(int cell, bool right)
 {
-    // A walk to a lit square the moves left can pay for, from the menu or while picking; never behind a dialog.
+    // 1. Inspect: a right click on the board, or any click on a bot's turn; an opened cell only.
     const std::string screen = Screen();
+    const bool board = screen == "menu" || screen == "picking" || screen == "" || screen == "caption";
+    if (board && (right || !PlayerTurn()))
+    {
+        if (cell >= 0 && cell < maxCells && state_.cells[U(cell)].opened)
+            inspect_ = cell;
+        return;
+    }
+    // 2. A walk to a lit square the moves left can pay for, from the menu or while picking.
     if ((screen != "menu" && screen != "picking") || walking_ || slide_.guest >= 0)
         return;
     const int me = Current(state_);
@@ -214,9 +222,26 @@ void Play::Key(umbra::platform::InputKey key)
     const std::string screen = Screen();
     if (screen == "confirm" && key == InputKey::Enter)
         (void)HandleUi("confirm", "stay", "");
+    // 3. Esc: close what has a way back, else the save menu (the menu, a bot's turn), else nothing.
+    if (key == InputKey::Escape)
+    {
+        if (screen == "pause")
+            pause_ = false;
+        else if (screen == "inspect")
+            inspect_ = -1;
+        else if (screen == "bag")
+            bag_ = false;
+        else if (screen == "confirm")
+            (void)HandleUi("confirm", "back", "");
+        else if (screen == "picking")
+            walk_.clear(), walking_ = slide_.guest >= 0, mode_ = Mode::Menu;
+        else if (screen == "menu" || screen == "" || screen == "caption")
+            pause_ = true;
+        return;
+    }
     if ((screen != "menu" && screen != "picking") || walking_ || slide_.guest >= 0)
         return;
-    // 3. Arrows: one step that way (picking); Enter: End turn in the menu, the hovered square while picking.
+    // 4. Arrows: one step that way (picking); Enter: End turn in the menu, the hovered square while picking.
     if (direction >= 0)
     {
         const int me = Current(state_), to = Neighbour(def_, state_.guests[U(me)].cell, direction);
@@ -249,6 +274,10 @@ bool Play::HandleUi(const std::string &, const std::string &action, const std::s
         turn_ = false;
         return true;
     }
+    if (action == "resume" && pause_)
+        return !(pause_ = false);
+    if (action == "close" && inspect_ >= 0)
+        return (inspect_ = -1), true;
     if (!PlayerTurn())
         return false;
     // 2. Choices: answers, battle moves.
@@ -294,6 +323,10 @@ std::string Play::Screen() const
 {
     if (state_.over)
         return "end";
+    if (pause_)
+        return "pause";
+    if (inspect_ >= 0)
+        return "inspect";
     if (slide_.guest >= 0 && PlayerTurn()) // a slide takes its time; a dialog waits for it
         return "picking";
     if (event_ >= 0)
@@ -316,7 +349,7 @@ std::string Play::Screen() const
 void Play::Update(float dt)
 {
     // 1. Nothing moves without time; a slide plays out first; then the player's rolls wait.
-    if (dt <= 0.0F)
+    if (dt <= 0.0F || pause_ || inspect_ >= 0)
         return;
     if (slide_.guest >= 0)
     {
@@ -388,6 +421,8 @@ nlohmann::json Play::UiData() const
         data["end"] = EndData();
     if (turn_ && !state_.over)
         data["turn"] = TurnData();
+    if (inspect_ >= 0)
+        data["inspect"] = InspectData();
     if (beat_.seen && hold_ > 0.0F)
         data["caption"] = {{"guest", def_.guests[U(beat_.guest)].name}, {"line", beat_.caption}, {"result", beat_.result}};
     const int me = Me();
@@ -670,4 +705,44 @@ nlohmann::json Play::EndData() const
     if (!allies.empty())
         lines.push_back("At your side at the end: " + allies + ".");
     return {{"outcome", outcome}, {"lines", lines}};
+}
+
+nlohmann::json Play::InspectData() const
+{
+    // 1. The room: its name and kind always; who and what is in it only when lit.
+    const Cell &cell = state_.cells[U(inspect_)];
+    const RoomDef &room = def_.rooms[U(cell.room)];
+    const BoardView view = MakeView(def_, state_, state_.player);
+    const bool lit = view.cells[U(inspect_)].lit;
+    static const char *kinds[] = {"foyer", "under-stage", "plain room", "item room", "event room", "trap", "passage room", "bonus room"};
+    nlohmann::json data = {{"room", {{"name", room.name}, {"kind", kinds[static_cast<int>(room.kind)]}, {"dark", !lit},
+                                     {"waiting", !cell.resolved && (room.kind == RoomKind::Item || room.kind == RoomKind::Event || room.kind == RoomKind::Trap)}}},
+                           {"guests", nlohmann::json::array()}, {"items", nlohmann::json::array()}, {"monsters", nlohmann::json::array()}};
+    if (!lit)
+        return data;
+    // 2. Guests, with their goal when the player knows it; floor items; monsters.
+    const Guest &mine = state_.guests[U(std::max<int>(state_.player, 0))];
+    for (const PawnView &pawn : view.pawns)
+    {
+        if (pawn.cell != inspect_)
+            continue;
+        const int g = pawn.guest;
+        const Guest &guest = state_.guests[U(g)];
+        nlohmann::json bag = nlohmann::json::array();
+        for (const std::int8_t item : guest.items)
+            if (item >= 0)
+                bag.push_back(def_.items[U(item)].name);
+        const bool known = guest.goal >= 0 && state_.player >= 0 && (g == state_.player || ((mine.knows >> g) & 1u));
+        data["guests"].push_back({{"name", def_.guests[U(g)].name}, {"hp", guest.hp}, {"maxHp", Stat(def_, state_, g, StatKind::MaxHp)},
+                                  {"might", Stat(def_, state_, g, StatKind::Might)}, {"sanity", Stat(def_, state_, g, StatKind::Sanity)},
+                                  {"speed", Stat(def_, state_, g, StatKind::Speed)}, {"level", guest.level}, {"group", guest.group},
+                                  {"bag", bag}, {"goal", known ? def_.goals[U(guest.goal)].text : ""}});
+    }
+    for (const FloorItem &f : state_.floor)
+        if (f.cell == inspect_)
+            data["items"].push_back(def_.items[U(f.item)].name);
+    for (const MonsterView &m : view.monsters)
+        if (m.cell == inspect_)
+            data["monsters"].push_back(def_.monsters[U(state_.monsters[U(m.monster)].kind)].name);
+    return data;
 }

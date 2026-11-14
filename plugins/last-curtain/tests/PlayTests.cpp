@@ -768,3 +768,167 @@ TEST_CASE("Continue mid-walk opens the menu with the moves that were left (T125)
     CHECK(again.State().guests[0].movesLeft == 3);
     CHECK(again.State().guests[0].cell == West(def, 1));
 }
+
+TEST_CASE("Input: menu, Esc opens the save menu (T126)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play(def, PlayerCorridor(def, 2, 4));
+    play.Key(InputKey::Escape);
+    CHECK(play.Screen() == "pause");
+    play.Key(InputKey::Escape); // Esc in the save menu is Resume
+    CHECK(play.Screen() == "menu");
+    play.Key(InputKey::Escape);
+    REQUIRE(play.HandleUi("pause", "resume", ""));
+    CHECK(play.Screen() == "menu");
+}
+
+TEST_CASE("Input: menu, an arrow steps that way in pick mode (T126)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play(def, PlayerCorridor(def, 2, 4));
+    play.Key(InputKey::Left);
+    CHECK(play.TurnMode() == Play::Mode::Picking);
+    Walk(play);
+    CHECK(play.State().guests[0].cell == West(def, 1));
+}
+
+TEST_CASE("Input: menu, Enter ends the turn (T126)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play(def, PlayerCorridor(def, 2, 4));
+    play.Key(InputKey::Enter);
+    CHECK_FALSE(play.PlayerTurn());
+}
+
+TEST_CASE("Input: menu and picking, a right click inspects (T126)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play(def, PlayerCorridor(def, 2, 4));
+    play.Click(West(def, 1), true);
+    CHECK(play.Screen() == "inspect");
+    play.Key(InputKey::Escape);
+    CHECK(play.Screen() == "menu");
+    REQUIRE(play.HandleUi("menu", "move", ""));
+    play.Click(West(def, 1), true);
+    CHECK(play.Screen() == "inspect");
+    REQUIRE(play.HandleUi("inspect", "close", ""));
+    CHECK(play.Screen() == "picking");
+}
+
+TEST_CASE("Input: picking, Esc goes back to the menu and keeps the steps taken (T126)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play(def, PlayerCorridor(def, 3, 4));
+    play.Click(West(def, 3));
+    play.Update(Play::slideSeconds); // one step under way
+    play.Key(InputKey::Escape);
+    Walk(play);
+    CHECK(play.TurnMode() == Play::Mode::Menu);
+    CHECK(play.State().guests[0].cell == West(def, 1));
+    CHECK(play.State().guests[0].movesLeft == 3);
+}
+
+TEST_CASE("Input: picking, Enter walks to the hovered square (T126)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play(def, PlayerCorridor(def, 2, 4));
+    REQUIRE(play.HandleUi("menu", "move", ""));
+    play.Hover(West(def, 2));
+    play.Key(InputKey::Enter);
+    Walk(play);
+    CHECK(play.State().guests[0].cell == West(def, 2));
+}
+
+TEST_CASE("Input: confirm, Enter is Stay and Esc is Back; arrows and clicks do nothing (T126)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play(def, PlayerCorridor(def, 1, 4));
+    play.Click(West(def, 2));
+    Walk(play);
+    REQUIRE(play.Screen() == "confirm");
+    play.Key(InputKey::Up);
+    play.Click(play.State().foyer);
+    play.Click(play.State().foyer, true);
+    CHECK(play.Screen() == "confirm");
+    play.Key(InputKey::Escape);
+    CHECK(play.TurnMode() == Play::Mode::Picking);
+    CHECK_FALSE(play.State().cells[static_cast<std::size_t>(West(def, 2))].opened);
+    play.Click(West(def, 2));
+    Walk(play);
+    REQUIRE(play.Screen() == "confirm");
+    play.Key(InputKey::Enter);
+    CHECK(play.State().cells[static_cast<std::size_t>(West(def, 2))].opened);
+}
+
+TEST_CASE("Input: a dialog ignores clicks on the board; Esc closes it where it can (T126)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play(def, PlayerCorridor(def, 2, 4));
+    REQUIRE(play.HandleUi("menu", "bag", ""));
+    REQUIRE(play.Screen() == "bag");
+    play.Click(West(def, 1));
+    play.Click(West(def, 1), true);
+    play.Update(Play::slideSeconds);
+    CHECK(play.Screen() == "bag");
+    CHECK(play.State().guests[0].cell == play.State().foyer);
+    play.Key(InputKey::Escape);
+    CHECK(play.Screen() == "menu");
+}
+
+TEST_CASE("Input: a bot's turn, Esc opens the save menu and a left click inspects (T126)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play = BotFirst(def);
+    REQUIRE_FALSE(play.PlayerTurn());
+    play.Key(InputKey::Escape);
+    CHECK(play.Screen() == "pause");
+    const int beats = play.Beats();
+    play.Update(10.0F);
+    CHECK(play.Beats() == beats); // the night waits behind the save menu
+    REQUIRE(play.HandleUi("pause", "resume", ""));
+    play.Click(play.State().guests[0].cell);
+    CHECK(play.Screen() == "inspect");
+}
+
+TEST_CASE("Inspect shows only what the player may know (T126)", "[night][play]")
+{
+    const NightDef def = Data();
+    NightState state = PlayerCorridor(def, 2, 4);
+    // A bot in the lit room west of the foyer, carrying a bandage; cell 0 a dark closet.
+    state.guests[1].cell = static_cast<std::int8_t>(West(def, 1));
+    state.guests[1].items[0] = static_cast<std::int8_t>(NightDef::Find(def.items, "bandage"));
+    Play play(def, state);
+    // 1. Nothing for an unopened cell or outside the board.
+    for (const int cell : {West(def, 4), -1, maxCells})
+    {
+        play.Click(cell, true);
+        CHECK(play.Screen() == "menu");
+    }
+    // 2. A dark room: its name and kind, nobody in it.
+    play.Click(0, true);
+    REQUIRE(play.Screen() == "inspect");
+    nlohmann::json data = play.UiData()["inspect"];
+    CHECK(data["room"]["dark"] == true);
+    CHECK(data["room"]["name"] == def.rooms[static_cast<std::size_t>(state.cells[0].room)].name);
+    CHECK(data["guests"].empty());
+    play.HandleUi("inspect", "close", "");
+    // 3. A lit room: the bot's numbers and bag; its goal only once learnt.
+    play.Click(West(def, 1), true);
+    data = play.UiData()["inspect"];
+    REQUIRE(data["guests"].size() == 1);
+    const nlohmann::json bot = data["guests"][0];
+    CHECK(bot["name"] == def.guests[1].name);
+    CHECK(bot["hp"] == state.guests[1].hp);
+    CHECK(bot["bag"].size() == 1);
+    CHECK(bot["goal"] == "");
+    play.HandleUi("inspect", "close", "");
+    NightState knows = state;
+    knows.guests[0].knows = 1u << 1;
+    Play learnt(def, knows);
+    learnt.Click(West(def, 1), true);
+    CHECK(learnt.UiData()["inspect"]["guests"][0]["goal"] == def.goals[static_cast<std::size_t>(state.guests[1].goal)].text);
+    // 4. The player's own goal always shows.
+    learnt.HandleUi("inspect", "close", "");
+    learnt.Click(state.foyer, true);
+    CHECK(learnt.UiData()["inspect"]["guests"][0]["goal"] == def.goals[static_cast<std::size_t>(state.guests[0].goal)].text);
+}

@@ -265,5 +265,36 @@
       "The curse took Hoang Gia Huy, who rose as the Opera Specter.",
       "At your side at the end: Dinh Quoc Bao."
     ]
+  },
+  "inspect": {
+    "room": {
+      "name": "Lighting box",
+      "kind": "event room",
+      "dark": false,
+      "waiting": true
+    },
+    "guests": [
+      {
+        "name": "Vo Minh Khang",
+        "hp": 24,
+        "maxHp": 30,
+        "might": 7,
+        "sanity": 2,
+        "speed": 3,
+        "level": 2,
+        "group": -1,
+        "bag": [
+          "Bandage",
+          "Lantern"
+        ],
+        "goal": "Reach the Shuttered office."
+      }
+    ],
+    "items": [
+      "Tonic"
+    ],
+    "monsters": [
+      "Stagehand"
+    ]
   }
 }

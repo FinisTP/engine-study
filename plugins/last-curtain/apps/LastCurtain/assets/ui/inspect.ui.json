@@ -1,0 +1,24 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "back": "close",
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [560, 0], "align": "stretch", "gap": 10, "children": [
+    { "type": "text", "style": "title", "text": "{inspect.room.name}" },
+    { "type": "text", "style": "muted", "text": "{inspect.room.kind}" },
+    { "type": "text", "style": "small", "text": "Dark: you cannot see who or what is here.", "visible": "{inspect.room.dark}" },
+    { "type": "text", "style": "small", "text": "Something still waits here.", "visible": "{inspect.room.waiting}" },
+    { "type": "list", "items": "{inspect.guests}", "as": "g", "gap": 8,
+      "entry": { "type": "stack", "style": "slot", "gap": 4, "children": [
+        { "type": "text", "style": "strong", "text": "{g.name}  Lv {g.level}" },
+        { "type": "text", "style": "small", "text": "HP {g.hp}/{g.maxHp}   Might {g.might}   Sanity {g.sanity}   Speed {g.speed}" },
+        { "type": "list", "items": "{g.bag}", "as": "i", "direction": "horizontal", "gap": 10, "entry": { "type": "text", "style": "muted", "text": "{i}" } },
+        { "type": "text", "style": "good", "text": "Goal: {g.goal}", "visible": "{g.goal}", "wrap": true, "size": [500, 0] }
+      ] } },
+    { "type": "text", "style": "heading", "text": "On the floor", "visible": "{inspect.items}" },
+    { "type": "list", "items": "{inspect.items}", "as": "i", "entry": { "type": "text", "style": "small", "text": "{i}" } },
+    { "type": "text", "style": "heading", "text": "Danger", "visible": "{inspect.monsters}" },
+    { "type": "list", "items": "{inspect.monsters}", "as": "m", "entry": { "type": "text", "style": "warning", "text": "{m}" } },
+    { "type": "button", "anchor": "right", "size": [160, 44], "text": "Close", "action": "close" }
+  ] }
+}

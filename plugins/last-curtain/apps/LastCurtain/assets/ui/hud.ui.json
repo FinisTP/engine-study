@@ -27,6 +27,6 @@
     { "type": "list", "anchor": "top-right", "offset": [-16, 64], "items": "{warnings}", "as": "w", "visible": "{warnings}",
       "entry": { "type": "text", "style": "warning", "text": "{w}", "wrap": true, "size": [460, 0] } },
     { "type": "text", "anchor": "bottom-left", "offset": [24, -18], "style": "muted",
-      "text": "Arrows or click: move   I: bag   Enter: end turn   Wheel: zoom   Esc: quit" }
+      "text": "Click: walk   Right-click: inspect   Arrows: step   I: bag   Enter: end turn   Wheel: zoom   Esc: menu" }
   ] }
 }

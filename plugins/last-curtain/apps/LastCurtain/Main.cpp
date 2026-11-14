@@ -185,8 +185,9 @@ namespace
                 using umbra::platform::ApplicationEventType;
                 const std::string screen = play ? play->Screen() : "start";
                 const bool board = screen.empty() || screen == "menu" || screen == "picking" || screen == "confirm" || screen == "caption"; // else a dialog has the keys
+                // Esc quits only from the start screen; in a night it means what the screen says (Play::Key).
                 if (events.IsEventRequested(ApplicationEventType::Quit) || events.IsEventRequested(ApplicationEventType::WindowClose) ||
-                    (input.IsKeyPressed(InputKey::Escape) && (board || screen == "start")))
+                    (input.IsKeyPressed(InputKey::Escape) && screen == "start"))
                     break;
                 if (events.IsEventRequested(ApplicationEventType::WindowResize))
                 {
@@ -217,6 +218,8 @@ namespace
                 {
                     if (input.IsKeyPressed(InputKey::Space))
                         play->Key(InputKey::Space);
+                    if (input.IsKeyPressed(InputKey::Escape))
+                        play->Key(InputKey::Escape), uiInput.back = false;
                     play->Update(dt);
                     const NightState &state = play->State();
                     const int now = Current(state);
@@ -274,6 +277,13 @@ namespace
                             begin(-1, &restored);
                         else if (action.screen == "end" && action.action == "new")
                             backToStart();
+                        else if (play && action.action == "save")
+                            WriteSave(*play);
+                        else if (play && action.action == "savequit")
+                        {
+                            WriteSave(*play);
+                            backToStart();
+                        }
                         else if (play)
                             (void)play->HandleUi(action.screen, action.action, action.arg);
                     }
@@ -282,6 +292,8 @@ namespace
                     drawList.hud.warnings = screens.Problems();
                 if (play && uiInput.click && !uiTook)
                     play->Click(table.Pick(def, uiInput.mouse, pixels));
+                if (play && input.IsMouseButtonPressed(2) && !uiTook) // the right button inspects
+                    play->Click(table.Pick(def, uiInput.mouse, pixels), true);
 
                 // 7. A capture: save the last frame, then stop.
                 if (++frame == frames && !options.capture.empty())
