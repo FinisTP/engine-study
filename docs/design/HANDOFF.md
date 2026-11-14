@@ -39,7 +39,16 @@ For whoever continues this work, in any session. Read this first.
   by state; inspect; a save menu; bots that think (max(0.4 s, the decision's time)) and slide; a
   following camera with drag and Focus; labels and numbered group rings; the goal's progress.
   Record and the Windows play checklist: `../testing/s28-the-screen.md`.
-- **Next: plan 3, the model's lines** (after the user plays plans 2-2c on Windows).
+- **Guest colours and pawn figures: implemented 2026-11-15 overnight**, `#UMBRA-158`-`#UMBRA-160`:
+  a `color` per guest from the 1960s palette; the pawns are one tinted, animated guest model (Hoang
+  Gia Huy's, Meshy) and one shared Taken model in its guest's colour. Record
+  `../testing/s28b-pawn-figures.md`.
+- **Drafts for the user's review (2026-11-15):** plan 3 design `2026-11-15-model-lines.md` and plan
+  `plans/2026-11-15-model-lines-plan.md`; plan 4 design `2026-11-15-art-rooms-battles.md` (4a the
+  painted table, 4b a room at full size, 4c battles in it) and plan
+  `plans/2026-11-15-painted-table-plan-4a.md`. Neither is started. The style board (13 SDXL
+  pictures from the user's ComfyUI) waits for the user's direction.
+- **Next:** the user's answers on the plan 3 and 4 drafts and the style board, then plan 3.
 
 ## Decided by the user (2026-11-14)
 
@@ -64,6 +73,11 @@ For whoever continues this work, in any session. Read this first.
   stay within 35.
 
 ## Waiting on the user
+
+0. The overnight drafts: the open questions in `2026-11-15-model-lines.md` (rewording chat
+   questions, the 1.0 s wait, lines not in saves) and `2026-11-15-art-rooms-battles.md` (the style
+   board, the room camera, when rooms open at full size, bots' battles, fonts); the look of the
+   figures (`../testing/s28b-pawn-figures.md` §4); the seven colours [call].
 
 1. MSVC warnings in `plugins/last-curtain` (not yet reported).
 2. The Windows check and a first play of plan 2 (`../testing/s26-board-on-screen.md` §4), and
