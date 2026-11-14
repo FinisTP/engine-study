@@ -1,0 +1,42 @@
+{
+  "format": "umbra.animgraph",
+  "version": 1,
+  "fade": 0.15,
+  "states": [
+    {
+      "name": "dead",
+      "clip": "death",
+      "loop": false,
+      "when": {
+        "flag": "dead"
+      }
+    },
+    {
+      "name": "hit",
+      "clip": "hit",
+      "on": "hit"
+    },
+    {
+      "name": "attack",
+      "clip": "attack",
+      "on": "attack"
+    },
+    {
+      "name": "power",
+      "clip": "power",
+      "on": "power"
+    },
+    {
+      "name": "walk",
+      "clip": "walk",
+      "when": {
+        "param": "speed",
+        "above": 0.3
+      }
+    },
+    {
+      "name": "idle",
+      "clip": "idle"
+    }
+  ]
+}

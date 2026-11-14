@@ -32,6 +32,7 @@ target_link_libraries(
         Umbra::Platform
         Umbra::Render
         Umbra::Assets
+        Umbra::Scene
         Umbra::Ui
         Umbra::Night
         Umbra::NightBots

@@ -134,7 +134,7 @@ namespace
             if (!renderer.Initialize(window))
                 return 1;
             Screens screens(renderer, assets);
-            Table table(renderer);
+            Table table(renderer, assets);
             umbra::core::DrawList drawList;
             const int frames = options.frames > 0 ? options.frames : (options.capture.empty() ? 0 : 3);
             int frame = 0, aimed = -1, savedRound = -1;
@@ -257,6 +257,7 @@ namespace
                     }
                     play->Hover(table.Pick(def, uiInput.mouse, pixels));
                     view = MakeView(def, state, state.player);
+                    table.Animate(def, view, ToDraw(play->Sliding()), dt);
                     table.Draw(def, view, play->Previewed().path, play->Previewed().affordable, ToDraw(play->Sliding()), play->Rings(), drawList);
                     // Saves: at each new round, and gone once the night is over.
                     if (state.player >= 0 && !state.over && state.round != savedRound)

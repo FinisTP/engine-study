@@ -1,6 +1,9 @@
 #include "Table.hpp"
 
+#include <AnimGraph.hpp>
+#include <GltfImporter.hpp>
 #include <Lighting.hpp>
+#include <Log.hpp>
 #include <MeshData.hpp>
 
 #include <glm/ext/matrix_clip_space.hpp>
@@ -41,7 +44,6 @@ namespace
         return Hex(0x6B7280);
     }
 
-    constexpr std::array<std::uint32_t, 7> guestColors{0xE07A5F, 0xF2CC8F, 0x81B29A, 0x5DA9E9, 0xC27BA0, 0xF4A261, 0xEDEDE9};
 
     // A 1 m cube: four vertices per face so each face has its own normal.
     umbra::core::MeshData Cube()
@@ -68,12 +70,85 @@ namespace
     }
 }
 
-Table::Table(umbra::render::Renderer &renderer) : renderer_(renderer), box_(renderer.CreateMesh(Cube())) {}
+Table::Table(umbra::render::Renderer &renderer, const umbra::assets::AssetFolders &assets)
+    : renderer_(renderer), box_(renderer.CreateMesh(Cube())), guest_(Load(assets / "models/guest.glb", assets / "animations/guest.anim.json", 0.55F)),
+      taken_(Load(assets / "models/taken.glb", assets / "animations/taken.anim.json", 0.65F))
+{
+}
 
 Table::~Table()
 {
+    for (const Figure *figure : {&guest_, &taken_})
+    {
+        if (figure->mesh)
+            renderer_.DestroyMesh(figure->mesh);
+        if (figure->texture)
+            renderer_.DestroyTexture(figure->texture);
+    }
     if (box_)
         renderer_.DestroyMesh(box_);
+}
+
+Table::Figure Table::Load(const std::filesystem::path &model, const std::filesystem::path &graph, float scale)
+{
+    // 1. The rigged model and its graph; a problem is logged and the pawn stays a box.
+    umbra::assets::ImportResult imported = umbra::assets::ImportGltf(model);
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    Figure figure;
+    figure.graph = umbra::scene::LoadAnimGraph(graph, graph.filename().string(), diagnostics);
+    for (const umbra::core::Diagnostic &d : diagnostics)
+        umbra::diagnostics::Error(umbra::core::Format(d));
+    if (!imported.Ok() || !imported.model.skeleton || imported.model.meshes.empty() || !figure.graph)
+    {
+        umbra::diagnostics::Error("Pawn figure " + model.string() + " could not be loaded; drawing a box");
+        return {};
+    }
+    // 2. Its one skinned mesh and texture on the GPU (pack_animated.py makes one of each).
+    figure.model = std::make_shared<const umbra::assets::Model>(std::move(imported.model));
+    const umbra::assets::ModelMesh &mesh = figure.model->meshes.front();
+    figure.mesh = renderer_.CreateMesh(mesh.data);
+    if (mesh.texture >= 0)
+        figure.texture = renderer_.CreateTexture(figure.model->textures[static_cast<std::size_t>(mesh.texture)]);
+    figure.scale = scale;
+    return figure;
+}
+
+umbra::core::Animator Table::MakeAnimator(const Figure &figure)
+{
+    const std::shared_ptr<const umbra::assets::Model> model = figure.model;
+    return {std::shared_ptr<const umbra::core::Skeleton>(model, &*model->skeleton), figure.graph, [model](const std::string &name) {
+                for (const umbra::core::Clip &clip : model->clips)
+                    if (clip.name == name)
+                        return std::shared_ptr<const umbra::core::Clip>(model, &clip);
+                return std::shared_ptr<const umbra::core::Clip>{};
+            }};
+}
+
+void Table::Animate(const NightDef &def, const BoardView &view, const Slide &slide, float dt)
+{
+    for (const PawnView &pawn : view.pawns)
+    {
+        if (pawn.guest < 0)
+            continue;
+        if (static_cast<std::size_t>(pawn.guest) >= pawns_.size())
+            pawns_.resize(static_cast<std::size_t>(pawn.guest) + 1);
+        Pawn &p = pawns_[static_cast<std::size_t>(pawn.guest)];
+        // 1. A new animator when the guest first shows, and again when it turns.
+        const Figure &figure = pawn.taken ? taken_ : guest_;
+        if (!figure.mesh)
+            continue;
+        if (!p.animator || p.taken != pawn.taken)
+            p.animator.emplace(MakeAnimator(figure)), p.taken = pawn.taken;
+        // 2. Sliding: face the step (the model faces -Z, so yaw = atan2(-x, -z)) and walk.
+        const bool walking = pawn.guest == slide.guest && slide.from >= 0 && slide.to >= 0 && slide.from != slide.to;
+        if (walking)
+        {
+            const glm::vec3 step = CellCenter(def, slide.to) - CellCenter(def, slide.from);
+            p.yaw = std::atan2(-step.x, -step.z);
+        }
+        p.animator->SetNumber("speed", walking ? 1.0F : 0.0F);
+        p.animator->Update(dt);
+    }
 }
 
 void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<int> &path, int affordable, const Slide &slide,
@@ -123,7 +198,23 @@ void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<i
     for (const PawnView &pawn : view.pawns)
     {
         const glm::vec3 at = Place(def, view, pawn.guest, slide);
-        Box(out, box_, at + glm::vec3{0, 0.45F, 0}, {0.5F, 0.9F, 0.5F}, Hex(guestColors[static_cast<std::size_t>(pawn.guest) % guestColors.size()]));
+        const glm::vec4 color = Hex(def.guests[static_cast<std::size_t>(pawn.guest)].color);
+        const Figure &figure = pawn.taken ? taken_ : guest_;
+        const Pawn *p = static_cast<std::size_t>(pawn.guest) < pawns_.size() ? &pawns_[static_cast<std::size_t>(pawn.guest)] : nullptr;
+        if (figure.mesh && p != nullptr && p->animator && p->taken == pawn.taken)
+        {
+            // The figure stands on the table: turned by yaw, scaled, feet (y = -1 in the packed model) at y = 0.
+            const glm::mat4 model = glm::scale(glm::rotate(glm::translate(glm::mat4{1.0F}, at), p->yaw, {0, 1, 0}), glm::vec3{figure.scale}) *
+                                    glm::translate(glm::mat4{1.0F}, {0, 1, 0});
+            const std::vector<glm::mat4> &palette = p->animator->Palette();
+            // Lightened a quarter toward white and a faint glow, so dark tints still read in the dim room.
+            out.items.push_back({figure.mesh, figure.texture, model, glm::mix(color, glm::vec4{1.0F}, 0.25F), 0.0F, 0.12F});
+            out.items.back().jointOffset = static_cast<std::uint32_t>(out.joints.size());
+            out.items.back().jointCount = static_cast<std::uint32_t>(palette.size());
+            out.joints.insert(out.joints.end(), palette.begin(), palette.end());
+        }
+        else
+            Box(out, box_, at + glm::vec3{0, 0.45F, 0}, {0.5F, 0.9F, 0.5F}, color);
         int group = 0;
         for (const auto &[guest, number] : rings)
             group = guest == pawn.guest ? number : group;
@@ -177,7 +268,11 @@ glm::vec3 Table::Place(const NightDef &def, const BoardView &view, int guest, co
 
 glm::vec3 Table::Above(const NightDef &def, const BoardView &view, int guest, const Slide &slide) const
 {
-    return Place(def, view, guest, slide) + glm::vec3{0.0F, 1.2F, 0.0F};
+    // The Taken's figure stands taller.
+    bool taken = false;
+    for (const PawnView &pawn : view.pawns)
+        taken = pawn.guest == guest ? pawn.taken : taken;
+    return Place(def, view, guest, slide) + glm::vec3{0.0F, taken ? 1.45F : 1.2F, 0.0F};
 }
 
 std::optional<glm::vec2> Table::ScreenPoint(glm::vec3 world, glm::vec2 pixels) const
