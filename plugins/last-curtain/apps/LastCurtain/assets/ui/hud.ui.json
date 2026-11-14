@@ -1,0 +1,27 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "root": { "type": "panel", "anchor": "fill", "style": "layer", "children": [
+    { "type": "stack", "anchor": "top", "style": "hud", "direction": "horizontal", "gap": 28, "size": [1280, 52], "align": "center", "children": [
+      { "type": "text", "style": "title", "text": "{clock}" },
+      { "type": "text", "style": "small", "text": "Round {round} of {rounds}  |  {phase}" },
+      { "type": "spacer", "size": [120, 0] },
+      { "type": "text", "style": "heading", "text": "{me.name}  Lv {me.level}" },
+      { "type": "text", "style": "strong", "text": "HP {me.hp}/{me.maxHp}   Might {me.might}   Sanity {me.sanity}   Speed {me.speed}" },
+      { "type": "text", "style": "good", "text": "{me.buffs}", "visible": "{me.buffs}" }
+    ] },
+    { "type": "stack", "anchor": "top-left", "offset": [24, 76], "style": "panel", "gap": 6, "size": [260, 0], "children": [
+      { "type": "text", "style": "heading", "text": "Allies" },
+      { "type": "text", "style": "muted", "text": "None yet", "visible": "{noAllies}" },
+      { "type": "list", "items": "{allies}", "as": "a", "entry": { "type": "text", "style": "small", "text": "{a.name}  HP {a.hp}/{a.maxHp}" } },
+      { "type": "text", "style": "heading", "text": "Winning over", "visible": "{winning}" },
+      { "type": "list", "items": "{winning}", "as": "w", "entry": { "type": "text", "style": "small", "text": "{w.name}  {w.approvals} of {w.goal}" } },
+      { "type": "text", "style": "heading", "text": "In your light", "visible": "{inLight}" },
+      { "type": "list", "items": "{inLight}", "as": "g", "entry": { "type": "text", "style": "small", "text": "{g.name}  |  {g.room}", "wrap": true, "size": [230, 0] } }
+    ] },
+    { "type": "list", "anchor": "top-right", "offset": [-16, 64], "items": "{warnings}", "as": "w", "visible": "{warnings}",
+      "entry": { "type": "text", "style": "warning", "text": "{w}", "wrap": true, "size": [460, 0] } },
+    { "type": "text", "anchor": "bottom-left", "offset": [24, -18], "style": "muted",
+      "text": "Arrows or click: move   I: bag   Enter: end turn   Wheel: zoom   Esc: quit" }
+  ] }
+}

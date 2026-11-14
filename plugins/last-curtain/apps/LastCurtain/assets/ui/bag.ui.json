@@ -1,0 +1,30 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "dim": true,
+  "back": "close",
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [900, 0], "align": "stretch", "gap": 14, "children": [
+    { "type": "text", "style": "title", "text": "Bag  {bagUsed} of {carry}" },
+    { "type": "text", "style": "small", "text": "Using, dropping and picking up are free: your turn goes on." },
+    { "type": "text", "style": "muted", "text": "The bag is empty.", "visible": "{bagEmpty}" },
+    { "type": "list", "items": "{bag}", "as": "item", "columns": 4, "gap": 12,
+      "entry": { "type": "stack", "style": "slot", "size": [200, 0], "gap": 6, "children": [
+        { "type": "text", "style": "strong", "text": "{item.name}" },
+        { "type": "text", "style": "muted", "text": "{item.kind}" },
+        { "type": "text", "style": "small", "text": "{item.text}", "wrap": true, "size": [180, 0] },
+        { "type": "button", "size": [180, 44], "text": "Use", "action": "use", "arg": "{item.slot}", "disabled": "{item.cannotUse}" },
+        { "type": "button", "size": [180, 44], "text": "Drop here", "action": "drop", "arg": "{item.slot}" }
+      ] } },
+    { "type": "text", "style": "heading", "text": "On the floor here", "visible": "{floor}" },
+    { "type": "list", "items": "{floor}", "as": "f", "gap": 8,
+      "entry": { "type": "stack", "style": "slot", "direction": "horizontal", "gap": 14, "align": "center", "children": [
+        { "type": "stack", "size": [640, 0], "children": [
+          { "type": "text", "style": "strong", "text": "{f.name}" },
+          { "type": "text", "style": "small", "text": "{f.text}", "wrap": true, "size": [620, 0] }
+        ] },
+        { "type": "button", "size": [150, 44], "text": "Pick up", "action": "pickup", "arg": "{f.index}" }
+      ] } },
+    { "type": "button", "anchor": "right", "size": [160, 44], "text": "Close", "action": "close" }
+  ] }
+}

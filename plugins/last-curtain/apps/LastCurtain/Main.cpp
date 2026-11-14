@@ -1,8 +1,8 @@
+#include "Play.hpp"
 #include "Screens.hpp"
 #include "Table.hpp"
 
 #include <BoardView.hpp>
-#include <NightBots.hpp>
 
 #include <ApplicationEvents.hpp>
 #include <CrashHandler.hpp>
@@ -84,7 +84,7 @@ namespace
                 platform.Shutdown();
                 return 1;
             }
-            NightState state = NewNight(def, options.seed, player);
+            Play play(def, options.seed, player);
 
             // 2. Window, renderer, screens and the table.
             umbra::core::FrameClock clock;
@@ -105,6 +105,9 @@ namespace
             umbra::core::DrawList drawList;
             const int frames = options.frames > 0 ? options.frames : (options.capture.empty() ? 0 : 3);
             int frame = 0, aimed = -1;
+            std::string shown; // the game screen Play asks for
+            if (screens.Ready() && player >= 0)
+                screens.Ui().Open("hud");
             bool captured = false, suspended = false;
 
             while (true)
@@ -115,7 +118,7 @@ namespace
                 pump.PumpEvents(input, events);
                 using umbra::platform::ApplicationEventType;
                 if (events.IsEventRequested(ApplicationEventType::Quit) || events.IsEventRequested(ApplicationEventType::WindowClose) ||
-                    input.IsKeyPressed(umbra::platform::InputKey::Escape))
+                    (input.IsKeyPressed(umbra::platform::InputKey::Escape) && play.Screen() != "bag"))
                     break;
                 if (events.IsEventRequested(ApplicationEventType::WindowResize))
                 {
@@ -136,29 +139,57 @@ namespace
                 clock.Tick();
                 const auto dt = static_cast<float>(clock.GetDeltaTimeSeconds());
 
-                // 4. Bots play one action a frame; the player's turn waits (the next tasks add input).
-                const int acting = Current(state);
-                if (acting >= 0 && acting != state.player)
-                    (void)Apply(def, state, ChooseAction(def, state, acting));
+                // 4. Bots play; the camera follows the acting guest; the wheel zooms.
+                play.Update(dt);
+                const NightState &state = play.State();
                 if (const int now = Current(state); now >= 0 && now != aimed)
                     table.Aim(CellCenter(def, state.guests[static_cast<std::size_t>(now)].cell), aimed < 0 ? 0.0F : 0.6F), aimed = now;
                 table.Zoom(input.Wheel());
                 table.Update(dt);
                 table.SetHunt(state.taken.present);
 
-                // 5. Draw the table and the screens.
-                drawList.Clear();
-                drawList.hud.diagnosticsWindow = false;
-                drawList.hud.warnings = screens.Problems();
-                table.Draw(def, MakeView(def, state, state.player), drawList);
+                // 5. The screen Play asks for. On the actions panel the arrows, Enter and I belong to the board.
+                if (const std::string want = play.Screen(); screens.Ready() && want != shown)
+                {
+                    if (!shown.empty())
+                        screens.Ui().Close(shown);
+                    if (!want.empty())
+                        screens.Ui().Open(want), screens.Ui().ResetFocus(want);
+                    shown = want;
+                }
                 const auto [width, height] = renderer.Extent();
                 const glm::vec2 pixels{static_cast<float>(width), static_cast<float>(height)};
-                if (screens.Ready())
-                    (void)screens.Ui().Update(nlohmann::json::object(), pixels,
-                                              Screens::MapInput(input, {static_cast<float>(window.GetWidth()), static_cast<float>(window.GetHeight())}, pixels),
-                                              drawList.ui);
+                umbra::ui::UiInput uiInput = Screens::MapInput(input, {static_cast<float>(window.GetWidth()), static_cast<float>(window.GetHeight())}, pixels);
+                if (shown != "bag")
+                {
+                    using umbra::platform::InputKey;
+                    uiInput.up = uiInput.down = uiInput.left = uiInput.right = uiInput.confirm = false;
+                    for (const InputKey key : {InputKey::Up, InputKey::Right, InputKey::Down, InputKey::Left, InputKey::Enter, InputKey::I})
+                        if (input.IsKeyPressed(key))
+                            play.Key(key);
+                }
 
-                // 6. A capture: save the last frame, then stop.
+                // 6. Draw the table and the screens; a click no screen took goes to the board.
+                drawList.Clear();
+                drawList.hud.diagnosticsWindow = false;
+                table.Draw(def, MakeView(def, state, state.player), drawList);
+                bool uiTook = false;
+                if (screens.Ready())
+                {
+                    nlohmann::json data = play.UiData();
+                    data["warnings"] = screens.Problems();
+                    for (const umbra::ui::UiAction &action : screens.Ui().Update(data, pixels, uiInput, drawList.ui))
+                    {
+                        (void)play.HandleUi(action.screen, action.action, action.arg);
+                        uiTook = true;
+                    }
+                }
+                else
+                    drawList.hud.warnings = screens.Problems();
+                if (uiInput.click && !uiTook)
+                    play.Click(table.Pick(def, uiInput.mouse, pixels));
+
+                // 7. A capture: save the last frame, then stop.
                 if (++frame == frames && !options.capture.empty())
                     renderer.CaptureNextFrame([&](const umbra::core::TextureData &picture) {
                         std::vector<std::uint8_t> png;
