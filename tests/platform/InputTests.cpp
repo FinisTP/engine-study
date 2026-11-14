@@ -92,3 +92,13 @@ TEST_CASE("Mouse buttons report presses once and focus loss clears everything")
     input.HandleMouseButton(7, true); // out of range: ignored
     REQUIRE_FALSE(input.IsMouseButtonHeld(7));
 }
+
+TEST_CASE("Input adds up wheel steps for one frame")
+{
+    umbra::platform::Input input;
+    input.HandleWheel(1.0F);
+    input.HandleWheel(0.5F);
+    CHECK(input.Wheel() == 1.5F);
+    input.BeginFrame();
+    CHECK(input.Wheel() == 0.0F);
+}

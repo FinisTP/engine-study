@@ -185,6 +185,9 @@ namespace umbra::platform
                 else
                     input.HandleMouseMotion(event.motion.xrel, event.motion.yrel, event.motion.x, event.motion.y);
                 break;
+            case SDL_EVENT_MOUSE_WHEEL:
+                input.HandleWheel(event.wheel.y);
+                break;
             case SDL_EVENT_FINGER_DOWN:
             case SDL_EVENT_FINGER_MOTION:
             case SDL_EVENT_FINGER_UP:

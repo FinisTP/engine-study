@@ -48,4 +48,6 @@ namespace umbra::night
     glm::vec3 CellCenter(const NightDef &def, int cell);
     // The cell under a point of the table, -1 outside the board.
     int CellAtPoint(const NightDef &def, glm::vec3 point);
+    // The cell a ray (from the camera through the cursor) meets on the table top (y = 0), -1 if none.
+    int CellUnderRay(const NightDef &def, glm::vec3 origin, glm::vec3 direction);
 }

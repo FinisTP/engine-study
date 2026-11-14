@@ -111,6 +111,9 @@ namespace umbra::platform
         void HandleMouseButton(int button, bool down) noexcept;
         [[nodiscard]] float GetMouseDeltaX() const noexcept { return mouseDeltaX_; }
         [[nodiscard]] float GetMouseDeltaY() const noexcept { return mouseDeltaY_; }
+        // Wheel steps since the last BeginFrame (positive: away from the user).
+        void HandleWheel(float steps) noexcept { wheel_ += steps; }
+        [[nodiscard]] float Wheel() const noexcept { return wheel_; }
         [[nodiscard]] bool IsMouseButtonPressed(int button) const noexcept;
         [[nodiscard]] bool IsMouseButtonHeld(int button) const noexcept;
 
@@ -143,6 +146,7 @@ namespace umbra::platform
         std::array<bool, 3> mouseHeld_{};
         float mouseDeltaX_ = 0.0F;
         float mouseDeltaY_ = 0.0F;
+        float wheel_ = 0.0F;
         float mouseX_ = -1.0F, mouseY_ = -1.0F;
         std::vector<Finger> fingers_;
         bool touchSeen_ = false;

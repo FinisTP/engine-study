@@ -41,6 +41,7 @@ namespace umbra::platform
         mousePressed_.fill(false);
         mouseDeltaX_ = 0.0F;
         mouseDeltaY_ = 0.0F;
+        wheel_ = 0.0F;
         // Lifted fingers were seen for one frame; the others start a new frame.
         std::erase_if(fingers_, [](const Finger &f) { return !f.down; });
         for (Finger &f : fingers_)
@@ -152,6 +153,7 @@ namespace umbra::platform
         mouseHeld_.fill(false);
         mouseDeltaX_ = 0.0F;
         mouseDeltaY_ = 0.0F;
+        wheel_ = 0.0F;
         fingers_.clear();
         axes_.fill(0.0F);
     }

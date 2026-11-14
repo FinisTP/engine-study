@@ -78,3 +78,18 @@ namespace umbra::night
         return CellAt(def, x, z);
     }
 }
+
+namespace umbra::night
+{
+    int CellUnderRay(const NightDef &def, glm::vec3 origin, glm::vec3 direction)
+    {
+        // 1. Where origin + t * direction reaches y = 0; t must be ahead of the origin.
+        if (direction.y > -1e-6F && direction.y < 1e-6F)
+            return -1;
+        const float t = -origin.y / direction.y;
+        if (t < 0.0F)
+            return -1;
+        // 2. That point's cell.
+        return CellAtPoint(def, origin + t * direction);
+    }
+}
