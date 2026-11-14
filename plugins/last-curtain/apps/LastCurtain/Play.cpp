@@ -3,6 +3,8 @@
 #include <BoardView.hpp>
 #include <NightBots.hpp>
 
+#include <algorithm>
+#include <bit>
 #include <charconv>
 #include <cstdio>
 
@@ -17,6 +19,35 @@ namespace
         int value = -1;
         const char *end = text.data() + text.size();
         return !text.empty() && std::from_chars(text.data(), end, value).ptr == end ? value : -1;
+    }
+
+    const char *StatName(StatKind stat)
+    {
+        switch (stat)
+        {
+        case StatKind::Might: return "Might";
+        case StatKind::Sanity: return "Sanity";
+        case StatKind::Speed: return "Speed";
+        default: return "";
+        }
+    }
+
+    // What an event's outcome does, in a few words.
+    std::string EffectText(Effect effect, int amount)
+    {
+        const std::string n = (amount > 0 ? "+" : "") + std::to_string(amount);
+        switch (effect)
+        {
+        case Effect::Hp: return n + " HP";
+        case Effect::MaxHp: return n + " max HP";
+        case Effect::Might: return n + " Might";
+        case Effect::Sanity: return n + " Sanity";
+        case Effect::Speed: return n + " Speed";
+        case Effect::Xp: return n + " XP";
+        case Effect::Item: return "an item";
+        case Effect::Back: return "pushed back to the room you came from";
+        default: return "nothing happens";
+        }
     }
 
     const char *KindName(ItemKind kind)
@@ -46,7 +77,42 @@ int Play::Me() const { return PlayerTurn() ? Current(state_) : state_.player; }
 
 bool Play::Do(const Action &action)
 {
-    return PlayerTurn() && Apply(def_, state_, action);
+    // 1. Apply on the player's turn only.
+    if (!PlayerTurn())
+        return false;
+    const NightState before = state_;
+    if (!Apply(def_, state_, action))
+        return false;
+    // 2. An event drawn on this move: shown before its roll (a new bit in eventsUsed).
+    const std::uint64_t drawn = state_.eventsUsed & ~before.eventsUsed;
+    if (drawn)
+    {
+        event_ = std::countr_zero(drawn);
+        eventCell_ = state_.guests[U(Current(before))].cell;
+        eventStat_ = Stat(def_, before, Current(before), def_.events[U(event_)].stat);
+    }
+    // 3. Every roll the player's side made, with what came of it.
+    for (const LogEntry &e : NewLog(state_, before.logCount))
+    {
+        if (e.kind != LogKind::Check || !Controls(state_, state_.player, e.who))
+            continue;
+        Dice d{e.a, e.other, e.b, "", "", e.a + e.other >= e.b};
+        if (action.kind == ActionKind::TakeOmen)
+            d.result = d.passed ? "The curse holds off. The omen is yours." : "The curse takes you.";
+        else if (action.kind == ActionKind::Answer)
+        {
+            d.stat = action.a == 0 ? "Might" : "Sanity";
+            d.result = d.passed ? "An approval." : "No approval this time.";
+        }
+        else if (drawn)
+        {
+            const EventDef &ev = def_.events[U(event_)];
+            d.stat = StatName(ev.stat);
+            d.result = d.passed ? EffectText(ev.passEffect, ev.passAmount) : EffectText(ev.failEffect, ev.failAmount);
+        }
+        dice_.push_back(d);
+    }
+    return true;
 }
 
 void Play::Click(int cell)
@@ -80,8 +146,24 @@ void Play::Key(umbra::platform::InputKey key)
 
 bool Play::HandleUi(const std::string &, const std::string &action, const std::string &arg)
 {
+    // 1. Screens that only show what happened: dismissed at any time.
+    if (action == "roll" && event_ >= 0)
+    {
+        event_ = -1;
+        return true;
+    }
+    if (action == "continue" && !dice_.empty())
+    {
+        dice_.pop_front();
+        return true;
+    }
     if (!PlayerTurn())
         return false;
+    // 2. Choices: answers, the omen.
+    for (const Action &a : LegalActions(def_, state_))
+        if ((action == "answer" && a.kind == ActionKind::Answer && std::to_string(a.a) == arg) ||
+            (action == "take" && a.kind == ActionKind::TakeOmen) || (action == "leave" && a.kind == ActionKind::LeaveOmen))
+            return Do(a);
     if (action == "bag")
         return bag_ = true;
     if (action == "close")
@@ -103,15 +185,25 @@ bool Play::HandleUi(const std::string &, const std::string &action, const std::s
 
 std::string Play::Screen() const
 {
+    if (state_.over)
+        return "";
+    if (event_ >= 0)
+        return "event";
+    if (!dice_.empty())
+        return "dice";
     if (!PlayerTurn())
         return hold_ > 0.0F && beat_.seen ? "caption" : "";
+    if (state_.chat.active)
+        return "chat";
+    if (state_.omenOffer >= 0)
+        return "omen";
     return bag_ ? "bag" : "actions";
 }
 
 void Play::Update(float dt)
 {
-    // 1. Wait out the beat on show; nothing moves without time.
-    if (dt <= 0.0F)
+    // 1. Wait out the beat on show and the player's rolls; nothing moves without time.
+    if (dt <= 0.0F || event_ >= 0 || !dice_.empty())
         return;
     hold_ -= dt;
     if (hold_ > 0.0F)
@@ -231,7 +323,57 @@ nlohmann::json Play::UiData() const
         if (pawn.guest != me)
             data["inLight"].push_back({{"name", def_.guests[U(pawn.guest)].name}, {"room", def_.rooms[U(state_.cells[U(pawn.cell)].room)].name}});
 
-    // 4. The bag and the floor of this room.
+    // 4. Rolls, events, omens and chats, each with its chance by the rules.
+    if (!state_.over && event_ >= 0)
+    {
+        const EventDef &ev = def_.events[U(event_)];
+        data["event"] = {{"room", def_.rooms[U(state_.cells[U(eventCell_)].room)].name}, {"name", ev.name}, {"text", ev.text},
+                         {"stat", StatName(ev.stat)}, {"statValue", eventStat_}, {"target", ev.target},
+                         {"chance", ChancePercent(eventStat_, ev.target)},
+                         {"pass", EffectText(ev.passEffect, ev.passAmount)}, {"fail", EffectText(ev.failEffect, ev.failAmount)}};
+    }
+    if (!state_.over && !dice_.empty())
+    {
+        const Dice &d = dice_.front();
+        data["dice"] = {{"die", d.die}, {"stat", d.stat}, {"statValue", d.statValue}, {"total", d.die + d.statValue},
+                        {"target", d.target}, {"passed", d.passed}, {"failed", !d.passed}, {"result", d.result},
+                        {"plain", d.stat.empty()}, {"withStat", !d.stat.empty()}};
+    }
+    if (!state_.over && PlayerTurn() && state_.chat.active)
+    {
+        const int asker = state_.chat.asker;
+        const QuestionDef &q = def_.questions[U(state_.chat.question)];
+        const int bond = Bond(state_, asker, state_.player);
+        nlohmann::json answers = nlohmann::json::array();
+        for (int a = 0; a < 2; ++a)
+        {
+            const int stat = Stat(def_, state_, state_.player, a == 0 ? StatKind::Might : StatKind::Sanity);
+            const int target = AnswerTarget(def_, state_, a);
+            answers.push_back({{"label", a == 0 ? q.physicalText : q.magicalText}, {"stat", a == 0 ? "Might" : "Sanity"},
+                               {"kind", a == 0 ? "physical" : "magical"}, {"statValue", stat}, {"target", target},
+                               {"chance", ChancePercent(stat, target)}, {"answer", std::to_string(a)}});
+        }
+        const std::string name = def_.guests[U(asker)].name;
+        data["chat"] = {{"name", name}, {"question", q.text}, {"approvals", state_.guests[U(asker)].approvals},
+                        {"goal", def_.rules.persuade.approvals}, {"answers", answers},
+                        {"bondNote", bond > 0 ? name + " likes you: the targets are lower." : bond < 0 ? name + " distrusts you: the targets are higher." : ""},
+                        {"likes", bond > 0}, {"distrusts", bond < 0}};
+    }
+    if (!state_.over && PlayerTurn() && state_.omenOffer >= 0)
+    {
+        const OmenDef &o = def_.omens[U(state_.cells[U(state_.omenOffer)].omen)];
+        std::string gift;
+        const auto add = [&](int amount, const char *what) {
+            if (amount != 0)
+                gift += (gift.empty() ? "" : ", ") + std::string(amount > 0 ? "+" : "") + std::to_string(amount) + " " + what;
+        };
+        add(o.might, "Might"), add(o.sanity, "Sanity"), add(o.speed, "Speed"), add(o.maxhp, "max HP");
+        const int target = CurseTarget(def_, state_);
+        data["omen"] = {{"name", o.name}, {"gift", gift}, {"target", target}, {"chance", std::clamp((target - 1) * 5, 0, 100)},
+                        {"taken", state_.omensTaken}};
+    }
+
+    // 5. The bag and the floor of this room.
     data["bag"] = data["floor"] = nlohmann::json::array();
     for (int s = 0; s < def_.rules.carry; ++s)
         if (const int item = guest.items[U(s)]; item >= 0)

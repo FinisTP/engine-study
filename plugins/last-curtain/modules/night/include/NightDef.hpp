@@ -73,6 +73,7 @@ namespace umbra::night
         int target = 0; // the number, from rules.checks
         Effect passEffect = Effect::None, failEffect = Effect::None;
         int passAmount = 0, failAmount = 0;
+        std::string text; // a short story for the screen
     };
 
     struct ItemDef

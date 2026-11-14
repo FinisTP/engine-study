@@ -1,19 +1,19 @@
-id,name,kind,stat,target,passEffect,passAmount,failEffect,failAmount
-applause,Applause from an empty hall,event,sanity,normal,sanity,1,hp,-3
-script,A script with your name,event,sanity,hard,xp,1,sanity,-1
-cold,A cold hand on the shoulder,event,might,normal,might,1,back,0
-song,A song from the walls,event,sanity,easy,hp,4,hp,-3
-mirror,Your reflection is late,event,sanity,normal,item,1,hp,-4
-dust,Dust sheets that breathe,event,might,easy,hp,3,hp,-2
-locker,A stuck locker,event,might,normal,item,1,hp,-2
-bell,The interval bell,event,speed,normal,speed,1,back,0
-portrait,A portrait that turns,event,sanity,hard,maxhp,2,sanity,-1
-rain,Rain on the stage,event,speed,easy,xp,1,hp,-2
-prompt,A voice gives you your line,event,sanity,normal,item,1,hp,-3
-weights,The counterweights shift,event,might,hard,might,1,hp,-5
-sandbag,A falling sandbag,trap,speed,normal,none,0,hp,-5
-floor,The floor gives way,trap,might,normal,none,0,hp,-6
-wire,A snapped wire,trap,speed,hard,none,0,hp,-4
-smoke,Smoke from the wings,trap,sanity,normal,none,0,hp,-4
-spotlight,A falling spotlight,trap,speed,easy,none,0,hp,-7
-hook,A loose hook,trap,might,easy,none,0,hp,-5
+id,name,kind,stat,target,passEffect,passAmount,failEffect,failAmount,text
+applause,Applause from an empty hall,event,sanity,normal,sanity,1,hp,-3,"Someone is clapping in the dark stalls, slow and steady, as if the show has just ended. Do you take a bow, or does it shake you?"
+script,A script with your name,event,sanity,hard,xp,1,sanity,-1,"A script lies open on a chair. Your name is in the cast list, and tonight's date is on the cover."
+cold,A cold hand on the shoulder,event,might,normal,might,1,back,0,"A hand rests on your shoulder. It is very cold, and there is no one behind you."
+song,A song from the walls,event,sanity,easy,hp,4,hp,-3,"A woman's voice sings through the walls, an old cai luong air. It wants you to listen to the end."
+mirror,Your reflection is late,event,sanity,normal,item,1,hp,-4,In the dressing-room mirror your reflection moves a moment after you do. It is holding something out.
+dust,Dust sheets that breathe,event,might,easy,hp,3,hp,-2,"The dust sheets over the old seats rise and fall, as if something beneath them breathes."
+locker,A stuck locker,event,might,normal,item,1,hp,-2,A locker is jammed shut. Something inside rattles when you pull at the door.
+bell,The interval bell,event,speed,normal,speed,1,back,0,The interval bell rings and rings. Every door slams at once; you must move before they lock.
+portrait,A portrait that turns,event,sanity,hard,maxhp,2,sanity,-1,A portrait of a forgotten singer slowly turns its eyes to follow you across the room.
+rain,Rain on the stage,event,speed,easy,xp,1,hp,-2,"Rain falls on the stage, indoors, from nowhere. The boards are slick under your feet."
+prompt,A voice gives you your line,event,sanity,normal,item,1,hp,-3,"A voice from the prompt box whispers your line. If you say it right, the house may reward you."
+weights,The counterweights shift,event,might,hard,might,1,hp,-5,The counterweights groan and start to drop. Someone has to hold the rope.
+sandbag,A falling sandbag,trap,speed,normal,none,0,hp,-5,A rope creaks overhead. A sandbag is coming down.
+floor,The floor gives way,trap,might,normal,none,0,hp,-6,The old boards crack under your weight.
+wire,A snapped wire,trap,speed,hard,none,0,hp,-4,A lighting wire snaps and whips across the room.
+smoke,Smoke from the wings,trap,sanity,normal,none,0,hp,-4,"Thick smoke pours from the wings, and in it you hear your name."
+spotlight,A falling spotlight,trap,speed,easy,none,0,hp,-7,A spotlight tears loose from the rig above you.
+hook,A loose hook,trap,might,easy,none,0,hp,-5,A loose scenery hook swings out of the dark.

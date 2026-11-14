@@ -1,0 +1,17 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "dim": true,
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [640, 0], "align": "stretch", "gap": 12, "children": [
+    { "type": "text", "style": "muted", "text": "OMEN" },
+    { "type": "text", "style": "title", "text": "{omen.name}" },
+    { "type": "text", "style": "good", "text": "Its gift: {omen.gift}" },
+    { "type": "text", "style": "bad", "text": "The curse: below {omen.target} on a plain d20 it takes you.   {omen.chance}% risk", "wrap": true, "size": [600, 0] },
+    { "type": "text", "style": "muted", "text": "The risk grows with every omen taken ({omen.taken} so far) and every hour of the night.", "wrap": true, "size": [600, 0] },
+    { "type": "stack", "direction": "horizontal", "gap": 12, "children": [
+      { "type": "button", "size": [200, 44], "text": "Take it", "action": "take" },
+      { "type": "button", "size": [200, 44], "text": "Leave it", "action": "leave" }
+    ] }
+  ] }
+}

@@ -126,7 +126,7 @@ namespace
                 pump.PumpEvents(input, events);
                 using umbra::platform::ApplicationEventType;
                 if (events.IsEventRequested(ApplicationEventType::Quit) || events.IsEventRequested(ApplicationEventType::WindowClose) ||
-                    (input.IsKeyPressed(umbra::platform::InputKey::Escape) && play.Screen() != "bag"))
+                    (input.IsKeyPressed(umbra::platform::InputKey::Escape) && (play.Screen().empty() || play.Screen() == "actions" || play.Screen() == "caption")))
                     break;
                 if (events.IsEventRequested(ApplicationEventType::WindowResize))
                 {
@@ -176,7 +176,8 @@ namespace
                 const auto [width, height] = renderer.Extent();
                 const glm::vec2 pixels{static_cast<float>(width), static_cast<float>(height)};
                 umbra::ui::UiInput uiInput = Screens::MapInput(input, {static_cast<float>(window.GetWidth()), static_cast<float>(window.GetHeight())}, pixels);
-                if (shown != "bag")
+                const bool board = shown.empty() || shown == "actions" || shown == "caption"; // else a dialog has the keys
+                if (board)
                 {
                     using umbra::platform::InputKey;
                     uiInput.up = uiInput.down = uiInput.left = uiInput.right = uiInput.confirm = false;

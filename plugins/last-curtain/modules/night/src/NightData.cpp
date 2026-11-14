@@ -331,13 +331,14 @@ namespace umbra::night
                 rooms.Bad(rooms.file, "fewer rooms than rules.json board.rooms");
         }
 
-        Sheet events(diagnostics, folder, "events.csv", {"id", "name", "kind", "stat", "target", "passEffect", "passAmount", "failEffect", "failAmount"});
+        Sheet events(diagnostics, folder, "events.csv", {"id", "name", "kind", "stat", "target", "passEffect", "passAmount", "failEffect", "failAmount", "text"});
         const auto effects = {"none", "hp", "hproom", "maxhp", "might", "sanity", "speed", "item", "xp", "buff", "armor", "light", "revive", "back"};
         for (int r = 0; r < events.Rows(); ++r)
         {
             EventDef e;
             e.id = events.Text(r, "id");
             e.name = events.Text(r, "name");
+            e.text = events.Text(r, "text");
             e.trap = events.Pick(r, "kind", {"event", "trap"}) == 1;
             e.stat = ToStat(events.Pick(r, "stat", {"might", "sanity", "speed"}));
             const int target = events.Pick(r, "target", {"easy", "normal", "hard"});

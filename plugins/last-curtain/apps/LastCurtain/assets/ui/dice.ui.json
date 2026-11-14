@@ -1,0 +1,16 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "dim": true,
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [460, 0], "align": "center", "gap": 10, "children": [
+    { "type": "text", "style": "muted", "text": "The d20 rolled" },
+    { "type": "text", "style": "title", "text": "{dice.die}" },
+    { "type": "text", "style": "strong", "text": "+ {dice.stat} {dice.statValue} = {dice.total}   against {dice.target}", "visible": "{dice.withStat}" },
+    { "type": "text", "style": "strong", "text": "against {dice.target}", "visible": "{dice.plain}" },
+    { "type": "text", "style": "heading", "text": "Passed", "visible": "{dice.passed}" },
+    { "type": "text", "style": "bad", "text": "Failed", "visible": "{dice.failed}" },
+    { "type": "text", "style": "text", "text": "{dice.result}", "wrap": true, "size": [420, 0], "textAlign": "center" },
+    { "type": "button", "size": [200, 44], "text": "Continue", "action": "continue" }
+  ] }
+}

@@ -5,6 +5,7 @@
 #include <NightBots.hpp>
 #include <Play.hpp>
 
+#include <algorithm>
 #include <filesystem>
 
 using namespace umbra::night;
@@ -12,14 +13,27 @@ using umbra::platform::InputKey;
 
 namespace
 {
+    // Dismisses the event and dice screens, which hold the bots.
+    void Settle(Play &play)
+    {
+        while (play.HandleUi("event", "roll", "") || play.HandleUi("dice", "continue", ""))
+        {
+        }
+    }
+
     // Bots play until it is the player's own turn; a chat a bot opened is answered first.
     void ToPlayer(Play &play)
     {
-        for (int i = 0; i < 400 && (!play.PlayerTurn() || play.State().chat.active); ++i)
+        for (int i = 0; i < 400 && (!play.PlayerTurn() || play.State().chat.active || play.Screen() != "actions"); ++i)
+        {
+            Settle(play);
             if (play.State().chat.active)
-                play.HandleUi("chat", "act", "0");
+                play.HandleUi("chat", "answer", "0");
+            else if (play.State().omenOffer >= 0 && play.PlayerTurn())
+                play.HandleUi("omen", "leave", "");
             else
                 play.Update(10.0F);
+        }
         REQUIRE(play.PlayerTurn());
     }
 
@@ -99,7 +113,7 @@ TEST_CASE("An ally is the player's to move (T111)", "[night][play]")
     state.guests[0].group = 0;
     Play play(def, state);
     for (int i = 0; i < 400 && Current(play.State()) != 1; ++i)
-        if (play.PlayerTurn())
+        if (Settle(play); play.PlayerTurn())
             play.HandleUi("actions", "act", play.UiData()["actions"].back()["arg"]);
         else
             play.Update(10.0F);
@@ -215,4 +229,116 @@ TEST_CASE("A minimised window does not lose a beat (T112)", "[night][play]")
         play.Update(0.0F);
     CHECK(play.Beats() == 1);
     CHECK(play.State().logCount == log);
+}
+
+namespace
+{
+    // The player acts first in this night; seed search.
+    NightState PlayerFirst(const NightDef &def)
+    {
+        for (std::uint64_t seed = 1; seed < 200; ++seed)
+            if (NightState state = NewNight(def, seed, 0); Current(state) == 0)
+                return state;
+        FAIL("no seed with the player first");
+        return {};
+    }
+}
+
+TEST_CASE("Every chance shown matches the rules (T113)", "[night][play]")
+{
+    NightDef def = Data();
+    SECTION("chat answers")
+    {
+        Play play(def, 4, 0);
+        for (int i = 0; i < 400 && !play.State().chat.active; ++i)
+            play.PlayerTurn() ? play.Key(InputKey::Enter) : play.Update(10.0F);
+        REQUIRE(play.State().chat.active);
+        REQUIRE(play.Screen() == "chat");
+        const nlohmann::json chat = play.UiData()["chat"];
+        REQUIRE(chat["answers"].size() == 2);
+        for (int a = 0; a < 2; ++a)
+        {
+            const int target = AnswerTarget(def, play.State(), a);
+            const int stat = Stat(def, play.State(), 0, a == 0 ? StatKind::Might : StatKind::Sanity);
+            CHECK(chat["answers"][a]["target"] == target);
+            CHECK(chat["answers"][a]["statValue"] == stat);
+            CHECK(chat["answers"][a]["chance"] == ChancePercent(stat, target));
+        }
+    }
+    SECTION("the omen's curse")
+    {
+        NightState state = PlayerFirst(def);
+        state.cells[static_cast<std::size_t>(state.foyer)].omen = 0;
+        state.omenOffer = state.foyer;
+        state.round = 9; // later in the night: the target has grown
+        Play play(def, state);
+        REQUIRE(play.Screen() == "omen");
+        const int target = CurseTarget(def, play.State());
+        const nlohmann::json omen = play.UiData()["omen"];
+        CHECK(omen["target"] == target);
+        CHECK(omen["chance"] == std::clamp((target - 1) * 5, 0, 100));
+        CHECK(omen["name"] == def.omens[0].name);
+    }
+    SECTION("an event")
+    {
+        for (RoomDef &room : def.rooms)
+            if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
+                room.kind = RoomKind::Event, room.doors = 15;
+        Play play(def, PlayerFirst(def));
+        const int step = StepCell(def, play);
+        REQUIRE(step >= 0);
+        play.Click(step);
+        REQUIRE(play.Screen() == "event");
+        const nlohmann::json event = play.UiData()["event"];
+        CHECK(event["chance"] == ChancePercent(event["statValue"], event["target"]));
+        CHECK_FALSE(event["text"].get<std::string>().empty());
+        play.Update(10.0F); // bots wait while the event shows
+        CHECK(play.Beats() == 0);
+    }
+}
+
+TEST_CASE("The dice screen shows the logged roll (T113)", "[night][play]")
+{
+    NightDef def = Data();
+    for (RoomDef &room : def.rooms)
+        if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
+            room.kind = RoomKind::Event, room.doors = 15;
+    Play play(def, PlayerFirst(def));
+    const std::uint32_t since = play.State().logCount;
+    play.Click(StepCell(def, play));
+    REQUIRE(play.HandleUi("event", "roll", ""));
+    REQUIRE(play.Screen() == "dice");
+    LogEntry check{};
+    for (const LogEntry &e : NewLog(play.State(), since))
+        if (e.kind == LogKind::Check)
+            check = e;
+    REQUIRE(check.kind == LogKind::Check);
+    const nlohmann::json dice = play.UiData()["dice"];
+    CHECK(dice["die"] == check.a);
+    CHECK(dice["statValue"] == check.other);
+    CHECK(dice["target"] == check.b);
+    CHECK(dice["total"] == check.a + check.other);
+    CHECK(dice["passed"] == (check.a + check.other >= check.b));
+    CHECK_FALSE(dice["result"].get<std::string>().empty());
+    REQUIRE(play.HandleUi("dice", "continue", ""));
+    CHECK(play.Screen() != "dice"); // an event room stops the guest: the turn may have passed
+    CHECK(play.Screen() != "event");
+}
+
+TEST_CASE("No screen waits after the night ended (T113)", "[night][play]")
+{
+    const NightDef def = Data();
+    NightState state = PlayerFirst(def);
+    state.chat = {true, true, 1, 5};
+    state.cells[static_cast<std::size_t>(state.foyer)].omen = 0;
+    state.omenOffer = state.foyer;
+    state.over = true;
+    state.outcome = Outcome::Company;
+    Play play(def, state);
+    CHECK(play.Screen() == "");
+    CHECK_FALSE(play.UiData().contains("chat"));
+    CHECK_FALSE(play.UiData().contains("omen"));
+    CHECK_FALSE(play.HandleUi("chat", "answer", "0"));
+    play.Update(10.0F);
+    CHECK(play.State().logCount == state.logCount);
 }
