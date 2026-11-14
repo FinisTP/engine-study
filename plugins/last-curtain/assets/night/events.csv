@@ -26,3 +26,9 @@ bell2,The prompt bell,event,might,easy,xp,1,back,0,"A bell rings for a cue nobod
 stairs,Stairs that give,trap,speed,normal,none,0,hp,-4,"The steps tilt under you, one after another."
 steam,A burst of steam,trap,might,normal,none,0,hp,-5,An old pipe bursts across the room.
 pitfall,The pit cover,trap,speed,hard,none,0,hp,-4,The cover over the orchestra pit cracks in two.
+tuning,An orchestra tuning up,event,sanity,normal,sanity,1,hp,-2,"From the empty pit comes the long A of an orchestra tuning, then the shuffle of pages. Do you listen until it stops?"
+curtaincall,A curtain that will not fall,event,might,normal,xp,1,hp,-3,"A heavy curtain hangs half down, its rope jammed. Do you haul it the rest of the way?"
+programme,Tonight's programme,event,sanity,easy,item,1,sanity,-1,A fresh programme lies on a seat. The cast list has one name scratched out so hard the paper tore.
+footsteps,Footsteps overhead,event,speed,normal,speed,1,back,0,"Someone runs across the floor above, then again, closer. Do you run to meet them?"
+makeup,A painted face in the glass,event,sanity,hard,maxhp,2,hp,-3,"The face in the dressing glass is made up for the stage, and it is not yours. Do you hold its gaze?"
+trunk,A locked costume trunk,event,might,normal,item,1,hp,-2,"A travelling trunk, its lock rusted shut. Something inside shifts when you touch it."

@@ -161,7 +161,7 @@ TEST_CASE("Bad data is refused with file, row and column (T94)", "[night][data]"
         Replace(kind / "goals.csv", "nhi,nhi-box,room,", "nhi,nhi-box,wish,");
         CHECK(Refused(kind).code == "night.goals");
         const fs::path count = CopyData("goalcount");
-        Replace(count / "goals.csv", "huy,huy-events,events,none,3", "huy,huy-events,events,none,0");
+        Replace(count / "goals.csv", "huy,huy-events,events,none,2", "huy,huy-events,events,none,0");
         CHECK(Refused(count).code == "night.goals");
         const fs::path item = CopyData("goalitem");
         Replace(item / "goals.csv", "khang,khang-ledger,item,ledger", "khang,khang-ledger,item,bandage");

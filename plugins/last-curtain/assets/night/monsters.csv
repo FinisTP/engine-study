@@ -1,4 +1,4 @@
 id,name,hp,might,sanity,attack,resist,xp,debuff,hpPerHour,statPerHour
 moths,Moth swarm,6,2,1,physical,none,1,none,1,0
-stagehand,Stagehand,10,4,2,physical,physical,1,weakened,2,0
-understudy,Understudy,10,2,4,magical,magical,1,shaken,2,0
+stagehand,Stagehand,8,4,2,physical,physical,1,weakened,2,0
+understudy,Understudy,8,2,4,magical,magical,1,shaken,2,0

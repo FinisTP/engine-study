@@ -15,9 +15,9 @@ bao,papers,Why would a man keep thirty years of death certificates? Would you re
 bao,splint,"Do you know how to set a splint, or shall I teach you on yourself?",Pull the bone straight on three,normal,Keep him calm while he works,easy
 bao,question,You answer my question with a question. Why do you think I do the same?,Laugh it off and keep walking,easy,Answer him with a better question,hard
 khang,arm,"Arm-wrestle me, boss. Loser carries the bag.",Grip his hand and push,hard,Make him laugh until he loses,normal
-khang,ledger,"Kid, read me what this ledger says. My eyes hate small print.",Hold the lamp and squint with him,easy,"Read it out, numbers and all",normal
-khang,altar,"There's an altar back there. Grab what's on it, I'm not touching that.",Lift the box off the altar,normal,Ask the altar's leave first,hard
-khang,debt,"Somebody here owes my people. You know who, boss?",Help him lean on the door,normal,Talk him out of leaning on anyone,hard
+khang,ledger,"Kid, read me what this ledger says. My eyes hate small print.",Hold the lamp and squint with him,normal,"Read it out, numbers and all",normal
+khang,altar,"There's an altar back there. Grab what's on it, I'm not touching that.",Lift the box off the altar,hard,Ask the altar's leave first,hard
+khang,debt,"Somebody here owes my people. You know who, boss?",Help him lean on the door,hard,Talk him out of leaning on anyone,hard
 khang,huy,That student keeps filming me. Should I smash the camera?,Hold him back by the collar,hard,Tell him how good he will look on it,easy
 mai,keys,"A key for every door, child, but one is missing. Will you help me look?",Move the heavy wardrobe aside,normal,Walk the halls with me and listen,easy
 mai,mirror,"Cover that mirror for me, dear. Do not look into it either.",Lift the sheet over it,easy,Stand with your back to it and describe it,hard

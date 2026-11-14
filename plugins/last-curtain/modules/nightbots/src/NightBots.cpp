@@ -352,6 +352,10 @@ namespace umbra::night
                     for (std::size_t m = 0; m < state.monsters.size(); ++m)
                         if (Sees(state.monsters[m].cell) && Beatable(static_cast<int>(m)))
                             goal(state.monsters[m].cell, style.fight);
+                    for (int o = 0; o < state.count; ++o) // someone to talk with
+                        if (o != g && Up(o) && Bond(state, g, o) >= 0 && me.chatRound != state.round && Sees(state.guests[U(o)].cell) &&
+                            (me.group < 0 || state.guests[U(o)].group != me.group))
+                            goal(state.guests[U(o)].cell, style.chatty);
                     for (int o = 0; o < state.count; ++o)
                         if (o != g && Up(o) && Bond(state, g, o) < 0 && Sees(state.guests[U(o)].cell) &&
                             fromNext[U(state.guests[U(o)].cell)] < fromHere[U(state.guests[U(o)].cell)])
@@ -410,16 +414,21 @@ namespace umbra::night
                 // 3. Goal work: its own, then a group member's.
                 if (const Action purpose = Purpose(); purpose.kind != ActionKind::EndTurn)
                     return purpose;
-                // 4. A chatty bot, or one fond of the player, asks the player a question first.
+                // 4. A very chatty bot talks with someone in the room before it moves.
+                if (style.chatty >= 6 && me.movesLeft == Stat(def, state, g, StatKind::Speed))
+                    for (const Action &a : legal)
+                        if (a.kind == ActionKind::Chat)
+                            return a;
+                // 5. A chatty bot, or one fond of the player, asks the player a question first.
                 if (state.player >= 0 && Has({ActionKind::OpenChat, I8(state.player)}) && (style.chatty >= 5 || Bond(state, g, state.player) > 0))
                     return {ActionKind::OpenChat, I8(state.player)};
-                // 5. Otherwise the best score; ties to the first.
+                // 6. Otherwise the best score; ties to the first.
                 Action best = legal.front();
                 int bestScore = INT_MIN;
                 for (const Action &a : legal)
                     if (const int s = Score(a); s > bestScore)
                         best = a, bestScore = s;
-                // 6. Nothing better to do here: talk with someone in the room.
+                // 7. Nothing better to do here: talk with someone in the room.
                 if (best.kind == ActionKind::EndTurn && style.chatty > 0)
                     for (const Action &a : legal)
                         if (a.kind == ActionKind::Chat)

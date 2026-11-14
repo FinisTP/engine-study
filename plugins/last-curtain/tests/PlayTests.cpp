@@ -249,7 +249,7 @@ TEST_CASE("Every chance shown matches the rules (T113)", "[night][play]")
     SECTION("chat answers")
     {
         Play play(def, FoyerNight(def, 4, 0));
-        for (int i = 0; i < 400 && !play.State().chat.active; ++i)
+        for (int i = 0; i < 400 && !(play.State().chat.active && play.PlayerTurn()); ++i)
             play.PlayerTurn() ? play.Key(InputKey::Enter) : play.Update(10.0F);
         REQUIRE(play.State().chat.active);
         REQUIRE(play.Screen() == "chat");

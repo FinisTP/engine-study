@@ -31,10 +31,18 @@ namespace umbra::night
         struct { int rounds = 3, minDamage = 1, base = 3, defenseDivisor = 2, guardDivisor = 2; } battle;
         struct { std::vector<int> xp; int hp = 4, stat = 1; } levels;
         struct { int fromRound = 3, chancePercent = 35, stayRounds = 3, max = 2; } monsters;
-        struct { int failHp = 1, earlyRooms = 35; } goals; // HP a failed guest keeps at midnight; goal rooms come out within this many
+        struct { int failHp = 1, earlyRooms = 35, roomGoalRooms = 65; } goals; // HP a failed guest keeps at midnight; keepsake / goal rooms come out within this many
         struct { int approvals = 3, bond = 3; } persuade; // approvals that make an ally; the bond's pull on a target
         struct { int downedReturnHp = 1, attackBondLoss = 300; } guests;
-        struct { int companyWinMin = 40, companyWinMax = 60; } balance;
+        struct
+        {
+            int companyWinMin = 40, companyWinMax = 60; // per Taken form, % of hunts
+            int takenMin = 5, takenMax = 30;            // per guest, % of nights it is the Taken
+            int allFinishedMax = 10;                    // % of nights with no hunt
+            int roomsMin = 45, roomsMax = 65;           // rooms open by midnight, a night on average
+            int botChatRoundsMin = 70;                  // % of evening rounds with a chat between bots
+            int goalMin = 45, goalMax = 65;             // per goal, % of the nights it is drawn
+        } balance;
     };
 
     struct GuestDef

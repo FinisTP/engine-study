@@ -1,8 +1,8 @@
 taken,id,name,hp,might,sanity,attack,resist,xp,debuff,hpShare,count
-nhi,crane,Paper crane,8,3,2,physical,none,1,none,25,3
-thanh,ember,Ember chorister,8,2,3,magical,none,1,shaken,25,3
-bao,orderly,Drowned orderly,9,3,2,physical,none,1,weakened,25,3
-khang,collector,Chain collector,9,3,2,physical,physical,1,none,25,3
-mai,root,Root of the house,9,2,3,magical,magical,1,none,25,3
-huy,shadow,Lagging shadow,8,2,3,magical,none,1,shaken,25,3
-lan,shard,Mirror shard,8,3,3,physical,none,1,none,25,3
+nhi,crane,Paper crane,4,3,2,physical,none,1,none,30,3
+thanh,ember,Ember chorister,4,2,3,magical,none,1,shaken,30,3
+bao,orderly,Drowned orderly,4,3,2,physical,none,1,weakened,30,3
+khang,collector,Chain collector,4,3,2,physical,physical,1,none,30,3
+mai,root,Root of the house,4,2,3,magical,magical,1,none,30,3
+huy,shadow,Lagging shadow,4,2,3,magical,none,1,shaken,30,3
+lan,shard,Mirror shard,4,3,3,physical,none,1,none,30,3

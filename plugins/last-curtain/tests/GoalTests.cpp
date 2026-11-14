@@ -144,7 +144,7 @@ TEST_CASE("A passed event roll counts; a trap does not (T117)", "[night][goal]")
 TEST_CASE("A keepsake waits in its room only when a drawn goal needs it (T117)", "[night][goal]")
 {
     NightDef def = Quiet();
-    const int costumes = NightDef::Find(def.rooms, "costumes"), crown = NightDef::Find(def.items, "crown");
+    const int crown = NightDef::Find(def.items, "crown"), costumes = def.items[U(crown)].room; // the crown's room
     def.rooms[U(costumes)].doors = 15;
     for (int needed = 0; needed < 2; ++needed)
     {

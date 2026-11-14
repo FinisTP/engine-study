@@ -51,18 +51,20 @@ namespace umbra::night
         for (int i = state.deckSize - 1; i > 0; --i)
             std::swap(state.deck[U(i)], state.deck[U(Below(state, i + 1))]);
 
-        // 2. The rooms tonight's goals need (goal rooms, keepsake rooms).
-        std::vector<int> needed;
+        // 2. The rooms tonight's goals need, each with the rooms it must come out within.
+        std::vector<std::pair<int, int>> needed;
         for (int g = 0; g < state.count; ++g)
             if (const int goal = state.guests[U(g)].goal; goal >= 0)
             {
                 const GoalDef &d = def.goals[U(goal)];
                 if (d.kind == GoalKind::Room)
-                    needed.push_back(d.target);
+                    needed.push_back({d.target, def.rules.goals.roomGoalRooms});
                 if (d.kind == GoalKind::Item)
-                    needed.push_back(def.items[U(d.target)].room);
+                    needed.push_back({def.items[U(d.target)].room, def.rules.goals.earlyRooms});
             }
-        const auto isNeeded = [&](int room) { return std::find(needed.begin(), needed.end(), room) != needed.end(); };
+        const auto isNeeded = [&](int room) {
+            return std::any_of(needed.begin(), needed.end(), [&](const auto &n) { return n.first == room; });
+        };
 
         // 3. The first deck entries that are not needed become the start rooms, at the front.
         int front = 0;
@@ -70,11 +72,10 @@ namespace umbra::night
             if (!isNeeded(state.deck[U(i)]))
                 std::rotate(state.deck.begin() + front, state.deck.begin() + i, state.deck.begin() + i + 1), ++front;
 
-        // 4. Each needed room's first entry moves to a random place soon after them, so it comes out
-        //    within goals.earlyRooms rooms (8 places spare: the foyer, the under-stage, skipped entries).
-        const int last = std::max(front + 1, std::min<int>(state.deckSize, def.rules.goals.earlyRooms - 8));
-        for (const int room : needed)
-            for (int i = front; i < state.deckSize; ++i)
+        // 4. Each needed room's first entry moves to a random place after them, so it comes out within
+        //    its window (8 places spare: the foyer, the under-stage, skipped entries).
+        for (const auto &[room, within] : needed)
+            for (int i = front, last = std::max(front + 1, std::min<int>(state.deckSize, within - 8)); i < state.deckSize; ++i)
                 if (state.deck[U(i)] == room)
                 {
                     const int to = front + Below(state, last - front);

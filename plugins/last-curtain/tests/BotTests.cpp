@@ -221,13 +221,16 @@ TEST_CASE("A bot never steps back the way it came in a turn (T121)", "[night][bo
             const int g = Current(state);
             const Action a = ChooseAction(def, state, g);
             const int before = state.guests[U(g)].cell;
+            const std::uint32_t logBefore = state.logCount;
             REQUIRE(Apply(def, state, a));
-            if (a.kind == ActionKind::Move && !state.battle.active)
+            if (a.kind == ActionKind::Move && state.logCount == logBefore) // a plain step (a room or trap may move the guest)
             {
                 INFO("seed " << seed << " guest " << g);
                 CHECK((state.guests[U(g)].cell != left[U(g)] || left[U(g)] == before));
                 left[U(g)] = before;
             }
+            else if (a.kind == ActionKind::Move)
+                left[U(g)] = state.guests[U(g)].from;
         }
     }
 }

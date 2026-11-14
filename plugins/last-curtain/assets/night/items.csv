@@ -13,8 +13,8 @@ armour,Stage armour,worn,armor,1,none,6,-1 physical damage taken while carried.,
 lantern,Lantern,worn,light,1,none,6,Your light reaches one step further.,none
 crucifix,Crucifix,relic,revive,0,none,1,Wakes a downed guest in your room. Used up.,none
 rosary,Rosary,relic,revive,0,none,1,Wakes a downed guest in your room. Used up.,none
-crown,Phoenix crown,keepsake,none,0,none,0,"A singer's crown of gilt phoenixes, made for the house's last great opening night.",costumes
-ledger,The patron's Ledger,keepsake,none,0,none,0,"A black ledger of what the house owes, and to whom.",office
-mask,Gilded mask,keepsake,none,0,none,0,The jewel of the patron's collection: a mask with tears of gold leaf.,maskcabinet
+crown,Phoenix crown,keepsake,none,0,none,0,"A singer's crown of gilt phoenixes, made for the house's last great opening night.",bar
+ledger,The patron's Ledger,keepsake,none,0,none,0,"A black ledger of what the house owes, and to whom.",stairwell
+mask,Gilded mask,keepsake,none,0,none,0,The jewel of the patron's collection: a mask with tears of gold leaf.,orchestraroom
 watch,A pocket watch,keepsake,none,0,none,0,"A father's watch, engraved with a daughter's name. It stopped at seven.",boxes
 keys,A ring of keys,keepsake,none,0,none,0,Forty years of doors on one iron ring.,corridor

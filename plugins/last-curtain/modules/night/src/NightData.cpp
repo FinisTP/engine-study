@@ -165,12 +165,21 @@ namespace umbra::night
             get("monsters", "max", r.monsters.max);
             get("goals", "failHp", r.goals.failHp);
             get("goals", "earlyRooms", r.goals.earlyRooms);
+            get("goals", "roomGoalRooms", r.goals.roomGoalRooms);
             get("persuade", "approvals", r.persuade.approvals);
             get("persuade", "bond", r.persuade.bond);
             get("guests", "downedReturnHp", r.guests.downedReturnHp);
             get("guests", "attackBondLoss", r.guests.attackBondLoss);
             get("balance", "companyWinMin", r.balance.companyWinMin);
             get("balance", "companyWinMax", r.balance.companyWinMax);
+            get("balance", "takenMin", r.balance.takenMin);
+            get("balance", "takenMax", r.balance.takenMax);
+            get("balance", "allFinishedMax", r.balance.allFinishedMax);
+            get("balance", "roomsMin", r.balance.roomsMin);
+            get("balance", "roomsMax", r.balance.roomsMax);
+            get("balance", "botChatRoundsMin", r.balance.botChatRoundsMin);
+            get("balance", "goalMin", r.balance.goalMin);
+            get("balance", "goalMax", r.balance.goalMax);
 
             // Limits the code relies on.
             auto check = [&](bool good, const char *field, const char *message) {
@@ -185,7 +194,9 @@ namespace umbra::night
             check(r.battle.rounds >= 1 && r.battle.minDamage >= 0, "battle", "rounds must be 1 or more, minDamage 0 or more");
             check(r.battle.defenseDivisor >= 1 && r.battle.guardDivisor >= 1, "battle", "divisors must be 1 or more");
             check(r.light.steps >= 0 && r.monsters.max >= 0 && r.monsters.max <= 8, "monsters.max", "must be 0 to 8");
-            check(r.goals.failHp >= 1 && r.goals.earlyRooms >= 8 && r.goals.earlyRooms <= r.board.rooms, "goals", "failHp 1 or more; earlyRooms 8 to board.rooms");
+            check(r.goals.failHp >= 1 && r.goals.earlyRooms >= 8 && r.goals.earlyRooms <= r.board.rooms && r.goals.roomGoalRooms >= 8 &&
+                      r.goals.roomGoalRooms <= r.board.rooms,
+                  "goals", "failHp 1 or more; earlyRooms and roomGoalRooms 8 to board.rooms");
             check(r.balance.companyWinMin <= r.balance.companyWinMax, "balance", "companyWinMin must not exceed companyWinMax");
             for (std::size_t i = 1; i < r.levels.xp.size(); ++i)
                 check(r.levels.xp[i] > r.levels.xp[i - 1], "levels.xp", "the steps must rise");

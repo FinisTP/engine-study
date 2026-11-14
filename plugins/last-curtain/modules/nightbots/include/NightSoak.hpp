@@ -21,9 +21,12 @@ namespace umbra::night
         int companyWins = 0, takenWins = 0, allFinished = 0; // allFinished: everyone did their goal, no hunt
         int playerWins = 0;                        // nights guest 0's side won
         long long rooms = 0, monsterKills = 0, minionKills = 0, levels = 0, downs = 0, deaths = 0;
-        std::array<int, maxGuests> marked{};
+        std::array<int, maxGuests> marked{};        // nights each guest was the Taken
+        std::vector<int> goalsDrawn, goalsDone;      // by goals.csv row
+        long long roomsByMidnight = 0;              // summed over the nights
+        int eveningRounds = 0, roundsWithBotChat = 0; // a chat answered between two bots
 
-        // No faults, and every form with at least 50 hunts inside the balance band.
+        // No faults, and every band of rules.json "balance" holds (forms and goals: 50 samples or more).
         bool Holds(const NightDef &def) const;
     };
 

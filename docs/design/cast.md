@@ -99,7 +99,7 @@ Stats: Might and Sanity run 1-8, Speed is tiles per turn, HP is plain points.
 - **Advantage weapon:** surgical kit (physical)
 - **Personality:** patient, dry humour, answers a question with a question
 - **+ Pronoun, voice:** he; measured, clinical, calls everyone by full name
-- **+ Stats:** HP 24, Might 4, Sanity 6, Speed 3
+- **+ Stats:** HP 24, Might 4, Sanity 6, Speed 4
 - **+ Play style:** Protector. Stays near the weakest ally, spends turns healing, fights only when cornered
 - **+ Bond:** protective of Nhi; distrusts Mai (the caretaker knows too much about the house)
 - **+ Curse:** Water
@@ -156,7 +156,7 @@ Stats: Might and Sanity run 1-8, Speed is tiles per turn, HP is plain points.
 - **Advantage weapon:** camera flash (magical)
 - **Personality:** eager, talks to an audience that is not there, brave until alone
 - **+ Pronoun, voice:** he; fast, narrates what he does, online slang
-- **+ Stats:** HP 20, Might 3, Sanity 4, Speed 6
+- **+ Stats:** HP 20, Might 3, Sanity 4, Speed 5
 - **+ Play style:** Explorer. Always takes the unopened path, picks up everything, flees fights when alone
 - **+ Bond:** admires Thanh (he has her recordings); follows Khang around
 - **+ Curse:** Shadow
@@ -189,11 +189,15 @@ Stats: Might and Sanity run 1-8, Speed is tiles per turn, HP is plain points.
 |---|---|
 | Truong Uyen Nhi | reach the Patron's box (her father's seat) · carry her father's pocket watch · have Phan Thi Mai as an ally |
 | Le Thanh | carry the Phoenix crown · reach the Auditorium · pass 2 event rolls |
-| Dinh Quoc Bao | have Truong Uyen Nhi as an ally · reach the Green room (the old infirmary) · destroy 2 monsters |
-| Vo Minh Khang | carry the patron's Ledger · destroy 3 monsters · reach the Shuttered office |
+| Dinh Quoc Bao | have Truong Uyen Nhi as an ally · reach the Green room (the old infirmary) · destroy 1 monster |
+| Vo Minh Khang | carry the patron's Ledger · destroy 2 monsters · reach the Shuttered office |
 | Phan Thi Mai | reach the Chapel of the stage ancestors · have Le Thanh as an ally · carry the ring of keys she lost |
-| Hoang Gia Huy | pass 3 event rolls · reach the Fly loft · destroy 2 monsters |
+| Hoang Gia Huy | pass 2 event rolls · reach the Fly loft · destroy 1 monster |
 | Tran Ngoc Lan | carry the Gilded mask · carry the Phoenix crown · have Vo Minh Khang as an ally |
+
+Keepsakes lie where the soak put them (plan 2b): the Phoenix crown in the Interval bar, the Ledger
+on the Service stairwell, the Gilded mask in the Orchestra room, the pocket watch in the Box seats,
+the ring of keys in the Back corridor [call]. Khang distrusts Lan (as she distrusts him).
 
 ## How the cast fits together (proposal)
 

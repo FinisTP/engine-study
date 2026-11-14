@@ -7,16 +7,16 @@ thanh,thanh-stage,room,auditorium,1,Stand in the Auditorium before midnight.
 thanh,thanh-events,events,none,2,Pass two of the house's tests.
 bao,bao-nhi,ally,nhi,1,Have Truong Uyen Nhi at his side at midnight.
 bao,bao-green,room,green,1,"Reach the Green room, the old infirmary."
-bao,bao-monsters,monsters,none,2,Destroy two of the house's creatures.
+bao,bao-monsters,monsters,none,1,Destroy one of the house's creatures.
 khang,khang-ledger,item,ledger,1,Carry the patron's Ledger at midnight.
-khang,khang-monsters,monsters,none,3,Destroy three of the house's creatures.
+khang,khang-monsters,monsters,none,2,Destroy two of the house's creatures.
 khang,khang-office,room,office,1,Reach the Shuttered office.
 mai,mai-chapel,room,chapel,1,Light the incense in the Chapel of the stage ancestors.
 mai,mai-thanh,ally,thanh,1,Have Le Thanh at her side at midnight.
 mai,mai-keys,item,keys,1,Carry her lost ring of keys at midnight.
-huy,huy-events,events,none,3,Pass three of the house's tests on camera.
+huy,huy-events,events,none,2,Pass two of the house's tests on camera.
 huy,huy-fly,room,fly,1,Film the Fly loft.
-huy,huy-monsters,monsters,none,2,Destroy two of the house's creatures on camera.
+huy,huy-monsters,monsters,none,1,Destroy one of the house's creatures on camera.
 lan,lan-mask,item,mask,1,Carry the Gilded mask at midnight.
 lan,lan-crown,item,crown,1,Carry the Phoenix crown at midnight.
 lan,lan-khang,ally,khang,1,Have Vo Minh Khang at her side at midnight.

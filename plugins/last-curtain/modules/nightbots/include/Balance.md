@@ -55,6 +55,11 @@ minions alone (must lose clearly more often).
 | minion kills, and the gap to strategy 1 | `minions.csv` (HP, stats, `hpShare`, `count`), `styles.csv` `huntHpPercent` |
 | downs, deaths | `events.csv` fail amounts, `monsters.csv`, the Taken forms and minions |
 | guest 0's side won | everything above |
+| the Taken in % of nights | the goals: whoever fails is drawn, so harder goals for a guest make it the Taken more often |
+| all finished (no hunt) | every goal's difficulty together |
+| rooms open by midnight (the foyer and start rooms count) | `styles.csv` `explore`, guests' `speed`; chats and goal walks lower it |
+| evening rounds with a chat between bots | `styles.csv` `chatty` (6 or more: a chat before moving; any above 0: walks toward lit guests and talks instead of waiting) |
+| goals finished, per goal | room goals: `goals.roomGoalRooms`; keepsakes: the item's `room` in `items.csv` (plain rooms are harder than rooms that stop movement), `goals.earlyRooms`; events / monsters: the goal's `count`, event rooms' `count` in `rooms.csv`, `monsters` in `rules.json`; ally goals: `questions.csv` targets and `bonds.csv` of the asker |
 
 ## Tuning order
 
@@ -66,3 +71,25 @@ minions alone (must lose clearly more often).
 
 Check on more than one seed range (`--seed 1`, `--seed 20001`, `--seed 50001`): a form's share
 moves about 3 points either way between ranges of 2,000 nights.
+
+Goals of guest 0 are reported but not banded: in the soak it is the player's seat, which bots
+treat as the player (they ask it questions first).
+
+## Tuning record
+
+**Plan 2b (2026-11-15), goals and the 70-room board.** Start: the hunt 4-18% for the company,
+room goals 95%, monster goals 5-8%, 42 rooms by midnight, 58% of rounds with a bot chat.
+1. Goal rooms dealt within 65 rooms (`roomGoalRooms`, user), keepsake rooms still within 35.
+2. Monsters: `chancePercent` 50 → 80, `max` 2 → 3, `stayRounds` 3 → 5; stagehand and
+   understudy HP 10 → 8. Monster goals: bao and huy 1, khang 2. huy-events 3 → 2.
+3. Six more event rooms in the deck for six fewer plain ones (85 entries kept); six new events
+   [call]. The fly loft has two doors.
+4. Styles: `explore` +2 each, `greed` added, schemer `chatty` 8, protector 7.
+5. Keepsakes: mask → Orchestra room, ledger → Service stairwell, crown → Interval bar [call].
+6. Speeds: bao 3 → 4, huy 6 → 5 (lan back at 4). khang distrusts lan (`bonds.csv`); khang's
+   physical questions one step harder.
+7. Minions HP halved, `hpShare` 25 → 30, so going for them pays again (strategy 1 wins fewer);
+   then every `takenHp` by the measured share: nhi 27, thanh 18, bao 28, khang 44, mai 26,
+   huy 51, lan 24.
+Result on seeds 1, 20001 and 80001 (2,000 nights each): the data holds; the hunt 50-52%,
+every form 49-58%, rooms 46.2-46.4 (close to the floor), bot chats 77-78%, goals 50-62%.

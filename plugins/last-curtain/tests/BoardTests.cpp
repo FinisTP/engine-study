@@ -201,15 +201,16 @@ TEST_CASE("Every event and trap room has an event to draw (T116)", "[night][boar
 namespace
 {
     // The rooms the night's drawn goals need: goal rooms and keepsake rooms.
-    std::vector<int> NeededRooms(const NightDef &def, const NightState &state)
+    // Goal rooms (when `rooms`) and keepsake rooms (when `keepsakes`) of tonight's goals.
+    std::vector<int> NeededRooms(const NightDef &def, const NightState &state, bool rooms_ = true, bool keepsakes = true)
     {
         std::vector<int> rooms;
         for (int g = 0; g < state.count; ++g)
         {
             const GoalDef &goal = def.goals[static_cast<std::size_t>(state.guests[static_cast<std::size_t>(g)].goal)];
-            if (goal.kind == GoalKind::Room)
+            if (goal.kind == GoalKind::Room && rooms_)
                 rooms.push_back(goal.target);
-            if (goal.kind == GoalKind::Item)
+            if (goal.kind == GoalKind::Item && keepsakes)
                 rooms.push_back(def.items[static_cast<std::size_t>(goal.target)].room);
         }
         return rooms;
@@ -253,15 +254,17 @@ TEST_CASE("No start room is a goal or keepsake room, nor the under-stage (T118)"
     }
 }
 
-TEST_CASE("Goal and keepsake rooms come out within the first earlyRooms rooms (T118)", "[night][board]")
+TEST_CASE("Keepsake rooms come out within earlyRooms rooms, goal rooms within roomGoalRooms (T118)", "[night][board]")
 {
     const NightDef def = Data();
+    REQUIRE(def.rules.goals.roomGoalRooms > def.rules.goals.earlyRooms);
     for (std::uint64_t seed = 1; seed <= 500; ++seed)
+    for (const bool goalRooms : {false, true})
     {
-        INFO("seed " << seed);
+        INFO("seed " << seed << (goalRooms ? " goal rooms" : " keepsake rooms"));
         NightState state = NewNight(def, seed);
         std::uint64_t pick = seed;
-        while (state.placed < def.rules.goals.earlyRooms)
+        while (state.placed < (goalRooms ? def.rules.goals.roomGoalRooms : def.rules.goals.earlyRooms))
         {
             std::vector<std::pair<int, int>> doorways;
             for (int cell = 0; cell < maxCells; ++cell)
@@ -273,7 +276,7 @@ TEST_CASE("Goal and keepsake rooms come out within the first earlyRooms rooms (T
             const auto [cell, dir] = doorways[(pick >> 33) % doorways.size()];
             Open(def, state, cell, dir);
         }
-        for (const int room : NeededRooms(def, state))
+        for (const int room : NeededRooms(def, state, goalRooms, !goalRooms))
         {
             bool placed = false;
             for (const Cell &c : state.cells)
@@ -297,4 +300,23 @@ TEST_CASE("A start room gives nothing on first entry (T118)", "[night][board]")
             CHECK(std::all_of(guest.items.begin(), guest.items.end(), [](std::int8_t i) { return i < 0; }));
         }
     }
+}
+
+TEST_CASE("Goal rooms may come out after the keepsake rooms' window (T118)", "[night][board]")
+{
+    const NightDef def = Data();
+    int late = 0;
+    for (std::uint64_t seed = 1; seed <= 200; ++seed)
+    {
+        NightState state = NewNight(def, seed);
+        // The deck's order from the first room after the start rooms: where each goal room lies.
+        for (const int room : NeededRooms(def, state, true, false))
+            for (int i = state.deckNext; i < state.deckSize; ++i)
+                if (state.deck[static_cast<std::size_t>(i)] == room)
+                {
+                    late += i + state.count + 2 > def.rules.goals.earlyRooms ? 1 : 0;
+                    break;
+                }
+    }
+    CHECK(late > 50);
 }
