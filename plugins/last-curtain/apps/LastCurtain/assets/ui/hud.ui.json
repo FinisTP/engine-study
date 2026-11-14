@@ -11,6 +11,11 @@
       { "type": "text", "style": "good", "text": "{me.buffs}", "visible": "{me.buffs}" }
     ] },
     { "type": "stack", "anchor": "top-left", "offset": [24, 76], "style": "panel", "gap": 6, "size": [260, 0], "children": [
+      { "type": "text", "style": "heading", "text": "Your goal", "visible": "{goal}" },
+      { "type": "text", "style": "small", "text": "{goal.text}", "wrap": true, "size": [230, 0], "visible": "{goal}" },
+      { "type": "text", "style": "good", "text": "Done", "visible": "{goal.done}" },
+      { "type": "text", "style": "heading", "text": "Goals you know", "visible": "{knownGoals}" },
+      { "type": "list", "items": "{knownGoals}", "as": "k", "entry": { "type": "text", "style": "small", "text": "{k.name}: {k.text}", "wrap": true, "size": [230, 0] } },
       { "type": "text", "style": "heading", "text": "Allies" },
       { "type": "text", "style": "muted", "text": "None yet", "visible": "{noAllies}" },
       { "type": "list", "items": "{allies}", "as": "a", "entry": { "type": "text", "style": "small", "text": "{a.name}  HP {a.hp}/{a.maxHp}" } },

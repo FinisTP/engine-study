@@ -15,6 +15,10 @@ namespace umbra::night
     {
         std::size_t U(int i) { return static_cast<std::size_t>(i); }
 
+        // Goals of the player's seat (guest 0), or that need it as an ally, hang on the player's
+        // choices: reported, not banded.
+        bool Seat(const GoalDef &goal) { return goal.guest == 0 || (goal.kind == GoalKind::Ally && goal.target == 0); }
+
         // The chooser under a test strategy: 1 the company leaves minions alone.
         Action Strategy(const NightDef &def, const NightState &state, int g, int strategy)
         {
@@ -34,8 +38,8 @@ namespace umbra::night
         for (std::size_t g = 0; g < def.guests.size(); ++g)
             if (!in(marked[g], nights, b.takenMin, b.takenMax))
                 return false;
-        for (std::size_t i = 0; i < goalsDrawn.size(); ++i) // the player's seat (guest 0) is not a bot's: not banded
-            if (def.goals[i].guest != 0 && goalsDrawn[i] >= 50 && !in(goalsDone[i], goalsDrawn[i], b.goalMin, b.goalMax))
+        for (std::size_t i = 0; i < goalsDrawn.size(); ++i)
+            if (!Seat(def.goals[i]) && goalsDrawn[i] >= 50 && !in(goalsDone[i], goalsDrawn[i], b.goalMin, b.goalMax))
                 return false;
         return in(roomsByMidnight, nights - faults, b.roomsMin * 100, b.roomsMax * 100) &&
                roundsWithBotChat * 100 >= b.botChatRoundsMin * eveningRounds;
@@ -138,7 +142,7 @@ namespace umbra::night
             << "goals finished (band " << def.rules.balance.goalMin << "-" << def.rules.balance.goalMax << "%):\n";
         for (std::size_t i = 0; i < r.goalsDrawn.size(); ++i)
             out << "  " << def.goals[i].id << ": " << share(r.goalsDone[i], r.goalsDrawn[i]) << "% of " << r.goalsDrawn[i]
-                << (def.goals[i].guest == 0 ? " (the player's seat, not banded)\n" : "\n");
+                << (Seat(def.goals[i]) ? " (the player's seat, not banded)\n" : "\n");
         return out.str();
     }
 

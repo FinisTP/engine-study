@@ -316,6 +316,16 @@ nlohmann::json Play::UiData() const
                   {"might", Stat(def_, state_, me, StatKind::Might)}, {"sanity", Stat(def_, state_, me, StatKind::Sanity)},
                   {"speed", Stat(def_, state_, me, StatKind::Speed)}, {"level", guest.level}, {"buffs", buffs}};
     data["moves"] = guest.movesLeft;
+    // The player's own goal, and the goals it has learnt in chats.
+    data["knownGoals"] = nlohmann::json::array();
+    if (state_.player >= 0 && state_.guests[U(state_.player)].goal >= 0)
+    {
+        const Guest &mine = state_.guests[U(state_.player)];
+        data["goal"] = {{"text", def_.goals[U(mine.goal)].text}, {"done", GoalDone(def_, state_, state_.player)}};
+        for (int g = 0; g < state_.count; ++g)
+            if (g != state_.player && ((mine.knows >> g) & 1u) && state_.guests[U(g)].goal >= 0)
+                data["knownGoals"].push_back({{"name", def_.guests[U(g)].name}, {"text", def_.goals[U(state_.guests[U(g)].goal)].text}});
+    }
     data["turnTitle"] = me == state_.player ? std::string{"Your turn"} : def_.guests[U(me)].name + "'s turn";
 
     // 2. What the turn allows besides walking; the bag before End turn, End turn last.

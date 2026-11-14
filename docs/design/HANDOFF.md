@@ -1,4 +1,4 @@
-# The Last Curtain: where things stand (2026-11-14, after plan 2)
+# The Last Curtain: where things stand (2026-11-15, after plan 2b)
 
 For whoever continues this work, in any session. Read this first.
 
@@ -24,6 +24,17 @@ For whoever continues this work, in any session. Read this first.
   the player's turn, paced bot turns with captions, chat, event, dice, omen, battle, Turn and end
   screens, start screen, saves and Continue. Linux GCC/Clang/ASan 55/55 and SwiftShader pictures.
   Record and the Windows play checklist: `../testing/s26-board-on-screen.md`.
+- **Plan 2b (goals and a bigger board): implemented 2026-11-15**, `#UMBRA-137` to `#UMBRA-145`
+  (design `2026-11-14-goals-and-bigger-board.md`, plan `plans/2026-11-14-goals-plan-2b.md`). Omens
+  are gone; each guest draws one of its goals (`assets/night/goals.csv`); at midnight the Taken is
+  drawn from those who failed and the other failed drop to 1 HP; all done means the company wins with
+  no hunt. A 9×9 board of 70 rooms with seven start rooms; a free step back without pacing; chats and
+  groups between any guests; bots that work toward goals. The soak checks every band
+  (`rules.json` "balance") and holds; the tuning steps are in `Balance.md`. Record and the Windows
+  checklist: `../testing/s27-goals-and-board.md`.
+- **Next: plan 2c, the screen** (the same design): a turn menu, walking clicks one step at a time,
+  a Stay/Back confirm for new rooms, right-click to inspect, input by state, sliding pawns, a
+  following camera with drag and Focus, numbered group rings, walls wherever a guest cannot pass.
 
 ## Decided by the user (2026-11-14)
 
@@ -31,11 +42,18 @@ For whoever continues this work, in any session. Read this first.
 2. The night has its own small data-driven battle rules (plan 2 drew its own battle screen).
 3. The plan ran in one session, task by task.
 
+## Decided by the user (2026-11-15)
+
+- Room goals were too easy (95%): goal rooms are now dealt within the first 65 rooms; keepsake rooms
+  stay within 35.
+
 ## Waiting on the user
 
 1. MSVC warnings in `plugins/last-curtain` (not yet reported).
 2. The Windows check and a first play of plan 2 (`../testing/s26-board-on-screen.md` §4), and
    whether chatty bots asking in round 1 feels like too much (§3).
+3. The Windows check of plan 2b (`../testing/s27-goals-and-board.md` §4) and the fill-ins marked
+   [call] there (six new events, the keepsakes' rooms, speeds, Khang distrusting Lan).
 
 Plan 1 is accepted by the user (2026-11-14): MSVC tests and `night-soak` match Linux.
 
@@ -55,7 +73,7 @@ The user lets Claude edit and commit in the checkout directly (2026-11-14).
 - Build the whole night as a simulation first and balance it there; the seven Taken powers must
   come out balanced against each other.
 - The Saigon Opera House keeps its real name and history; only guests and events are invented.
-- Use our own terms (guests, the Taken, the company, the Turn, omen, marked); no text, names,
+- Use our own terms (guests, the Taken, the company, the Turn, goals, marked); no text, names,
   scenarios or art from the board game *Betrayal at House on the Hill*.
 - Ask the user for any decision that is theirs; mark fill-ins as `[call]`.
 

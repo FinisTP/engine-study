@@ -64,7 +64,9 @@ namespace umbra::night
             //    and the other is not yet won over.
             if (me.chatRound == state.round)
                 continue;
-            if (other.group != GroupOf(state, g) && GroupSize(state, GroupOf(state, g)) < 3 &&
+            //    The player is never the asker (bots ask the player through OpenChat), and the
+            //    player's allies are not won away.
+            if (o != player && other.group != 0 && other.group != GroupOf(state, g) && GroupSize(state, GroupOf(state, g)) < 3 &&
                 state.approvals[U(o * maxGuests + g)] < def.rules.persuade.approvals)
                 legal.push_back({ActionKind::Chat, I8(o)});
             // 3. A bot may ask the player a question, before it moves.

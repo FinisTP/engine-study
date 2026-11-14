@@ -90,7 +90,7 @@ Guests never fight each other before midnight; afterwards only the Taken. Allies
 in the room fight on the player's side.
 
 Talking (before midnight, once a round each): any guest may `Chat` with a guest in the room
-who is not in its group (it uses the turn). The other guest asks it one of its five questions
+who is not in its group, is not the player and is not one of the player's allies (it uses the turn). The other guest asks it one of its five questions
 (`questions.csv`, not one asked before while any remain); a bot may also ask the player at the
 start of its turn (`OpenChat`; it does not use the player's turn). The answerer (`Current`) picks
 `Answer` 0 (d20 + Might) or 1 (d20 + Sanity) against that answer's target, `persuade.bond` easier

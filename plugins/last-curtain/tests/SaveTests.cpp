@@ -63,7 +63,7 @@ TEST_CASE("Same data and seed, same night (T103)", "[night][save]")
     CHECK(Fingerprint(a) == Fingerprint(b));
     CHECK(Fingerprint(a) != Fingerprint(NewNight(def, 1)));
     // Golden: update when the data or the rules change (Night.md "Fingerprint").
-    CHECK(Fingerprint(a) == 0x4e34cfb0c7dee5d1ULL);
+    CHECK(Fingerprint(a) == 0x18ad7ca8acb98ac2ULL);
 }
 
 TEST_CASE("A save at any point continues to the same end (T103)", "[night][save]")
@@ -154,4 +154,63 @@ TEST_CASE("A damaged save or one from other data is refused (T103)", "[night][sa
     REQUIRE(LoadNight(folder, other, diagnostics));
     CHECK(other.fingerprint != def.fingerprint);
     refused(other, good);
+}
+
+TEST_CASE("A mid-evening save round-trips goals, groups, approvals and undo (T122)", "[night][save]")
+{
+    const NightDef def = Data();
+    NightState state = NewNight(def, 7, 0);
+    Chooser chooser{7};
+    while (state.round < 4 && Current(state) >= 0)
+        Drive(def, state, chooser, 1);
+    REQUIRE_FALSE(state.taken.present);
+    // Set every new field to something other than its default.
+    Guest &g = state.guests[2];
+    g.goalCount = 1, g.goalRoomSeen = true, g.knows = 0b101, g.undo = state.foyer, g.group = 3;
+    g.barred.set(5), g.bonusUsed.set(70);
+    state.guests[3].group = 3;
+    state.approvals[3 * maxGuests + 2] = 2;
+    state.chat = {true, 3, 2, 0};
+    const NightState loaded = RoundTrip(def, state);
+    CHECK(Fingerprint(loaded) == Fingerprint(state));
+    const Guest &l = loaded.guests[2];
+    CHECK(l.goal == g.goal);
+    CHECK(l.goalCount == 1);
+    CHECK(l.goalRoomSeen);
+    CHECK(l.knows == 0b101);
+    CHECK(l.undo == state.foyer);
+    CHECK(l.barred.test(5));
+    CHECK(l.bonusUsed.test(70));
+    CHECK(loaded.guests[3].group == 3);
+    CHECK(loaded.approvals[3 * maxGuests + 2] == 2);
+    CHECK((loaded.chat.asker == 3 && loaded.chat.answerer == 2));
+
+    // Out-of-range values in the new fields are refused.
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    NightState out;
+    for (const char *field : {"answerer", "undo", "approvals"})
+    {
+        nlohmann::json bad = SaveNight(def, state);
+        if (std::string(field) == "answerer")
+            bad["state"]["chat"]["answerer"] = 9;
+        else if (std::string(field) == "undo")
+            bad["state"]["guests"][2]["undo"] = 120;
+        else
+            bad["state"]["approvals"][0] = 9;
+        INFO(field);
+        CHECK_FALSE(LoadNightState(def, bad, out, diagnostics));
+    }
+}
+
+TEST_CASE("A version-1 save is refused (T122)", "[night][save]")
+{
+    const NightDef def = Data();
+    nlohmann::json saved = SaveNight(def, FoyerNight(def, 3));
+    CHECK(saved["version"] == 2);
+    saved["version"] = 1;
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    NightState out;
+    CHECK_FALSE(LoadNightState(def, saved, out, diagnostics));
+    REQUIRE_FALSE(diagnostics.empty());
+    CHECK(diagnostics.front().message.find("version 2") != std::string::npos);
 }

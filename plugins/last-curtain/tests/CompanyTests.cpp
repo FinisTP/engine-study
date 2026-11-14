@@ -273,3 +273,26 @@ TEST_CASE("Groups hold at most three (T120)", "[night][company]")
     for (const Action &a : LegalActions(def, state))
         CHECK(a.kind != ActionKind::Chat);
 }
+
+TEST_CASE("A bot never recruits the player through Chat (final review)", "[night][company]")
+{
+    const NightDef def = EasyTalk();
+    NightState state = FoyerNight(def, 6, 0);
+    const int g = state.order[1] == 0 ? state.order[2] : state.order[1];
+    ToTurnOf(def, state, g);
+    const auto legal = LegalActions(def, state);
+    CHECK(std::none_of(legal.begin(), legal.end(), [](const Action &a) { return a.kind == ActionKind::Chat && a.a == 0; }));
+    CHECK(std::find(legal.begin(), legal.end(), Action{ActionKind::OpenChat, 0}) != legal.end()); // it asks the player instead
+}
+
+TEST_CASE("The player's allies cannot be won away (final review)", "[night][company]")
+{
+    const NightDef def = EasyTalk();
+    NightState state = FoyerNight(def, 6, 0);
+    const int g = state.order[1] == 0 ? state.order[2] : state.order[1];
+    const int ally = g == 1 ? 2 : 1;
+    state.guests[0].group = state.guests[U(ally)].group = 0;
+    ToTurnOf(def, state, g);
+    const auto legal = LegalActions(def, state);
+    CHECK(std::find(legal.begin(), legal.end(), Action{ActionKind::Chat, static_cast<std::int8_t>(ally)}) == legal.end());
+}

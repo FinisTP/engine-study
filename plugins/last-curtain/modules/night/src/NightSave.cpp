@@ -68,7 +68,8 @@ namespace umbra::night
             {
                 const Guest &guest = s.guests[inner::U(g)];
                 if (!in(guest.cell, 0, maxCells) || !s.cells[inner::U(guest.cell)].opened || !in(s.order[inner::U(g)], 0, s.count) ||
-                    !in(guest.downedBy, -1, s.count) || !in(guest.goal, -1, static_cast<int>(def.goals.size())))
+                    !in(guest.downedBy, -1, s.count) || !in(guest.goal, -1, static_cast<int>(def.goals.size())) || !in(guest.undo, -1, maxCells) ||
+                    !in(guest.group, -1, s.count + 1) || guest.goalCount < 0)
                     return "guest " + std::to_string(g) + " is out of range (cell " + std::to_string(guest.cell) + ", downedBy " +
                            std::to_string(guest.downedBy) + ")";
                 for (std::int8_t i : guest.items)
@@ -95,6 +96,12 @@ namespace umbra::night
             }
             if (s.taken.present && !in(s.taken.guest, 0, s.count))
                 return "the Taken is out of range";
+            const ChatState &c = s.chat;
+            if (c.active && (!in(c.asker, 0, s.count) || !in(c.answerer, 0, s.count) || !in(c.question, 0, static_cast<int>(def.questions.size()))))
+                return "the chat is out of range";
+            for (std::int8_t a : s.approvals)
+                if (!in(a, 0, def.rules.persuade.approvals + 1))
+                    return "an approval count is out of range";
             return {};
         }
     }
@@ -103,7 +110,7 @@ namespace umbra::night
 
     nlohmann::json SaveNight(const NightDef &def, const NightState &state)
     {
-        return {{"format", "umbra.night"}, {"version", 1}, {"data", def.fingerprint}, {"state", state}};
+        return {{"format", "umbra.night"}, {"version", 2}, {"data", def.fingerprint}, {"state", state}};
     }
 
     bool LoadNightState(const NightDef &def, const nlohmann::json &saved, NightState &out, std::vector<core::Diagnostic> &diagnostics)
@@ -112,8 +119,8 @@ namespace umbra::night
             diagnostics.push_back({core::Severity::Error, "night.save", "", "", message});
             return false;
         };
-        if (!saved.is_object() || saved.value("format", "") != "umbra.night" || saved.value("version", 0) != 1)
-            return fail("not a night save of version 1");
+        if (!saved.is_object() || saved.value("format", "") != "umbra.night" || saved.value("version", 0) != 2)
+            return fail("not a night save of version 2");
         if (saved.value("data", std::uint64_t{0}) != def.fingerprint)
             return fail("the save was made with other data; start a new night");
         NightState state;

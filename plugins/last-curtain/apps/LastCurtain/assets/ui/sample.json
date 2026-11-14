@@ -14,6 +14,16 @@
     "buffs": ""
   },
   "moves": 4,
+  "goal": {
+    "text": "Find her father's seat in the Patron's box.",
+    "done": false
+  },
+  "knownGoals": [
+    {
+      "name": "Dinh Quoc Bao",
+      "text": "Reach the Green room, the old infirmary."
+    }
+  ],
   "turnTitle": "Your turn",
   "actions": [
     {

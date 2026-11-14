@@ -72,8 +72,8 @@ minions alone (must lose clearly more often).
 Check on more than one seed range (`--seed 1`, `--seed 20001`, `--seed 50001`): a form's share
 moves about 3 points either way between ranges of 2,000 nights.
 
-Goals of guest 0 are reported but not banded: in the soak it is the player's seat, which bots
-treat as the player (they ask it questions first).
+Goals of guest 0, and ally goals that name guest 0, are reported but not banded: in the soak it
+is the player's seat, which bots treat as the player (they ask it questions first).
 
 ## Tuning record
 
@@ -91,5 +91,8 @@ room goals 95%, monster goals 5-8%, 42 rooms by midnight, 58% of rounds with a b
 7. Minions HP halved, `hpShare` 25 → 30, so going for them pays again (strategy 1 wins fewer);
    then every `takenHp` by the measured share: nhi 27, thanh 18, bao 28, khang 44, mai 26,
    huy 51, lan 24.
-Result on seeds 1, 20001 and 80001 (2,000 nights each): the data holds; the hunt 50-52%,
-every form 49-58%, rooms 46.2-46.4 (close to the floor), bot chats 77-78%, goals 50-62%.
+8. Final review: bots no longer `Chat` with the player (that made the player join a bot's group)
+   and the player's allies cannot be won away. Bao's goal "Nhi at his side" fell to ~7% (the
+   player's group fills first) and left the band with Nhi's own goals. `takenHp` mai 23, thanh 19.
+Result on seeds 1, 20001 and 80001 (2,000 nights each): the data holds; the hunt 48-51%,
+every form 44-56%, rooms 47.2-47.3, bot chats 78-79%, banded goals 49-62%.

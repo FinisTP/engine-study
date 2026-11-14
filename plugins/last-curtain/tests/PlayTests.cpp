@@ -572,3 +572,18 @@ TEST_CASE("A push-back event names the room it happened in (final review)", "[ni
     CHECK(play.State().guests[0].cell == play.State().foyer); // pushed back
     CHECK(play.UiData()["event"]["room"] == def.rooms[static_cast<std::size_t>(play.State().cells[static_cast<std::size_t>(step)].room)].name);
 }
+
+TEST_CASE("The HUD data carries the player's goal (T122)", "[night][play]")
+{
+    const NightDef def = Data();
+    NightState state = FoyerNight(def, 4, 0);
+    state.guests[0].knows = static_cast<std::uint8_t>(1u << 2); // the player has learnt guest 2's goal
+    Play play(def, state);
+    const nlohmann::json data = play.UiData();
+    REQUIRE(data.contains("goal"));
+    CHECK(data["goal"]["text"] == def.goals[static_cast<std::size_t>(state.guests[0].goal)].text);
+    CHECK(data["goal"]["done"] == false);
+    REQUIRE(data["knownGoals"].size() == 1);
+    CHECK(data["knownGoals"][0]["name"] == def.guests[2].name);
+    CHECK(data["knownGoals"][0]["text"] == def.goals[static_cast<std::size_t>(state.guests[2].goal)].text);
+}
