@@ -36,6 +36,8 @@ namespace umbra::night
                     state.marked = I8(g);
         }
         // 2. The marked guest leaves every group and rises as the Taken in the under-stage, at full HP.
+        if (state.understage < 0)
+            ForceUnderStage(def, state);
         const int t = state.marked;
         Guest &taken = state.guests[U(t)];
         state.taken = {true, I8(t), 0, false};

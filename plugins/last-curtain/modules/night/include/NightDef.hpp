@@ -130,6 +130,7 @@ namespace umbra::night
         std::vector<MonsterDef> monsters;
         std::vector<OmenDef> omens;
         std::vector<StyleDef> styles;
+        std::uint64_t fingerprint = 0; // a hash of every data file, so saves match their data
 
         // The index of the row with this id, or -1.
         template <class T> static int Find(const std::vector<T> &rows, std::string_view id)

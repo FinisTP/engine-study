@@ -91,7 +91,27 @@ namespace umbra::night
                Has(state.cells[U(from)].doors, direction) && !state.cells[U(to)].opened;
     }
 
-    int Open(const NightDef &def, NightState &state, int from, int direction)
+    int Open(const NightDef &def, NightState &state, int from, int direction) { return OpenRoom(def, state, from, direction, false); }
+
+    void inner::ForceUnderStage(const NightDef &def, NightState &state)
+    {
+        // Through the doorway whose room lies farthest from the foyer.
+        const int w = def.rules.board.width;
+        int best = -1, bestFrom = -1, bestDir = -1;
+        for (int c = 0; c < maxCells; ++c)
+            for (int d = 0; d < 4; ++d)
+                if (Doorway(def, state, c, d))
+                {
+                    const int t = Neighbour(def, c, d);
+                    const int distance = std::abs(t % w - state.foyer % w) + std::abs(t / w - state.foyer / w);
+                    if (distance > best)
+                        best = distance, bestFrom = c, bestDir = d;
+                }
+        if (bestFrom >= 0)
+            OpenRoom(def, state, bestFrom, bestDir, true);
+    }
+
+    int inner::OpenRoom(const NightDef &def, NightState &state, int from, int direction, bool forceUnderStage)
     {
         if (!Doorway(def, state, from, direction))
             return -1;
@@ -102,7 +122,7 @@ namespace umbra::night
         //    can bring it nearer), or as the last room.
         const int w = def.rules.board.width;
         const int gridDistance = std::abs(target % w - state.foyer % w) + std::abs(target / w - state.foyer / w);
-        if (state.understage < 0 && (last || gridDistance >= 3))
+        if (state.understage < 0 && (last || gridDistance >= 3 || forceUnderStage))
         {
             const int room = static_cast<int>(std::find_if(def.rooms.begin(), def.rooms.end(),
                                                            [](const RoomDef &r) { return r.kind == RoomKind::UnderStage; }) - def.rooms.begin());

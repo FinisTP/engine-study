@@ -443,3 +443,17 @@ TEST_CASE("Changing a power's numbers in the data changes the game, not the code
     REQUIRE(Apply(h.def, h.state, {ActionKind::Power}));
     CHECK(h.state.guests[0].hp == hp - 9);
 }
+
+TEST_CASE("The under-stage is on the board at the Turn even if nobody found it (T101)", "[night][hunt]")
+{
+    const NightDef def = Quiet();
+    for (std::uint64_t seed = 1; seed <= 30; ++seed)
+    {
+        NightState state = NewNight(def, seed); // nobody opens a room all evening
+        state.marked = 1;
+        PassToMidnight(def, state);
+        REQUIRE(state.understage >= 0);
+        CHECK(state.guests[1].cell == state.understage);
+        CHECK(Steps(def, state, state.foyer, state.understage) >= 1);
+    }
+}

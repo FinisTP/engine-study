@@ -30,6 +30,8 @@ namespace umbra::night::inner
     }
 
     void BuildBoard(const NightDef &def, NightState &state); // Board.cpp: deck and foyer
+    int OpenRoom(const NightDef &def, NightState &state, int from, int direction, bool forceUnderStage);
+    void ForceUnderStage(const NightDef &def, NightState &state); // at the Turn, if nobody found it
 
     // Turn order: high roll first, then higher speed, then lower index (Turn.cpp).
     std::array<std::int8_t, maxGuests> Order(const std::array<int, maxGuests> &rolls, const std::array<int, maxGuests> &speeds, int count);

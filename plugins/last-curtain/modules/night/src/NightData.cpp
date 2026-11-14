@@ -387,6 +387,15 @@ namespace umbra::night
 
         if (diagnostics.size() != before)
             return false;
+        // The fingerprint: every file's bytes, in a fixed order.
+        d.fingerprint = 14695981039346656037ULL;
+        for (const char *name : {"rules.json", "powers.json", "buffs.csv", "styles.csv", "items.csv", "monsters.csv", "omens.csv", "rooms.csv",
+                                 "events.csv", "guests.csv", "bonds.csv"})
+        {
+            std::ifstream file(folder / name, std::ios::binary);
+            for (char c; file.get(c);)
+                d.fingerprint = (d.fingerprint ^ static_cast<unsigned char>(c)) * 1099511628211ULL;
+        }
         out = std::move(d);
         return true;
     }

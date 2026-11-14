@@ -12,12 +12,14 @@ target_sources(
         src/Battle.cpp
         src/Company.cpp
         src/Hunt.cpp
+        src/NightSave.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
         FILES
             include/NightDef.hpp
             include/Night.hpp
+            include/NightSave.hpp
 )
 
 target_compile_features(UmbraNight PUBLIC cxx_std_20)
