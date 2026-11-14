@@ -26,9 +26,12 @@ For whoever continues this work, in any session. Read this first.
 
 ## Waiting on the user
 
-1. The Windows check again for `#UMBRA-116` (`../testing/s25-night-simulation.md` §4, §5).
-2. Level 5 is still out of reach (about 3 level-ups a night for the whole table).
-3. Go-ahead to write plan 2 (the board on screen).
+1. For `#UMBRA-116` on Windows: the tests passed; `night-soak` and MSVC warnings still to check
+   (`../testing/s25-night-simulation.md` §5).
+2. Go-ahead to write plan 2 (the board on screen).
+
+Decided: level 5 out of reach in a night is intended (levels build character, not min-maxing).
+The user lets Claude edit and commit in the checkout directly (2026-11-14).
 
 ## The user's standing wishes for this game
 

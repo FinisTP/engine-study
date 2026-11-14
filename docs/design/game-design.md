@@ -176,8 +176,10 @@ rules.
 | Speed | Rooms moved per turn; breaks ties in turn order | (whoever starts the fight attacks first) |
 
 **Levels.** Beating monsters gives XP. Each level: +4 max HP and +1 to Might or Sanity (the
-player chooses; bots follow their weapon type). A level does not heal. Level cap 5, reached by a
-guest who spends about 15 turns fighting monsters: levels come at about 2, 5, 9 and 14 kills **[call: the steps]**.
+player chooses; bots follow their weapon type). A level does not heal. Level cap 5. Levels come
+at 1, 3, 6 and 10 kills (`rules.json` `levels.xp`); in practice a guest gains a level or two a
+night and level 5 is out of reach. That is intended (user, 2026-11-14): levels build the
+character, they are not for min-maxing.
 
 The cast document is written for the opera house: the patron's agent and his daughter, a singer
 of the house, its caretaker, its old company doctor, the appraiser of the patron's costumes and
@@ -472,6 +474,7 @@ build phases.
 | 2026-11-14 | No hidden marked guest; a failed curse roll turns that guest at once and time jumps to midnight; the roll is a plain d20 (same odds for all) against a target that rises with omens taken and the hour | user |
 | 2026-11-14 | With no failed roll by midnight, chance picks an omen holder (all alike), else anyone | user |
 | 2026-11-14 | No fights between guests before midnight; the early win, bystanders joining and temper are cut | user |
+| 2026-11-14 | Level 5 out of reach in a night is intended: levels build the character, not min-maxing | user |
 | 2026-11-14 | After midnight the Taken's own minions (one kind per form, a fixed set at the Turn) replace ordinary monsters; destroying one takes a share of the Taken's HP | user |
 
 ## Sources (the house's history)

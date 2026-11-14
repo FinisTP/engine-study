@@ -161,4 +161,8 @@ cases of the cut rules) and the balance case (now also: hunting minions pays 5+ 
 strikes early in at most 25% of nights, not before round 3 on average). The new tests were written
 alongside the code, not watched failing first.
 
-Windows: §4 must be repeated for this revision (the golden fingerprint and the soak numbers changed).
+Windows (user, 2026-11-14, MSVC Release): `UmbraNightTests.exe` 64 cases / 151,881 assertions and the
+balance case passed (so the golden fingerprint matches MSVC). `night-soak` not yet re-run: the
+build folder had no `UmbraTool.exe` at the time.
+
+Level 5 out of reach (about 3 level-ups a night for the whole table) is intended (user, 2026-11-14).
