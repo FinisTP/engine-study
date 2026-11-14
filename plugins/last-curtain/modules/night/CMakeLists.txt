@@ -6,11 +6,14 @@ target_sources(
     PRIVATE
         src/Csv.cpp
         src/NightData.cpp
+        src/Night.cpp
+        src/Board.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
         FILES
             include/NightDef.hpp
+            include/Night.hpp
 )
 
 target_compile_features(UmbraNight PUBLIC cxx_std_20)
