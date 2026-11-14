@@ -30,8 +30,6 @@ namespace
             Settle(play);
             if (play.State().chat.active)
                 play.HandleUi("chat", "answer", "0");
-            else if (play.State().omenOffer >= 0 && play.PlayerTurn())
-                play.HandleUi("omen", "leave", "");
             else
                 play.Update(10.0F);
         }
@@ -266,20 +264,6 @@ TEST_CASE("Every chance shown matches the rules (T113)", "[night][play]")
             CHECK(chat["answers"][a]["chance"] == ChancePercent(stat, target));
         }
     }
-    SECTION("the omen's curse")
-    {
-        NightState state = PlayerFirst(def);
-        state.cells[static_cast<std::size_t>(state.foyer)].omen = 0;
-        state.omenOffer = state.foyer;
-        state.round = 9; // later in the night: the target has grown
-        Play play(def, state);
-        REQUIRE(play.Screen() == "omen");
-        const int target = CurseTarget(def, play.State());
-        const nlohmann::json omen = play.UiData()["omen"];
-        CHECK(omen["target"] == target);
-        CHECK(omen["chance"] == std::clamp((target - 1) * 5, 0, 100));
-        CHECK(omen["name"] == def.omens[0].name);
-    }
     SECTION("an event")
     {
         for (RoomDef &room : def.rooms)
@@ -331,14 +315,11 @@ TEST_CASE("No screen waits after the night ended (T113)", "[night][play]")
     const NightDef def = Data();
     NightState state = PlayerFirst(def);
     state.chat = {true, true, 1, 5};
-    state.cells[static_cast<std::size_t>(state.foyer)].omen = 0;
-    state.omenOffer = state.foyer;
     state.over = true;
     state.outcome = Outcome::Company;
     Play play(def, state);
-    CHECK(play.Screen() == "end"); // the end screen only, no chat or omen
+    CHECK(play.Screen() == "end"); // the end screen only, no chat
     CHECK_FALSE(play.UiData().contains("chat"));
-    CHECK_FALSE(play.UiData().contains("omen"));
     CHECK_FALSE(play.HandleUi("chat", "answer", "0"));
     play.Update(10.0F);
     CHECK(play.State().logCount == state.logCount);
@@ -435,8 +416,6 @@ namespace
                 play.HandleUi("turn", "begin", "");
             else if (play.State().chat.active && play.PlayerTurn())
                 play.HandleUi("chat", "answer", "0");
-            else if (play.State().omenOffer >= 0 && play.PlayerTurn())
-                play.HandleUi("omen", "leave", "");
             else if (play.PlayerTurn() && play.State().battle.active)
                 play.HandleUi("battle", "guard", "");
             else if (play.PlayerTurn())
@@ -499,8 +478,6 @@ TEST_CASE("The Turn screen names the form and its numbers (T115)", "[night][play
         Settle(play);
         if (play.State().chat.active && play.PlayerTurn())
             play.HandleUi("chat", "answer", "0");
-        else if (play.State().omenOffer >= 0 && play.PlayerTurn())
-            play.HandleUi("omen", "leave", "");
         else if (play.PlayerTurn())
             play.Key(InputKey::Enter);
         else
@@ -562,8 +539,6 @@ TEST_CASE("Clicks and keys do nothing while a dialog shows (final review)", "[ni
             Settle(play);
             if (play.State().chat.active && play.PlayerTurn())
                 play.HandleUi("chat", "answer", "0");
-            else if (play.State().omenOffer >= 0 && play.PlayerTurn())
-                play.HandleUi("omen", "leave", "");
             else if (play.PlayerTurn())
                 play.Key(InputKey::Enter);
             else

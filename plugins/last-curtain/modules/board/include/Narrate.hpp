@@ -22,7 +22,7 @@ namespace umbra::night
         bool seen = false;
     };
 
-    // captions.json: key -> line with {guest}, {other}, {room}, {foe}, {omen}, {power}, {item} ... filled in.
+    // captions.json: key -> line with {guest}, {other}, {room}, {foe}, {power}, {item} ... filled in.
     struct Captions
     {
         std::map<std::string, std::string> lines;

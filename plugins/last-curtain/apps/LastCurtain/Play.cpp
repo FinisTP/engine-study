@@ -119,9 +119,7 @@ bool Play::Do(const Action &action)
         if (e.kind != LogKind::Check || !Controls(state_, state_.player, e.who))
             continue;
         Dice d{e.a, e.other, e.b, "", "", e.a + e.other >= e.b};
-        if (action.kind == ActionKind::TakeOmen)
-            d.result = d.passed ? "The curse holds off. The omen is yours." : "The curse takes you.";
-        else if (action.kind == ActionKind::Answer)
+        if (action.kind == ActionKind::Answer)
         {
             d.stat = action.a == 0 ? "Might" : "Sanity";
             d.result = d.passed ? "An approval." : "No approval this time.";
@@ -188,10 +186,9 @@ bool Play::HandleUi(const std::string &, const std::string &action, const std::s
     }
     if (!PlayerTurn())
         return false;
-    // 2. Choices: answers, the omen.
+    // 2. Choices: answers, battle moves.
     for (const Action &a : LegalActions(def_, state_))
         if ((action == "answer" && a.kind == ActionKind::Answer && std::to_string(a.a) == arg) ||
-            (action == "take" && a.kind == ActionKind::TakeOmen) || (action == "leave" && a.kind == ActionKind::LeaveOmen) ||
             (action == "strike" && a.kind == ActionKind::Strike && std::to_string(a.a) == arg) ||
             (action == "guard" && a.kind == ActionKind::Guard) || (action == "leave" && a.kind == ActionKind::Leave))
             return Do(a);
@@ -228,8 +225,6 @@ std::string Play::Screen() const
         return hold_ > 0.0F && beat_.seen ? "caption" : "";
     if (state_.chat.active)
         return "chat";
-    if (state_.omenOffer >= 0)
-        return "omen";
     if (state_.battle.active)
         return bag_ ? "bag" : "battle";
     return bag_ ? "bag" : "actions";
@@ -274,8 +269,6 @@ std::string Play::Label(const Action &action) const
     case ActionKind::PickUp: return "Pick up the " + def_.items[U(state_.floor[U(action.a)].item)].name;
     case ActionKind::UseItem: return "Use the " + def_.items[U(state_.guests[U(Me())].items[U(action.a)])].name;
     case ActionKind::DropItem: return "Drop the " + def_.items[U(state_.guests[U(Me())].items[U(action.a)])].name;
-    case ActionKind::TakeOmen: return "Take the omen";
-    case ActionKind::LeaveOmen: return "Leave the omen";
     case ActionKind::Chat: return "Chat with " + name(action.a);
     case ActionKind::Attack: return "Attack " + (action.a >= 0 ? "the " + monster(action.a) : name(action.b));
     case ActionKind::Strike:
@@ -363,7 +356,7 @@ nlohmann::json Play::UiData() const
         if (pawn.guest != me)
             data["inLight"].push_back({{"name", def_.guests[U(pawn.guest)].name}, {"room", def_.rooms[U(state_.cells[U(pawn.cell)].room)].name}});
 
-    // 4. Rolls, events, omens and chats, each with its chance by the rules.
+    // 4. Rolls, events and chats, each with its chance by the rules.
     if (!state_.over && event_ >= 0)
     {
         const EventDef &ev = def_.events[U(event_)];
@@ -399,20 +392,6 @@ nlohmann::json Play::UiData() const
                         {"bondNote", bond > 0 ? name + " likes you: the targets are lower." : bond < 0 ? name + " distrusts you: the targets are higher." : ""},
                         {"likes", bond > 0}, {"distrusts", bond < 0}};
     }
-    if (!state_.over && PlayerTurn() && state_.omenOffer >= 0)
-    {
-        const OmenDef &o = def_.omens[U(state_.cells[U(state_.omenOffer)].omen)];
-        std::string gift;
-        const auto add = [&](int amount, const char *what) {
-            if (amount != 0)
-                gift += (gift.empty() ? "" : ", ") + std::string(amount > 0 ? "+" : "") + std::to_string(amount) + " " + what;
-        };
-        add(o.might, "Might"), add(o.sanity, "Sanity"), add(o.speed, "Speed"), add(o.maxhp, "max HP");
-        const int target = CurseTarget(def_, state_);
-        data["omen"] = {{"name", o.name}, {"gift", gift}, {"target", target}, {"chance", std::clamp((target - 1) * 5, 0, 100)},
-                        {"taken", state_.omensTaken}};
-    }
-
     if (!state_.over && PlayerTurn() && state_.battle.active)
         data["battle"] = BattleData();
 
@@ -569,7 +548,6 @@ nlohmann::json Play::EndData() const
     nlohmann::json lines = nlohmann::json::array();
     lines.push_back("Rounds played: " + std::to_string(std::min<int>(state_.round, def_.rules.clock.rounds)));
     lines.push_back("Rooms opened: " + std::to_string(rooms));
-    lines.push_back("Omens taken: " + std::to_string(state_.omensTaken));
     if (state_.taken.guest >= 0)
         lines.push_back("The curse took " + def_.guests[U(state_.taken.guest)].name + ", who rose as " + def_.guests[U(state_.taken.guest)].taken + ".");
     std::string fallen, allies;

@@ -11,7 +11,7 @@ the same choice.
 1. A level: the stat of its weapon.
 2. In battle: heal below `healBelowPercent`, a boost in round 1, leave below
    `fleeBelowHpPercent`; otherwise strike the weakest enemy.
-3. An omen: take it while the curse target is at most `omen * 2`. A question (guest 0 in the
+3. A question (guest 0 in the
    soak): the answer with the higher chance. Opening a chat with the player: when `chatty` is 5 or
    more, or the bot likes the player.
 4. Hurt below `fleeBelowHpPercent`: heal, else move away from monsters and the Taken.
@@ -34,29 +34,25 @@ UmbraTool night-soak [--data <folder>] [--nights 1000] [--seed 1] [--strategy 0]
 
 `night-soak` exits 1 when the data does not hold: a fault, or a form with 50 or more hunts
 outside `rules.json` `balance.companyWinMin..Max`. Try a variant without touching the shipped
-data: copy the folder, edit the copy, pass `--data <copy>`. Strategies: 1 the company leaves
-minions alone (must lose clearly more often), 2 guest 0 refuses every omen, 3 guest 0 takes every
-omen.
+data: copy the folder, edit the copy, pass `--data <copy>`. Strategy 1: the company leaves
+minions alone (must lose clearly more often).
 
 ## What moves which line of the report
 
 | Report line | Moved by |
 |---|---|
 | company wins by form | `guests.csv` `takenHp`, `takenMight`, `takenSanity`, `takenSpeed`; that form's entry in `powers.json` and `minions.csv` |
-| the curse struck early (share, round) | `omens.targets`, `omens.perHour`, `styles.csv` `omen` |
-| omens per night | `styles.csv` `omen`, the curse targets |
 | monster kills, levels | `monsters` in `rules.json` (chance, max, from which round), `monsters.csv` HP and growth, `levels.xp` |
 | minion kills, and the gap to strategy 1 | `minions.csv` (HP, stats, `hpShare`, `count`), `styles.csv` `huntHpPercent` |
 | downs, deaths | `events.csv` fail amounts, `monsters.csv`, the Taken forms and minions |
-| guest 0's side won (by strategy) | everything above; refusing omens must not be a winning plan |
+| guest 0's side won | everything above |
 
 ## Tuning order
 
 1. All forms' `takenHp` together until the hunt is near 50% overall.
 2. Each form (its stats, then its power's numbers) until it is inside the band. A power's numbers
    matter less than the form's stats: change the stats first when a form is far out.
-3. Omens (`omens.csv`, `omens.targets`) for the omen strategies.
-4. Monsters and level steps. More monsters also help the Taken after midnight (they take its
+3. Monsters and level steps. More monsters also help the Taken after midnight (they take its
    side), so the forms need retuning afterwards.
 
 Check on more than one seed range (`--seed 1`, `--seed 20001`, `--seed 50001`): a form's share

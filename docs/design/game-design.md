@@ -1,4 +1,4 @@
-# The Last Curtain (working title): game design, draft 8 (approved 2026-11-14)
+# The Last Curtain (working title): game design, draft 9 (2026-11-15: goals replace omens, `2026-11-14-goals-and-bigger-board.md`)
 
 Date: 2026-11-14. Status: **approved by the user 2026-11-14** as the design to build from. Nothing in it is built yet. Plan: `plans/2026-11-14-night-simulation.md`.
 Companion: `cast.md` (the seven characters).
@@ -11,11 +11,11 @@ Claude that the user has not confirmed. Section 20 lists the questions still ope
 ## 1. The game in one paragraph
 
 Seven people are shut inside Saigon's old opera house for one night, 19:00 to 5:00. Turn by turn they open
-its hidden rooms, find items, meet what lives there, fight, and grow stronger. The house holds omens: cursed
-keepsakes that make whoever takes one stronger, at a risk that grows with every omen and every
-hour. When the curse takes one of them, maybe the player, the theatre shifts time to midnight and
-that person returns as something else, with its minions; the rest have until 5:00 to destroy it
-or stay in the theatre forever. Every night has a different building, a different victim and a different secret.
+its hidden rooms, find items, meet what lives there, fight, and grow stronger. Each came for a
+reason of their own: a secret goal they must finish before midnight. At midnight the curse takes
+one of those who failed, maybe the player, and that person returns as something else, with its
+minions; the others who failed stand weakened. The rest have until 5:00 to destroy it or stay in
+the theatre forever. If everyone finished, dawn comes early and the house lets them go. Every night has a different building, a different victim and a different secret.
 
 It is a single-player digital game built on the core loop of *Betrayal at House on the Hill*:
 explore tile by tile, then a betrayal. It uses none of that game's text, names, scenarios or art.
@@ -105,8 +105,9 @@ owner" of the first sheets becomes the patron: a collector who paid for the hous
 | The one who turns | the Taken |
 | Those who hunt it | the company |
 | The betrayal at midnight | the Turn |
-| A cursed keepsake that may mark its taker | an omen |
-| The one who turns (at a failed curse roll or by chance at midnight) | the Taken |
+| What a guest came for tonight | their goal |
+| A unique item a goal asks for | a keepsake |
+| The one who turns (drawn at midnight from those who failed their goal) | the Taken |
 | The room where the Taken appears | the under-stage |
 
 ## 4. The night
@@ -120,14 +121,14 @@ owner" of the first sheets becomes the patron: a collector who paid for the hous
 ```
 19:00                         0:00                          5:00
   |------- evening, 10 rounds ---|------- the hunt, 10 rounds ---|
-  omens are found and taken; a failed curse roll jumps to midnight   the Taken appears
+  each guest chases a secret goal          the Taken comes from those who failed
 ```
 
 ## 5. A turn
 
 1. **Move** up to Speed rooms through opened rooms and through doorways not yet opened.
 2. **Opening a room** reveals it. An empty room does not stop you: keep moving. A room with
-   something in it (item, event, trap, omen) stops your movement and you resolve it.
+   something in it (item, event, trap) stops your movement and you resolve it.
 3. **Free at any point, and you may still move afterwards:** use an item; leave an item on the
    floor; pick one up.
 4. **One of these ends the turn:** resolving a room; trying to persuade a guest; attacking a
@@ -143,8 +144,8 @@ to slip away.
 
 ## 6. The board
 
-- One floor, a 5x5 grid. About 20 rooms are placed each night from a set of 25.
-- All guests start in the **foyer** (bottom centre). The **under-stage** is always placed, far from the foyer, and is a plain room until midnight.
+- One floor, a 9x9 grid. 70 rooms are placed each night from a deck of about 85 (user, 2026-11-14).
+- The **foyer** sits at the bottom centre; before round 1 seven start rooms are opened around it at random, and each guest starts in its own (user, 2026-11-14). Everyone gathers in the foyer at midnight. The **under-stage** is always placed, far from the foyer, and is a plain room until midnight.
 - Unopened rooms are hidden, but a doorway shows there is a room beyond it.
 - The generator never seals the board: there is always an unopened doorway until all rooms are placed.
 
@@ -156,7 +157,6 @@ to slip away.
 | Trap | 3 | The first guest in rolls to save themselves or takes damage. |
 | Transport | 2 (one pair) | Trapdoor and catwalk: enter one, leave from the other. Costs 1 movement. |
 | Bonus | 3 | End your turn here: +1 to one stat. Once per guest per night. |
-| Omen | 5 | The first guest in finds an omen and decides whether to take it (section 12). |
 | Foyer, under-stage | 2 | Start; where the Taken appears. |
 
 Bonus rooms: rehearsal room (+1 Might), chapel of the stage ancestors (+1 Sanity), rigging gallery (+1 Speed).
@@ -267,39 +267,27 @@ Before midnight nobody dies:
   company. Every battle lasts at most 3 rounds, then the board resumes and both sides keep their
   HP. A monster not beaten in 3 rounds stays with the HP it has left; XP is given only for the kill.
 
-## 12. Omens and the curse
+## 12. Personal goals (replace omens, user 2026-11-14)
 
-- **Omen rooms** (five) each hold one omen, drawn at random: a cursed keepsake of the house.
-- The first guest in may **take it or leave it**. An omen is not an item and takes no slot. It
-  grants great power for the night:
-
-| Omen | Grants |
-|---|---|
-| The cracked mask | +4 Might |
-| The scorched playbill | +4 Sanity |
-| The single dancing shoe | +2 Speed |
-| The prompter's bell | +12 max HP, healed |
-| The stopped metronome | +2 Might and +2 Sanity |
-
-- **Taking an omen means a curse roll** (user, 2026-11-14): a plain d20, the same odds for every
-  guest, against a target that rises with every omen taken and with every hour of the night
-  (`rules.json` `omens.targets` and `omens.perHour`). Early in the evening only a very unlucky
-  roll fails.
-- **A failed roll and the theatre shifts time** (user, 2026-11-14): that guest turns at once.
-  Everyone skips the rest of the evening and wakes at midnight as the burning past takes the
-  house; the hunt begins. Everyone sees who failed.
-- **If nobody has failed by midnight,** chance picks one of the omen holders, all alike, the
-  player included; if no omen was taken at all, one of all seven.
-- **Only the Taken's secret is true tonight;** the model tells it at the Turn.
+- Each guest has two or three goals that fit their story (`goals.csv`, `cast.md`); one is drawn
+  secretly each night. Kinds: reach a room, carry a keepsake at midnight, have a named guest as an
+  ally, pass N event rolls, destroy N monsters.
+- Every goal is about equally hard and depends on the board and the dice: held by a bot, each is
+  finished in 45-65% of nights (soak).
+- Keepsakes are unique items waiting in a fixed room, there only when a drawn goal needs it; they
+  can be dropped, picked up and taken by rivals. Goal and keepsake rooms come out within the first
+  35 rooms opened.
+- A guest knows only its own goal; a passed chat answer reveals the other's.
+- **At midnight** the Taken is drawn at random from the guests who failed; the others who failed
+  drop to 1 HP. If every living guest finished, the company wins at once.
 - **The Taken form has its power unconditionally**, whoever turned.
 
 **The seven powers must be balanced against each other** (user requirement): the company wins
-40% to 60% of hunts against every form (soak test, `night-soak`). Refusing every omen must not be
-the winning plan.
+40% to 60% of hunts against every form (soak test, `night-soak`).
 
 ## 13. The Turn (midnight)
 
-1. The one who turns vanishes from where they are and the **Taken** appears in the under-stage, in its own form (own model, own voice: a distorted echo of the person).
+1. The one drawn from the failed (section 12) vanishes from where they are and the **Taken** appears in the under-stage, in its own form (own model, own voice: a distorted echo of the person).
 2. Every other living or downed guest is placed in the foyer; the downed stand up with 1 HP.
 3. The Taken's power and its secret are revealed to all.
 4. **The Taken's strength is fixed** for each form: it does not scale with the company. A well-prepared company has it easier; that is the reward for the evening.
@@ -339,9 +327,11 @@ the winning plan.
 
 ## 16. The bots
 
-Bots follow rules, not the language model. Each turn a bot scores its legal moves by its **play
-style** (explorer, fighter, loner, protector, schemer), its HP, the hour, its bond with nearby
-guests, and the minions and the Taken after midnight, and takes the best. Before the game applies it, the decision is said
+Bots follow rules, not the language model. In the evening a bot picks one target for its turn
+and walks to it: its own goal first, then a known goal of a group member, then what its **play
+style** (explorer, fighter, loner, protector, schemer) wants, then the nearest doorway; it does
+not pace back and forth, and talks to other guests to win them over. After midnight it plays the
+hunt by its HP, its friends nearby, the minions and the Taken. Before the game applies it, the decision is said
 aloud in that guest's voice.
 
 Requirements:
@@ -357,10 +347,10 @@ Required (user decision). It never decides anything; the rules do.
 |---|---|
 | The line a bot says for its decision | The decision, the guest's voice and personality |
 | What a guest says when asked to join | The roll's result and the bond |
-| What a guest says on taking an omen | The omen, the guest's personality |
+| What a guest says on finishing or failing their goal | The goal, the guest's personality |
 | The Taken's lines | The form's distorted personality and the secret |
 | Tonight's telling of the secret at the Turn | The cast sheet's plot |
-| How the one who turned comes back as the Taken | The omen, the room, the secret |
+| How the one who turned comes back as the Taken | The failed goal, the room, the secret |
 
 Every line passes the existing guard (names, length, no invented facts) and falls back to a
 written template if refused or late. Qwen3 4B on the graphics card gave about 0.8 s a line,
@@ -378,7 +368,7 @@ schedules and wages; progress between nights.
 
 All gameplay data is metadata (user requirement, 2026-11-14): every stat, cost, chance, target,
 count and list lives in CSV or JSON files under `plugins/last-curtain/assets/night/` (guests,
-bonds, powers, rooms, events and traps, items, buffs, monsters, omens, bot styles, and one
+bonds, powers, rooms, events and traps, items, buffs, monsters, goals, bot styles, and one
 `rules.json` for the clock, checks, light, battle formula, levels and the balance band).
 Balancing means editing those files and running the soak test again; code changes only when a
 new kind of mechanic is added.
@@ -406,7 +396,7 @@ A is recommended: the town's unused parts stay where they are, and what is share
 model, the storyteller's forks) is used from the new plugin.
 
 **Phases under A [call]:** (1) board and movement, headless; (2) checks, items, monsters, down
-and dead; (3) omens and the mark, the Turn, the hunt and the seven powers; (4) bots
+and dead; (3) goals and the midnight draw, the Turn, the hunt and the seven powers; (4) bots
 and the soak test; (5) the 3D board, camera and UI with placeholder art; (6) the model's lines;
 (7) art: room kit, guests, Taken forms.
 
@@ -415,8 +405,7 @@ and the soak test; (5) the 3D board, camera and UI with placeholder art; (6) the
 None from the user's side.
 
 Still marked **[call]** in the text, for the test runs or a later review to settle: the XP
-steps, guard as a battle option, where debuffs come from, how often relics appear, what each
-omen grants and the curse targets, the win-rate band for balancing the seven powers, and the
+steps, guard as a battle option, where debuffs come from, how often relics appear, the goals and their counts, the win-rate band for balancing the seven powers, and the
 build phases.
 
 ## 21. Decision log
@@ -483,6 +472,8 @@ build phases.
 | 2026-11-14 | Guests are won over by talking: five questions each, a physical or a magical answer, three approvals | user |
 | 2026-11-14 | An event stays one roll on one stat; its outcomes may push the guest back a room | user |
 | 2026-11-14 | Level 5 out of reach in a night is intended: levels build the character, not min-maxing | user |
+| 2026-11-15 | Omens removed; each guest draws a secret personal goal (2-3 per guest, even difficulty); the Taken is drawn from those who failed, the others who failed drop to 1 HP; all finished = the company wins at midnight | user |
+| 2026-11-15 | A 9x9 board of 70 rooms; seven start rooms, one per guest; a free step back without pacing; guests chat with each other and form groups that help members' goals | user |
 | 2026-11-14 | After midnight the Taken's own minions (one kind per form, a fixed set at the Turn) replace ordinary monsters; destroying one takes a share of the Taken's HP | user |
 
 ## Sources (the house's history)

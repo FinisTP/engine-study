@@ -159,8 +159,6 @@ namespace umbra::night
             list("levels", "xp", r.levels.xp);
             get("levels", "hp", r.levels.hp);
             get("levels", "stat", r.levels.stat);
-            list("omens", "targets", r.omens.targets);
-            get("omens", "perHour", r.omens.perHour);
             get("monsters", "fromRound", r.monsters.fromRound);
             get("monsters", "chancePercent", r.monsters.chancePercent);
             get("monsters", "stayRounds", r.monsters.stayRounds);
@@ -239,11 +237,11 @@ namespace umbra::night
                                static_cast<BuffStat>(buffs.Pick(r, "stat", {"guard", "might", "sanity"})),
                                buffs.Int(r, "amount"), buffs.Int(r, "rounds")});
 
-        Sheet styles(diagnostics, folder, "styles.csv", {"style", "explore", "fight", "loot", "omen", "bonus", "fleeBelowHpPercent", "avoidGuests",
+        Sheet styles(diagnostics, folder, "styles.csv", {"style", "explore", "fight", "loot", "bonus", "fleeBelowHpPercent", "avoidGuests",
                                                          "healBelowPercent", "huntHpPercent", "huntNearSteps", "crowd", "chatty"});
         for (int r = 0; r < styles.Rows(); ++r)
             d.styles.push_back({styles.Text(r, "style"), styles.Int(r, "explore"), styles.Int(r, "fight"), styles.Int(r, "loot"),
-                                styles.Int(r, "omen"), styles.Int(r, "bonus"), styles.Int(r, "fleeBelowHpPercent"), styles.Int(r, "avoidGuests"),
+                                styles.Int(r, "bonus"), styles.Int(r, "fleeBelowHpPercent"), styles.Int(r, "avoidGuests"),
                                 styles.Int(r, "healBelowPercent"), styles.Int(r, "huntHpPercent"), styles.Int(r, "huntNearSteps"), styles.Int(r, "crowd"),
                                 styles.Int(r, "chatty")});
 
@@ -290,18 +288,13 @@ namespace umbra::night
             d.monsters.push_back(m);
         }
 
-        Sheet omens(diagnostics, folder, "omens.csv", {"id", "name", "might", "sanity", "speed", "maxhp"});
-        for (int r = 0; r < omens.Rows(); ++r)
-            d.omens.push_back({omens.Text(r, "id"), omens.Text(r, "name"), omens.Int(r, "might"), omens.Int(r, "sanity"),
-                               omens.Int(r, "speed"), omens.Int(r, "maxhp")});
-
         Sheet rooms(diagnostics, folder, "rooms.csv", {"id", "name", "kind", "doors", "stat", "amount", "count"});
         for (int r = 0; r < rooms.Rows(); ++r)
         {
             RoomDef room;
             room.id = rooms.Text(r, "id");
             room.name = rooms.Text(r, "name");
-            room.kind = static_cast<RoomKind>(rooms.Pick(r, "kind", {"foyer", "understage", "plain", "item", "event", "trap", "omen", "transport", "bonus"}));
+            room.kind = static_cast<RoomKind>(rooms.Pick(r, "kind", {"foyer", "understage", "plain", "item", "event", "trap", "transport", "bonus"}));
             for (char c : rooms.Text(r, "doors"))
             {
                 const std::size_t bit = std::string_view("NESW").find(c);
@@ -325,7 +318,7 @@ namespace umbra::night
                 count[static_cast<int>(room.kind)] += room.count, total += room.count;
             if (count[0] != 1 || count[1] != 1)
                 rooms.Bad(rooms.file, "exactly one foyer and one under-stage are needed");
-            else if (count[7] != 0 && count[7] != 2)
+            else if (const int t = count[static_cast<int>(RoomKind::Transport)]; t != 0 && t != 2)
                 rooms.Bad(rooms.file, "transport rooms come as one pair");
             else if (total < d.rules.board.rooms)
                 rooms.Bad(rooms.file, "fewer rooms than rules.json board.rooms");
@@ -427,7 +420,7 @@ namespace umbra::night
             return false;
         // The fingerprint: every file's bytes, in a fixed order.
         d.fingerprint = 14695981039346656037ULL;
-        for (const char *name : {"rules.json", "powers.json", "buffs.csv", "styles.csv", "items.csv", "monsters.csv", "omens.csv", "rooms.csv",
+        for (const char *name : {"rules.json", "powers.json", "buffs.csv", "styles.csv", "items.csv", "monsters.csv", "rooms.csv",
                                  "events.csv", "guests.csv", "minions.csv", "questions.csv", "bonds.csv"})
         {
             std::ifstream file(folder / name, std::ios::binary);

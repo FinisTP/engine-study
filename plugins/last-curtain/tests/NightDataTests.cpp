@@ -60,7 +60,6 @@ TEST_CASE("The shipped data loads and is complete (T94)", "[night][data]")
     CHECK(diagnostics.empty());
     CHECK(def.guests.size() == 7);
     CHECK(def.powers.size() == 7);
-    CHECK(def.omens.size() == 5);
     CHECK(def.rules.clock.rounds == 20);
     CHECK(def.rules.carry == 4);
     CHECK(def.guests[static_cast<std::size_t>(NightDef::Find(def.guests, "khang"))].might == 7);
@@ -117,8 +116,8 @@ TEST_CASE("Bad data is refused with file, row and column (T94)", "[night][data]"
     SECTION("a row with too few cells")
     {
         const fs::path folder = CopyData("short");
-        Replace(folder / "omens.csv", "mask,The cracked mask,4,0,0,0", "mask,The cracked mask,4");
-        CHECK(Refused(folder).field == "omens.csv:1");
+        Replace(folder / "items.csv", "bandage,Bandage,heal,hp,6,none,6,Heals 6 HP.", "bandage,Bandage,heal");
+        CHECK(Refused(folder).field == "items.csv:1");
     }
     SECTION("a guest without five questions")
     {
@@ -131,10 +130,16 @@ TEST_CASE("Bad data is refused with file, row and column (T94)", "[night][data]"
     SECTION("a quoted field with a comma loads")
     {
         const fs::path folder = CopyData("quoted");
-        Replace(folder / "omens.csv", "mask,The cracked mask,", "mask,\"The mask, cracked\",");
+        Replace(folder / "items.csv", "bandage,Bandage,", "bandage,\"Bandage, clean\",");
         std::vector<umbra::core::Diagnostic> diagnostics;
         NightDef def;
         REQUIRE(LoadNight(folder, def, diagnostics));
-        CHECK(def.omens[0].name == "The mask, cracked");
+        CHECK(def.items[0].name == "Bandage, clean");
+    }
+    SECTION("omen rooms are gone")
+    {
+        const fs::path folder = CopyData("omenroom");
+        Replace(folder / "rooms.csv", "auditorium,Auditorium,plain", "auditorium,Auditorium,omen");
+        CHECK(Refused(folder).code == "night.rooms");
     }
 }

@@ -300,11 +300,6 @@ namespace umbra::night
                 // A chatty bot, or one fond of the player, asks the player a question first.
                 if (state.player >= 0 && Has({ActionKind::OpenChat, I8(state.player)}) && (style.chatty >= 5 || Bond(state, g, state.player) > 0))
                     return {ActionKind::OpenChat, I8(state.player)};
-                if (legal.front().kind == ActionKind::TakeOmen)
-                {
-                    // Take it while the curse roll's target is low enough for this style.
-                    return {CurseTarget(def, state) <= style.omen * 2 ? ActionKind::TakeOmen : ActionKind::LeaveOmen};
-                }
                 if (IsTaken(state, g))
                     return Taken();
                 // 2. Hurt: heal, else get away from monsters (and the Taken).

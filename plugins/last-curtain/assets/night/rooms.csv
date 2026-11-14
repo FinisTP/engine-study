@@ -17,11 +17,11 @@ mirrors,Hall of mirrors,event,NS,none,0,1
 fly,Fly loft,trap,NESW,none,0,1
 boards,Rotten boards,trap,NE,none,0,1
 rigging,Rigging pit,trap,NSW,none,0,1
-patronbox,Patron's box,omen,NE,none,0,1
-prompter,Prompter's box,omen,NS,none,0,1
-maskcabinet,Mask cabinet,omen,NESW,none,0,1
-office,Shuttered office,omen,NEW,none,0,1
-vault,Dusty vault,omen,NW,none,0,1
+patronbox,Patron's box,bonus,NE,maxhp,2,1
+prompter,Prompter's box,item,NS,none,0,1
+maskcabinet,Mask cabinet,item,NESW,none,0,1
+office,Shuttered office,event,NEW,none,0,1
+vault,Dusty vault,event,NW,none,0,1
 trapdoor,Stage trapdoor,transport,NESW,none,0,1
 catwalk,Catwalk,transport,NS,none,0,1
 rehearsal,Rehearsal room,bonus,NEW,might,1,1

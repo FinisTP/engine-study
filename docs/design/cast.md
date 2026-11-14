@@ -1,4 +1,4 @@
-# The Last Curtain: cast (draft 5, 2026-11-14)
+# The Last Curtain: cast (draft 6, 2026-11-15: goals)
 
 Status: **draft for the user to edit.** Characters 1 and 2 are the user's; their new fields and
 characters 3-7 are proposals. Nothing here is built yet.
@@ -40,6 +40,7 @@ The user's fields, then the added ones (marked +).
 | + Stats | HP, Might, Sanity, Speed at level 1 (first numbers, to be balanced by test runs) |
 | + Play style | How they play when a bot: what they go for, when they fight or run |
 | + Bond | One feeling toward another guest at 19:00, the seed for allying or betraying |
+| + Goals | Two or three reasons they came; one is drawn secretly each night (`goals.csv`) |
 | + Curse | The element that takes them; names their power and their signs |
 | Traitor plot | The secret that is true only on the night they turn |
 | + Traitor form | Its own look and a distorted echo of the personality: no longer the person |
@@ -181,6 +182,18 @@ Stats: Might and Sanity run 1-8, Speed is tiles per turn, HP is plain points.
 - **Traitor plot:** she recognises a mirror she sold to the patron years ago, now hung in the house; her reflection stayed behind in it and made a bargain in her name
 - **+ Traitor form:** her reflection stepped out: left and right reversed, skin like silvered glass with fine cracks. Her appraising eye remains: she states each guest's worth, and it is always less than they hoped
 - **Traitor power:** the Mirror curse turns the next attack or power used on her back on its user
+
+## Goals (2026-11-15, one drawn each night; counts tuned by the soak) [call]
+
+| Guest | Goals |
+|---|---|
+| Truong Uyen Nhi | reach the Patron's box (her father's seat) · carry her father's pocket watch · have Phan Thi Mai as an ally |
+| Le Thanh | carry the Phoenix crown · reach the Auditorium · pass 2 event rolls |
+| Dinh Quoc Bao | have Truong Uyen Nhi as an ally · reach the Green room (the old infirmary) · destroy 2 monsters |
+| Vo Minh Khang | carry the patron's Ledger · destroy 3 monsters · reach the Shuttered office |
+| Phan Thi Mai | reach the Chapel of the stage ancestors · have Le Thanh as an ally · carry the ring of keys she lost |
+| Hoang Gia Huy | pass 3 event rolls · reach the Fly loft · destroy 2 monsters |
+| Tran Ngoc Lan | carry the Gilded mask · carry the Phoenix crown · have Vo Minh Khang as an ally |
 
 ## How the cast fits together (proposal)
 

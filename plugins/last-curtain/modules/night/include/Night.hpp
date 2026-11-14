@@ -17,8 +17,7 @@ namespace umbra::night
         std::int8_t room = -1;
         std::uint8_t doors = 0;
         bool opened = false;
-        bool resolved = false; // its item, event, trap or omen is taken care of
-        std::int8_t omen = -1; // the omens.csv row lying here (drawn on first entry)
+        bool resolved = false; // its item, event or trap is taken care of
     };
 
     struct Guest
@@ -28,7 +27,6 @@ namespace umbra::night
         std::int8_t from = -1; // the cell before the last move (an event may push the guest back)
         std::int16_t xp = 0;
         std::array<std::int8_t, maxCarry> items{-1, -1, -1, -1, -1, -1}; // items.csv rows, -1 = empty
-        std::uint8_t omens = 0;        // omens.csv rows held, as bits
         std::uint64_t bonusUsed = 0;   // cells whose bonus this guest has had, as bits
         bool down = false, dead = false;
         std::int8_t downedBy = -1; // the guest who brought them down; -1 = the house
@@ -47,7 +45,7 @@ namespace umbra::night
     enum class ActionKind : std::uint8_t
     {
         Move, UseItem, DropItem, PickUp, EndTurn,
-        TakeOmen, LeaveOmen, Chat, Attack, Strike, Guard, Leave, LevelUp, Power, OpenChat, Answer
+        Chat, Attack, Strike, Guard, Leave, LevelUp, Power, OpenChat, Answer
     };
 
     // Move: a = direction 0-3, or transportMove. UseItem/DropItem: a = slot (relic: b = the downed guest).
@@ -66,7 +64,7 @@ namespace umbra::night
     enum class LogKind : std::uint8_t
     {
         Opened, Check, Effect, Item, Down, Woke,
-        Battle, Hit, Omen, Turned, Power, Died, Ended, Monster, Level, Persuade
+        Battle, Hit, Turned, Power, Died, Ended, Monster, Level, Persuade
     };
 
     // One thing that happened. Check: a = die, other = stat, b = target. Effect: a = Effect, b = amount.
@@ -151,9 +149,7 @@ namespace umbra::night
         bool over = false; // the night has ended
         std::vector<FloorItem> floor;
         std::array<std::int16_t, maxGuests * maxGuests> bonds{}; // from * maxGuests + to, -1000..1000
-        std::int8_t marked = -1, omensTaken = 0; // marked: the guest who turns (set at a failed roll or at midnight)
-        std::int8_t omenOffer = -1;          // the cell whose omen the board guest must take or leave
-        std::uint8_t omensUsed = 0;          // omens.csv rows already drawn (bits)
+        std::int8_t marked = -1; // the guest who turns, set at midnight
         Outcome outcome = Outcome::Running;
         Taken taken;
         std::array<Mark, 16> flooded{}, sealed{};
@@ -184,8 +180,6 @@ namespace umbra::night
     // The chance, in percent, that d20 + stat reaches the target.
     int ChancePercent(int stat, int target);
 
-    // The curse roll's target for the next omen: targets[omens taken] + perHour * hours since the night began.
-    int CurseTarget(const NightDef &def, const NightState &state);
     bool IsTaken(const NightState &state, int guest);
 
     // A hit in battle (Battle.cpp): data formula, resistance, armour, guard; never below minDamage.
@@ -198,7 +192,7 @@ namespace umbra::night
     // Entries written since `since` (a logCount value), oldest first; at most the last 256.
     std::vector<LogEntry> NewLog(const NightState &state, std::size_t since);
 
-    // Base + worn items + omens (+ buffs in battle). Light: how many steps the guest's light reaches.
+    // Base + worn items (+ buffs in battle). Light: how many steps the guest's light reaches.
     int Stat(const NightDef &def, const NightState &state, int guest, StatKind kind);
 
     // The board (Board.cpp). Directions: 0 N, 1 E, 2 S, 3 W.

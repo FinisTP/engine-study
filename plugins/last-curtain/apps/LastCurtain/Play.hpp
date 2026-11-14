@@ -24,7 +24,7 @@ public:
     // An action from a screen; true when it did something.
     bool HandleUi(const std::string &screen, const std::string &action, const std::string &arg);
     [[nodiscard]] nlohmann::json UiData() const;
-    // "", "end", "caption", "event", "dice", "turn", "chat", "omen", "battle", "actions" or "bag"
+    // "", "end", "caption", "event", "dice", "turn", "chat", "battle", "actions" or "bag"
     [[nodiscard]] std::string Screen() const;
     // Bots act one action at a time: a beat the player sees holds 1.5 s (0.3 s after Space), an
     // unseen one 0.2 s. dt 0 (a minimised window) changes nothing.

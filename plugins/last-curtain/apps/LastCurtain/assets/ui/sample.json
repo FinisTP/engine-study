@@ -151,13 +151,6 @@
     "plain": false,
     "withStat": true
   },
-  "omen": {
-    "name": "The cracked mask",
-    "gift": "+1 Sanity",
-    "target": 4,
-    "chance": 15,
-    "taken": 1
-  },
   "battle": {
     "room": "Box seats",
     "round": 2,
@@ -254,7 +247,6 @@
     "lines": [
       "Rounds played: 18",
       "Rooms opened: 17",
-      "Omens taken: 2",
       "The curse took Hoang Gia Huy, who rose as the Opera Specter.",
       "At your side at the end: Dinh Quoc Bao."
     ]

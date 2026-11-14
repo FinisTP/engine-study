@@ -7,8 +7,8 @@
 namespace umbra::night
 {
     // Field lists: every member of every struct in the state.
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Cell, room, doors, opened, resolved, omen)
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Guest, hp, maxHp, might, sanity, speed, cell, from, level, group, xp, items, omens, bonusUsed, down, dead,
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Cell, room, doors, opened, resolved)
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Guest, hp, maxHp, might, sanity, speed, cell, from, level, group, xp, items, bonusUsed, down, dead,
                                        downedBy, pending, approvals, asked, chatRound, movesLeft)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FloorItem, cell, item)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LogEntry, tick, kind, who, other, a, b)
@@ -19,8 +19,8 @@ namespace umbra::night
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Mark, cell, direction, untilRound)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ChatState, active, byBot, asker, question)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(NightState, seed, random, cells, deck, deckSize, deckNext, placed, foyer, understage, guests, order, count,
-                                       round, turn, player, over, floor, eventsUsed, itemsUsed, log, logCount, bonds, marked, omensTaken,
-                                       omenOffer, omensUsed, outcome, taken, flooded, sealed, chat, battle, monsters)
+                                       round, turn, player, over, floor, eventsUsed, itemsUsed, log, logCount, bonds, marked,
+                                       outcome, taken, flooded, sealed, chat, battle, monsters)
 
     namespace
     {
@@ -41,7 +41,7 @@ namespace umbra::night
                 !in(s.deckNext, 0, s.deckSize + 1) || !in(s.marked, -1, s.count) || !in(s.player, -1, s.count))
                 return "the night's counters are out of range";
             for (const Cell &c : s.cells)
-                if (!in(c.room, -1, rooms) || !in(c.omen, -1, static_cast<int>(def.omens.size())) || (c.opened && c.room < 0))
+                if (!in(c.room, -1, rooms) || (c.opened && c.room < 0))
                     return "a cell names a room that does not exist";
             for (int i = 0; i < s.deckSize; ++i)
                 if (!in(s.deck[inner::U(i)], 0, rooms))

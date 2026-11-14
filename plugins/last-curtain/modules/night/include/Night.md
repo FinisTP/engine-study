@@ -29,7 +29,6 @@ code holds only the mechanics. Design: `docs/design/game-design.md` (GDD); bots 
 | `items.csv` | items: kind, effect, amount, buff, draw weight, UI line |
 | `buffs.csv` | buffs and debuffs: stat, amount, rounds |
 | `monsters.csv` | monsters: stats, attack type, resistance, XP, debuff, growth per hour |
-| `omens.csv` | omens and their gifts |
 | `styles.csv` | bot play styles: weights and thresholds |
 
 `LoadNight` refuses bad data with code `night.<file>` and field `<file>:<row>:<column>`.
@@ -47,13 +46,13 @@ code holds only the mechanics. Design: `docs/design/game-design.md` (GDD); bots 
 
 ## A turn (`Turn.cpp`)
 
-- Moves = Speed. Passage: 1 move. Doorway: opens the room. Item, event, trap and omen rooms stop
+- Moves = Speed. Passage: 1 move. Doorway: opens the room. Item, event and trap rooms stop
   movement until resolved; an unused bonus room stops it too. Transport rooms move you to the
   other one of the pair for 1 move (`Action{Move, transportMove}`).
 - Items, drop and pick up are free. Resolving an item, event or trap room ends the turn; so does
-  taking or leaving an omen, persuading, or a battle.
+  persuading, or a battle.
 - Ending the turn in an unused bonus room adds its stat (once per guest per room).
-- `Stat` = base + worn items + omens + battle buffs; in water Speed is 1; the Taken has its form's
+- `Stat` = base + worn items + battle buffs; in water Speed is 1; the Taken has its form's
   fixed numbers.
 
 ## Checks, events, items (`Turn.cpp`)
@@ -78,7 +77,7 @@ themselves. A battle ends after `battle.rounds` rounds, when a side has nobody s
 Killing a monster gives its XP to every standing guest on the other side; a level is chosen
 (`LevelUp`) before anything else. Monsters appear at round start from `monsters.fromRound`.
 
-## The company and omens (`Company.cpp`)
+## The company (`Company.cpp`)
 
 Guests never fight each other before midnight; afterwards only the Taken. Allies of the player
 in the room fight on the player's side.
@@ -91,15 +90,10 @@ Winning a guest over (before midnight, while group 0 has fewer than 3): the play
 harder if not (`AnswerTarget`). A pass is one approval; `persuade.approvals` of them and the guest
 joins group 0. `ChancePercent(stat, target)` is what the screens show.
 
-Omens: the first guest in may take or leave it. Taking it gives the gift and rolls the curse: a
-plain d20, the same odds for everyone, against `CurseTarget` = `omens.targets[omens taken]` (the
-last repeats) + `omens.perHour` x hours since 19:00. A d20 below the target: that guest turns at
-once (`TurnNow`): everyone's remaining evening is skipped and the hunt starts at midnight.
-
 ## The Turn and the hunt (`Hunt.cpp`)
 
-At a failed curse roll, or at the end of round `turnAfterRound` if nobody failed (then chance
-picks an omen holder, all alike; with no omen taken, anyone): that guest leaves every group and
+At the end of round `turnAfterRound` chance picks the guest who turns, among everyone (plan 2b
+replaces this with personal goals): that guest leaves every group and
 rises as the Taken in the under-stage at its form's HP; everyone else gathers in the foyer, the
 downed stand with `downedReturnHp`; the Taken moves to the end of the order. Ordinary monsters
 vanish and stop appearing; the form's minions (`minions.csv`, `count` of each) wait in the opened

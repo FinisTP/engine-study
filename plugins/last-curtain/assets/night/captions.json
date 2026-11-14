@@ -2,8 +2,6 @@
   "move": "{guest} walks into the {room}.",
   "open": "{guest} opens a door: the {room}.",
   "fight": "{guest} goes for the {foe}.",
-  "omenTake": "{guest} takes {omen}.",
-  "omenLeave": "{guest} leaves {omen} where it lies.",
   "chat": "{guest} talks with {other}.",
   "answer": "{guest} answers.",
   "endTurn": "{guest} waits.",

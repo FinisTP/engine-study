@@ -118,7 +118,6 @@ TEST_CASE("The soak report adds up (T105)", "[night][soak]")
         hunts += r.forms[static_cast<std::size_t>(g)].nights, marked += r.marked[static_cast<std::size_t>(g)];
     CHECK(hunts == r.nights - r.faults);
     CHECK(marked == r.nights - r.faults);
-    CHECK(r.cursed <= r.nights);
 }
 
 TEST_CASE("A thousand nights have no faults (T105)", "[night][soak]")
@@ -138,13 +137,7 @@ TEST_CASE("The shipped data is balanced (T105)", "[.][night][soak][balance]")
     const SoakReport bot = Soak(def, 1, 1000);
     INFO(Text(def, bot));
     CHECK(bot.Holds(def));
-    const SoakReport bot500 = Soak(def, 1, 500), noMinions = Soak(def, 1, 500, 1), refuser = Soak(def, 1, 500, 2), taker = Soak(def, 1, 500, 3);
+    const SoakReport bot500 = Soak(def, 1, 500), noMinions = Soak(def, 1, 500, 1);
     // Killing minions must pay: the company wins clearly more hunts when it goes for them.
     CHECK(bot500.companyWins >= noMinions.companyWins + 500 * 5 / 100);
-    CHECK(refuser.playerWins * 100 / 500 <= bot500.playerWins * 100 / 500 + 5);
-    // The curse rarely strikes early, and then not in the first hours.
-    CHECK(bot.cursed * 100 / bot.nights <= 25);
-    CHECK(bot.cursedRounds >= 3LL * bot.cursed);
-    const int hunts = taker.companyWins + taker.takenWins;
-    CHECK(taker.companyWins * 100 / std::max(1, hunts) <= def.rules.balance.companyWinMax);
 }

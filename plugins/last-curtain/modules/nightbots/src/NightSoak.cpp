@@ -14,12 +14,9 @@ namespace umbra::night
     {
         std::size_t U(int i) { return static_cast<std::size_t>(i); }
 
-        // The chooser under a test strategy: 1 the company leaves minions alone; 2/3 guest 0 refuses/takes every omen.
+        // The chooser under a test strategy: 1 the company leaves minions alone.
         Action Strategy(const NightDef &def, const NightState &state, int g, int strategy)
         {
-            const std::vector<Action> legal = LegalActions(def, state);
-            if (g == 0 && !legal.empty() && legal.front().kind == ActionKind::TakeOmen && (strategy == 2 || strategy == 3))
-                return {strategy == 3 ? ActionKind::TakeOmen : ActionKind::LeaveOmen};
             return ChooseAction(def, state, g, strategy != 1);
         }
     }
@@ -64,8 +61,6 @@ namespace umbra::night
                     r.levels += count(e.kind == LogKind::Level);
                     r.downs += count(e.kind == LogKind::Down);
                     r.deaths += count(e.kind == LogKind::Died && !IsTaken(state, e.who));
-                    if (e.kind == LogKind::Omen && e.b == 0)
-                        ++r.cursed, r.cursedRounds += e.tick / 8;
                     turned = turned || e.kind == LogKind::Turned;
                 }
             }
@@ -76,7 +71,6 @@ namespace umbra::night
                 ++r.faults;
                 continue;
             }
-            r.omens += state.omensTaken;
             ++r.marked[U(state.marked)];
             SoakForm &form = r.forms[U(state.marked)];
             ++form.nights;
@@ -99,13 +93,10 @@ namespace umbra::night
             return std::to_string(tenths / 10) + "." + std::to_string(tenths % 10);
         };
         const int done = std::max(1, r.nights - r.faults);
-        const long long cursedRound = r.cursed ? r.cursedRounds * 10 / r.cursed : 0; // tenths of a round
         out << r.nights << " nights, " << r.faults << " faults\n"
             << "company won the hunt " << r.companyWins << " (" << share(r.companyWins, done) << "%), the Taken won " << r.takenWins
             << "; guest 0's side won " << share(r.playerWins, done) << "%\n"
-            << "the curse struck early in " << share(r.cursed, done) << "% of nights, on average in round " << cursedRound / 10 << "." << cursedRound % 10
-            << " of " << def.rules.clock.turnAfterRound << "; otherwise chance chose at midnight\n"
-            << "per night: rooms " << each(r.rooms) << ", omens " << each(r.omens) << ", monster kills " << each(r.monsterKills) << ", minion kills "
+            << "per night: rooms " << each(r.rooms) << ", monster kills " << each(r.monsterKills) << ", minion kills "
             << each(r.minionKills) << ", levels " << each(r.levels) << ", downs " << each(r.downs) << ", deaths " << each(r.deaths) << "\n"
             << "the hunt, company wins by form (band " << def.rules.balance.companyWinMin << "-" << def.rules.balance.companyWinMax << "%):\n";
         for (std::size_t g = 0; g < def.guests.size(); ++g)
@@ -124,7 +115,7 @@ namespace umbra::night
             forms.push_back({{"guest", def.guests[g].id}, {"form", def.guests[g].taken}, {"hunts", r.forms[g].nights},
                              {"companyWins", r.forms[g].companyWins}});
         return {{"nights", r.nights}, {"faults", r.faults}, {"companyWins", r.companyWins}, {"takenWins", r.takenWins}, {"playerWins", r.playerWins},
-                {"cursed", r.cursed}, {"cursedRounds", r.cursedRounds}, {"rooms", r.rooms}, {"omens", r.omens}, {"monsterKills", r.monsterKills},
+                {"rooms", r.rooms}, {"monsterKills", r.monsterKills},
                 {"minionKills", r.minionKills}, {"levels", r.levels}, {"downs", r.downs}, {"deaths", r.deaths}, {"forms", forms}, {"holds", r.Holds(def)}};
     }
 }

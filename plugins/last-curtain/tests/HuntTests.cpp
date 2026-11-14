@@ -88,21 +88,9 @@ TEST_CASE("At midnight the marked guest becomes the Taken and the rest gather (T
     CHECK(Stat(def, state, marked, StatKind::Might) == def.guests[U(marked)].takenMight);
 }
 
-TEST_CASE("With no failed roll, chance picks an omen holder, all alike; with no omen, anyone (T101)", "[night][hunt]")
+TEST_CASE("Chance picks the Taken among the living at midnight (T101)", "[night][hunt]")
 {
     const NightDef def = Quiet();
-    int heavy = 0;
-    for (std::uint64_t seed = 1; seed <= 300; ++seed)
-    {
-        NightState state = Built(def, seed);
-        state.guests[1].omens = 0b1;
-        state.guests[5].omens = 0b10110;
-        PassToMidnight(def, state);
-        REQUIRE((TakenGuest(state) == 1 || TakenGuest(state) == 5));
-        heavy += TakenGuest(state) == 5 ? 1 : 0;
-    }
-    CHECK(heavy >= 120); // one omen or three: the same chance
-    CHECK(heavy <= 180);
     std::array<int, maxGuests> chosen{};
     for (std::uint64_t seed = 1; seed <= 300; ++seed)
     {

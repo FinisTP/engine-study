@@ -165,7 +165,7 @@ TEST_CASE("Monsters appear, grow with the hour, leave, and force a fight when me
             continue;
         }
         const auto legal = LegalActions(def, state);
-        if (legal[0].kind == ActionKind::LevelUp || legal[0].kind == ActionKind::TakeOmen)
+        if (legal[0].kind == ActionKind::LevelUp)
         {
             REQUIRE(Apply(def, state, legal[0]));
             continue;

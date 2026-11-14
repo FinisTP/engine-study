@@ -35,7 +35,6 @@ namespace
         case RoomKind::Item: return Hex(0x3B6FB6);
         case RoomKind::Event: return Hex(0x7C4DBF);
         case RoomKind::Trap: return Hex(0xB3261E);
-        case RoomKind::Omen: return Hex(0x1F1F24);
         case RoomKind::Transport: return Hex(0x1F8A8A);
         case RoomKind::Bonus: return Hex(0x2F8F5B);
         }

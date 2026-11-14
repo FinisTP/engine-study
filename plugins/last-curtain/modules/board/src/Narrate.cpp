@@ -13,7 +13,7 @@ namespace umbra::night
         using Vars = std::map<std::string, std::string>;
 
         constexpr const char *keys[] = {
-            "move", "open", "fight", "omenTake", "omenLeave", "chat", "answer", "endTurn", "power", "strike",
+            "move", "open", "fight", "chat", "answer", "endTurn", "power", "strike",
             "guard", "leave", "item", "pickup", "drop", "level", "check", "passed", "failed", "found", "down",
             "died", "hit", "killed"};
 
@@ -70,13 +70,6 @@ namespace umbra::night
                 const Fighter &f = before.battle.fighters[U(action.a)];
                 v["foe"] = f.monster >= 0 ? MonsterName(def, before, f.monster) : GuestName(def, f.guest);
                 return Fill(captions, "strike", v);
-            }
-            case ActionKind::TakeOmen:
-            case ActionKind::LeaveOmen:
-            {
-                const int omen = before.omenOffer >= 0 ? before.cells[U(before.omenOffer)].omen : -1;
-                v["omen"] = omen >= 0 ? def.omens[U(omen)].name : "an omen";
-                return Fill(captions, action.kind == ActionKind::TakeOmen ? "omenTake" : "omenLeave", v);
             }
             case ActionKind::Chat:
             case ActionKind::OpenChat:

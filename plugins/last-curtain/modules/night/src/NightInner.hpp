@@ -44,12 +44,9 @@ namespace umbra::night::inner
     void CompanyLegal(const NightDef &def, const NightState &state, int guest, std::vector<Action> &legal);
     void OpenChat(const NightDef &def, NightState &state, int asker, bool byBot); // draws a question
     void AnswerChat(const NightDef &def, NightState &state, int answer);
-    void OfferOmen(const NightDef &def, NightState &state, int cell); // on entering an unclaimed omen room
-    bool TakeOmen(const NightDef &def, NightState &state, int guest);  // true: the roll failed and the guest turns
     void EndNight(NightState &state, Outcome outcome);
     // Hunt.cpp
     void TheTurn(const NightDef &def, NightState &state);
-    void TurnNow(const NightDef &def, NightState &state); // a failed curse roll: everyone wakes at midnight
     bool ContactBattle(const NightDef &def, NightState &state, int mover, int cell); // the Taken meets the company
     bool CompanyAlive(const NightState &state);
     void PowerLegal(const NightDef &def, const NightState &state, std::vector<Action> &legal);

@@ -19,19 +19,9 @@ namespace umbra::night
 
     void inner::TheTurn(const NightDef &def, NightState &state)
     {
-        // 1. Nobody failed a curse roll: chance picks an omen holder, all alike; with no omen taken, anyone.
+        // 1. Chance picks the guest who turns, among everyone.
         if (state.marked < 0)
-        {
-            std::vector<int> holders, everyone;
-            for (int g = 0; g < state.count; ++g)
-            {
-                everyone.push_back(g);
-                if (state.guests[U(g)].omens)
-                    holders.push_back(g);
-            }
-            const std::vector<int> &from = holders.empty() ? everyone : holders;
-            state.marked = I8(from[U(Below(state, static_cast<int>(from.size())))]);
-        }
+            state.marked = I8(Below(state, state.count));
         // 2. The marked guest leaves every group and rises as the Taken in the under-stage, at full HP.
         if (state.understage < 0)
             ForceUnderStage(def, state);
@@ -78,17 +68,6 @@ namespace umbra::night
         }
     }
 
-    void inner::TurnNow(const NightDef &def, NightState &state)
-    {
-        // Everyone's remaining evening is skipped: the hunt starts at midnight, the company first.
-        state.round = I8(def.rules.clock.turnAfterRound + 1);
-        state.turn = 0;
-        TheTurn(def, state);
-        if (Current(state) < 0 && !state.over)
-            EndTurn(def, state); // the first in the order cannot act: on to the next
-        else
-            StartTurn(def, state);
-    }
 
     bool inner::ContactBattle(const NightDef &def, NightState &state, int mover, int cell)
     {

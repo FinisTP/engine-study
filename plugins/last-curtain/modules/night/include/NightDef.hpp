@@ -14,7 +14,7 @@ namespace umbra::night
 {
     enum class StatKind : std::uint8_t { Might, Sanity, Speed, MaxHp, Light, None };
     enum class Weapon : std::uint8_t { Physical, Magical };
-    enum class RoomKind : std::uint8_t { Foyer, UnderStage, Plain, Item, Event, Trap, Omen, Transport, Bonus };
+    enum class RoomKind : std::uint8_t { Foyer, UnderStage, Plain, Item, Event, Trap, Transport, Bonus };
     enum class Effect : std::uint8_t { None, Hp, HpRoom, MaxHp, Might, Sanity, Speed, Item, Xp, Buff, Armor, Light, Revive, Back };
     enum class ItemKind : std::uint8_t { Heal, Boost, Worn, Relic };
     enum class BuffStat : std::uint8_t { Guard, Might, Sanity };
@@ -29,7 +29,6 @@ namespace umbra::night
         int carry = 4;
         struct { int rounds = 3, minDamage = 1, base = 3, defenseDivisor = 2, guardDivisor = 2; } battle;
         struct { std::vector<int> xp; int hp = 4, stat = 1; } levels;
-        struct { std::vector<int> targets; int perHour = 0; } omens; // curse target: targets[omens taken] + perHour * hours since start
         struct { int fromRound = 3, chancePercent = 35, stayRounds = 3, max = 2; } monsters;
         struct { int approvals = 3, bond = 3; } persuade; // approvals that make an ally; the bond's pull on a target
         struct { int downedReturnHp = 1, attackBondLoss = 300; } guests;
@@ -116,16 +115,11 @@ namespace umbra::night
         int physicalTarget = 0, magicalTarget = 0;
     };
 
-    struct OmenDef
-    {
-        std::string id, name;
-        int might = 0, sanity = 0, speed = 0, maxhp = 0;
-    };
 
     struct StyleDef
     {
         std::string id;
-        int explore = 0, fight = 0, loot = 0, omen = 0, bonus = 0, fleeBelowHpPercent = 0, avoidGuests = 0;
+        int explore = 0, fight = 0, loot = 0, bonus = 0, fleeBelowHpPercent = 0, avoidGuests = 0;
         int healBelowPercent = 40; // in battle, heal below this share of max HP
         int huntHpPercent = 50;    // in the hunt, go for the Taken only above this share of max HP
         int huntNearSteps = 2;     // ... and with another guest this near
@@ -144,7 +138,6 @@ namespace umbra::night
         std::vector<ItemDef> items;
         std::vector<BuffDef> buffs;
         std::vector<MonsterDef> monsters; // ordinary monsters, then the minions of minions.csv
-        std::vector<OmenDef> omens;
         std::vector<StyleDef> styles;
         std::vector<QuestionDef> questions; // five per guest
         std::uint64_t fingerprint = 0; // a hash of every data file, so saves match their data

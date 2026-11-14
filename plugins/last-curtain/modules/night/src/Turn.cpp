@@ -39,7 +39,6 @@ namespace umbra::night
             case RoomKind::Item:
             case RoomKind::Event:
             case RoomKind::Trap:
-            case RoomKind::Omen:
                 if (!c.resolved)
                     guest.movesLeft = 0;
                 break;
@@ -306,12 +305,6 @@ namespace umbra::night
             legal.push_back({ActionKind::LevelUp, 1});
             return legal;
         }
-        if (state.omenOffer >= 0)
-        {
-            legal.push_back({ActionKind::TakeOmen});
-            legal.push_back({ActionKind::LeaveOmen});
-            return legal;
-        }
 
         // 1. Moving: through passages and doorways, and between the transport pair.
         if (guest.movesLeft > 0)
@@ -382,14 +375,6 @@ namespace umbra::night
             else
                 StartBattle(def, state, guest.cell, Side(state, g), {Fighter{-1, action.a}});
             break;
-        case ActionKind::TakeOmen:
-        case ActionKind::LeaveOmen:
-            state.omenOffer = -1;
-            if (action.kind == ActionKind::TakeOmen && TakeOmen(def, state, g))
-                TurnNow(def, state); // the curse took hold: everyone wakes at midnight
-            else
-                inner::EndTurn(def, state);
-            break;
         case ActionKind::Power:
             UsePower(def, state, action);
             break;
@@ -434,10 +419,8 @@ namespace umbra::night
                 StartBattle(def, state, to, {Fighter{-1, I8(monster)}}, Side(state, g));
                 break;
             }
-            // Resolving an item, event or trap room ends the turn; an omen is offered.
+            // Resolving an item, event or trap room ends the turn.
             const RoomKind kind = RoomOf(def, state, to).kind;
-            if (kind == RoomKind::Omen && !state.cells[U(to)].resolved)
-                OfferOmen(def, state, to);
             if (!state.cells[U(to)].resolved && (kind == RoomKind::Item || kind == RoomKind::Event || kind == RoomKind::Trap))
             {
                 Resolve(def, state, g, to);
@@ -541,14 +524,6 @@ namespace umbra::night
         // 2. Water slows anyone but the Taken to 1.
         if (kind == StatKind::Speed && Flooded(state, guest.cell))
             return 1;
-        // 3. Omens held.
-        for (std::size_t o = 0; o < def.omens.size(); ++o)
-            if ((guest.omens >> o) & 1u)
-            {
-                const OmenDef &omen = def.omens[o];
-                value += kind == StatKind::Might ? omen.might : kind == StatKind::Sanity ? omen.sanity : kind == StatKind::Speed ? omen.speed
-                       : kind == StatKind::MaxHp ? omen.maxhp : 0;
-            }
         return value;
     }
 }
