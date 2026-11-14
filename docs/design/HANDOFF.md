@@ -26,9 +26,10 @@ For whoever continues this work, in any session. Read this first.
 
 ## Waiting on the user
 
-1. For `#UMBRA-116` on Windows: the tests passed; `night-soak` and MSVC warnings still to check
-   (`../testing/s25-night-simulation.md` §5).
-2. Go-ahead to write plan 2 (the board on screen).
+1. MSVC warnings in `plugins/last-curtain` (not yet reported).
+
+Plan 1 is accepted by the user (2026-11-14): MSVC tests and `night-soak` match Linux. Next: plan 2,
+the board on screen.
 
 Decided: level 5 out of reach in a night is intended (levels build character, not min-maxing).
 The user lets Claude edit and commit in the checkout directly (2026-11-14).

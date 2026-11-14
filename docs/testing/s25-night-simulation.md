@@ -162,7 +162,8 @@ strikes early in at most 25% of nights, not before round 3 on average). The new 
 alongside the code, not watched failing first.
 
 Windows (user, 2026-11-14, MSVC Release): `UmbraNightTests.exe` 64 cases / 151,881 assertions and the
-balance case passed (so the golden fingerprint matches MSVC). `night-soak` not yet re-run: the
-build folder had no `UmbraTool.exe` at the time.
+balance case passed (so the golden fingerprint matches MSVC). `night-soak --nights 1000`
+then printed every line of the block above, identical to Linux, "the data holds" (1,594 ms). (The
+first attempt failed to link in an x86 developer shell: build from an x64 shell.)
 
 Level 5 out of reach (about 3 level-ups a night for the whole table) is intended (user, 2026-11-14).
