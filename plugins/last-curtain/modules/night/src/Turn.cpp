@@ -50,11 +50,7 @@ namespace umbra::night
             }
         }
 
-        void Heal(const NightDef &def, NightState &state, int g, int amount)
-        {
-            Guest &guest = G(state, g);
-            guest.hp = I16(std::min(guest.hp + amount, Stat(def, state, g, StatKind::MaxHp)));
-        }
+        void Heal(const NightDef &def, NightState &state, int g, int amount) { HealGuest(def, state, g, amount); }
 
         // An unused row, uniformly (events) or by weight (items); -1 when none is left.
         int DrawEvent(const NightDef &def, NightState &state, bool trap)
@@ -174,6 +170,28 @@ namespace umbra::night
         }
     }
 
+    void inner::HealGuest(const NightDef &def, NightState &state, int g, int amount)
+    {
+        Guest &guest = G(state, g);
+        guest.hp = I16(std::min(guest.hp + amount, Stat(def, state, g, StatKind::MaxHp)));
+    }
+
+    int inner::BoardGuest(const NightState &state)
+    {
+        if (state.over || state.turn < 0 || state.turn >= state.count)
+            return -1;
+        const int g = state.order[U(state.turn)];
+        return state.guests[U(g)].down || state.guests[U(g)].dead ? -1 : g;
+    }
+
+    int inner::MonsterAt(const NightState &state, int cell)
+    {
+        for (std::size_t m = 0; m < state.monsters.size(); ++m)
+            if (state.monsters[m].cell == cell && state.monsters[m].hp > 0)
+                return static_cast<int>(m);
+        return -1;
+    }
+
     std::array<std::int8_t, maxGuests> inner::Order(const std::array<int, maxGuests> &rolls, const std::array<int, maxGuests> &speeds, int count)
     {
         std::array<std::int8_t, maxGuests> order{};
@@ -197,7 +215,7 @@ namespace umbra::night
     void inner::EndTurn(const NightDef &def, NightState &state)
     {
         // 1. A bonus room pays once per guest when the turn ends there.
-        const int g = Current(state);
+        const int g = BoardGuest(state);
         if (g >= 0)
         {
             Guest &guest = G(state, g);
@@ -225,6 +243,7 @@ namespace umbra::night
                     state.over = true;
                     return;
                 }
+                RoundStart(def, state);
             }
             const Guest &next = G(state, state.order[U(state.turn)]);
             if (!next.down && !next.dead)
@@ -235,11 +254,15 @@ namespace umbra::night
 
     int Current(const NightState &state)
     {
-        if (state.over || state.turn < 0 || state.turn >= state.count)
+        if (state.over)
             return -1;
-        const int g = state.order[U(state.turn)];
-        const Guest &guest = state.guests[U(g)];
-        return guest.down || guest.dead ? -1 : g;
+        // 1. A battle: the guest fighter to act. 2. A level to choose. 3. The board.
+        if (state.battle.active)
+            return state.battle.fighters[U(state.battle.turn)].guest;
+        for (int g = 0; g < state.count; ++g)
+            if (state.guests[U(g)].pending > 0 && !state.guests[U(g)].dead)
+                return g;
+        return BoardGuest(state);
     }
 
     std::vector<Action> LegalActions(const NightDef &def, const NightState &state)
@@ -249,6 +272,17 @@ namespace umbra::night
         if (g < 0 || state.round > def.rules.clock.rounds)
             return legal;
         const Guest &guest = state.guests[U(g)];
+        if (state.battle.active)
+        {
+            BattleLegal(def, state, legal);
+            return legal;
+        }
+        if (guest.pending > 0)
+        {
+            legal.push_back({ActionKind::LevelUp, 0});
+            legal.push_back({ActionKind::LevelUp, 1});
+            return legal;
+        }
 
         // 1. Moving: through passages and doorways, and between the transport pair.
         if (guest.movesLeft > 0)
@@ -279,6 +313,11 @@ namespace umbra::night
                 if (state.floor[f].cell == guest.cell)
                     legal.push_back({ActionKind::PickUp, I8(f)});
 
+        // 3. Fighting a monster in the room.
+        const int monster = MonsterAt(state, guest.cell);
+        if (monster >= 0)
+            legal.push_back({ActionKind::Attack, I8(monster)});
+
         legal.push_back({ActionKind::EndTurn});
         return legal;
     }
@@ -290,8 +329,23 @@ namespace umbra::night
             return false;
         const int g = Current(state);
         Guest &guest = G(state, g);
+        if (state.battle.active)
+        {
+            BattleApply(def, state, action);
+            return true;
+        }
         switch (action.kind)
         {
+        case ActionKind::LevelUp:
+            guest.maxHp = I16(guest.maxHp + def.rules.levels.hp);
+            (action.a == 0 ? guest.might : guest.sanity) += I16(def.rules.levels.stat);
+            ++guest.level;
+            --guest.pending;
+            Log(state, LogKind::Level, g, -1, guest.level);
+            break;
+        case ActionKind::Attack:
+            StartBattle(def, state, guest.cell, {Fighter{I8(g)}}, {Fighter{-1, action.a}});
+            break;
         case ActionKind::Move:
         {
             int to = action.a == transportMove ? Pair(def, state, guest.cell) : Neighbour(def, guest.cell, action.a);
@@ -302,6 +356,13 @@ namespace umbra::night
             }
             --guest.movesLeft;
             Enter(def, state, g, to);
+            // A monster in the room: a fight at once, the monster's side first.
+            if (const int monster = MonsterAt(state, to); monster >= 0)
+            {
+                guest.movesLeft = 0;
+                StartBattle(def, state, to, {Fighter{-1, I8(monster)}}, {Fighter{I8(g)}});
+                break;
+            }
             // Resolving an item, event or trap room ends the turn.
             const RoomKind kind = RoomOf(def, state, to).kind;
             if (!state.cells[U(to)].resolved && (kind == RoomKind::Item || kind == RoomKind::Event || kind == RoomKind::Trap))
@@ -374,8 +435,9 @@ namespace umbra::night
     int Stat(const NightDef &def, const NightState &state, int g, StatKind kind)
     {
         const Guest &guest = state.guests[U(g)];
-        int value = kind == StatKind::Might ? guest.might : kind == StatKind::Sanity ? guest.sanity : kind == StatKind::Speed ? guest.speed
-                  : kind == StatKind::MaxHp ? guest.maxHp : kind == StatKind::Light ? def.rules.light.steps : 0;
+        int value = BuffBonus(def, state, g, kind);
+        value += kind == StatKind::Might ? guest.might : kind == StatKind::Sanity ? guest.sanity : kind == StatKind::Speed ? guest.speed
+               : kind == StatKind::MaxHp ? guest.maxHp : kind == StatKind::Light ? def.rules.light.steps : 0;
         // 1. Worn items while carried.
         static constexpr Effect wornEffect[] = {Effect::Might, Effect::Sanity, Effect::Speed, Effect::MaxHp, Effect::Light};
         if (kind != StatKind::None)

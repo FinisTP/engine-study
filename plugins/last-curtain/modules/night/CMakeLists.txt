@@ -9,6 +9,7 @@ target_sources(
         src/Night.cpp
         src/Board.cpp
         src/Turn.cpp
+        src/Battle.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include

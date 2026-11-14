@@ -30,6 +30,7 @@ namespace umbra::night
         std::uint64_t bonusUsed = 0;   // cells whose bonus this guest has had, as bits
         bool down = false, dead = false;
         std::int8_t downedBy = -1; // the guest who brought them down; -1 = the house
+        std::int8_t pending = 0;   // levels earned and not yet chosen
         std::int8_t movesLeft = 0;
     };
 
@@ -44,7 +45,9 @@ namespace umbra::night
         TakeOmen, LeaveOmen, Persuade, Attack, Join, Strike, Guard, Leave, LevelUp, Power
     };
 
-    // Move: a = direction 0-3, or transportMove. UseItem/DropItem: a = slot. PickUp: a = index in `floor`.
+    // Move: a = direction 0-3, or transportMove. UseItem/DropItem: a = slot (relic: b = the downed guest).
+    // PickUp: a = index in `floor`. Attack: a = monster index or -1, b = guest or -1. Strike: a = fighter index.
+    // LevelUp: a = 0 Might, 1 Sanity.
     inline constexpr std::int8_t transportMove = 4;
     struct Action
     {
@@ -75,6 +78,29 @@ namespace umbra::night
         bool passed = false;
     };
 
+    struct Monster
+    {
+        std::int8_t kind = -1, cell = -1, leavesRound = 0; // kind: monsters.csv row
+        std::int16_t hp = 0, might = 0, sanity = 0;        // grown with the hour it appeared
+    };
+
+    // One side of a fight: a guest (or the Taken) or a monster, with its buffs (buffs.csv rows).
+    struct Fighter
+    {
+        std::int8_t guest = -1, monster = -1; // monster: index in NightState::monsters
+        bool taken = false;
+        std::int8_t side = 0; // 0 = the side that started
+        std::array<std::int8_t, 4> buff{-1, -1, -1, -1}, buffRounds{};
+    };
+
+    struct Battle
+    {
+        bool active = false;
+        std::int8_t round = 1, turn = 0, count = 0; // turn: index in fighters
+        std::array<Fighter, 8> fighters{};
+        std::int8_t cell = -1, owner = -1; // owner: the guest whose board turn it is
+    };
+
     // Everything that changes during a night. No pointers, strings or maps: bots copy it to look ahead.
     struct NightState
     {
@@ -91,6 +117,8 @@ namespace umbra::night
         std::int8_t player = -1;
         bool over = false; // the night has ended
         std::vector<FloorItem> floor;
+        Battle battle;
+        std::vector<Monster> monsters;
         std::uint64_t eventsUsed = 0, itemsUsed = 0; // events.csv / items.csv rows already drawn
         std::array<LogEntry, 256> log{};             // a ring of the last 256
         std::uint32_t logCount = 0;                  // entries ever written
@@ -105,6 +133,9 @@ namespace umbra::night
     bool Apply(const NightDef &def, NightState &state, const Action &action); // false and no change if not legal
     int Hour(const NightDef &def, const NightState &state);
     int Minute(const NightDef &def, const NightState &state);
+    // A hit in battle (Battle.cpp): data formula, resistance, armour, guard; never below minDamage.
+    int Damage(const NightDef &def, const NightState &state, const Fighter &attacker, const Fighter &defender);
+
     // d20 + the guest's stat against the target; no rule for 1 or 20.
     Check RollCheck(const NightDef &def, NightState &state, int guest, StatKind stat, int target);
     // Damage from a guest (byGuest) or the house (-1). Before the Turn 0 HP is down, after it death.

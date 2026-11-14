@@ -33,6 +33,15 @@ namespace umbra::night::inner
 
     // Turn order: high roll first, then higher speed, then lower index (Turn.cpp).
     std::array<std::int8_t, maxGuests> Order(const std::array<int, maxGuests> &rolls, const std::array<int, maxGuests> &speeds, int count);
+    int BoardGuest(const NightState &state); // whose board turn it is, ignoring battles and levels
+    int MonsterAt(const NightState &state, int cell); // a living monster there, or -1
+    // Battle.cpp
+    void StartBattle(const NightDef &def, NightState &state, int cell, const std::vector<Fighter> &starters, const std::vector<Fighter> &others);
+    void BattleLegal(const NightDef &def, const NightState &state, std::vector<Action> &legal);
+    void BattleApply(const NightDef &def, NightState &state, const Action &action);
+    void RoundStart(const NightDef &def, NightState &state); // monsters leave and appear
+    int BuffBonus(const NightDef &def, const NightState &state, int guest, StatKind kind); // battle buffs on a guest
+    void HealGuest(const NightDef &def, NightState &state, int guest, int amount);
     void StartTurn(const NightDef &def, NightState &state); // the current guest's moves
     void EndTurn(const NightDef &def, NightState &state);   // bonus room, then the next guest
 }
