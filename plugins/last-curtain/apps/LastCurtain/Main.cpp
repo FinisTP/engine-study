@@ -140,6 +140,7 @@ namespace
             int frame = 0, aimed = -1, savedRound = -1;
             bool wasHeld = false, dragging = false, pressTook = false; // the left button: a drag looks around, a release without one clicks
             glm::vec2 pressAt{0.0F}, lastMouse{0.0F};
+            BoardView view; // what the player sees this frame
             std::string shown; // the screen on show besides the HUD
             bool captured = false, suspended = false, quit = false, fresh = true; // fresh: the camera jumps to a new night
             std::mt19937_64 random(options.seed ? options.seed : static_cast<std::uint64_t>(std::chrono::system_clock::now().time_since_epoch().count()));
@@ -164,12 +165,14 @@ namespace
                 play->SetCaptions(captions);
                 if (screens.Ready() && play->State().player >= 0)
                     screens.Ui().Open("hud");
+                if (screens.Ready())
+                    screens.Ui().Open("labels");
                 aimed = -1, savedRound = -1, fresh = true;
             };
             const auto backToStart = [&] {
                 play.reset();
                 if (screens.Ready())
-                    screens.Ui().Close("hud");
+                    screens.Ui().Close("hud"), screens.Ui().Close("labels");
                 NightState unused;
                 canContinue = ReadSave(def, unused);
             };
@@ -253,7 +256,8 @@ namespace
                                 play->Key(key);
                     }
                     play->Hover(table.Pick(def, uiInput.mouse, pixels));
-                    table.Draw(def, MakeView(def, state, state.player), play->Previewed().path, play->Previewed().affordable, ToDraw(play->Sliding()), drawList);
+                    view = MakeView(def, state, state.player);
+                    table.Draw(def, view, play->Previewed().path, play->Previewed().affordable, ToDraw(play->Sliding()), play->Rings(), drawList);
                     // Saves: at each new round, and gone once the night is over.
                     if (state.player >= 0 && !state.over && state.round != savedRound)
                         WriteSave(*play), savedRound = state.round;
@@ -265,7 +269,7 @@ namespace
                     }
                 }
                 else
-                    table.Draw(def, BoardView{}, {}, 0, {}, drawList); // the dark room behind the start screen
+                    table.Draw(def, BoardView{}, {}, 0, {}, {}, drawList); // the dark room behind the start screen
                 show(play ? play->Screen() : "start");
 
                 // 6. The screens; their actions; a click no screen took goes to the board.
@@ -274,6 +278,21 @@ namespace
                 {
                     nlohmann::json data = play ? play->UiData() : Play::StartData(def, canContinue);
                     data["warnings"] = screens.Problems();
+                    // Labels over pawns in view: "thinking..." and the group numbers (Table.md).
+                    data["labels"] = nlohmann::json::array();
+                    if (play)
+                    {
+                        const auto label = [&](int guest, const std::string &text, float up) {
+                            for (const PawnView &pawn : view.pawns)
+                                if (pawn.guest == guest)
+                                    if (const auto at = table.ScreenPoint(table.Above(def, view, guest, ToDraw(play->Sliding())) + glm::vec3{0.0F, up, 0.0F}, pixels))
+                                        data["labels"].push_back({{"text", text}, {"at", {at->x, at->y}}});
+                        };
+                        for (const auto &[guest, number] : play->Rings())
+                            label(guest, std::to_string(number), 0.0F);
+                        if (play->ThinkingGuest() >= 0)
+                            label(play->ThinkingGuest(), "thinking...", 0.5F);
+                    }
                     for (const umbra::ui::UiAction &action : screens.Ui().Update(data, pixels, uiInput, drawList.ui))
                     {
                         uiTook = true;

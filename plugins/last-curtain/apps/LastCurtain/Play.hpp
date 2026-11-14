@@ -60,6 +60,9 @@ public:
     void SetDecider(Decider decider) { decider_ = std::move(decider); }
     // The camera: the cell to look at (-1: nothing), and whether it follows (a drag stops it until Focus).
     [[nodiscard]] int CameraCell() const;
+    // (guest, number) for every guest in a group of two or more: the player's group is 1, the
+    // others 2, 3 ... in order of their lowest member.
+    [[nodiscard]] std::vector<std::pair<int, int>> Rings() const;
     void Drag() { following_ = false; }
     [[nodiscard]] bool Following() const { return following_; }
     [[nodiscard]] float Thinking() const { return think_; }      // seconds of "thinking..." left

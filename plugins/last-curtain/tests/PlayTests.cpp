@@ -1080,3 +1080,31 @@ TEST_CASE("A dead player still follows the beats; Focus and Esc are safe (T128)"
     play.Key(InputKey::Escape);
     CHECK(play.Screen() == "pause");
 }
+
+TEST_CASE("Rings are numbered by group, the player's first (T129)", "[night][play]")
+{
+    const NightDef def = Data();
+    NightState state = PlayerCorridor(def, 1, 4);
+    state.guests[3].group = state.guests[5].group = 4; // a bot group, lowest member 3
+    state.guests[6].group = 7;                         // a group of one: no ring
+    Play alone(def, state);
+    CHECK(alone.Rings() == std::vector<std::pair<int, int>>{{3, 2}, {5, 2}});
+    state.guests[0].group = state.guests[2].group = 0; // the player's group
+    Play play(def, state);
+    CHECK(play.Rings() == std::vector<std::pair<int, int>>{{0, 1}, {2, 1}, {3, 2}, {5, 2}});
+}
+
+TEST_CASE("The HUD shows a goal's progress (T129)", "[night][play]")
+{
+    NightDef def = Data();
+    NightState state = PlayerCorridor(def, 1, 4);
+    def.goals.push_back({0, "test", GoalKind::Events, -1, 2, "Pass two tests."});
+    state.guests[0].goal = static_cast<std::int8_t>(def.goals.size() - 1);
+    state.guests[0].goalCount = 1;
+    Play play(def, state);
+    CHECK(play.UiData()["goal"]["progress"] == "1 of 2");
+    def.goals.back().kind = GoalKind::Room;
+    def.goals.back().target = 0;
+    Play room(def, state);
+    CHECK(room.UiData()["goal"]["progress"] == "");
+}

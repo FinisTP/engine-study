@@ -7,6 +7,8 @@
 
 #include <glm/vec2.hpp>
 
+#include <optional>
+#include <utility>
 #include <vector>
 
 // The board drawn as a table top (Table.md): placeholder boxes for floors, walls, pawns and
@@ -25,8 +27,12 @@ public:
         float t = 0.0F; // 0 to 1
     };
     // path: the walk being picked, gold up to `affordable` steps, red after; slide: a pawn between two cells.
+    // rings: (guest, group number) from Play::Rings; numbers 1-3 have their own colour.
     void Draw(const umbra::night::NightDef &def, const umbra::night::BoardView &view, const std::vector<int> &path, int affordable,
-              const Slide &slide, umbra::core::DrawList &out) const;
+              const Slide &slide, const std::vector<std::pair<int, int>> &rings, umbra::core::DrawList &out) const;
+    // The top of a guest's pawn as drawn (a label sits above it), and a table point in render pixels.
+    [[nodiscard]] glm::vec3 Above(const umbra::night::NightDef &def, const umbra::night::BoardView &view, int guest, const Slide &slide) const;
+    [[nodiscard]] std::optional<glm::vec2> ScreenPoint(glm::vec3 world, glm::vec2 pixels) const;
     void SetHunt(bool hunt) { hunt_ = hunt; } // after the Turn the ambient turns red
     void Aim(glm::vec3 target, float seconds);
     void Update(float dt);
@@ -37,6 +43,8 @@ public:
     [[nodiscard]] int Pick(const umbra::night::NightDef &def, glm::vec2 mouse, glm::vec2 pixels) const;
 
 private:
+    static int Crowd(const umbra::night::BoardView &view, int cell); // pawns standing in the cell
+    static glm::vec3 Place(const umbra::night::NightDef &def, const umbra::night::BoardView &view, int guest, const Slide &slide);
     umbra::render::Renderer &renderer_;
     umbra::core::MeshHandle box_; // a 1 m cube centred on the origin
     glm::vec3 from_{0.0F}, to_{0.0F};

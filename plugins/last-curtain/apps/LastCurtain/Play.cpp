@@ -5,6 +5,7 @@
 #include <NightSave.hpp>
 
 #include <algorithm>
+#include <array>
 #include <bit>
 #include <charconv>
 #include <chrono>
@@ -498,7 +499,10 @@ nlohmann::json Play::UiData() const
     if (state_.player >= 0 && state_.guests[U(state_.player)].goal >= 0)
     {
         const Guest &mine = state_.guests[U(state_.player)];
-        data["goal"] = {{"text", def_.goals[U(mine.goal)].text}, {"done", GoalDone(def_, state_, state_.player)}};
+        const GoalDef &goal = def_.goals[U(mine.goal)];
+        const bool counted = goal.kind == GoalKind::Events || goal.kind == GoalKind::Monsters;
+        data["goal"] = {{"text", goal.text}, {"done", GoalDone(def_, state_, state_.player)},
+                        {"progress", counted ? std::to_string(std::min<int>(mine.goalCount, goal.count)) + " of " + std::to_string(goal.count) : ""}};
         for (int g = 0; g < state_.count; ++g)
             if (g != state_.player && ((mine.knows >> g) & 1u) && state_.guests[U(g)].goal >= 0)
                 data["knownGoals"].push_back({{"name", def_.guests[U(g)].name}, {"text", def_.goals[U(state_.guests[U(g)].goal)].text}});
@@ -752,6 +756,31 @@ nlohmann::json Play::EndData() const
     if (!allies.empty())
         lines.push_back("At your side at the end: " + allies + ".");
     return {{"outcome", outcome}, {"lines", lines}};
+}
+
+std::vector<std::pair<int, int>> Play::Rings() const
+{
+    // 1. Count each group's living members.
+    std::array<int, 16> size{};
+    for (int g = 0; g < state_.count; ++g)
+        if (const Guest &guest = state_.guests[U(g)]; guest.group >= 0 && guest.group < 16 && !guest.dead)
+            ++size[U(guest.group)];
+    // 2. Number the groups as their first member comes up; the player's group is 1.
+    const int mine = state_.player >= 0 ? state_.guests[U(state_.player)].group : -1;
+    std::array<int, 16> number{};
+    int next = 2;
+    std::vector<std::pair<int, int>> rings;
+    for (int g = 0; g < state_.count; ++g)
+    {
+        const Guest &guest = state_.guests[U(g)];
+        if (guest.group < 0 || guest.group >= 16 || guest.dead || size[U(guest.group)] < 2)
+            continue;
+        int &n = number[U(guest.group)];
+        if (n == 0)
+            n = guest.group == mine ? 1 : next++;
+        rings.push_back({g, n});
+    }
+    return rings;
 }
 
 int Play::CameraCell() const

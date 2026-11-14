@@ -14,4 +14,9 @@
    point shifts by the drag times `distance / 700` metres a pixel (x across, y toward the camera),
    so the board stays under the cursor at any zoom. A drag stops the camera following (`Play::Drag`)
    until the Focus button. A board click is the button let go without a drag.
-7. **Picking**: the mouse position goes back through the projection and view (`inverse(projection * view)`) at the near and far planes. The line between those two points is the ray from the eye; `CellUnderRay` finds where it meets the table top, y = 0.
+7. **Labels**: "thinking..." and the group numbers float over pawns. `Above` is the pawn's top;
+   `ScreenPoint` takes it through the camera's view and projection to clip space, divides by `w`
+   (points behind the eye are dropped) and maps -1..1 to pixels, y down. The `labels` screen draws
+   each at its point (`"at"`). Rings: gold for the player's group (1), teal (2), violet (3), red for
+   the Taken.
+8. **Picking**: the mouse position goes back through the projection and view (`inverse(projection * view)`) at the near and far planes. The line between those two points is the ray from the eye; `CellUnderRay` finds where it meets the table top, y = 0.

@@ -16,7 +16,8 @@
   "moves": 4,
   "goal": {
     "text": "Find her father's seat in the Patron's box.",
-    "done": false
+    "done": false,
+    "progress": "1 of 2"
   },
   "knownGoals": [
     {
@@ -297,5 +298,21 @@
       "Stagehand"
     ]
   },
-  "focus": true
+  "focus": true,
+  "labels": [
+    {
+      "text": "thinking...",
+      "at": [
+        640,
+        300
+      ]
+    },
+    {
+      "text": "2",
+      "at": [
+        500,
+        380
+      ]
+    }
+  ]
 }

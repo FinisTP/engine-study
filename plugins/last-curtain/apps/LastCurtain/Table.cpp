@@ -77,7 +77,7 @@ Table::~Table()
 }
 
 void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<int> &path, int affordable, const Slide &slide,
-                 umbra::core::DrawList &out) const
+                 const std::vector<std::pair<int, int>> &rings, umbra::core::DrawList &out) const
 {
     // 1. Light: indoors, dim ambient (red in the hunt), one warm lamp over the middle of the table.
     umbra::core::EnvironmentSettings settings;
@@ -118,27 +118,80 @@ void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<i
         Box(out, box_, CellCenter(def, path[i]) + glm::vec3{0, 0.03F, 0}, {0.35F, 0.04F, 0.35F},
             static_cast<int>(i) < affordable ? Hex(0xF2D58A) : Hex(0xD62828));
 
-    // 4. Pawns, spread around their cell; a ring under the player and allies, a red one under the Taken.
-    std::map<int, int> inCell;
-    const auto spot = [&](int cell) {
-        const int i = inCell[cell]++;
-        const float angle = static_cast<float>(i) * 2.399F; // golden angle: no two land together
-        return CellCenter(def, cell) + (i == 0 ? glm::vec3{0} : 0.6F * glm::vec3{std::cos(angle), 0, std::sin(angle)});
-    };
+    // 4. Pawns where Place puts them; a ring under the player (gold), each group (its number's colour) and the Taken (red).
+    constexpr std::array<std::uint32_t, 4> groupColors{0xF2D58A, 0xF2D58A, 0x5FC9C9, 0xB28DFF};
     for (const PawnView &pawn : view.pawns)
     {
-        glm::vec3 at = spot(pawn.cell);
-        if (pawn.guest == slide.guest && slide.from >= 0 && slide.to >= 0) // between two cells, eased (Table.md)
-        {
-            const float t = std::clamp(slide.t, 0.0F, 1.0F), eased = t * t * (3.0F - 2.0F * t);
-            at = CellCenter(def, slide.from) + (CellCenter(def, slide.to) - CellCenter(def, slide.from)) * eased;
-        }
+        const glm::vec3 at = Place(def, view, pawn.guest, slide);
         Box(out, box_, at + glm::vec3{0, 0.45F, 0}, {0.5F, 0.9F, 0.5F}, Hex(guestColors[static_cast<std::size_t>(pawn.guest) % guestColors.size()]));
-        if (pawn.player || pawn.ally || pawn.taken)
-            Box(out, box_, at + glm::vec3{0, 0.02F, 0}, {0.75F, 0.04F, 0.75F}, pawn.taken ? Hex(0xD62828) : pawn.player ? Hex(0xF2D58A) : Hex(0x8FD48A));
+        int group = 0;
+        for (const auto &[guest, number] : rings)
+            group = guest == pawn.guest ? number : group;
+        if (pawn.taken)
+            Box(out, box_, at + glm::vec3{0, 0.02F, 0}, {0.75F, 0.04F, 0.75F}, Hex(0xD62828));
+        else if (pawn.player || group > 0)
+            Box(out, box_, at + glm::vec3{0, 0.02F, 0}, {0.75F, 0.04F, 0.75F}, Hex(groupColors[static_cast<std::size_t>(std::clamp(group, 0, 3))]));
     }
+    std::map<int, int> inCell;
+    const auto spot = [&](int cell) {
+        const int i = inCell[cell]++ + Crowd(view, cell);
+        const float angle = static_cast<float>(i) * 2.399F;
+        return CellCenter(def, cell) + (i == 0 ? glm::vec3{0} : 0.6F * glm::vec3{std::cos(angle), 0, std::sin(angle)});
+    };
     for (const MonsterView &monster : view.monsters)
         Box(out, box_, spot(monster.cell) + glm::vec3{0, 0.35F, 0}, {0.6F, 0.7F, 0.6F}, monster.minion ? Hex(0x5B2A86) : Hex(0x8B5A2B));
+}
+
+int Table::Crowd(const BoardView &view, int cell)
+{
+    int n = 0;
+    for (const PawnView &pawn : view.pawns)
+        n += pawn.cell == cell ? 1 : 0;
+    return n;
+}
+
+glm::vec3 Table::Place(const NightDef &def, const BoardView &view, int guest, const Slide &slide)
+{
+    // 1. A sliding pawn: between its two cells, eased (Table.md).
+    if (guest == slide.guest && slide.from >= 0 && slide.to >= 0)
+    {
+        const float t = std::clamp(slide.t, 0.0F, 1.0F), eased = t * t * (3.0F - 2.0F * t);
+        return CellCenter(def, slide.from) + (CellCenter(def, slide.to) - CellCenter(def, slide.from)) * eased;
+    }
+    // 2. Else spread round its cell by the golden angle (no two land together), in the view's order.
+    int cell = -1;
+    for (const PawnView &pawn : view.pawns)
+        cell = pawn.guest == guest ? pawn.cell : cell;
+    if (cell < 0)
+        return {};
+    int before = 0;
+    for (const PawnView &pawn : view.pawns)
+    {
+        if (pawn.guest == guest)
+            break;
+        before += pawn.cell == cell ? 1 : 0;
+    }
+    const float angle = static_cast<float>(before) * 2.399F;
+    return CellCenter(def, cell) + (before == 0 ? glm::vec3{0} : 0.6F * glm::vec3{std::cos(angle), 0, std::sin(angle)});
+}
+
+glm::vec3 Table::Above(const NightDef &def, const BoardView &view, int guest, const Slide &slide) const
+{
+    return Place(def, view, guest, slide) + glm::vec3{0.0F, 1.2F, 0.0F};
+}
+
+std::optional<glm::vec2> Table::ScreenPoint(glm::vec3 world, glm::vec2 pixels) const
+{
+    // 1. World -> clip space with the table's camera; behind the eye: none.
+    const umbra::core::Camera camera = Camera();
+    const glm::mat4 view = glm::lookAtRH(camera.position, camera.target, glm::vec3{0.0F, 1.0F, 0.0F});
+    const glm::mat4 projection = glm::perspectiveRH_NO(glm::radians(camera.fovYDegrees), pixels.x / std::max(pixels.y, 1.0F), camera.nearPlane, camera.farPlane);
+    const glm::vec4 clip = projection * view * glm::vec4(world, 1.0F);
+    if (clip.w <= 0.0F)
+        return std::nullopt;
+    // 2. Divide by w (-1..1), then to pixels; screen y grows downward.
+    const glm::vec2 ndc = glm::vec2(clip) / clip.w;
+    return glm::vec2{(ndc.x * 0.5F + 0.5F) * pixels.x, (0.5F - ndc.y * 0.5F) * pixels.y};
 }
 
 void Table::Aim(glm::vec3 target, float seconds)
