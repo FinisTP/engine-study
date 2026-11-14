@@ -11,6 +11,13 @@ passages. An opened cell that no one lights is **known**: its shape and kind sho
 it. Pawns, monsters, minions and the Taken appear only in lit cells; the viewer's own pawn always.
 A dead viewer, or viewer -1, sees everything (watching the bots finish the night).
 
+## Walls and doorways
+
+Each side of an opened cell is one of three: a **passage** (`Passage`: both rooms opened with
+doors facing, not sealed), a **doorway** (`Doorway`: a door to a cell not opened yet, while rooms
+remain) or a **wall** (everything else, `CellView::walls`): a door that faces another room's
+wall is a wall, so the table never shows a gap a guest cannot pass.
+
 ## Steps
 
 On a turn the viewer plays (their guest or an ally, not in battle), every legal `Move` through a

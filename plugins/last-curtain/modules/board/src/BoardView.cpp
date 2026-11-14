@@ -27,8 +27,12 @@ namespace umbra::night
             v.kind = def.rooms[U(cell.room)].kind;
             v.doors = cell.doors;
             for (int d = 0; d < 4; ++d)
+            {
                 if (Doorway(def, state, c, d))
                     v.doorways = static_cast<std::uint8_t>(v.doorways | (1u << d));
+                else if (!Passage(def, state, c, d))
+                    v.walls = static_cast<std::uint8_t>(v.walls | (1u << d));
+            }
             v.lit = all;
             for (int g = 0; g < state.count && !v.lit; ++g)
                 if (Controls(state, viewer, g) && Up(state.guests[U(g)]))

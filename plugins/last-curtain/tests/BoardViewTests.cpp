@@ -127,3 +127,24 @@ TEST_CASE("A dead player sees everything (T108)", "[night][board]")
     CHECK(Shows(MakeView(def, state, -1), 2));
     CHECK(Shows(MakeView(def, state, 0), 2)); // a dead viewer watches with everyone's eyes
 }
+
+TEST_CASE("A door facing a wall is drawn as a wall on both sides (T123)", "[night][view]")
+{
+    const NightDef def = Data();
+    NightState state = Corridor(def); // foyer <-> Left(1) <-> Left(2), E and W doors
+    const int a = Left(def, 1), b = Left(def, 2);
+    state.cells[U(b)].doors = 8; // b keeps only its west door: a's west door faces b's wall
+    BoardView view = MakeView(def, state, -1);
+    CHECK((view.cells[U(a)].walls & (1u << 3)) != 0);
+    CHECK((view.cells[U(b)].walls & (1u << 1)) != 0);
+    CHECK((view.cells[U(a)].walls & (1u << 1)) == 0); // a <-> foyer is a passage
+    CHECK((view.cells[U(state.foyer)].walls & (1u << 3)) == 0);
+    // A doorway (a door to a cell not yet opened) is no wall.
+    REQUIRE((view.cells[U(b)].doorways & (1u << 3)) != 0);
+    CHECK((view.cells[U(b)].walls & (1u << 3)) == 0);
+    // A sealed passage is a wall from both sides.
+    state.sealed[0] = {I8(state.foyer), 3, 99};
+    view = MakeView(def, state, -1);
+    CHECK((view.cells[U(state.foyer)].walls & (1u << 3)) != 0);
+    CHECK((view.cells[U(a)].walls & (1u << 1)) != 0);
+}

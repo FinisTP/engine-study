@@ -76,6 +76,7 @@ namespace
         case ItemKind::Boost: return "fight boost";
         case ItemKind::Worn: return "worn";
         case ItemKind::Relic: return "relic";
+        case ItemKind::Keepsake: return "keepsake";
         }
         return "";
     }

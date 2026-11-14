@@ -17,6 +17,7 @@ namespace umbra::night
         RoomKind kind = RoomKind::Plain;
         std::uint8_t doors = 0;    // NESW, bit 0 = N
         std::uint8_t doorways = 0; // doors that lead to a room not yet opened
+        std::uint8_t walls = 0;    // sides a guest cannot pass: neither a passage nor a doorway
         std::int8_t step = -1;     // index in LegalActions of the Move into this cell, on the viewer's turn
     };
 

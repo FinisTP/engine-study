@@ -89,7 +89,7 @@ void Table::Draw(const NightDef &def, const BoardView &view, umbra::core::DrawLi
     out.lights.push_back({{0.0F, 7.0F, 0.0F}, {1.0F, 0.82F, 0.6F}, 30.0F, 40.0F, 0.0F});
     out.camera = Camera();
 
-    // 2. Rooms: a floor tile, wall stubs where a side has no door, a faint bar at each doorway.
+    // 2. Rooms: a floor tile, a wall stub on every side a guest cannot pass, a faint bar at each doorway.
     const int cells = def.rules.board.width * def.rules.board.height;
     const glm::vec3 side[] = {{0, 0, -1}, {1, 0, 0}, {0, 0, 1}, {-1, 0, 0}}; // N E S W
     for (int c = 0; c < cells; ++c)
@@ -105,7 +105,7 @@ void Table::Draw(const NightDef &def, const BoardView &view, umbra::core::DrawLi
         {
             const bool across = d == 1 || d == 3;
             const glm::vec3 edge = at + side[d] * (tile * 0.5F);
-            if (!(cell.doors & (1u << d)))
+            if (cell.walls & (1u << d))
                 Box(out, box_, edge + glm::vec3{0, 0.17F, 0}, across ? glm::vec3{0.12F, 0.35F, tile} : glm::vec3{tile, 0.35F, 0.12F}, Hex(0x3A3A44));
             else if (cell.doorways & (1u << d))
                 Box(out, box_, edge + side[d] * 0.2F, across ? glm::vec3{0.3F, 0.03F, 0.6F} : glm::vec3{0.6F, 0.03F, 0.3F}, Hex(0xC9C1AD));
