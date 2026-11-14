@@ -15,7 +15,7 @@
 - Short, simple code; `// 1.` step comments where code is not obvious; a `.md` beside the code for concepts (projection of labels, slides, drag) — extend `apps/LastCurtain/Table.md` and `modules/board/include/Board.md`.
 - C++ string and char literals ASCII (MSVC reads the local code page).
 - Commits `issue #UMBRA-<n> <summary>`, numbers from #147; stage by name or `git add -A plugins/last-curtain` plus named files; never commit `projects/reference/assets/scenes/settlement.scene.json`.
-- The rules, the bots and `assets/night/` do not change in this plan; the soak must still say "the data holds" and the golden fingerprint must not move.
+- After Task 0 the rules, the bots and `assets/night/` do not change; the soak must still say "the data holds" and the golden fingerprint must not move after Task 0.
 - Slide: 0.25 s a step **[call]**. Thinking pause: `max(0.4 s, the decision's own time)` before a bot's first action of a turn, only when the player sees it (user). Beat lengths stay (1.5 s seen, 0.3 s after Space, 0.2 s unseen).
 - Input table (user), exactly:
 
@@ -39,7 +39,21 @@
 
 ---
 
-### Task 1: Walls wherever a guest cannot pass (#147)
+### Task 0: No ally goals (#147) (user, 2026-11-15)
+
+**Files:**
+- Modify: `modules/night` (`GoalKind::Ally` removed: loader, `GoalDone`, tests), `modules/nightbots` (the ally parts of `Purpose`, `Seat`), `assets/night/goals.csv`, `docs/design/cast.md`, `Night.md`, `Balance.md`
+- Test: `tests/NightDataTests.cpp`, `tests/GoalTests.cpp`, `tests/BotTests.cpp`
+
+The user: an ally is not a personal goal. The four ally goals get other goals **[call]**: Nhi — pass two of the house's tests (what happened to her father); Bao — pass two tests (steady hands); Mai — destroy one creature; Lan — reach the Hall of mirrors.
+
+- [ ] **Step 1: Write the failing test** `"A goal of kind ally is refused (T117)"` (`night.goals`, the kind column).
+- [ ] **Step 2: Run** — Expected: FAIL (ally loads).
+- [ ] **Step 3: Implement**; replace the four rows; update the golden fingerprint; re-run the soak on seeds 1, 20001, 80001 and tune only the new goals' counts if one is out of band.
+- [ ] **Step 4: Run** the dev tests and the balance test — Expected: pass; "the data holds".
+- [ ] **Step 5: Commit** `issue #UMBRA-147 last-curtain: no ally goals`.
+
+### Task 1: Walls wherever a guest cannot pass (#148)
 
 **Files:**
 - Modify: `modules/board/include/BoardView.hpp`, `modules/board/src/BoardView.cpp`, `modules/board/include/Board.md`, `apps/LastCurtain/Table.cpp`, `apps/LastCurtain/Table.md`
@@ -52,9 +66,9 @@
 - [ ] **Step 2: Run** `timeout 110 /home/claude/dev/b/tests/UmbraNightTests "*T123*"` — Expected: FAIL to compile (no `walls`).
 - [ ] **Step 3: Implement** in `MakeView`: `walls` bit when `!Passage(def, state, c, d) && !(doorways bit)`; Table draws walls from `walls` (the old "no door" test goes). Board.md and Table.md: one line each.
 - [ ] **Step 4: Run** the dev tests — Expected: all pass.
-- [ ] **Step 5: Commit** `issue #UMBRA-147 last-curtain: walls wherever a guest cannot pass`.
+- [ ] **Step 5: Commit** `issue #UMBRA-148 last-curtain: walls wherever a guest cannot pass`.
 
-### Task 2: Paths to a lit square (#148)
+### Task 2: Paths to a lit square (#149)
 
 **Files:**
 - Modify: `modules/board/include/BoardView.hpp`, `modules/board/src/BoardView.cpp`, `Board.md`
@@ -67,9 +81,9 @@
 - [ ] **Step 2: Run** `"*T124*"` — Expected: FAIL to compile.
 - [ ] **Step 3: Implement** a breadth-first search from the guest's cell (Board.md: one paragraph).
 - [ ] **Step 4: Run** the dev tests — Expected: all pass.
-- [ ] **Step 5: Commit** `issue #UMBRA-148 last-curtain: paths to a lit square`.
+- [ ] **Step 5: Commit** `issue #UMBRA-149 last-curtain: paths to a lit square`.
 
-### Task 3: The turn: menu, picking, walking, Stay/Back (#149)
+### Task 3: The turn: menu, picking, walking, Stay/Back (#150)
 
 **Files:**
 - Modify: `apps/LastCurtain/Play.hpp`, `Play.cpp`, `Main.cpp`, `Table.hpp`, `Table.cpp`, `Table.md`, `README.md`; rename `assets/ui/actions.ui.json` → `menu.ui.json`; create `assets/ui/picking.ui.json`, `assets/ui/confirm.ui.json`; `assets/ui/sample.json`
@@ -97,9 +111,9 @@
 - [ ] **Step 2: Run** `timeout 110 /home/claude/dev/b/tests/UmbraNightTests "[play]"` — Expected: FAIL.
 - [ ] **Step 3: Implement.** Walk = the `PathTo` cells; `Update(dt)` (player's turn): when no slide runs and no dialog waits, take the next cell — unopened: mode Confirm and stop; else apply the legal Move toward it and start a slide; a move that wrote any log entry other than a plain step, or left 0 moves, ends the walk. Stay applies the opening move (with its slide) and ends the walk; Back returns to picking. Menu entries: "Move" (when any Move is legal), then the old action labels (Fight the X, Chat with X, Take the passage, the power), "Use item" (opens the bag), "End turn". `menu.ui.json`, `picking.ui.json` ("Choose a lit square. Esc: back.") and `confirm.ui.json` ("A closed door. Open it?" with Stay / Back; the room behind is unknown until opened). Main: the mouse position goes to `Hover` each frame; draws `Previewed()` and `Sliding()`. Table.md: the slide's smoothstep in one line.
 - [ ] **Step 4: Run** the dev tests and `UmbraTool ui-preview menu picking confirm` with `sample.json` — Expected: all pass; 0 errors.
-- [ ] **Step 5: Commit** `issue #UMBRA-149 last-curtain: the turn menu, walking clicks and Stay/Back`.
+- [ ] **Step 5: Commit** `issue #UMBRA-150 last-curtain: the turn menu, walking clicks and Stay/Back`.
 
-### Task 4: Input by state, inspect, the save menu (#150)
+### Task 4: Input by state, inspect, the save menu (#151)
 
 **Files:**
 - Modify: `Play.hpp`, `Play.cpp`, `Main.cpp`; create `assets/ui/inspect.ui.json`, `assets/ui/pause.ui.json`; `sample.json`
@@ -113,9 +127,9 @@
 - [ ] **Step 2: Run** `"*T126*"` — Expected: FAIL.
 - [ ] **Step 3: Implement**; Main stops quitting on Esc (Esc goes to `Play::Key`; the window's close button still quits, saving as now); right button → `Click(cell, true)`.
 - [ ] **Step 4: Run** the dev tests and `ui-preview inspect pause` — Expected: pass; 0 errors.
-- [ ] **Step 5: Commit** `issue #UMBRA-150 last-curtain: input by state, inspect and the save menu`.
+- [ ] **Step 5: Commit** `issue #UMBRA-151 last-curtain: input by state, inspect and the save menu`.
 
-### Task 5: Bots on screen: thinking and sliding (#151)
+### Task 5: Bots on screen: thinking and sliding (#152)
 
 **Files:**
 - Modify: `Play.hpp`, `Play.cpp`
@@ -128,9 +142,9 @@
 - [ ] **Step 2: Run** `"*T127*"` — Expected: FAIL.
 - [ ] **Step 3: Implement**: the decision is made, timed and held as the pending action; the pause counts down; then Apply, the beat and the slide as now.
 - [ ] **Step 4: Run** the dev tests — Expected: pass.
-- [ ] **Step 5: Commit** `issue #UMBRA-151 last-curtain: bots think and slide`.
+- [ ] **Step 5: Commit** `issue #UMBRA-152 last-curtain: bots think and slide`.
 
-### Task 6: The camera follows; drag and Focus (#152)
+### Task 6: The camera follows; drag and Focus (#153)
 
 **Files:**
 - Modify: `Play.hpp`, `Play.cpp`, `Table.hpp`, `Table.cpp`, `Table.md`, `Main.cpp`, `assets/ui/hud.ui.json` (a Focus button)
@@ -143,9 +157,9 @@
 - [ ] **Step 2: Run** `"*T128*"` — Expected: FAIL.
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run** the dev tests — Expected: pass.
-- [ ] **Step 5: Commit** `issue #UMBRA-152 last-curtain: the camera follows; drag and Focus`.
+- [ ] **Step 5: Commit** `issue #UMBRA-153 last-curtain: the camera follows; drag and Focus`.
 
-### Task 7: Labels over the table: thinking, group numbers; the goal's progress (#153)
+### Task 7: Labels over the table: thinking, group numbers; the goal's progress (#154)
 
 **Files:**
 - Modify: `engine/ui/src/Screen.cpp`, `engine/ui/src/Ui.cpp`, `engine/ui/include/Screen.hpp`, `engine/ui/include/UI.md`; `modules/board/src/Narrate.cpp`, `assets/night/captions.json`; `Play.hpp`, `Play.cpp`, `Table.hpp`, `Table.cpp`, `Table.md`, `Main.cpp`; create `assets/ui/labels.ui.json`; `hud.ui.json`, `sample.json`
@@ -159,9 +173,9 @@
 - [ ] **Step 2: Run** the ui tests and `"*T129*"` — Expected: FAIL.
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run** every CTest in the dev build and `ui-preview labels hud` — Expected: pass; 0 errors.
-- [ ] **Step 5: Commit** `issue #UMBRA-153 last-curtain: labels over pawns and the goal's progress`.
+- [ ] **Step 5: Commit** `issue #UMBRA-154 last-curtain: labels over pawns and the goal's progress`.
 
-### Task 8: Records, checks, ship (#154)
+### Task 8: Records, checks, ship (#155)
 
 **Files:**
 - Create: `docs/testing/s28-the-screen.md` (ROADMAP §14 template; the Windows checklist from the spec: a full night as one guest, a goal finished and one failed, a bot-to-bot recruit seen, the camera follow and drag, the save menu, Esc in each state)
@@ -170,4 +184,4 @@
 - [ ] **Step 1: Run** `/home/claude/verify.sh` (gcc, clang, asan) — Expected: every CTest passes.
 - [ ] **Step 2: Run** the soak on seed 1 (2,000 nights) — Expected: "the data holds", same numbers as plan 2b (the rules did not change).
 - [ ] **Step 3: Capture** with SwiftShader: `LastCurtain --seed 3 --player nhi --frames 30` and a `--watch` run long enough to catch a slide and a "thinking..." label — Expected: walls on every closed side, the menu, a label over a pawn.
-- [ ] **Step 4: Write the records**; **commit** `issue #UMBRA-154 last-curtain: plan 2c records`; ship to the PC with `git am`; the final whole-branch review with the Review Focus above; the final message lists every ledger "Ruling:" and deferred minor.
+- [ ] **Step 4: Write the records**; **commit** `issue #UMBRA-155 last-curtain: plan 2c records`; ship to the PC with `git am`; the final whole-branch review with the Review Focus above; the final message lists every ledger "Ruling:" and deferred minor.
