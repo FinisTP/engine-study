@@ -56,7 +56,7 @@ namespace
         case LogKind::Died: return text + who(e.who) + " dies";
         case LogKind::Monster: return text + (e.other == 1 ? who(e.who) + " kills " : "appears: ") + def.monsters[static_cast<std::size_t>(e.a)].name;
         case LogKind::Level: return text + who(e.who) + " reaches level " + std::to_string(e.a);
-        case LogKind::Persuade: return text + who(e.who) + (e.a ? " wins over " : " fails to win over ") + who(e.other);
+        case LogKind::Persuade: return text + who(e.who) + (e.a ? " answers " : " fails to answer ") + who(e.other) + " (" + std::to_string(e.b) + " approvals)";
         case LogKind::Ended:
         {
             static const char *ends[] = {"running", "the company destroys the Taken", "the Taken wins"};

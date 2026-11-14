@@ -274,6 +274,8 @@ namespace umbra::night
         // 1. A battle: the guest fighter to act. 2. A level to choose. 3. The board.
         if (state.battle.active)
             return state.battle.fighters[U(state.battle.turn)].guest;
+        if (state.chat.active)
+            return state.player; // the player answers a question
         for (int g = 0; g < state.count; ++g)
             if (state.guests[U(g)].pending > 0 && !state.guests[U(g)].dead)
                 return g;
@@ -290,6 +292,12 @@ namespace umbra::night
         if (state.battle.active)
         {
             BattleLegal(def, state, legal);
+            return legal;
+        }
+        if (state.chat.active)
+        {
+            legal.push_back({ActionKind::Answer, 0});
+            legal.push_back({ActionKind::Answer, 1});
             return legal;
         }
         if (guest.pending > 0)
@@ -385,10 +393,21 @@ namespace umbra::night
         case ActionKind::Power:
             UsePower(def, state, action);
             break;
-        case ActionKind::Persuade:
-            Persuade(def, state, g, action.a);
-            inner::EndTurn(def, state);
+        case ActionKind::Chat:
+            OpenChat(def, state, action.a, false);
             break;
+        case ActionKind::OpenChat:
+            OpenChat(def, state, g, true);
+            break;
+        case ActionKind::Answer:
+        {
+            // A chat the player opened uses their turn; one a bot opened does not.
+            const bool byBot = state.chat.byBot;
+            AnswerChat(def, state, action.a);
+            if (!byBot)
+                inner::EndTurn(def, state);
+            break;
+        }
         case ActionKind::Move:
         {
             int to = action.a == transportMove ? Pair(def, state, guest.cell) : Neighbour(def, guest.cell, action.a);

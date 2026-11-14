@@ -31,7 +31,7 @@ namespace umbra::night
         struct { std::vector<int> xp; int hp = 4, stat = 1; } levels;
         struct { std::vector<int> targets; int perHour = 0; } omens; // curse target: targets[omens taken] + perHour * hours since start
         struct { int fromRound = 3, chancePercent = 35, stayRounds = 3, max = 2; } monsters;
-        struct { int target = 13, bond = 3, retryRounds = 2; } persuade;
+        struct { int approvals = 3, bond = 3; } persuade; // approvals that make an ally; the bond's pull on a target
         struct { int downedReturnHp = 1, attackBondLoss = 300; } guests;
         struct { int companyWinMin = 40, companyWinMax = 60; } balance;
     };
@@ -107,6 +107,14 @@ namespace umbra::night
         int count = 0;   // a minion: how many are placed at the Turn
     };
 
+    // One of a guest's questions: two answers, one physical and one magical, each with its target.
+    struct QuestionDef
+    {
+        int guest = 0; // guests.csv row
+        std::string id, text, physicalText, magicalText;
+        int physicalTarget = 0, magicalTarget = 0;
+    };
+
     struct OmenDef
     {
         std::string id, name;
@@ -121,6 +129,7 @@ namespace umbra::night
         int huntHpPercent = 50;    // in the hunt, go for the Taken only above this share of max HP
         int huntNearSteps = 2;     // ... and with another guest this near
         int crowd = 3;             // the Taken keeps away from this many guests together
+        int chatty = 0;            // 5 or more: opens a chat with the player whenever it can
     };
 
     struct NightDef
@@ -136,6 +145,7 @@ namespace umbra::night
         std::vector<MonsterDef> monsters; // ordinary monsters, then the minions of minions.csv
         std::vector<OmenDef> omens;
         std::vector<StyleDef> styles;
+        std::vector<QuestionDef> questions; // five per guest
         std::uint64_t fingerprint = 0; // a hash of every data file, so saves match their data
 
         // The index of the row with this id, or -1.

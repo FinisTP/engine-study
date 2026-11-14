@@ -9,7 +9,7 @@ namespace umbra::night
     // Field lists: every member of every struct in the state.
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Cell, room, doors, opened, resolved, omen)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Guest, hp, maxHp, might, sanity, speed, cell, from, level, group, xp, items, omens, bonusUsed, down, dead,
-                                       downedBy, pending, askedUntilRound, movesLeft)
+                                       downedBy, pending, approvals, asked, chatRound, movesLeft)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FloorItem, cell, item)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LogEntry, tick, kind, who, other, a, b)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Monster, kind, cell, leavesRound, hp, might, sanity)
@@ -17,9 +17,10 @@ namespace umbra::night
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Battle, active, round, turn, count, fighters, cell, owner)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Taken, present, guest, cooldown, reflect)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Mark, cell, direction, untilRound)
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ChatState, active, byBot, asker, question)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(NightState, seed, random, cells, deck, deckSize, deckNext, placed, foyer, understage, guests, order, count,
                                        round, turn, player, over, floor, eventsUsed, itemsUsed, log, logCount, bonds, marked, omensTaken,
-                                       omenOffer, omensUsed, outcome, taken, flooded, sealed, battle, monsters)
+                                       omenOffer, omensUsed, outcome, taken, flooded, sealed, chat, battle, monsters)
 
     namespace
     {

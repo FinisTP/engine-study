@@ -326,7 +326,13 @@ the winning plan.
 ## 15. Allies
 
 - Only the player recruits. A group is at most 3: the player and two allies.
-- **To recruit:** be in the same room and spend the turn. Roll d20 + Sanity against 13, easier by 3 if that guest's bond favours you, harder by 3 if it is against you **[call]**. On a failure that guest cannot be asked again for 2 rounds **[call]**.
+- **Winning a guest over by talking** (user, 2026-11-14): in the same room, the player chats with
+  a guest, which uses the turn; a bot may also open a chat with the player at the start of its own
+  turn. The guest asks one of their five questions (`questions.csv`), with two answers: one needs
+  a physical roll (d20 + Might), the other a magical roll (d20 + Sanity), each with its own target;
+  the guest's bond toward the player makes both easier or harder by 3. A passed roll is one
+  approval, a failed one costs nothing; **three approvals**, on three separate turns, and the
+  guest joins the player's group.
 - **An ally is controlled by the player** on its own turn, and joins the player's battles when in the same room.
 - A recruited guest who turns leaves the group: the player loses that ally.
 - Bots never form groups.
@@ -474,6 +480,8 @@ build phases.
 | 2026-11-14 | No hidden marked guest; a failed curse roll turns that guest at once and time jumps to midnight; the roll is a plain d20 (same odds for all) against a target that rises with omens taken and the hour | user |
 | 2026-11-14 | With no failed roll by midnight, chance picks an omen holder (all alike), else anyone | user |
 | 2026-11-14 | No fights between guests before midnight; the early win, bystanders joining and temper are cut | user |
+| 2026-11-14 | Guests are won over by talking: five questions each, a physical or a magical answer, three approvals | user |
+| 2026-11-14 | An event stays one roll on one stat; its outcomes may push the guest back a room | user |
 | 2026-11-14 | Level 5 out of reach in a night is intended: levels build the character, not min-maxing | user |
 | 2026-11-14 | After midnight the Taken's own minions (one kind per form, a fixed set at the Turn) replace ordinary monsters; destroying one takes a share of the Taken's HP | user |
 

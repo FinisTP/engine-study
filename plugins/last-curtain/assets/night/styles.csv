@@ -1,6 +1,6 @@
-style,explore,fight,loot,omen,bonus,fleeBelowHpPercent,avoidGuests,healBelowPercent,huntHpPercent,huntNearSteps,crowd
-explorer,9,3,5,5,4,30,1,40,50,2,3
-fighter,4,9,3,6,5,20,0,40,50,2,3
-loner,5,2,5,7,4,40,6,40,50,2,3
-protector,4,5,4,3,4,40,0,40,50,2,3
-schemer,3,3,8,6,4,35,2,40,50,2,3
+style,explore,fight,loot,omen,bonus,fleeBelowHpPercent,avoidGuests,healBelowPercent,huntHpPercent,huntNearSteps,crowd,chatty
+explorer,9,3,5,5,4,30,1,40,50,2,3,4
+fighter,4,9,3,6,5,20,0,40,50,2,3,3
+loner,5,2,5,7,4,40,6,40,50,2,3,1
+protector,4,5,4,3,4,40,0,40,50,2,3,6
+schemer,3,3,8,6,4,35,2,40,50,2,3,7

@@ -120,6 +120,14 @@ TEST_CASE("Bad data is refused with file, row and column (T94)", "[night][data]"
         Replace(folder / "omens.csv", "mask,The cracked mask,4,0,0,0", "mask,The cracked mask,4");
         CHECK(Refused(folder).field == "omens.csv:1");
     }
+    SECTION("a guest without five questions")
+    {
+        const fs::path folder = CopyData("questions");
+        std::string text = ReadText(folder / "questions.csv");
+        text.erase(text.rfind("\nlan,"));
+        WriteText(folder / "questions.csv", text + "\n");
+        CHECK(Refused(folder).code == "night.questions");
+    }
     SECTION("a quoted field with a comma loads")
     {
         const fs::path folder = CopyData("quoted");

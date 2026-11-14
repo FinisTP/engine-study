@@ -1,0 +1,36 @@
+guest,id,text,physicalText,physicalTarget,magicalText,magicalTarget
+nhi,father,"Have you seen my father? Tall, grey suit. Do not say you are not sure.",Climb up and look over the balcony with me,normal,"Tell me what you remember, exactly",easy
+nhi,crane,"Fold a crane with me. If yours is ugly, you are lying about being careful.",Hold the paper steady while I crease it,easy,Fold your own and get every corner right,hard
+nhi,beetle,There is a beetle on the door. Get rid of it. Do not squash it.,Lift the door off its hinge and let it walk out,normal,"Talk it outside, slowly, like Mai does",normal
+nhi,laugh,Somebody laughed at me in the foyer. Were you laughing?,Stand between me and whoever it was,hard,Say who it was and why it is not funny,normal
+nhi,ghost,Ghosts do not scare me. Do they scare you? Answer properly.,Walk ahead of me into the dark,normal,Stay still and listen to it with me,easy
+thanh,note,Forgive me. There is a note in the walls I cannot place. Would you help me find it?,Knock along the panels until it rings true,normal,Hum with me until the wall answers,easy
+thanh,bracelet,My bracelet slipped beneath the stage boards. It was my mother's.,Pry the board up for me,normal,"Let me sing it back to my hand, and steady me",hard
+thanh,incense,"Would you light this incense for the old company? It would please them, I think.",Shield the flame from the draught,easy,Say their names with me as it burns,normal
+thanh,stage,They want me to sing at midnight. Do you think I should?,Promise you will stand in the wings,normal,Tell me honestly what you hear in the hall,hard
+thanh,shadow,"Something passed behind us. Please, which way should we go?",Take my hand and run the long way round,hard,Stand still and let it pass,normal
+bao,pulse,Truong Uyen Nhi is pale. Would you hold her wrist while I count?,Keep her arm still,easy,Keep her talking so she does not panic,normal
+bao,water,"There is water on that floor. Would you carry me across it, or tell me it is only rain?",Carry him over the puddle,hard,Convince him it is only rain,normal
+bao,papers,Why would a man keep thirty years of death certificates? Would you read them for me?,Force the locked drawer,normal,"Read them aloud, every name",hard
+bao,splint,"Do you know how to set a splint, or shall I teach you on yourself?",Pull the bone straight on three,normal,Keep him calm while he works,easy
+bao,question,You answer my question with a question. Why do you think I do the same?,Laugh it off and keep walking,easy,Answer him with a better question,hard
+khang,arm,"Arm-wrestle me, boss. Loser carries the bag.",Grip his hand and push,hard,Make him laugh until he loses,normal
+khang,ledger,"Kid, read me what this ledger says. My eyes hate small print.",Hold the lamp and squint with him,easy,"Read it out, numbers and all",normal
+khang,altar,"There's an altar back there. Grab what's on it, I'm not touching that.",Lift the box off the altar,normal,Ask the altar's leave first,hard
+khang,debt,"Somebody here owes my people. You know who, boss?",Help him lean on the door,normal,Talk him out of leaning on anyone,hard
+khang,huy,That student keeps filming me. Should I smash the camera?,Hold him back by the collar,hard,Tell him how good he will look on it,easy
+mai,keys,"A key for every door, child, but one is missing. Will you help me look?",Move the heavy wardrobe aside,normal,Walk the halls with me and listen,easy
+mai,mirror,"Cover that mirror for me, dear. Do not look into it either.",Lift the sheet over it,easy,Stand with your back to it and describe it,hard
+mai,lift,"The old lift has not run since the war, child. Open its gate, or tell me what you heard behind it?",Force the gate,normal,Tell her what you heard,hard
+mai,patron,"Do not say his name, dear. Will you promise?",Swear it on your hands,easy,Promise and mean it,normal
+mai,proverb,"When the river is high, which way does the reed bend? Think, child.",Show her with your hands,normal,Answer her proverb with another,hard
+huy,battery,"My camera's dying. Hold this torch while I swap the battery? Viewers, stay with me.",Hold the torch rock steady,easy,Keep talking to his viewers for him,normal
+huy,stairs,"Race me to the top of the stairs, for the footage? Three, two...",Sprint the stairs,hard,Count him down with real suspense,normal
+huy,thanh,"Is that Le Thanh? Could you ask her for one line on camera? I can't, I'm shaking.",Steer him over to her,normal,Ask her kindly for him,normal
+huy,alone,"Don't leave me alone in here, okay? Just for a minute?",Stand guard in the doorway,easy,Talk him through the dark,normal
+huy,sound,Did you hear that? Tell my viewers what it was. Be honest.,Go and check the noise,hard,Name it calmly for the camera,normal
+lan,mask,This mask is cracked along the brow. Steady it while I look? Gently.,Hold it still with both hands,normal,Tell her where it was made,hard
+lan,costume,"That costume would suit you, almost. Help me lift the rack down?",Lift the rack down,normal,Name the opera it was made for,hard
+lan,favour,I keep a list of favours. Shall I write your name on the good side?,Carry her case for her,easy,Make her laugh at her own list,normal
+lan,bracelets,Le Thanh's bracelets are older than she thinks. Would you ask her where they came from?,Bring her over by the elbow,normal,Ask the question gracefully,normal
+lan,broken,Someone dropped a vase in the hall. Can it be saved? Tell me it can.,Gather every shard,easy,"Tell her it can, and convince her",hard

@@ -11,7 +11,9 @@ the same choice.
 1. A level: the stat of its weapon.
 2. In battle: heal below `healBelowPercent`, a boost in round 1, leave below
    `fleeBelowHpPercent`; otherwise strike the weakest enemy.
-3. An omen: take it while the curse target is at most `omen * 2`.
+3. An omen: take it while the curse target is at most `omen * 2`. A question (guest 0 in the
+   soak): the answer with the higher chance. Opening a chat with the player: when `chatty` is 5 or
+   more, or the bot likes the player.
 4. Hurt below `fleeBelowHpPercent`: heal, else move away from monsters and the Taken.
 5. After midnight (company), when above `huntHpPercent`: attack the Taken in the room; else a
    minion in the room; else walk to the nearest minion; else, with a friend within

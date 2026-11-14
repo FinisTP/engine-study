@@ -290,6 +290,16 @@ namespace umbra::night
                     return {ActionKind::LevelUp, I8(def.guests[U(g)].weapon == Weapon::Physical ? 0 : 1)};
                 if (state.battle.active)
                     return Battle();
+                // A question to answer (the player's guest as a bot): the likelier roll.
+                if (legal.front().kind == ActionKind::Answer)
+                {
+                    const int physical = ChancePercent(Stat(def, state, g, StatKind::Might), AnswerTarget(def, state, 0));
+                    const int magical = ChancePercent(Stat(def, state, g, StatKind::Sanity), AnswerTarget(def, state, 1));
+                    return {ActionKind::Answer, I8(physical >= magical ? 0 : 1)};
+                }
+                // A chatty bot, or one fond of the player, asks the player a question first.
+                if (state.player >= 0 && Has({ActionKind::OpenChat, I8(state.player)}) && (style.chatty >= 5 || Bond(state, g, state.player) > 0))
+                    return {ActionKind::OpenChat, I8(state.player)};
                 if (legal.front().kind == ActionKind::TakeOmen)
                 {
                     // Take it while the curse roll's target is low enough for this style.

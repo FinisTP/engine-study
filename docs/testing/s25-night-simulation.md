@@ -167,3 +167,23 @@ then printed every line of the block above, identical to Linux, "the data holds"
 first attempt failed to link in an x86 developer shell: build from an x64 shell.)
 
 Level 5 out of reach (about 3 level-ups a night for the whole table) is intended (user, 2026-11-14).
+
+## 6. Plan 2 rules: pushed back, and talking (`#UMBRA-121`, `#UMBRA-122`, 2026-11-14)
+
+Events may push a guest back to the room they came from (`back`; `cold` and `bell` fail that
+way now). The single persuasion roll is replaced by the conversation rule (design
+`2026-11-14-board-on-screen.md`): 35 questions in `questions.csv`, `persuade` = 3 approvals and a
+bond of 3, `styles.csv` `chatty`. In the soak guest 0 is the player, so chatty bots ask guest 0
+questions and it gains allies; the company got stronger and the forms were retuned (Taken HP: Folded
+Girl 100, Drowned Physician 90, Iron Debtor 106, Rooted Caretaker 64, Silvered Reflection 74).
+
+```
+1000 nights, 0 faults
+company won the hunt 507 (50%), the Taken won 493; guest 0's side won 48%
+the curse struck early in 15% of nights, on average in round 3.8 of 10
+seeds 1 / 20001 / 80001 (2,000 each): every form 42-54%; seed 50001: the Iron Debtor 62% (109 hunts)
+strategies (500): bots 50%; leaving minions alone 40%; refusing omens 47%; taking every omen 50%
+```
+
+The Iron Debtor has the fewest hunts (Khang rarely takes omens) and swings most between seed
+ranges; the shipped test range holds.

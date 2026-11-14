@@ -20,6 +20,7 @@ code holds only the mechanics. Design: `docs/design/game-design.md` (GDD); bots 
 |---|---|
 | `rules.json` | clock (start hour, 20 rounds, the Turn after round 10), grid size and rooms placed, check targets, light steps, carry limit, battle formula, level steps, curse targets and their rise per hour, monster spawning, persuading, downed HP, the balance band |
 | `guests.csv` | the seven guests: stats, weapon type, style, Taken form stats and power |
+| `questions.csv` | five questions per guest: text, a physical and a magical answer, each with its target word |
 | `minions.csv` | each Taken form's minions: stats, attack, resistance, XP, debuff, share of the Taken's HP, how many |
 | `bonds.csv` | starting bonds, -1000..1000 |
 | `powers.json` | each power's kind and numbers (damage, range, rounds, cooldown) |
@@ -80,8 +81,15 @@ Killing a monster gives its XP to every standing guest on the other side; a leve
 ## The company and omens (`Company.cpp`)
 
 Guests never fight each other before midnight; afterwards only the Taken. Allies of the player
-in the room fight on the player's side. Only the player persuades, before midnight: d20 + Sanity
-against `persuade.target`, easier or harder by `persuade.bond` with the target's bond.
+in the room fight on the player's side.
+
+Winning a guest over (before midnight, while group 0 has fewer than 3): the player's guest
+`Chat`s with a guest in the room (it uses the turn), or a bot opens one at the start of its turn
+(`OpenChat`; it does not use the player's turn). A random question of that guest's five
+(`questions.csv`, not one asked before while any remain) waits for `Answer` 0 (d20 + Might) or 1
+(d20 + Sanity) against that answer's target, `persuade.bond` easier if the guest likes the player,
+harder if not (`AnswerTarget`). A pass is one approval; `persuade.approvals` of them and the guest
+joins group 0. `ChancePercent(stat, target)` is what the screens show.
 
 Omens: the first guest in may take or leave it. Taking it gives the gift and rolls the curse: a
 plain d20, the same odds for everyone, against `CurseTarget` = `omens.targets[omens taken]` (the

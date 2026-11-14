@@ -33,7 +33,9 @@ namespace umbra::night
         bool down = false, dead = false;
         std::int8_t downedBy = -1; // the guest who brought them down; -1 = the house
         std::int8_t pending = 0;   // levels earned and not yet chosen
-        std::array<std::int8_t, maxGuests> askedUntilRound{}; // may not persuade that guest again before
+        std::int8_t approvals = 0;  // the player's passed answers to this guest's questions
+        std::uint8_t asked = 0;     // this guest's own questions already asked (bits of its pool)
+        std::int8_t chatRound = -1; // the round this guest last opened a chat with the player
         std::int8_t movesLeft = 0;
     };
 
@@ -45,13 +47,14 @@ namespace umbra::night
     enum class ActionKind : std::uint8_t
     {
         Move, UseItem, DropItem, PickUp, EndTurn,
-        TakeOmen, LeaveOmen, Persuade, Attack, Strike, Guard, Leave, LevelUp, Power
+        TakeOmen, LeaveOmen, Chat, Attack, Strike, Guard, Leave, LevelUp, Power, OpenChat, Answer
     };
 
     // Move: a = direction 0-3, or transportMove. UseItem/DropItem: a = slot (relic: b = the downed guest).
     // PickUp: a = index in `floor`. Attack: a = monster index or -1, b = guest or -1. Strike: a = fighter index.
     // Power: a = target guest (line, pull, swap) or cell (seal, with b = direction); -1 for area, flood, reflect.
-    // LevelUp: a = 0 Might, 1 Sanity. Persuade: a = guest.
+    // LevelUp: a = 0 Might, 1 Sanity. Chat: a = the guest to talk to. OpenChat: a bot asks the player (a = the
+    // player's guest). Answer: a = 0 physical, 1 magical.
     inline constexpr std::int8_t transportMove = 4;
     struct Action
     {
@@ -86,6 +89,13 @@ namespace umbra::night
     };
 
     enum class Outcome : std::uint8_t { Running, Company, Taken };
+
+    // A chat in progress: `asker` asked the player question `question` (questions.csv row).
+    struct ChatState
+    {
+        bool active = false, byBot = false;
+        std::int8_t asker = -1, question = -1;
+    };
 
     // A flooded cell, or a sealed passage (cell + direction), until the end of a round.
     struct Mark
@@ -147,6 +157,7 @@ namespace umbra::night
         Outcome outcome = Outcome::Running;
         Taken taken;
         std::array<Mark, 16> flooded{}, sealed{};
+        ChatState chat;
         Battle battle;
         std::vector<Monster> monsters;
         std::uint64_t eventsUsed = 0, itemsUsed = 0; // events.csv / items.csv rows already drawn
@@ -168,6 +179,11 @@ namespace umbra::night
     bool Controls(const NightState &state, int controller, int guest); // the player's guest and their group 0
 
     Outcome Result(const NightState &state);
+    // The open chat's target for answer 0 (physical) or 1 (magical), moved by the asker's bond to the player.
+    int AnswerTarget(const NightDef &def, const NightState &state, int answer);
+    // The chance, in percent, that d20 + stat reaches the target.
+    int ChancePercent(int stat, int target);
+
     // The curse roll's target for the next omen: targets[omens taken] + perHour * hours since the night began.
     int CurseTarget(const NightDef &def, const NightState &state);
     bool IsTaken(const NightState &state, int guest);
