@@ -46,6 +46,7 @@ private:
     bool Do(const umbra::night::Action &action); // applies a legal action on the player's turn
     [[nodiscard]] int Me() const;                // the guest the screens show
     [[nodiscard]] std::string Label(const umbra::night::Action &action) const;
+    [[nodiscard]] nlohmann::json BattleData() const;
 
     const umbra::night::NightDef &def_;
     umbra::night::NightState state_;

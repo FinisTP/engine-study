@@ -157,5 +157,53 @@
     "target": 4,
     "chance": 15,
     "taken": 1
+  },
+  "battle": {
+    "room": "Box seats",
+    "round": 2,
+    "rounds": 3,
+    "canLeave": true,
+    "cannotLeave": false,
+    "last": "The Opera Specter hits Dinh Quoc Bao for 4.",
+    "company": [
+      {
+        "name": "Truong Uyen Nhi",
+        "hp": 12,
+        "maxHp": 16,
+        "buffs": "Strengthened",
+        "acting": true,
+        "index": 0,
+        "note": ""
+      },
+      {
+        "name": "Dinh Quoc Bao",
+        "hp": 20,
+        "maxHp": 24,
+        "buffs": "Guarded",
+        "acting": false,
+        "index": 1,
+        "note": ""
+      }
+    ],
+    "enemies": [
+      {
+        "name": "The Opera Specter",
+        "hp": 35,
+        "maxHp": 60,
+        "buffs": "",
+        "strike": 4,
+        "index": 2,
+        "note": "The Taken. Its power: area."
+      },
+      {
+        "name": "Ember chorister",
+        "hp": 8,
+        "maxHp": 8,
+        "buffs": "",
+        "strike": 6,
+        "index": 3,
+        "note": "A minion: killing it takes 25% of the Taken's HP."
+      }
+    ]
   }
 }

@@ -1,0 +1,41 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "dim": true,
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [860, 0], "align": "stretch", "gap": 14, "children": [
+    { "type": "stack", "direction": "horizontal", "gap": 14, "align": "center", "children": [
+      { "type": "text", "style": "title", "text": "Battle in the {battle.room}" },
+      { "type": "text", "style": "small", "text": "Round {battle.round} of {battle.rounds}" }
+    ] },
+    { "type": "stack", "direction": "horizontal", "gap": 24, "children": [
+      { "type": "stack", "size": [400, 0], "gap": 10, "children": [
+        { "type": "text", "style": "muted", "text": "THE COMPANY" },
+        { "type": "list", "items": "{battle.company}", "as": "c", "gap": 8,
+          "entry": { "type": "stack", "style": "slot", "size": [400, 0], "gap": 5, "selected": "{c.acting}", "children": [
+            { "type": "text", "style": "strong", "text": "{c.name}" },
+            { "type": "text", "style": "good", "text": "acting now", "visible": "{c.acting}" },
+            { "type": "bar", "size": [380, 14], "value": "{c.hp}", "max": "{c.maxHp}", "text": "HP {c.hp} / {c.maxHp}" },
+            { "type": "text", "style": "small", "text": "{c.buffs}", "visible": "{c.buffs}" }
+          ] } }
+      ] },
+      { "type": "stack", "size": [400, 0], "gap": 10, "children": [
+        { "type": "text", "style": "muted", "text": "THE OTHER SIDE  |  choose whom to strike" },
+        { "type": "list", "items": "{battle.enemies}", "as": "e", "gap": 8, "action": "strike", "arg": "{e.index}",
+          "entry": { "type": "stack", "style": "button", "size": [400, 0], "gap": 5, "children": [
+            { "type": "text", "style": "strong", "text": "{e.name}   |   your strike: {e.strike}" },
+            { "type": "bar", "style": "enemy", "size": [360, 14], "value": "{e.hp}", "max": "{e.maxHp}", "text": "HP {e.hp} / {e.maxHp}" },
+            { "type": "text", "style": "small", "text": "{e.buffs}", "visible": "{e.buffs}" },
+            { "type": "text", "style": "small", "text": "{e.note}", "visible": "{e.note}", "wrap": true, "size": [360, 0] }
+          ] } }
+      ] }
+    ] },
+    { "type": "stack", "direction": "horizontal", "gap": 12, "children": [
+      { "type": "button", "size": [262, 44], "text": "Use an item", "action": "bag" },
+      { "type": "button", "size": [262, 44], "text": "Guard (halve the next hit)", "action": "guard" },
+      { "type": "button", "size": [262, 44], "text": "Leave the battle", "action": "leave", "disabled": "{battle.cannotLeave}" }
+    ] },
+    { "type": "text", "style": "muted", "text": "Leaving is possible from round 2.", "visible": "{battle.cannotLeave}" },
+    { "type": "text", "style": "small", "text": "Last: {battle.last}", "visible": "{battle.last}" }
+  ] }
+}

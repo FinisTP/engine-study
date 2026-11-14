@@ -342,3 +342,82 @@ TEST_CASE("No screen waits after the night ended (T113)", "[night][play]")
     play.Update(10.0F);
     CHECK(play.State().logCount == state.logCount);
 }
+
+namespace
+{
+    // The player's first turn, with a monster in the foyer, attacked: a battle the player opens.
+    Play FightMonster(const NightDef &def, NightState state, int monsterHp, int monsterMight)
+    {
+        state.monsters.push_back({0, state.foyer, 20, static_cast<std::int16_t>(monsterHp), static_cast<std::int16_t>(monsterMight), 1});
+        Play play(def, state);
+        const std::vector<Action> legal = LegalActions(def, play.State());
+        for (std::size_t i = 0; i < legal.size(); ++i)
+            if (legal[i].kind == ActionKind::Attack && legal[i].a == 0)
+                REQUIRE(play.HandleUi("actions", "act", std::to_string(i)));
+        REQUIRE(play.State().battle.active);
+        return play;
+    }
+}
+
+TEST_CASE("The battle data lists both sides and the expected damage (T114)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play = FightMonster(def, PlayerFirst(def), 99, 1);
+    REQUIRE(play.Screen() == "battle");
+    const nlohmann::json battle = play.UiData()["battle"];
+    const Battle &b = play.State().battle;
+    REQUIRE(battle["company"].size() == 1);
+    CHECK(battle["company"][0]["name"] == def.guests[0].name);
+    CHECK(battle["company"][0]["acting"] == true);
+    REQUIRE(battle["enemies"].size() == 1);
+    const int enemy = battle["enemies"][0]["index"];
+    CHECK(battle["enemies"][0]["name"] == def.monsters[0].name);
+    CHECK(battle["enemies"][0]["hp"] == 99);
+    CHECK(battle["enemies"][0]["strike"] == Damage(def, play.State(), b.fighters[static_cast<std::size_t>(b.turn)], b.fighters[static_cast<std::size_t>(enemy)]));
+    CHECK(battle["round"] == 1);
+    CHECK(battle["rounds"] == def.rules.battle.rounds);
+    const std::uint32_t since = play.State().logCount;
+    REQUIRE(play.HandleUi("battle", "strike", std::to_string(enemy)));
+    bool hit = false;
+    for (const LogEntry &e : NewLog(play.State(), since))
+        hit = hit || (e.kind == LogKind::Hit && e.who == 0);
+    CHECK(hit);
+    CHECK_FALSE(play.UiData()["battle"]["last"].get<std::string>().empty());
+}
+
+TEST_CASE("Leave is offered from round 2 only (T114)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play = FightMonster(def, PlayerFirst(def), 99, 1);
+    CHECK(play.UiData()["battle"]["canLeave"] == false);
+    CHECK_FALSE(play.HandleUi("battle", "leave", ""));
+    REQUIRE(play.HandleUi("battle", "guard", "")); // the monster acts, round 2 begins
+    REQUIRE(play.State().battle.active);
+    REQUIRE(play.State().battle.round == 2);
+    CHECK(play.UiData()["battle"]["canLeave"] == true);
+    CHECK(play.HandleUi("battle", "leave", ""));
+    CHECK_FALSE(play.State().battle.active);
+}
+
+TEST_CASE("The player's death mid-battle ends the screen and the watching begins (T114)", "[night][play]")
+{
+    const NightDef def = Data();
+    NightState state = PlayerFirst(def);
+    // After midnight 0 HP is death; the Taken waits far away, shut in a closet.
+    const int far = CellAt(def, 0, 0);
+    Closet(def, state, far);
+    state.taken = {true, 6, 0, false};
+    state.marked = 6;
+    state.guests[6].cell = static_cast<std::int8_t>(far);
+    state.guests[0].hp = 1;
+    Play play = FightMonster(def, state, 99, 30);
+    const int enemy = play.UiData()["battle"]["enemies"][0]["index"];
+    REQUIRE(play.HandleUi("battle", "strike", std::to_string(enemy)));
+    REQUIRE(play.State().guests[0].dead);
+    CHECK_FALSE(play.PlayerTurn());
+    CHECK(play.Screen() != "battle");
+    CHECK_FALSE(play.UiData().contains("battle"));
+    const int beats = play.Beats();
+    play.Update(10.0F);
+    CHECK((play.Beats() > beats || play.State().over));
+}

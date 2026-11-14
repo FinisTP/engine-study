@@ -70,7 +70,8 @@ Play::Play(const NightDef &def, const NightState &state) : def_(def), state_(sta
 bool Play::PlayerTurn() const
 {
     const int acting = Current(state_);
-    return state_.player >= 0 && acting >= 0 && Controls(state_, state_.player, acting);
+    // A dead player only watches; their allies go back to their bots.
+    return state_.player >= 0 && acting >= 0 && !state_.guests[U(state_.player)].dead && Controls(state_, state_.player, acting);
 }
 
 int Play::Me() const { return PlayerTurn() ? Current(state_) : state_.player; }
@@ -140,7 +141,7 @@ void Play::Key(umbra::platform::InputKey key)
                 return;
     if (key == InputKey::Space && !PlayerTurn())
         fast_ = true;
-    if (key == InputKey::I && PlayerTurn() && !state_.battle.active && !state_.chat.active)
+    if (key == InputKey::I && PlayerTurn() && !state_.chat.active)
         bag_ = !bag_;
 }
 
@@ -162,7 +163,9 @@ bool Play::HandleUi(const std::string &, const std::string &action, const std::s
     // 2. Choices: answers, the omen.
     for (const Action &a : LegalActions(def_, state_))
         if ((action == "answer" && a.kind == ActionKind::Answer && std::to_string(a.a) == arg) ||
-            (action == "take" && a.kind == ActionKind::TakeOmen) || (action == "leave" && a.kind == ActionKind::LeaveOmen))
+            (action == "take" && a.kind == ActionKind::TakeOmen) || (action == "leave" && a.kind == ActionKind::LeaveOmen) ||
+            (action == "strike" && a.kind == ActionKind::Strike && std::to_string(a.a) == arg) ||
+            (action == "guard" && a.kind == ActionKind::Guard) || (action == "leave" && a.kind == ActionKind::Leave))
             return Do(a);
     if (action == "bag")
         return bag_ = true;
@@ -197,6 +200,8 @@ std::string Play::Screen() const
         return "chat";
     if (state_.omenOffer >= 0)
         return "omen";
+    if (state_.battle.active)
+        return bag_ ? "bag" : "battle";
     return bag_ ? "bag" : "actions";
 }
 
@@ -373,6 +378,9 @@ nlohmann::json Play::UiData() const
                         {"taken", state_.omensTaken}};
     }
 
+    if (!state_.over && PlayerTurn() && state_.battle.active)
+        data["battle"] = BattleData();
+
     // 5. The bag and the floor of this room.
     data["bag"] = data["floor"] = nlohmann::json::array();
     for (int s = 0; s < def_.rules.carry; ++s)
@@ -395,4 +403,69 @@ nlohmann::json Play::UiData() const
     data["noAllies"] = data["allies"].empty();
     data["carry"] = def_.rules.carry;
     return data;
+}
+
+nlohmann::json Play::BattleData() const
+{
+    // 1. Each fighter: name, HP, buffs; the acting guest's side is the company.
+    const Battle &b = state_.battle;
+    const Fighter &acting = b.fighters[U(b.turn)];
+    const auto name = [&](const Fighter &f) {
+        if (f.monster >= 0)
+            return def_.monsters[U(state_.monsters[U(f.monster)].kind)].name;
+        return f.taken ? def_.guests[U(f.guest)].taken : def_.guests[U(f.guest)].name;
+    };
+    nlohmann::json company = nlohmann::json::array(), enemies = nlohmann::json::array();
+    for (int i = 0; i < b.count; ++i)
+    {
+        const Fighter &f = b.fighters[U(i)];
+        std::string buffs;
+        for (std::size_t k = 0; k < f.buff.size(); ++k)
+            if (f.buff[k] >= 0)
+                buffs += (buffs.empty() ? "" : ", ") + def_.buffs[U(f.buff[k])].name;
+        int hp = 0, maxHp = 0;
+        std::string note;
+        if (f.monster >= 0)
+        {
+            const Monster &m = state_.monsters[U(f.monster)];
+            const MonsterDef &md = def_.monsters[U(m.kind)];
+            hp = m.hp, maxHp = std::max<int>(m.hp, md.hp);
+            if (md.taken >= 0)
+                note = "A minion: killing it takes " + std::to_string(md.hpShare) + "% of the Taken's HP.";
+        }
+        else
+        {
+            hp = state_.guests[U(f.guest)].hp, maxHp = Stat(def_, state_, f.guest, StatKind::MaxHp);
+            if (f.taken)
+                note = "The Taken. Its power: " + def_.powers[U(def_.guests[U(f.guest)].power)].id + ".";
+        }
+        if (hp <= 0 && f.monster >= 0)
+            continue; // a destroyed monster
+        nlohmann::json row = {{"name", name(f)}, {"hp", hp}, {"maxHp", std::max(maxHp, 1)}, {"buffs", buffs}, {"index", i}, {"note", note}};
+        if (f.side == acting.side)
+            row["acting"] = i == b.turn, company.push_back(row);
+        else
+            row["strike"] = Damage(def_, state_, acting, f), enemies.push_back(row);
+    }
+    // 2. The last blow, from the log.
+    std::string last;
+    const std::vector<LogEntry> recent = NewLog(state_, state_.logCount > 24 ? state_.logCount - 24 : 0);
+    for (const LogEntry &e : recent)
+        if (e.kind == LogKind::Hit)
+        {
+            const auto who = [&](int g, bool striker) {
+                if (g >= 0)
+                    return def_.guests[U(g)].name;
+                for (int i = 0; i < b.count; ++i) // a monster: the first one standing in this battle
+                    if (b.fighters[U(i)].monster >= 0)
+                        return def_.monsters[U(state_.monsters[U(b.fighters[U(i)].monster)].kind)].name;
+                return std::string{striker ? "Something" : "something"};
+            };
+            last = who(e.who, true) + " hits " + who(e.other, false) + " for " + std::to_string(e.a) + ".";
+        }
+    bool canLeave = false;
+    for (const Action &a : LegalActions(def_, state_))
+        canLeave = canLeave || a.kind == ActionKind::Leave;
+    return {{"room", def_.rooms[U(state_.cells[U(b.cell)].room)].name}, {"round", b.round}, {"rounds", def_.rules.battle.rounds},
+            {"company", company}, {"enemies", enemies}, {"canLeave", canLeave}, {"cannotLeave", !canLeave}, {"last", last}};
 }
