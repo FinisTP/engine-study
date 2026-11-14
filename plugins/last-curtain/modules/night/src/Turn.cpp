@@ -269,12 +269,7 @@ namespace umbra::night
             return -1;
         // 1. A battle: the guest fighter to act. 2. A level to choose. 3. The board.
         if (state.battle.active)
-        {
-            for (int g = 0; g < maxGuests; ++g)
-                if ((state.battle.asking >> g) & 1u)
-                    return g;
             return state.battle.fighters[U(state.battle.turn)].guest;
-        }
         for (int g = 0; g < state.count; ++g)
             if (state.guests[U(g)].pending > 0 && !state.guests[U(g)].dead)
                 return g;
@@ -371,16 +366,17 @@ namespace umbra::night
             break;
         case ActionKind::Attack:
             if (action.b >= 0)
-                AttackGuest(def, state, g, action.b);
+                ContactBattle(def, state, g, guest.cell); // only with the Taken, after midnight
             else
                 StartBattle(def, state, guest.cell, Side(state, g), {Fighter{-1, action.a}});
             break;
         case ActionKind::TakeOmen:
         case ActionKind::LeaveOmen:
-            if (action.kind == ActionKind::TakeOmen)
-                TakeOmen(def, state, g);
             state.omenOffer = -1;
-            inner::EndTurn(def, state);
+            if (action.kind == ActionKind::TakeOmen && TakeOmen(def, state, g))
+                TurnNow(def, state); // the curse took hold: everyone wakes at midnight
+            else
+                inner::EndTurn(def, state);
             break;
         case ActionKind::Power:
             UsePower(def, state, action);
@@ -481,9 +477,6 @@ namespace umbra::night
         guest.down = true;
         guest.downedBy = I8(byGuest);
         Log(state, LogKind::Down, g, byGuest);
-        // The marked guest brought down by a guest's hand before the Turn: the night is won.
-        if (g == state.marked && byGuest >= 0)
-            EndNight(state, Outcome::CompanyEarly);
     }
 
     std::vector<LogEntry> NewLog(const NightState &state, std::size_t since)

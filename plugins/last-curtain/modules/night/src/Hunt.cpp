@@ -1,7 +1,6 @@
 #include "NightInner.hpp"
 
 #include <algorithm>
-#include <bit>
 
 // The Turn at midnight and the hunt (Night.md "The Turn and the hunt").
 namespace umbra::night
@@ -20,20 +19,18 @@ namespace umbra::night
 
     void inner::TheTurn(const NightDef &def, NightState &state)
     {
-        // 1. Nobody failed: chance marks an omen holder, weighted by omens held; with no omen taken, anyone.
+        // 1. Nobody failed a curse roll: chance picks an omen holder, all alike; with no omen taken, anyone.
         if (state.marked < 0)
         {
-            std::array<int, maxGuests> weight{};
-            int total = 0;
+            std::vector<int> holders, everyone;
             for (int g = 0; g < state.count; ++g)
-                total += weight[U(g)] = std::popcount(state.guests[U(g)].omens);
-            if (total == 0)
-                for (int g = 0; g < state.count; ++g)
-                    total += weight[U(g)] = 1;
-            int pick = Below(state, total);
-            for (int g = 0; g < state.count && state.marked < 0; ++g)
-                if ((pick -= weight[U(g)]) < 0)
-                    state.marked = I8(g);
+            {
+                everyone.push_back(g);
+                if (state.guests[U(g)].omens)
+                    holders.push_back(g);
+            }
+            const std::vector<int> &from = holders.empty() ? everyone : holders;
+            state.marked = I8(from[U(Below(state, static_cast<int>(from.size())))]);
         }
         // 2. The marked guest leaves every group and rises as the Taken in the under-stage, at full HP.
         if (state.understage < 0)
@@ -59,6 +56,38 @@ namespace umbra::night
         auto at = std::find(state.order.begin(), state.order.begin() + state.count, I8(t));
         std::rotate(at, at + 1, state.order.begin() + state.count);
         Log(state, LogKind::Turned, t, -1, state.understage);
+
+        // 5. Ordinary monsters are gone; the Taken's minions wait in the rooms farthest from the foyer.
+        state.monsters.clear();
+        std::vector<int> rooms;
+        for (int c = 0; c < maxCells; ++c)
+            if (state.cells[U(c)].opened && c != state.foyer && c != state.understage)
+                rooms.push_back(c);
+        std::stable_sort(rooms.begin(), rooms.end(),
+                         [&](int a, int b) { return Steps(def, state, state.foyer, a) > Steps(def, state, state.foyer, b); });
+        std::size_t next = 0;
+        for (std::size_t kind = 0; kind < def.monsters.size(); ++kind)
+        {
+            const MonsterDef &m = def.monsters[kind];
+            for (int n = 0; m.taken == t && n < m.count; ++n)
+            {
+                const int cell = next < rooms.size() ? rooms[next++] : state.understage;
+                state.monsters.push_back({I8(kind), I8(cell), 127, I16(m.hp), I16(m.might), I16(m.sanity)});
+                Log(state, LogKind::Monster, -1, -1, static_cast<int>(kind), cell);
+            }
+        }
+    }
+
+    void inner::TurnNow(const NightDef &def, NightState &state)
+    {
+        // Everyone's remaining evening is skipped: the hunt starts at midnight, the company first.
+        state.round = I8(def.rules.clock.turnAfterRound + 1);
+        state.turn = 0;
+        TheTurn(def, state);
+        if (Current(state) < 0 && !state.over)
+            EndTurn(def, state); // the first in the order cannot act: on to the next
+        else
+            StartTurn(def, state);
     }
 
     bool inner::ContactBattle(const NightDef &def, NightState &state, int mover, int cell)

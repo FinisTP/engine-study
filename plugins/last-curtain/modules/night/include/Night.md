@@ -9,8 +9,8 @@ code holds only the mechanics. Design: `docs/design/game-design.md` (GDD); bots 
 
 1. `NewNight(def, seed, player)` builds the deck, puts the foyer bottom centre, places every guest
    there and rolls a d20 each for the order (high first, ties to higher Speed, then lower index).
-2. `Current(state)` names who acts: a bystander being asked to join a fight, else the guest fighter
-   whose battle turn it is, else a guest with a level to choose, else the board guest. -1 = over.
+2. `Current(state)` names who acts: the guest fighter whose battle turn it is, else a guest with a
+   level to choose, else the board guest. -1 = over.
 3. `LegalActions` lists what that guest may do; `Apply` refuses anything else and changes nothing.
 4. Monsters never choose: they act inside `Apply`. Bots and people use the same two calls.
 
@@ -18,8 +18,9 @@ code holds only the mechanics. Design: `docs/design/game-design.md` (GDD); bots 
 
 | File | Owns |
 |---|---|
-| `rules.json` | clock (start hour, 20 rounds, the Turn after round 10), grid size and rooms placed, check targets, light steps, carry limit, battle formula, level steps, omen targets, monster spawning, persuading, downed HP, bond loss, the balance band |
-| `guests.csv` | the seven guests: stats, weapon type, style, temper, Taken form stats and power |
+| `rules.json` | clock (start hour, 20 rounds, the Turn after round 10), grid size and rooms placed, check targets, light steps, carry limit, battle formula, level steps, curse targets and their rise per hour, monster spawning, persuading, downed HP, the balance band |
+| `guests.csv` | the seven guests: stats, weapon type, style, Taken form stats and power |
+| `minions.csv` | each Taken form's minions: stats, attack, resistance, XP, debuff, share of the Taken's HP, how many |
 | `bonds.csv` | starting bonds, -1000..1000 |
 | `powers.json` | each power's kind and numbers (damage, range, rounds, cooldown) |
 | `rooms.csv` | the room set: kind, doors before rotation, bonus stat, how many of each |
@@ -75,26 +76,28 @@ themselves. A battle ends after `battle.rounds` rounds, when a side has nobody s
 Killing a monster gives its XP to every standing guest on the other side; a level is chosen
 (`LevelUp`) before anything else. Monsters appear at round start from `monsters.fromRound`.
 
-## The company (`Company.cpp`)
+## The company and omens (`Company.cpp`)
 
-Attacking a guest: everyone whose light reaches the room loses `attackBondLoss` toward the
-attacker; bots in the room not allied to either side are asked to join the defender
-(`Battle::asking`); allies of each side in the room fight on it. Only the player persuades:
-d20 + Sanity against `persuade.target`, easier or harder by `persuade.bond` with the target's bond.
+Guests never fight each other before midnight; afterwards only the Taken. Allies of the player
+in the room fight on the player's side. Only the player persuades, before midnight: d20 + Sanity
+against `persuade.target`, easier or harder by `persuade.bond` with the target's bond.
 
-Omens: the first guest in may take or leave it. Taking rolls d20 + Sanity *before the gift*
-against `omens.targets[omensTaken]` (the last repeats); the first failure marks. Only guests
-whose light reaches the room learn of it (`Knows`). The marked guest brought down by a guest
-before the Turn ends the night (`Outcome::CompanyEarly`).
+Omens: the first guest in may take or leave it. Taking it gives the gift and rolls the curse: a
+plain d20, the same odds for everyone, against `CurseTarget` = `omens.targets[omens taken]` (the
+last repeats) + `omens.perHour` x hours since 19:00. A d20 below the target: that guest turns at
+once (`TurnNow`): everyone's remaining evening is skipped and the hunt starts at midnight.
 
 ## The Turn and the hunt (`Hunt.cpp`)
 
-At the end of round `turnAfterRound`: nobody marked means chance picks an omen holder, weighted
-by omens held (with none, anyone). The marked guest leaves every group and rises as the Taken in
-the under-stage at its form's HP; everyone else gathers in the foyer, the downed stand with
-`downedReturnHp`; the Taken moves to the end of the order. After midnight 0 HP is death and items
-fall. The house never hurts the Taken; it ignores rooms and monsters; monsters join its side.
-A battle starts when the Taken and company guests share a room, with every company guest there.
+At a failed curse roll, or at the end of round `turnAfterRound` if nobody failed (then chance
+picks an omen holder, all alike; with no omen taken, anyone): that guest leaves every group and
+rises as the Taken in the under-stage at its form's HP; everyone else gathers in the foyer, the
+downed stand with `downedReturnHp`; the Taken moves to the end of the order. Ordinary monsters
+vanish and stop appearing; the form's minions (`minions.csv`, `count` of each) wait in the opened
+rooms farthest from the foyer. Killing a minion takes `hpShare`% of the form's `takenHp` from the
+Taken at once. After midnight 0 HP is death and items fall. The house never hurts the Taken; it
+ignores rooms and minions; minions fight on its side. A battle starts when the Taken and company
+guests share a room, with every company guest there.
 
 Powers (one code path per `kind`, numbers from `powers.json`, at most one use per turn, then
 `cooldown` Taken turns):

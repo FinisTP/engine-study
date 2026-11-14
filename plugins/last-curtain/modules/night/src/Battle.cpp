@@ -127,6 +127,10 @@ namespace umbra::night
                 if (m.hp == 0)
                 {
                     Log(state, LogKind::Monster, attacker.guest, 1, m.kind, target.monster); // other 1: killed
+                    // A minion takes its share of the Taken's life with it.
+                    const MonsterDef &md = def.monsters[U(m.kind)];
+                    if (md.taken >= 0 && state.taken.present && attacker.guest >= 0)
+                        Hurt(def, state, state.taken.guest, def.guests[U(md.taken)].takenHp * md.hpShare / 100, attacker.guest);
                     for (int f = 0; f < state.battle.count; ++f)
                     {
                         const Fighter &winner = state.battle.fighters[U(f)];
@@ -230,14 +234,7 @@ namespace umbra::night
         return side;
     }
 
-    void inner::BeginRounds(const NightDef &def, NightState &state)
-    {
-        state.battle.turn = -1;
-        Advance(def, state);
-    }
-
-    void inner::StartBattle(const NightDef &def, NightState &state, int cell, const std::vector<Fighter> &starters, const std::vector<Fighter> &others,
-                            std::uint8_t asking)
+    void inner::StartBattle(const NightDef &def, NightState &state, int cell, const std::vector<Fighter> &starters, const std::vector<Fighter> &others)
     {
         Battle &b = state.battle;
         b = {};
@@ -250,21 +247,14 @@ namespace umbra::night
             if (b.count < 8)
                 f.side = 1, b.fighters[U(b.count++)] = f;
         Log(state, LogKind::Battle, starters.front().guest, others.front().guest, cell);
-        // Bystanders choose first; then the first fighter (perhaps a monster) acts.
-        b.asking = asking;
-        if (!asking)
-            BeginRounds(def, state);
+        // The first fighter may be a monster: let it act.
+        b.turn = -1;
+        Advance(def, state);
     }
 
     void inner::BattleLegal(const NightDef &def, const NightState &state, std::vector<Action> &legal)
     {
         const Battle &b = state.battle;
-        if (b.asking)
-        {
-            legal.push_back({ActionKind::Join});
-            legal.push_back({ActionKind::EndTurn});
-            return;
-        }
         const Fighter &me = b.fighters[U(b.turn)];
         for (int f = 0; f < b.count; ++f)
             if (b.fighters[U(f)].side != me.side && Standing(state, b.fighters[U(f)]))
@@ -285,22 +275,6 @@ namespace umbra::night
 
     void inner::BattleApply(const NightDef &def, NightState &state, const Action &action)
     {
-        Battle &b = state.battle;
-        if (b.asking)
-        {
-            // A bystander joins the defender's side or stays out; neither uses their own turn.
-            const int g = Current(state);
-            if (action.kind == ActionKind::Join && b.count < 8)
-            {
-                Fighter f{I8(g)};
-                f.side = 1;
-                b.fighters[U(b.count++)] = f;
-            }
-            b.asking = static_cast<std::uint8_t>(b.asking & ~(1u << g));
-            if (!b.asking)
-                BeginRounds(def, state);
-            return;
-        }
         Fighter &me = At(state, state.battle.turn);
         Guest &guest = state.guests[U(me.guest)];
         switch (action.kind)
@@ -347,9 +321,12 @@ namespace umbra::night
         state.monsters.erase(std::remove_if(state.monsters.begin(), state.monsters.end(),
                                             [&](const Monster &m) { return m.leavesRound <= state.round || m.hp <= 0; }),
                              state.monsters.end());
-        // 2. Perhaps one appears, grown with the hour, in an opened room without a guest.
+        // 2. Before midnight, perhaps one appears, grown with the hour, in an opened room without a guest.
         const auto &rules = def.rules.monsters;
-        if (state.round < rules.fromRound || static_cast<int>(state.monsters.size()) >= rules.max || def.monsters.empty() ||
+        int ordinary = 0;
+        for (const MonsterDef &m : def.monsters)
+            ordinary += m.taken < 0 ? 1 : 0;
+        if (state.taken.present || state.round < rules.fromRound || static_cast<int>(state.monsters.size()) >= rules.max || ordinary == 0 ||
             Below(state, 100) >= rules.chancePercent)
             return;
         std::vector<int> cells;
@@ -359,7 +336,7 @@ namespace umbra::night
                 cells.push_back(c);
         if (cells.empty())
             return;
-        const int kind = Below(state, static_cast<int>(def.monsters.size()));
+        const int kind = Below(state, ordinary); // ordinary monsters come first in the list
         const MonsterDef &m = def.monsters[U(kind)];
         const int hours = (state.round - 1) * 30 / 60;
         const int cell = cells[U(Below(state, static_cast<int>(cells.size())))];

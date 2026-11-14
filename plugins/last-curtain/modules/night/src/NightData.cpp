@@ -159,6 +159,7 @@ namespace umbra::night
             get("levels", "hp", r.levels.hp);
             get("levels", "stat", r.levels.stat);
             list("omens", "targets", r.omens.targets);
+            get("omens", "perHour", r.omens.perHour);
             get("monsters", "fromRound", r.monsters.fromRound);
             get("monsters", "chancePercent", r.monsters.chancePercent);
             get("monsters", "stayRounds", r.monsters.stayRounds);
@@ -350,7 +351,7 @@ namespace umbra::night
         if (d.events.size() > 64)
             events.Bad(events.file, "at most 64 events and traps");
 
-        Sheet guests(diagnostics, folder, "guests.csv", {"id", "name", "pronoun", "weapon", "hp", "might", "sanity", "speed", "style", "temper",
+        Sheet guests(diagnostics, folder, "guests.csv", {"id", "name", "pronoun", "weapon", "hp", "might", "sanity", "speed", "style",
                                                          "taken", "takenHp", "takenMight", "takenSanity", "takenSpeed", "power"});
         for (int r = 0; r < guests.Rows(); ++r)
         {
@@ -364,7 +365,6 @@ namespace umbra::night
             g.sanity = guests.Int(r, "sanity");
             g.speed = guests.Int(r, "speed");
             g.style = guests.Ref(r, "style", d.styles);
-            g.flees = guests.Pick(r, "temper", {"fight", "flee"}) == 1;
             g.taken = guests.Text(r, "taken");
             g.takenHp = guests.Int(r, "takenHp");
             g.takenMight = guests.Int(r, "takenMight");
@@ -377,6 +377,29 @@ namespace umbra::night
         }
         if (guests.ok && (d.guests.size() < 2 || d.guests.size() > 7))
             guests.Bad(guests.file, "a night has 2 to 7 guests");
+
+        // Minions: one kind per Taken form, after the ordinary monsters in the same list.
+        Sheet minions(diagnostics, folder, "minions.csv", {"taken", "id", "name", "hp", "might", "sanity", "attack", "resist", "xp", "debuff", "hpShare", "count"});
+        for (int r = 0; r < minions.Rows(); ++r)
+        {
+            MonsterDef m;
+            m.taken = minions.Ref(r, "taken", d.guests);
+            m.id = minions.Text(r, "id");
+            m.name = minions.Text(r, "name");
+            m.hp = minions.Int(r, "hp");
+            m.might = minions.Int(r, "might");
+            m.sanity = minions.Int(r, "sanity");
+            m.attack = static_cast<Weapon>(minions.Pick(r, "attack", weapons));
+            m.resist = minions.Pick(r, "resist", {"physical", "magical", "none"});
+            m.resist = m.resist == 2 ? -1 : m.resist;
+            m.xp = minions.Int(r, "xp");
+            m.debuff = minions.Ref(r, "debuff", d.buffs, true);
+            m.hpShare = minions.Int(r, "hpShare");
+            m.count = minions.Int(r, "count");
+            if (m.hp < 1 || m.hpShare < 0 || m.hpShare > 100 || m.count < 0)
+                minions.Bad(minions.Where(r, "hp"), "hp must be 1 or more, hpShare 0 to 100, count 0 or more");
+            d.monsters.push_back(m);
+        }
 
         Sheet bonds(diagnostics, folder, "bonds.csv", {"from", "to", "bond"});
         for (int r = 0; r < bonds.Rows(); ++r)
@@ -392,7 +415,7 @@ namespace umbra::night
         // The fingerprint: every file's bytes, in a fixed order.
         d.fingerprint = 14695981039346656037ULL;
         for (const char *name : {"rules.json", "powers.json", "buffs.csv", "styles.csv", "items.csv", "monsters.csv", "omens.csv", "rooms.csv",
-                                 "events.csv", "guests.csv", "bonds.csv"})
+                                 "events.csv", "guests.csv", "minions.csv", "bonds.csv"})
         {
             std::ifstream file(folder / name, std::ios::binary);
             for (char c; file.get(c);)

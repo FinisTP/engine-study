@@ -13,6 +13,10 @@ For whoever continues this work, in any session. Read this first.
   `night-run`, `night-soak`. Linux GCC: every test passes and the first balance pass holds. The
   Windows check and two balance points for the user are in `../testing/s25-night-simulation.md`.
 - The decisions taken while building are listed in that record and in the session's report.
+- **Revision `#UMBRA-116` (user, 2026-11-14 evening):** no hidden marked guest; a failed curse
+  roll (plain d20, target rising with omens and hours) turns that guest at once and time jumps to
+  midnight; no fights between guests before midnight; the Taken's own minions after midnight,
+  each taking a share of its HP. Record: §5 of `../testing/s25-night-simulation.md`.
 
 ## Decided by the user (2026-11-14)
 
@@ -22,9 +26,8 @@ For whoever continues this work, in any session. Read this first.
 
 ## Waiting on the user
 
-1. The Windows check (`../testing/s25-night-simulation.md` §4).
-2. Two balance points (§3 of that record): about 3 nights in 10 end before midnight; level 5 is
-   out of reach with today's monster supply.
+1. The Windows check again for `#UMBRA-116` (`../testing/s25-night-simulation.md` §4, §5).
+2. Level 5 is still out of reach (about 3 level-ups a night for the whole table).
 3. Go-ahead to write plan 2 (the board on screen).
 
 ## The user's standing wishes for this game

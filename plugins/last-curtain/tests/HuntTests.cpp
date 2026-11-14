@@ -88,7 +88,7 @@ TEST_CASE("At midnight the marked guest becomes the Taken and the rest gather (T
     CHECK(Stat(def, state, marked, StatKind::Might) == def.guests[U(marked)].takenMight);
 }
 
-TEST_CASE("With no failed roll, chance marks an omen holder; with no omen, anyone (T101)", "[night][hunt]")
+TEST_CASE("With no failed roll, chance picks an omen holder, all alike; with no omen, anyone (T101)", "[night][hunt]")
 {
     const NightDef def = Quiet();
     int heavy = 0;
@@ -101,8 +101,8 @@ TEST_CASE("With no failed roll, chance marks an omen holder; with no omen, anyon
         REQUIRE((TakenGuest(state) == 1 || TakenGuest(state) == 5));
         heavy += TakenGuest(state) == 5 ? 1 : 0;
     }
-    CHECK(heavy >= 195);
-    CHECK(heavy <= 255);
+    CHECK(heavy >= 120); // one omen or three: the same chance
+    CHECK(heavy <= 180);
     std::array<int, maxGuests> chosen{};
     for (std::uint64_t seed = 1; seed <= 300; ++seed)
     {
@@ -461,4 +461,57 @@ TEST_CASE("The under-stage is on the board at the Turn even if nobody found it (
         CHECK(state.guests[1].cell == state.understage);
         CHECK(Steps(def, state, state.foyer, state.understage) >= 1);
     }
+}
+
+TEST_CASE("At midnight the Taken's minions wait far from the foyer; ordinary monsters are gone (T101)", "[night][hunt]")
+{
+    NightDef def = Data();
+    def.rules.monsters.chancePercent = 100;
+    for (std::uint64_t seed = 1; seed <= 20; ++seed)
+    {
+        NightState state = Built(def, seed);
+        state.marked = 2;
+        PassToMidnight(def, state);
+        int minions = 0, expected = 0;
+        for (const MonsterDef &m : def.monsters)
+            expected += m.taken == 2 ? m.count : 0;
+        for (const Monster &m : state.monsters)
+        {
+            const MonsterDef &md = def.monsters[U(m.kind)];
+            CHECK(md.taken == 2); // only this form's minions, no ordinary monster
+            CHECK(m.cell != state.foyer);
+            CHECK(Steps(def, state, state.foyer, m.cell) >= 2);
+            ++minions;
+        }
+        CHECK(minions == expected);
+        // No ordinary monster appears in the hunt.
+        for (int i = 0; i < 30 && Current(state) >= 0; ++i)
+        {
+            if (state.battle.active)
+                FightOut(def, state);
+            else
+                REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
+            for (const Monster &m : state.monsters)
+                CHECK(def.monsters[U(m.kind)].taken == 2);
+        }
+    }
+}
+
+TEST_CASE("Killing a minion takes its share of the Taken's life (T101)", "[night][hunt]")
+{
+    const NightDef def = Quiet();
+    NightState state = Built(def, 4);
+    state.marked = 6;
+    PassToMidnight(def, state);
+    REQUIRE_FALSE(state.monsters.empty());
+    const int taken = TakenGuest(state), hp = state.guests[U(taken)].hp;
+    const MonsterDef &md = def.monsters[U(state.monsters[0].kind)];
+    while (Current(state) == taken)
+        REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
+    const int g = Current(state);
+    state.monsters[0].hp = 1;
+    state.monsters[0].cell = state.guests[U(g)].cell;
+    REQUIRE(Apply(def, state, {ActionKind::Attack, 0}));
+    FightOut(def, state);
+    CHECK(state.guests[U(taken)].hp == hp - def.guests[U(taken)].takenHp * md.hpShare / 100);
 }

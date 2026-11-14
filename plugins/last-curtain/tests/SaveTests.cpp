@@ -63,7 +63,7 @@ TEST_CASE("Same data and seed, same night (T103)", "[night][save]")
     CHECK(Fingerprint(a) == Fingerprint(b));
     CHECK(Fingerprint(a) != Fingerprint(NewNight(def, 1)));
     // Golden: update when the data or the rules change (Night.md "Fingerprint").
-    CHECK(Fingerprint(a) == 0x350193fc9303b9b1ULL);
+    CHECK(Fingerprint(a) == 0xc5fb0eee05c7883aULL);
 }
 
 TEST_CASE("A save at any point continues to the same end (T103)", "[night][save]")

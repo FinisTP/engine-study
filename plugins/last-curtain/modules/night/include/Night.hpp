@@ -33,8 +33,6 @@ namespace umbra::night
         std::int8_t downedBy = -1; // the guest who brought them down; -1 = the house
         std::int8_t pending = 0;   // levels earned and not yet chosen
         std::array<std::int8_t, maxGuests> askedUntilRound{}; // may not persuade that guest again before
-        std::uint8_t sawOmen = 0, sawFail = 0; // guests seen taking an omen / failing its roll (bits)
-        std::uint8_t attackedBy = 0;           // guests who attacked this one (bits)
         std::int8_t movesLeft = 0;
     };
 
@@ -46,13 +44,13 @@ namespace umbra::night
     enum class ActionKind : std::uint8_t
     {
         Move, UseItem, DropItem, PickUp, EndTurn,
-        TakeOmen, LeaveOmen, Persuade, Attack, Join, Strike, Guard, Leave, LevelUp, Power
+        TakeOmen, LeaveOmen, Persuade, Attack, Strike, Guard, Leave, LevelUp, Power
     };
 
     // Move: a = direction 0-3, or transportMove. UseItem/DropItem: a = slot (relic: b = the downed guest).
     // PickUp: a = index in `floor`. Attack: a = monster index or -1, b = guest or -1. Strike: a = fighter index.
     // Power: a = target guest (line, pull, swap) or cell (seal, with b = direction); -1 for area, flood, reflect.
-    // LevelUp: a = 0 Might, 1 Sanity. Persuade: a = guest. Join / EndTurn: a bystander's choice before a battle.
+    // LevelUp: a = 0 Might, 1 Sanity. Persuade: a = guest.
     inline constexpr std::int8_t transportMove = 4;
     struct Action
     {
@@ -64,12 +62,13 @@ namespace umbra::night
     enum class LogKind : std::uint8_t
     {
         Opened, Check, Effect, Item, Down, Woke,
-        Battle, Hit, Omen, Marked, Turned, Power, Died, Ended, Monster, Level, Persuade
+        Battle, Hit, Omen, Turned, Power, Died, Ended, Monster, Level, Persuade
     };
 
     // One thing that happened. Check: a = die, other = stat, b = target. Effect: a = Effect, b = amount.
     // Item: a = item. Down/Died: other = by whom (-1 house). Woke: other = helper. Opened: a = cell.
-    // Monster: a = kind; other -1 = appeared (b = cell), other 1 = killed by `who`. Battle: who/other = first guest of each side.
+    // Monster: a = monsters.csv row (minions after the monsters); other -1 = appeared (b = cell), other 1 = killed by `who`.
+    // Battle: who/other = first guest of each side.
     // Hit: who = striker (-1 monster), other = struck (-1 monster), a = damage, b = HP left. Ended: a = Outcome.
     struct LogEntry
     {
@@ -85,12 +84,7 @@ namespace umbra::night
         bool passed = false;
     };
 
-    enum class Outcome : std::uint8_t { Running, CompanyEarly, Company, Taken };
-
-    struct Seen
-    {
-        bool omen = false, fail = false;
-    };
+    enum class Outcome : std::uint8_t { Running, Company, Taken };
 
     // A flooded cell, or a sealed passage (cell + direction), until the end of a round.
     struct Mark
@@ -127,7 +121,6 @@ namespace umbra::night
         std::int8_t round = 1, turn = 0, count = 0; // turn: index in fighters
         std::array<Fighter, 8> fighters{};
         std::int8_t cell = -1, owner = -1; // owner: the guest whose board turn it is
-        std::uint8_t asking = 0;           // bystanders still to choose whether to join the defender (bits)
     };
 
     // Everything that changes during a night. No pointers, strings or maps: bots copy it to look ahead.
@@ -147,7 +140,7 @@ namespace umbra::night
         bool over = false; // the night has ended
         std::vector<FloorItem> floor;
         std::array<std::int16_t, maxGuests * maxGuests> bonds{}; // from * maxGuests + to, -1000..1000
-        std::int8_t marked = -1, omensTaken = 0;
+        std::int8_t marked = -1, omensTaken = 0; // marked: the guest who turns (set at a failed roll or at midnight)
         std::int8_t omenOffer = -1;          // the cell whose omen the board guest must take or leave
         std::uint8_t omensUsed = 0;          // omens.csv rows already drawn (bits)
         Outcome outcome = Outcome::Running;
@@ -172,11 +165,10 @@ namespace umbra::night
     // The company (Company.cpp).
     int Bond(const NightState &state, int from, int to);
     bool Controls(const NightState &state, int controller, int guest); // the player's guest and their group 0
-    std::vector<int> Joiners(const NightDef &def, const NightState &state, int attacker, int defender);
 
-    // What `viewer` saw of `guest`: an omen taken, a roll failed. Nothing else about omens is visible.
-    Seen Knows(const NightState &state, int viewer, int guest);
     Outcome Result(const NightState &state);
+    // The curse roll's target for the next omen: targets[omens taken] + perHour * hours since the night began.
+    int CurseTarget(const NightDef &def, const NightState &state);
     bool IsTaken(const NightState &state, int guest);
 
     // A hit in battle (Battle.cpp): data formula, resistance, armour, guard; never below minDamage.

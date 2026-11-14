@@ -12,10 +12,10 @@ Claude that the user has not confirmed. Section 20 lists the questions still ope
 
 Seven people are shut inside Saigon's old opera house for one night, 19:00 to 5:00. Turn by turn they open
 its hidden rooms, find items, meet what lives there, fight, and grow stronger. The house holds omens: cursed
-keepsakes that make whoever takes one stronger and may mark them. One guest, maybe the player,
-will be marked. Work out who and bring that person down in time and the night is saved. If not, at midnight that person
-returns as something else, and the rest have until 5:00 to destroy it or stay in the theatre
-forever. Every night has a different building, a different victim and a different secret.
+keepsakes that make whoever takes one stronger, at a risk that grows with every omen and every
+hour. When the curse takes one of them, maybe the player, the theatre shifts time to midnight and
+that person returns as something else, with its minions; the rest have until 5:00 to destroy it
+or stay in the theatre forever. Every night has a different building, a different victim and a different secret.
 
 It is a single-player digital game built on the core loop of *Betrayal at House on the Hill*:
 explore tile by tile, then a betrayal. It uses none of that game's text, names, scenarios or art.
@@ -106,7 +106,7 @@ owner" of the first sheets becomes the patron: a collector who paid for the hous
 | Those who hunt it | the company |
 | The betrayal at midnight | the Turn |
 | A cursed keepsake that may mark its taker | an omen |
-| The hidden state of the one who will turn | marked |
+| The one who turns (at a failed curse roll or by chance at midnight) | the Taken |
 | The room where the Taken appears | the under-stage |
 
 ## 4. The night
@@ -120,7 +120,7 @@ owner" of the first sheets becomes the patron: a collector who paid for the hous
 ```
 19:00                         0:00                          5:00
   |------- evening, 10 rounds ---|------- the hunt, 10 rounds ---|
-  omens are found and taken; one of their takers is marked   the Taken appears
+  omens are found and taken; a failed curse roll jumps to midnight   the Taken appears
 ```
 
 ## 5. A turn
@@ -138,8 +138,8 @@ open doors; a lantern makes it 5. Everything else is dark: you do not see who is
 they do. A room opened by anyone appears on your map at once (its shape and kind, not who is in
 it). The player sees with the light of their own guest and their allies. So guests near each
 other are aware of each other's actions, and a bot's turn is shown with its decision said aloud
-when it happens in your light; outside it you see only a new room appear. A marked guest, or
-the Taken after midnight, can use the dark to slip away.
+when it happens in your light; outside it you see only a new room appear. The Taken can use the dark
+to slip away.
 
 ## 6. The board
 
@@ -248,48 +248,30 @@ and defense. A guest's options are: attack with their weapon, use an item, guard
 
 ## 11. Down before midnight, dead after
 
+Revised by the user on 2026-11-14 (evening, after plan 1's first balance pass): there is no
+hidden marked guest and no fighting between guests before midnight.
+
 Before midnight nobody dies:
 
-- **Down:** a guest whose HP reaches 0 lies unconscious where they fell and takes no turns.
-- **The marked guest brought down by a guest's attack: the night is won at once.**
-- **The marked guest brought down by anything else** (trap, event, monster) is only down. At
-  midnight they rise as the Taken **at full HP**. The model writes how, from what felled them
-  and their secret (for example: Thanh falls to a beast, but something in the house will not
-  let her go, and she returns as the Opera Specter).
-- **Anyone else** stands up at midnight with 1 HP, in the foyer with the others.
+- **Down:** a guest whose HP reaches 0 (trap, event, monster) lies unconscious where they fell
+  and takes no turns.
+- **At the Turn** every downed guest stands up with 1 HP in the foyer; the one who turns rises
+  as the Taken **at full HP**, wherever they were.
 - **Reviving:** another guest in the same room can wake a downed guest with a relic: the
   **crucifix** (thập tự giá) or the **rosary** (chuỗi tràng hạt). Relics are rare: at most one
-  of each in a night, and some nights neither **[call]**. Used up.
+  of each in a night. Used up.
 - **After midnight**, 0 HP is death.
+- **Guests do not fight each other before midnight**; after it, only the Taken fights the
+  company. Every battle lasts at most 3 rounds, then the board resumes and both sides keep their
+  HP. A monster not beaten in 3 rounds stays with the HP it has left; XP is given only for the kill.
 
-**Bringing down a guest is slow and costly**, so that striking everyone in turn is never a plan:
+## 12. Omens and the curse
 
-1. **Every battle lasts at most 3 rounds** (user decision; it holds for monsters and the Taken
-   too). Then the board resumes and both sides keep their HP. An even match between guests needs
-   two or three of the ten evening turns.
-2. **The others react:** every bot that sees a guest attack another who has not turned thinks
-   worse of the attacker, which makes recruiting them harder. A bot in the same room may join
-   the defender's side; that is the bot's own choice.
-3. **No XP** for fighting a guest.
-4. **The target answers in their own way:** on their turns they fight back or run, by their
-   temper and the bot's choice (Khang hits back; Thanh leaves).
-
-There is no further penalty for bringing down an innocent guest: the cost is one ally fewer at
-full strength in the hunt.
-
-A monster not beaten in 3 rounds stays on the board with the HP it has left; XP is given only
-for the kill **[call]**.
-
-The soak test will check the result: a player who attacks without evidence should win clearly
-less often than one who explores.
-
-## 12. Omens and the marked guest
-
-- **Omen rooms** (five) each hold one omen: a cursed keepsake of the house.
+- **Omen rooms** (five) each hold one omen, drawn at random: a cursed keepsake of the house.
 - The first guest in may **take it or leave it**. An omen is not an item and takes no slot. It
   grants great power for the night:
 
-| Omen | Grants **[call: which omen gives what]** |
+| Omen | Grants |
 |---|---|
 | The cracked mask | +4 Might |
 | The scorched playbill | +4 Sanity |
@@ -297,46 +279,31 @@ less often than one who explores.
 | The prompter's bell | +12 max HP, healed |
 | The stopped metronome | +2 Might and +2 Sanity |
 
-- **Taking an omen means a curse roll:** d20 + Sanity against a target that rises with every
-  omen taken that night (first 6, then 9, 12, 15, 18) **[call: the numbers]**. The Sanity used
-  is the guest's own, before the omen's gift.
-- **Who sees it:** guests whose light reaches the room see the omen taken and are shown the
-  roll. Everyone else knows nothing: not that an omen was taken, nor who holds one, until the
-  Taken appears.
-- **The first guest to fail is marked** and turns at midnight. A marked player is told.
-- **If nobody has failed by midnight,** chance marks one of the omen holders, the player
-  included; if no omen was taken at all, one of all seven **[call: the last case]**.
-- **Only the marked guest's secret is true tonight;** the model tells it at the Turn.
+- **Taking an omen means a curse roll** (user, 2026-11-14): a plain d20, the same odds for every
+  guest, against a target that rises with every omen taken and with every hour of the night
+  (`rules.json` `omens.targets` and `omens.perHour`). Early in the evening only a very unlucky
+  roll fails.
+- **A failed roll and the theatre shifts time** (user, 2026-11-14): that guest turns at once.
+  Everyone skips the rest of the evening and wakes at midnight as the burning past takes the
+  house; the hunt begins. Everyone sees who failed.
+- **If nobody has failed by midnight,** chance picks one of the omen holders, all alike, the
+  player included; if no omen was taken at all, one of all seven.
+- **Only the Taken's secret is true tonight;** the model tells it at the Turn.
+- **The Taken form has its power unconditionally**, whoever turned.
 
-**Before midnight**
-
-- **A failure that was seen** makes its witnesses hunters, and the marked guest's best course
-  is to hide in the dark until midnight. A marked bot does so; a marked player is advised to.
-- **A failure nobody saw** stays secret. Each guest knows only what happened in their own
-  light: which omens they saw taken, by whom, and how those rolls went.
-- **Striking first:** anyone may attack anyone at any time (section 11 makes it slow and
-  costly). If the marked guest is brought down by a guest before midnight, the night ends at
-  once: the company wins and leaves.
-- **Bots** act only on what they saw: a bot that saw the failure hunts the marked guest. A bot
-  that saw nothing has no cause and does not attack.
-- **The Taken form has its power unconditionally**, whoever was marked.
-
-**The seven powers must be balanced against each other** (user requirement): no form may be
-clearly stronger or weaker than the rest. The test runs measure, for each form, how often the
-company wins the hunt; every form must land in the same band, and the powers' numbers (damage,
-reach, how often usable) are tuned until they do. Proposed band: the company wins 40% to 60% of
-hunts against every form **[call]**.
-
-Balance note: +4 is half the stat range. It is meant to make an omen hard to refuse; the test
-runs must show that refusing every omen is not the winning plan and that omen holders do not
-make the Taken trivial.
+**The seven powers must be balanced against each other** (user requirement): the company wins
+40% to 60% of hunts against every form (soak test, `night-soak`). Refusing every omen must not be
+the winning plan.
 
 ## 13. The Turn (midnight)
 
-1. The marked guest vanishes from where they are and the **Taken** appears in the under-stage, in its own form (own model, own voice: a distorted echo of the person).
+1. The one who turns vanishes from where they are and the **Taken** appears in the under-stage, in its own form (own model, own voice: a distorted echo of the person).
 2. Every other living or downed guest is placed in the foyer; the downed stand up with 1 HP.
 3. The Taken's power and its secret are revealed to all.
 4. **The Taken's strength is fixed** for each form: it does not scale with the company. A well-prepared company has it easier; that is the reward for the evening.
+5. **Its minions appear** (user, 2026-11-14): a fixed set of the form's own minions
+   (`minions.csv`) waits in the rooms farthest from the foyer. Ordinary monsters vanish and do
+   not come back.
 
 ## 14. The hunt (0:00 to 5:00)
 
@@ -344,9 +311,11 @@ make the Taken trivial.
 - **On the board** the Taken moves and may use its power once per turn (its seven powers are in
   the cast document: a line, an area, a flood, a pull, a sealed door, a swap, a reflection).
   Powers act on the board at once, like using an item.
+- **Minions** fight on the Taken's side. **Destroying a minion takes its share of the Taken's
+  HP at once** (`hpShare`), so the company has a reason to hunt the minions first.
 - **Battle on contact:** when a member of the company enters the Taken's room, or it enters
-  theirs, a battle starts with everyone of the company in that room. It lasts 3 rounds,
-  then the board resumes. **The Taken's HP carries over** from battle to battle.
+  theirs, a battle starts with everyone of the company in that room (and any minion there). It
+  lasts 3 rounds, then the board resumes. **The Taken's HP carries over** from battle to battle.
 - **The company wins** when the Taken's HP reaches 0 with at least one of them alive: the doors open and the survivors leave.
 - **The Taken wins** at 5:00, or when no member of the company is left: they are trapped in the theatre for good.
 - **A player who is the Taken** wins and loses by the same two rules, from the other side.
@@ -357,14 +326,14 @@ make the Taken trivial.
 - Only the player recruits. A group is at most 3: the player and two allies.
 - **To recruit:** be in the same room and spend the turn. Roll d20 + Sanity against 13, easier by 3 if that guest's bond favours you, harder by 3 if it is against you **[call]**. On a failure that guest cannot be asked again for 2 rounds **[call]**.
 - **An ally is controlled by the player** on its own turn, and joins the player's battles when in the same room.
-- A recruited guest who is marked still turns at midnight: the player loses that ally from the group.
+- A recruited guest who turns leaves the group: the player loses that ally.
 - Bots never form groups.
 
 ## 16. The bots
 
 Bots follow rules, not the language model. Each turn a bot scores its legal moves by its **play
 style** (explorer, fighter, loner, protector, schemer), its HP, the hour, its bond with nearby
-guests and how likely it rates each guest to be marked, and takes the best. Before the game applies it, the decision is said
+guests, and the minions and the Taken after midnight, and takes the best. Before the game applies it, the decision is said
 aloud in that guest's voice.
 
 Requirements:
@@ -383,7 +352,7 @@ Required (user decision). It never decides anything; the rules do.
 | What a guest says on taking an omen | The omen, the guest's personality |
 | The Taken's lines | The form's distorted personality and the secret |
 | Tonight's telling of the secret at the Turn | The cast sheet's plot |
-| How a marked guest felled by the house comes back | What felled them, the room, the secret |
+| How the one who turned comes back as the Taken | The omen, the room, the secret |
 
 Every line passes the existing guard (names, length, no invented facts) and falls back to a
 written template if refused or late. Qwen3 4B on the graphics card gave about 0.8 s a line,
@@ -500,6 +469,10 @@ build phases.
 | 2026-11-14 | The Taken has its power unconditionally; the seven powers must be balanced against each other, by simulation | user |
 | 2026-11-14 | Design and cast approved; all gameplay data as JSON or CSV so balance needs no code change | user |
 | 2026-11-14 | The first to fail is secretly marked; a seen failure sends them into hiding; if none fails, a random omen holder, the player included | user |
+| 2026-11-14 | No hidden marked guest; a failed curse roll turns that guest at once and time jumps to midnight; the roll is a plain d20 (same odds for all) against a target that rises with omens taken and the hour | user |
+| 2026-11-14 | With no failed roll by midnight, chance picks an omen holder (all alike), else anyone | user |
+| 2026-11-14 | No fights between guests before midnight; the early win, bystanders joining and temper are cut | user |
+| 2026-11-14 | After midnight the Taken's own minions (one kind per form, a fixed set at the Turn) replace ordinary monsters; destroying one takes a share of the Taken's HP | user |
 
 ## Sources (the house's history)
 

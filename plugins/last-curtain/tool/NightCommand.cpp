@@ -50,17 +50,16 @@ namespace
         case LogKind::Down: return text + who(e.who) + " is down" + (e.other >= 0 ? " (by " + who(e.other) + ")" : "");
         case LogKind::Woke: return text + who(e.who) + " is woken by " + who(e.other);
         case LogKind::Battle: return text + "battle: " + who(e.who) + " against " + who(e.other);
-        case LogKind::Omen: return text + who(e.who) + " takes " + def.omens[static_cast<std::size_t>(e.a)].name;
-        case LogKind::Marked: return text + who(e.who) + " is marked";
+        case LogKind::Omen: return text + who(e.who) + " takes " + def.omens[static_cast<std::size_t>(e.a)].name + (e.b ? "" : ": the curse takes hold, time jumps to midnight");
         case LogKind::Turned: return text + "THE TURN: " + who(e.who) + " rises as " + def.guests[static_cast<std::size_t>(e.who)].taken;
         case LogKind::Power: return text + def.guests[static_cast<std::size_t>(e.who)].taken + " uses " + def.powers[static_cast<std::size_t>(def.guests[static_cast<std::size_t>(e.who)].power)].id;
         case LogKind::Died: return text + who(e.who) + " dies";
-        case LogKind::Monster: return text + (e.other == 1 ? who(e.who) + " kills a " : "a monster appears: ") + def.monsters[static_cast<std::size_t>(e.a)].name;
+        case LogKind::Monster: return text + (e.other == 1 ? who(e.who) + " kills " : "appears: ") + def.monsters[static_cast<std::size_t>(e.a)].name;
         case LogKind::Level: return text + who(e.who) + " reaches level " + std::to_string(e.a);
         case LogKind::Persuade: return text + who(e.who) + (e.a ? " wins over " : " fails to win over ") + who(e.other);
         case LogKind::Ended:
         {
-            static const char *ends[] = {"running", "the company wins before midnight", "the company destroys the Taken", "the Taken wins"};
+            static const char *ends[] = {"running", "the company destroys the Taken", "the Taken wins"};
             return text + "END: " + ends[e.a];
         }
         default: return {};

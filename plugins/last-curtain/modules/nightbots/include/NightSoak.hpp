@@ -11,23 +11,25 @@ namespace umbra::night
 {
     struct SoakForm
     {
-        int nights = 0, companyWins = 0, earlyWins = 0; // nights: hunts against this form
+        int nights = 0, companyWins = 0; // nights: hunts against this form
     };
 
     struct SoakReport
     {
         int nights = 0, faults = 0;
         std::array<SoakForm, maxGuests> forms{}; // by marked guest
-        int earlyWins = 0, companyWins = 0, takenWins = 0;
-        int playerWins = 0; // nights guest 0's side won
-        long long rooms = 0, omens = 0, monsterKills = 0, levels = 0, downs = 0, deaths = 0, guestAttacks = 0;
+        int companyWins = 0, takenWins = 0;
+        int playerWins = 0;                        // nights guest 0's side won
+        int cursed = 0;                            // nights whose Turn came from a failed curse roll
+        long long cursedRounds = 0;                // the rounds those rolls failed in, added up
+        long long rooms = 0, omens = 0, monsterKills = 0, minionKills = 0, levels = 0, downs = 0, deaths = 0;
         std::array<int, maxGuests> marked{};
 
         // No faults, and every form with at least 50 hunts inside the balance band.
         bool Holds(const NightDef &def) const;
     };
 
-    // strategy for guest 0: 0 its bot, 1 attacks the nearest guest every turn, 2 refuses every omen, 3 takes every omen.
+    // strategy: 0 the bots, 1 the company leaves minions alone, 2 guest 0 refuses every omen, 3 guest 0 takes every omen.
     SoakReport Soak(const NightDef &def, std::uint64_t firstSeed, int nights, int strategy = 0);
     std::string Text(const NightDef &def, const SoakReport &report);
     nlohmann::json Json(const NightDef &def, const SoakReport &report);

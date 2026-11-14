@@ -20,8 +20,11 @@ namespace umbra::night
             const StyleDef &style;
             std::vector<Action> legal;
 
-            Bot(const NightDef &d, const NightState &s, int guest)
-                : def(d), state(s), g(guest), me(s.guests[U(guest)]), style(d.styles[U(d.guests[U(guest)].style)]), legal(LegalActions(d, s))
+            bool chaseMinions = true;
+
+            Bot(const NightDef &d, const NightState &s, int guest, bool minions)
+                : def(d), state(s), g(guest), me(s.guests[U(guest)]), style(d.styles[U(d.guests[U(guest)].style)]), legal(LegalActions(d, s)),
+                  chaseMinions(minions)
             {
             }
 
@@ -111,28 +114,13 @@ namespace umbra::night
             Action Battle() const
             {
                 const auto &b = state.battle;
-                if (b.asking)
-                {
-                    // A bystander: join the defender if it likes the defender better.
-                    int defender = -1;
-                    for (int f = 0; f < b.count; ++f)
-                        if (b.fighters[U(f)].side == 1 && b.fighters[U(f)].guest >= 0 && defender < 0)
-                            defender = b.fighters[U(f)].guest;
-                    const int attacker = b.fighters[0].guest;
-                    return attacker >= 0 && defender >= 0 && Bond(state, g, defender) > Bond(state, g, attacker) ? Action{ActionKind::Join}
-                                                                                                                 : Action{ActionKind::EndTurn};
-                }
-                const Fighter &mine = b.fighters[U(b.turn)];
                 // 1. Heal when low; a boost in the first round.
                 if (const int heal = Slot(ItemKind::Heal); heal >= 0 && Below(style.healBelowPercent))
                     return {ActionKind::UseItem, I8(heal)};
                 if (const int boost = Slot(ItemKind::Boost); boost >= 0 && b.round == 1)
                     return {ActionKind::UseItem, I8(boost)};
-                // 2. A fleeing temper leaves a fight with a guest; anyone leaves when nearly down.
-                bool guestEnemy = false;
-                for (int f = 0; f < b.count; ++f)
-                    guestEnemy = guestEnemy || (b.fighters[U(f)].side != mine.side && b.fighters[U(f)].guest >= 0 && !b.fighters[U(f)].taken);
-                if (Has({ActionKind::Leave}) && ((guestEnemy && def.guests[U(g)].flees) || Below(style.fleeBelowHpPercent)))
+                // 2. Leave when nearly down.
+                if (Has({ActionKind::Leave}) && Below(style.fleeBelowHpPercent))
                     return {ActionKind::Leave};
                 // 3. Strike the weakest enemy.
                 Action best{ActionKind::Guard};
@@ -209,6 +197,19 @@ namespace umbra::night
                 const bool strong = !Below(style.huntHpPercent);
                 if (strong && Has({ActionKind::Attack, -1, I8(taken)}))
                     return {ActionKind::Attack, -1, I8(taken)};
+                // Minions first: each one killed takes a share of the Taken's life.
+                if (chaseMinions && strong)
+                {
+                    for (const Action &a : legal)
+                        if (a.kind == ActionKind::Attack && a.a >= 0)
+                            return a;
+                    int minion = -1, best = INT_MAX;
+                    for (const Monster &m : state.monsters)
+                        if (const int n = StepsTo(me.cell, m.cell); m.hp > 0 && n > 0 && n < best)
+                            minion = m.cell, best = n;
+                    if (minion >= 0 && Toward(minion).kind == ActionKind::Move)
+                        return Toward(minion);
+                }
                 if (strong && friendNear)
                     if (const Action step = Toward(goal); step.kind == ActionKind::Move)
                         return step;
@@ -291,14 +292,12 @@ namespace umbra::night
                     return Battle();
                 if (legal.front().kind == ActionKind::TakeOmen)
                 {
-                    // Take it while the curse roll still looks worth the risk to this style.
-                    const auto &targets = def.rules.omens.targets;
-                    const int target = targets[U(std::min<int>(state.omensTaken, static_cast<int>(targets.size()) - 1))];
-                    return {style.omen * 2 + Stat(def, state, g, StatKind::Sanity) >= target ? ActionKind::TakeOmen : ActionKind::LeaveOmen};
+                    // Take it while the curse roll's target is low enough for this style.
+                    return {CurseTarget(def, state) <= style.omen * 2 ? ActionKind::TakeOmen : ActionKind::LeaveOmen};
                 }
                 if (IsTaken(state, g))
                     return Taken();
-                // 2. Hurt: heal, else get away from monsters and attackers.
+                // 2. Hurt: heal, else get away from monsters (and the Taken).
                 if (Below(style.fleeBelowHpPercent))
                 {
                     if (const int heal = Slot(ItemKind::Heal); heal >= 0)
@@ -306,46 +305,14 @@ namespace umbra::night
                     std::vector<int> threats;
                     for (const Monster &m : state.monsters)
                         threats.push_back(m.cell);
-                    for (int o = 0; o < state.count; ++o)
-                        if ((me.attackedBy >> o) & 1u)
-                            threats.push_back(state.guests[U(o)].cell);
+                    if (state.taken.present)
+                        threats.push_back(state.guests[U(state.taken.guest)].cell);
                     if (!threats.empty())
                         return AwayFrom(threats);
                 }
                 if (state.taken.present)
                     return Hunt();
-                // 3. Before midnight: hunt one it saw fail; hide when marked and seen; answer an attack by temper.
-                for (int o = 0; o < state.count; ++o)
-                {
-                    if (o == g || !Up(o))
-                        continue;
-                    const int cell = state.guests[U(o)].cell;
-                    if (Knows(state, g, o).fail)
-                    {
-                        if (Has({ActionKind::Attack, -1, I8(o)}))
-                            return {ActionKind::Attack, -1, I8(o)};
-                        if (Sees(cell) && Toward(cell).kind == ActionKind::Move)
-                            return Toward(cell);
-                    }
-                    if ((me.attackedBy >> o) & 1u && cell == me.cell)
-                    {
-                        if (!def.guests[U(g)].flees && Has({ActionKind::Attack, -1, I8(o)}))
-                            return {ActionKind::Attack, -1, I8(o)};
-                        if (def.guests[U(g)].flees)
-                            return AwayFrom({cell});
-                    }
-                }
-                if (state.marked == g)
-                {
-                    bool seen = false;
-                    std::vector<int> others;
-                    for (int o = 0; o < state.count; ++o)
-                        if (o != g && Up(o))
-                            seen = seen || Knows(state, o, g).fail, others.push_back(state.guests[U(o)].cell);
-                    if (seen)
-                        return AwayFrom(others);
-                }
-                // 4. Otherwise the best score; ties to the first.
+                // 3. Otherwise the best score; ties to the first.
                 Action best = legal.front();
                 int bestScore = INT_MIN;
                 for (const Action &a : legal)
@@ -356,7 +323,10 @@ namespace umbra::night
         };
     }
 
-    Action ChooseAction(const NightDef &def, const NightState &state, int guest) { return Bot(def, state, guest).Choose(); }
+    Action ChooseAction(const NightDef &def, const NightState &state, int guest, bool chaseMinions)
+    {
+        return Bot(def, state, guest, chaseMinions).Choose();
+    }
 
     int PlayNight(const NightDef &def, NightState &state)
     {

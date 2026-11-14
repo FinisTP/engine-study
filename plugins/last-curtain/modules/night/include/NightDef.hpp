@@ -29,7 +29,7 @@ namespace umbra::night
         int carry = 4;
         struct { int rounds = 3, minDamage = 1, base = 3, defenseDivisor = 2, guardDivisor = 2; } battle;
         struct { std::vector<int> xp; int hp = 4, stat = 1; } levels;
-        struct { std::vector<int> targets; } omens;
+        struct { std::vector<int> targets; int perHour = 0; } omens; // curse target: targets[omens taken] + perHour * hours since start
         struct { int fromRound = 3, chancePercent = 35, stayRounds = 3, max = 2; } monsters;
         struct { int target = 13, bond = 3, retryRounds = 2; } persuade;
         struct { int downedReturnHp = 1, attackBondLoss = 300; } guests;
@@ -41,8 +41,7 @@ namespace umbra::night
         std::string id, name, pronoun;
         Weapon weapon = Weapon::Physical;
         int hp = 0, might = 0, sanity = 0, speed = 0;
-        int style = 0;     // styles.csv row
-        bool flees = false; // temper: fight or flee
+        int style = 0; // styles.csv row
         std::string taken;
         int takenHp = 0, takenMight = 0, takenSanity = 0, takenSpeed = 0;
         int power = 0; // powers.json entry
@@ -103,6 +102,9 @@ namespace umbra::night
         int xp = 0;
         int debuff = -1; // buffs.csv row
         int hpPerHour = 0, statPerHour = 0;
+        int taken = -1;  // a minion: the guests.csv row of its Taken (minions.csv); -1 = an ordinary monster
+        int hpShare = 0; // a minion: the share of its Taken's max HP (percent) that dies with it
+        int count = 0;   // a minion: how many are placed at the Turn
     };
 
     struct OmenDef
@@ -131,7 +133,7 @@ namespace umbra::night
         std::vector<EventDef> events;
         std::vector<ItemDef> items;
         std::vector<BuffDef> buffs;
-        std::vector<MonsterDef> monsters;
+        std::vector<MonsterDef> monsters; // ordinary monsters, then the minions of minions.csv
         std::vector<OmenDef> omens;
         std::vector<StyleDef> styles;
         std::uint64_t fingerprint = 0; // a hash of every data file, so saves match their data

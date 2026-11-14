@@ -21,17 +21,6 @@ namespace
         return std::find(legal.begin(), legal.end(), action) != legal.end();
     }
 
-    // Strike the first enemy until the battle is over (joiners stay out).
-    void FightOut(const NightDef &def, NightState &state)
-    {
-        for (int i = 0; i < 200 && state.battle.active; ++i)
-        {
-            const auto legal = LegalActions(def, state);
-            auto pick = std::find_if(legal.begin(), legal.end(), [](const Action &a) { return a.kind == ActionKind::Strike; });
-            REQUIRE(Apply(def, state, pick != legal.end() ? *pick : Action{ActionKind::EndTurn}));
-        }
-    }
-
     // Everyone but these guests leaves the foyer for a far, dark closet (cell 0 of the grid).
     void OnlyIn(NightState &state, std::initializer_list<int> here)
     {
@@ -52,43 +41,14 @@ namespace
     }
 }
 
-TEST_CASE("Attacking a guest is slow, pays no XP and is seen (T99)", "[night][company]")
-{
-    NightDef def = Quiet();
-    for (GuestDef &g : def.guests)
-        g.hp = 30, g.might = 4, g.sanity = 4, g.weapon = Weapon::Physical;
-    NightState state = NewNight(def, 1);
-    const int attacker = Current(state), defender = state.order[1], watcher = state.order[2], dark = state.order[3];
-    OnlyIn(state, {attacker, defender, watcher});
-    state.guests[U(dark)].cell = 0;
-    const int seen = Bond(state, watcher, attacker), unseen = Bond(state, dark, attacker);
-    REQUIRE(Apply(def, state, {ActionKind::Attack, -1, I8(defender)}));
-    // The watcher is a bot in the room: it may join; it stays out.
-    if (state.battle.active && Current(state) == watcher)
-        REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
-    FightOut(def, state);
-    CHECK_FALSE(state.guests[U(attacker)].down);
-    CHECK_FALSE(state.guests[U(defender)].down);
-    CHECK(state.guests[U(attacker)].xp == 0);
-    CHECK(state.guests[U(defender)].xp == 0);
-    CHECK(Bond(state, watcher, attacker) == std::max(-1000, seen - def.rules.guests.attackBondLoss));
-    CHECK(Bond(state, dark, attacker) == unseen);
-}
-
-TEST_CASE("A guest brought down by a guest stays down until midnight (T99)", "[night][company]")
+TEST_CASE("No guest fights another before midnight (T99)", "[night][company]")
 {
     const NightDef def = Quiet();
-    NightState state = NewNight(def, 1);
-    const int attacker = Current(state), defender = state.order[1];
-    OnlyIn(state, {attacker, defender});
-    state.guests[U(defender)].hp = 1;
-    REQUIRE(Apply(def, state, {ActionKind::Attack, -1, I8(defender)}));
-    FightOut(def, state);
-    CHECK(state.guests[U(defender)].down);
-    CHECK(state.guests[U(defender)].downedBy == attacker);
-    for (int i = 0; i < 14; ++i)
+    NightState state = NewNight(def, 1, 0); // all seven in the foyer
+    for (int i = 0; i < 70 && !state.taken.present; ++i)
     {
-        CHECK(Current(state) != defender);
+        for (const Action &a : LegalActions(def, state))
+            CHECK_FALSE((a.kind == ActionKind::Attack && a.b >= 0));
         REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
     }
 }
@@ -146,9 +106,9 @@ TEST_CASE("Allies fight beside the player and are the player's to move (T99)", "
     CHECK(Controls(state, 0, 0));
     CHECK(Controls(state, 0, ally));
     CHECK_FALSE(Controls(state, 0, other));
-    OnlyIn(state, {0, ally, other});
-    state.guests[U(other)].hp = 99;
-    REQUIRE(Apply(def, state, {ActionKind::Attack, -1, I8(other)}));
+    OnlyIn(state, {0, ally});
+    state.monsters.push_back({0, state.foyer, 99, 99, 1, 1});
+    REQUIRE(Apply(def, state, {ActionKind::Attack, 0}));
     REQUIRE(state.battle.active);
     bool allyBeside = false;
     for (int f = 0; f < state.battle.count; ++f)
@@ -156,31 +116,6 @@ TEST_CASE("Allies fight beside the player and are the player's to move (T99)", "
     CHECK(allyBeside);
 }
 
-TEST_CASE("A bot in the room may be offered the defender's side (T99)", "[night][company]")
-{
-    const NightDef def = Quiet();
-    NightState state = NewNight(def, 1);
-    const int attacker = Current(state), defender = state.order[1], bystander = state.order[2];
-    OnlyIn(state, {attacker, defender, bystander});
-    CHECK(Joiners(def, state, attacker, defender) == std::vector<int>{bystander});
-    REQUIRE(Apply(def, state, {ActionKind::Attack, -1, I8(defender)}));
-    REQUIRE(Current(state) == bystander);
-    const auto legal = LegalActions(def, state);
-    REQUIRE(legal.size() == 2);
-    CHECK(Has(legal, {ActionKind::Join}));
-    CHECK(Has(legal, {ActionKind::EndTurn}));
-    REQUIRE(Apply(def, state, {ActionKind::Join}));
-    bool joined = false;
-    for (int f = 0; f < state.battle.count; ++f)
-        joined = joined || (state.battle.fighters[U(f)].guest == bystander && state.battle.fighters[U(f)].side == 1);
-    CHECK(joined);
-    CHECK(Current(state) == attacker); // the battle begins with the starter
-    FightOut(def, state);
-    // Joining did not use the bystander's own board turn.
-    while (Current(state) >= 0 && Current(state) != bystander && state.round == 1)
-        REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
-    CHECK(Current(state) == bystander);
-}
 
 namespace
 {
@@ -210,7 +145,8 @@ namespace
 
 TEST_CASE("An omen gives its gift and costs a roll against a rising target (T100)", "[night][omen]")
 {
-    const NightDef def = OmenRooms();
+    NightDef def = OmenRooms();
+    def.rules.omens.targets = {1, 1, 1}; // a d20 never rolls below 1: no omen turns anyone here
     NightState state = NewNight(def, 3);
     for (std::size_t n = 0; n < 3; ++n)
     {
@@ -224,10 +160,14 @@ TEST_CASE("An omen gives its gift and costs a roll against a rising target (T100
         const int sanity = Stat(def, state, g, StatKind::Sanity), maxHp = Stat(def, state, g, StatKind::MaxHp);
         const int hp = state.guests[U(g)].hp, might = Stat(def, state, g, StatKind::Might);
         const std::size_t since = state.logCount;
+        const int round = state.round;
         REQUIRE(Apply(def, state, {ActionKind::TakeOmen}));
+        if (state.taken.present)
+            break; // an unlucky roll: the guest turned
+        REQUIRE(state.round == round);
         const LogEntry check = LastCheck(state, since);
-        CHECK(check.b == def.rules.omens.targets[n]);
-        CHECK(check.other == sanity); // the Sanity before the gift
+        CHECK(check.b == def.rules.omens.targets[n] + def.rules.omens.perHour * ((state.round - 1) * 30 / 60));
+        CHECK(check.other == 0); // a plain d20: the same odds for everyone
         CHECK(Stat(def, state, g, StatKind::Sanity) == sanity + omen.sanity);
         CHECK(Stat(def, state, g, StatKind::Might) == might + omen.might);
         CHECK(Stat(def, state, g, StatKind::MaxHp) == maxHp + omen.maxhp);
@@ -237,25 +177,39 @@ TEST_CASE("An omen gives its gift and costs a roll against a rising target (T100
     }
 }
 
-TEST_CASE("The first failure marks, in secret (T100)", "[night][omen]")
+TEST_CASE("The curse target rises with omens taken and with the hour (T100)", "[night][omen]")
+{
+    NightDef def = OmenRooms();
+    def.rules.omens.targets = {2, 5};
+    def.rules.omens.perHour = 3;
+    NightState state = NewNight(def, 3);
+    CHECK(CurseTarget(def, state) == 2);
+    state.omensTaken = 1;
+    CHECK(CurseTarget(def, state) == 5);
+    state.omensTaken = 4; // the last target repeats
+    CHECK(CurseTarget(def, state) == 5);
+    state.round = 5; // 21:00, two hours in
+    CHECK(CurseTarget(def, state) == 5 + 2 * 3);
+}
+
+TEST_CASE("A failed curse roll turns that guest at once and the hunt starts at midnight (T100)", "[night][omen]")
 {
     NightDef def = OmenRooms();
     def.rules.omens.targets = {99};
     NightState state = NewNight(def, 3);
-    const int taker = Current(state), watcher = state.order[1], dark = state.order[2];
-    Closet(def, state, 0);
-    state.guests[U(dark)].cell = 0; // a closet: no light reaches it
+    const int taker = Current(state);
     WalkIn(def, state);
     REQUIRE(Apply(def, state, {ActionKind::TakeOmen}));
-    CHECK(state.marked == taker);
-    CHECK(Knows(state, watcher, taker).omen);
-    CHECK(Knows(state, watcher, taker).fail);
-    CHECK_FALSE(Knows(state, dark, taker).omen);
-    CHECK_FALSE(Knows(state, dark, taker).fail);
-    // A later failure does not move the mark.
-    WalkIn(def, state);
-    REQUIRE(Apply(def, state, {ActionKind::TakeOmen}));
-    CHECK(state.marked == taker);
+    REQUIRE(state.taken.present);
+    CHECK(state.taken.guest == taker);
+    CHECK(state.round == def.rules.clock.turnAfterRound + 1);
+    CHECK(Hour(def, state) == 0);
+    CHECK(state.guests[U(taker)].cell == state.understage);
+    for (int g = 0; g < state.count; ++g)
+        if (g != taker)
+            CHECK(state.guests[U(g)].cell == state.foyer);
+    CHECK(Current(state) == state.order[0]); // the company moves first
+    CHECK(state.order[U(state.count - 1)] == taker);
 }
 
 TEST_CASE("Leaving an omen leaves it for the next guest (T100)", "[night][omen]")
@@ -281,21 +235,3 @@ TEST_CASE("Leaving an omen leaves it for the next guest (T100)", "[night][omen]"
     CHECK(((state.guests[U(next)].omens >> omen) & 1u) == 1u);
 }
 
-TEST_CASE("Bringing the marked guest down by a guest's hand wins the night at once (T100)", "[night][omen]")
-{
-    const NightDef def = Quiet();
-    NightState state = NewNight(def, 1);
-    const int attacker = Current(state), marked = state.order[1];
-    state.marked = static_cast<std::int8_t>(marked);
-    OnlyIn(state, {attacker, marked});
-    NightState trap = state;
-    state.guests[U(marked)].hp = 1;
-    REQUIRE(Apply(def, state, {ActionKind::Attack, -1, I8(marked)}));
-    FightOut(def, state);
-    CHECK(Result(state) == Outcome::CompanyEarly);
-    CHECK(Current(state) == -1);
-    // The same fall to the house leaves the night running.
-    Hurt(def, trap, marked, 999, -1);
-    CHECK(trap.guests[U(marked)].down);
-    CHECK(Result(trap) == Outcome::Running);
-}

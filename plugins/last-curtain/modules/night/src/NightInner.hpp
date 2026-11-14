@@ -38,19 +38,17 @@ namespace umbra::night::inner
     int BoardGuest(const NightState &state); // whose board turn it is, ignoring battles and levels
     int MonsterAt(const NightState &state, int cell); // a living monster there, or -1
     // Battle.cpp
-    void StartBattle(const NightDef &def, NightState &state, int cell, const std::vector<Fighter> &starters, const std::vector<Fighter> &others,
-                     std::uint8_t asking = 0);
-    void BeginRounds(const NightDef &def, NightState &state); // after the bystanders chose
+    void StartBattle(const NightDef &def, NightState &state, int cell, const std::vector<Fighter> &starters, const std::vector<Fighter> &others);
     std::vector<Fighter> Side(const NightState &state, int guest); // a guest and their allies in the room
     // Company.cpp
     void CompanyLegal(const NightDef &def, const NightState &state, int guest, std::vector<Action> &legal);
-    void AttackGuest(const NightDef &def, NightState &state, int attacker, int defender);
     void Persuade(const NightDef &def, NightState &state, int asker, int target);
     void OfferOmen(const NightDef &def, NightState &state, int cell); // on entering an unclaimed omen room
-    void TakeOmen(const NightDef &def, NightState &state, int guest);
+    bool TakeOmen(const NightDef &def, NightState &state, int guest);  // true: the roll failed and the guest turns
     void EndNight(NightState &state, Outcome outcome);
     // Hunt.cpp
     void TheTurn(const NightDef &def, NightState &state);
+    void TurnNow(const NightDef &def, NightState &state); // a failed curse roll: everyone wakes at midnight
     bool ContactBattle(const NightDef &def, NightState &state, int mover, int cell); // the Taken meets the company
     bool CompanyAlive(const NightState &state);
     void PowerLegal(const NightDef &def, const NightState &state, std::vector<Action> &legal);

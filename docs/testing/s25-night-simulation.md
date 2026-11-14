@@ -119,5 +119,46 @@ ctest --preset windows-msvc-release -R Umbra.Night
 ```
 
 - [ ] MSVC builds the plugin without warnings
-- [ ] `Umbra.Night` and `Umbra.Night.Balance` pass (the golden fingerprint must match: same night on MSVC)
-- [ ] `night-soak --nights 1000` prints the same numbers as §3 and "the data holds"
+- [x] `Umbra.Night` and `Umbra.Night.Balance` pass (the golden fingerprint must match: same night on MSVC) (user, 2026-11-14, MSVC Release: 66 cases / 215,434 assertions, and the balance case, all passed)
+- [x] `night-soak --nights 1000` prints the same numbers as §3 and "the data holds" (user, 2026-11-14, MSVC Release: every line identical to the Linux run, 1,002 ms)
+
+## 5. Revision `#UMBRA-116`: the curse turns at once; minions (2026-11-14, evening)
+
+User decisions after the first pass: no hidden marked guest; a failed curse roll turns that
+guest at once and everyone wakes at midnight; the roll is a plain d20 (same odds for all); with no
+failure by midnight chance picks an omen holder, all alike, else anyone; no fights between guests
+before midnight; after midnight a fixed set of the form's own minions (one kind per form) replaces
+ordinary monsters, and killing one takes a share of the Taken's HP.
+
+Built: `TakeOmen` / `TurnNow` / `CurseTarget` (`Company.cpp`, `Hunt.cpp`), `minions.csv` (loaded
+after the monsters, `MonsterDef::taken`, `hpShare`, `count`), minions placed in the rooms farthest
+from the foyer at the Turn, the HP share in `Battle.cpp`; cut: `Knows`, the early win, evening
+attacks between guests, bystanders joining, the `temper` column, `attackedBy`, `sawOmen`/`sawFail`.
+Bots go for minions first; soak strategy 1 is now "the company leaves minions alone".
+
+Data changed: `omens.targets` 6, 9, 12, 15, 18 (+ Sanity) → 1, 1, 1, 2, 3 + `perHour` 2 (plain d20);
+`minions.csv` new (HP 8-9, Might/Sanity 2-3, 25% of the Taken's HP each, 3 per form); Taken HP:
+Folded Girl 96, Opera Specter 60, Drowned Physician 82, Iron Debtor 94 (Might 7), Rooted Caretaker
+60, the Lens 90, Silvered Reflection 68.
+
+```
+1000 nights, 0 faults
+company won the hunt 488 (48%), the Taken won 512; guest 0's side won 47%
+the curse struck early in 13% of nights, on average in round 3.9 of 10; otherwise chance chose at midnight
+per night: rooms 18.5, omens 3.1, monster kills 3.1, minion kills 0.8, levels 3.1, downs 0.2, deaths 2.6
+  Folded Girl 53% (198 hunts), Opera Specter 47% (170), Drowned Physician 50% (95), Iron Debtor 51% (77),
+  Rooted Caretaker 47% (105), the Lens 45% (192), Silvered Reflection 46% (163); the data holds
+```
+
+Seeds 20001 and 50001 (2,000 nights each): every form 42-57%. Strategies (500 nights): the bots
+49%; the company leaving minions alone 42% (hunting them is worth 7 points); guest 0 refusing every
+omen 48%; taking every omen 49%.
+
+Tests: 64 cases in `Umbra.Night` (new: no guest fights before midnight, the curse target rising
+with omens and hours, a failed roll turning at once, chance among holders all alike, minions
+placed and ordinary monsters gone, a minion's HP share, bots going for minions; removed: the
+cases of the cut rules) and the balance case (now also: hunting minions pays 5+ points; the curse
+strikes early in at most 25% of nights, not before round 3 on average). The new tests were written
+alongside the code, not watched failing first.
+
+Windows: §4 must be repeated for this revision (the golden fingerprint and the soak numbers changed).
