@@ -180,3 +180,120 @@ TEST_CASE("A bot in the room may be offered the defender's side (T99)", "[night]
         REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
     CHECK(Current(state) == bystander);
 }
+
+namespace
+{
+    // Every room but the foyer and the under-stage is an omen room with four doors.
+    NightDef OmenRooms()
+    {
+        NightDef def = Quiet();
+        for (RoomDef &room : def.rooms)
+            if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
+                room.kind = RoomKind::Omen, room.doors = 15;
+        return def;
+    }
+
+    // The current guest walks through a new doorway (into an omen room).
+    void WalkIn(const NightDef &def, NightState &state)
+    {
+        const int g = Current(state);
+        for (std::int8_t d = 0; d < 4; ++d)
+            if (Doorway(def, state, state.guests[U(g)].cell, d))
+            {
+                REQUIRE(Apply(def, state, {ActionKind::Move, d}));
+                return;
+            }
+        FAIL("no doorway");
+    }
+}
+
+TEST_CASE("An omen gives its gift and costs a roll against a rising target (T100)", "[night][omen]")
+{
+    const NightDef def = OmenRooms();
+    NightState state = NewNight(def, 3);
+    for (std::size_t n = 0; n < 3; ++n)
+    {
+        const int g = Current(state);
+        WalkIn(def, state);
+        const auto legal = LegalActions(def, state);
+        REQUIRE(legal.size() == 2);
+        const Cell &cell = state.cells[U(state.guests[U(g)].cell)];
+        REQUIRE(cell.omen >= 0);
+        const OmenDef &omen = def.omens[U(cell.omen)];
+        const int sanity = Stat(def, state, g, StatKind::Sanity), maxHp = Stat(def, state, g, StatKind::MaxHp);
+        const int hp = state.guests[U(g)].hp, might = Stat(def, state, g, StatKind::Might);
+        const std::size_t since = state.logCount;
+        REQUIRE(Apply(def, state, {ActionKind::TakeOmen}));
+        const LogEntry check = LastCheck(state, since);
+        CHECK(check.b == def.rules.omens.targets[n]);
+        CHECK(check.other == sanity); // the Sanity before the gift
+        CHECK(Stat(def, state, g, StatKind::Sanity) == sanity + omen.sanity);
+        CHECK(Stat(def, state, g, StatKind::Might) == might + omen.might);
+        CHECK(Stat(def, state, g, StatKind::MaxHp) == maxHp + omen.maxhp);
+        CHECK(state.guests[U(g)].hp == hp + omen.maxhp);
+        CHECK(state.omensTaken == static_cast<int>(n) + 1);
+        CHECK(Current(state) != g); // taking ends the turn
+    }
+}
+
+TEST_CASE("The first failure marks, in secret (T100)", "[night][omen]")
+{
+    NightDef def = OmenRooms();
+    def.rules.omens.targets = {99};
+    NightState state = NewNight(def, 3);
+    const int taker = Current(state), watcher = state.order[1], dark = state.order[2];
+    state.guests[U(dark)].cell = 0; // an unopened corner: no light reaches it
+    WalkIn(def, state);
+    REQUIRE(Apply(def, state, {ActionKind::TakeOmen}));
+    CHECK(state.marked == taker);
+    CHECK(Knows(state, watcher, taker).omen);
+    CHECK(Knows(state, watcher, taker).fail);
+    CHECK_FALSE(Knows(state, dark, taker).omen);
+    CHECK_FALSE(Knows(state, dark, taker).fail);
+    // A later failure does not move the mark.
+    WalkIn(def, state);
+    REQUIRE(Apply(def, state, {ActionKind::TakeOmen}));
+    CHECK(state.marked == taker);
+}
+
+TEST_CASE("Leaving an omen leaves it for the next guest (T100)", "[night][omen]")
+{
+    const NightDef def = OmenRooms();
+    NightState state = NewNight(def, 3);
+    const int first = Current(state);
+    WalkIn(def, state);
+    const int cell = state.guests[U(first)].cell;
+    const int omen = state.cells[U(cell)].omen;
+    REQUIRE(Apply(def, state, {ActionKind::LeaveOmen}));
+    CHECK(state.guests[U(first)].omens == 0);
+    CHECK(Current(state) != first);
+    // The next guest walks into the same room through the passage now open.
+    const int next = Current(state);
+    std::int8_t way = -1;
+    for (std::int8_t d = 0; d < 4; ++d)
+        if (Neighbour(def, state.guests[U(next)].cell, d) == cell && Passage(def, state, state.guests[U(next)].cell, d))
+            way = d;
+    REQUIRE(way >= 0);
+    REQUIRE(Apply(def, state, {ActionKind::Move, way}));
+    REQUIRE(Apply(def, state, {ActionKind::TakeOmen}));
+    CHECK(((state.guests[U(next)].omens >> omen) & 1u) == 1u);
+}
+
+TEST_CASE("Bringing the marked guest down by a guest's hand wins the night at once (T100)", "[night][omen]")
+{
+    const NightDef def = Quiet();
+    NightState state = NewNight(def, 1);
+    const int attacker = Current(state), marked = state.order[1];
+    state.marked = static_cast<std::int8_t>(marked);
+    OnlyIn(state, {attacker, marked});
+    NightState trap = state;
+    state.guests[U(marked)].hp = 1;
+    REQUIRE(Apply(def, state, {ActionKind::Attack, -1, I8(marked)}));
+    FightOut(def, state);
+    CHECK(Result(state) == Outcome::CompanyEarly);
+    CHECK(Current(state) == -1);
+    // The same fall to the house leaves the night running.
+    Hurt(def, trap, marked, 999, -1);
+    CHECK(trap.guests[U(marked)].down);
+    CHECK(Result(trap) == Outcome::Running);
+}

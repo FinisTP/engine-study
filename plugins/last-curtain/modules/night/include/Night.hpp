@@ -18,6 +18,7 @@ namespace umbra::night
         std::uint8_t doors = 0;
         bool opened = false;
         bool resolved = false; // its item, event, trap or omen is taken care of
+        std::int8_t omen = -1; // the omens.csv row lying here (drawn on first entry)
     };
 
     struct Guest
@@ -32,6 +33,7 @@ namespace umbra::night
         std::int8_t downedBy = -1; // the guest who brought them down; -1 = the house
         std::int8_t pending = 0;   // levels earned and not yet chosen
         std::array<std::int8_t, maxGuests> askedUntilRound{}; // may not persuade that guest again before
+        std::uint8_t sawOmen = 0, sawFail = 0; // guests seen taking an omen / failing its roll (bits)
         std::int8_t movesLeft = 0;
     };
 
@@ -79,6 +81,13 @@ namespace umbra::night
         bool passed = false;
     };
 
+    enum class Outcome : std::uint8_t { Running, CompanyEarly, Company, Taken };
+
+    struct Seen
+    {
+        bool omen = false, fail = false;
+    };
+
     struct Monster
     {
         std::int8_t kind = -1, cell = -1, leavesRound = 0; // kind: monsters.csv row
@@ -120,6 +129,10 @@ namespace umbra::night
         bool over = false; // the night has ended
         std::vector<FloorItem> floor;
         std::array<std::int16_t, maxGuests * maxGuests> bonds{}; // from * maxGuests + to, -1000..1000
+        std::int8_t marked = -1, omensTaken = 0;
+        std::int8_t omenOffer = -1;          // the cell whose omen the board guest must take or leave
+        std::uint8_t omensUsed = 0;          // omens.csv rows already drawn (bits)
+        Outcome outcome = Outcome::Running;
         Battle battle;
         std::vector<Monster> monsters;
         std::uint64_t eventsUsed = 0, itemsUsed = 0; // events.csv / items.csv rows already drawn
@@ -140,6 +153,10 @@ namespace umbra::night
     int Bond(const NightState &state, int from, int to);
     bool Controls(const NightState &state, int controller, int guest); // the player's guest and their group 0
     std::vector<int> Joiners(const NightDef &def, const NightState &state, int attacker, int defender);
+
+    // What `viewer` saw of `guest`: an omen taken, a roll failed. Nothing else about omens is visible.
+    Seen Knows(const NightState &state, int viewer, int guest);
+    Outcome Result(const NightState &state);
 
     // A hit in battle (Battle.cpp): data formula, resistance, armour, guard; never below minDamage.
     int Damage(const NightDef &def, const NightState &state, const Fighter &attacker, const Fighter &defender);

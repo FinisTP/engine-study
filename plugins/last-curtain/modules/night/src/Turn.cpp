@@ -288,6 +288,12 @@ namespace umbra::night
             legal.push_back({ActionKind::LevelUp, 1});
             return legal;
         }
+        if (state.omenOffer >= 0)
+        {
+            legal.push_back({ActionKind::TakeOmen});
+            legal.push_back({ActionKind::LeaveOmen});
+            return legal;
+        }
 
         // 1. Moving: through passages and doorways, and between the transport pair.
         if (guest.movesLeft > 0)
@@ -355,6 +361,13 @@ namespace umbra::night
             else
                 StartBattle(def, state, guest.cell, Side(state, g), {Fighter{-1, action.a}});
             break;
+        case ActionKind::TakeOmen:
+        case ActionKind::LeaveOmen:
+            if (action.kind == ActionKind::TakeOmen)
+                TakeOmen(def, state, g);
+            state.omenOffer = -1;
+            inner::EndTurn(def, state);
+            break;
         case ActionKind::Persuade:
             Persuade(def, state, g, action.a);
             inner::EndTurn(def, state);
@@ -376,8 +389,10 @@ namespace umbra::night
                 StartBattle(def, state, to, {Fighter{-1, I8(monster)}}, Side(state, g));
                 break;
             }
-            // Resolving an item, event or trap room ends the turn.
+            // Resolving an item, event or trap room ends the turn; an omen is offered.
             const RoomKind kind = RoomOf(def, state, to).kind;
+            if (kind == RoomKind::Omen && !state.cells[U(to)].resolved)
+                OfferOmen(def, state, to);
             if (!state.cells[U(to)].resolved && (kind == RoomKind::Item || kind == RoomKind::Event || kind == RoomKind::Trap))
             {
                 Resolve(def, state, g, to);
@@ -427,6 +442,9 @@ namespace umbra::night
         guest.down = true;
         guest.downedBy = I8(byGuest);
         Log(state, LogKind::Down, g, byGuest);
+        // The marked guest brought down by a guest's hand before the Turn: the night is won.
+        if (g == state.marked && byGuest >= 0)
+            EndNight(state, Outcome::CompanyEarly);
     }
 
     std::vector<LogEntry> NewLog(const NightState &state, std::size_t since)

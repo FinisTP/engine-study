@@ -44,6 +44,9 @@ namespace umbra::night::inner
     void CompanyLegal(const NightDef &def, const NightState &state, int guest, std::vector<Action> &legal);
     void AttackGuest(const NightDef &def, NightState &state, int attacker, int defender);
     void Persuade(const NightDef &def, NightState &state, int asker, int target);
+    void OfferOmen(const NightDef &def, NightState &state, int cell); // on entering an unclaimed omen room
+    void TakeOmen(const NightDef &def, NightState &state, int guest);
+    void EndNight(NightState &state, Outcome outcome);
     void BattleLegal(const NightDef &def, const NightState &state, std::vector<Action> &legal);
     void BattleApply(const NightDef &def, NightState &state, const Action &action);
     void RoundStart(const NightDef &def, NightState &state); // monsters leave and appear
