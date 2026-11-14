@@ -1,6 +1,6 @@
 # The Last Curtain: goals, a bigger board and a better table (plans 2b and 2c)
 
-> **Status:** In design — revised after a `design-system` review (verdict CONCERNS, answered by the user)
+> **Status:** Ready for approval — revised twice after `design-system` reviews; no blocking concern left
 > **Author:** the user + Claude · **Last updated:** 2026-11-14 (night)
 > **Implements pillars:** 1 Who will turn? · 2 The building is the board · 3 Prepare, then survive · 4 Every night differs
 > **Quick reference** — Layer: Core · Priority: Vertical slice · Key deps: the night rules (`Night.md`), bots (`Balance.md`), `LastCurtain.exe` (plan 2)
@@ -52,16 +52,23 @@ instead.
    be dropped, picked up and taken by rivals (Phoenix crown in the Costume store, the Ledger in the
    Shuttered office, the Gilded mask in the Mask cabinet, the pocket watch in the Box seats, the ring
    of keys in the Back corridor **[call]**). A keepsake is in play only when a drawn goal needs it.
-   Draft goals, one drawn per night **[call]**:
+   **Even difficulty (user):** every goal must be about as hard to finish within the ten evening
+   rounds, and, like reaching a room, depend on the luck of the draw and the board rather than be
+   a sure thing. The test is the soak: each goal, held by a bot, is finished in **45–65%** of
+   nights **[call]**. Counts (N events, N monsters) and keepsake rooms are tuned in data until every
+   goal sits in that band; a goal that cannot be brought into it is dropped. The full house (all
+   seven finish) then follows from the band (about 0.55^7 ≈ 2% if goals were independent).
+
+   Draft goals, one drawn per night, with starting counts for the soak to tune **[call]**:
 
    | Guest | Goals |
    |---|---|
    | Truong Uyen Nhi | room: the Patron's box (her father's seat) · item: her father's pocket watch · ally: Phan Thi Mai |
-   | Le Thanh | item: the Phoenix crown · room: the Auditorium stage · events: pass 1 |
-   | Dinh Quoc Bao | ally: Truong Uyen Nhi · room: the Green room (the old infirmary) · monsters: destroy 1 |
-   | Vo Minh Khang | item: the patron's Ledger · monsters: destroy 2 · room: the Shuttered office |
+   | Le Thanh | item: the Phoenix crown · room: the Auditorium · events: pass 2 |
+   | Dinh Quoc Bao | ally: Truong Uyen Nhi · room: the Green room (the old infirmary) · monsters: destroy 2 |
+   | Vo Minh Khang | item: the patron's Ledger · monsters: destroy 3 · room: the Shuttered office |
    | Phan Thi Mai | room: the Chapel of the stage ancestors · ally: Le Thanh · item: the ring of keys she lost |
-   | Hoang Gia Huy | events: pass 2 · room: the Fly loft · monsters: destroy 1 |
+   | Hoang Gia Huy | events: pass 3 · room: the Fly loft · monsters: destroy 2 |
    | Tran Ngoc Lan | item: the Gilded mask · item: the Phoenix crown · ally: Vo Minh Khang |
 
    Keepsakes then: Phoenix crown, Ledger, Gilded mask, pocket watch, ring of keys.
@@ -85,7 +92,8 @@ instead.
 **Moving (user)**
 10. In a turn, stepping back into the room you just left gives the step back (an undo of the last
     step). Only a plain step can be undone: not one that opened a room, rolled, started a fight or
-    picked something up. Scouting this way is allowed **[call]**.
+    picked something up. Scouting this way is allowed (user), but **no pacing (user):** a room
+    left by an undo cannot be entered again in the same turn, so A → B → back to A → B is refused.
 
 **Bots**
 11. **Purpose:** at the start of its turn a bot picks one target and walks a shortest path to it,
@@ -110,8 +118,23 @@ menu ──Move──▶ picking ──lit square──▶ (new room?) ──yes
 A dialog (event, dice, Turn) can open from moving; it closes back to menu.
 ```
 
-- Clicking a lit square from the menu goes straight to picking with that square chosen **[call]**.
-- Esc backs out of picking or a dialog; on the menu it opens a pause box with Resume / Quit **[call]**.
+- **Clicking a lit square (user):** the pawn walks there one cardinal step at a time along the
+  shortest legal path, each step costing a move and shown sliding; it never jumps. It stops early
+  where a step opens a room (the Stay/Back confirm), rolls, meets a monster or runs out of moves.
+  A square with no legal path is ignored; one beyond the moves left is ignored too, and while
+  picking its path is drawn red past the last step you can afford (user).
+- **Right-click inspects (user):** left-click walks (or chooses a square in pick mode); a right-click
+  on a room or pawn opens its info at any time. On a bot's turn a left-click inspects too.
+- **Input depends on the state (user):** every key and click means what the current state or the
+  open screen says, and nothing else:
+
+  | State | Esc | Arrows | Enter | Click on the board |
+  |---|---|---|---|---|
+  | menu (your turn, idle) | save menu (Save, Resume, Save and quit) | pick mode, step that way | End turn | left: walk to a lit square · right: inspect |
+  | picking / walking | cancel the move (back to menu; steps already taken stay) | step | confirm the chosen square | left: choose a square · right: inspect |
+  | confirm (Stay/Back) | Back | — | Stay | — |
+  | a dialog (event, dice, chat, the Turn, bag, inspect) | close or Back where it has one | move focus | the focused button | ignored |
+  | a bot's turn | save menu | — | — | left or right: inspect |
 
 ### Interactions with other systems
 
@@ -193,7 +216,8 @@ company rarely meets the Taken in ten rounds, `light.steps` or the under-stage d
 | `failHp` | `rules.json` | 1–half max | failing costs nothing | — |
 | `chatty`, `greed` | `styles.csv` | 0–10 | chat or loot spam | silent, empty-handed bots |
 | `persuade.approvals` | `rules.json` | 2–4 | groups never form | everyone allied by round 3 |
-| slide time, think pause, beat lengths | `LastCurtain` (plan 2c) | 0.15–0.4 s, 0.3–0.8 s | slow evenings | unreadable bot turns |
+| slide time, minimum think pause, beat lengths | `LastCurtain` (plan 2c) | 0.15–0.4 s, 0.4 s floor (user) | slow evenings | unreadable bot turns |
+| goal counts and keepsake rooms | `goals.csv` | until each goal is 45–65% | the holder turns too often | the goal is a formality |
 
 `failHp` and the hunt's balance interact: a lower `failHp` needs a weaker Taken.
 
@@ -206,16 +230,17 @@ caption; the thinking pause shows "thinking..." over the pawn.
 ## Game Feel
 
 - Pawns slide room to room (about 0.25 s a step **[call]**).
-- A bot in view thinks about 0.4 s before its first action **[call]** (lowered from 0.6 s: six bots
-  pay it every round, and the user already spends most of the time watching).
+- **Thinking pause (user):** a bot in view shows "thinking..." before its first action for
+  `max(0.4 s, the time its decision really took)`. Today a decision takes microseconds, so it is
+  0.4 s; when the built-in model makes decisions (plan 3), the pause is the model's own time.
 - While focused, the camera follows whoever moves, step by step; dragging frees it until Focus.
 
 ## UI Requirements (plan 2c)
 
-- The turn menu, picking mode, the Stay/Back confirm (states above).
-- Drag to look; a **Focus** button; the pause box (Resume / Quit).
-- Inspect: click a room → name, kind, what is known; click a pawn → HP, stats, level, group, bag,
-  and goal if known.
+- The turn menu, picking mode, the Stay/Back confirm, and the input table (states above).
+- Drag to look; a **Focus** button; the save menu (Save, Resume, Save and quit).
+- Inspect: right-click a room → name, kind, what is known; right-click a pawn → HP, stats, level,
+  group, bag, and goal if known.
 - HUD: your goal and its progress ("Pass 2 events: 1 of 2"); "Goals you know" list.
 - Walls drawn where a guest cannot pass; doorway marks only where a room can still open.
 
@@ -241,16 +266,18 @@ Automated (2b):
 - **GIVEN** a passed chat answer, **WHEN** it resolves, **THEN** the answerer knows the asker's goal (both ways between bots).
 - **GIVEN** a keepsake dropped in a room, **WHEN** another guest picks it up, **THEN** it counts for that guest's item goal only.
 - **GIVEN** a plan-2 save, **WHEN** Continue is checked, **THEN** it is refused.
-- Soak (1,000 nights): no bot steps back mid-path; every bot turn ends at its target or with the target gone; ≥ 1 bot-to-bot chat a round in ≥ 70% of evening rounds; every Taken form 40–60%; each guest the Taken in 5–30% of nights; all-finished nights ≤ 15% **[call]**; 45–65 rooms open by midnight **[call]**.
+- Soak (1,000 nights): no bot steps back mid-path; every bot turn ends at its target or with the target gone; ≥ 1 bot-to-bot chat a round in ≥ 70% of evening rounds; every Taken form 40–60%; each guest the Taken in 5–30% of nights; all-finished nights ≤ 10% (user); each goal finished by its bot holder in 45–65% of nights **[call]**; 45–65 rooms open by midnight **[call]**.
 
-Automated (2c): menu and picking ignore illegal squares; Stay opens the room, Back cancels; a slide
+Automated (2b, added): **GIVEN** a guest that undid a step from A back out of B, **WHEN** it tries to enter B again that turn, **THEN** the move is refused. **GIVEN** 1,000 nights, **WHEN** the soak runs, **THEN** every goal held by a bot is finished in 45–65% of the nights it was drawn.
+
+Automated (2c): **GIVEN** the menu and a lit square 3 steps away with 4 moves left, **WHEN** it is clicked, **THEN** the pawn takes 3 cardinal steps, each sliding, and 1 move is left; **GIVEN** the path crosses an unopened room, **THEN** the walk stops at its door with the Stay/Back confirm. **GIVEN** each state of the input table, **WHEN** each listed key is pressed, **THEN** exactly the listed thing happens (one test per cell). **GIVEN** a bot decision that took 0.1 s / 0.9 s, **WHEN** it is in view, **THEN** "thinking..." shows 0.4 s / 0.9 s. Menu and picking ignore illegal squares; Stay opens the room, Back cancels; a slide
 takes its time and a dialog waits for it; a drag stops following until Focus; inspect data for a
 room and a guest matches the state.
 
 Screenshot / play (2c, Windows): the Windows checklist in the 2c record — a full night as one guest,
-a goal finished and one failed, a bot-to-bot recruit seen, the camera follow and drag, the pause box.
+a goal finished and one failed, a bot-to-bot recruit seen, the camera follow and drag, the save menu, Esc in each state.
 
 ## Open Questions
 
 - None blocking. The **[call]** items above are Claude's choices for the user to change: goal lists,
-  keepsake rooms, new room names, `greed`, timings, scouting by undo, the pause box, the band numbers.
+  keepsake rooms, new room names, `greed`, timings, the goal band 45–65%, the shared Phoenix crown between Lan and Thanh.
