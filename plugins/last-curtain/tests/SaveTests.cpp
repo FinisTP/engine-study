@@ -63,7 +63,7 @@ TEST_CASE("Same data and seed, same night (T103)", "[night][save]")
     CHECK(Fingerprint(a) == Fingerprint(b));
     CHECK(Fingerprint(a) != Fingerprint(NewNight(def, 1)));
     // Golden: update when the data or the rules change (Night.md "Fingerprint").
-    CHECK(Fingerprint(a) == 0xa3a2639ed60de19cULL);
+    CHECK(Fingerprint(a) == 0xd7e74f4da5a85650ULL);
 }
 
 TEST_CASE("A save at any point continues to the same end (T103)", "[night][save]")
@@ -74,7 +74,7 @@ TEST_CASE("A save at any point continues to the same end (T103)", "[night][save]
     {
         for (int cut : {37, 150, 400, 700})
         {
-            NightState state = NewNight(def, seed);
+            NightState state = FoyerNight(def, seed);
             Chooser chooser{seed};
             Drive(def, state, chooser, cut + static_cast<int>(seed));
             midBattle = midBattle || state.battle.active;
@@ -98,7 +98,7 @@ TEST_CASE("A save at any point continues to the same end (T103)", "[night][save]
     quick.rules.monsters.chancePercent = 100;
     for (std::uint64_t seed = 1; seed <= 50 && !pendingLevel; ++seed)
     {
-        NightState state = NewNight(quick, seed);
+        NightState state = FoyerNight(quick, seed);
         Chooser chooser{seed};
         while (Current(state) >= 0 && !pendingLevel)
         {
@@ -120,7 +120,7 @@ TEST_CASE("A save at any point continues to the same end (T103)", "[night][save]
 TEST_CASE("A damaged save or one from other data is refused (T103)", "[night][save]")
 {
     const NightDef def = Data();
-    NightState state = NewNight(def, 3);
+    NightState state = FoyerNight(def, 3);
     Chooser chooser{3};
     Drive(def, state, chooser, 100);
     const nlohmann::json good = SaveNight(def, state);

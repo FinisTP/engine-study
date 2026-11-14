@@ -29,8 +29,9 @@ namespace umbra::night::inner
         state.log[state.logCount++ % state.log.size()] = {I16(state.round * 8 + state.turn), kind, I8(who), I8(other), I16(a), I16(b)};
     }
 
-    void BuildBoard(const NightDef &def, NightState &state); // Board.cpp: deck and foyer
-    int OpenRoom(const NightDef &def, NightState &state, int from, int direction, bool forceUnderStage);
+    // Board.cpp: the deck, the foyer and one start room per guest (returned, in order of placing).
+    std::vector<int> BuildBoard(const NightDef &def, NightState &state);
+    int OpenRoom(const NightDef &def, NightState &state, int from, int direction, bool forceUnderStage, bool allowUnderStage = true);
     void ForceUnderStage(const NightDef &def, NightState &state); // at the Turn, if nobody found it
 
     // Turn order: high roll first, then higher speed, then lower index (Turn.cpp).

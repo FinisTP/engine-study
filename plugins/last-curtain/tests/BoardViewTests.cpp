@@ -17,7 +17,7 @@ namespace
     // A two-room corridor to the left of the foyer, every guest in the foyer, guest 0 the player.
     NightState Corridor(const NightDef &def)
     {
-        NightState state = NewNight(def, 1, 0);
+        NightState state = FoyerNight(def, 1, 0);
         for (int g = 0; g < state.count; ++g)
             state.guests[U(g)].cell = state.foyer;
         const int room = NightDef::Find(def.rooms, "auditorium");
@@ -88,7 +88,7 @@ TEST_CASE("Minions and the Taken show only in light (T108)", "[night][board]")
 TEST_CASE("Steps are the legal moves of the viewer's turn (T108)", "[night][board]")
 {
     const NightDef def = Data();
-    NightState state = NewNight(def, 1, 0);
+    NightState state = FoyerNight(def, 1, 0);
     while (Current(state) != 0)
         REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
     BoardView view = MakeView(def, state, 0);

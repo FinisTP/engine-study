@@ -19,3 +19,23 @@ inline void Closet(const umbra::night::NightDef &def, umbra::night::NightState &
     const int room = umbra::night::NightDef::Find(def.rooms, "auditorium");
     state.cells[static_cast<std::size_t>(cell)] = {static_cast<std::int8_t>(room), 0, true};
 }
+
+// A night laid out as before plan 2b: only the foyer opened and every guest in it. For tests of
+// rules that do not depend on the start; the scattered start itself is tested in BoardTests (T118).
+inline umbra::night::NightState FoyerNight(const umbra::night::NightDef &def, std::uint64_t seed, int player = -1)
+{
+    using namespace umbra::night;
+    NightState state = NewNight(def, seed, player);
+    for (int c = 0; c < maxCells; ++c)
+        if (c != state.foyer)
+            state.cells[static_cast<std::size_t>(c)] = {};
+    state.placed = 1;
+    state.deckNext = 0; // the start rooms go back to the front of the deck
+    for (int g = 0; g < state.count; ++g)
+    {
+        Guest &guest = state.guests[static_cast<std::size_t>(g)];
+        guest.cell = guest.from = state.foyer;
+        guest.bonusUsed.reset();
+    }
+    return state;
+}

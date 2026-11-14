@@ -44,7 +44,7 @@ namespace
 TEST_CASE("Damage follows the data formula for both types (T98)", "[night][battle]")
 {
     NightDef def = Quiet();
-    NightState state = NewNight(def, 1);
+    NightState state = FoyerNight(def, 1);
     const int khang = NightDef::Find(def.guests, "khang"), thanh = NightDef::Find(def.guests, "thanh");
     const int m = PutMonster(def, state, "stagehand", state.foyer, 10);
     const int might = state.monsters[U(m)].might, sanity = state.monsters[U(m)].sanity;
@@ -61,7 +61,7 @@ TEST_CASE("Damage follows the data formula for both types (T98)", "[night][battl
 TEST_CASE("The starter strikes first and a battle lasts three rounds (T98)", "[night][battle]")
 {
     const NightDef def = Quiet();
-    NightState state = NewNight(def, 1);
+    NightState state = FoyerNight(def, 1);
     const int g = Current(state);
     const int m = PutMonster(def, state, "moths", state.foyer, 999);
     const std::size_t since = state.logCount;
@@ -88,7 +88,7 @@ TEST_CASE("The starter strikes first and a battle lasts three rounds (T98)", "[n
 TEST_CASE("Buffs show their effect and run out (T98)", "[night][battle]")
 {
     const NightDef def = Quiet();
-    NightState state = NewNight(def, 1);
+    NightState state = FoyerNight(def, 1);
     const int g = Current(state);
     Guest &guest = state.guests[U(g)];
     guest.hp = guest.maxHp = 100;
@@ -117,7 +117,7 @@ TEST_CASE("Buffs show their effect and run out (T98)", "[night][battle]")
 TEST_CASE("Killing monsters gives XP and levels without healing (T98)", "[night][battle]")
 {
     const NightDef def = Quiet();
-    NightState state = NewNight(def, 1);
+    NightState state = FoyerNight(def, 1);
     const int g = Current(state);
     Guest &guest = state.guests[U(g)];
     for (int kill = 0; kill < def.rules.levels.xp[0]; ++kill)
@@ -146,7 +146,7 @@ TEST_CASE("Monsters appear, grow with the hour, leave, and force a fight when me
 {
     NightDef def = Data();
     def.rules.monsters.chancePercent = 100;
-    NightState state = NewNight(def, 9);
+    NightState state = FoyerNight(def, 9);
     // Open the whole board so monsters have somewhere to be.
     for (bool opened = true; opened;)
     {
@@ -189,7 +189,7 @@ TEST_CASE("Monsters appear, grow with the hour, leave, and force a fight when me
     for (RoomDef &room : plain.rooms)
         if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
             room.kind = RoomKind::Plain, room.doors = 15;
-    NightState walk = NewNight(plain, 2);
+    NightState walk = FoyerNight(plain, 2);
     const int g = Current(walk);
     REQUIRE(Apply(plain, walk, {ActionKind::Move, 0})); // north out of the foyer
     PutMonster(plain, walk, "moths", walk.foyer, 999);
@@ -202,7 +202,7 @@ TEST_CASE("Monsters appear, grow with the hour, leave, and force a fight when me
 TEST_CASE("Leaving is not possible in the first round (T98)", "[night][battle]")
 {
     const NightDef def = Quiet();
-    NightState state = NewNight(def, 1);
+    NightState state = FoyerNight(def, 1);
     const int m = PutMonster(def, state, "moths", state.foyer, 999);
     REQUIRE(Apply(def, state, {ActionKind::Attack, static_cast<std::int8_t>(m)}));
     CHECK_FALSE(Apply(def, state, {ActionKind::Leave}));
@@ -218,7 +218,7 @@ TEST_CASE("After a level is chosen the next guest still has its moves (T98)", "[
 {
     NightDef def = Quiet();
     def.rules.levels.xp = {1, 2, 3, 4};
-    NightState state = NewNight(def, 1);
+    NightState state = FoyerNight(def, 1);
     const int g = Current(state);
     const int m = PutMonster(def, state, "moths", state.guests[U(g)].cell, 1);
     REQUIRE(Apply(def, state, {ActionKind::Attack, static_cast<std::int8_t>(m)}));

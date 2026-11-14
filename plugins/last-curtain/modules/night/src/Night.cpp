@@ -26,7 +26,7 @@ namespace umbra::night
             guest.goal = mine.empty() ? I8(-1) : I8(mine[U(Below(state, static_cast<int>(mine.size())))]);
             guest.knows = static_cast<std::uint8_t>(1u << g);
         }
-        BuildBoard(def, state);
+        std::vector<int> starts = BuildBoard(def, state);
 
         // 2. Every guest in the foyer at full HP; a d20 each sets the order for the night.
         std::array<int, maxGuests> rolls{}, speeds{};
@@ -38,7 +38,11 @@ namespace umbra::night
             guest.might = I16(d.might);
             guest.sanity = I16(d.sanity);
             guest.speed = I16(d.speed);
-            guest.cell = guest.from = state.foyer;
+            // Each guest in a start room of its own, by chance; the room gives it nothing on this entry.
+            if (g < static_cast<int>(starts.size()))
+                std::swap(starts[U(g)], starts[U(g + Below(state, static_cast<int>(starts.size()) - g))]);
+            guest.cell = guest.from = I8(g < static_cast<int>(starts.size()) ? starts[U(g)] : state.foyer);
+            guest.bonusUsed.set(U(guest.cell));
             rolls[U(g)] = Roll(state, 20);
             speeds[U(g)] = d.speed;
         }

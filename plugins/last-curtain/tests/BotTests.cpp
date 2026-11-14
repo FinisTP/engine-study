@@ -32,7 +32,7 @@ TEST_CASE("Seven bots finish a night on every seed (T104)", "[night][bots]")
     const NightDef def = Data();
     for (std::uint64_t seed = 1; seed <= 300; ++seed)
     {
-        NightState state = NewNight(def, seed);
+        NightState state = FoyerNight(def, seed);
         const int applies = PlayNight(def, state);
         INFO("seed " << seed);
         CHECK(applies < 5000);
@@ -51,7 +51,7 @@ TEST_CASE("Styles differ: the explorer opens more rooms than the fighter (T104)"
     long opened[2] = {0, 0};
     for (std::uint64_t seed = 1; seed <= 100; ++seed)
     {
-        NightState state = NewNight(def, seed);
+        NightState state = FoyerNight(def, seed);
         PlayWatching(def, state, [&](const LogEntry &e) {
             if (e.kind == LogKind::Opened && (e.who == explorer || e.who == fighter))
                 ++opened[e.who == explorer ? 0 : 1];
@@ -64,7 +64,7 @@ TEST_CASE("A hurt bot heals or flees (T104)", "[night][bots]")
 {
     NightDef def = Data();
     def.rules.monsters.chancePercent = 0;
-    NightState state = NewNight(def, 2);
+    NightState state = FoyerNight(def, 2);
     const int g = Current(state);
     Guest &guest = state.guests[U(g)];
     guest.hp = 2;
@@ -83,7 +83,7 @@ TEST_CASE("A hurt bot heals or flees (T104)", "[night][bots]")
 TEST_CASE("In the hunt a strong bot goes for a minion first (T104)", "[night][bots]")
 {
     const NightDef def = Data();
-    NightState state = NewNight(def, 2);
+    NightState state = FoyerNight(def, 2);
     // Build the board, then turn guest 6 by hand at midnight.
     for (bool opened = true; opened;)
     {

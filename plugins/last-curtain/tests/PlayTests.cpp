@@ -49,7 +49,7 @@ namespace
 TEST_CASE("A click on a step cell moves; elsewhere nothing (T111)", "[night][play]")
 {
     const NightDef def = Data();
-    Play play(def, 4, 0);
+    Play play(def, FoyerNight(def, 4, 0));
     ToPlayer(play);
     const int me = play.State().player;
     const int start = play.State().guests[0].cell;
@@ -70,7 +70,7 @@ TEST_CASE("A click on a step cell moves; elsewhere nothing (T111)", "[night][pla
 TEST_CASE("Keys do nothing on a bot's turn (T111)", "[night][play]")
 {
     const NightDef def = Data();
-    Play play(def, 4, 0);
+    Play play(def, FoyerNight(def, 4, 0));
     ToPlayer(play);
     play.Key(InputKey::Enter);
     REQUIRE_FALSE(play.PlayerTurn());
@@ -87,7 +87,7 @@ TEST_CASE("Keys do nothing on a bot's turn (T111)", "[night][play]")
 TEST_CASE("End turn works with moves left (T111)", "[night][play]")
 {
     const NightDef def = Data();
-    Play play(def, 4, 0);
+    Play play(def, FoyerNight(def, 4, 0));
     ToPlayer(play);
     const int turn = play.State().turn, round = play.State().round;
     REQUIRE(play.State().guests[0].movesLeft > 0);
@@ -106,7 +106,7 @@ TEST_CASE("End turn works with moves left (T111)", "[night][play]")
 TEST_CASE("An ally is the player's to move (T111)", "[night][play]")
 {
     const NightDef def = Data();
-    NightState state = NewNight(def, 4, 0);
+    NightState state = FoyerNight(def, 4, 0);
     for (int g = 1; g < state.count; ++g)
         state.guests[static_cast<std::size_t>(g)].group = g == 1 ? 0 : static_cast<std::int8_t>(g);
     state.guests[0].group = 0;
@@ -130,7 +130,7 @@ TEST_CASE("An ally is the player's to move (T111)", "[night][play]")
 TEST_CASE("UiData has the keys the screens bind (T111)", "[night][play]")
 {
     const NightDef def = Data();
-    Play play(def, 4, 0);
+    Play play(def, FoyerNight(def, 4, 0));
     ToPlayer(play);
     const nlohmann::json data = play.UiData();
     for (const char *key : {"clock", "round", "phase", "me", "moves", "actions", "allies", "winning", "inLight", "bag", "floor", "bagUsed", "carry"})
@@ -155,9 +155,9 @@ TEST_CASE("UiData has the keys the screens bind (T111)", "[night][play]")
 TEST_CASE("Only recruited guests are allies (T111)", "[night][play]")
 {
     const NightDef def = Data();
-    Play play(def, 4, 0);
+    Play play(def, FoyerNight(def, 4, 0));
     CHECK(play.UiData()["allies"].empty());
-    NightState state = NewNight(def, 4, 0);
+    NightState state = FoyerNight(def, 4, 0);
     state.guests[0].group = state.guests[2].group = 0;
     state.guests[3].approvals = 1;
     const nlohmann::json data = Play(def, state).UiData();
@@ -174,7 +174,7 @@ namespace
     {
         for (std::uint64_t seed = 1; seed < 100; ++seed)
         {
-            Play play(def, seed, 0);
+            Play play(def, FoyerNight(def, seed, 0));
             const int bot = Current(play.State());
             if (!play.PlayerTurn() && ChooseAction(def, play.State(), bot).kind != ActionKind::OpenChat)
             {
@@ -186,7 +186,7 @@ namespace
             }
         }
         FAIL("no seed with a bot first");
-        return Play(def, 1, 0);
+        return Play(def, FoyerNight(def, 1, 0));
     }
 }
 
@@ -236,7 +236,7 @@ namespace
     NightState PlayerFirst(const NightDef &def)
     {
         for (std::uint64_t seed = 1; seed < 200; ++seed)
-            if (NightState state = NewNight(def, seed, 0); Current(state) == 0)
+            if (NightState state = FoyerNight(def, seed, 0); Current(state) == 0)
                 return state;
         FAIL("no seed with the player first");
         return {};
@@ -248,7 +248,7 @@ TEST_CASE("Every chance shown matches the rules (T113)", "[night][play]")
     NightDef def = Data();
     SECTION("chat answers")
     {
-        Play play(def, 4, 0);
+        Play play(def, FoyerNight(def, 4, 0));
         for (int i = 0; i < 400 && !play.State().chat.active; ++i)
             play.PlayerTurn() ? play.Key(InputKey::Enter) : play.Update(10.0F);
         REQUIRE(play.State().chat.active);
@@ -435,7 +435,7 @@ namespace
 TEST_CASE("A save and Continue give the same night (T115)", "[night][play]")
 {
     const NightDef def = Data();
-    Play play(def, 11, 2);
+    Play play(def, FoyerNight(def, 11, 2));
     PlayUntil(play, [&] { return play.State().round >= 4; });
     const nlohmann::json saved = play.Save();
     NightState restored;
@@ -451,7 +451,7 @@ TEST_CASE("A save and Continue give the same night (T115)", "[night][play]")
 TEST_CASE("A save from other data hides Continue (T115)", "[night][play]")
 {
     const NightDef def = Data();
-    const nlohmann::json saved = Play(def, 11, 2).Save();
+    const nlohmann::json saved = Play(def, FoyerNight(def, 11, 2)).Save();
     NightDef other = def;
     other.rules.battle.rounds += 1;
     other.fingerprint ^= 1; // other data
@@ -469,7 +469,7 @@ TEST_CASE("A save from other data hides Continue (T115)", "[night][play]")
 TEST_CASE("The Turn screen names the form and its numbers (T115)", "[night][play]")
 {
     const NightDef def = Data();
-    NightState state = NewNight(def, 11, 0);
+    NightState state = FoyerNight(def, 11, 0);
     state.marked = 3;
     state.round = static_cast<std::int8_t>(def.rules.clock.turnAfterRound);
     Play play(def, state);
@@ -504,7 +504,7 @@ TEST_CASE("The Turn screen names the form and its numbers (T115)", "[night][play
 TEST_CASE("The player as the Taken plays on (T115)", "[night][play]")
 {
     const NightDef def = Data();
-    NightState state = NewNight(def, 11, 0);
+    NightState state = FoyerNight(def, 11, 0);
     state.marked = 0;
     state.round = static_cast<std::int8_t>(def.rules.clock.turnAfterRound);
     Play play(def, state);
@@ -530,7 +530,7 @@ TEST_CASE("Clicks and keys do nothing while a dialog shows (final review)", "[ni
     bool tested = false;
     for (std::uint64_t seed = 1; seed < 40 && !tested; ++seed)
     {
-        NightState state = NewNight(def, seed, 0);
+        NightState state = FoyerNight(def, seed, 0);
         state.marked = 3;
         state.round = static_cast<std::int8_t>(def.rules.clock.turnAfterRound);
         Play play(def, state);

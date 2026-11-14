@@ -34,7 +34,7 @@ namespace umbra::night
         }
     }
 
-    void inner::BuildBoard(const NightDef &def, NightState &state)
+    std::vector<int> inner::BuildBoard(const NightDef &def, NightState &state)
     {
         // 1. The deck: every room but the foyer and the under-stage, `count` times, shuffled.
         state.deckSize = 0;
@@ -51,9 +51,60 @@ namespace umbra::night
         for (int i = state.deckSize - 1; i > 0; --i)
             std::swap(state.deck[U(i)], state.deck[U(Below(state, i + 1))]);
 
-        // 2. The foyer, bottom centre, as drawn.
+        // 2. The rooms tonight's goals need (goal rooms, keepsake rooms).
+        std::vector<int> needed;
+        for (int g = 0; g < state.count; ++g)
+            if (const int goal = state.guests[U(g)].goal; goal >= 0)
+            {
+                const GoalDef &d = def.goals[U(goal)];
+                if (d.kind == GoalKind::Room)
+                    needed.push_back(d.target);
+                if (d.kind == GoalKind::Item)
+                    needed.push_back(def.items[U(d.target)].room);
+            }
+        const auto isNeeded = [&](int room) { return std::find(needed.begin(), needed.end(), room) != needed.end(); };
+
+        // 3. The first deck entries that are not needed become the start rooms, at the front.
+        int front = 0;
+        for (int i = 0; i < state.deckSize && front < state.count; ++i)
+            if (!isNeeded(state.deck[U(i)]))
+                std::rotate(state.deck.begin() + front, state.deck.begin() + i, state.deck.begin() + i + 1), ++front;
+
+        // 4. Each needed room's first entry moves to a random place soon after them, so it comes out
+        //    within goals.earlyRooms rooms (8 places spare: the foyer, the under-stage, skipped entries).
+        const int last = std::max(front + 1, std::min<int>(state.deckSize, def.rules.goals.earlyRooms - 8));
+        for (const int room : needed)
+            for (int i = front; i < state.deckSize; ++i)
+                if (state.deck[U(i)] == room)
+                {
+                    const int to = front + Below(state, last - front);
+                    auto at = state.deck.begin();
+                    if (to < i)
+                        std::rotate(at + to, at + i, at + i + 1);
+                    else
+                        std::rotate(at + i, at + i + 1, at + to + 1);
+                    break;
+                }
+
+        // 5. The foyer, bottom centre, as drawn; the start rooms through random doorways around it.
         state.foyer = I8(CellAt(def, def.rules.board.width / 2, def.rules.board.height - 1));
         Place(state, state.foyer, foyerRoom, def.rooms[U(foyerRoom)].doors);
+        std::vector<int> starts;
+        while (static_cast<int>(starts.size()) < state.count)
+        {
+            std::vector<std::pair<int, int>> doorways;
+            for (int c = 0; c < maxCells; ++c)
+                for (int d = 0; d < 4; ++d)
+                    if (Doorway(def, state, c, d))
+                        doorways.push_back({c, d});
+            if (doorways.empty())
+                break;
+            const auto [cell, d] = doorways[U(Below(state, static_cast<int>(doorways.size())))];
+            const int opened = OpenRoom(def, state, cell, d, false, false);
+            state.cells[U(opened)].resolved = true;
+            starts.push_back(opened);
+        }
+        return starts;
     }
 
     int CellAt(const NightDef &def, int x, int y)
@@ -111,7 +162,7 @@ namespace umbra::night
             OpenRoom(def, state, bestFrom, bestDir, true);
     }
 
-    int inner::OpenRoom(const NightDef &def, NightState &state, int from, int direction, bool forceUnderStage)
+    int inner::OpenRoom(const NightDef &def, NightState &state, int from, int direction, bool forceUnderStage, bool allowUnderStage)
     {
         if (!Doorway(def, state, from, direction))
             return -1;
@@ -122,7 +173,7 @@ namespace umbra::night
         //    can bring it nearer), or as the last room.
         const int w = def.rules.board.width;
         const int gridDistance = std::abs(target % w - state.foyer % w) + std::abs(target / w - state.foyer / w);
-        if (state.understage < 0 && (last || gridDistance >= 3 || forceUnderStage))
+        if (state.understage < 0 && allowUnderStage && (last || gridDistance >= 3 || forceUnderStage))
         {
             const int room = static_cast<int>(std::find_if(def.rooms.begin(), def.rooms.end(),
                                                            [](const RoomDef &r) { return r.kind == RoomKind::UnderStage; }) - def.rooms.begin());

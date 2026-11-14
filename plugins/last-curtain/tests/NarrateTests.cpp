@@ -33,7 +33,7 @@ TEST_CASE("A bot's turn in light has a caption, a path and a result (T109)", "[n
     for (RoomDef &room : def.rooms)
         if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
             room.kind = RoomKind::Plain, room.doors = 15;
-    NightState state = NewNight(def, 1, 0);
+    NightState state = FoyerNight(def, 1, 0);
     while (Current(state) == 0)
         REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
     const int bot = Current(state);
@@ -53,7 +53,7 @@ TEST_CASE("A roll is told with its die, stat and target (T109)", "[night][narrat
     for (RoomDef &room : def.rooms)
         if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
             room.kind = RoomKind::Event, room.doors = 15;
-    NightState state = NewNight(def, 2, 0);
+    NightState state = FoyerNight(def, 2, 0);
     while (Current(state) == 0)
         REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
     const Beat beat = Step(def, state, {ActionKind::Move, 0}, 0, Lines());
@@ -68,7 +68,7 @@ TEST_CASE("A turn in the dark shows nothing but the opened room (T109)", "[night
     for (RoomDef &room : def.rooms)
         if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
             room.kind = RoomKind::Plain, room.doors = 15;
-    NightState state = NewNight(def, 1, 0);
+    NightState state = FoyerNight(def, 1, 0);
     while (Current(state) == 0)
         REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
     const int bot = Current(state);

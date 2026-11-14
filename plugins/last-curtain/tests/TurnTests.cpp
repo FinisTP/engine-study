@@ -45,7 +45,7 @@ TEST_CASE("Order is a d20 each, ties to Speed, fixed for the night (T96)", "[nig
     const NightDef def = Data();
     for (std::uint64_t seed = 1; seed <= 50; ++seed)
     {
-        const NightState a = NewNight(def, seed), b = NewNight(def, seed);
+        const NightState a = FoyerNight(def, seed), b = FoyerNight(def, seed);
         std::array<int, maxGuests> seen{};
         for (std::int8_t g : a.order)
             ++seen[static_cast<std::size_t>(g)];
@@ -63,7 +63,7 @@ TEST_CASE("A guest moves up to Speed and plain rooms do not stop it (T96)", "[ni
     NightDef def = AllRooms(RoomKind::Plain);
     for (GuestDef &g : def.guests)
         g.speed = 4;
-    NightState state = NewNight(def, 3);
+    NightState state = FoyerNight(def, 3);
     const int first = Current(state);
     REQUIRE(first == state.order[0]);
     for (int step = 0; step < 4; ++step)
@@ -81,7 +81,7 @@ TEST_CASE("A guest moves up to Speed and plain rooms do not stop it (T96)", "[ni
 TEST_CASE("A room with something in it stops movement (T96)", "[night][turn]")
 {
     const NightDef def = AllRooms(RoomKind::Bonus);
-    NightState state = NewNight(def, 3);
+    NightState state = FoyerNight(def, 3);
     const int g = Current(state);
     REQUIRE(Apply(def, state, First(LegalActions(def, state), ActionKind::Move)));
     CHECK(state.guests[static_cast<std::size_t>(g)].movesLeft == 0);
@@ -91,7 +91,7 @@ TEST_CASE("A room with something in it stops movement (T96)", "[night][turn]")
 TEST_CASE("A bonus room pays once per guest when the turn ends there (T96)", "[night][turn]")
 {
     const NightDef def = AllRooms(RoomKind::Bonus);
-    NightState state = NewNight(def, 3);
+    NightState state = FoyerNight(def, 3);
     const int g = Current(state);
     const int might = state.guests[static_cast<std::size_t>(g)].might;
     REQUIRE(Apply(def, state, First(LegalActions(def, state), ActionKind::Move)));
@@ -107,7 +107,7 @@ TEST_CASE("A bonus room pays once per guest when the turn ends there (T96)", "[n
 TEST_CASE("Transport rooms are a pair (T96)", "[night][turn]")
 {
     const NightDef def = Data();
-    NightState state = NewNight(def, 3);
+    NightState state = FoyerNight(def, 3);
     const int trapdoor = NightDef::Find(def.rooms, "trapdoor"), catwalk = NightDef::Find(def.rooms, "catwalk");
     const int a = CellAt(def, 0, 0), b = CellAt(def, 4, 0);
     state.cells[static_cast<std::size_t>(a)] = {static_cast<std::int8_t>(trapdoor), 15, true};
@@ -127,7 +127,7 @@ TEST_CASE("Transport rooms are a pair (T96)", "[night][turn]")
 TEST_CASE("Items: four carried, any number on a floor, all free (T96)", "[night][turn]")
 {
     const NightDef def = AllRooms(RoomKind::Plain);
-    NightState state = NewNight(def, 3);
+    NightState state = FoyerNight(def, 3);
     const int g = Current(state);
     Guest &guest = state.guests[static_cast<std::size_t>(g)];
     guest.items = {static_cast<std::int8_t>(Slot(def, "shoes")), static_cast<std::int8_t>(Slot(def, "bandage")),
@@ -156,7 +156,7 @@ TEST_CASE("Items: four carried, any number on a floor, all free (T96)", "[night]
 TEST_CASE("Twenty rounds run from 19:00 to 04:30 (T96)", "[night][turn]")
 {
     const NightDef def = Data();
-    NightState state = NewNight(def, 5);
+    NightState state = FoyerNight(def, 5);
     CHECK(Hour(def, state) == 19);
     CHECK(Minute(def, state) == 0);
     for (int i = 0; i < 7; ++i)
@@ -209,7 +209,7 @@ TEST_CASE("A check is d20 plus the stat against the target (T97)", "[night][chec
 {
     NightDef def = Data();
     def.guests[0].sanity = 5;
-    NightState state = NewNight(def, 11);
+    NightState state = FoyerNight(def, 11);
     int passed = 0;
     for (int i = 0; i < 2000; ++i)
     {
@@ -231,7 +231,7 @@ TEST_CASE("An event applies its pass or its fail effect, once (T97)", "[night][c
     int passes = 0, fails = 0;
     for (std::uint64_t seed = 1; seed <= 40; ++seed)
     {
-        NightState state = NewNight(def, seed);
+        NightState state = FoyerNight(def, seed);
         const int g = Current(state);
         const Guest before = state.guests[static_cast<std::size_t>(g)];
         const Action move = First(LegalActions(def, state), ActionKind::Move);
@@ -269,7 +269,7 @@ TEST_CASE("An event applies its pass or its fail effect, once (T97)", "[night][c
 TEST_CASE("A trap can bring a guest down but not kill before midnight (T97)", "[night][check]")
 {
     const NightDef def = OneEvent(RoomKind::Trap, StatKind::Speed, 99, Effect::None, 0, Effect::Hp, -99);
-    NightState state = NewNight(def, 2);
+    NightState state = FoyerNight(def, 2);
     const int g = Current(state);
     REQUIRE(Apply(def, state, First(LegalActions(def, state), ActionKind::Move)));
     const Guest &guest = state.guests[static_cast<std::size_t>(g)];
@@ -288,7 +288,7 @@ TEST_CASE("A trap can bring a guest down but not kill before midnight (T97)", "[
 TEST_CASE("A relic wakes a downed guest in the same room and is used up (T97)", "[night][check]")
 {
     const NightDef def = Data();
-    NightState state = NewNight(def, 2);
+    NightState state = FoyerNight(def, 2);
     const int g = Current(state), other = state.order[1];
     Guest &helper = state.guests[static_cast<std::size_t>(g)];
     helper.items[0] = static_cast<std::int8_t>(Slot(def, "crucifix"));
@@ -314,7 +314,7 @@ TEST_CASE("A relic wakes a downed guest in the same room and is used up (T97)", 
 TEST_CASE("An item room gives one item; a full guest finds it on the floor (T97)", "[night][check]")
 {
     const NightDef def = AllRooms(RoomKind::Item);
-    NightState state = NewNight(def, 4);
+    NightState state = FoyerNight(def, 4);
     int g = Current(state);
     REQUIRE(Apply(def, state, First(LegalActions(def, state), ActionKind::Move)));
     CHECK(Items(state.guests[static_cast<std::size_t>(g)]) == 1);
@@ -341,7 +341,7 @@ TEST_CASE("An event can push a guest back to the room they came from (T106)", "[
     {
         NightDef def = target == 99 ? OneEvent(RoomKind::Event, StatKind::Sanity, 99, Effect::None, 0, Effect::Back, 0)
                                     : OneEvent(RoomKind::Event, StatKind::Sanity, 1, Effect::Back, 0, Effect::None, 0);
-        NightState state = NewNight(def, 5);
+        NightState state = FoyerNight(def, 5);
         const int g = Current(state);
         REQUIRE(Apply(def, state, First(LegalActions(def, state), ActionKind::Move)));
         INFO("target " << target);

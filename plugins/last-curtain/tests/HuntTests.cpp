@@ -36,7 +36,7 @@ namespace
     // A board built far enough to hold the under-stage.
     NightState Built(const NightDef &def, std::uint64_t seed, int player = -1)
     {
-        NightState state = NewNight(def, seed, player);
+        NightState state = FoyerNight(def, seed, player);
         for (;;)
         {
             int cell = -1, dir = -1;
@@ -449,7 +449,7 @@ TEST_CASE("The under-stage is on the board at the Turn even if nobody found it (
     const NightDef def = Quiet();
     for (std::uint64_t seed = 1; seed <= 30; ++seed)
     {
-        NightState state = NewNight(def, seed); // nobody opens a room all evening
+        NightState state = FoyerNight(def, seed); // nobody opens a room all evening
         state.marked = 1;
         PassToMidnight(def, state);
         REQUIRE(state.understage >= 0);

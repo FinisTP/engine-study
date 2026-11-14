@@ -106,7 +106,7 @@ TEST_CASE("Entering the goal room marks it seen (T117)", "[night][goal]")
     // Every deck room is the Patron's box with four doors: the first new room is it.
     const int box = NightDef::Find(def.rooms, "patronbox");
     def.rooms[U(box)].doors = 15;
-    NightState state = NewNight(def, 2, 0);
+    NightState state = FoyerNight(def, 2, 0);
     for (std::int8_t &r : state.deck)
         r = I8(box);
     const int g = Current(state);
@@ -129,7 +129,7 @@ TEST_CASE("A passed event roll counts; a trap does not (T117)", "[night][goal]")
     for (RoomDef &room : def.rooms)
         if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
             room.kind = RoomKind::Event, room.doors = 15;
-    NightState state = NewNight(def, 2, 0);
+    NightState state = FoyerNight(def, 2, 0);
     const int g = Current(state);
     SetGoal(def, state, g, "huy-events");
     for (std::int8_t d = 0; d < 4; ++d)
@@ -148,7 +148,7 @@ TEST_CASE("A keepsake waits in its room only when a drawn goal needs it (T117)",
     def.rooms[U(costumes)].doors = 15;
     for (int needed = 0; needed < 2; ++needed)
     {
-        NightState state = NewNight(def, 5, 0);
+        NightState state = FoyerNight(def, 5, 0);
         for (std::int8_t &r : state.deck)
             r = I8(costumes);
         for (int g = 0; g < state.count; ++g)

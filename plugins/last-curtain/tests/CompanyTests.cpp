@@ -43,7 +43,7 @@ namespace
 TEST_CASE("No guest fights another before midnight (T99)", "[night][company]")
 {
     const NightDef def = Quiet();
-    NightState state = NewNight(def, 1, 0); // all seven in the foyer
+    NightState state = FoyerNight(def, 1, 0); // all seven in the foyer
     for (int i = 0; i < 70 && !state.taken.present; ++i)
     {
         for (const Action &a : LegalActions(def, state))
@@ -57,7 +57,7 @@ namespace
     // Guest 0 is the player and acts now; everyone stands in the foyer.
     NightState PlayerFirst(const NightDef &def, std::uint64_t seed = 1)
     {
-        NightState state = NewNight(def, seed, 0);
+        NightState state = FoyerNight(def, seed, 0);
         while (Current(state) != 0)
             REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
         return state;
@@ -164,7 +164,7 @@ TEST_CASE("A bot may open a chat; it does not use the player's turn (T107)", "[n
     NightDef def = Quiet();
     for (StyleDef &s : def.styles)
         s.chatty = 10;
-    NightState state = NewNight(def, 1, 0);
+    NightState state = FoyerNight(def, 1, 0);
     while (Current(state) == 0)
         REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
     const int bot = Current(state);
@@ -189,7 +189,7 @@ TEST_CASE("A chance is the share of d20 rolls that reach the target (T107)", "[n
 TEST_CASE("Allies fight beside the player and are the player's to move (T99)", "[night][company]")
 {
     const NightDef def = Quiet();
-    NightState state = NewNight(def, 1, 0);
+    NightState state = FoyerNight(def, 1, 0);
     while (Current(state) != 0)
         REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
     const int ally = 1, other = 2;

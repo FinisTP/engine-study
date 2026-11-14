@@ -7,8 +7,12 @@ code holds only the mechanics. Design: `docs/design/game-design.md` (GDD); bots 
 
 ## How a night runs
 
-1. `NewNight(def, seed, player)` builds the deck, puts the foyer bottom centre, places every guest
-   there and rolls a d20 each for the order (high first, ties to higher Speed, then lower index).
+1. `NewNight(def, seed, player)` draws each guest's goal, builds the deck, puts the foyer bottom
+   centre and opens one start room per guest through random doorways around it (never the
+   under-stage, never a room a drawn goal needs); each guest starts in its own, which gives it
+   nothing on that entry (resolved, its bonus used). The rooms the goals need move to random places
+   among the next deck entries, so they come out within `goals.earlyRooms` rooms. Then a d20 each
+   sets the order (high first, ties to higher Speed, then lower index).
 2. `Current(state)` names who acts: the guest fighter whose battle turn it is, else a guest with a
    level to choose, else the board guest. -1 = over.
 3. `LegalActions` lists what that guest may do; `Apply` refuses anything else and changes nothing.
