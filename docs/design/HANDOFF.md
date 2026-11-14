@@ -50,6 +50,16 @@ For whoever continues this work, in any session. Read this first.
 ## Decided by the user (2026-11-15)
 
 - No ally goals: winning a guest over is never a personal goal.
+- The [call] fill-ins of plans 2b and 2c are accepted (new goals, events, keepsake rooms, speeds,
+  Khang distrusting Lan, chattiness and greed).
+- Plan 3 (the model's lines): the model words what the player sees and hears (captions in light,
+  their chats, goals done or failed, the Turn, the Taken); English; with no model file or capable
+  graphics card the night plays on with the written lines.
+- Plan 4 covers art, walking the rooms at full size and battles in the real-size room.
+- Art: 1960s Saigon golden-age poster style; 3D for the 7 guests and one shared Taken model; 2D
+  for room tiles, walls, items, props, monsters, portraits and UI; mostly free and local (ComfyUI on
+  the user's laptop, Meshy Pro for the 3D characters, about $20-40); painted top-down room tiles.
+  The art resource plan is a Claude Doc, "The Last Curtain: art resource plan" (claude.ai).
 - Room goals were too easy (95%): goal rooms are now dealt within the first 65 rooms; keepsake rooms
   stay within 35.
 

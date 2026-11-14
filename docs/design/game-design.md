@@ -474,6 +474,8 @@ build phases.
 | 2026-11-14 | Level 5 out of reach in a night is intended: levels build the character, not min-maxing | user |
 | 2026-11-15 | Omens removed; each guest draws a secret personal goal (2-3 per guest, even difficulty); the Taken is drawn from those who failed, the others who failed drop to 1 HP; all finished = the company wins at midnight | user |
 | 2026-11-15 | No ally goals: winning a guest over is never a personal goal | user |
+| 2026-11-15 | Plan 3: the model words what the player sees and hears, in English; without the model the night plays on with written lines | user |
+| 2026-11-15 | Plan 4: art, walking the rooms at full size and real-size battles; art in 1960s Saigon poster style, 3D guests and one shared Taken, 2D rooms, items and UI, made mostly locally | user |
 | 2026-11-15 | A 9x9 board of 70 rooms; seven start rooms, one per guest; a free step back without pacing; guests chat with each other and form groups that help members' goals | user |
 | 2026-11-14 | After midnight the Taken's own minions (one kind per form, a fixed set at the Turn) replace ordinary monsters; destroying one takes a share of the Taken's HP | user |
 
