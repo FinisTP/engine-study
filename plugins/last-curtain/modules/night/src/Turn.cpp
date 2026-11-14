@@ -210,6 +210,8 @@ namespace umbra::night
     void inner::StartTurn(const NightDef &def, NightState &state)
     {
         const int g = Current(state);
+        if (IsTaken(state, g))
+            TakenTurnStart(state);
         if (g >= 0)
             G(state, g).movesLeft = I8(Stat(def, state, g, StatKind::Speed));
     }
@@ -231,6 +233,9 @@ namespace umbra::night
                     *stat = I16(*stat + room.amount);
             }
             guest.movesLeft = 0;
+            FloodEndTurn(def, state, g);
+            if (state.over)
+                return;
         }
 
         // 2. The next guest who can act; a new round after the last.
@@ -337,6 +342,8 @@ namespace umbra::night
             legal.push_back({ActionKind::Attack, I8(monster)});
         CompanyLegal(def, state, g, legal);
 
+        if (taken)
+            PowerLegal(def, state, legal);
         legal.push_back({ActionKind::EndTurn});
         return legal;
     }
@@ -374,6 +381,9 @@ namespace umbra::night
                 TakeOmen(def, state, g);
             state.omenOffer = -1;
             inner::EndTurn(def, state);
+            break;
+        case ActionKind::Power:
+            UsePower(def, state, action);
             break;
         case ActionKind::Persuade:
             Persuade(def, state, g, action.a);
@@ -511,7 +521,10 @@ namespace umbra::night
             for (std::int8_t i : guest.items)
                 if (i >= 0 && def.items[U(i)].kind == ItemKind::Worn && def.items[U(i)].effect == wornEffect[static_cast<int>(kind)])
                     value += def.items[U(i)].amount;
-        // 2. Omens held.
+        // 2. Water slows anyone but the Taken to 1.
+        if (kind == StatKind::Speed && Flooded(state, guest.cell))
+            return 1;
+        // 3. Omens held.
         for (std::size_t o = 0; o < def.omens.size(); ++o)
             if ((guest.omens >> o) & 1u)
             {

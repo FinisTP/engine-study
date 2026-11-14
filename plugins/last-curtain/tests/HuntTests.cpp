@@ -239,3 +239,207 @@ TEST_CASE("The night ends three ways (T101)", "[night][hunt]")
         REQUIRE(Apply(def, late, {ActionKind::EndTurn}));
     CHECK(Result(late) == Outcome::Taken);
 }
+
+namespace
+{
+    constexpr std::uint8_t N = 1, E = 2, S = 4, W = 8;
+
+    // A hunt where `form` is the Taken (guest 6's power is replaced), on a hand-built board:
+    // row 0 is a corridor (0,0)-(4,0); (4,1) hangs below its end. Every guest is placed by hand.
+    struct Hunt
+    {
+        NightDef def;
+        NightState state;
+        int taken = 6;
+        int Cell(int x, int y) const { return CellAt(def, x, y); }
+    };
+
+    Hunt MakeHunt(const char *form, std::initializer_list<std::pair<int, std::uint8_t>> extra = {})
+    {
+        Hunt h{Quiet(), {}};
+        h.def.guests[6].power = NightDef::Find(h.def.powers, form);
+        for (GuestDef &g : h.def.guests)
+            g.hp = 40;
+        h.state = Built(h.def, 4);
+        h.state.marked = 6;
+        PassToMidnight(h.def, h.state);
+        const int room = NightDef::Find(h.def.rooms, "auditorium");
+        h.state.cells = {};
+        auto open = [&](int cell, std::uint8_t doors) { h.state.cells[U(cell)] = {I8(room), doors, true}; };
+        open(h.Cell(0, 0), E);
+        open(h.Cell(1, 0), E | W);
+        open(h.Cell(2, 0), E | W);
+        open(h.Cell(3, 0), E | W);
+        open(h.Cell(4, 0), W | S);
+        open(h.Cell(4, 1), N);
+        for (auto [cell, doors] : extra)
+            open(cell, doors);
+        // Park everyone far away in an unopened corner (no path), then make it the Taken's turn.
+        for (Guest &g : h.state.guests)
+            g.cell = I8(h.Cell(0, 4));
+        while (Current(h.state) != 6)
+            REQUIRE(Apply(h.def, h.state, {ActionKind::EndTurn}));
+        h.state.guests[6].cell = I8(h.Cell(0, 0));
+        return h;
+    }
+
+    const PowerDef &Power(const Hunt &h) { return h.def.powers[U(h.def.guests[6].power)]; }
+
+    bool Offers(const Hunt &h, const Action &action)
+    {
+        const auto legal = LegalActions(h.def, h.state);
+        return std::find(legal.begin(), legal.end(), action) != legal.end();
+    }
+}
+
+TEST_CASE("Power: line (T102)", "[night][power]")
+{
+    Hunt h = MakeHunt("line");
+    h.state.guests[0].cell = I8(h.Cell(3, 0));
+    h.state.guests[1].cell = I8(h.Cell(4, 1));
+    CHECK(Offers(h, {ActionKind::Power, 0}));
+    CHECK_FALSE(Offers(h, {ActionKind::Power, 1}));
+    const int hp = h.state.guests[0].hp;
+    REQUIRE(Apply(h.def, h.state, {ActionKind::Power, 0}));
+    CHECK(h.state.guests[0].hp == hp - Power(h).damage);
+    CHECK_FALSE(h.state.battle.active);
+}
+
+TEST_CASE("Power: area (T102)", "[night][power]")
+{
+    Hunt h = MakeHunt("area");
+    CHECK_FALSE(Offers(h, {ActionKind::Power}));
+    h.state.guests[0].cell = I8(h.Cell(2, 0));
+    h.state.guests[1].cell = I8(h.Cell(3, 0));
+    REQUIRE(Offers(h, {ActionKind::Power}));
+    const int hp0 = h.state.guests[0].hp, hp1 = h.state.guests[1].hp;
+    REQUIRE(Apply(h.def, h.state, {ActionKind::Power}));
+    CHECK(h.state.guests[0].hp == hp0 - Power(h).damage);
+    CHECK(h.state.guests[1].hp == hp1);
+}
+
+TEST_CASE("Power: flood (T102)", "[night][power]")
+{
+    Hunt h = MakeHunt("flood");
+    h.state.guests[6].cell = I8(h.Cell(1, 0));
+    REQUIRE(Offers(h, {ActionKind::Power}));
+    REQUIRE(Apply(h.def, h.state, {ActionKind::Power}));
+    REQUIRE(Apply(h.def, h.state, {ActionKind::EndTurn}));
+    const int wet = Current(h.state);
+    REQUIRE(wet >= 0);
+    h.state.guests[U(wet)].cell = I8(h.Cell(2, 0));
+    CHECK(Stat(h.def, h.state, wet, StatKind::Speed) == 1);
+    const int hp = h.state.guests[U(wet)].hp;
+    h.state.guests[U(wet)].movesLeft = 0;
+    REQUIRE(Apply(h.def, h.state, {ActionKind::EndTurn}));
+    CHECK(h.state.guests[U(wet)].hp == hp - Power(h).damage);
+    const int dry = Current(h.state);
+    h.state.guests[U(dry)].cell = I8(h.Cell(3, 0));
+    CHECK(Stat(h.def, h.state, dry, StatKind::Speed) == h.def.guests[U(dry)].speed);
+}
+
+TEST_CASE("Power: pull (T102)", "[night][power]")
+{
+    Hunt h = MakeHunt("pull");
+    h.state.guests[0].cell = I8(h.Cell(3, 0));
+    h.state.guests[1].cell = I8(h.Cell(4, 0));
+    CHECK(Offers(h, {ActionKind::Power, 0}));
+    CHECK_FALSE(Offers(h, {ActionKind::Power, 1}));
+    const int hp = h.state.guests[0].hp;
+    REQUIRE(Apply(h.def, h.state, {ActionKind::Power, 0}));
+    CHECK(h.state.guests[0].cell == h.Cell(0, 0));
+    CHECK(h.state.guests[0].hp <= hp - Power(h).damage);
+    CHECK(h.state.battle.active);
+}
+
+TEST_CASE("Power: seal (T102)", "[night][power]")
+{
+    // A loop below the corridor: (1,0)-(1,1)-(2,1)-(2,0), so one passage of the loop may be sealed.
+    Hunt h = MakeHunt("seal", {{CellAt(Data(), 1, 1), N | E}, {CellAt(Data(), 2, 1), N | W}});
+    h.state.cells[U(h.Cell(1, 0))].doors |= S;
+    h.state.cells[U(h.Cell(2, 0))].doors |= S;
+    h.state.guests[0].cell = I8(h.Cell(3, 0));
+    const Action loop{ActionKind::Power, I8(h.Cell(1, 0)), 1}; // (1,0) east: the loop goes round it
+    const Action cut{ActionKind::Power, I8(h.Cell(2, 0)), 1};  // (2,0) east: the only way to guest 0
+    CHECK(Offers(h, loop));
+    CHECK_FALSE(Offers(h, cut));
+    REQUIRE(Apply(h.def, h.state, loop));
+    CHECK_FALSE(Passage(h.def, h.state, h.Cell(1, 0), 1));
+    CHECK_FALSE(Passage(h.def, h.state, h.Cell(2, 0), 3));
+    CHECK(Steps(h.def, h.state, h.Cell(3, 0), h.Cell(0, 0)) == 5);
+    // It opens again after its rounds.
+    for (int i = 0; i < 7 * (Power(h).rounds + 1) && Current(h.state) >= 0; ++i)
+    {
+        if (h.state.battle.active)
+            break;
+        REQUIRE(Apply(h.def, h.state, {ActionKind::EndTurn}));
+    }
+    CHECK(Passage(h.def, h.state, h.Cell(1, 0), 1));
+}
+
+TEST_CASE("Power: swap (T102)", "[night][power]")
+{
+    Hunt h = MakeHunt("swap");
+    h.state.guests[0].cell = I8(h.Cell(4, 1));
+    REQUIRE(Offers(h, {ActionKind::Power, 0}));
+    const int moves = h.state.guests[6].movesLeft;
+    REQUIRE(Apply(h.def, h.state, {ActionKind::Power, 0}));
+    CHECK(h.state.guests[6].cell == h.Cell(4, 1));
+    CHECK(h.state.guests[0].cell == h.Cell(0, 0));
+    CHECK(Current(h.state) == 6); // the Taken may still move and act
+    CHECK(h.state.guests[6].movesLeft == moves);
+}
+
+TEST_CASE("Power: reflect (T102)", "[night][power]")
+{
+    Hunt h = MakeHunt("reflect");
+    REQUIRE(Offers(h, {ActionKind::Power}));
+    REQUIRE(Apply(h.def, h.state, {ActionKind::Power}));
+    CHECK(h.state.taken.reflect);
+    REQUIRE(Apply(h.def, h.state, {ActionKind::EndTurn}));
+    const int g = Current(h.state);
+    h.state.guests[U(g)].cell = h.state.guests[6].cell;
+    const int takenHp = h.state.guests[6].hp, hp = h.state.guests[U(g)].hp;
+    REQUIRE(Apply(h.def, h.state, {ActionKind::Attack, -1, 6}));
+    REQUIRE(Current(h.state) == g);
+    const auto legal = LegalActions(h.def, h.state);
+    REQUIRE(Apply(h.def, h.state, *std::find_if(legal.begin(), legal.end(), [](const Action &a) { return a.kind == ActionKind::Strike; })));
+    CHECK(h.state.guests[U(g)].hp < hp);
+    CHECK(h.state.guests[6].hp == takenHp);
+    CHECK_FALSE(h.state.taken.reflect);
+}
+
+TEST_CASE("A power is offered only with a valid target and respects its cooldown (T102)", "[night][power]")
+{
+    Hunt h = MakeHunt("line");
+    CHECK_FALSE(Offers(h, {ActionKind::Power, 0}));
+    h.def.powers[U(h.def.guests[6].power)].cooldown = 2;
+    h.state.guests[0].cell = I8(h.Cell(3, 0));
+    int uses = 0;
+    for (int turn = 0; turn < 4; ++turn)
+    {
+        while (Current(h.state) != 6)
+            REQUIRE(Apply(h.def, h.state, {ActionKind::EndTurn}));
+        h.state.guests[6].cell = I8(h.Cell(0, 0));
+        h.state.guests[0].cell = I8(h.Cell(3, 0));
+        h.state.guests[0].hp = 40;
+        if (Offers(h, {ActionKind::Power, 0}))
+        {
+            REQUIRE(Apply(h.def, h.state, {ActionKind::Power, 0}));
+            CHECK_FALSE(Offers(h, {ActionKind::Power, 0})); // once per turn
+            ++uses;
+        }
+        REQUIRE(Apply(h.def, h.state, {ActionKind::EndTurn}));
+    }
+    CHECK(uses == 2);
+}
+
+TEST_CASE("Changing a power's numbers in the data changes the game, not the code (T102)", "[night][power]")
+{
+    Hunt h = MakeHunt("area");
+    h.def.powers[U(h.def.guests[6].power)].damage = 9;
+    h.state.guests[0].cell = I8(h.Cell(1, 0));
+    const int hp = h.state.guests[0].hp;
+    REQUIRE(Apply(h.def, h.state, {ActionKind::Power}));
+    CHECK(h.state.guests[0].hp == hp - 9);
+}

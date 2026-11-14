@@ -75,7 +75,13 @@ namespace umbra::night
         if (from < 0 || to < 0)
             return false;
         const Cell &a = state.cells[U(from)], &b = state.cells[U(to)];
-        return a.opened && b.opened && Has(a.doors, direction) && Has(b.doors, Opposite(direction));
+        if (!a.opened || !b.opened || !Has(a.doors, direction) || !Has(b.doors, Opposite(direction)))
+            return false;
+        // A sealed passage is shut from both sides.
+        for (const Mark &m : state.sealed)
+            if ((m.cell == from && m.direction == direction) || (m.cell == to && m.direction == Opposite(direction)))
+                return false;
+        return true;
     }
 
     bool Doorway(const NightDef &def, const NightState &state, int from, int direction)
@@ -95,8 +101,8 @@ namespace umbra::night
         // 1. The under-stage, once the target is 3 grid squares from the foyer (no later shortcut
         //    can bring it nearer), or as the last room.
         const int w = def.rules.board.width;
-        const int far = std::abs(target % w - state.foyer % w) + std::abs(target / w - state.foyer / w);
-        if (state.understage < 0 && (last || far >= 3))
+        const int gridDistance = std::abs(target % w - state.foyer % w) + std::abs(target / w - state.foyer / w);
+        if (state.understage < 0 && (last || gridDistance >= 3))
         {
             const int room = static_cast<int>(std::find_if(def.rooms.begin(), def.rooms.end(),
                                                            [](const RoomDef &r) { return r.kind == RoomKind::UnderStage; }) - def.rooms.begin());

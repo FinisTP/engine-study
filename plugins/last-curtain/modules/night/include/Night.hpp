@@ -50,6 +50,7 @@ namespace umbra::night
 
     // Move: a = direction 0-3, or transportMove. UseItem/DropItem: a = slot (relic: b = the downed guest).
     // PickUp: a = index in `floor`. Attack: a = monster index or -1, b = guest or -1. Strike: a = fighter index.
+    // Power: a = target guest (line, pull, swap) or cell (seal, with b = direction); -1 for area, flood, reflect.
     // LevelUp: a = 0 Might, 1 Sanity. Persuade: a = guest. Join / EndTurn: a bystander's choice before a battle.
     inline constexpr std::int8_t transportMove = 4;
     struct Action
@@ -86,6 +87,12 @@ namespace umbra::night
     struct Seen
     {
         bool omen = false, fail = false;
+    };
+
+    // A flooded cell, or a sealed passage (cell + direction), until the end of a round.
+    struct Mark
+    {
+        std::int8_t cell = -1, direction = -1, untilRound = 0;
     };
 
     // The marked guest after midnight. Its cell and HP are its Guest record's.
@@ -142,6 +149,7 @@ namespace umbra::night
         std::uint8_t omensUsed = 0;          // omens.csv rows already drawn (bits)
         Outcome outcome = Outcome::Running;
         Taken taken;
+        std::array<Mark, 16> flooded{}, sealed{};
         Battle battle;
         std::vector<Monster> monsters;
         std::uint64_t eventsUsed = 0, itemsUsed = 0; // events.csv / items.csv rows already drawn

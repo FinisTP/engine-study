@@ -101,6 +101,14 @@ namespace umbra::night
         {
             Fighter &attacker = At(state, from), &target = At(state, to);
             const int damage = Damage(def, state, attacker, target);
+            // 0. A reflecting Taken turns the blow back on a guest who strikes it.
+            if (target.taken && state.taken.reflect && attacker.guest >= 0)
+            {
+                state.taken.reflect = false;
+                Hurt(def, state, attacker.guest, damage, target.guest);
+                Log(state, LogKind::Hit, target.guest, attacker.guest, damage, state.guests[U(attacker.guest)].hp);
+                return;
+            }
             // 1. The guard is spent by the hit.
             for (std::size_t i = 0; i < target.buff.size(); ++i)
                 if (target.buff[i] >= 0 && def.buffs[U(target.buff[i])].stat == BuffStat::Guard)
@@ -153,6 +161,8 @@ namespace umbra::night
             Battle &b = state.battle;
             for (;;)
             {
+                if (!b.active)
+                    return; // the night ended mid-battle
                 if (!SideStanding(state, 0) || !SideStanding(state, 1))
                     return EndBattle(def, state);
                 if (++b.turn >= b.count)
@@ -326,6 +336,13 @@ namespace umbra::night
 
     void inner::RoundStart(const NightDef &def, NightState &state)
     {
+        // 0. Water and seals that have run their rounds are gone.
+        for (Mark &m : state.flooded)
+            if (m.cell >= 0 && m.untilRound < state.round)
+                m = {};
+        for (Mark &m : state.sealed)
+            if (m.cell >= 0 && m.untilRound < state.round)
+                m = {};
         // 1. Monsters whose time is up leave.
         state.monsters.erase(std::remove_if(state.monsters.begin(), state.monsters.end(),
                                             [&](const Monster &m) { return m.leavesRound <= state.round || m.hp <= 0; }),

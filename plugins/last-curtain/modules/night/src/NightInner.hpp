@@ -51,6 +51,11 @@ namespace umbra::night::inner
     void TheTurn(const NightDef &def, NightState &state);
     bool ContactBattle(const NightDef &def, NightState &state, int mover, int cell); // the Taken meets the company
     bool CompanyAlive(const NightState &state);
+    void PowerLegal(const NightDef &def, const NightState &state, std::vector<Action> &legal);
+    void UsePower(const NightDef &def, NightState &state, const Action &action);
+    bool Flooded(const NightState &state, int cell);
+    void TakenTurnStart(NightState &state);
+    void FloodEndTurn(const NightDef &def, NightState &state, int guest); // damage for ending a turn in the water
     void BattleLegal(const NightDef &def, const NightState &state, std::vector<Action> &legal);
     void BattleApply(const NightDef &def, NightState &state, const Action &action);
     void RoundStart(const NightDef &def, NightState &state); // monsters leave and appear
