@@ -119,6 +119,10 @@ namespace umbra::night
             case Effect::Sanity: raise(guest.sanity); break;
             case Effect::Speed: raise(guest.speed); break;
             case Effect::Xp: guest.xp = I16(guest.xp + amount); break;
+            case Effect::Back: // back through the doorway they just came by
+                if (guest.from >= 0)
+                    guest.cell = guest.from;
+                break;
             case Effect::Item:
                 for (int n = 0; n < amount; ++n)
                     GiveItem(def, state, g, DrawItem(def, state));
@@ -394,6 +398,7 @@ namespace umbra::night
                 Log(state, LogKind::Opened, g, -1, to);
             }
             --guest.movesLeft;
+            guest.from = guest.cell;
             Enter(def, state, g, to);
             // After midnight: the Taken and the company meet; the Taken passes monsters and rooms by.
             if (state.taken.present && ContactBattle(def, state, g, to))

@@ -27,7 +27,7 @@ namespace umbra::night
             guest.might = I16(d.might);
             guest.sanity = I16(d.sanity);
             guest.speed = I16(d.speed);
-            guest.cell = state.foyer;
+            guest.cell = guest.from = state.foyer;
             rolls[U(g)] = Roll(state, 20);
             speeds[U(g)] = d.speed;
         }

@@ -331,7 +331,7 @@ namespace umbra::night
         }
 
         Sheet events(diagnostics, folder, "events.csv", {"id", "name", "kind", "stat", "target", "passEffect", "passAmount", "failEffect", "failAmount"});
-        const auto effects = {"none", "hp", "hproom", "maxhp", "might", "sanity", "speed", "item", "xp"};
+        const auto effects = {"none", "hp", "hproom", "maxhp", "might", "sanity", "speed", "item", "xp", "buff", "armor", "light", "revive", "back"};
         for (int r = 0; r < events.Rows(); ++r)
         {
             EventDef e;

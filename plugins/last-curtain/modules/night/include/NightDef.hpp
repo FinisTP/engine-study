@@ -15,7 +15,7 @@ namespace umbra::night
     enum class StatKind : std::uint8_t { Might, Sanity, Speed, MaxHp, Light, None };
     enum class Weapon : std::uint8_t { Physical, Magical };
     enum class RoomKind : std::uint8_t { Foyer, UnderStage, Plain, Item, Event, Trap, Omen, Transport, Bonus };
-    enum class Effect : std::uint8_t { None, Hp, HpRoom, MaxHp, Might, Sanity, Speed, Item, Xp, Buff, Armor, Light, Revive };
+    enum class Effect : std::uint8_t { None, Hp, HpRoom, MaxHp, Might, Sanity, Speed, Item, Xp, Buff, Armor, Light, Revive, Back };
     enum class ItemKind : std::uint8_t { Heal, Boost, Worn, Relic };
     enum class BuffStat : std::uint8_t { Guard, Might, Sanity };
     enum class PowerKind : std::uint8_t { Line, Area, Flood, Pull, Seal, Swap, Reflect };

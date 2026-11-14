@@ -1,12 +1,12 @@
 id,name,kind,stat,target,passEffect,passAmount,failEffect,failAmount
 applause,Applause from an empty hall,event,sanity,normal,sanity,1,hp,-3
 script,A script with your name,event,sanity,hard,xp,1,sanity,-1
-cold,A cold hand on the shoulder,event,might,normal,might,1,hp,-4
+cold,A cold hand on the shoulder,event,might,normal,might,1,back,0
 song,A song from the walls,event,sanity,easy,hp,4,hp,-3
 mirror,Your reflection is late,event,sanity,normal,item,1,hp,-4
 dust,Dust sheets that breathe,event,might,easy,hp,3,hp,-2
 locker,A stuck locker,event,might,normal,item,1,hp,-2
-bell,The interval bell,event,speed,normal,speed,1,hp,-3
+bell,The interval bell,event,speed,normal,speed,1,back,0
 portrait,A portrait that turns,event,sanity,hard,maxhp,2,sanity,-1
 rain,Rain on the stage,event,speed,easy,xp,1,hp,-2
 prompt,A voice gives you your line,event,sanity,normal,item,1,hp,-3

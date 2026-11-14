@@ -25,6 +25,7 @@ namespace umbra::night
     {
         std::int16_t hp = 0, maxHp = 0, might = 0, sanity = 0, speed = 0; // base values (levels, rooms, events)
         std::int8_t cell = -1, level = 1, group = -1;
+        std::int8_t from = -1; // the cell before the last move (an event may push the guest back)
         std::int16_t xp = 0;
         std::array<std::int8_t, maxCarry> items{-1, -1, -1, -1, -1, -1}; // items.csv rows, -1 = empty
         std::uint8_t omens = 0;        // omens.csv rows held, as bits

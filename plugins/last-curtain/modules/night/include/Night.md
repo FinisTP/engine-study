@@ -59,7 +59,8 @@ code holds only the mechanics. Design: `docs/design/game-design.md` (GDD); bots 
 
 `RollCheck`: d20 + stat >= target. Events and traps are drawn without replacement; items by
 `weight`, without replacement (so each relic at most once a night). A full guest finds the item on
-the floor. Before the Turn 0 HP is *down*; a relic wakes a downed guest in the same room.
+the floor. Before the Turn 0 HP is *down*; a relic wakes a downed guest in the same room. An event outcome `back` pushes the guest to the room
+they came from (`Guest::from`).
 
 ## Battles (`Battle.cpp`)
 

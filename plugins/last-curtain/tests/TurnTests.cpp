@@ -334,3 +334,18 @@ TEST_CASE("An item room gives one item; a full guest finds it on the floor (T97)
     CHECK(Items(full) == 4);
     CHECK(state.floor.size() == 1);
 }
+
+TEST_CASE("An event can push a guest back to the room they came from (T106)", "[night][check]")
+{
+    for (int target : {99, 1}) // a failed roll, then a passed one: either outcome may push back
+    {
+        NightDef def = target == 99 ? OneEvent(RoomKind::Event, StatKind::Sanity, 99, Effect::None, 0, Effect::Back, 0)
+                                    : OneEvent(RoomKind::Event, StatKind::Sanity, 1, Effect::Back, 0, Effect::None, 0);
+        NightState state = NewNight(def, 5);
+        const int g = Current(state);
+        REQUIRE(Apply(def, state, First(LegalActions(def, state), ActionKind::Move)));
+        INFO("target " << target);
+        CHECK(state.guests[static_cast<std::size_t>(g)].cell == state.foyer);
+        CHECK(Current(state) != g); // resolving the room ended the turn
+    }
+}
