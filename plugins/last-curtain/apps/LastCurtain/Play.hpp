@@ -58,6 +58,10 @@ public:
     void Update(float dt);
     void SetCaptions(umbra::night::Captions captions) { captions_ = std::move(captions); }
     void SetDecider(Decider decider) { decider_ = std::move(decider); }
+    // The camera: the cell to look at (-1: nothing), and whether it follows (a drag stops it until Focus).
+    [[nodiscard]] int CameraCell() const;
+    void Drag() { following_ = false; }
+    [[nodiscard]] bool Following() const { return following_; }
     [[nodiscard]] float Thinking() const { return think_; }      // seconds of "thinking..." left
     [[nodiscard]] int ThinkingGuest() const { return think_ > 0.0F ? pendingGuest_ : -1; }
     [[nodiscard]] const umbra::night::Beat &LastBeat() const { return beat_; }
@@ -113,5 +117,6 @@ private:
     umbra::night::Action pendingAction_;
     int pendingGuest_ = -1;
     float think_ = 0.0F;
-    int thoughtTurn_ = -1; // round * 8 + turn of the last bot turn that thought
+    int thoughtTurn_ = -1;
+    bool following_ = true; // round * 8 + turn of the last bot turn that thought
 };

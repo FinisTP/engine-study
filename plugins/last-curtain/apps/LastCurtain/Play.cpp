@@ -289,6 +289,8 @@ bool Play::HandleUi(const std::string &, const std::string &action, const std::s
         turn_ = false;
         return true;
     }
+    if (action == "focus")
+        return following_ = true;
     if (action == "resume" && pause_)
         return !(pause_ = false);
     if (action == "close" && inspect_ >= 0)
@@ -467,6 +469,7 @@ nlohmann::json Play::UiData() const
         data["turn"] = TurnData();
     if (inspect_ >= 0)
         data["inspect"] = InspectData();
+    data["focus"] = !following_;
     if (beat_.seen && hold_ > 0.0F)
         data["caption"] = {{"guest", def_.guests[U(beat_.guest)].name}, {"line", beat_.caption}, {"result", beat_.result}};
     const int me = Me();
@@ -749,6 +752,18 @@ nlohmann::json Play::EndData() const
     if (!allies.empty())
         lines.push_back("At your side at the end: " + allies + ".");
     return {{"outcome", outcome}, {"lines", lines}};
+}
+
+int Play::CameraCell() const
+{
+    // A step sliding, a bot's beat or thought the player sees, else the acting guest on the player's turn.
+    if (slide_.guest >= 0)
+        return slide_.to;
+    if (beat_.seen && hold_ > 0.0F && beat_.camera >= 0)
+        return beat_.camera;
+    if (ThinkingGuest() >= 0)
+        return state_.guests[U(ThinkingGuest())].cell;
+    return PlayerTurn() ? state_.guests[U(Current(state_))].cell : -1;
 }
 
 nlohmann::json Play::InspectData() const

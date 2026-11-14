@@ -16,6 +16,8 @@
 #include <TextureTools.hpp>
 #include <Window.hpp>
 
+#include <glm/geometric.hpp>
+
 #include <chrono>
 #include <cstdlib>
 #include <fstream>
@@ -135,7 +137,9 @@ namespace
             Table table(renderer);
             umbra::core::DrawList drawList;
             const int frames = options.frames > 0 ? options.frames : (options.capture.empty() ? 0 : 3);
-            int frame = 0, aimed = -1, beats = 0, savedRound = -1;
+            int frame = 0, aimed = -1, savedRound = -1;
+            bool wasHeld = false, dragging = false, pressTook = false; // the left button: a drag looks around, a release without one clicks
+            glm::vec2 pressAt{0.0F}, lastMouse{0.0F};
             std::string shown; // the screen on show besides the HUD
             bool captured = false, suspended = false, quit = false, fresh = true; // fresh: the camera jumps to a new night
             std::mt19937_64 random(options.seed ? options.seed : static_cast<std::uint64_t>(std::chrono::system_clock::now().time_since_epoch().count()));
@@ -160,7 +164,7 @@ namespace
                 play->SetCaptions(captions);
                 if (screens.Ready() && play->State().player >= 0)
                     screens.Ui().Open("hud");
-                aimed = -1, beats = 0, savedRound = -1, fresh = true;
+                aimed = -1, savedRound = -1, fresh = true;
             };
             const auto backToStart = [&] {
                 play.reset();
@@ -222,14 +226,21 @@ namespace
                         play->Key(InputKey::Escape), uiInput.back = false;
                     play->Update(dt);
                     const NightState &state = play->State();
-                    const int now = Current(state);
-                    if (fresh && now >= 0)
-                        table.Aim(CellCenter(def, state.guests[static_cast<std::size_t>(now)].cell), 0.0F), fresh = false;
-                    if (play->Beats() != beats && play->LastBeat().camera >= 0)
-                        table.Aim(CellCenter(def, play->LastBeat().camera), 0.6F), aimed = -1;
-                    beats = play->Beats();
-                    if (play->PlayerTurn() && now != aimed)
-                        table.Aim(CellCenter(def, state.guests[static_cast<std::size_t>(now)].cell), 0.6F), aimed = now;
+                    // While following, the camera eases to whatever Play says to look at; a drag frees it.
+                    const int look = play->CameraCell();
+                    if (fresh && look >= 0)
+                        table.Aim(CellCenter(def, look), 0.0F), aimed = look, fresh = false;
+                    if (play->Following() && look >= 0 && look != aimed)
+                        table.Aim(CellCenter(def, look), 0.4F), aimed = look;
+                    if (!play->Following())
+                        aimed = -1; // Focus aims again at once
+                    const bool held = input.IsMouseButtonHeld(0);
+                    if (held && !wasHeld)
+                        pressAt = uiInput.mouse, dragging = false;
+                    if (held && !dragging && glm::length(uiInput.mouse - pressAt) > 4.0F)
+                        dragging = true, play->Drag();
+                    if (held && dragging)
+                        table.Pan(uiInput.mouse - lastMouse);
                     table.Zoom(input.Wheel());
                     table.Update(dt);
                     table.SetHunt(state.taken.present);
@@ -290,8 +301,12 @@ namespace
                 }
                 else
                     drawList.hud.warnings = screens.Problems();
-                if (play && uiInput.click && !uiTook)
+                // A board click is the left button let go without a drag, pressed where no screen took it.
+                if (uiInput.click)
+                    pressTook = uiTook;
+                if (play && wasHeld && !input.IsMouseButtonHeld(0) && !dragging && !pressTook)
                     play->Click(table.Pick(def, uiInput.mouse, pixels));
+                wasHeld = input.IsMouseButtonHeld(0), lastMouse = uiInput.mouse;
                 if (play && input.IsMouseButtonPressed(2) && !uiTook) // the right button inspects
                     play->Click(table.Pick(def, uiInput.mouse, pixels), true);
 

@@ -10,4 +10,8 @@
    steps the moves left can pay for, red after.
 4. **Light**: indoors, a dim ambient (tinted red after the Turn) and one warm lamp 7 m over the middle of the table.
 5. **Camera**: it looks at a target from 50 degrees above the table. `Aim` moves the target over some seconds with smoothstep easing, `t*t*(3-2t)`, so it starts and stops gently. The wheel changes the distance (5 to 22 m).
-6. **Picking**: the mouse position goes back through the projection and view (`inverse(projection * view)`) at the near and far planes. The line between those two points is the ray from the eye; `CellUnderRay` finds where it meets the table top, y = 0.
+6. **Looking around**: dragging with the left button moves the table with the mouse: the look-at
+   point shifts by the drag times `distance / 700` metres a pixel (x across, y toward the camera),
+   so the board stays under the cursor at any zoom. A drag stops the camera following (`Play::Drag`)
+   until the Focus button. A board click is the button let go without a drag.
+7. **Picking**: the mouse position goes back through the projection and view (`inverse(projection * view)`) at the near and far planes. The line between those two points is the ray from the eye; `CellUnderRay` finds where it meets the table top, y = 0.

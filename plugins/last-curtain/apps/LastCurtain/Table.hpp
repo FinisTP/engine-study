@@ -31,6 +31,7 @@ public:
     void Aim(glm::vec3 target, float seconds);
     void Update(float dt);
     void Zoom(float steps);
+    void Pan(glm::vec2 pixels); // a drag: the table moves with the mouse (Table.md)
     [[nodiscard]] umbra::core::Camera Camera() const;
     // The cell under the mouse (render pixels), -1 if none.
     [[nodiscard]] int Pick(const umbra::night::NightDef &def, glm::vec2 mouse, glm::vec2 pixels) const;

@@ -151,6 +151,14 @@ void Table::Aim(glm::vec3 target, float seconds)
 
 void Table::Update(float dt) { elapsed_ = std::min(elapsed_ + dt, seconds_); }
 
+void Table::Pan(glm::vec2 pixels)
+{
+    // A pixel covers more of the table the farther the camera is: about distance / 700 metres.
+    const glm::vec3 target = Camera().target - glm::vec3{pixels.x, 0.0F, pixels.y} * (distance_ / 700.0F);
+    from_ = to_ = target;
+    elapsed_ = seconds_;
+}
+
 void Table::Zoom(float steps) { distance_ = std::clamp(distance_ - steps, 5.0F, 22.0F); }
 
 umbra::core::Camera Table::Camera() const

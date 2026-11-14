@@ -1027,3 +1027,56 @@ TEST_CASE("A bot's step slides (T127)", "[night][play]")
     }
     CHECK(slid);
 }
+
+TEST_CASE("The camera follows each step of a walk (T128)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play(def, PlayerCorridor(def, 3, 4));
+    CHECK(play.CameraCell() == play.State().foyer);
+    play.Click(West(def, 3));
+    std::vector<int> looked;
+    for (int i = 0; i < 20 && (play.Sliding().guest >= 0 || play.Screen() == "picking"); ++i)
+    {
+        play.Update(Play::slideSeconds);
+        if (looked.empty() || looked.back() != play.CameraCell())
+            looked.push_back(play.CameraCell());
+    }
+    CHECK(looked == std::vector<int>{West(def, 1), West(def, 2), West(def, 3)});
+}
+
+TEST_CASE("A drag stops following until Focus (T128)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play(def, PlayerCorridor(def, 2, 4));
+    CHECK(play.Following());
+    CHECK(play.UiData()["focus"] == false);
+    play.Drag();
+    CHECK_FALSE(play.Following());
+    CHECK(play.UiData()["focus"] == true);
+    REQUIRE(play.HandleUi("hud", "focus", ""));
+    CHECK(play.Following());
+}
+
+TEST_CASE("A dead player still follows the beats; Focus and Esc are safe (T128)", "[night][play]")
+{
+    const NightDef def = Data();
+    NightState state = PlayerCorridor(def, 1, 4);
+    Apply(def, state, {ActionKind::EndTurn});
+    state.guests[0].dead = true;
+    for (int g = 1; g < state.count; ++g)
+        state.guests[static_cast<std::size_t>(g)].cell = state.foyer;
+    Play play(def, state);
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    Captions captions;
+    REQUIRE(LoadCaptions(std::filesystem::path(UMBRA_NIGHT_DATA) / "captions.json", captions, diagnostics));
+    play.SetCaptions(captions);
+    for (int i = 0; i < 50 && play.Beats() == 0; ++i)
+        play.Update(0.2F);
+    REQUIRE(play.Beats() > 0);
+    if (play.LastBeat().seen)
+        CHECK(play.CameraCell() == play.LastBeat().camera);
+    play.Drag();
+    CHECK(play.HandleUi("hud", "focus", ""));
+    play.Key(InputKey::Escape);
+    CHECK(play.Screen() == "pause");
+}
