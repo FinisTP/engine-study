@@ -5,11 +5,13 @@ target_sources(
     UmbraNightBoard
     PRIVATE
         src/BoardView.cpp
+        src/Narrate.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
         FILES
             include/BoardView.hpp
+            include/Narrate.hpp
             include/Board.md
 )
 
@@ -17,11 +19,13 @@ target_compile_features(UmbraNightBoard PUBLIC cxx_std_20)
 
 # What the player may see of the night, and its narration: headless, tested without a window.
 find_package(glm CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 target_link_libraries(
     UmbraNightBoard
     PUBLIC
         Umbra::Night
         glm::glm
+        nlohmann_json::nlohmann_json
     PRIVATE
         Umbra::Warnings
         Umbra::Sanitizers

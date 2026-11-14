@@ -27,3 +27,13 @@ z = (row    - (height - 1) / 2) * cellSize      row 0 is at -z (far side), the f
 ```
 
 `CellAtPoint` inverts it: `column = floor(x / cellSize + width / 2)`, the same for rows.
+
+## Narration
+
+`Narrate` turns one applied action into a `Beat`: a camera cell, the pawn's walk and two lines of text.
+
+1. The beat is **seen** when the actor's start cell was lit for the viewer, or its end cell or a newly opened room is lit now.
+2. An unseen beat has no caption, path or camera: the opened room still appears, because the board draws the state.
+3. The **caption** is the decision (`captions.json` keys `move`, `open`, `fight` ...); the **result** comes from the log entries the action wrote (`check`, `found`, `down`, `died`, `hit`, `killed`), joined with "; ".
+
+The lines are plain templates for now; a later plan lets the model word them.
