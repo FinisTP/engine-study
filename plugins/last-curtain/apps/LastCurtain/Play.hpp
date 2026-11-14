@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Narrate.hpp>
 #include <Night.hpp>
 
 #include <Input.hpp>
@@ -22,8 +23,13 @@ public:
     // An action from a screen; true when it did something.
     bool HandleUi(const std::string &screen, const std::string &action, const std::string &arg);
     [[nodiscard]] nlohmann::json UiData() const;
-    [[nodiscard]] std::string Screen() const; // "", "actions" or "bag"
-    void Update(float dt);                    // a bot's turn: one action
+    [[nodiscard]] std::string Screen() const; // "", "caption", "actions" or "bag"
+    // Bots act one action at a time: a beat the player sees holds 1.5 s (0.3 s after Space), an
+    // unseen one 0.2 s. dt 0 (a minimised window) changes nothing.
+    void Update(float dt);
+    void SetCaptions(umbra::night::Captions captions) { captions_ = std::move(captions); }
+    [[nodiscard]] const umbra::night::Beat &LastBeat() const { return beat_; }
+    [[nodiscard]] int Beats() const { return beats_; } // bot actions so far
     [[nodiscard]] const umbra::night::NightState &State() const { return state_; }
 
 private:
@@ -34,4 +40,9 @@ private:
     const umbra::night::NightDef &def_;
     umbra::night::NightState state_;
     bool bag_ = false;
+    umbra::night::Captions captions_;
+    umbra::night::Beat beat_;
+    float hold_ = 0.0F; // seconds the last beat still shows
+    bool fast_ = false; // Space: short beats until the player's next turn
+    int beats_ = 0;
 };

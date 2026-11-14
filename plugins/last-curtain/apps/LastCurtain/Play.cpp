@@ -72,6 +72,8 @@ void Play::Key(umbra::platform::InputKey key)
         if ((action.kind == ActionKind::Move && action.a == direction) || (key == InputKey::Enter && action.kind == ActionKind::EndTurn))
             if (Do(action))
                 return;
+    if (key == InputKey::Space && !PlayerTurn())
+        fast_ = true;
     if (key == InputKey::I && PlayerTurn() && !state_.battle.active && !state_.chat.active)
         bag_ = !bag_;
 }
@@ -102,18 +104,35 @@ bool Play::HandleUi(const std::string &, const std::string &action, const std::s
 std::string Play::Screen() const
 {
     if (!PlayerTurn())
-        return "";
+        return hold_ > 0.0F && beat_.seen ? "caption" : "";
     return bag_ ? "bag" : "actions";
 }
 
-void Play::Update(float)
+void Play::Update(float dt)
 {
-    // A bot's turn: one action per call (the next task paces them).
+    // 1. Wait out the beat on show; nothing moves without time.
+    if (dt <= 0.0F)
+        return;
+    hold_ -= dt;
+    if (hold_ > 0.0F)
+        return;
+    // 2. The player's turn: the beats are over, Space wears off.
     const int acting = Current(state_);
     if (acting < 0 || PlayerTurn())
+    {
+        beat_ = {};
+        fast_ = false;
         return;
+    }
+    // 3. A bot acts; the narrator says what the player could see of it.
     bag_ = false;
-    (void)Apply(def_, state_, ChooseAction(def_, state_, acting));
+    const NightState before = state_;
+    const Action action = ChooseAction(def_, state_, acting);
+    if (!Apply(def_, state_, action))
+        return;
+    ++beats_;
+    beat_ = captions_.lines.empty() ? Beat{} : Narrate(def_, before, state_, NewLog(state_, before.logCount), action, acting, state_.player, captions_);
+    hold_ = beat_.seen ? (fast_ ? 0.3F : 1.5F) : 0.2F;
 }
 
 std::string Play::Label(const Action &action) const
@@ -149,6 +168,8 @@ std::string Play::Label(const Action &action) const
 nlohmann::json Play::UiData() const
 {
     nlohmann::json data;
+    if (beat_.seen && hold_ > 0.0F)
+        data["caption"] = {{"guest", def_.guests[U(beat_.guest)].name}, {"line", beat_.caption}, {"result", beat_.result}};
     const int me = Me();
     if (me < 0)
         return data;

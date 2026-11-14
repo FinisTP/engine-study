@@ -1,7 +1,11 @@
 #include "NightTestData.hpp"
 
 #include <BoardView.hpp>
+#include <Narrate.hpp>
+#include <NightBots.hpp>
 #include <Play.hpp>
+
+#include <filesystem>
 
 using namespace umbra::night;
 using umbra::platform::InputKey;
@@ -148,4 +152,67 @@ TEST_CASE("Only recruited guests are allies (T111)", "[night][play]")
     CHECK(data["allies"][0]["name"] == def.guests[2].name);
     REQUIRE(data["winning"].size() == 1);
     CHECK(data["winning"][0]["name"] == def.guests[3].name);
+}
+
+namespace
+{
+    // A night whose first guest to act is a bot that does not open a chat, with captions.
+    Play BotFirst(const NightDef &def)
+    {
+        for (std::uint64_t seed = 1; seed < 100; ++seed)
+        {
+            Play play(def, seed, 0);
+            const int bot = Current(play.State());
+            if (!play.PlayerTurn() && ChooseAction(def, play.State(), bot).kind != ActionKind::OpenChat)
+            {
+                std::vector<umbra::core::Diagnostic> diagnostics;
+                Captions captions;
+                REQUIRE(LoadCaptions(std::filesystem::path(UMBRA_NIGHT_DATA) / "captions.json", captions, diagnostics));
+                play.SetCaptions(captions);
+                return play;
+            }
+        }
+        FAIL("no seed with a bot first");
+        return Play(def, 1, 0);
+    }
+}
+
+TEST_CASE("Bot turns advance with time and hold on seen beats (T112)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play = BotFirst(def);
+    play.Update(0.01F); // the bot acts in the foyer, in the player's light
+    REQUIRE(play.Beats() == 1);
+    CHECK(play.Screen() == "caption");
+    CHECK_FALSE(play.UiData()["caption"]["line"].get<std::string>().empty());
+    play.Update(0.5F);
+    CHECK(play.Beats() == 1); // still showing
+    play.Update(1.1F);
+    CHECK((play.Beats() == 2 || play.PlayerTurn()));
+}
+
+TEST_CASE("Space makes the bots' beats short (T112)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play = BotFirst(def);
+    play.Key(InputKey::Space);
+    play.Update(0.01F);
+    REQUIRE(play.Beats() == 1);
+    play.Update(0.35F);
+    CHECK((play.Beats() == 2 || play.PlayerTurn()));
+}
+
+TEST_CASE("A minimised window does not lose a beat (T112)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play = BotFirst(def);
+    for (int i = 0; i < 100; ++i)
+        play.Update(0.0F);
+    CHECK(play.Beats() == 0);
+    play.Update(0.01F);
+    const std::uint32_t log = play.State().logCount;
+    for (int i = 0; i < 100; ++i)
+        play.Update(0.0F);
+    CHECK(play.Beats() == 1);
+    CHECK(play.State().logCount == log);
 }

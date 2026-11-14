@@ -3,6 +3,7 @@
 #include "Table.hpp"
 
 #include <BoardView.hpp>
+#include <Narrate.hpp>
 
 #include <ApplicationEvents.hpp>
 #include <CrashHandler.hpp>
@@ -85,6 +86,13 @@ namespace
                 return 1;
             }
             Play play(def, options.seed, player);
+            {
+                Captions captions;
+                if (LoadCaptions(assets / "night/captions.json", captions, diagnostics))
+                    play.SetCaptions(std::move(captions));
+                for (const umbra::core::Diagnostic &d : diagnostics)
+                    umbra::diagnostics::Error(umbra::core::Format(d));
+            }
 
             // 2. Window, renderer, screens and the table.
             umbra::core::FrameClock clock;
@@ -104,7 +112,7 @@ namespace
             Table table(renderer);
             umbra::core::DrawList drawList;
             const int frames = options.frames > 0 ? options.frames : (options.capture.empty() ? 0 : 3);
-            int frame = 0, aimed = -1;
+            int frame = 0, aimed = -1, beats = 0;
             std::string shown; // the game screen Play asks for
             if (screens.Ready() && player >= 0)
                 screens.Ui().Open("hud");
@@ -139,11 +147,19 @@ namespace
                 clock.Tick();
                 const auto dt = static_cast<float>(clock.GetDeltaTimeSeconds());
 
-                // 4. Bots play; the camera follows the acting guest; the wheel zooms.
+                // 4. Bots play; the camera goes to each beat the player sees, and to the player's pawn on their turn.
+                if (input.IsKeyPressed(umbra::platform::InputKey::Space))
+                    play.Key(umbra::platform::InputKey::Space);
                 play.Update(dt);
                 const NightState &state = play.State();
-                if (const int now = Current(state); now >= 0 && now != aimed)
-                    table.Aim(CellCenter(def, state.guests[static_cast<std::size_t>(now)].cell), aimed < 0 ? 0.0F : 0.6F), aimed = now;
+                const int now = Current(state);
+                if (frame == 0 && now >= 0)
+                    table.Aim(CellCenter(def, state.guests[static_cast<std::size_t>(now)].cell), 0.0F);
+                if (play.Beats() != beats && play.LastBeat().camera >= 0)
+                    table.Aim(CellCenter(def, play.LastBeat().camera), 0.6F), aimed = -1;
+                beats = play.Beats();
+                if (play.PlayerTurn() && now != aimed)
+                    table.Aim(CellCenter(def, state.guests[static_cast<std::size_t>(now)].cell), 0.6F), aimed = now;
                 table.Zoom(input.Wheel());
                 table.Update(dt);
                 table.SetHunt(state.taken.present);

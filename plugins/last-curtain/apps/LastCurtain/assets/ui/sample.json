@@ -1,21 +1,102 @@
 {
-  "clock": "21:30", "round": 6, "rounds": 20, "phase": "evening",
-  "me": { "name": "Truong Uyen Nhi", "hp": 14, "maxHp": 16, "might": 3, "sanity": 6, "speed": 5, "level": 2, "buffs": "" },
-  "moves": 4, "turnTitle": "Your turn",
+  "clock": "21:30",
+  "round": 6,
+  "rounds": 20,
+  "phase": "evening",
+  "me": {
+    "name": "Truong Uyen Nhi",
+    "hp": 14,
+    "maxHp": 16,
+    "might": 3,
+    "sanity": 6,
+    "speed": 5,
+    "level": 2,
+    "buffs": ""
+  },
+  "moves": 4,
+  "turnTitle": "Your turn",
   "actions": [
-    { "label": "Chat with Dinh Quoc Bao", "action": "act", "arg": "3" },
-    { "label": "Pick up the Lantern", "action": "act", "arg": "4" },
-    { "label": "Bag (3 of 4)", "action": "bag", "arg": "" },
-    { "label": "End turn", "action": "act", "arg": "5" }
+    {
+      "label": "Chat with Dinh Quoc Bao",
+      "action": "act",
+      "arg": "3"
+    },
+    {
+      "label": "Pick up the Lantern",
+      "action": "act",
+      "arg": "4"
+    },
+    {
+      "label": "Bag (3 of 4)",
+      "action": "bag",
+      "arg": ""
+    },
+    {
+      "label": "End turn",
+      "action": "act",
+      "arg": "5"
+    }
   ],
-  "allies": [ { "name": "Dinh Quoc Bao", "hp": 20, "maxHp": 24 } ], "noAllies": false,
-  "winning": [ { "name": "Phan Thi Mai", "approvals": 2, "goal": 3 } ],
-  "inLight": [ { "name": "Vo Minh Khang", "room": "Lighting box" } ],
+  "allies": [
+    {
+      "name": "Dinh Quoc Bao",
+      "hp": 20,
+      "maxHp": 24
+    }
+  ],
+  "noAllies": false,
+  "winning": [
+    {
+      "name": "Phan Thi Mai",
+      "approvals": 2,
+      "goal": 3
+    }
+  ],
+  "inLight": [
+    {
+      "name": "Vo Minh Khang",
+      "room": "Lighting box"
+    }
+  ],
   "bag": [
-    { "name": "Bandage", "kind": "healing", "text": "Heals 6 HP.", "canUse": true, "cannotUse": false, "slot": 0 },
-    { "name": "Opera fan", "kind": "worn", "text": "+1 Sanity while you carry it.", "canUse": false, "cannotUse": true, "slot": 1 },
-    { "name": "Whetstone", "kind": "fight boost", "text": "In battle: +2 Might for the battle.", "canUse": false, "cannotUse": true, "slot": 2 }
+    {
+      "name": "Bandage",
+      "kind": "healing",
+      "text": "Heals 6 HP.",
+      "canUse": true,
+      "cannotUse": false,
+      "slot": 0
+    },
+    {
+      "name": "Opera fan",
+      "kind": "worn",
+      "text": "+1 Sanity while you carry it.",
+      "canUse": false,
+      "cannotUse": true,
+      "slot": 1
+    },
+    {
+      "name": "Whetstone",
+      "kind": "fight boost",
+      "text": "In battle: +2 Might for the battle.",
+      "canUse": false,
+      "cannotUse": true,
+      "slot": 2
+    }
   ],
-  "floor": [ { "name": "Lantern", "text": "Worn: your light reaches one room further.", "index": 0 } ],
-  "bagUsed": 3, "bagEmpty": false, "carry": 4
+  "floor": [
+    {
+      "name": "Lantern",
+      "text": "Worn: your light reaches one room further.",
+      "index": 0
+    }
+  ],
+  "bagUsed": 3,
+  "bagEmpty": false,
+  "carry": 4,
+  "caption": {
+    "guest": "Vo Minh Khang",
+    "line": "Vo Minh Khang opens a door: the Green room.",
+    "result": "rolled 14 + 7 against 13: passed"
+  }
 }
