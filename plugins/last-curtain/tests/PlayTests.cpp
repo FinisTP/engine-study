@@ -545,3 +545,55 @@ TEST_CASE("The player as the Taken plays on (T115)", "[night][play]")
     CHECK(view.cells[static_cast<std::size_t>(play.State().guests[0].cell)].lit);
     CHECK(play.UiData()["me"]["name"] == def.guests[0].name);
 }
+
+TEST_CASE("Clicks and keys do nothing while a dialog shows (final review)", "[night][play]")
+{
+    // The Turn screen shows while the player, first of the company, could already move.
+    const NightDef def = Data();
+    bool tested = false;
+    for (std::uint64_t seed = 1; seed < 40 && !tested; ++seed)
+    {
+        NightState state = NewNight(def, seed, 0);
+        state.marked = 3;
+        state.round = static_cast<std::int8_t>(def.rules.clock.turnAfterRound);
+        Play play(def, state);
+        for (int i = 0; i < 3000 && !play.State().taken.present; ++i)
+        {
+            Settle(play);
+            if (play.State().chat.active && play.PlayerTurn())
+                play.HandleUi("chat", "answer", "0");
+            else if (play.State().omenOffer >= 0 && play.PlayerTurn())
+                play.HandleUi("omen", "leave", "");
+            else if (play.PlayerTurn())
+                play.Key(InputKey::Enter);
+            else
+                play.Update(10.0F);
+        }
+        if (play.Screen() != "turn" || !play.PlayerTurn() || StepCell(def, play) < 0)
+            continue;
+        tested = true;
+        const int cell = play.State().guests[0].cell;
+        play.Click(StepCell(def, play));
+        for (const InputKey key : {InputKey::Up, InputKey::Right, InputKey::Down, InputKey::Left, InputKey::Enter, InputKey::I})
+            play.Key(key);
+        CHECK(play.State().guests[0].cell == cell);
+        CHECK(play.Screen() == "turn");
+    }
+    CHECK(tested);
+}
+
+TEST_CASE("A push-back event names the room it happened in (final review)", "[night][play]")
+{
+    NightDef def = Data();
+    for (RoomDef &room : def.rooms)
+        if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
+            room.kind = RoomKind::Event, room.doors = 15;
+    for (EventDef &event : def.events) // every event pushes back, pass or fail
+        event.passEffect = event.failEffect = Effect::Back;
+    Play play(def, PlayerFirst(def));
+    const int step = StepCell(def, play);
+    play.Click(step);
+    REQUIRE(play.Screen() == "event");
+    CHECK(play.State().guests[0].cell == play.State().foyer); // pushed back
+    CHECK(play.UiData()["event"]["room"] == def.rooms[static_cast<std::size_t>(play.State().cells[static_cast<std::size_t>(step)].room)].name);
+}

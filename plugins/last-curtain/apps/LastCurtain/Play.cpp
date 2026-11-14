@@ -108,7 +108,9 @@ bool Play::Do(const Action &action)
     if (drawn)
     {
         event_ = std::countr_zero(drawn);
-        eventCell_ = state_.guests[U(Current(before))].cell;
+        // The room moved into (the guest may have been pushed back out of it).
+        const int from = before.guests[U(Current(before))].cell;
+        eventCell_ = action.kind == ActionKind::Move && action.a < transportMove ? Neighbour(def_, from, action.a) : state_.guests[U(Current(before))].cell;
         eventStat_ = Stat(def_, before, Current(before), def_.events[U(event_)].stat);
     }
     // 3. Every roll the player's side made, with what came of it.
@@ -137,7 +139,7 @@ bool Play::Do(const Action &action)
 
 void Play::Click(int cell)
 {
-    if (!PlayerTurn() || cell < 0 || cell >= maxCells)
+    if (Screen() != "actions" || cell < 0 || cell >= maxCells) // never behind a dialog
         return;
     const int step = MakeView(def_, state_, state_.player).cells[U(cell)].step;
     if (step >= 0)
@@ -153,15 +155,17 @@ void Play::Key(umbra::platform::InputKey key)
     if (key == InputKey::Right) direction = 1;
     if (key == InputKey::Down) direction = 2;
     if (key == InputKey::Left) direction = 3;
-    // 2. Each key does what a legal action of this turn allows, or nothing.
+    // 2. Each key does what a legal action of this turn allows, or nothing; never behind a dialog.
+    if (key == InputKey::Space && !PlayerTurn())
+        fast_ = true;
+    if (key == InputKey::I && (Screen() == "actions" || Screen() == "bag") && !state_.chat.active)
+        bag_ = !bag_;
+    if (Screen() != "actions")
+        return;
     for (const Action &action : LegalActions(def_, state_))
         if ((action.kind == ActionKind::Move && action.a == direction) || (key == InputKey::Enter && action.kind == ActionKind::EndTurn))
             if (Do(action))
                 return;
-    if (key == InputKey::Space && !PlayerTurn())
-        fast_ = true;
-    if (key == InputKey::I && PlayerTurn() && !state_.chat.active)
-        bag_ = !bag_;
 }
 
 bool Play::HandleUi(const std::string &, const std::string &action, const std::string &arg)
