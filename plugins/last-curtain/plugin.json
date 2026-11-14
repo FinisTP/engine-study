@@ -8,10 +8,12 @@
   "requires": [],
   "modules": [
     "night",
-    "nightbots"
+    "nightbots",
+    "board"
   ],
   "links": [
     "Umbra::Night",
-    "Umbra::NightBots"
+    "Umbra::NightBots",
+    "Umbra::NightBoard"
   ]
 }

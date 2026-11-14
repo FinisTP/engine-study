@@ -1,0 +1,80 @@
+#include <BoardView.hpp>
+
+#include <cmath>
+
+namespace umbra::night
+{
+    namespace
+    {
+        std::size_t U(int i) { return static_cast<std::size_t>(i); }
+
+        bool Up(const Guest &g) { return !g.down && !g.dead; }
+    }
+
+    BoardView MakeView(const NightDef &def, const NightState &state, int viewer)
+    {
+        BoardView view;
+        const bool all = viewer < 0 || state.guests[U(viewer)].dead;
+
+        // 1. Each cell: its shape when opened; lit when a guest the viewer controls lights it.
+        for (int c = 0; c < maxCells; ++c)
+        {
+            const Cell &cell = state.cells[U(c)];
+            CellView &v = view.cells[U(c)];
+            if (!cell.opened)
+                continue;
+            v.opened = true;
+            v.kind = def.rooms[U(cell.room)].kind;
+            v.doors = cell.doors;
+            for (int d = 0; d < 4; ++d)
+                if (Doorway(def, state, c, d))
+                    v.doorways = static_cast<std::uint8_t>(v.doorways | (1u << d));
+            v.lit = all;
+            for (int g = 0; g < state.count && !v.lit; ++g)
+                if (Controls(state, viewer, g) && Up(state.guests[U(g)]))
+                    v.lit = Lit(def, state, state.guests[U(g)].cell, c, Stat(def, state, g, StatKind::Light));
+        }
+
+        // 2. The viewer's steps: legal moves on a turn the viewer plays.
+        const int acting = Current(state);
+        if (!all && acting >= 0 && Controls(state, viewer, acting) && !state.battle.active)
+        {
+            const std::vector<Action> legal = LegalActions(def, state);
+            for (std::size_t i = 0; i < legal.size(); ++i)
+                if (legal[i].kind == ActionKind::Move && legal[i].a < 4)
+                    view.cells[U(Neighbour(def, state.guests[U(acting)].cell, legal[i].a))].step = static_cast<std::int8_t>(i);
+        }
+
+        // 3. Pawns and monsters in lit cells only (the viewer's own pawn always).
+        for (int g = 0; g < state.count; ++g)
+        {
+            const Guest &guest = state.guests[U(g)];
+            if (guest.dead || (g != viewer && !view.cells[U(guest.cell)].lit))
+                continue;
+            view.pawns.push_back({g, guest.cell, g == viewer, g != viewer && Controls(state, viewer, g), IsTaken(state, g)});
+        }
+        for (std::size_t m = 0; m < state.monsters.size(); ++m)
+        {
+            const Monster &monster = state.monsters[m];
+            if (monster.hp > 0 && view.cells[U(monster.cell)].lit)
+                view.monsters.push_back({static_cast<int>(m), monster.cell, def.monsters[U(monster.kind)].taken >= 0});
+        }
+        return view;
+    }
+
+    glm::vec3 CellCenter(const NightDef &def, int cell)
+    {
+        const auto &b = def.rules.board;
+        const float x = static_cast<float>(cell % b.width) - static_cast<float>(b.width - 1) * 0.5F;
+        const float z = static_cast<float>(cell / b.width) - static_cast<float>(b.height - 1) * 0.5F;
+        return {x * cellSize, 0.0F, z * cellSize};
+    }
+
+    int CellAtPoint(const NightDef &def, glm::vec3 point)
+    {
+        const auto &b = def.rules.board;
+        const int x = static_cast<int>(std::floor(point.x / cellSize + static_cast<float>(b.width) * 0.5F));
+        const int z = static_cast<int>(std::floor(point.z / cellSize + static_cast<float>(b.height) * 0.5F));
+        return CellAt(def, x, z);
+    }
+}
