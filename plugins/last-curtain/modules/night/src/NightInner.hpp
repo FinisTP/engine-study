@@ -25,4 +25,9 @@ namespace umbra::night::inner
     template <class T> std::int16_t I16(T v) { return static_cast<std::int16_t>(v); }
 
     void BuildBoard(const NightDef &def, NightState &state); // Board.cpp: deck and foyer
+
+    // Turn order: high roll first, then higher speed, then lower index (Turn.cpp).
+    std::array<std::int8_t, maxGuests> Order(const std::array<int, maxGuests> &rolls, const std::array<int, maxGuests> &speeds, int count);
+    void StartTurn(const NightDef &def, NightState &state); // the current guest's moves
+    void EndTurn(const NightDef &def, NightState &state);   // bonus room, then the next guest
 }

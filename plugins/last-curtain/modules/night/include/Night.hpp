@@ -4,6 +4,7 @@
 
 #include <array>
 #include <cstdint>
+#include <vector>
 
 // The night as one copyable value and the rules that change it (Night.md).
 namespace umbra::night
@@ -16,6 +17,39 @@ namespace umbra::night
         std::int8_t room = -1;
         std::uint8_t doors = 0;
         bool opened = false;
+        bool resolved = false; // its item, event, trap or omen is taken care of
+    };
+
+    struct Guest
+    {
+        std::int16_t hp = 0, maxHp = 0, might = 0, sanity = 0, speed = 0; // base values (levels, rooms, events)
+        std::int8_t cell = -1, level = 1, group = -1;
+        std::int16_t xp = 0;
+        std::array<std::int8_t, maxCarry> items{-1, -1, -1, -1, -1, -1}; // items.csv rows, -1 = empty
+        std::uint8_t omens = 0;        // omens.csv rows held, as bits
+        std::uint64_t bonusUsed = 0;   // cells whose bonus this guest has had, as bits
+        bool down = false, dead = false;
+        std::int8_t movesLeft = 0;
+    };
+
+    struct FloorItem
+    {
+        std::int8_t cell = -1, item = -1;
+    };
+
+    enum class ActionKind : std::uint8_t
+    {
+        Move, UseItem, DropItem, PickUp, EndTurn,
+        TakeOmen, LeaveOmen, Persuade, Attack, Join, Strike, Guard, Leave, LevelUp, Power
+    };
+
+    // Move: a = direction 0-3, or transportMove. UseItem/DropItem: a = slot. PickUp: a = index in `floor`.
+    inline constexpr std::int8_t transportMove = 4;
+    struct Action
+    {
+        ActionKind kind = ActionKind::EndTurn;
+        std::int8_t a = -1, b = -1;
+        bool operator==(const Action &) const = default;
     };
 
     // Everything that changes during a night. No pointers, strings or maps: bots copy it to look ahead.
@@ -26,9 +60,27 @@ namespace umbra::night
         std::array<std::int8_t, 64> deck{}; // rooms.csv rows still to place, shuffled
         std::int8_t deckSize = 0, deckNext = 0, placed = 0;
         std::int8_t foyer = -1, understage = -1; // cells
+
+        std::array<Guest, maxGuests> guests{};
+        std::array<std::int8_t, maxGuests> order{}; // who acts in which place of a round
+        std::int8_t count = 0;                      // guests tonight
+        std::int8_t round = 1, turn = 0;            // turn: place in `order`
+        std::int8_t player = -1;
+        bool over = false; // the night has ended
+        std::vector<FloorItem> floor;
     };
 
-    NightState NewNight(const NightDef &def, std::uint64_t seed);
+    // A night with every guest in the foyer; `player` is the guest a person plays (-1: bots only).
+    NightState NewNight(const NightDef &def, std::uint64_t seed, int player = -1);
+
+    // The turn (Turn.cpp).
+    int Current(const NightState &state); // the guest to act; -1 when the night is over
+    std::vector<Action> LegalActions(const NightDef &def, const NightState &state);
+    bool Apply(const NightDef &def, NightState &state, const Action &action); // false and no change if not legal
+    int Hour(const NightDef &def, const NightState &state);
+    int Minute(const NightDef &def, const NightState &state);
+    // Base + worn items + omens (+ buffs in battle). Light: how many steps the guest's light reaches.
+    int Stat(const NightDef &def, const NightState &state, int guest, StatKind kind);
 
     // The board (Board.cpp). Directions: 0 N, 1 E, 2 S, 3 W.
     int CellAt(const NightDef &def, int x, int y); // -1 outside the grid

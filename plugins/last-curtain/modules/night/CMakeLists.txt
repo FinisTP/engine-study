@@ -8,6 +8,7 @@ target_sources(
         src/NightData.cpp
         src/Night.cpp
         src/Board.cpp
+        src/Turn.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
