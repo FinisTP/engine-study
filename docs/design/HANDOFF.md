@@ -1,4 +1,4 @@
-# The Last Curtain: where things stand (2026-11-15, after plan 2b)
+# The Last Curtain: where things stand (2026-11-15, after plan 2c)
 
 For whoever continues this work, in any session. Read this first.
 
@@ -32,9 +32,14 @@ For whoever continues this work, in any session. Read this first.
   groups between any guests; bots that work toward goals. The soak checks every band
   (`rules.json` "balance") and holds; the tuning steps are in `Balance.md`. Record and the Windows
   checklist: `../testing/s27-goals-and-board.md`.
-- **Next: plan 2c, the screen** (the same design): a turn menu, walking clicks one step at a time,
-  a Stay/Back confirm for new rooms, right-click to inspect, input by state, sliding pawns, a
-  following camera with drag and Focus, numbered group rings, walls wherever a guest cannot pass.
+- **Plan 2c (the screen): implemented 2026-11-15**, `#UMBRA-146` to `#UMBRA-156` (plan
+  `plans/2026-11-14-goals-plan-2c.md`). First, by the user's word, no ally goals (four new goals,
+  bots and balance re-measured). Then walls wherever a guest cannot pass; a turn menu; walking clicks
+  one sliding step at a time with a red path past the moves left; Stay/Back at a closed door; input
+  by state; inspect; a save menu; bots that think (max(0.4 s, the decision's time)) and slide; a
+  following camera with drag and Focus; labels and numbered group rings; the goal's progress.
+  Record and the Windows play checklist: `../testing/s28-the-screen.md`.
+- **Next: plan 3, the model's lines** (after the user plays plans 2-2c on Windows).
 
 ## Decided by the user (2026-11-14)
 
@@ -44,6 +49,7 @@ For whoever continues this work, in any session. Read this first.
 
 ## Decided by the user (2026-11-15)
 
+- No ally goals: winning a guest over is never a personal goal.
 - Room goals were too easy (95%): goal rooms are now dealt within the first 65 rooms; keepsake rooms
   stay within 35.
 
@@ -52,7 +58,8 @@ For whoever continues this work, in any session. Read this first.
 1. MSVC warnings in `plugins/last-curtain` (not yet reported).
 2. The Windows check and a first play of plan 2 (`../testing/s26-board-on-screen.md` §4), and
    whether chatty bots asking in round 1 feels like too much (§3).
-3. The Windows check of plan 2b (`../testing/s27-goals-and-board.md` §4) and the fill-ins marked
+3. The Windows play check of plan 2c (`../testing/s28-the-screen.md` §4).
+4. The Windows check of plan 2b (`../testing/s27-goals-and-board.md` §4) and the fill-ins marked
    [call] there (six new events, the keepsakes' rooms, speeds, Khang distrusting Lan).
 
 Plan 1 is accepted by the user (2026-11-14): MSVC tests and `night-soak` match Linux.
