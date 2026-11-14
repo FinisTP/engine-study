@@ -18,7 +18,7 @@ namespace umbra::night
     {
         int nights = 0, faults = 0;
         std::array<SoakForm, maxGuests> forms{}; // by marked guest
-        int companyWins = 0, takenWins = 0;
+        int companyWins = 0, takenWins = 0, allFinished = 0; // allFinished: everyone did their goal, no hunt
         int playerWins = 0;                        // nights guest 0's side won
         long long rooms = 0, monsterKills = 0, minionKills = 0, levels = 0, downs = 0, deaths = 0;
         std::array<int, maxGuests> marked{};

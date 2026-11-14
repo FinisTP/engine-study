@@ -28,7 +28,7 @@ namespace
         for (int i = 0; i < 400 && (!play.PlayerTurn() || play.State().chat.active || play.Screen() != "actions"); ++i)
         {
             Settle(play);
-            if (play.State().chat.active)
+            if (play.State().chat.active && play.PlayerTurn())
                 play.HandleUi("chat", "answer", "0");
             else
                 play.Update(10.0F);

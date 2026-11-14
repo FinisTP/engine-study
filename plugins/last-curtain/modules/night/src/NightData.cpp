@@ -241,12 +241,12 @@ namespace umbra::night
                                buffs.Int(r, "amount"), buffs.Int(r, "rounds")});
 
         Sheet styles(diagnostics, folder, "styles.csv", {"style", "explore", "fight", "loot", "bonus", "fleeBelowHpPercent", "avoidGuests",
-                                                         "healBelowPercent", "huntHpPercent", "huntNearSteps", "crowd", "chatty"});
+                                                         "healBelowPercent", "huntHpPercent", "huntNearSteps", "crowd", "chatty", "greed"});
         for (int r = 0; r < styles.Rows(); ++r)
             d.styles.push_back({styles.Text(r, "style"), styles.Int(r, "explore"), styles.Int(r, "fight"), styles.Int(r, "loot"),
                                 styles.Int(r, "bonus"), styles.Int(r, "fleeBelowHpPercent"), styles.Int(r, "avoidGuests"),
                                 styles.Int(r, "healBelowPercent"), styles.Int(r, "huntHpPercent"), styles.Int(r, "huntNearSteps"), styles.Int(r, "crowd"),
-                                styles.Int(r, "chatty")});
+                                styles.Int(r, "chatty"), styles.Int(r, "greed")});
 
         Sheet items(diagnostics, folder, "items.csv", {"id", "name", "kind", "effect", "amount", "buff", "weight", "text", "room"});
         for (int r = 0; r < items.Rows(); ++r)

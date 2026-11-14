@@ -66,6 +66,11 @@ namespace umbra::night
             }
             // 2. The outcome, by the form that was marked.
             const Outcome outcome = Result(state);
+            if (outcome == Outcome::Company && !turned)
+            {
+                ++r.allFinished;
+                continue;
+            }
             if (outcome == Outcome::Running || !turned)
             {
                 ++r.faults;
@@ -93,7 +98,7 @@ namespace umbra::night
             return std::to_string(tenths / 10) + "." + std::to_string(tenths % 10);
         };
         const int done = std::max(1, r.nights - r.faults);
-        out << r.nights << " nights, " << r.faults << " faults\n"
+        out << r.nights << " nights, " << r.faults << " faults, " << r.allFinished << " all finished (no hunt)\n"
             << "company won the hunt " << r.companyWins << " (" << share(r.companyWins, done) << "%), the Taken won " << r.takenWins
             << "; guest 0's side won " << share(r.playerWins, done) << "%\n"
             << "per night: rooms " << each(r.rooms) << ", monster kills " << each(r.monsterKills) << ", minion kills "

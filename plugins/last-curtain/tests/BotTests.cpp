@@ -115,12 +115,12 @@ TEST_CASE("The soak report adds up (T105)", "[night][soak]")
     const NightDef def = Data();
     const SoakReport r = Soak(def, 1, 200);
     CHECK(r.nights == 200);
-    CHECK(r.nights == r.companyWins + r.takenWins + r.faults);
+    CHECK(r.nights == r.companyWins + r.takenWins + r.faults + r.allFinished);
     int hunts = 0, marked = 0;
     for (int g = 0; g < maxGuests; ++g)
         hunts += r.forms[static_cast<std::size_t>(g)].nights, marked += r.marked[static_cast<std::size_t>(g)];
-    CHECK(hunts == r.nights - r.faults);
-    CHECK(marked == r.nights - r.faults);
+    CHECK(hunts == r.nights - r.faults - r.allFinished);
+    CHECK(marked == r.nights - r.faults - r.allFinished);
 }
 
 TEST_CASE("A thousand nights have no faults (T105)", "[night][soak]")
@@ -143,4 +143,173 @@ TEST_CASE("The shipped data is balanced (T105)", "[.][night][soak][balance]")
     const SoakReport bot500 = Soak(def, 1, 500), noMinions = Soak(def, 1, 500, 1);
     // Killing minions must pay: the company wins clearly more hunts when it goes for them.
     CHECK(bot500.companyWins >= noMinions.companyWins + 500 * 5 / 100);
+}
+
+namespace
+{
+    // Opens `n` rooms in a row from `from`; fewer if a room has no door onward.
+    std::vector<int> Chain(const NightDef &def, NightState &state, int from, int n)
+    {
+        std::vector<int> cells;
+        for (int at = from; static_cast<int>(cells.size()) < n;)
+        {
+            int next = -1;
+            for (int d = 0; d < 4 && next < 0; ++d)
+                if (Doorway(def, state, at, d))
+                    next = Open(def, state, at, d);
+            if (next < 0)
+                break;
+            cells.push_back(at = next);
+        }
+        return cells;
+    }
+
+    // A night whose first guest stands in the foyer with a chain of `n` rooms ahead.
+    NightState ChainNight(const NightDef &def, int n, std::vector<int> &cells)
+    {
+        for (std::uint64_t seed = 1;; ++seed)
+        {
+            NightState state = FoyerNight(def, seed);
+            cells = Chain(def, state, state.foyer, n);
+            if (static_cast<int>(cells.size()) == n)
+                return state;
+        }
+    }
+
+    // Gives guest `g` a goal of its own (added to the data).
+    void GiveGoal(NightDef &def, NightState &state, int g, GoalKind kind, int target)
+    {
+        def.goals.push_back({g, "test", kind, target, 1, "test"});
+        state.guests[U(g)].goal = static_cast<std::int8_t>(def.goals.size() - 1);
+    }
+
+    // Plays guest g's turn by its bot; returns false if a step went back to the cell before.
+    bool PlayTurn(const NightDef &def, NightState &state, int g)
+    {
+        int left = -1;
+        while (Current(state) == g && !state.chat.active)
+        {
+            const Action a = ChooseAction(def, state, g);
+            const int before = state.guests[U(g)].cell;
+            REQUIRE(Apply(def, state, a));
+            if (a.kind == ActionKind::Move)
+            {
+                if (state.guests[U(g)].cell == left && left != before)
+                    return false;
+                left = before;
+            }
+            if (a.kind == ActionKind::EndTurn)
+                break;
+        }
+        return true;
+    }
+}
+
+TEST_CASE("A bot never steps back the way it came in a turn (T121)", "[night][bots]")
+{
+    const NightDef def = Data();
+    for (std::uint64_t seed = 1; seed <= 200; ++seed)
+    {
+        NightState state = NewNight(def, seed);
+        std::array<int, maxGuests> left;
+        left.fill(-1);
+        int round = state.round, turn = state.turn, applies = 0;
+        while (Current(state) >= 0 && !state.taken.present && applies++ < 5000)
+        {
+            if (state.round != round || state.turn != turn)
+                left.fill(-1), round = state.round, turn = state.turn;
+            const int g = Current(state);
+            const Action a = ChooseAction(def, state, g);
+            const int before = state.guests[U(g)].cell;
+            REQUIRE(Apply(def, state, a));
+            if (a.kind == ActionKind::Move && !state.battle.active)
+            {
+                INFO("seed " << seed << " guest " << g);
+                CHECK((state.guests[U(g)].cell != left[U(g)] || left[U(g)] == before));
+                left[U(g)] = before;
+            }
+        }
+    }
+}
+
+TEST_CASE("A bot walks toward its known goal room (T121)", "[night][bots]")
+{
+    NightDef def = Data();
+    def.rules.monsters.chancePercent = 0;
+    std::vector<int> cells;
+    NightState state = ChainNight(def, 3, cells);
+    const int g = Current(state), goal = cells.back();
+    GiveGoal(def, state, g, GoalKind::Room, state.cells[U(goal)].room);
+    const int start = Steps(def, state, state.foyer, goal);
+    REQUIRE(PlayTurn(def, state, g));
+    const int now = Steps(def, state, state.guests[U(g)].cell, goal);
+    CHECK((now < start || state.guests[U(g)].goalRoomSeen));
+}
+
+TEST_CASE("A bot with greed 0 leaves a worn item on the floor (T121)", "[night][bots]")
+{
+    NightDef def = Data();
+    NightState state = FoyerNight(def, 3);
+    const int g = Current(state);
+    def.styles[U(def.guests[U(g)].style)].greed = 0;
+    const int worn = [&] {
+        for (std::size_t i = 0; i < def.items.size(); ++i)
+            if (def.items[i].kind == ItemKind::Worn)
+                return static_cast<int>(i);
+        return -1;
+    }();
+    REQUIRE(worn >= 0);
+    state.floor.push_back({I8(state.foyer), I8(worn)});
+    CHECK_FALSE(ChooseAction(def, state, g).kind == ActionKind::PickUp);
+    // Healing it takes.
+    state.floor[0].item = I8(NightDef::Find(def.items, "bandage"));
+    CHECK(ChooseAction(def, state, g).kind == ActionKind::PickUp);
+}
+
+TEST_CASE("A bot whose ally goal is the player opens a chat with the player (T121)", "[night][bots]")
+{
+    NightDef def = Data();
+    NightState state = FoyerNight(def, 4, 0);
+    while (Current(state) == 0)
+        REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
+    const int g = Current(state);
+    def.styles[U(def.guests[U(g)].style)].chatty = 0; // the goal alone asks for it
+    GiveGoal(def, state, g, GoalKind::Ally, 0);
+    CHECK(ChooseAction(def, state, g) == Action{ActionKind::OpenChat, 0});
+}
+
+TEST_CASE("A bot helps a group member's known goal (T121)", "[night][bots]")
+{
+    NightDef def = Data();
+    def.rules.monsters.chancePercent = 0;
+    std::vector<int> cells;
+    NightState state = ChainNight(def, 3, cells);
+    const int g = Current(state), member = (g + 1) % state.count;
+    const int keepsake = NightDef::Find(def.items, "watch");
+    GiveGoal(def, state, g, GoalKind::Room, state.cells[U(state.foyer)].room); // its own goal: done
+    state.guests[U(g)].goalRoomSeen = true;
+    GiveGoal(def, state, member, GoalKind::Item, keepsake);
+    state.guests[U(g)].group = state.guests[U(member)].group = 5;
+    state.guests[U(g)].knows = static_cast<std::uint8_t>(1u << member);
+    state.guests[U(member)].cell = I8(cells[0]);
+    state.floor.push_back({I8(cells.back()), I8(keepsake)});
+    const int start = Steps(def, state, state.foyer, cells.back());
+    REQUIRE(PlayTurn(def, state, g));
+    CHECK(Steps(def, state, state.guests[U(g)].cell, cells.back()) < start);
+}
+
+TEST_CASE("A bot does not chase a keepsake holder it cannot see (T121)", "[night][bots]")
+{
+    NightDef def = Data();
+    def.rules.monsters.chancePercent = 0;
+    std::vector<int> cells;
+    NightState state = ChainNight(def, 6, cells);
+    const int g = Current(state), holder = (g + 1) % state.count;
+    const int keepsake = NightDef::Find(def.items, "watch");
+    GiveGoal(def, state, g, GoalKind::Item, keepsake);
+    state.guests[U(holder)].cell = I8(cells.back());
+    REQUIRE_FALSE(Lit(def, state, state.foyer, cells.back(), Stat(def, state, g, StatKind::Light)));
+    NightState carrying = state;
+    carrying.guests[U(holder)].items[0] = I8(keepsake);
+    CHECK(ChooseAction(def, carrying, g) == ChooseAction(def, state, g));
 }

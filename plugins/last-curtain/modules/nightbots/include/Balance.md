@@ -11,18 +11,27 @@ the same choice.
 1. A level: the stat of its weapon.
 2. In battle: heal below `healBelowPercent`, a boost in round 1, leave below
    `fleeBelowHpPercent`; otherwise strike the weakest enemy.
-3. A question (guest 0 in the
-   soak): the answer with the higher chance. Opening a chat with the player: when `chatty` is 5 or
-   more, or the bot likes the player.
+3. A question to answer (any bot, and guest 0 in the soak): the answer with the higher chance.
 4. Hurt below `fleeBelowHpPercent`: heal, else move away from monsters and the Taken.
 5. After midnight (company), when above `huntHpPercent`: attack the Taken in the room; else a
    minion in the room; else walk to the nearest minion; else, with a friend within
    `huntNearSteps`, toward the Taken (where any company light shows it, else the under-stage);
    otherwise toward the nearest guest.
-7. The Taken: its power on the weakest guest it can reach; attack or approach a lone guest; keep
+6. The Taken: its power on the weakest guest it can reach; attack or approach a lone guest; keep
    away from `crowd` or more guests together.
-8. Otherwise the best score: new rooms `explore`, floor items `loot`, beatable monsters `fight`,
-   unused bonus rooms `bonus`, minus `avoidGuests` for walking toward a disliked guest.
+7. Purpose (the evening), recomputed every action from what the guest knows:
+   - pick up healing, or a keepsake its own goal or a known group member's goal needs;
+   - an ally goal: `OpenChat` if the ally is the player, `Chat` if the ally is in the room;
+     a monsters goal: attack a beatable monster in the room;
+   - else walk the shortest path to the nearest target of its own goal (the goal room once opened;
+     the keepsake on its room's floor, or a holder only while lit; the ally while lit; an unresolved
+     event room; a lit beatable monster), then of a known group member's keepsake.
+8. A chat with the player: when `chatty` is 5 or more, or the bot likes the player.
+9. Otherwise the best score: new rooms `explore`, floor items `loot` x `greed` (greed 0: none),
+   beatable monsters `fight`, unused bonus rooms `bonus`, minus `avoidGuests` for walking toward a
+   disliked guest. If that is to wait, a bot with `chatty` above 0 talks with someone in the room.
+
+In the evening no bot steps back into the cell it just left during the same turn.
 
 ## Running it
 

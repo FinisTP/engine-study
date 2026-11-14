@@ -26,6 +26,9 @@ namespace umbra::night
                 : def(d), state(s), g(guest), me(s.guests[U(guest)]), style(d.styles[U(d.guests[U(guest)].style)]), legal(LegalActions(d, s)),
                   chaseMinions(minions)
             {
+                // In the evening a bot never steps back the way it came this turn.
+                if (!state.taken.present && me.movesLeft < Stat(def, state, g, StatKind::Speed))
+                    std::erase_if(legal, [&](const Action &a) { return a.kind == ActionKind::Move && Next(a) == me.from; });
             }
 
             bool Has(const Action &a) const { return std::find(legal.begin(), legal.end(), a) != legal.end(); }
@@ -218,6 +221,96 @@ namespace umbra::night
                 return {ActionKind::EndTurn};
             }
 
+            // Whether the bot's side needs this item: healing, or a keepsake of its own or a known member's goal.
+            bool Needed(int item) const
+            {
+                if (def.items[U(item)].kind == ItemKind::Heal)
+                    return true;
+                for (int o = 0; o < state.count; ++o)
+                    if (o == g || (me.group >= 0 && state.guests[U(o)].group == me.group && ((me.knows >> o) & 1u)))
+                        if (const int goal = state.guests[U(o)].goal; goal >= 0 && def.goals[U(goal)].kind == GoalKind::Item &&
+                                                                     def.goals[U(goal)].target == item && !GoalDone(def, state, o))
+                            return true;
+                return false;
+            }
+
+            // The nearest cell that guest `who`'s goal needs, as this bot knows it (-1: none).
+            int GoalCell(int who) const
+            {
+                const Guest &holder = state.guests[U(who)];
+                if (holder.goal < 0 || GoalDone(def, state, who))
+                    return -1;
+                const GoalDef &goal = def.goals[U(holder.goal)];
+                const bool mine = who == g;
+                int best = -1, bestSteps = INT_MAX;
+                auto consider = [&](int cell) {
+                    if (const int n = StepsTo(me.cell, cell); n >= 0 && n < bestSteps)
+                        best = cell, bestSteps = n;
+                };
+                switch (goal.kind)
+                {
+                case GoalKind::Room: // opened rooms are known to all
+                    for (int c = 0; mine && c < maxCells; ++c)
+                        if (state.cells[U(c)].opened && state.cells[U(c)].room == goal.target)
+                            consider(c);
+                    break;
+                case GoalKind::Item: // on the floor of its room, or carried by a guest in the light
+                    for (const FloorItem &f : state.floor)
+                        if (f.item == goal.target)
+                            consider(f.cell);
+                    for (int o = 0; o < state.count; ++o)
+                        if (o != g && o != who && Up(o) && Sees(state.guests[U(o)].cell) &&
+                            std::find(state.guests[U(o)].items.begin(), state.guests[U(o)].items.end(), goal.target) != state.guests[U(o)].items.end())
+                            consider(state.guests[U(o)].cell);
+                    break;
+                case GoalKind::Ally:
+                    if (mine && Up(goal.target) && Sees(state.guests[U(goal.target)].cell))
+                        consider(state.guests[U(goal.target)].cell);
+                    break;
+                case GoalKind::Events: // a room with a test still in it
+                    for (int c = 0; mine && c < maxCells; ++c)
+                        if (state.cells[U(c)].opened && !state.cells[U(c)].resolved && def.rooms[U(state.cells[U(c)].room)].kind == RoomKind::Event)
+                            consider(c);
+                    break;
+                case GoalKind::Monsters:
+                    for (std::size_t m = 0; mine && m < state.monsters.size(); ++m)
+                        if (state.monsters[m].hp > 0 && Sees(state.monsters[m].cell) && Beatable(static_cast<int>(m)))
+                            consider(state.monsters[m].cell);
+                    break;
+                }
+                return best;
+            }
+
+            // The goal work in reach: a chat, an attack or a pick-up here, else a step toward the target.
+            Action Purpose() const
+            {
+                // Picking up costs no step; a chat ends the turn.
+                for (const Action &a : legal)
+                    if (a.kind == ActionKind::PickUp && Needed(state.floor[U(a.a)].item))
+                        return a;
+                const int goal = me.goal < 0 || GoalDone(def, state, g) ? -1 : me.goal;
+                if (goal >= 0)
+                {
+                    const GoalDef &def0 = def.goals[U(goal)];
+                    if (def0.kind == GoalKind::Ally && def0.target == state.player && Has({ActionKind::OpenChat, I8(def0.target)}))
+                        return {ActionKind::OpenChat, I8(def0.target)};
+                    if (def0.kind == GoalKind::Ally && Has({ActionKind::Chat, I8(def0.target)}))
+                        return {ActionKind::Chat, I8(def0.target)};
+                    if (def0.kind == GoalKind::Monsters)
+                        for (const Action &a : legal)
+                            if (a.kind == ActionKind::Attack && a.a >= 0 && Beatable(a.a))
+                                return a;
+                }
+                // 1. Its own goal; 2. a known goal of a group member.
+                int target = GoalCell(g);
+                for (int o = 0; target < 0 && o < state.count; ++o)
+                    if (o != g && me.group >= 0 && state.guests[U(o)].group == me.group && ((me.knows >> o) & 1u))
+                        target = GoalCell(o);
+                if (target < 0 || target == me.cell)
+                    return {ActionKind::EndTurn};
+                return Toward(target);
+            }
+
             // The style's score for one ordinary action in the evening.
             int Score(const Action &a) const
             {
@@ -268,7 +361,7 @@ namespace umbra::night
                 case ActionKind::UseItem:
                     return a.b < 0 && Below(style.healBelowPercent) ? 50 : a.b >= 0 ? 40 : -1; // relics wake the fallen
                 case ActionKind::PickUp:
-                    return style.loot * 10;
+                    return style.greed * style.loot - 1; // greed 0: never (needed items go by Purpose)
                 case ActionKind::Attack:
                     return a.a >= 0 && Beatable(a.a) ? style.fight * 10 : -100;
                 case ActionKind::EndTurn:
@@ -297,9 +390,6 @@ namespace umbra::night
                     const int magical = ChancePercent(Stat(def, state, g, StatKind::Sanity), AnswerTarget(def, state, 1));
                     return {ActionKind::Answer, I8(physical >= magical ? 0 : 1)};
                 }
-                // A chatty bot, or one fond of the player, asks the player a question first.
-                if (state.player >= 0 && Has({ActionKind::OpenChat, I8(state.player)}) && (style.chatty >= 5 || Bond(state, g, state.player) > 0))
-                    return {ActionKind::OpenChat, I8(state.player)};
                 if (IsTaken(state, g))
                     return Taken();
                 // 2. Hurt: heal, else get away from monsters (and the Taken).
@@ -317,12 +407,23 @@ namespace umbra::night
                 }
                 if (state.taken.present)
                     return Hunt();
-                // 3. Otherwise the best score; ties to the first.
+                // 3. Goal work: its own, then a group member's.
+                if (const Action purpose = Purpose(); purpose.kind != ActionKind::EndTurn)
+                    return purpose;
+                // 4. A chatty bot, or one fond of the player, asks the player a question first.
+                if (state.player >= 0 && Has({ActionKind::OpenChat, I8(state.player)}) && (style.chatty >= 5 || Bond(state, g, state.player) > 0))
+                    return {ActionKind::OpenChat, I8(state.player)};
+                // 5. Otherwise the best score; ties to the first.
                 Action best = legal.front();
                 int bestScore = INT_MIN;
                 for (const Action &a : legal)
                     if (const int s = Score(a); s > bestScore)
                         best = a, bestScore = s;
+                // 6. Nothing better to do here: talk with someone in the room.
+                if (best.kind == ActionKind::EndTurn && style.chatty > 0)
+                    for (const Action &a : legal)
+                        if (a.kind == ActionKind::Chat)
+                            return a;
                 return best;
             }
         };

@@ -136,7 +136,8 @@ namespace umbra::night
         int huntHpPercent = 50;    // in the hunt, go for the Taken only above this share of max HP
         int huntNearSteps = 2;     // ... and with another guest this near
         int crowd = 3;             // the Taken keeps away from this many guests together
-        int chatty = 0;            // 5 or more: opens a chat with the player whenever it can
+        int chatty = 0;            // how readily it opens chats (Balance.md "The bots")
+        int greed = 10;            // 0: picks up only healing and needed keepsakes; 10: everything
     };
 
     struct NightDef
