@@ -22,5 +22,6 @@
   "hit": "{damage} damage",
   "killed": "the {foe} is destroyed",
   "goalDone": "{who} did what they came for",
-  "goalFailed": "{who} failed what they came for"
+  "goalFailed": "{who} failed what they came for",
+  "joined": "{other} joins {who}"
 }

@@ -159,7 +159,7 @@ TEST_CASE("Only recruited guests are allies (T111)", "[night][play]")
     CHECK(play.UiData()["allies"].empty());
     NightState state = FoyerNight(def, 4, 0);
     state.guests[0].group = state.guests[2].group = 0;
-    state.guests[3].approvals = 1;
+    state.approvals[3 * maxGuests + 0] = 1;
     const nlohmann::json data = Play(def, state).UiData();
     REQUIRE(data["allies"].size() == 1);
     CHECK(data["allies"][0]["name"] == def.guests[2].name);
@@ -314,7 +314,7 @@ TEST_CASE("No screen waits after the night ended (T113)", "[night][play]")
 {
     const NightDef def = Data();
     NightState state = PlayerFirst(def);
-    state.chat = {true, true, 1, 5};
+    state.chat = {true, 1, 0, 5};
     state.over = true;
     state.outcome = Outcome::Company;
     Play play(def, state);

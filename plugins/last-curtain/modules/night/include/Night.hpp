@@ -32,9 +32,8 @@ namespace umbra::night
         bool down = false, dead = false;
         std::int8_t downedBy = -1; // the guest who brought them down; -1 = the house
         std::int8_t pending = 0;   // levels earned and not yet chosen
-        std::int8_t approvals = 0;  // the player's passed answers to this guest's questions
         std::uint8_t asked = 0;     // this guest's own questions already asked (bits of its pool)
-        std::int8_t chatRound = -1; // the round this guest last opened a chat with the player
+        std::int8_t chatRound = -1; // the round this guest last opened a chat
         std::int8_t movesLeft = 0;
         std::int8_t undo = -1;          // this turn: the cell a plain last step came from (-1 none)
         std::bitset<maxCells> barred;   // this turn: cells left by an undo, not to be entered again
@@ -57,8 +56,8 @@ namespace umbra::night
     // Move: a = direction 0-3, or transportMove. UseItem/DropItem: a = slot (relic: b = the downed guest).
     // PickUp: a = index in `floor`. Attack: a = monster index or -1, b = guest or -1. Strike: a = fighter index.
     // Power: a = target guest (line, pull, swap) or cell (seal, with b = direction); -1 for area, flood, reflect.
-    // LevelUp: a = 0 Might, 1 Sanity. Chat: a = the guest to talk to. OpenChat: a bot asks the player (a = the
-    // player's guest). Answer: a = 0 physical, 1 magical.
+    // LevelUp: a = 0 Might, 1 Sanity. Chat: a = the guest to talk to (it asks a question). OpenChat: a bot asks
+    // the player (a = the player's guest). Answer: a = 0 physical, 1 magical.
     inline constexpr std::int8_t transportMove = 4;
     struct Action
     {
@@ -94,11 +93,11 @@ namespace umbra::night
 
     enum class Outcome : std::uint8_t { Running, Company, Taken };
 
-    // A chat in progress: `asker` asked the player question `question` (questions.csv row).
+    // A chat in progress: `asker` asked `answerer` question `question` (questions.csv row).
     struct ChatState
     {
-        bool active = false, byBot = false;
-        std::int8_t asker = -1, question = -1;
+        bool active = false;
+        std::int8_t asker = -1, answerer = -1, question = -1;
     };
 
     // A flooded cell, or a sealed passage (cell + direction), until the end of a round.
@@ -155,6 +154,7 @@ namespace umbra::night
         bool over = false; // the night has ended
         std::vector<FloorItem> floor;
         std::array<std::int16_t, maxGuests * maxGuests> bonds{}; // from * maxGuests + to, -1000..1000
+        std::array<std::int8_t, maxGuests * maxGuests> approvals{}; // asker * maxGuests + answerer: passed answers
         std::int8_t marked = -1; // the guest who turns, set at midnight
         Outcome outcome = Outcome::Running;
         Taken taken;

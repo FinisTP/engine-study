@@ -90,9 +90,7 @@ TEST_CASE("Chatting asks one of the guest's questions and uses the turn (T107)",
     CHECK_FALSE(state.chat.active);
     CHECK(Current(state) != 0); // the chat used the turn
 
-    // A bot never chats first through Chat; nobody chats with someone in another room.
-    const auto botLegal = LegalActions(def, state);
-    CHECK(std::none_of(botLegal.begin(), botLegal.end(), [](const Action &a) { return a.kind == ActionKind::Chat; }));
+    // Nobody chats with someone in another room.
     NightState apart = PlayerFirst(def);
     Closet(def, apart, 0);
     apart.guests[1].cell = 0;
@@ -107,7 +105,7 @@ TEST_CASE("A passed answer is one approval; three make an ally (T107)", "[night]
     {
         REQUIRE(Apply(def, state, {ActionKind::Chat, 1}));
         REQUIRE(Apply(def, state, {ActionKind::Answer, 0}));
-        CHECK(state.guests[1].approvals == talk + 1);
+        CHECK(state.approvals[1 * maxGuests + 0] == talk + 1);
         while (Current(state) != 0)
             REQUIRE(Apply(def, state, Current(state) >= 0 && LegalActions(def, state)[0].kind == ActionKind::Answer ? Action{ActionKind::Answer, 0}
                                                                                                                   : Action{ActionKind::EndTurn}));
@@ -115,7 +113,7 @@ TEST_CASE("A passed answer is one approval; three make an ally (T107)", "[night]
     CHECK(state.guests[0].group == 0);
     CHECK(state.guests[1].group == 0);
     // A second ally the same way, then the group is full.
-    state.guests[2].approvals = 2;
+    state.approvals[2 * maxGuests + 0] = 2;
     REQUIRE(Apply(def, state, {ActionKind::Chat, 2}));
     REQUIRE(Apply(def, state, {ActionKind::Answer, 0}));
     CHECK(state.guests[2].group == 0);
@@ -147,7 +145,7 @@ TEST_CASE("Questions are not asked twice while unasked ones remain (T107)", "[ni
     std::vector<int> asked;
     for (int talk = 0; talk < 5; ++talk)
     {
-        state.guests[0].group = -1, state.guests[1].group = -1, state.guests[1].approvals = 0; // never join
+        state.guests[0].group = -1, state.guests[1].group = -1, state.approvals[1 * maxGuests + 0] = 0; // never join
         REQUIRE(Apply(def, state, {ActionKind::Chat, 1}));
         asked.push_back(state.chat.question);
         REQUIRE(Apply(def, state, {ActionKind::Answer, 0}));
@@ -205,4 +203,73 @@ TEST_CASE("Allies fight beside the player and are the player's to move (T99)", "
     for (int f = 0; f < state.battle.count; ++f)
         allyBeside = allyBeside || (state.battle.fighters[U(f)].guest == ally && state.battle.fighters[U(f)].side == 0);
     CHECK(allyBeside);
+}
+
+namespace
+{
+    // Every question is passed with any answer.
+    NightDef EasyTalk()
+    {
+        NightDef def = Data();
+        def.rules.monsters.chancePercent = 0;
+        for (QuestionDef &q : def.questions)
+            q.physicalTarget = q.magicalTarget = -20;
+        return def;
+    }
+
+    // Plays EndTurn until it is guest g's board turn.
+    void ToTurnOf(const NightDef &def, NightState &state, int g)
+    {
+        while (Current(state) != g)
+            REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
+    }
+
+    std::size_t Pair(int asker, int answerer) { return static_cast<std::size_t>(asker * maxGuests + answerer); }
+}
+
+TEST_CASE("Two bots can chat; three passes bring the other into the opener's group (T120)", "[night][company]")
+{
+    const NightDef def = EasyTalk();
+    NightState state = FoyerNight(def, 6); // no player: all bots
+    const int g = state.order[0], o = state.order[1];
+    for (int time = 1; time <= def.rules.persuade.approvals; ++time)
+    {
+        ToTurnOf(def, state, g);
+        REQUIRE(Apply(def, state, {ActionKind::Chat, static_cast<std::int8_t>(o)}));
+        REQUIRE(Current(state) == g); // the opener answers the other's question
+        REQUIRE(Apply(def, state, {ActionKind::Answer, 0}));
+        CHECK(state.approvals[Pair(o, g)] == time);
+        CHECK(Current(state) != g); // the chat used the turn
+    }
+    CHECK(state.guests[static_cast<std::size_t>(g)].group == 1 + g);
+    CHECK(state.guests[static_cast<std::size_t>(o)].group == 1 + g);
+    CHECK(GoalDone(def, state, g) == (def.goals[static_cast<std::size_t>(state.guests[static_cast<std::size_t>(g)].goal)].kind == GoalKind::Ally &&
+                                      def.goals[static_cast<std::size_t>(state.guests[static_cast<std::size_t>(g)].goal)].target == o));
+}
+
+TEST_CASE("Both bots learn each other's goal on a pass (T120)", "[night][company]")
+{
+    const NightDef def = EasyTalk();
+    NightState state = FoyerNight(def, 6);
+    const int g = state.order[0], o = state.order[1];
+    ToTurnOf(def, state, g);
+    REQUIRE(Apply(def, state, {ActionKind::Chat, static_cast<std::int8_t>(o)}));
+    REQUIRE(Apply(def, state, {ActionKind::Answer, 1}));
+    CHECK((state.guests[static_cast<std::size_t>(g)].knows >> o) & 1u);
+    CHECK((state.guests[static_cast<std::size_t>(o)].knows >> g) & 1u);
+}
+
+TEST_CASE("Groups hold at most three (T120)", "[night][company]")
+{
+    const NightDef def = EasyTalk();
+    NightState state = FoyerNight(def, 6);
+    const int g = state.order[0];
+    ToTurnOf(def, state, g);
+    int members = 1;
+    state.guests[static_cast<std::size_t>(g)].group = static_cast<std::int8_t>(1 + g);
+    for (int o = 0; o < state.count && members < 3; ++o)
+        if (o != g)
+            state.guests[static_cast<std::size_t>(o)].group = static_cast<std::int8_t>(1 + g), ++members;
+    for (const Action &a : LegalActions(def, state))
+        CHECK(a.kind != ActionKind::Chat);
 }

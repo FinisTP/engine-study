@@ -349,8 +349,8 @@ nlohmann::json Play::UiData() const
             continue;
         if (Controls(state_, state_.player, g))
             data["allies"].push_back({{"name", def_.guests[U(g)].name}, {"hp", other.hp}, {"maxHp", Stat(def_, state_, g, StatKind::MaxHp)}});
-        else if (other.approvals > 0)
-            data["winning"].push_back({{"name", def_.guests[U(g)].name}, {"approvals", other.approvals}, {"goal", def_.rules.persuade.approvals}});
+        else if (const int won = state_.approvals[U(g * maxGuests + state_.player)]; won > 0)
+            data["winning"].push_back({{"name", def_.guests[U(g)].name}, {"approvals", won}, {"goal", def_.rules.persuade.approvals}});
     }
     for (const PawnView &pawn : MakeView(def_, state_, state_.player).pawns)
         if (pawn.guest != me)
@@ -387,7 +387,7 @@ nlohmann::json Play::UiData() const
                                {"chance", ChancePercent(stat, target)}, {"answer", std::to_string(a)}});
         }
         const std::string name = def_.guests[U(asker)].name;
-        data["chat"] = {{"name", name}, {"question", q.text}, {"approvals", state_.guests[U(asker)].approvals},
+        data["chat"] = {{"name", name}, {"question", q.text}, {"approvals", state_.approvals[U(asker * maxGuests + state_.player)]},
                         {"goal", def_.rules.persuade.approvals}, {"answers", answers},
                         {"bondNote", bond > 0 ? name + " likes you: the targets are lower." : bond < 0 ? name + " distrusts you: the targets are higher." : ""},
                         {"likes", bond > 0}, {"distrusts", bond < 0}};

@@ -43,7 +43,7 @@ namespace umbra::night::inner
     std::vector<Fighter> Side(const NightState &state, int guest); // a guest and their allies in the room
     // Company.cpp
     void CompanyLegal(const NightDef &def, const NightState &state, int guest, std::vector<Action> &legal);
-    void OpenChat(const NightDef &def, NightState &state, int asker, bool byBot); // draws a question
+    void OpenChat(const NightDef &def, NightState &state, int opener, int other, bool askedByOpener); // draws a question
     void AnswerChat(const NightDef &def, NightState &state, int answer);
     void EndNight(NightState &state, Outcome outcome);
     // Hunt.cpp

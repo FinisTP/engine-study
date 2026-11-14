@@ -286,7 +286,7 @@ namespace umbra::night
         if (state.battle.active)
             return state.battle.fighters[U(state.battle.turn)].guest;
         if (state.chat.active)
-            return state.player; // the player answers a question
+            return state.chat.answerer;
         for (int g = 0; g < state.count; ++g)
             if (state.guests[U(g)].pending > 0 && !state.guests[U(g)].dead)
                 return g;
@@ -392,17 +392,17 @@ namespace umbra::night
             UsePower(def, state, action);
             break;
         case ActionKind::Chat:
-            OpenChat(def, state, action.a, false);
+            OpenChat(def, state, g, action.a, false); // the other guest asks
             break;
         case ActionKind::OpenChat:
-            OpenChat(def, state, g, true);
+            OpenChat(def, state, g, action.a, true); // the bot asks the player
             break;
         case ActionKind::Answer:
         {
-            // A chat the player opened uses their turn; one a bot opened does not.
-            const bool byBot = state.chat.byBot;
+            // A chat the answerer opened uses its turn; a question from a bot on its turn does not.
+            const bool opened = state.chat.answerer == BoardGuest(state);
             AnswerChat(def, state, action.a);
-            if (!byBot)
+            if (opened)
                 inner::EndTurn(def, state);
             break;
         }

@@ -32,8 +32,18 @@ namespace umbra::night
     int AnswerTarget(const NightDef &def, const NightState &state, int answer)
     {
         const QuestionDef &q = def.questions[U(state.chat.question)];
-        const int bond = Bond(state, state.chat.asker, state.player);
+        const int bond = Bond(state, state.chat.asker, state.chat.answerer);
         return (answer == 0 ? q.physicalTarget : q.magicalTarget) + (bond > 0 ? -def.rules.persuade.bond : bond < 0 ? def.rules.persuade.bond : 0);
+    }
+
+    namespace
+    {
+        // The group `g` recruits into: the player's is 0, a bot's is 1 + its index (-1: none yet).
+        int GroupOf(const NightState &state, int g)
+        {
+            const int group = state.guests[U(g)].group;
+            return group >= 0 ? group : g == state.player ? 0 : 1 + g;
+        }
     }
 
     void inner::CompanyLegal(const NightDef &def, const NightState &state, int g, std::vector<Action> &legal)
@@ -48,21 +58,26 @@ namespace umbra::night
             // 1. The only fight between guests is with the Taken, after midnight.
             if (state.taken.present && (IsTaken(state, g) || IsTaken(state, o)))
                 legal.push_back({ActionKind::Attack, -1, I8(o)});
-            if (state.taken.present || GroupSize(state, 0) >= 3)
+            if (state.taken.present)
                 continue;
-            // 2. The player chats with a guest not yet theirs.
-            if (g == player && other.group != 0)
+            // 2. Any guest may talk with one not in its group, once a round, while its group has room
+            //    and the other is not yet won over.
+            if (me.chatRound == state.round)
+                continue;
+            if (other.group != GroupOf(state, g) && GroupSize(state, GroupOf(state, g)) < 3 &&
+                state.approvals[U(o * maxGuests + g)] < def.rules.persuade.approvals)
                 legal.push_back({ActionKind::Chat, I8(o)});
-            // 3. A bot may ask the player a question, before it moves, once a turn.
-            if (o == player && g != player && me.group != 0 && me.approvals < def.rules.persuade.approvals && me.chatRound != state.round &&
+            // 3. A bot may ask the player a question, before it moves.
+            if (o == player && me.group != 0 && GroupSize(state, 0) < 3 && state.approvals[U(g * maxGuests + o)] < def.rules.persuade.approvals &&
                 me.movesLeft == Stat(def, state, g, StatKind::Speed))
                 legal.push_back({ActionKind::OpenChat, I8(o)});
         }
     }
 
-    void inner::OpenChat(const NightDef &def, NightState &state, int asker, bool byBot)
+    void inner::OpenChat(const NightDef &def, NightState &state, int opener, int other, bool askedByOpener)
     {
-        // A question of the asker's pool not asked yet (all asked: any of them).
+        // The asker puts a question of its pool not asked yet (all asked: any of them) to the answerer.
+        const int asker = askedByOpener ? opener : other, answerer = askedByOpener ? other : opener;
         Guest &guest = state.guests[U(asker)];
         std::vector<int> pool, fresh;
         for (std::size_t q = 0; q < def.questions.size(); ++q)
@@ -76,25 +91,29 @@ namespace umbra::night
             return;
         const int pick = fresh.empty() ? Below(state, static_cast<int>(pool.size())) : fresh[U(Below(state, static_cast<int>(fresh.size())))];
         guest.asked = static_cast<std::uint8_t>(guest.asked | (1u << pick));
-        if (byBot)
-            guest.chatRound = state.round;
-        state.chat = {true, byBot, I8(asker), I8(pool[U(pick)])};
+        state.guests[U(opener)].chatRound = state.round;
+        state.chat = {true, I8(asker), I8(answerer), I8(pool[U(pick)])};
     }
 
     void inner::AnswerChat(const NightDef &def, NightState &state, int answer)
     {
-        // A passed roll is one approval; enough of them, and the asker joins the player's group.
-        const int asker = state.chat.asker, player = state.player;
-        const Check check = RollCheck(def, state, player, answer == 0 ? StatKind::Might : StatKind::Sanity, AnswerTarget(def, state, answer));
-        Guest &guest = state.guests[U(asker)];
+        // 1. A passed roll is one approval, and the asker's goal is told (between bots, both ways).
+        const int asker = state.chat.asker, answerer = state.chat.answerer;
+        const Check check = RollCheck(def, state, answerer, answer == 0 ? StatKind::Might : StatKind::Sanity, AnswerTarget(def, state, answer));
+        std::int8_t &approvals = state.approvals[U(asker * maxGuests + answerer)];
         if (check.passed)
         {
-            guest.approvals = I8(std::min<int>(guest.approvals + 1, def.rules.persuade.approvals));
-            state.guests[U(player)].knows = static_cast<std::uint8_t>(state.guests[U(player)].knows | (1u << asker)); // its goal is told
+            approvals = I8(std::min<int>(approvals + 1, def.rules.persuade.approvals));
+            Guest &a = state.guests[U(asker)], &b = state.guests[U(answerer)];
+            b.knows = static_cast<std::uint8_t>(b.knows | (1u << asker));
+            if (asker != state.player && answerer != state.player)
+                a.knows = static_cast<std::uint8_t>(a.knows | (1u << answerer));
         }
-        if (guest.approvals >= def.rules.persuade.approvals && GroupSize(state, 0) < 3)
-            state.guests[U(player)].group = guest.group = 0;
-        Log(state, LogKind::Persuade, player, asker, check.passed ? 1 : 0, guest.approvals);
+        // 2. Enough approvals: the asker joins the answerer's group.
+        const int group = GroupOf(state, answerer);
+        if (approvals >= def.rules.persuade.approvals && GroupSize(state, group) < 3)
+            state.guests[U(answerer)].group = state.guests[U(asker)].group = I8(group);
+        Log(state, LogKind::Persuade, answerer, asker, check.passed ? 1 : 0, approvals);
         state.chat.active = false;
     }
 

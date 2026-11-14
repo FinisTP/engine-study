@@ -89,18 +89,21 @@ Killing a monster gives its XP to every standing guest on the other side; a leve
 Guests never fight each other before midnight; afterwards only the Taken. Allies of the player
 in the room fight on the player's side.
 
-Winning a guest over (before midnight, while group 0 has fewer than 3): the player's guest
-`Chat`s with a guest in the room (it uses the turn), or a bot opens one at the start of its turn
-(`OpenChat`; it does not use the player's turn). A random question of that guest's five
-(`questions.csv`, not one asked before while any remain) waits for `Answer` 0 (d20 + Might) or 1
-(d20 + Sanity) against that answer's target, `persuade.bond` easier if the guest likes the player,
-harder if not (`AnswerTarget`). A pass is one approval; `persuade.approvals` of them and the guest
-joins group 0. `ChancePercent(stat, target)` is what the screens show.
+Talking (before midnight, once a round each): any guest may `Chat` with a guest in the room
+who is not in its group (it uses the turn). The other guest asks it one of its five questions
+(`questions.csv`, not one asked before while any remain); a bot may also ask the player at the
+start of its turn (`OpenChat`; it does not use the player's turn). The answerer (`Current`) picks
+`Answer` 0 (d20 + Might) or 1 (d20 + Sanity) against that answer's target, `persuade.bond` easier
+if the asker likes the answerer, harder if not (`AnswerTarget`). A pass is one approval
+(`NightState::approvals`, asker * 7 + answerer) and tells the answerer the asker's goal (between
+two bots, both ways). At `persuade.approvals` the asker joins the answerer's group, while it has
+fewer than 3: the player's group is 0, a bot's is 1 + its index. `ChancePercent(stat, target)` is
+what the screens show.
 
 ## Goals (`Company.cpp`, `Turn.cpp`, `Battle.cpp`)
 
 Each guest draws one of its own `goals.csv` rows at `NewNight`, before the board; it knows only
-its own (`Guest::knows`, bits). A passed chat answer tells the player the asker's goal. Kinds:
+its own (`Guest::knows`, bits). A passed chat answer tells the answerer the asker's goal (see Talking). Kinds:
 `room` (entering the room sets `goalRoomSeen`), `item` (a keepsake carried at midnight), `ally`
 (the named guest in the same group), `events` (passed event rolls, traps not counted) and
 `monsters` (ordinary monsters this guest destroyed): `goalCount` against `count`. A keepsake

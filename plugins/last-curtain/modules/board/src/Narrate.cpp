@@ -15,7 +15,7 @@ namespace umbra::night
         constexpr const char *keys[] = {
             "move", "open", "fight", "chat", "answer", "endTurn", "power", "strike",
             "guard", "leave", "item", "pickup", "drop", "level", "check", "passed", "failed", "found", "down",
-            "died", "hit", "killed", "goalDone", "goalFailed"};
+            "died", "hit", "killed", "goalDone", "goalFailed", "joined"};
 
         std::size_t U(int i) { return static_cast<std::size_t>(i); }
 
@@ -106,6 +106,8 @@ namespace umbra::night
                     line = Fill(captions, e.kind == LogKind::Down ? "down" : "died", {{"who", GuestName(def, e.who)}});
                 else if (e.kind == LogKind::Goal)
                     line = Fill(captions, e.a ? "goalDone" : "goalFailed", {{"who", GuestName(def, e.who)}});
+                else if (e.kind == LogKind::Persuade && e.a && e.b >= def.rules.persuade.approvals)
+                    line = Fill(captions, "joined", {{"who", GuestName(def, e.who)}, {"other", GuestName(def, e.other)}});
                 else if (e.kind == LogKind::Hit)
                     line = Fill(captions, "hit", {{"damage", std::to_string(e.a)}});
                 else if (e.kind == LogKind::Monster && e.other == 1 && e.a >= 0)
