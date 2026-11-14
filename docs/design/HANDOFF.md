@@ -1,4 +1,4 @@
-# The Last Curtain: where things stand (2026-11-14)
+# The Last Curtain: where things stand (2026-11-14, after plan 2)
 
 For whoever continues this work, in any session. Read this first.
 
@@ -17,19 +17,32 @@ For whoever continues this work, in any session. Read this first.
   roll (plain d20, target rising with omens and hours) turns that guest at once and time jumps to
   midnight; no fights between guests before midnight; the Taken's own minions after midnight,
   each taking a share of its HP. Record: §5 of `../testing/s25-night-simulation.md`.
+- **Plan 2 (the board on screen): implemented 2026-11-14**, `#UMBRA-121` to `#UMBRA-131`
+  (design `2026-11-14-board-on-screen.md`, plan `plans/2026-11-14-board-on-screen-plan.md`). Push back
+  and the conversation rule in the rules; the `board` module (what the player sees, the narrator,
+  picking); `LastCurtain.exe` in `plugins/last-curtain/apps/LastCurtain` (`README.md`): table view,
+  the player's turn, paced bot turns with captions, chat, event, dice, omen, battle, Turn and end
+  screens, start screen, saves and Continue. Linux GCC/Clang/ASan 55/55 and SwiftShader pictures.
+  Record and the Windows play checklist: `../testing/s26-board-on-screen.md`.
 
 ## Decided by the user (2026-11-14)
 
 1. The plan captures what they want.
-2. The night has its own small data-driven battle rules (plan 2 reuses the engine's battle screen).
+2. The night has its own small data-driven battle rules (plan 2 drew its own battle screen).
 3. The plan ran in one session, task by task.
 
 ## Waiting on the user
 
 1. MSVC warnings in `plugins/last-curtain` (not yet reported).
+2. The Windows check and a first play of plan 2 (`../testing/s26-board-on-screen.md` §4), and
+   whether chatty bots asking in round 1 feels like too much (§3).
 
-Plan 1 is accepted by the user (2026-11-14): MSVC tests and `night-soak` match Linux. Next: plan 2,
-the board on screen.
+Plan 1 is accepted by the user (2026-11-14): MSVC tests and `night-soak` match Linux.
+
+Plan 2 decisions (user, 2026-11-14): a tabletop view first; a separate program; the conversation
+rule (5 questions per guest, two answers each with its own target, 3 approvals over separate turns);
+End turn at any time; events roll one fixed stat and may push the guest back; battles in the
+real-size room come in a later plan.
 
 Decided: level 5 out of reach in a night is intended (levels build character, not min-maxing).
 The user lets Claude edit and commit in the checkout directly (2026-11-14).
@@ -52,11 +65,10 @@ XP steps; guard as a battle option; where debuffs come from; how often relics ap
 omen grants and the curse targets; the win-rate band for balancing (40% to 60%); the Taken forms'
 stats; the build phases.
 
-## After plan 1
+## Next
 
-Plan 2: the board on screen (3D board, light and dark, camera on the acting guest, UI, the
-player's turn, allies, the battle screen). Plan 3: the model's lines. Plan 4: art. Each is written
-when the one before works.
+Plan 3: the model's lines (the captions and chats worded by the built-in model). Plan 4: art,
+walking the rooms and battles in the real-size room. Each is written when the one before works.
 
 ## Other open items from before the pivot
 
