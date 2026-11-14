@@ -5,6 +5,7 @@
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
+#include <cctype>
 #include <charconv>
 #include <fstream>
 #include <initializer_list>
@@ -78,6 +79,17 @@ namespace umbra::night
                 if (!cell.empty() && !ParseInt(cell, value))
                     Bad(Where(row, column), "'" + cell + "' is not a whole number");
                 return value;
+            }
+
+            // Six hex digits, RRGGBB.
+            std::uint32_t Color(int row, const char *column)
+            {
+                const std::string cell = Text(row, column);
+                if (cell.size() == 6 && std::all_of(cell.begin(), cell.end(), [](unsigned char c) { return std::isxdigit(c) != 0; }))
+                    return static_cast<std::uint32_t>(std::stoul(cell, nullptr, 16));
+                if (!cell.empty())
+                    Bad(Where(row, column), "'" + cell + "' is not a colour (six hex digits, RRGGBB)");
+                return 0;
             }
 
             // The position of the cell's word in the list.
@@ -361,7 +373,7 @@ namespace umbra::night
             events.Bad(events.file, "at most 64 events and traps");
 
         Sheet guests(diagnostics, folder, "guests.csv", {"id", "name", "pronoun", "weapon", "hp", "might", "sanity", "speed", "style",
-                                                         "taken", "takenHp", "takenMight", "takenSanity", "takenSpeed", "power"});
+                                                         "taken", "takenHp", "takenMight", "takenSanity", "takenSpeed", "color", "power"});
         for (int r = 0; r < guests.Rows(); ++r)
         {
             GuestDef g;
@@ -379,6 +391,7 @@ namespace umbra::night
             g.takenMight = guests.Int(r, "takenMight");
             g.takenSanity = guests.Int(r, "takenSanity");
             g.takenSpeed = guests.Int(r, "takenSpeed");
+            g.color = guests.Color(r, "color");
             g.power = guests.Ref(r, "power", d.powers);
             if (g.hp < 1 || g.takenHp < 1)
                 guests.Bad(guests.Where(r, "hp"), "hp and takenHp must be 1 or more");

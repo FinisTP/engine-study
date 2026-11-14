@@ -1,8 +1,8 @@
-id,name,pronoun,weapon,hp,might,sanity,speed,style,taken,takenHp,takenMight,takenSanity,takenSpeed,power
-nhi,Truong Uyen Nhi,she,physical,16,3,6,5,explorer,The Folded Girl,34,7,10,5,line
-thanh,Le Thanh,she,magical,20,2,7,4,loner,The Opera Specter,24,6,11,4,area
-bao,Dinh Quoc Bao,he,physical,24,4,6,4,protector,The Drowned Physician,42,8,10,3,flood
-khang,Vo Minh Khang,he,physical,30,7,2,3,fighter,The Iron Debtor,53,7,6,3,pull
-mai,Phan Thi Mai,she,magical,18,2,8,3,schemer,The Rooted Caretaker,28,6,12,3,seal
-huy,Hoang Gia Huy,he,magical,20,3,4,5,explorer,The Lens,59,7,11,6,swap
-lan,Tran Ngoc Lan,she,physical,22,5,5,4,schemer,The Silvered Reflection,29,9,9,4,reflect
+id,name,pronoun,weapon,hp,might,sanity,speed,style,taken,takenHp,takenMight,takenSanity,takenSpeed,color,power
+nhi,Truong Uyen Nhi,she,physical,16,3,6,5,explorer,The Folded Girl,34,7,10,5,3E8E7E,line
+thanh,Le Thanh,she,magical,20,2,7,4,loner,The Opera Specter,24,6,11,4,B3261E,area
+bao,Dinh Quoc Bao,he,physical,24,4,6,4,protector,The Drowned Physician,42,8,10,3,C9C2B2,flood
+khang,Vo Minh Khang,he,physical,30,7,2,3,fighter,The Iron Debtor,53,7,6,3,D9A21B,pull
+mai,Phan Thi Mai,she,magical,18,2,8,3,schemer,The Rooted Caretaker,28,6,12,3,A0662B,seal
+huy,Hoang Gia Huy,he,magical,20,3,4,5,explorer,The Lens,59,7,11,6,2E4A7D,swap
+lan,Tran Ngoc Lan,she,physical,22,5,5,4,schemer,The Silvered Reflection,29,9,9,4,C46A7A,reflect

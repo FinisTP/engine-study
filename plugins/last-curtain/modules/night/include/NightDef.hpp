@@ -54,6 +54,7 @@ namespace umbra::night
         std::string taken;
         int takenHp = 0, takenMight = 0, takenSanity = 0, takenSpeed = 0;
         int power = 0; // powers.json entry
+        std::uint32_t color = 0; // 0xRRGGBB: the pawn's tint, also of its Taken form
     };
 
     struct BondDef { int from = 0, to = 0, bond = 0; };

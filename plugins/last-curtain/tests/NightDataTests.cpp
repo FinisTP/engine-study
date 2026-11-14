@@ -83,6 +83,15 @@ TEST_CASE("Every guest has two or three goals (T117)", "[night][data]")
     }
 }
 
+TEST_CASE("Every guest has a colour from the 1960s palette (T130)", "[night][data]")
+{
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    NightDef def;
+    REQUIRE(LoadNight(UMBRA_NIGHT_DATA, def, diagnostics));
+    CHECK(def.guests[static_cast<std::size_t>(NightDef::Find(def.guests, "thanh"))].color == 0xB3261EU); // lacquer red
+    CHECK(def.guests[static_cast<std::size_t>(NightDef::Find(def.guests, "mai"))].color == 0xA0662BU);   // ochre
+}
+
 TEST_CASE("Bad data is refused with file, row and column (T94)", "[night][data]")
 {
     SECTION("a missing file")
@@ -112,6 +121,12 @@ TEST_CASE("Bad data is refused with file, row and column (T94)", "[night][data]"
         const fs::path folder = CopyData("unknown");
         Replace(folder / "guests.csv", ",line\n", ",nosuch\n");
         CHECK(Refused(folder).field == "guests.csv:1:power");
+    }
+    SECTION("a colour that is not six hex digits")
+    {
+        const fs::path folder = CopyData("colour");
+        Replace(folder / "guests.csv", "3E8E7E,", "green,");
+        CHECK(Refused(folder).field == "guests.csv:1:color");
     }
     SECTION("no under-stage")
     {
