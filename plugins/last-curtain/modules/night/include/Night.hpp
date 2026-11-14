@@ -68,7 +68,9 @@ namespace umbra::night
     };
 
     // One thing that happened. Check: a = die, other = stat, b = target. Effect: a = Effect, b = amount.
-    // Item: a = item. Down: other = by whom (-1 house). Woke: other = helper. Opened: a = cell.
+    // Item: a = item. Down/Died: other = by whom (-1 house). Woke: other = helper. Opened: a = cell.
+    // Monster: a = kind; other -1 = appeared (b = cell), other 1 = killed by `who`. Battle: who/other = first guest of each side.
+    // Hit: who = striker (-1 monster), other = struck (-1 monster), a = damage, b = HP left. Ended: a = Outcome.
     struct LogEntry
     {
         std::int16_t tick = 0; // round * 8 + turn

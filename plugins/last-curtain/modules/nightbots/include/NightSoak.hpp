@@ -1,0 +1,34 @@
+#pragma once
+
+#include <Night.hpp>
+
+#include <nlohmann/json_fwd.hpp>
+
+#include <string>
+
+// The soak test: many bot nights, one report to balance by (Balance.md).
+namespace umbra::night
+{
+    struct SoakForm
+    {
+        int nights = 0, companyWins = 0, earlyWins = 0; // nights: hunts against this form
+    };
+
+    struct SoakReport
+    {
+        int nights = 0, faults = 0;
+        std::array<SoakForm, maxGuests> forms{}; // by marked guest
+        int earlyWins = 0, companyWins = 0, takenWins = 0;
+        int playerWins = 0; // nights guest 0's side won
+        long long rooms = 0, omens = 0, monsterKills = 0, levels = 0, downs = 0, deaths = 0, guestAttacks = 0;
+        std::array<int, maxGuests> marked{};
+
+        // No faults, and every form with at least 50 hunts inside the balance band.
+        bool Holds(const NightDef &def) const;
+    };
+
+    // strategy for guest 0: 0 its bot, 1 attacks the nearest guest every turn, 2 refuses every omen, 3 takes every omen.
+    SoakReport Soak(const NightDef &def, std::uint64_t firstSeed, int nights, int strategy = 0);
+    std::string Text(const NightDef &def, const SoakReport &report);
+    nlohmann::json Json(const NightDef &def, const SoakReport &report);
+}

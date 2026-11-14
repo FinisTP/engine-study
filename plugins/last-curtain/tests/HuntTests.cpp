@@ -64,11 +64,12 @@ TEST_CASE("At midnight the marked guest becomes the Taken and the rest gather (T
 {
     const NightDef def = Quiet();
     NightState state = Built(def, 4);
-    const int marked = 2, trapped = 3, struck = 4;
+    // Not the guest whose turn it is: they are set down by hand.
+    const int marked = state.order[1], trapped = state.order[2], struck = state.order[3];
     state.marked = I8(marked);
     state.guests[U(trapped)].down = true, state.guests[U(trapped)].hp = 0;
-    state.guests[U(struck)].down = true, state.guests[U(struck)].hp = 0, state.guests[U(struck)].downedBy = 1;
-    state.guests[U(5)].cell = state.understage;
+    state.guests[U(struck)].down = true, state.guests[U(struck)].hp = 0, state.guests[U(struck)].downedBy = state.order[0];
+    state.guests[U(state.order[4])].cell = state.understage;
     PassToMidnight(def, state);
     REQUIRE(state.taken.present);
     CHECK(TakenGuest(state) == marked);
@@ -116,14 +117,15 @@ TEST_CASE("A marked guest felled by the house returns at full strength (T101)", 
 {
     const NightDef def = Quiet();
     NightState state = Built(def, 4);
-    state.marked = 3;
-    Hurt(def, state, 3, 999, -1);
-    REQUIRE(state.guests[3].down);
+    const int m = state.order[1];
+    state.marked = I8(m);
+    Hurt(def, state, m, 999, -1);
+    REQUIRE(state.guests[U(m)].down);
     CHECK(Result(state) == Outcome::Running);
     PassToMidnight(def, state);
-    CHECK(TakenGuest(state) == 3);
-    CHECK_FALSE(state.guests[3].down);
-    CHECK(state.guests[3].hp == def.guests[3].takenHp);
+    CHECK(TakenGuest(state) == m);
+    CHECK_FALSE(state.guests[U(m)].down);
+    CHECK(state.guests[U(m)].hp == def.guests[U(m)].takenHp);
 }
 
 TEST_CASE("A marked ally leaves the player's group; a marked player controls the Taken (T101)", "[night][hunt]")
@@ -274,7 +276,8 @@ namespace
         open(h.Cell(4, 1), N);
         for (auto [cell, doors] : extra)
             open(cell, doors);
-        // Park everyone far away in an unopened corner (no path), then make it the Taken's turn.
+        // Park everyone far away in a closet (no path), then make it the Taken's turn.
+        Closet(h.def, h.state, h.Cell(0, 4));
         for (Guest &g : h.state.guests)
             g.cell = I8(h.Cell(0, 4));
         while (Current(h.state) != 6)
@@ -341,8 +344,10 @@ TEST_CASE("Power: flood (T102)", "[night][power]")
 TEST_CASE("Power: pull (T102)", "[night][power]")
 {
     Hunt h = MakeHunt("pull");
-    h.state.guests[0].cell = I8(h.Cell(3, 0));
-    h.state.guests[1].cell = I8(h.Cell(4, 0));
+    const int range = Power(h).range;
+    REQUIRE(range < 4);
+    h.state.guests[0].cell = I8(h.Cell(range, 0));
+    h.state.guests[1].cell = I8(h.Cell(range + 1, 0));
     CHECK(Offers(h, {ActionKind::Power, 0}));
     CHECK_FALSE(Offers(h, {ActionKind::Power, 1}));
     const int hp = h.state.guests[0].hp;

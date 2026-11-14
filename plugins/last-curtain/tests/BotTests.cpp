@@ -152,3 +152,42 @@ TEST_CASE("A hurt bot heals or flees (T104)", "[night][bots]")
     const Action choice = ChooseAction(def, state, g);
     CHECK_FALSE((choice.kind == ActionKind::Move && choice.a == 0));
 }
+
+#include <NightSoak.hpp>
+
+TEST_CASE("The soak report adds up (T105)", "[night][soak]")
+{
+    const NightDef def = Data();
+    const SoakReport r = Soak(def, 1, 200);
+    CHECK(r.nights == 200);
+    CHECK(r.nights == r.earlyWins + r.companyWins + r.takenWins + r.faults);
+    int hunts = 0, marked = 0;
+    for (int g = 0; g < maxGuests; ++g)
+        hunts += r.forms[static_cast<std::size_t>(g)].nights, marked += r.marked[static_cast<std::size_t>(g)];
+    CHECK(hunts == r.nights - r.earlyWins - r.faults);
+    CHECK(marked == r.nights - r.faults);
+}
+
+TEST_CASE("A thousand nights have no faults (T105)", "[night][soak]")
+{
+    const NightDef def = Data();
+    const SoakReport r = Soak(def, 1, 1000);
+    CHECK(r.faults == 0);
+    for (int g = 0; g < static_cast<int>(def.guests.size()); ++g)
+        CHECK(r.marked[static_cast<std::size_t>(g)] >= 20);
+    CHECK(r.rooms / r.nights >= 12);
+}
+
+// Slow (several thousand nights): run with "[balance]", or UmbraTool night-soak.
+TEST_CASE("The shipped data is balanced (T105)", "[.][night][soak][balance]")
+{
+    const NightDef def = Data();
+    const SoakReport bot = Soak(def, 1, 1000);
+    INFO(Text(def, bot));
+    CHECK(bot.Holds(def));
+    const SoakReport bot500 = Soak(def, 1, 500), attacker = Soak(def, 1, 500, 1), refuser = Soak(def, 1, 500, 2), taker = Soak(def, 1, 500, 3);
+    CHECK(attacker.playerWins < bot500.playerWins);
+    CHECK(refuser.playerWins * 100 / 500 <= bot500.playerWins * 100 / 500 + 5);
+    const int hunts = taker.companyWins + taker.takenWins;
+    CHECK(taker.companyWins * 100 / std::max(1, hunts) <= def.rules.balance.companyWinMax);
+}

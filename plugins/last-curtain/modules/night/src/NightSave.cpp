@@ -48,7 +48,8 @@ namespace umbra::night
             for (int g = 0; g < s.count; ++g)
             {
                 const Guest &guest = s.guests[inner::U(g)];
-                if (!in(guest.cell, 0, maxCells) || !in(s.order[inner::U(g)], 0, s.count) || !in(guest.downedBy, -1, s.count))
+                if (!in(guest.cell, 0, maxCells) || !s.cells[inner::U(guest.cell)].opened || !in(s.order[inner::U(g)], 0, s.count) ||
+                    !in(guest.downedBy, -1, s.count))
                     return "guest " + std::to_string(g) + " is out of range (cell " + std::to_string(guest.cell) + ", downedBy " +
                            std::to_string(guest.downedBy) + ")";
                 for (std::int8_t i : guest.items)

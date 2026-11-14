@@ -8,7 +8,11 @@ namespace umbra::night
     {
         NightState state;
         state.seed = seed;
-        state.random = (seed ^ 0x9E3779B97F4A7C15ULL) | 1u;
+        // splitmix64 spreads neighbouring seeds apart (xorshift alone keeps them alike for many draws).
+        std::uint64_t z = seed + 0x9E3779B97F4A7C15ULL;
+        z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ULL;
+        z = (z ^ (z >> 27)) * 0x94D049BB133111EBULL;
+        state.random = (z ^ (z >> 31)) | 1u;
         state.player = I8(player);
         BuildBoard(def, state);
 

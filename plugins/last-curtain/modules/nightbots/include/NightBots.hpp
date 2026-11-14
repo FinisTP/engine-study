@@ -2,7 +2,7 @@
 
 #include <Night.hpp>
 
-// The bots: rules, not the model (NightBots.md). A bot reads only what its guest could know.
+// The bots: rules, not the model (Balance.md "The bots"). A bot reads only what its guest could know.
 namespace umbra::night
 {
     // The action the bot of `guest` takes now (guest must be Current()).

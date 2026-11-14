@@ -18,3 +18,4 @@ target_link_libraries(
 umbra_copy_asan_runtime(UmbraNightTests)
 
 add_test(NAME Umbra.Night COMMAND UmbraNightTests)
+add_test(NAME Umbra.Night.Balance COMMAND UmbraNightTests "[balance]")

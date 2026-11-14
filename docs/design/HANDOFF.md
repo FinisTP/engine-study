@@ -7,22 +7,25 @@ For whoever continues this work, in any session. Read this first.
 - **Design: approved by the user** (2026-11-14). `game-design.md` (draft 8) and `cast.md` (draft 5).
   The decision log is section 21 of the design; ADR `../adr/0012-last-curtain.md` records the pivot
   from the living town.
-- **Plan 1 (the night as a simulation): written, not yet reviewed by the user.**
-  `plans/2026-11-14-night-simulation.md`, twelve tasks, commits `#UMBRA-104` to `#UMBRA-115`.
-- **Nothing is built.** No code of `plugins/last-curtain` exists.
-- Committed as `#UMBRA-103` (documents only).
+- **Plan 1 (the night as a simulation): implemented 2026-11-14**, `#UMBRA-104` to `#UMBRA-115`
+  (`plans/2026-11-14-night-simulation.md`). `plugins/last-curtain`: rules (`modules/night`,
+  `Night.md`), bots and soak test (`modules/nightbots`, `Balance.md`), tools `UmbraTool night-check`,
+  `night-run`, `night-soak`. Linux GCC: every test passes and the first balance pass holds. The
+  Windows check and two balance points for the user are in `../testing/s25-night-simulation.md`.
+- The decisions taken while building are listed in that record and in the session's report.
+
+## Decided by the user (2026-11-14)
+
+1. The plan captures what they want.
+2. The night has its own small data-driven battle rules (plan 2 reuses the engine's battle screen).
+3. The plan ran in one session, task by task.
 
 ## Waiting on the user
 
-1. **Does the plan capture what they want?**
-2. **The battle rules:** the plan gives the night its own small data-driven battle rules (Might and
-   Sanity as two damage types, the starter attacks first, 3 rounds) because the engine's
-   turn-combat rules have one Attack and one Defense, order by speed, no round limit, and a state
-   too slow to copy for simulation. The design says "the engine's existing turn-based battles".
-   Confirm or change.
-3. **How to run the plan:** in one session, task by task (recommended), or with a fresh agent per task.
-
-Do not start building before these are answered.
+1. The Windows check (`../testing/s25-night-simulation.md` §4).
+2. Two balance points (§3 of that record): about 3 nights in 10 end before midnight; level 5 is
+   out of reach with today's monster supply.
+3. Go-ahead to write plan 2 (the board on screen).
 
 ## The user's standing wishes for this game
 

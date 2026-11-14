@@ -209,7 +209,7 @@ namespace umbra::night
 
     void inner::StartTurn(const NightDef &def, NightState &state)
     {
-        const int g = Current(state);
+        const int g = BoardGuest(state); // not Current(): a level being chosen is not a turn
         if (IsTaken(state, g))
             TakenTurnStart(state);
         if (g >= 0)

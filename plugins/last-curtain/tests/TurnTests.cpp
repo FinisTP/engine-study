@@ -306,6 +306,7 @@ TEST_CASE("A relic wakes a downed guest in the same room and is used up (T97)", 
     helper.items[0] = static_cast<std::int8_t>(Slot(def, "rosary"));
     fallen.down = true;
     fallen.hp = 0;
+    Closet(def, state, state.foyer - 1);
     fallen.cell = static_cast<std::int8_t>(state.foyer - 1);
     CHECK_FALSE(Apply(def, state, wake));
 }

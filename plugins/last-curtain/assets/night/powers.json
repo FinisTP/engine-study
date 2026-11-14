@@ -1,9 +1,9 @@
 {
-  "line": { "kind": "line", "damage": 8, "cooldown": 1 },
+  "line": { "kind": "line", "damage": 10, "cooldown": 1 },
   "area": { "kind": "area", "damage": 5, "range": 2, "cooldown": 1 },
-  "flood": { "kind": "flood", "damage": 3, "rounds": 2, "cooldown": 1 },
-  "pull": { "kind": "pull", "damage": 6, "range": 3, "cooldown": 1 },
+  "flood": { "kind": "flood", "damage": 2, "rounds": 2, "cooldown": 1 },
+  "pull": { "kind": "pull", "damage": 2, "range": 2, "cooldown": 3 },
   "seal": { "kind": "seal", "range": 3, "rounds": 2, "cooldown": 1 },
   "swap": { "kind": "swap", "cooldown": 1 },
-  "reflect": { "kind": "reflect", "cooldown": 1 }
+  "reflect": { "kind": "reflect", "cooldown": 3 }
 }

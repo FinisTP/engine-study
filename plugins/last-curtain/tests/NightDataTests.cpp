@@ -97,7 +97,7 @@ TEST_CASE("Bad data is refused with file, row and column (T94)", "[night][data]"
     SECTION("an unknown id")
     {
         const fs::path folder = CopyData("unknown");
-        Replace(folder / "guests.csv", "90,7,10,5,line", "90,7,10,5,nosuch");
+        Replace(folder / "guests.csv", ",line\n", ",nosuch\n");
         CHECK(Refused(folder).field == "guests.csv:1:power");
     }
     SECTION("no under-stage")

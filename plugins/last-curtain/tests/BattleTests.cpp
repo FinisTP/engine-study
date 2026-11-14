@@ -147,12 +147,14 @@ TEST_CASE("Monsters appear, grow with the hour, leave, and force a fight when me
     NightDef def = Data();
     def.rules.monsters.chancePercent = 100;
     NightState state = NewNight(def, 9);
-    // Open some rooms so monsters have somewhere to be.
-    for (int i = 0; i < 6 && Current(state) >= 0; ++i)
+    // Open the whole board so monsters have somewhere to be.
+    for (bool opened = true; opened;)
     {
-        const auto legal = LegalActions(def, state);
-        const auto move = std::find_if(legal.begin(), legal.end(), [](const Action &a) { return a.kind == ActionKind::Move; });
-        REQUIRE(Apply(def, state, move != legal.end() ? *move : Action{ActionKind::EndTurn}));
+        opened = false;
+        for (int c = 0; c < maxCells && !opened; ++c)
+            for (int d = 0; d < 4 && !opened; ++d)
+                if (Doorway(def, state, c, d))
+                    opened = Open(def, state, c, d) >= 0;
     }
     int seenGrown = 0;
     while (Current(state) >= 0 && state.round <= 8)
@@ -210,4 +212,20 @@ TEST_CASE("Leaving is not possible in the first round (T98)", "[night][battle]")
     REQUIRE(Apply(def, state, {ActionKind::Leave}));
     CHECK_FALSE(state.battle.active);
     CHECK(state.monsters.size() == 1);
+}
+
+TEST_CASE("After a level is chosen the next guest still has its moves (T98)", "[night][battle]")
+{
+    NightDef def = Quiet();
+    def.rules.levels.xp = {1, 2, 3, 4};
+    NightState state = NewNight(def, 1);
+    const int g = Current(state);
+    const int m = PutMonster(def, state, "moths", state.guests[U(g)].cell, 1);
+    REQUIRE(Apply(def, state, {ActionKind::Attack, static_cast<std::int8_t>(m)}));
+    StrikeOut(def, state);
+    REQUIRE(Current(state) == g); // the level comes first
+    REQUIRE(Apply(def, state, {ActionKind::LevelUp, 0}));
+    const int next = Current(state);
+    REQUIRE(next == state.order[1]);
+    CHECK(state.guests[U(next)].movesLeft == Stat(def, state, next, StatKind::Speed));
 }

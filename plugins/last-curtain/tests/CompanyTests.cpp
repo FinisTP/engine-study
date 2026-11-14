@@ -32,9 +32,10 @@ namespace
         }
     }
 
-    // Everyone but these guests leaves the foyer for a far, dark corner (cell 0 of the grid, not opened).
+    // Everyone but these guests leaves the foyer for a far, dark closet (cell 0 of the grid).
     void OnlyIn(NightState &state, std::initializer_list<int> here)
     {
+        Closet(Data(), state, 0);
         for (int g = 0; g < state.count; ++g)
             if (std::find(here.begin(), here.end(), g) == here.end())
                 state.guests[U(g)].cell = 0;
@@ -242,7 +243,8 @@ TEST_CASE("The first failure marks, in secret (T100)", "[night][omen]")
     def.rules.omens.targets = {99};
     NightState state = NewNight(def, 3);
     const int taker = Current(state), watcher = state.order[1], dark = state.order[2];
-    state.guests[U(dark)].cell = 0; // an unopened corner: no light reaches it
+    Closet(def, state, 0);
+    state.guests[U(dark)].cell = 0; // a closet: no light reaches it
     WalkIn(def, state);
     REQUIRE(Apply(def, state, {ActionKind::TakeOmen}));
     CHECK(state.marked == taker);

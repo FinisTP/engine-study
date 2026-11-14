@@ -20,6 +20,7 @@ target_sources(
             include/NightDef.hpp
             include/Night.hpp
             include/NightSave.hpp
+            include/Night.md
 )
 
 target_compile_features(UmbraNight PUBLIC cxx_std_20)

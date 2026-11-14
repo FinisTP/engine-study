@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <climits>
 
-// How a bot chooses: hard rules first, then the best score from its style (NightBots.md).
+// How a bot chooses: hard rules first, then the best score from its style (Balance.md "The bots").
 namespace umbra::night
 {
     namespace
@@ -31,6 +31,25 @@ namespace umbra::night
             bool Up(int o) const { return !state.guests[U(o)].down && !state.guests[U(o)].dead; }
             bool Sees(int cell) const { return Lit(def, state, me.cell, cell, Stat(def, state, g, StatKind::Light)); }
             int StepsTo(int from, int cell) const { return Steps(def, state, from, cell); }
+
+            // Steps from one cell to every cell through passages (-1 unreachable), in one search.
+            std::array<int, maxCells> Distances(int from) const
+            {
+                std::array<int, maxCells> dist;
+                dist.fill(-1);
+                std::array<int, maxCells> queue{};
+                int head = 0, tail = 0;
+                dist[U(from)] = 0;
+                queue[U(tail++)] = from;
+                while (head < tail)
+                {
+                    const int cell = queue[U(head++)];
+                    for (int d = 0; d < 4; ++d)
+                        if (Passage(def, state, cell, d) && dist[U(Neighbour(def, cell, d))] < 0)
+                            dist[U(Neighbour(def, cell, d))] = dist[U(cell)] + 1, queue[U(tail++)] = Neighbour(def, cell, d);
+                }
+                return dist;
+            }
 
             // Where a legal Move leads (-1 for a doorway: an unknown room).
             int Next(const Action &a) const
@@ -217,8 +236,9 @@ namespace umbra::night
                         m >= 0)
                         return Beatable(m) ? style.fight * 10 : -100;
                     int score = -1;
+                    const auto fromHere = Distances(me.cell), fromNext = Distances(next);
                     auto goal = [&](int cell, int weight) {
-                        const int now = StepsTo(me.cell, cell), then = StepsTo(next, cell);
+                        const int now = fromHere[U(cell)], then = fromNext[U(cell)];
                         if (then >= 0 && now >= 0 && then < now)
                             score = std::max(score, weight * 10 - then);
                     };
@@ -240,7 +260,7 @@ namespace umbra::night
                             goal(state.monsters[m].cell, style.fight);
                     for (int o = 0; o < state.count; ++o)
                         if (o != g && Up(o) && Bond(state, g, o) < 0 && Sees(state.guests[U(o)].cell) &&
-                            StepsTo(next, state.guests[U(o)].cell) < StepsTo(me.cell, state.guests[U(o)].cell))
+                            fromNext[U(state.guests[U(o)].cell)] < fromHere[U(state.guests[U(o)].cell)])
                             score -= style.avoidGuests * 10;
                     return score;
                 }
@@ -270,7 +290,12 @@ namespace umbra::night
                 if (state.battle.active)
                     return Battle();
                 if (legal.front().kind == ActionKind::TakeOmen)
-                    return {style.omen >= 5 ? ActionKind::TakeOmen : ActionKind::LeaveOmen};
+                {
+                    // Take it while the curse roll still looks worth the risk to this style.
+                    const auto &targets = def.rules.omens.targets;
+                    const int target = targets[U(std::min<int>(state.omensTaken, static_cast<int>(targets.size()) - 1))];
+                    return {style.omen * 2 + Stat(def, state, g, StatKind::Sanity) >= target ? ActionKind::TakeOmen : ActionKind::LeaveOmen};
+                }
                 if (IsTaken(state, g))
                     return Taken();
                 // 2. Hurt: heal, else get away from monsters and attackers.

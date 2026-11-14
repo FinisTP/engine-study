@@ -126,7 +126,7 @@ namespace umbra::night
                 m.hp = I16(std::max(0, m.hp - damage));
                 if (m.hp == 0)
                 {
-                    Log(state, LogKind::Monster, attacker.guest, -1, m.kind, 0);
+                    Log(state, LogKind::Monster, attacker.guest, 1, m.kind, target.monster); // other 1: killed
                     for (int f = 0; f < state.battle.count; ++f)
                     {
                         const Fighter &winner = state.battle.fighters[U(f)];

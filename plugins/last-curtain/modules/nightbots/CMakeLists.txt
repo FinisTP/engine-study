@@ -5,11 +5,14 @@ target_sources(
     UmbraNightBots
     PRIVATE
         src/NightBots.cpp
+        src/NightSoak.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
         FILES
             include/NightBots.hpp
+            include/NightSoak.hpp
+            include/Balance.md
 )
 
 target_compile_features(UmbraNightBots PUBLIC cxx_std_20)
@@ -23,3 +26,6 @@ target_link_libraries(
         Umbra::Warnings
         Umbra::Sanitizers
 )
+
+# The plugin's own data folder, the tools' default (night-run, night-soak without --data).
+target_compile_definitions(UmbraNightBots PUBLIC UMBRA_NIGHT_DEFAULT_DATA="${CMAKE_CURRENT_SOURCE_DIR}/../../assets/night")

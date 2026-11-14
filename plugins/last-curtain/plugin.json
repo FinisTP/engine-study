@@ -11,6 +11,7 @@
     "nightbots"
   ],
   "links": [
-    "Umbra::Night"
+    "Umbra::Night",
+    "Umbra::NightBots"
   ]
 }
