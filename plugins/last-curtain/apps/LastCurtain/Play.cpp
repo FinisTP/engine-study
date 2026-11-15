@@ -1154,6 +1154,9 @@ int Play::StageCell() const
         return event_ >= 0 && eventCell_ >= 0 ? eventCell_ : state_.guests[U(state_.player)].cell;
     if (moment_ && beat_.seen && beat_.camera >= 0 && (waitTap_ || hold_ > 0.0F))
         return beat_.camera;
+    // A chat with the player, from the moment it opens.
+    if (options_.moments && state_.chat.active && state_.player >= 0 && (state_.chat.asker == state_.player || state_.chat.answerer == state_.player))
+        return state_.guests[U(state_.chat.asker)].cell;
     // 3. A battle the player can see (their own, or bots' in their light).
     if (state_.battle.active && state_.battle.cell >= 0 && MakeView(def_, state_, state_.player).cells[U(state_.battle.cell)].lit)
         return state_.battle.cell;

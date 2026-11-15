@@ -2086,3 +2086,14 @@ TEST_CASE("The player's goal room is known to the table, to shine (T170)", "[nig
     const std::vector<int> cells = play.GoalCells();
     CHECK(std::find(cells.begin(), cells.end(), West(def, 2)) != cells.end());
 }
+
+TEST_CASE("A chat is shown in its room from the moment it opens (T171)", "[night][play][chat]")
+{
+    const NightDef def = Data();
+    Play play(def, FoyerNight(def, 4, 0));
+    play.SetOptions(Designed());
+    for (int i = 0; i < 400 && !(play.State().chat.active && play.PlayerTurn()); ++i)
+        play.PlayerTurn() ? play.Key(InputKey::Enter) : (play.WaitingForTap() ? (void)play.HandleUi("caption", "next", "") : play.Update(10.0F));
+    REQUIRE(play.State().chat.active);
+    CHECK(play.StageCell() == play.State().guests[static_cast<std::size_t>(play.State().chat.asker)].cell);
+}
