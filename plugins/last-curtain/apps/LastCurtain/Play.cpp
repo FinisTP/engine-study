@@ -212,7 +212,7 @@ void Play::Click(int cell, bool right)
         return;
     const int me = Current(state_);
     std::vector<int> path = PathTo(def_, state_, me, cell);
-    if (path.empty() || static_cast<int>(path.size()) > state_.guests[U(me)].movesLeft)
+    if (path.empty() || Affordable(me, path) < static_cast<int>(path.size()))
         return;
     walk_ = std::move(path);
     walking_ = true;
@@ -225,8 +225,24 @@ Play::Preview Play::Previewed() const
         return {};
     const int me = Current(state_);
     Preview p{PathTo(def_, state_, me, hover_), 0};
-    p.affordable = std::min<int>(static_cast<int>(p.path.size()), state_.guests[U(me)].movesLeft);
+    p.affordable = Affordable(me, p.path);
     return p;
+}
+
+int Play::Affordable(int guest, const std::vector<int> &path) const
+{
+    // Steps along the path the moves can pay for: an opened room within the budget of the way back to
+    // the origin, a new room one more than the room before it (Night.md "Moves").
+    const Guest &g = state_.guests[U(guest)];
+    int n = 0, last = g.cell;
+    for (const int cell : path)
+    {
+        const int cost = state_.cells[U(cell)].opened ? Distance(def_, state_, g.origin, cell) : Distance(def_, state_, g.origin, last) + 1;
+        if (cost < 0 || cost > g.budget || g.steps + n >= def_.rules.moves.stepsPerSpeed * Stat(def_, state_, guest, StatKind::Speed))
+            break;
+        ++n, last = cell;
+    }
+    return n;
 }
 
 bool Play::Step(int to)

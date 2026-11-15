@@ -167,19 +167,15 @@ TEST_CASE("A path may end through a doorway (T124)", "[night][view]")
     CHECK(PathTo(def, state, 0, beyond) == std::vector<int>{a, b, beyond});
 }
 
-TEST_CASE("No path to a dark, walled-off, barred or own cell (T124)", "[night][view]")
+TEST_CASE("No path to a dark, walled-off or own cell (T124)", "[night][view]")
 {
     const NightDef def = Data();
     NightState state = Corridor(def);
-    const int a = Left(def, 1), b = Left(def, 2);
     Closet(def, state, 0); // cell 0: opened, no doors
     CHECK(PathTo(def, state, 0, 0).empty());
     CHECK(PathTo(def, state, 0, state.foyer).empty());
     CHECK(PathTo(def, state, 0, -1).empty());
     CHECK(PathTo(def, state, 0, maxCells).empty());
-    NightState barred = state;
-    barred.guests[0].barred.set(U(a));
-    CHECK(PathTo(def, barred, 0, b).empty());
     // A room beyond the guest's light is not a lit square, even with a way there.
     for (std::uint64_t seed = 1;; ++seed)
     {

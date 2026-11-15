@@ -147,6 +147,7 @@ private:
     float flashClock_ = 0.0F;  // the HUD shows `flash_` (an HP change) while this runs
     std::string flash_;
     int beatEvent_ = -1; // the event a bot's seen beat faced, for the caption
+    [[nodiscard]] int Affordable(int guest, const std::vector<int> &path) const;
     [[nodiscard]] int RoomEvent(const umbra::night::NightState &before, const umbra::night::Action &action, int guest, int &entered) const;
     [[nodiscard]] std::string RollResult(const umbra::night::EventDef &ev, bool passed, int guest) const;
     std::deque<Dice> dice_;

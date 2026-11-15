@@ -639,7 +639,7 @@ namespace
         Closet(def, state, 0);
         for (int g = 1; g < state.count; ++g)
             state.guests[static_cast<std::size_t>(g)].cell = 0;
-        state.guests[0].movesLeft = static_cast<std::int8_t>(moves);
+        state.guests[0].movesLeft = state.guests[0].budget = static_cast<std::int8_t>(moves), state.guests[0].origin = state.guests[0].cell;
         return state;
     }
 
@@ -1825,4 +1825,20 @@ TEST_CASE("A bonus room says what it gives on the way in, and announces it when 
     play.Update(10.0F);
     CHECK(play.Beats() == 0); // the bots wait for it
     REQUIRE(play.HandleUi("arrive", "onward", ""));
+}
+
+TEST_CASE("A walk back toward where moves count from is always affordable (T157)", "[night][play][moves]")
+{
+    const NightDef def = Data();
+    Play play(def, PlayerCorridor(def, 3, 1));
+    GoTo(play, West(def, 1));
+    REQUIRE(play.State().guests[0].cell == West(def, 1));
+    CHECK(play.State().guests[0].movesLeft == 0);
+    // Out of moves, but the foyer is where they count from: the way back is free.
+    REQUIRE(play.HandleUi("menu", "move", ""));
+    play.Hover(play.State().foyer);
+    CHECK(play.Previewed().affordable == 1);
+    GoTo(play, play.State().foyer);
+    CHECK(play.State().guests[0].cell == play.State().foyer);
+    CHECK(play.State().guests[0].movesLeft == 1);
 }

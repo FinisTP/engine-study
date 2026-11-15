@@ -27,7 +27,7 @@ namespace umbra::night
                   chaseMinions(minions)
             {
                 // In the evening a bot never steps back the way it came this turn.
-                if (!state.taken.present && me.movesLeft < Stat(def, state, g, StatKind::Speed))
+                if (!state.taken.present && me.steps > 0)
                     std::erase_if(legal, [&](const Action &a) { return a.kind == ActionKind::Move && Next(a) == me.from; });
             }
 

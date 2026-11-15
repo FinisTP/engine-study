@@ -96,7 +96,7 @@ namespace umbra::night
                 // 2. An unopened target: reached through a doorway of a cell on the way.
                 if (!open && next == cell && Doorway(def, state, at, d))
                     from[U(cell)] = at, end = cell;
-                else if (Passage(def, state, at, d) && from[U(next)] == -2 && !me.barred.test(U(next)))
+                else if (Passage(def, state, at, d) && from[U(next)] == -2)
                 {
                     from[U(next)] = at, queue[U(tail++)] = next;
                     if (next == cell)

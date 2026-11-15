@@ -163,6 +163,7 @@ namespace umbra::night
             get("checks", "normal", r.checks.normal);
             get("checks", "hard", r.checks.hard);
             get("light", "steps", r.light.steps);
+            get("moves", "stepsPerSpeed", r.moves.stepsPerSpeed);
             get(nullptr, "carry", r.carry);
             get("battle", "rounds", r.battle.rounds);
             get("battle", "minDamage", r.battle.minDamage);
@@ -206,6 +207,7 @@ namespace umbra::night
             check(r.clock.turnAfterRound >= 1 && r.clock.turnAfterRound < r.clock.rounds, "clock.turnAfterRound", "must come before the last round");
             check(r.battle.rounds >= 1 && r.battle.minDamage >= 0, "battle", "rounds must be 1 or more, minDamage 0 or more");
             check(r.battle.defenseDivisor >= 1 && r.battle.guardDivisor >= 1, "battle", "divisors must be 1 or more");
+            check(r.moves.stepsPerSpeed >= 1, "moves.stepsPerSpeed", "must be 1 or more");
             check(r.light.steps >= 0 && r.monsters.max >= 0 && r.monsters.max <= 8, "monsters.max", "must be 0 to 8");
             check(r.goals.failHp >= 1 && r.goals.earlyRooms >= 8 && r.goals.earlyRooms <= r.board.rooms && r.goals.roomGoalRooms >= 8 &&
                       r.goals.roomGoalRooms <= r.board.rooms,

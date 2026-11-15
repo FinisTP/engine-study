@@ -26,6 +26,9 @@ namespace umbra::night
             return -1;
         }
 
+        // A commit: no more moves this turn, counted from here (Night.md "Moves").
+        void Stop(Guest &guest) { guest.movesLeft = guest.budget = 0, guest.origin = guest.cell; }
+
         // Entering a room: one with something still in it stops movement.
         void Enter(const NightDef &def, NightState &state, int g, int cell)
         {
@@ -42,11 +45,11 @@ namespace umbra::night
             case RoomKind::Event:
             case RoomKind::Trap:
                 if (!c.resolved)
-                    guest.movesLeft = 0;
+                    Stop(guest);
                 break;
             case RoomKind::Bonus:
                 if (!guest.bonusUsed[U(cell)])
-                    guest.movesLeft = 0;
+                    Stop(guest);
                 break;
             default:
                 break;
@@ -260,9 +263,8 @@ namespace umbra::night
         if (g >= 0)
         {
             Guest &guest = G(state, g);
-            guest.movesLeft = I8(Stat(def, state, g, StatKind::Speed));
-            guest.undo = -1;
-            guest.barred.reset();
+            guest.movesLeft = guest.budget = I8(Stat(def, state, g, StatKind::Speed));
+            guest.origin = guest.cell, guest.steps = 0;
         }
     }
 
@@ -282,7 +284,7 @@ namespace umbra::night
                 if (stat)
                     *stat = I16(*stat + room.amount);
             }
-            guest.movesLeft = 0;
+            Stop(guest);
             FloodEndTurn(def, state, g);
             if (state.over)
                 return;
@@ -355,14 +357,15 @@ namespace umbra::night
             return legal;
         }
 
-        // 1. Moving: through passages and doorways, and between the transport pair.
-        if (guest.movesLeft > 0)
+        // 1. Moving: through passages (a step costs only if it leads further from the origin), a doorway
+        //    (a new room: one more move), and between the transport pair; within the turn's step cap.
+        if (guest.steps < def.rules.moves.stepsPerSpeed * Stat(def, state, g, StatKind::Speed))
         {
-            // Not into the room an undo just left (no pacing back and forth).
+            const auto within = [&](int to) { const int d = Distance(def, state, guest.origin, to); return d >= 0 && d <= guest.budget; };
             for (std::int8_t d = 0; d < 4; ++d)
-                if ((Passage(def, state, guest.cell, d) || Doorway(def, state, guest.cell, d)) && !(Neighbour(def, guest.cell, d) >= 0 && guest.barred[U(Neighbour(def, guest.cell, d))]))
+                if ((Passage(def, state, guest.cell, d) && within(Neighbour(def, guest.cell, d))) || (Doorway(def, state, guest.cell, d) && guest.movesLeft > 0))
                     legal.push_back({ActionKind::Move, d});
-            if (const int pair = Pair(def, state, guest.cell); pair >= 0 && !guest.barred[U(pair)])
+            if (const int pair = Pair(def, state, guest.cell); pair >= 0 && within(pair))
                 legal.push_back({ActionKind::Move, transportMove});
         }
 
@@ -445,28 +448,27 @@ namespace umbra::night
         }
         case ActionKind::Move:
         {
-            const std::uint32_t logBefore = state.logCount; // nothing logged by the move: a plain step
             int to = action.a == transportMove ? Pair(def, state, guest.cell) : Neighbour(def, guest.cell, action.a);
-            if (action.a != transportMove && !Passage(def, state, guest.cell, action.a))
+            const bool opened = action.a != transportMove && !Passage(def, state, guest.cell, action.a);
+            if (opened)
             {
                 to = Open(def, state, guest.cell, action.a);
                 Log(state, LogKind::Opened, g, -1, to);
                 PlaceKeepsake(def, state, to);
             }
-            // 1. A step back into the cell the last plain step came from undoes it: both moves back,
-            //    and the cell just left is barred for the rest of the turn.
-            const int was = guest.cell;
-            const bool undo = to == guest.undo;
-            guest.movesLeft = I8(guest.movesLeft + (undo ? 1 : -1));
-            if (undo)
-                guest.barred.set(U(was));
-            guest.undo = -1;
+            // 1. The step: a new room commits (moves count from it with what is left); otherwise what is
+            //    left is the budget less the shortest way back to the origin (Night.md "Moves").
+            guest.steps = I8(guest.steps + 1);
             guest.from = guest.cell;
+            guest.cell = I8(to);
+            if (opened)
+                guest.budget = I8(guest.movesLeft - 1), guest.origin = I8(to);
+            guest.movesLeft = I8(guest.budget - std::max(0, Distance(def, state, guest.origin, to)));
             Enter(def, state, g, to);
             // After midnight: the Taken and the company meet; the Taken passes monsters and rooms by.
             if (state.taken.present && ContactBattle(def, state, g, to))
             {
-                guest.movesLeft = 0;
+                Stop(guest);
                 break;
             }
             if (IsTaken(state, g))
@@ -474,7 +476,7 @@ namespace umbra::night
             // A monster in the room: a fight at once, the monster's side first.
             if (const int monster = MonsterAt(state, to); monster >= 0)
             {
-                guest.movesLeft = 0;
+                Stop(guest);
                 StartBattle(def, state, to, {Fighter{-1, I8(monster)}}, Side(state, g));
                 break;
             }
@@ -485,23 +487,17 @@ namespace umbra::night
                 Resolve(def, state, g, to);
                 inner::EndTurn(def, state);
             }
-            // 2. A plain step (nothing opened, rolled or fought: nothing logged) may be undone next.
-            else if (!undo && state.logCount == logBefore)
-                guest.undo = I8(was);
             break;
         }
         case ActionKind::UseItem:
             UseItem(def, state, g, action.a, action.b);
-            guest.undo = -1;
             break;
         case ActionKind::DropItem:
-            guest.undo = -1;
             state.floor.push_back({guest.cell, guest.items[U(action.a)]});
             guest.items[U(action.a)] = -1;
             break;
         case ActionKind::PickUp:
         {
-            guest.undo = -1;
             auto slot = std::find(guest.items.begin(), guest.items.end(), std::int8_t(-1));
             *slot = state.floor[U(action.a)].item;
             state.floor.erase(state.floor.begin() + action.a);
@@ -590,5 +586,35 @@ namespace umbra::night
         if (kind == StatKind::Speed && Flooded(state, guest.cell))
             return 1;
         return value;
+    }
+}
+
+namespace umbra::night
+{
+    int Distance(const NightDef &def, const NightState &state, int from, int to)
+    {
+        // Breadth-first through passages and the transport pair.
+        if (from < 0 || to < 0)
+            return -1;
+        std::array<int, maxCells> steps;
+        steps.fill(-1);
+        std::array<int, maxCells> queue{};
+        int head = 0, tail = 0;
+        steps[inner::U(from)] = 0, queue[inner::U(tail++)] = from;
+        while (head < tail)
+        {
+            const int at = queue[inner::U(head++)];
+            if (at == to)
+                return steps[inner::U(at)];
+            const auto visit = [&](int next) {
+                if (next >= 0 && steps[inner::U(next)] < 0)
+                    steps[inner::U(next)] = steps[inner::U(at)] + 1, queue[inner::U(tail++)] = next;
+            };
+            for (int d = 0; d < 4; ++d)
+                if (Passage(def, state, at, d))
+                    visit(Neighbour(def, at, d));
+            visit(Pair(def, state, at));
+        }
+        return -1;
     }
 }

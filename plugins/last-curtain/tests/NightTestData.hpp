@@ -34,7 +34,7 @@ inline umbra::night::NightState FoyerNight(const umbra::night::NightDef &def, st
     for (int g = 0; g < state.count; ++g)
     {
         Guest &guest = state.guests[static_cast<std::size_t>(g)];
-        guest.cell = guest.from = state.foyer;
+        guest.cell = guest.from = guest.origin = state.foyer;
         guest.bonusUsed.reset();
     }
     return state;

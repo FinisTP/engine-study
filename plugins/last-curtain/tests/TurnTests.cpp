@@ -114,7 +114,7 @@ TEST_CASE("Transport rooms are a pair (T96)", "[night][turn]")
     state.cells[static_cast<std::size_t>(b)] = {static_cast<std::int8_t>(catwalk), 15, true};
     const int g = Current(state);
     Guest &guest = state.guests[static_cast<std::size_t>(g)];
-    guest.cell = static_cast<std::int8_t>(a);
+    guest.cell = guest.origin = static_cast<std::int8_t>(a);
     const int moves = guest.movesLeft;
     REQUIRE(Apply(def, state, {ActionKind::Move, transportMove}));
     CHECK(guest.cell == b);
@@ -373,65 +373,59 @@ namespace
     }
 }
 
-TEST_CASE("Stepping back after a plain step gives the move back (T119)", "[night][turn]")
+TEST_CASE("Moves count as the shortest way back to where the turn began: out and back costs nothing (T157)", "[night][turn][moves]")
+{
+    const NightDef def = AllRooms(RoomKind::Plain);
+    NightState state = FoyerNight(def, 3);
+    Guest &guest = state.guests[static_cast<std::size_t>(Current(state))];
+    const int speed = Stat(def, state, Current(state), StatKind::Speed);
+    // 1. Opening a door commits: the new room is where moves count from, with what was left.
+    const std::int8_t d = OpenFirst(def, state), back = static_cast<std::int8_t>((d + 2) % 4);
+    const int room = Neighbour(def, state.foyer, d);
+    CHECK(guest.origin == room);
+    CHECK(guest.budget == speed - 1);
+    CHECK(guest.movesLeft == speed - 1);
+    // 2. Out to the foyer and back: one move, then none.
+    REQUIRE(Apply(def, state, {ActionKind::Move, back}));
+    CHECK(guest.movesLeft == speed - 2);
+    REQUIRE(Apply(def, state, {ActionKind::Move, d}));
+    CHECK(guest.movesLeft == speed - 1);
+    // 3. Out and back again, as often as wanted (no pacing ban).
+    REQUIRE(Apply(def, state, {ActionKind::Move, back}));
+    REQUIRE(Apply(def, state, {ActionKind::Move, d}));
+    CHECK(guest.movesLeft == speed - 1);
+}
+
+TEST_CASE("With no moves left a guest may still step back toward where moves count from (T157)", "[night][turn][moves]")
 {
     const NightDef def = AllRooms(RoomKind::Plain);
     NightState state = FoyerNight(def, 3);
     Guest &guest = state.guests[static_cast<std::size_t>(Current(state))];
     const std::int8_t d = OpenFirst(def, state), back = static_cast<std::int8_t>((d + 2) % 4);
-    const int moves = guest.movesLeft;                    // in the new room B
-    REQUIRE(Apply(def, state, {ActionKind::Move, back})); // a plain step to the foyer: it costs
-    CHECK(guest.movesLeft == moves - 1);
-    REQUIRE(Apply(def, state, {ActionKind::Move, d}));    // back into B, the room just left: undone
-    CHECK(guest.movesLeft == moves);
-    CHECK(guest.cell == Neighbour(def, state.foyer, d));
+    guest.budget = 1, guest.movesLeft = 1; // one move from the new room
+    REQUIRE(Apply(def, state, {ActionKind::Move, back})); // to the foyer: none left
+    CHECK(guest.movesLeft == 0);
+    CHECK(CanMove(def, state, d)); // back toward the start costs nothing
+    for (std::int8_t other = 0; other < 4; ++other)
+        if (other != d && Doorway(def, state, state.foyer, other))
+            CHECK_FALSE(CanMove(def, state, other)); // a new room would cost one more
 }
 
-TEST_CASE("A room left by an undo cannot be entered again that turn (T119)", "[night][turn]")
+TEST_CASE("A turn has a cap on steps, so no one paces forever (T157)", "[night][turn][moves]")
 {
     const NightDef def = AllRooms(RoomKind::Plain);
     NightState state = FoyerNight(def, 3);
-    const int g = Current(state);
+    Guest &guest = state.guests[static_cast<std::size_t>(Current(state))];
     const std::int8_t d = OpenFirst(def, state), back = static_cast<std::int8_t>((d + 2) % 4);
-    REQUIRE(Apply(def, state, {ActionKind::Move, back}));
-    REQUIRE(Apply(def, state, {ActionKind::Move, d})); // the undo leaves the foyer
+    const int cap = def.rules.moves.stepsPerSpeed * Stat(def, state, Current(state), StatKind::Speed);
+    for (int i = 1; i < cap; ++i) // the opening step was the first
+        REQUIRE(Apply(def, state, {ActionKind::Move, i % 2 ? back : d}));
+    CHECK(guest.steps == cap);
     CHECK_FALSE(CanMove(def, state, back));
-    CHECK_FALSE(Apply(def, state, {ActionKind::Move, back}));
-    // Next turn it is open again.
-    REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
-    while (Current(state) != g)
-        REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
-    CHECK(CanMove(def, state, back));
+    CHECK_FALSE(CanMove(def, state, d));
 }
 
-TEST_CASE("Only a plain step can be undone (T119)", "[night][turn]")
-{
-    SECTION("a step that opened a room")
-    {
-        const NightDef def = AllRooms(RoomKind::Plain);
-        NightState state = FoyerNight(def, 3);
-        Guest &guest = state.guests[static_cast<std::size_t>(Current(state))];
-        const std::int8_t d = OpenFirst(def, state);
-        const int moves = guest.movesLeft;
-        REQUIRE(Apply(def, state, {ActionKind::Move, static_cast<std::int8_t>((d + 2) % 4)}));
-        CHECK(guest.movesLeft == moves - 1);
-    }
-    SECTION("a step followed by a pick-up")
-    {
-        const NightDef def = AllRooms(RoomKind::Plain);
-        NightState state = FoyerNight(def, 3);
-        Guest &guest = state.guests[static_cast<std::size_t>(Current(state))];
-        const std::int8_t d = OpenFirst(def, state), back = static_cast<std::int8_t>((d + 2) % 4);
-        REQUIRE(Apply(def, state, {ActionKind::Move, back})); // a plain step to the foyer
-        state.floor.push_back({state.foyer, static_cast<std::int8_t>(Slot(def, "bandage"))});
-        REQUIRE(Apply(def, state, {ActionKind::PickUp, static_cast<std::int8_t>(state.floor.size() - 1)}));
-        const int moves = guest.movesLeft;
-        REQUIRE(Apply(def, state, {ActionKind::Move, d})); // after a pick-up the step back costs
-        CHECK(guest.movesLeft == moves - 1);
-    }
-}
-
-TEST_CASE("A push back cannot be undone for a refund (T119)", "[night][turn]")
+TEST_CASE("A push back leaves the guest stopped where it landed (T157)", "[night][turn][moves]")
 {
     NightDef def = AllRooms(RoomKind::Event);
     for (EventDef &e : def.events)
@@ -440,7 +434,7 @@ TEST_CASE("A push back cannot be undone for a refund (T119)", "[night][turn]")
     const int g = Current(state);
     OpenFirst(def, state); // an event: pushed back to the foyer, the turn over
     CHECK(state.guests[static_cast<std::size_t>(g)].cell == state.foyer);
-    CHECK(state.guests[static_cast<std::size_t>(g)].undo == -1);
+    CHECK(state.guests[static_cast<std::size_t>(g)].movesLeft == 0);
 }
 
 namespace

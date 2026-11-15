@@ -27,6 +27,7 @@ namespace umbra::night
         struct { int width = 5, height = 5, rooms = 20; } board;
         struct { int easy = 10, normal = 13, hard = 16; } checks;
         struct { int steps = 4; } light;
+        struct { int stepsPerSpeed = 3; } moves; // a turn's steps are capped at this x Speed (no endless pacing)
         int carry = 4;
         struct { int rounds = 3, minDamage = 1, base = 3, defenseDivisor = 2, guardDivisor = 2; } battle;
         struct { std::vector<int> xp; int hp = 4, stat = 1; } levels;

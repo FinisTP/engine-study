@@ -51,11 +51,15 @@ code holds only the mechanics. Design: `docs/design/game-design.md` (GDD); bots 
 
 ## A turn (`Turn.cpp`)
 
-- Moves = Speed. Passage: 1 move. Stepping back into the cell a plain last step came from (no
-  room opened, nothing rolled, fought or picked up) undoes it: the move comes back, and the cell
-  just left is barred for the rest of the turn (`Guest::undo`, `barred`), so no pacing. Doorway: opens the room. Item, event and trap rooms stop
-  movement until resolved; an unused bonus room stops it too. Transport rooms move you to the
-  other one of the pair for 1 move (`Action{Move, transportMove}`).
+- **Moves** (user, 2026-11-15): a turn starts with `budget` = Speed at `origin` = where the guest
+  stands. What is left is always the budget less the shortest way back to the origin through
+  passages (`Distance`, a breadth-first search), so walking out and back costs nothing and a misclick
+  can be walked back. A step is legal if it keeps that way within the budget; a doorway (a new room)
+  needs one move left. Two things **commit** (the room becomes the origin, with what is left as
+  the budget): opening a room, and a room that stops the guest (item, event and trap rooms until
+  resolved, an unused bonus room, a fight; `Stop`). Transport rooms join the pair as a passage of 1
+  (`Action{Move, transportMove}`). `rules.json` `moves.stepsPerSpeed` x Speed caps the steps of a
+  turn (bots cannot pace forever; bots also never step straight back the way they came).
 - Items, drop and pick up are free. Resolving an item, event or trap room ends the turn; so does
   persuading, or a battle.
 - Ending the turn in an unused bonus room adds its stat (once per guest per room).

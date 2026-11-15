@@ -2,6 +2,7 @@
   "clock": { "startHour": 19, "rounds": 20, "turnAfterRound": 10 },
   "board": { "width": 9, "height": 9, "rooms": 70 },
   "checks": { "easy": 10, "normal": 13, "hard": 16 },
+  "moves": { "stepsPerSpeed": 3 },
   "light": { "steps": 4 },
   "carry": 4,
   "battle": { "rounds": 3, "minDamage": 1, "base": 3, "defenseDivisor": 2, "guardDivisor": 2 },

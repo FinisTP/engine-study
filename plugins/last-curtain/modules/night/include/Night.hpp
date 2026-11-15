@@ -35,9 +35,11 @@ namespace umbra::night
         std::int8_t pending = 0;   // levels earned and not yet chosen
         std::uint8_t asked = 0;     // this guest's own questions already asked (bits of its pool)
         std::int8_t chatRound = -1; // the round this guest last opened a chat
-        std::int8_t movesLeft = 0;
-        std::int8_t undo = -1;          // this turn: the cell a plain last step came from (-1 none)
-        std::bitset<maxCells> barred;   // this turn: cells left by an undo, not to be entered again
+        // Moves (user, 2026-11-15): what a step costs is the shortest way back to `origin`, where the turn
+        // began or the last commit (a door opened, a room that stops the guest) left it, with `budget`.
+        std::int8_t movesLeft = 0; // budget minus the shortest way from origin to here
+        std::int8_t origin = -1, budget = 0;
+        std::int8_t steps = 0; // steps this turn, capped at rules.moves.stepsPerSpeed x Speed
         std::int8_t goal = -1, goalCount = 0; // goals.csv row drawn tonight; events passed or monsters destroyed for it
         bool goalRoomSeen = false;           // a room goal: the room was entered
         std::uint8_t knows = 0;              // guests whose goal this guest knows, as bits
@@ -191,6 +193,8 @@ namespace umbra::night
     bool IsTaken(const NightState &state, int guest);
     // The name to show: the Taken form's once the curse has taken the guest, else the guest's.
     std::string ShownName(const NightDef &def, const NightState &state, int guest);
+    // Fewest steps from `from` to `to` through passages and the transport pair (-1: no way). Night.md "Moves".
+    int Distance(const NightDef &def, const NightState &state, int from, int to);
     // The guest's goal is done now (a room seen, a keepsake carried, an ally in its group, the count reached).
     bool GoalDone(const NightDef &def, const NightState &state, int guest);
 

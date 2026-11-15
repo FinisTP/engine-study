@@ -50,7 +50,7 @@ namespace umbra::night
         state.taken = {true, I8(t), 0, false};
         taken.group = -1;
         taken.down = false;
-        taken.cell = state.understage;
+        taken.cell = taken.origin = state.understage;
         taken.hp = I16(def.guests[U(t)].takenHp);
         // 3. Everyone else gathers in the foyer; the downed stand.
         for (int g = 0; g < state.count; ++g)
@@ -58,7 +58,7 @@ namespace umbra::night
             Guest &guest = state.guests[U(g)];
             if (g == t || guest.dead)
                 continue;
-            guest.cell = state.foyer;
+            guest.cell = guest.origin = state.foyer; // moves count from where they now stand
             if (guest.down)
                 guest.down = false, guest.hp = I16(def.rules.guests.downedReturnHp);
         }
