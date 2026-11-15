@@ -26,6 +26,7 @@ namespace umbra::night
                 continue;
             v.opened = true;
             v.kind = def.rooms[U(cell.room)].kind;
+            v.room = cell.room;
             v.doors = cell.doors;
             for (int d = 0; d < 4; ++d)
             {
@@ -62,8 +63,12 @@ namespace umbra::night
         {
             const Monster &monster = state.monsters[m];
             if (monster.hp > 0 && view.cells[U(monster.cell)].lit)
-                view.monsters.push_back({static_cast<int>(m), monster.cell, def.monsters[U(monster.kind)].taken >= 0});
+                view.monsters.push_back({static_cast<int>(m), monster.cell, monster.kind, def.monsters[U(monster.kind)].taken >= 0});
         }
+        // Items lying where the player can see.
+        for (const FloorItem &f : state.floor)
+            if (f.cell >= 0 && f.item >= 0 && view.cells[U(f.cell)].lit)
+                view.items.push_back({f.cell, f.item});
         return view;
     }
 

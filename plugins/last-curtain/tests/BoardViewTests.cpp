@@ -193,3 +193,42 @@ TEST_CASE("No path to a dark, walled-off, barred or own cell (T124)", "[night][v
         break;
     }
 }
+
+TEST_CASE("A cell's view names its room, for its picture (plan 4a)", "[night][board]")
+{
+    const NightDef def = Data();
+    const NightState state = NewNight(def, 3, 0);
+    const BoardView view = MakeView(def, state, 0);
+    for (int c = 0; c < maxCells; ++c)
+    {
+        const CellView &cell = view.cells[static_cast<std::size_t>(c)];
+        if (cell.opened)
+            CHECK(cell.room == state.cells[static_cast<std::size_t>(c)].room);
+        else
+            CHECK(cell.room == -1);
+    }
+    CHECK(view.cells[static_cast<std::size_t>(state.foyer)].room == NightDef::Find(def.rooms, "foyer"));
+}
+
+TEST_CASE("The view lists items lying in lit cells and each monster's kind (T142)", "[night][board]")
+{
+    const NightDef def = Data();
+    NightState state = NewNight(def, 3, 0);
+    const int here = state.guests[0].cell;
+    state.floor.push_back({static_cast<std::int8_t>(here), static_cast<std::int8_t>(NightDef::Find(def.items, "lantern"))});
+    state.floor.push_back({static_cast<std::int8_t>(state.foyer == here ? -1 : state.foyer), static_cast<std::int8_t>(NightDef::Find(def.items, "fan"))});
+    Monster moths;
+    moths.kind = static_cast<std::int8_t>(NightDef::Find(def.monsters, "moths"));
+    moths.cell = static_cast<std::int8_t>(here);
+    moths.hp = 3;
+    state.monsters.push_back(moths);
+    const BoardView view = MakeView(def, state, 0);
+    REQUIRE_FALSE(view.items.empty());
+    CHECK(view.items[0].cell == here);
+    CHECK(view.items[0].item == NightDef::Find(def.items, "lantern"));
+    for (const FloorView &item : view.items)
+        CHECK(view.cells[static_cast<std::size_t>(item.cell)].lit);
+    const auto found = std::find_if(view.monsters.begin(), view.monsters.end(), [&](const MonsterView &m) { return m.cell == here; });
+    REQUIRE(found != view.monsters.end());
+    CHECK(found->kind == moths.kind);
+}

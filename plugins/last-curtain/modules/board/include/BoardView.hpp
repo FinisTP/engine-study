@@ -15,6 +15,7 @@ namespace umbra::night
     {
         bool opened = false, lit = false;
         RoomKind kind = RoomKind::Plain;
+        int room = -1;             // rooms.csv row, for its picture; -1 = not opened
         std::uint8_t doors = 0;    // NESW, bit 0 = N
         std::uint8_t doorways = 0; // doors that lead to a room not yet opened
         std::uint8_t walls = 0;    // sides a guest cannot pass: neither a passage nor a doorway
@@ -30,7 +31,14 @@ namespace umbra::night
     struct MonsterView
     {
         int monster = -1, cell = -1;
+        int kind = -1; // monsters.csv row (minions too), for its card
         bool minion = false;
+    };
+
+    // An item lying on the floor of a lit cell.
+    struct FloorView
+    {
+        int cell = -1, item = -1; // item: items.csv row
     };
 
     struct BoardView
@@ -38,6 +46,7 @@ namespace umbra::night
         std::array<CellView, maxCells> cells{};
         std::vector<PawnView> pawns;
         std::vector<MonsterView> monsters;
+        std::vector<FloorView> items;
     };
 
     // viewer: the player's guest; -1 (or a dead viewer) sees everything.

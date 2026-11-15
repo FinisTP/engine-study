@@ -40,6 +40,10 @@ public:
     void SetHunt(bool hunt) { hunt_ = hunt; } // after the Turn the ambient turns red
     void Aim(glm::vec3 target, float seconds);
     void Update(float dt);
+    // The painted pictures (Art.md), once; a missing one leaves its box (logged).
+    void LoadArt(const umbra::night::NightDef &def, const umbra::assets::AssetFolders &assets);
+    // Tonight's featured cells (FeaturedCells), set when a night starts.
+    void SetFeatured(std::vector<bool> featured) { featured_ = std::move(featured); }
     // The figures: a sliding pawn faces its step and walks, the others stand idle (Table.md).
     void Animate(const umbra::night::NightDef &def, const umbra::night::BoardView &view, const Slide &slide, float dt);
     void Zoom(float steps);
@@ -72,6 +76,10 @@ private:
     umbra::core::MeshHandle box_; // a 1 m cube centred on the origin
     Figure guest_, taken_;        // one guest model for all seven, one Taken; tinted by guests.csv's color
     std::vector<Pawn> pawns_;     // by guest
+    std::vector<umbra::core::TextureHandle> roomArt_; // by rooms.csv row; empty handle = a box
+    std::vector<umbra::core::TextureHandle> cardArt_; // by monsters.csv row (minions too)
+    std::vector<umbra::core::TextureHandle> itemArt_; // by items.csv row
+    std::vector<bool> featured_;                      // by cell: a gold frame
     glm::vec3 from_{0.0F}, to_{0.0F};
     float seconds_ = 0.0F, elapsed_ = 0.0F;
     float distance_ = 11.0F;

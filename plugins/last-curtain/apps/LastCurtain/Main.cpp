@@ -1,3 +1,4 @@
+#include "Art.hpp"
 #include "Play.hpp"
 #include "Screens.hpp"
 #include "Table.hpp"
@@ -162,6 +163,7 @@ namespace
                 return 1;
             Screens screens(renderer, assets);
             Table table(renderer, assets);
+            table.LoadArt(def, assets);
             umbra::core::DrawList drawList;
             const int frames = options.frames > 0 ? options.frames : (options.capture.empty() ? 0 : 3);
             int frame = 0, aimed = -1, savedRound = -1;
@@ -191,6 +193,7 @@ namespace
                     play.emplace(def, options.seed ? options.seed : random(), player);
                 play->SetCaptions(captions);
                 play->SetWords(&words);
+                table.SetFeatured(FeaturedCells(def, play->State()));
                 if (screens.Ready() && play->State().player >= 0)
                     screens.Ui().Open("hud");
                 if (screens.Ready())

@@ -1,10 +1,13 @@
 #include "Table.hpp"
 
+#include "Art.hpp"
+
 #include <AnimGraph.hpp>
 #include <GltfImporter.hpp>
 #include <Lighting.hpp>
 #include <Log.hpp>
 #include <MeshData.hpp>
+#include <TextureTools.hpp>
 
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
@@ -78,6 +81,10 @@ Table::Table(umbra::render::Renderer &renderer, const umbra::assets::AssetFolder
 
 Table::~Table()
 {
+    for (const auto *art : {&roomArt_, &cardArt_, &itemArt_})
+        for (const umbra::core::TextureHandle texture : *art)
+            if (texture)
+                renderer_.DestroyTexture(texture);
     for (const Figure *figure : {&guest_, &taken_})
     {
         if (figure->mesh)
@@ -111,6 +118,26 @@ Table::Figure Table::Load(const std::filesystem::path &model, const std::filesys
         figure.texture = renderer_.CreateTexture(figure.model->textures[static_cast<std::size_t>(mesh.texture)]);
     figure.scale = scale;
     return figure;
+}
+
+void Table::LoadArt(const NightDef &def, const umbra::assets::AssetFolders &assets)
+{
+    int missing = 0;
+    const auto load = [&](const char *set, const std::string &id) {
+        umbra::core::TextureData data;
+        std::string error;
+        const bool ok = umbra::assets::LoadImageFile(assets / ArtPath(set, id), data, error);
+        missing += ok ? 0 : 1;
+        return ok ? renderer_.CreateTexture(data) : umbra::core::TextureHandle{};
+    };
+    for (const RoomDef &room : def.rooms)
+        roomArt_.push_back(load("rooms", room.id));
+    for (const MonsterDef &monster : def.monsters)
+        cardArt_.push_back(load("cards", monster.id));
+    for (const ItemDef &item : def.items)
+        itemArt_.push_back(load("items", item.id));
+    if (missing > 0)
+        umbra::diagnostics::Error(std::to_string(missing) + " table pictures are missing; those are boxes (Art.md)");
 }
 
 umbra::core::Animator Table::MakeAnimator(const Figure &figure)
@@ -174,7 +201,18 @@ void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<i
         if (!cell.opened)
             continue;
         const glm::vec3 at = CellCenter(def, c);
-        Box(out, box_, at - glm::vec3{0, tileThick * 0.5F, 0}, {tile, tileThick, tile}, cell.lit ? RoomColor(cell.kind) : Hex(0x2A2A33));
+        const umbra::core::TextureHandle art = cell.room >= 0 && static_cast<std::size_t>(cell.room) < roomArt_.size() ? roomArt_[static_cast<std::size_t>(cell.room)] : umbra::core::TextureHandle{};
+        if (!art)
+            Box(out, box_, at - glm::vec3{0, tileThick * 0.5F, 0}, {tile, tileThick, tile}, cell.lit ? RoomColor(cell.kind) : Hex(0x2A2A33));
+        else
+        {
+            // The frame (gold for a featured room, else the kind's colour), the painted tile on it; dim out of the light.
+            const glm::vec4 shade = cell.lit ? glm::vec4{1.0F} : glm::vec4{0.32F, 0.32F, 0.36F, 1.0F};
+            const bool featured = static_cast<std::size_t>(c) < featured_.size() && featured_[static_cast<std::size_t>(c)];
+            Box(out, box_, at - glm::vec3{0, tileThick * 0.5F, 0}, {tile, tileThick, tile}, (featured ? Hex(0xD4AF37) : RoomColor(cell.kind)) * shade);
+            const float inner = featured ? 0.84F : 0.9F;
+            out.items.push_back({box_, art, glm::scale(glm::translate(glm::mat4{1.0F}, at - glm::vec3{0, tileThick * 0.5F - 0.004F, 0}), {tile * inner, tileThick, tile * inner}), shade});
+        }
         if (cell.step >= 0)
             Box(out, box_, at + glm::vec3{0, 0.01F, 0}, {tile * 0.6F, 0.02F, tile * 0.6F}, Hex(0xF2D58A));
         for (int d = 0; d < 4; ++d)
@@ -229,8 +267,35 @@ void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<i
         const float angle = static_cast<float>(i) * 2.399F;
         return CellCenter(def, cell) + (i == 0 ? glm::vec3{0} : 0.6F * glm::vec3{std::cos(angle), 0, std::sin(angle)});
     };
+    // 5. Monsters: a painted card standing in a dark frame, facing the camera (+Z); a box without its picture.
+    const auto art = [](const std::vector<umbra::core::TextureHandle> &set, int row) {
+        return row >= 0 && static_cast<std::size_t>(row) < set.size() ? set[static_cast<std::size_t>(row)] : umbra::core::TextureHandle{};
+    };
     for (const MonsterView &monster : view.monsters)
-        Box(out, box_, spot(monster.cell) + glm::vec3{0, 0.35F, 0}, {0.6F, 0.7F, 0.6F}, monster.minion ? Hex(0x5B2A86) : Hex(0x8B5A2B));
+    {
+        const glm::vec3 at = spot(monster.cell);
+        const glm::vec4 frame = monster.minion ? Hex(0x5B2A86) : Hex(0x2A1E16);
+        if (const umbra::core::TextureHandle card = art(cardArt_, monster.kind))
+        {
+            Box(out, box_, at + glm::vec3{0, 0.45F, 0}, {0.68F, 0.9F, 0.04F}, frame);
+            out.items.push_back({box_, card, glm::scale(glm::translate(glm::mat4{1.0F}, at + glm::vec3{0, 0.46F, 0.005F}), {0.6F, 0.8F, 0.04F}), glm::vec4{1.0F}});
+            Box(out, box_, at + glm::vec3{0, 0.02F, 0}, {0.5F, 0.04F, 0.25F}, frame); // its stand
+        }
+        else
+            Box(out, box_, at + glm::vec3{0, 0.35F, 0}, {0.6F, 0.7F, 0.6F}, monster.minion ? Hex(0x5B2A86) : Hex(0x8B5A2B));
+    }
+    // 6. Items on the floor: small painted tokens along the cell's near edge.
+    std::map<int, int> tokens;
+    for (const FloorView &item : view.items)
+    {
+        const int i = tokens[item.cell]++;
+        const glm::vec3 at = CellCenter(def, item.cell) + glm::vec3{-tile * 0.3F + static_cast<float>(i) * 0.45F, 0.0F, tile * 0.32F};
+        Box(out, box_, at + glm::vec3{0, 0.015F, 0}, {0.42F, 0.03F, 0.42F}, Hex(0x2A1E16));
+        if (const umbra::core::TextureHandle token = art(itemArt_, item.item))
+            out.items.push_back({box_, token, glm::scale(glm::translate(glm::mat4{1.0F}, at + glm::vec3{0, 0.02F, 0}), {0.36F, 0.03F, 0.36F}), glm::vec4{1.0F}});
+        else
+            Box(out, box_, at + glm::vec3{0, 0.02F, 0}, {0.3F, 0.03F, 0.3F}, Hex(0xF2D58A));
+    }
 }
 
 int Table::Crowd(const BoardView &view, int cell)
