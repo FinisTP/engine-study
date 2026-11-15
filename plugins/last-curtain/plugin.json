@@ -5,15 +5,19 @@
   "label": "The Last Curtain",
   "description": "One night in the Saigon Opera House as a headless, data-driven board game (ADR 0012): seven guests, omens, the Turn and the hunt.",
   "kind": "game",
-  "requires": [],
+  "requires": [
+    "living-town"
+  ],
   "modules": [
     "night",
     "nightbots",
-    "board"
+    "board",
+    "nightmind"
   ],
   "links": [
     "Umbra::Night",
     "Umbra::NightBots",
-    "Umbra::NightBoard"
+    "Umbra::NightBoard",
+    "Umbra::NightMind"
   ]
 }
