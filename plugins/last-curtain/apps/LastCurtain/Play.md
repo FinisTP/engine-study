@@ -30,12 +30,15 @@ fight, a fall, a chat, a clearing) waits for Continue with `tapToContinue` and i
 size with `moments`; the caption names the event the bot faced. A walk alone stays on the table.
 Skip runs the bots to the player's turn with no waits.
 
-Before a deed the player will see (a walk into a room that does something, a fight, a chat, a
-power), the bot's action is tried on a copy of the night (the rules are deterministic, so the copy
-comes out the same): if it is a deed, its caption is shown first as a **preview** (what the bot
-faces: the room, its event and story, no result) and waits for a tap; then the action is applied
-and its result shown. A blow in a fight says who hit whom, for how much and the HP left, and puts
-the damage over the struck guest for 2 s; an item used is named.
+A deed the player waits on (a walk into a room that does something, a fight, a chat, a power)
+shows in steps, once the bot has walked in (the caption waits for the slide): first what it faces
+(the room, its event and story, no result: a **preview**); after a tap, its roll on the dice screen
+("Le Thanh rolls"); then the result, waiting again. A bot that only waits stays on the table. A
+blow in a fight says who hit whom, for how much and the HP left, and puts the damage over the
+struck guest for 2 s; an item used is named.
+
+A die tumbles for `diceSeconds`, its face changing less and less often (14 × the square root of
+the time gone), lands on its number, holds it 0.4 s, then tells the verdict and the result.
 
 ## Chats
 

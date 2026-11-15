@@ -3,6 +3,7 @@
   "version": 1,
   "modal": true,
   "root": { "type": "stack", "anchor": "right", "offset": [-24, 20], "style": "panel", "size": [440, 0], "align": "center", "gap": 10, "children": [
+    { "type": "text", "style": "heading", "text": "{dice.who} rolls", "visible": "{dice.who}" },
     { "type": "text", "style": "muted", "text": "The d20 is rolling...", "visible": "{dice.rolling}" },
     { "type": "text", "style": "muted", "text": "The d20 rolled", "visible": "{dice.landed}" },
     { "type": "text", "style": "title", "text": "{dice.die}" },
@@ -12,6 +13,6 @@
     { "type": "text", "style": "bad", "text": "Failed", "visible": "{dice.failed}" },
     { "type": "text", "style": "text", "text": "{dice.result}", "wrap": true, "size": [400, 0], "textAlign": "center" },
     { "type": "text", "style": "strong", "text": "{dice.replyBy}: \"{dice.reply}\"", "visible": "{dice.reply}", "wrap": true, "size": [400, 0], "textAlign": "center" },
-    { "type": "button", "size": [200, 44], "text": "Continue", "action": "continue", "visible": "{dice.landed}" }
+    { "type": "button", "size": [200, 44], "text": "Continue", "action": "continue", "visible": "{dice.told}" }
   ] }
 }

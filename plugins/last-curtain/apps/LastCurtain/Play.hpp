@@ -12,6 +12,7 @@
 #include <deque>
 #include <functional>
 #include <vector>
+#include <optional>
 #include <string>
 
 // One night as the person plays it, without a window (tested): clicks, keys and screen actions in,
@@ -110,6 +111,7 @@ private:
         int hp = 0; // the HP it took or gave, for the HUD's flash
         std::string reply, replyBy; // a chat answer: the asker's reply (the model's words when ready)
         int replyTicket = 0;
+        std::string who; // a bot's roll: its name (empty: the player's)
     };
 
     bool Do(const umbra::night::Action &action); // applies a legal action on the player's turn
@@ -164,9 +166,10 @@ private:
         float until = 0.0F; // clock_ when it goes
     };
     std::vector<Popup> popups_; // damage over struck guests (Main draws them as labels)
-    bool previewed_ = false;     // the pending bot deed was previewed (shown before it happens)
-    bool preview_ = false;       // the caption on show is that preview
-    std::string previewCaption_; // the model's words for it, kept for the deed
+    bool preview_ = false;          // the caption on show is a deed's first step: what the bot faces
+    std::string heldResult_;        // ... its result, shown after the tap
+    std::optional<Dice> botDice_;   // ... and the bot's roll, shown between
+    [[nodiscard]] float DiceSettle() const;
     [[nodiscard]] std::string RollResult(const umbra::night::EventDef &ev, bool passed, int guest) const;
     std::deque<Dice> dice_;
     bool turn_ = false; // the Turn happened and its screen waits

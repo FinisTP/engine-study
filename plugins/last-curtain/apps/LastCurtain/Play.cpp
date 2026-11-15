@@ -177,7 +177,7 @@ bool Play::Do(const Action &action)
     {
         if (e.kind != LogKind::Check || !Controls(state_, state_.player, e.who))
             continue;
-        Dice d{e.a, e.other, e.b, "", "", e.a + e.other >= e.b, 0, "", "", 0};
+        Dice d{e.a, e.other, e.b, "", "", e.a + e.other >= e.b, 0, "", "", 0, ""};
         if (action.kind == ActionKind::Answer)
         {
             d.stat = action.a == 0 ? "Might" : "Sanity";
@@ -304,8 +304,10 @@ void Play::Key(umbra::platform::InputKey key)
     if (key == InputKey::Down) direction = 2;
     if (key == InputKey::Left) direction = 3;
     // 2. Each key does what a legal action of this turn allows, or nothing; never behind a dialog.
-    if (key == InputKey::Space && (!PlayerTurn() || waitTap_))
-        fast_ = !PlayerTurn(), waitTap_ = false;
+    if (key == InputKey::Space && waitTap_)
+        (void)HandleUi("caption", "next", "");
+    else if (key == InputKey::Space && !PlayerTurn())
+        fast_ = true;
     if (key == InputKey::Enter && Screen() == "rest")
         resting_ = false;
     if (key == InputKey::I && (Screen() == "menu" || Screen() == "bag") && !state_.chat.active)
@@ -371,7 +373,7 @@ bool Play::HandleUi(const std::string &, const std::string &action, const std::s
     }
     if (action == "done" && mode_ == Mode::Picking && !walking_) // the walk picker's Done
         return (mode_ = Mode::Menu), true;
-    if (action == "continue" && !dice_.empty() && diceClock_ >= options_.diceSeconds)
+    if (action == "continue" && !dice_.empty() && diceClock_ >= options_.diceSeconds + DiceSettle())
     {
         // The HUD shows an HP change for a moment.
         const int hp = dice_.front().hp;
@@ -389,7 +391,17 @@ bool Play::HandleUi(const std::string &, const std::string &action, const std::s
         return following_ = true;
     // A tap on a waiting beat; Skip runs the bots to the player's turn.
     if (action == "next" && waitTap_)
+    {
+        // A preview gives way to the bot's roll (if any) and the result, which waits again.
+        if (preview_)
+        {
+            preview_ = false, beat_.result = heldResult_;
+            if (botDice_)
+                dice_.push_back(*botDice_), diceClock_ = 0.0F, botDice_.reset();
+            return true;
+        }
         return !(waitTap_ = false);
+    }
     if (action == "skip" && !PlayerTurn() && state_.player >= 0 && !state_.over)
     {
         skipping_ = fast_ = true, waitTap_ = false;
@@ -466,8 +478,8 @@ std::string Play::Screen() const
         return turnTicket_ != 0 ? "" : "turn"; // its line is still coming
     if (resting_)
         return "rest";
-    if (waitTap_ && beat_.seen) // a bot's beat waits, even one that handed the turn to the player
-        return "caption";
+    if (waitTap_ && beat_.seen) // a bot's beat waits (once it has walked in), even one that handed the turn on
+        return slide_.guest >= 0 ? "" : "caption";
     if (!PlayerTurn())
         return (hold_ > 0.0F || waitTap_) && beat_.seen ? "caption" : "";
     if (state_.chat.active)
@@ -541,35 +553,8 @@ void Play::Update(float dt)
     lineWaiting_ = LineWaiting(captionTicket_, askedAt_) || LineWaiting(saidTicket_, askedAt_);
     if (lineWaiting_)
         return;
-    // 5. A deed the player will see (a room, a fight, a chat, a power) is first shown as what the bot
-    //    faces, waiting for a tap; the rules decide nothing yet (Play.md "Bots").
-    const Action next = pendingAction_;
-    const bool facing = next.kind == ActionKind::Move || next.kind == ActionKind::Attack || next.kind == ActionKind::Power ||
-                        next.kind == ActionKind::Chat || next.kind == ActionKind::OpenChat;
-    if (!previewed_ && facing && options_.tapToContinue && !skipping_ && !fast_ && !captions_.lines.empty())
-    {
-        NightState trial = state_;
-        if (Apply(def_, trial, next))
-        {
-            const std::vector<LogEntry> entries = NewLog(trial, state_.logCount);
-            Beat b = Narrate(def_, state_, trial, entries, next, acting, state_.player, captions_);
-            if (b.seen && Notable(entries, next))
-            {
-                previewed_ = preview_ = true;
-                if (captionTicket_ != 0)
-                    b.caption = previewCaption_ = words_->Take(captionTicket_, b.caption), captionTicket_ = 0;
-                b.result.clear();
-                b.camera = state_.guests[U(acting)].cell; // where the bot stands: the room ahead may not be open yet
-                beat_ = b;
-                int entered = -1;
-                beatEvent_ = RoomEvent(state_, trial, next, acting, entered);
-                waitTap_ = true, moment_ = options_.moments, hold_ = 0.0F;
-                return;
-            }
-        }
-    }
-    // 6. It acts; the narrator says what the player could see of it; a step slides.
-    pending_ = previewed_ = preview_ = false;
+    // 5. It acts; the narrator says what the player could see of it; a step slides.
+    pending_ = preview_ = false;
     const NightState before = state_;
     const Action action = pendingAction_;
     if (!Apply(def_, state_, action))
@@ -582,9 +567,6 @@ void Play::Update(float dt)
     beat_ = captions_.lines.empty() ? Beat{} : Narrate(def_, before, state_, NewLog(state_, before.logCount), action, acting, state_.player, captions_);
     if (captionTicket_ != 0)
         beat_.caption = words_->Take(captionTicket_, beat_.caption), captionTicket_ = 0;
-    else if (!previewCaption_.empty())
-        beat_.caption = previewCaption_;
-    previewCaption_.clear();
     said_ = saidTicket_ != 0 ? words_->Take(saidTicket_, "") : "", saidTicket_ = 0;
     int entered = -1;
     beatEvent_ = beat_.seen ? RoomEvent(before, state_, action, acting, entered) : -1; // the caption names it
@@ -597,6 +579,23 @@ void Play::Update(float dt)
     hold_ = !beat_.seen || skipping_ ? options_.unseenBeatSeconds : fast_ ? options_.fastBeatSeconds : options_.beatSeconds;
     waitTap_ = notable && options_.tapToContinue && !skipping_ && !fast_;
     moment_ = notable && options_.moments && !skipping_;
+    // 6. A deed the player waits on (a room, a fight, a chat, a power) shows in two steps (Play.md "Bots"):
+    //    once the bot has walked in, what it faces (no result); after a tap its roll, then the result.
+    const bool facing = action.kind == ActionKind::Move || action.kind == ActionKind::Attack || action.kind == ActionKind::Power ||
+                        action.kind == ActionKind::Chat || action.kind == ActionKind::OpenChat;
+    if (waitTap_ && facing)
+    {
+        preview_ = true, heldResult_ = beat_.result, beat_.result.clear(), botDice_.reset();
+        for (const LogEntry &e : NewLog(state_, before.logCount))
+            if (e.kind == LogKind::Check && e.who == acting)
+            {
+                Dice d{e.a, e.other, e.b, "", "", e.a + e.other >= e.b, 0, "", "", 0, ""};
+                d.who = ShownName(def_, state_, acting);
+                if (beatEvent_ >= 0)
+                    d.stat = StatName(def_.events[U(beatEvent_)].stat), d.result = RollResult(def_.events[U(beatEvent_)], d.passed, acting);
+                botDice_ = d;
+            }
+    }
     if (!beat_.seen)
         slide_ = {}; // only what the player sees slides
 }
@@ -763,14 +762,17 @@ nlohmann::json Play::UiData() const
     }
     if (!state_.over && !dice_.empty())
     {
-        // While it tumbles the face flickers and nothing is told yet.
+        // While it tumbles the face changes, more and more slowly (fewer flips as sqrt flattens); then the
+        // final number holds a moment before the verdict is told.
         const Dice &d = dice_.front();
-        const bool rolling = diceClock_ < options_.diceSeconds, landed = !rolling;
-        const int face = rolling ? 1 + static_cast<int>(diceClock_ * 23.0F + static_cast<float>(d.die) * 7.0F) % 20 : d.die;
+        const bool rolling = diceClock_ < options_.diceSeconds, told = diceClock_ >= options_.diceSeconds + DiceSettle();
+        const int flips = rolling ? static_cast<int>(14.0F * std::sqrt(diceClock_ / options_.diceSeconds)) : 0;
+        const int face = rolling ? 1 + (flips * 7 + d.die * 3) % 20 : d.die;
+        const bool landed = told;
         data["dice"] = {{"die", face}, {"stat", d.stat}, {"statValue", d.statValue}, {"total", d.die + d.statValue},
                         {"target", d.target}, {"passed", landed && d.passed}, {"failed", landed && !d.passed}, {"result", landed ? d.result : ""},
-                        {"plain", landed && d.stat.empty()}, {"withStat", landed && !d.stat.empty()}, {"rolling", rolling}, {"landed", landed},
-                        {"reply", landed ? d.reply : ""}, {"replyBy", d.replyBy}};
+                        {"plain", landed && d.stat.empty()}, {"withStat", landed && !d.stat.empty()}, {"rolling", rolling}, {"landed", !rolling},
+                        {"reply", landed ? d.reply : ""}, {"replyBy", d.replyBy}, {"told", told}, {"who", d.who}};
     }
     if (!state_.over && PlayerTurn() && state_.chat.active)
     {
@@ -1307,3 +1309,5 @@ int Play::RoomEvent(const NightState &before, const NightState &after, const Act
         faced = faced || ((e.kind == LogKind::Check || e.kind == LogKind::Cleared) && e.who == guest);
     return entered >= 0 && faced ? before.cells[U(entered)].event : -1;
 }
+
+float Play::DiceSettle() const { return options_.diceSeconds > 0.0F ? 0.4F : 0.0F; } // the landed number holds this long

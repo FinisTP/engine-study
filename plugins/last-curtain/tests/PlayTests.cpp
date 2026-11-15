@@ -1463,7 +1463,7 @@ namespace
         for (int i = 0; i < limit; ++i)
         {
             Settle(play);
-            if (play.WaitingForTap())
+            if (play.WaitingForTap() && play.Sliding().guest < 0) // once the bot has walked in
                 return true;
             if (play.State().chat.active && play.PlayerTurn() && play.Screen() == "chat")
                 play.HandleUi("chat", "answer", "0");
@@ -1500,8 +1500,12 @@ TEST_CASE("A bot beat where something happens waits for a tap, shown at full siz
     CHECK(play.StageCell() == play.LastBeat().camera);
     play.Update(100.0F);
     CHECK(play.Beats() == beats);
-    // 2. A tap lets the night go on.
-    REQUIRE(play.HandleUi("caption", "next", ""));
+    // 2. Taps (the deed's steps: what it faces, its roll, its result) let the night go on.
+    for (int t = 0; t < 4 && play.WaitingForTap(); ++t)
+    {
+        Settle(play);
+        play.HandleUi("caption", "next", "");
+    }
     CHECK_FALSE(play.WaitingForTap());
 }
 
@@ -1554,6 +1558,11 @@ TEST_CASE("A bot's walk stays on the table; only what it does opens the room and
     for (int i = 0; i < 4000 && !play.State().over; ++i)
     {
         Settle(play);
+        if (play.WaitingForTap()) // a deed's later steps (its roll, its result)
+        {
+            play.HandleUi("caption", "next", "");
+            continue;
+        }
         const std::uint32_t before = play.State().logCount;
         if (play.State().chat.active && play.PlayerTurn() && play.Screen() == "chat")
             play.HandleUi("chat", "answer", "0");
@@ -1622,10 +1631,10 @@ namespace
         return play;
     }
 
-    // Lets the die land: it tumbles for a second.
+    // Lets the die land and tell: it tumbles for a second, then holds its number a moment.
     void Land(Play &play)
     {
-        for (int i = 0; i < 20 && play.UiData()["dice"]["rolling"] == true; ++i)
+        for (int i = 0; i < 30 && play.UiData()["dice"]["told"] != true; ++i)
             play.Update(0.1F);
     }
 }
@@ -1658,6 +1667,7 @@ TEST_CASE("Walking into a room plays it step by step: arrival, card, tumbling di
         CHECK_FALSE(play.HandleUi("dice", "continue", ""));
         Land(play);
         CHECK(play.UiData()["dice"]["rolling"] == false);
+        CHECK(play.UiData()["dice"]["told"] == true);
         // 4. The result in plain words, with what is left.
         const std::string result = play.UiData()["dice"]["result"].get<std::string>();
         CHECK(result.find(play.UiData()["dice"]["passed"] == true ? "Speed" : "now") != std::string::npos);
@@ -1832,7 +1842,7 @@ TEST_CASE("A walk back toward where moves count from is always affordable (T157)
     CHECK(play.State().guests[0].movesLeft == 1);
 }
 
-TEST_CASE("A bot's deed in sight is previewed before it happens, then its result shown (T159)", "[night][play][pace]")
+TEST_CASE("A bot's deed in sight: it walks in first, then what it faces, its roll, then the result (T159, T166)", "[night][play][pace]")
 {
     NightDef def = Data();
     for (RoomDef &room : def.rooms)
@@ -1843,7 +1853,9 @@ TEST_CASE("A bot's deed in sight is previewed before it happens, then its result
     Captions captions;
     REQUIRE(LoadCaptions(std::filesystem::path(UMBRA_NIGHT_DATA) / "captions.json", captions, diagnostics));
     play.SetCaptions(captions);
-    play.SetOptions(Designed());
+    umbra::night::GameOptions options = Designed();
+    options.diceSeconds = 1.0F;
+    play.SetOptions(options);
     int previews = 0;
     for (int i = 0; i < 60 && previews == 0; ++i)
     {
@@ -1851,21 +1863,65 @@ TEST_CASE("A bot's deed in sight is previewed before it happens, then its result
             break;
         if (play.UiData()["caption"]["preview"] == true)
         {
-            // 1. The preview: what the bot faces, nothing decided yet (no result, the log unchanged by it).
+            // 1. The bot has walked in (no slide left); its caption names the event, no result yet.
             ++previews;
-            const std::uint32_t log = play.State().logCount;
+            CHECK(play.Sliding().guest < 0);
             CHECK(play.UiData()["caption"]["result"] == "");
             CHECK_FALSE(play.UiData()["caption"]["event"].get<std::string>().empty());
             REQUIRE(play.HandleUi("caption", "next", ""));
-            // 2. Then the deed and its result, waiting again.
-            REQUIRE(UntilTap(play, 50));
-            CHECK(play.State().logCount > log);
+            // 2. Its roll tumbles, lands and holds, then tells.
+            REQUIRE(play.Screen() == "dice");
+            CHECK(play.UiData()["dice"]["who"] != "");
+            CHECK_FALSE(play.HandleUi("dice", "continue", ""));
+            for (int t = 0; t < 30 && play.UiData()["dice"]["told"] != true; ++t)
+                play.Update(0.1F);
+            REQUIRE(play.HandleUi("dice", "continue", ""));
+            // 3. Then the result, waiting again.
+            CHECK(play.Screen() == "caption");
             CHECK(play.UiData()["caption"]["preview"] == false);
             CHECK_FALSE(play.UiData()["caption"]["result"].get<std::string>().empty());
+            CHECK(play.WaitingForTap());
         }
-        play.HandleUi("caption", "next", "");
+        else
+            play.HandleUi("caption", "next", "");
     }
     CHECK(previews > 0);
+}
+
+TEST_CASE("A die slows to a stop, shows its number, then tells (T166)", "[night][play][flow]")
+{
+    NightDef def = Data();
+    const int sandbag = NightDef::Find(def.events, "sandbag");
+    def.events[static_cast<std::size_t>(sandbag)].clear = ClearKind::None;
+    Play play = IntoRoom(def, "loosestairs", sandbag);
+    REQUIRE(play.HandleUi("arrive", "onward", ""));
+    REQUIRE(play.HandleUi("event", "roll", ""));
+    // 1. Early on the face changes often, later seldom.
+    int early = 0, late = 0, last = play.UiData()["dice"]["die"].get<int>();
+    for (int t = 0; t < 10; ++t)
+    {
+        play.Update(0.05F);
+        const int face = play.UiData()["dice"]["die"].get<int>();
+        (t < 5 ? early : late) += face != last ? 1 : 0, last = face;
+    }
+    for (int t = 0; t < 8; ++t)
+        play.Update(0.05F); // to 0.9 s
+    int changesNearEnd = 0;
+    for (int t = 0; t < 2; ++t)
+    {
+        play.Update(0.05F);
+        const int face = play.UiData()["dice"]["die"].get<int>();
+        changesNearEnd += face != last ? 1 : 0, last = face;
+    }
+    CHECK(early >= changesNearEnd);
+    // 2. Landed: the final number shows, the verdict not yet; then it tells.
+    play.Update(0.05F);
+    REQUIRE(play.UiData()["dice"]["rolling"] == false);
+    CHECK(play.UiData()["dice"]["told"] == false);
+    CHECK(play.UiData()["dice"]["result"] == "");
+    play.Update(0.5F);
+    CHECK(play.UiData()["dice"]["told"] == true);
+    CHECK(play.UiData()["dice"]["result"] != "");
 }
 
 TEST_CASE("Answering a chat gets a reply from the asker, pleased or not (T160)", "[night][play][chat]")
@@ -1985,9 +2041,8 @@ TEST_CASE("A guest knocked down is told plainly, and the HUD says so (T164)", "[
     Play play = IntoRoom(def, "loosestairs", sandbag);
     REQUIRE(play.HandleUi("arrive", "onward", ""));
     REQUIRE(play.HandleUi("event", "roll", ""));
-    for (int i = 0; i < 20 && play.UiData()["dice"]["rolling"] == true; ++i)
+    for (int i = 0; i < 30 && play.UiData()["dice"]["told"] != true; ++i)
         play.Update(0.2F);
-    play.Update(1.0F);
     const std::string result = play.UiData()["dice"]["result"].get<std::string>();
     CHECK(result.find("down") != std::string::npos);
     CHECK(play.UiData()["me"]["down"] == true);
