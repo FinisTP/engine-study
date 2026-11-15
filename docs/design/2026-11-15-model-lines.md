@@ -1,6 +1,6 @@
 # The Last Curtain: the model's lines (plan 3)
 
-> **Status:** Approved by the user 2026-11-15 (open questions answered); not started
+> **Status:** Implemented 2026-11-15 (`#UMBRA-162`-`#UMBRA-169`, `../testing/s29-model-lines.md`)
 > **Author:** the user + Claude · **Last updated:** 2026-11-15
 > **Quick reference** — Layer: presentation over the night rules · Key deps: the night (`Night.md`), the narrator (`Narrate.hpp`, `captions.json`), the built-in model (`plugins/living-town/modules/mind`, S23)
 

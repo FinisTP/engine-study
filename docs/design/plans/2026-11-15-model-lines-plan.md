@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Status:** ready; the spec's questions are answered (user, 2026-11-15). Not started.
+> **Status:** done 2026-11-15 (`#UMBRA-162`-`#UMBRA-169`); rulings in `../../testing/s29-model-lines.md` and the commits.
 
 **Goal:** the built-in model rewords captions, chat questions, goal lines, the Turn and the Taken's lines in each guest's voice, with the written templates as the fallback.
 

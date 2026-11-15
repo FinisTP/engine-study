@@ -52,7 +52,11 @@ For whoever continues this work, in any session. Read this first.
   lines are not saved; the style board's direction is right; full-size rooms use a fixed stage-like
   corner camera and open only for Look; battles (the player's and bots' in the player's light) play
   at full size; a free display face; the seven colours fit the cast. Both specs and plans updated.
-- **Next: plan 3, the model's lines** (`plans/2026-11-15-model-lines-plan.md`), then plan 4a.
+- **Plan 3, the model's lines: implemented 2026-11-15**, `#UMBRA-162`-`#UMBRA-169`: voices in
+  `guests.csv`, `modules/nightmind` (requests, guard, `TryLines`), `Words`, Play's waits, the model
+  file `apps/LastCurtain/models/night.gguf`, `UmbraTool night-mind`. Record `../testing/s29-model-lines.md`
+  (§4: the real-model check on Windows).
+- **Next: plan 4a, the painted table** (`plans/2026-11-15-painted-table-plan-4a.md`).
 
 ## Decided by the user (2026-11-14)
 
