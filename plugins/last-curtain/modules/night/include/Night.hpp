@@ -189,6 +189,8 @@ namespace umbra::night
     int ChancePercent(int stat, int target);
 
     bool IsTaken(const NightState &state, int guest);
+    // The name to show: the Taken form's once the curse has taken the guest, else the guest's.
+    std::string ShownName(const NightDef &def, const NightState &state, int guest);
     // The guest's goal is done now (a room seen, a keepsake carried, an ally in its group, the count reached).
     bool GoalDone(const NightDef &def, const NightState &state, int guest);
 

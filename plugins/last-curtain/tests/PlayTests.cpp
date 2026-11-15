@@ -1776,3 +1776,53 @@ TEST_CASE("The camera follows whoever acts; a drag frees it only until the next 
     if (MakeView(def, play.State(), play.State().player).cells[static_cast<std::size_t>(play.State().guests[static_cast<std::size_t>(bot)].cell)].lit)
         CHECK(play.CameraCell() == play.State().guests[static_cast<std::size_t>(bot)].cell);
 }
+
+TEST_CASE("The top bar shows whoever acts; the Taken go by their risen name (T155)", "[night][play][hud]")
+{
+    const NightDef def = Data();
+    NightState state = FoyerNight(def, 4, 0);
+    // 1. The Taken's name once risen.
+    const int g = 1;
+    CHECK(ShownName(def, state, g) == def.guests[g].name);
+    state.taken.present = true, state.taken.guest = g;
+    CHECK(ShownName(def, state, g) == def.guests[g].taken);
+    // 2. A bot's turn: its stats, marked as theirs; the player's HP stays in a chip.
+    Play play(def, FoyerNight(def, 4, 0));
+    ToPlayer(play);
+    play.Key(InputKey::Enter);
+    REQUIRE_FALSE(play.PlayerTurn());
+    const int bot = Current(play.State());
+    nlohmann::json top = play.UiData()["top"];
+    CHECK(top["name"] == def.guests[static_cast<std::size_t>(bot)].name);
+    CHECK(top["theirs"] == true);
+    CHECK(top["hp"] == play.State().guests[static_cast<std::size_t>(bot)].hp);
+    CHECK(play.UiData()["me"]["hp"] == play.State().guests[0].hp);
+    // 3. The player's turn: their own.
+    ToPlayer(play);
+    top = play.UiData()["top"];
+    CHECK(top["name"] == def.guests[0].name);
+    CHECK(top["theirs"] == false);
+}
+
+TEST_CASE("A bonus room says what it gives on the way in, and announces it when paid (T156)", "[night][play][flow]")
+{
+    NightDef def = Data();
+    Play play = IntoRoom(def, "rehearsal", -1);
+    // 1. Walking in: what it will give.
+    REQUIRE(play.Screen() == "arrive");
+    CHECK(play.UiData()["arrive"]["kind"] == "BONUS ROOM");
+    CHECK(play.UiData()["arrive"]["line"].get<std::string>().find("Might") != std::string::npos);
+    REQUIRE(play.HandleUi("arrive", "onward", ""));
+    // 2. Ending the turn there pays it, said plainly.
+    const int might = play.State().guests[0].might;
+    const std::vector<Action> legal = LegalActions(def, play.State());
+    const auto end = std::find_if(legal.begin(), legal.end(), [](const Action &x) { return x.kind == ActionKind::EndTurn; });
+    REQUIRE(end != legal.end());
+    REQUIRE(play.HandleUi("menu", "act", std::to_string(end - legal.begin())));
+    CHECK(play.State().guests[0].might == might + 1);
+    REQUIRE(play.Screen() == "arrive");
+    CHECK(play.UiData()["arrive"]["line"].get<std::string>().find("+1 Might") != std::string::npos);
+    play.Update(10.0F);
+    CHECK(play.Beats() == 0); // the bots wait for it
+    REQUIRE(play.HandleUi("arrive", "onward", ""));
+}

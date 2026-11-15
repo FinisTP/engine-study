@@ -9,6 +9,11 @@ namespace umbra::night
 
     bool IsTaken(const NightState &state, int guest) { return state.taken.present && state.taken.guest == guest; }
 
+    std::string ShownName(const NightDef &def, const NightState &state, int guest)
+    {
+        return IsTaken(state, guest) ? def.guests[U(guest)].taken : def.guests[U(guest)].name;
+    }
+
     bool inner::CompanyAlive(const NightState &state)
     {
         for (int g = 0; g < state.count; ++g)

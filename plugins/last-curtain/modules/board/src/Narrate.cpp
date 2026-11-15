@@ -30,9 +30,9 @@ namespace umbra::night
             return text;
         }
 
-        std::string GuestName(const NightDef &def, int guest)
+        std::string GuestName(const NightDef &def, const NightState &state, int guest)
         {
-            return guest >= 0 && U(guest) < def.guests.size() ? def.guests[U(guest)].name : "the house";
+            return guest >= 0 && U(guest) < def.guests.size() ? ShownName(def, state, guest) : "the house";
         }
 
         std::string RoomName(const NightDef &def, const NightState &state, int cell)
@@ -53,7 +53,7 @@ namespace umbra::night
                              const std::vector<LogEntry> &entries, const Action &action, int actor,
                              const Captions &captions)
         {
-            Vars v{{"guest", GuestName(def, actor)}};
+            Vars v{{"guest", GuestName(def, after, actor)}};
             const int cell = after.guests[U(actor)].cell;
             switch (action.kind)
             {
@@ -63,17 +63,17 @@ namespace umbra::night
                         return v["room"] = RoomName(def, after, e.a), Fill(captions, "open", v);
                 return v["room"] = RoomName(def, after, cell), Fill(captions, "move", v);
             case ActionKind::Attack:
-                v["foe"] = action.a >= 0 ? MonsterName(def, before, action.a) : GuestName(def, action.b);
+                v["foe"] = action.a >= 0 ? MonsterName(def, before, action.a) : GuestName(def, after, action.b);
                 return Fill(captions, "fight", v);
             case ActionKind::Strike:
             {
                 const Fighter &f = before.battle.fighters[U(action.a)];
-                v["foe"] = f.monster >= 0 ? MonsterName(def, before, f.monster) : GuestName(def, f.guest);
+                v["foe"] = f.monster >= 0 ? MonsterName(def, before, f.monster) : GuestName(def, after, f.guest);
                 return Fill(captions, "strike", v);
             }
             case ActionKind::Chat:
             case ActionKind::OpenChat:
-                return v["other"] = GuestName(def, action.a), Fill(captions, "chat", v);
+                return v["other"] = GuestName(def, after, action.a), Fill(captions, "chat", v);
             case ActionKind::Power:
                 return v["power"] = def.powers[U(def.guests[U(actor)].power)].id, Fill(captions, "power", v);
             case ActionKind::Answer: return Fill(captions, "answer", v);
@@ -89,7 +89,7 @@ namespace umbra::night
         }
 
         // The outcome lines from the log, joined with "; ".
-        std::string Result(const NightDef &def, const std::vector<LogEntry> &entries,
+        std::string Result(const NightDef &def, const NightState &after, const std::vector<LogEntry> &entries,
                             const Captions &captions)
         {
             std::string out;
@@ -103,14 +103,14 @@ namespace umbra::night
                 else if (e.kind == LogKind::Item && e.a >= 0)
                     line = Fill(captions, "found", {{"item", def.items[U(e.a)].name}});
                 else if (e.kind == LogKind::Down || e.kind == LogKind::Died)
-                    line = Fill(captions, e.kind == LogKind::Down ? "down" : "died", {{"who", GuestName(def, e.who)}});
+                    line = Fill(captions, e.kind == LogKind::Down ? "down" : "died", {{"who", GuestName(def, after, e.who)}});
                 else if (e.kind == LogKind::Cleared)
-                    line = Fill(captions, "cleared", {{"who", GuestName(def, e.who)}, {"event", def.events[U(e.a)].name}});
+                    line = Fill(captions, "cleared", {{"who", GuestName(def, after, e.who)}, {"event", def.events[U(e.a)].name}});
                 else if (e.kind == LogKind::Goal)
-                    line = Fill(captions, e.a ? "goalDone" : "goalFailed", {{"who", GuestName(def, e.who)}});
+                    line = Fill(captions, e.a ? "goalDone" : "goalFailed", {{"who", GuestName(def, after, e.who)}});
                 else if (e.kind == LogKind::Persuade && e.a)
                 {
-                    const Vars pair{{"who", GuestName(def, e.who)}, {"other", GuestName(def, e.other)}};
+                    const Vars pair{{"who", GuestName(def, after, e.who)}, {"other", GuestName(def, after, e.other)}};
                     line = Fill(captions, "told", pair);
                     if (e.b >= def.rules.persuade.approvals)
                         line += "; " + Fill(captions, "joined", pair);
@@ -169,7 +169,7 @@ namespace umbra::night
         if (from != to)
             beat.path = {from, to};
         beat.caption = Decision(def, before, after, entries, action, actor, captions);
-        beat.result = Result(def, entries, captions);
+        beat.result = Result(def, after, entries, captions);
         return beat;
     }
 }

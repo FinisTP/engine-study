@@ -152,15 +152,25 @@ bool Play::Do(const Action &action)
                                                           " carries you through. " + ev.name + " is gone for everyone.";
     }
     found_ = entered >= 0 && logged(LogKind::Item) != entries.end() && state_.cells[U(entered)].room >= 0 && def_.rooms[U(state_.cells[U(entered)].room)].kind == RoomKind::Item ? logged(LogKind::Item)->a : -1;
-    if (entered >= 0 && (event_ >= 0 || found_ >= 0 || logged(LogKind::Effect) != entries.end()))
+    const bool bonusAhead = entered >= 0 && state_.cells[U(entered)].room >= 0 && def_.rooms[U(state_.cells[U(entered)].room)].kind == RoomKind::Bonus &&
+                            !before.guests[U(g)].bonusUsed[U(entered)];
+    if (entered >= 0 && (event_ >= 0 || found_ >= 0 || bonusAhead || logged(LogKind::Effect) != entries.end()))
     {
         const RoomDef &room = def_.rooms[U(state_.cells[U(entered)].room)];
         const char *kinds[] = {"ROOM", "EVENT ROOM", "TRAP ROOM", "ITEM ROOM", "BONUS ROOM"};
         const int k = room.kind == RoomKind::Event ? 1 : room.kind == RoomKind::Trap ? 2 : room.kind == RoomKind::Item ? 3 : room.kind == RoomKind::Bonus ? 4 : 0;
         const std::string line = event_ >= 0 ? "Something is waiting for you here." : found_ >= 0 ? "Something has been left here."
-                                 : room.kind == RoomKind::Bonus ? "+" + std::to_string(room.amount) + " " + StatName(room.stat) + ", once for each guest."
+                                 : room.kind == RoomKind::Bonus ? "+" + std::to_string(room.amount) + " " + StatName(room.stat) + " when your turn ends here (once for each guest)."
                                                                 : "The room stirs.";
         arrive_ = {entered, kinds[k], line};
+    }
+    // 2b. A bonus paid as the turn ended (a new bit in bonusUsed): said plainly.
+    if ((state_.guests[U(g)].bonusUsed & ~before.guests[U(g)].bonusUsed).any())
+    {
+        const int cell = state_.guests[U(g)].cell;
+        const RoomDef &room = def_.rooms[U(state_.cells[U(cell)].room)];
+        arrive_ = {cell, "BONUS ROOM", "+" + std::to_string(room.amount) + " " + StatName(room.stat) + ". Your " + StatName(room.stat) + " is now " +
+                                           std::to_string(Stat(def_, state_, g, room.stat)) + "."};
     }
     // 3. Every roll the player's side made, with what came of it.
     for (const LogEntry &e : entries)
@@ -513,6 +523,11 @@ void Play::Update(float dt)
     said_ = saidTicket_ != 0 ? words_->Take(saidTicket_, "") : "", saidTicket_ = 0;
     int entered = -1;
     beatEvent_ = beat_.seen ? RoomEvent(before, action, acting, entered) : -1; // the caption names it
+    if (beat_.seen && (state_.guests[U(acting)].bonusUsed & ~before.guests[U(acting)].bonusUsed).any()) // a bonus room paid
+    {
+        const RoomDef &room = def_.rooms[U(state_.cells[U(state_.guests[U(acting)].cell)].room)];
+        beat_.result += (beat_.result.empty() ? "" : "; ") + std::string("+") + std::to_string(room.amount) + " " + StatName(room.stat) + " from the " + room.name;
+    }
     const bool notable = beat_.seen && Notable(NewLog(state_, before.logCount), action);
     hold_ = !beat_.seen || skipping_ ? options_.unseenBeatSeconds : fast_ ? options_.fastBeatSeconds : options_.beatSeconds;
     waitTap_ = notable && options_.tapToContinue && !skipping_ && !fast_;
@@ -523,7 +538,7 @@ void Play::Update(float dt)
 
 std::string Play::Label(const Action &action) const
 {
-    const auto name = [&](int guest) { return guest >= 0 ? def_.guests[U(guest)].name : std::string{"?"}; };
+    const auto name = [&](int guest) { return guest >= 0 ? ShownName(def_, state_, guest) : std::string{"?"}; };
     const auto monster = [&](int m) { return def_.monsters[U(state_.monsters[U(m)].kind)].name; };
     switch (action.kind)
     {
@@ -567,9 +582,9 @@ nlohmann::json Play::UiData() const
         data["inspect"] = InspectData();
     data["focus"] = !following_;
     if (beat_.seen && (hold_ > 0.0F || waitTap_))
-        data["caption"] = {{"guest", def_.guests[U(beat_.guest)].name}, {"line", beat_.caption}, {"result", beat_.result}, {"tap", waitTap_},
+        data["caption"] = {{"guest", ShownName(def_, state_, beat_.guest)}, {"line", beat_.caption}, {"result", beat_.result}, {"tap", waitTap_},
                            {"event", beatEvent_ >= 0 ? def_.events[U(beatEvent_)].name : ""}, {"eventText", beatEvent_ >= 0 ? def_.events[U(beatEvent_)].text : ""},
-                           {"said", said_}, {"saidBy", saidGuest_ >= 0 ? def_.guests[U(saidGuest_)].name : ""}};
+                           {"said", said_}, {"saidBy", saidGuest_ >= 0 ? ShownName(def_, state_, saidGuest_) : ""}};
     const int me = Me();
     if (me < 0)
         return data;
@@ -591,6 +606,13 @@ nlohmann::json Play::UiData() const
                   {"might", Stat(def_, state_, me, StatKind::Might)}, {"sanity", Stat(def_, state_, me, StatKind::Sanity)},
                   {"speed", Stat(def_, state_, me, StatKind::Speed)}, {"level", guest.level}, {"buffs", buffs},
                   {"flash", flashClock_ > 0.0F ? flash_ : ""}}; // an HP change, for a moment
+    // The top bar: whoever acts (a bot on its turn, marked as theirs), else the player.
+    const int top = !PlayerTurn() && !state_.over && Current(state_) >= 0 ? Current(state_) : me;
+    const Guest &t = state_.guests[U(top)];
+    data["top"] = {{"name", ShownName(def_, state_, top)}, {"portrait", ArtPath("portraits", def_.guests[U(top)].id).generic_string()},
+                   {"hp", t.hp}, {"maxHp", Stat(def_, state_, top, StatKind::MaxHp)}, {"might", Stat(def_, state_, top, StatKind::Might)},
+                   {"sanity", Stat(def_, state_, top, StatKind::Sanity)}, {"speed", Stat(def_, state_, top, StatKind::Speed)},
+                   {"level", t.level}, {"theirs", top != me}};
     data["moves"] = guest.movesLeft;
     // The player's own goal, and the goals it has learnt in chats.
     data["knownGoals"] = nlohmann::json::array();
@@ -605,7 +627,7 @@ nlohmann::json Play::UiData() const
             if (g != state_.player && ((mine.knows >> g) & 1u) && state_.guests[U(g)].goal >= 0)
                 data["knownGoals"].push_back({{"name", def_.guests[U(g)].name}, {"text", def_.goals[U(state_.guests[U(g)].goal)].text}});
     }
-    data["turnTitle"] = me == state_.player ? std::string{"Your turn"} : def_.guests[U(me)].name + "'s turn";
+    data["turnTitle"] = me == state_.player ? std::string{"Your turn"} : ShownName(def_, state_, me) + "'s turn";
 
     // 2. The turn menu: Move first, then fights, chats and the rest, Use item, End turn last.
     data["actions"] = nlohmann::json::array();
@@ -647,7 +669,7 @@ nlohmann::json Play::UiData() const
     }
     for (const PawnView &pawn : MakeView(def_, state_, state_.player).pawns)
         if (pawn.guest != me)
-            data["inLight"].push_back({{"name", def_.guests[U(pawn.guest)].name}, {"room", def_.rooms[U(state_.cells[U(pawn.cell)].room)].name}});
+            data["inLight"].push_back({{"name", ShownName(def_, state_, pawn.guest)}, {"room", def_.rooms[U(state_.cells[U(pawn.cell)].room)].name}});
 
     // 4. Rolls, events and chats, each with its chance by the rules.
     if (!state_.over && event_ >= 0)
@@ -775,7 +797,7 @@ nlohmann::json Play::BattleData() const
         {
             const auto who = [&](int g, bool striker) {
                 if (g >= 0)
-                    return def_.guests[U(g)].name;
+                    return ShownName(def_, state_, g);
                 for (int i = 0; i < b.count; ++i) // a monster: the first one standing in this battle
                     if (b.fighters[U(i)].monster >= 0)
                         return def_.monsters[U(state_.monsters[U(b.fighters[U(i)].monster)].kind)].name;
@@ -1028,7 +1050,7 @@ nlohmann::json Play::InspectData() const
             if (item >= 0)
                 bag.push_back(def_.items[U(item)].name);
         const bool known = guest.goal >= 0 && state_.player >= 0 && (g == state_.player || ((mine.knows >> g) & 1u));
-        data["guests"].push_back({{"name", def_.guests[U(g)].name}, {"hp", guest.hp}, {"maxHp", Stat(def_, state_, g, StatKind::MaxHp)},
+        data["guests"].push_back({{"name", ShownName(def_, state_, g)}, {"hp", guest.hp}, {"maxHp", Stat(def_, state_, g, StatKind::MaxHp)},
                                   {"might", Stat(def_, state_, g, StatKind::Might)}, {"sanity", Stat(def_, state_, g, StatKind::Sanity)},
                                   {"speed", Stat(def_, state_, g, StatKind::Speed)}, {"level", guest.level}, {"group", guest.group},
                                   {"bag", bag}, {"goal", known ? def_.goals[U(guest.goal)].text : ""}});
@@ -1149,7 +1171,7 @@ nlohmann::json Play::HereData() const
             items += (items.empty() ? "" : ", ") + def_.items[U(f.item)].name;
     for (int g = 0; g < state_.count; ++g)
         if (g != state_.player && state_.guests[U(g)].cell == cell && !state_.guests[U(g)].dead)
-            people += (people.empty() ? "" : ", ") + def_.guests[U(g)].name;
+            people += (people.empty() ? "" : ", ") + ShownName(def_, state_, g);
     return {{"name", room.name}, {"what", what}, {"items", items}, {"people", people}};
 }
 
