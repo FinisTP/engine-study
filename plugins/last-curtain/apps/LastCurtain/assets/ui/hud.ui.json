@@ -9,7 +9,8 @@
       { "type": "image", "image": "{me.portrait}", "size": [44, 44] },
       { "type": "text", "style": "heading", "text": "{me.name}  Lv {me.level}" },
       { "type": "text", "style": "strong", "text": "HP {me.hp}/{me.maxHp}   Might {me.might}   Sanity {me.sanity}   Speed {me.speed}" },
-      { "type": "text", "style": "good", "text": "{me.buffs}", "visible": "{me.buffs}" }
+      { "type": "text", "style": "bad", "text": "{me.flash}", "visible": "{me.flash}" },
+    { "type": "text", "style": "good", "text": "{me.buffs}", "visible": "{me.buffs}" }
     ] },
     { "type": "stack", "anchor": "top-left", "offset": [24, 76], "style": "panel", "gap": 6, "size": [260, 0], "children": [
       { "type": "text", "style": "heading", "text": "Your goal", "visible": "{goal}" },

@@ -132,6 +132,22 @@ private:
     bool fast_ = false; // Space: short beats until the player's next turn
     int beats_ = 0;
     int event_ = -1, eventCell_ = -1, eventStat_ = 0; // the event to show before its dice (events.csv row)
+    // A room walked into, step by step (Play.md "The room's flow"): arrival, the card or the find, the dice.
+    struct Arrival
+    {
+        int cell = -1;
+        std::string kind, line;
+    };
+    Arrival arrive_;
+    int found_ = -1;           // an item found in an item room (items.csv row)
+    std::string lasting_;      // the card's note: a lasting event still armed
+    std::string cleared_;      // the card's note: its condition met, no roll
+    float diceClock_ = 0.0F;   // seconds the front die has shown; it tumbles for the first diceSeconds
+    float flashClock_ = 0.0F;  // the HUD shows `flash_` (an HP change) while this runs
+    std::string flash_;
+    int beatEvent_ = -1; // the event a bot's seen beat faced, for the caption
+    [[nodiscard]] int RoomEvent(const umbra::night::NightState &before, const umbra::night::Action &action, int guest, int &entered) const;
+    [[nodiscard]] std::string RollResult(const umbra::night::EventDef &ev, bool passed, int guest) const;
     std::deque<Dice> dice_;
     bool turn_ = false; // the Turn happened and its screen waits
     Mode mode_ = Mode::Menu;

@@ -126,18 +126,43 @@ bool Play::Do(const Action &action)
     resting_ = action.kind == ActionKind::Move && !PlayerTurn() && !state_.over && !state_.battle.active;
     if (resting_)
         walk_.clear(), walking_ = false, mode_ = Mode::Menu; // the rest of a walk is dropped
-    // 2. An event drawn on this move: shown before its roll (a new bit in eventsUsed).
-    const std::uint64_t drawn = state_.eventsUsed & ~before.eventsUsed;
-    if (drawn)
+    // 2. What the room did, shown step by step: the event drawn (a new bit in eventsUsed) or the lasting
+    //    one armed there; a find; a bonus. The room is the one moved into (a push may have sent the guest back).
+    const int g = Current(before);
+    const std::vector<LogEntry> entries = NewLog(state_, before.logCount);
+    const auto logged = [&](LogKind kind) {
+        return std::find_if(entries.begin(), entries.end(), [&](const LogEntry &e) { return e.kind == kind && e.who == g; });
+    };
+    int entered = -1;
+    event_ = RoomEvent(before, action, g, entered);
+    const bool drawn = (state_.eventsUsed & ~before.eventsUsed) != 0;
+    const bool rolled = logged(LogKind::Check) != entries.end(), cleared = logged(LogKind::Cleared) != entries.end();
+    lasting_ = cleared_ = "";
+    if (event_ >= 0)
     {
-        event_ = std::countr_zero(drawn);
-        // The room moved into (the guest may have been pushed back out of it).
-        const int from = before.guests[U(Current(before))].cell;
-        eventCell_ = action.kind == ActionKind::Move && action.a < transportMove ? Neighbour(def_, from, action.a) : state_.guests[U(Current(before))].cell;
-        eventStat_ = Stat(def_, before, Current(before), def_.events[U(event_)].stat);
+        const EventDef &ev = def_.events[U(event_)];
+        eventCell_ = entered >= 0 ? entered : state_.guests[U(g)].cell;
+        eventStat_ = Stat(def_, before, g, ev.stat);
+        if (!drawn)
+            lasting_ = "It is still here, and stays until someone passes its roll.";
+        if (cleared && !rolled)
+            cleared_ = ev.clear == ClearKind::Carry ? "You carry the " + def_.items[U(ev.clearItem)].name + ": it cannot touch you. " + ev.name + " is gone for everyone."
+                                                    : "Your " + std::string(StatName(ev.clearStat)) + " " + std::to_string(Stat(def_, before, g, ev.clearStat)) +
+                                                          " carries you through. " + ev.name + " is gone for everyone.";
+    }
+    found_ = entered >= 0 && logged(LogKind::Item) != entries.end() && def_.rooms[U(before.cells[U(entered)].room)].kind == RoomKind::Item ? logged(LogKind::Item)->a : -1;
+    if (entered >= 0 && (event_ >= 0 || found_ >= 0 || logged(LogKind::Effect) != entries.end()))
+    {
+        const RoomDef &room = def_.rooms[U(state_.cells[U(entered)].room)];
+        const char *kinds[] = {"ROOM", "EVENT ROOM", "TRAP ROOM", "ITEM ROOM", "BONUS ROOM"};
+        const int k = room.kind == RoomKind::Event ? 1 : room.kind == RoomKind::Trap ? 2 : room.kind == RoomKind::Item ? 3 : room.kind == RoomKind::Bonus ? 4 : 0;
+        const std::string line = event_ >= 0 ? "Something is waiting for you here." : found_ >= 0 ? "Something has been left here."
+                                 : room.kind == RoomKind::Bonus ? "+" + std::to_string(room.amount) + " " + StatName(room.stat) + ", once for each guest."
+                                                                : "The room stirs.";
+        arrive_ = {entered, kinds[k], line};
     }
     // 3. Every roll the player's side made, with what came of it.
-    for (const LogEntry &e : NewLog(state_, before.logCount))
+    for (const LogEntry &e : entries)
     {
         if (e.kind != LogKind::Check || !Controls(state_, state_.player, e.who))
             continue;
@@ -147,14 +172,14 @@ bool Play::Do(const Action &action)
             d.stat = action.a == 0 ? "Might" : "Sanity";
             d.result = d.passed ? "An approval." : "No approval this time.";
         }
-        else if (drawn)
+        else if (event_ >= 0)
         {
-            const EventDef &ev = def_.events[U(event_)];
-            d.stat = StatName(ev.stat);
-            d.result = d.passed ? EffectText(ev.passEffect, ev.passAmount) : EffectText(ev.failEffect, ev.failAmount);
+            d.stat = StatName(def_.events[U(event_)].stat);
+            d.result = RollResult(def_.events[U(event_)], d.passed, e.who);
         }
         dice_.push_back(d);
     }
+    diceClock_ = 0.0F;
     return true;
 }
 
@@ -284,14 +309,22 @@ void Play::Key(umbra::platform::InputKey key)
 bool Play::HandleUi(const std::string &, const std::string &action, const std::string &arg)
 {
     // 1. Screens that only show what happened: dismissed at any time.
+    if (action == "onward" && arrive_.cell >= 0)
+        return (arrive_ = {}), true;
     if (action == "roll" && event_ >= 0)
     {
-        event_ = -1;
+        event_ = -1, diceClock_ = 0.0F;
         return true;
     }
-    if (action == "continue" && !dice_.empty())
+    if (action == "take" && found_ >= 0)
+        return (found_ = -1), true;
+    if (action == "continue" && !dice_.empty() && diceClock_ >= options_.diceSeconds)
     {
-        dice_.pop_front();
+        // The HUD shows an HP change for a moment.
+        const std::size_t cut = dice_.front().result.find(" HP");
+        flash_ = cut != std::string::npos ? dice_.front().result.substr(dice_.front().result.rfind(' ', cut - 1) + 1, cut - dice_.front().result.rfind(' ', cut - 1) - 1) + " HP" : "";
+        flashClock_ = flash_.empty() ? 0.0F : 2.0F;
+        dice_.pop_front(), diceClock_ = 0.0F;
         return true;
     }
     if (action == "begin" && turn_)
@@ -374,8 +407,12 @@ std::string Play::Screen() const
         return "look";
     if (slide_.guest >= 0 && PlayerTurn()) // a slide takes its time; a dialog waits for it
         return "picking";
+    if (arrive_.cell >= 0)
+        return "arrive";
     if (event_ >= 0)
         return "event";
+    if (found_ >= 0)
+        return "found";
     if (!dice_.empty())
         return "dice";
     if (turn_)
@@ -399,6 +436,7 @@ void Play::Update(float dt)
     if (dt <= 0.0F || pause_ || inspect_ >= 0 || looking_)
         return;
     clock_ += dt;
+    diceClock_ += dt, flashClock_ = std::max(0.0F, flashClock_ - dt);
     ResolveLines();
     if (slide_.guest >= 0)
     {
@@ -407,7 +445,7 @@ void Play::Update(float dt)
             return;
         slide_ = {};
     }
-    if (event_ >= 0 || !dice_.empty() || turn_ || waitTap_ || resting_)
+    if (arrive_.cell >= 0 || event_ >= 0 || found_ >= 0 || !dice_.empty() || turn_ || waitTap_ || resting_)
         return;
     hold_ -= dt;
     if (hold_ > 0.0F)
@@ -467,6 +505,8 @@ void Play::Update(float dt)
     if (captionTicket_ != 0)
         beat_.caption = words_->Take(captionTicket_, beat_.caption), captionTicket_ = 0;
     said_ = saidTicket_ != 0 ? words_->Take(saidTicket_, "") : "", saidTicket_ = 0;
+    int entered = -1;
+    beatEvent_ = beat_.seen ? RoomEvent(before, action, acting, entered) : -1; // the caption names it
     const bool notable = beat_.seen && Notable(NewLog(state_, before.logCount), action);
     hold_ = !beat_.seen || skipping_ ? options_.unseenBeatSeconds : fast_ ? options_.fastBeatSeconds : options_.beatSeconds;
     waitTap_ = notable && options_.tapToContinue && !skipping_ && !fast_;
@@ -522,6 +562,7 @@ nlohmann::json Play::UiData() const
     data["focus"] = !following_;
     if (beat_.seen && (hold_ > 0.0F || waitTap_))
         data["caption"] = {{"guest", def_.guests[U(beat_.guest)].name}, {"line", beat_.caption}, {"result", beat_.result}, {"tap", waitTap_},
+                           {"event", beatEvent_ >= 0 ? def_.events[U(beatEvent_)].name : ""}, {"eventText", beatEvent_ >= 0 ? def_.events[U(beatEvent_)].text : ""},
                            {"said", said_}, {"saidBy", saidGuest_ >= 0 ? def_.guests[U(saidGuest_)].name : ""}};
     const int me = Me();
     if (me < 0)
@@ -542,7 +583,8 @@ nlohmann::json Play::UiData() const
                     buffs += (buffs.empty() ? "" : ", ") + def_.buffs[U(b)].name;
     data["me"] = {{"name", def_.guests[U(me)].name}, {"portrait", ArtPath("portraits", def_.guests[U(me)].id).generic_string()}, {"hp", guest.hp}, {"maxHp", Stat(def_, state_, me, StatKind::MaxHp)},
                   {"might", Stat(def_, state_, me, StatKind::Might)}, {"sanity", Stat(def_, state_, me, StatKind::Sanity)},
-                  {"speed", Stat(def_, state_, me, StatKind::Speed)}, {"level", guest.level}, {"buffs", buffs}};
+                  {"speed", Stat(def_, state_, me, StatKind::Speed)}, {"level", guest.level}, {"buffs", buffs},
+                  {"flash", flashClock_ > 0.0F ? flash_ : ""}}; // an HP change, for a moment
     data["moves"] = guest.movesLeft;
     // The player's own goal, and the goals it has learnt in chats.
     data["knownGoals"] = nlohmann::json::array();
@@ -609,14 +651,26 @@ nlohmann::json Play::UiData() const
                          {"picture", ArtPath("events", ev.id).generic_string()},
                          {"stat", StatName(ev.stat)}, {"statValue", eventStat_}, {"target", ev.target},
                          {"chance", ChancePercent(eventStat_, ev.target)},
-                         {"pass", EffectText(ev.passEffect, ev.passAmount)}, {"fail", EffectText(ev.failEffect, ev.failAmount)}};
+                         {"pass", EffectText(ev.passEffect, ev.passAmount)}, {"fail", EffectText(ev.failEffect, ev.failAmount)},
+                         {"kind", ev.trap ? "TRAP" : "EVENT"}, {"lasting", lasting_}, {"cleared", cleared_}, {"rolls", cleared_.empty()},
+                         {"button", cleared_.empty() ? "Roll" : "Continue"}};
+    }
+    if (!state_.over && arrive_.cell >= 0)
+        data["arrive"] = {{"kind", arrive_.kind}, {"room", def_.rooms[U(state_.cells[U(arrive_.cell)].room)].name}, {"line", arrive_.line}};
+    if (!state_.over && found_ >= 0)
+    {
+        const ItemDef &item = def_.items[U(found_)];
+        data["found"] = {{"name", item.name}, {"does", item.text}, {"kind", KindName(item.kind)}, {"picture", ArtPath("items", item.id).generic_string()}};
     }
     if (!state_.over && !dice_.empty())
     {
+        // While it tumbles the face flickers and nothing is told yet.
         const Dice &d = dice_.front();
-        data["dice"] = {{"die", d.die}, {"stat", d.stat}, {"statValue", d.statValue}, {"total", d.die + d.statValue},
-                        {"target", d.target}, {"passed", d.passed}, {"failed", !d.passed}, {"result", d.result},
-                        {"plain", d.stat.empty()}, {"withStat", !d.stat.empty()}};
+        const bool rolling = diceClock_ < options_.diceSeconds, landed = !rolling;
+        const int face = rolling ? 1 + static_cast<int>(diceClock_ * 23.0F + static_cast<float>(d.die) * 7.0F) % 20 : d.die;
+        data["dice"] = {{"die", face}, {"stat", d.stat}, {"statValue", d.statValue}, {"total", d.die + d.statValue},
+                        {"target", d.target}, {"passed", landed && d.passed}, {"failed", landed && !d.passed}, {"result", landed ? d.result : ""},
+                        {"plain", landed && d.stat.empty()}, {"withStat", landed && !d.stat.empty()}, {"rolling", rolling}, {"landed", landed}};
     }
     if (!state_.over && PlayerTurn() && state_.chat.active)
     {
@@ -975,8 +1029,10 @@ int Play::StageCell() const
     if (looking_ && state_.player >= 0)
         return state_.guests[U(state_.player)].cell;
     // 2. Something that happened in the player's sight (options "moments"): their event, a bot's beat.
-    if (options_.moments && (event_ >= 0 || !dice_.empty()) && state_.player >= 0)
-        return eventCell_ >= 0 ? eventCell_ : state_.guests[U(state_.player)].cell;
+    if (options_.moments && arrive_.cell >= 0)
+        return arrive_.cell;
+    if (options_.moments && (event_ >= 0 || found_ >= 0 || !dice_.empty()) && state_.player >= 0)
+        return event_ >= 0 && eventCell_ >= 0 ? eventCell_ : state_.guests[U(state_.player)].cell;
     if (moment_ && beat_.seen && beat_.camera >= 0 && (waitTap_ || hold_ > 0.0F))
         return beat_.camera;
     // 3. A battle the player can see (their own, or bots' in their light).
@@ -1076,4 +1132,34 @@ nlohmann::json Play::HereData() const
         if (g != state_.player && state_.guests[U(g)].cell == cell && !state_.guests[U(g)].dead)
             people += (people.empty() ? "" : ", ") + def_.guests[U(g)].name;
     return {{"name", room.name}, {"what", what}, {"items", items}, {"people", people}};
+}
+
+std::string Play::RollResult(const EventDef &ev, bool passed, int guest) const
+{
+    // In plain words: how it went (captions.json "<pass|fail><Stat>"), what it did, and what is left.
+    const std::string key = std::string(passed ? "pass" : "fail") + StatName(ev.stat);
+    const auto line = captions_.lines.find(key);
+    std::string text = line != captions_.lines.end() ? line->second : std::string("Your ") + StatName(ev.stat) + (passed ? " holds." : " fails you.");
+    const Effect effect = passed ? ev.passEffect : ev.failEffect;
+    const int amount = passed ? ev.passAmount : ev.failAmount;
+    if (effect == Effect::None)
+        return text + " Nothing else happens.";
+    text += " " + EffectText(effect, amount);
+    if (effect == Effect::Hp)
+        text += " (now " + std::to_string(state_.guests[U(guest)].hp) + " of " + std::to_string(Stat(def_, state_, guest, StatKind::MaxHp)) + ")";
+    return text + ".";
+}
+
+int Play::RoomEvent(const NightState &before, const Action &action, int guest, int &entered) const
+{
+    // The room moved into (a push may have sent the guest back), and the event it brought: a new draw
+    // (a new bit in eventsUsed) or the lasting one armed there, if the guest rolled or cleared it.
+    const int from = before.guests[U(guest)].cell;
+    entered = action.kind != ActionKind::Move ? -1 : action.a < transportMove ? Neighbour(def_, from, action.a) : state_.guests[U(guest)].cell;
+    if (const std::uint64_t drawn = state_.eventsUsed & ~before.eventsUsed)
+        return std::countr_zero(drawn);
+    bool faced = false;
+    for (const LogEntry &e : NewLog(state_, before.logCount))
+        faced = faced || ((e.kind == LogKind::Check || e.kind == LogKind::Cleared) && e.who == guest);
+    return entered >= 0 && faced ? before.cells[U(entered)].event : -1;
 }

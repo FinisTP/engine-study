@@ -5,12 +5,14 @@
   "dim": true,
   "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [720, 0], "align": "stretch", "gap": 12, "children": [
     { "type": "stack", "align": "center", "children": [ { "type": "image", "image": "{event.picture}", "size": [300, 300] } ] },
-    { "type": "text", "style": "muted", "text": "EVENT  |  {event.room}" },
+    { "type": "text", "style": "muted", "text": "{event.kind}  |  {event.room}" },
     { "type": "text", "style": "title", "text": "{event.name}" },
     { "type": "text", "style": "text", "text": "{event.text}", "wrap": true, "size": [680, 0] },
-    { "type": "text", "style": "strong", "text": "Roll {event.stat}: d20 + {event.statValue} against {event.target}   |   {event.chance}% chance" },
-    { "type": "text", "style": "good", "text": "Pass: {event.pass}" },
-    { "type": "text", "style": "bad", "text": "Fail: {event.fail}" },
-    { "type": "button", "size": [200, 44], "text": "Roll", "action": "roll" }
+    { "type": "text", "style": "warning", "text": "{event.lasting}", "visible": "{event.lasting}", "wrap": true, "size": [680, 0] },
+    { "type": "text", "style": "good", "text": "{event.cleared}", "visible": "{event.cleared}", "wrap": true, "size": [680, 0] },
+    { "type": "text", "style": "strong", "text": "A {event.stat} roll: d20 + your {event.stat} {event.statValue}, needing {event.target} or more   |   {event.chance}% chance", "visible": "{event.rolls}" },
+    { "type": "text", "style": "good", "text": "If you pass: {event.pass}", "visible": "{event.rolls}" },
+    { "type": "text", "style": "bad", "text": "If you fail: {event.fail}", "visible": "{event.rolls}" },
+    { "type": "stack", "align": "center", "children": [ { "type": "button", "size": [200, 44], "text": "{event.button}", "action": "roll" } ] }
   ] }
 }

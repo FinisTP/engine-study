@@ -19,7 +19,7 @@ namespace umbra::night
         const std::map<std::string, float GameOptions::*> numbers{
             {"slideSeconds", &GameOptions::slideSeconds},           {"thinkSeconds", &GameOptions::thinkSeconds},
             {"lineSeconds", &GameOptions::lineSeconds},             {"beatSeconds", &GameOptions::beatSeconds},
-            {"fastBeatSeconds", &GameOptions::fastBeatSeconds},     {"unseenBeatSeconds", &GameOptions::unseenBeatSeconds},
+            {"fastBeatSeconds", &GameOptions::fastBeatSeconds},     {"unseenBeatSeconds", &GameOptions::unseenBeatSeconds}, {"diceSeconds", &GameOptions::diceSeconds},
             {"cameraDistance", &GameOptions::cameraDistance},       {"cameraMinDistance", &GameOptions::cameraMinDistance},
             {"cameraMaxDistance", &GameOptions::cameraMaxDistance}, {"cameraTilt", &GameOptions::cameraTilt},
             {"cameraEaseSeconds", &GameOptions::cameraEaseSeconds}};

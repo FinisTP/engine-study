@@ -5,6 +5,7 @@ lineSeconds,3,the longest wait for the model's line (user)
 beatSeconds,2.5,a seen bot action stays on screen when it does not wait for a tap
 fastBeatSeconds,0.4,the same after Space
 unseenBeatSeconds,0.2,an action out of the player's sight
+diceSeconds,1,a die tumbles this long before it lands
 tapToContinue,1,1: a bot action where something happens waits for a tap (user)
 moments,1,1: things that happen in the player's sight are shown in the room at full size (user)
 cameraDistance,11,metres from the table at the start

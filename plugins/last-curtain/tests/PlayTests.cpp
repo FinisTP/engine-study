@@ -23,7 +23,8 @@ namespace
     // Dismisses the event and dice screens, which hold the bots.
     void Settle(Play &play)
     {
-        while (play.HandleUi("event", "roll", "") || play.HandleUi("dice", "continue", ""))
+        while (play.HandleUi("arrive", "onward", "") || play.HandleUi("event", "roll", "") || play.HandleUi("found", "take", "") ||
+               play.HandleUi("dice", "continue", ""))
         {
         }
     }
@@ -300,6 +301,7 @@ TEST_CASE("Every chance shown matches the rules (T113)", "[night][play]")
         const int step = StepCell(def, play);
         REQUIRE(step >= 0);
         GoTo(play, step);
+        REQUIRE(play.HandleUi("arrive", "onward", "")); // the arrival first (T152)
         REQUIRE(play.Screen() == "event");
         const nlohmann::json event = play.UiData()["event"];
         CHECK(event["chance"] == ChancePercent(event["statValue"], event["target"]));
@@ -319,6 +321,7 @@ TEST_CASE("The dice screen shows the logged roll (T113)", "[night][play]")
     const std::uint32_t since = play.State().logCount;
     GoTo(play, StepCell(def, play));
     REQUIRE(play.HandleUi("event", "roll", ""));
+    REQUIRE(play.HandleUi("arrive", "onward", "")); // the arrival first (T152)
     REQUIRE(play.Screen() == "dice");
     LogEntry check{};
     for (const LogEntry &e : NewLog(play.State(), since))
@@ -596,6 +599,7 @@ TEST_CASE("A push-back event names the room it happened in (final review)", "[ni
     Play play(def, PlayerFirst(def));
     const int step = StepCell(def, play);
     GoTo(play, step);
+    REQUIRE(play.HandleUi("arrive", "onward", "")); // the arrival first (T152)
     REQUIRE(play.Screen() == "event");
     CHECK(play.State().guests[0].cell == play.State().foyer); // pushed back
     CHECK(play.UiData()["event"]["room"] == def.rooms[static_cast<std::size_t>(play.State().cells[static_cast<std::size_t>(step)].room)].name);
@@ -746,6 +750,7 @@ TEST_CASE("A dialog part-way along a walk drops the rest of the walk (T125)", "[
     Play play(def, state);
     play.Click(West(def, 3));
     Walk(play);
+    REQUIRE(play.HandleUi("arrive", "onward", "")); // the arrival first (T152)
     CHECK(play.Screen() == "event");
     play.HandleUi("event", "roll", "");
     while (play.Screen() == "dice")
@@ -1343,6 +1348,7 @@ TEST_CASE("Screens carry their pictures: the event's, the asker's and my portrai
                 room.kind = RoomKind::Event, room.doors = 15;
         Play play(def, PlayerFirst(def));
         GoTo(play, StepCell(def, play));
+        REQUIRE(play.HandleUi("arrive", "onward", "")); // the arrival first (T152)
         REQUIRE(play.Screen() == "event");
         const nlohmann::json event = play.UiData()["event"];
         const auto drawn = std::find_if(def.events.begin(), def.events.end(), [&](const EventDef &e) { return e.name == event["name"].get<std::string>(); });
@@ -1606,4 +1612,115 @@ TEST_CASE("After a room resolves the player may still look around; the bots wait
     for (int i = 0; i < 20 && play.Beats() == 0; ++i)
         play.Update(1.0F);
     CHECK(play.Beats() > 0);
+}
+
+namespace
+{
+    // The corridor with its first room made `roomId`, unresolved, `event` armed in it (-1: none).
+    Play IntoRoom(NightDef &def, const char *roomId, int event)
+    {
+        umbra::night::GameOptions options;
+        options.diceSeconds = 1.0F, options.moments = true;
+        NightState state = PlayerCorridor(def, 1, 4);
+        Cell &cell = state.cells[static_cast<std::size_t>(West(def, 1))];
+        cell.room = static_cast<std::int8_t>(NightDef::Find(def.rooms, roomId));
+        cell.resolved = false;
+        cell.event = static_cast<std::int8_t>(event);
+        cell.doors = 2 | 8;
+        Play play(def, state);
+        play.SetOptions(options);
+        GoTo(play, West(def, 1));
+        return play;
+    }
+
+    // Lets the die land: it tumbles for a second.
+    void Land(Play &play)
+    {
+        for (int i = 0; i < 20 && play.UiData()["dice"]["rolling"] == true; ++i)
+            play.Update(0.1F);
+    }
+}
+
+TEST_CASE("Walking into a room plays it step by step: arrival, card, tumbling die, a plain result (T152)", "[night][play][flow]")
+{
+    NightDef def = Data();
+    const int sandbag = NightDef::Find(def.events, "sandbag");
+    SECTION("a lasting trap: arrival names it, the card says it stays, the die tumbles, the result is plain")
+    {
+        def.events[static_cast<std::size_t>(sandbag)].clear = ClearKind::None;
+        Play play = IntoRoom(def, "loosestairs", sandbag);
+        // 1. Arrival: the kind and the room, at full size.
+        REQUIRE(play.Screen() == "arrive");
+        CHECK(play.UiData()["arrive"]["kind"] == "TRAP ROOM");
+        CHECK(play.UiData()["arrive"]["room"] == "Loose stairs");
+        CHECK(play.StageCell() == West(def, 1));
+        play.Update(10.0F);
+        CHECK(play.Screen() == "arrive"); // it waits for the player
+        REQUIRE(play.HandleUi("arrive", "onward", ""));
+        // 2. The card: the event, that it stays, the roll and its odds.
+        REQUIRE(play.Screen() == "event");
+        const nlohmann::json event = play.UiData()["event"];
+        CHECK(event["name"] == def.events[static_cast<std::size_t>(sandbag)].name);
+        CHECK(event["lasting"].get<std::string>().find("until someone") != std::string::npos);
+        REQUIRE(play.HandleUi("event", "roll", ""));
+        // 3. The die tumbles: no verdict and no Continue until it lands.
+        REQUIRE(play.Screen() == "dice");
+        CHECK(play.UiData()["dice"]["rolling"] == true);
+        CHECK_FALSE(play.HandleUi("dice", "continue", ""));
+        Land(play);
+        CHECK(play.UiData()["dice"]["rolling"] == false);
+        // 4. The result in plain words, with what is left.
+        const std::string result = play.UiData()["dice"]["result"].get<std::string>();
+        CHECK(result.find(play.UiData()["dice"]["passed"] == true ? "Speed" : "now") != std::string::npos);
+        REQUIRE(play.HandleUi("dice", "continue", ""));
+        CHECK(play.Screen() == "rest");
+    }
+    SECTION("its condition met: the card says so, and no die")
+    {
+        def.events[static_cast<std::size_t>(sandbag)].clearAmount = 1;
+        Play play = IntoRoom(def, "loosestairs", sandbag);
+        REQUIRE(play.HandleUi("arrive", "onward", ""));
+        REQUIRE(play.Screen() == "event");
+        CHECK(play.UiData()["event"]["cleared"].get<std::string>().find("Speed") != std::string::npos);
+        REQUIRE(play.HandleUi("event", "roll", ""));
+        CHECK(play.Screen() == "rest");
+    }
+    SECTION("an item room: arrival, then what was found")
+    {
+        Play play = IntoRoom(def, "armoury", -1);
+        REQUIRE(play.Screen() == "arrive");
+        CHECK(play.UiData()["arrive"]["kind"] == "ITEM ROOM");
+        REQUIRE(play.HandleUi("arrive", "onward", ""));
+        REQUIRE(play.Screen() == "found");
+        CHECK_FALSE(play.UiData()["found"]["name"].get<std::string>().empty());
+        CHECK_FALSE(play.UiData()["found"]["does"].get<std::string>().empty());
+        REQUIRE(play.HandleUi("found", "take", ""));
+        CHECK(play.Screen() == "rest");
+    }
+}
+
+TEST_CASE("A bot's roll in sight names the event it faced (T152)", "[night][play][flow]")
+{
+    NightDef def = Data();
+    for (RoomDef &room : def.rooms)
+        if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
+            room.kind = RoomKind::Event, room.doors = 15;
+    Play play(def, FoyerNight(def, 4, 0));
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    Captions captions;
+    REQUIRE(LoadCaptions(std::filesystem::path(UMBRA_NIGHT_DATA) / "captions.json", captions, diagnostics));
+    play.SetCaptions(captions);
+    play.SetOptions(Designed());
+    bool named = false;
+    for (int i = 0; i < 40 && !named; ++i)
+    {
+        const std::uint32_t before = play.State().logCount;
+        if (!UntilTap(play, 3000))
+            break;
+        for (const LogEntry &e : NewLog(play.State(), before))
+            if (e.kind == LogKind::Check && e.who != play.State().player)
+                named = !play.UiData()["caption"]["event"].get<std::string>().empty();
+        play.HandleUi("caption", "next", "");
+    }
+    CHECK(named);
 }

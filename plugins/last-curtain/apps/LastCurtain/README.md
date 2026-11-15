@@ -41,7 +41,7 @@ Esc quits. Quitting mid-night saves to
 | File | What |
 |---|---|
 | `Main.cpp` | window, renderer, the loop, the start screen, saves |
-| `Play.*` | the night as the person plays it, without a window (tested in `tests/PlayTests.cpp`) |
+| `Play.*`, `Play.md` | the night as the person plays it, without a window: the room's flow, rest, bots' beats (tested in `tests/PlayTests.cpp`) |
 | `Table.*`, `Table.md` | the board drawn as boxes, the light and the camera |
 | `Options.*`, `assets/options.csv` | the pace, the waits and the camera, for design (`key,value,note`; a bad row keeps the defaults) |
 | `Screens.*` | `engine/ui` set up for this program |

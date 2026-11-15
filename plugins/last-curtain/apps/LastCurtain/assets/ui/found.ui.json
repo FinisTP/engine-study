@@ -1,0 +1,14 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "dim": true,
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [520, 0], "align": "center", "gap": 10, "children": [
+    { "type": "text", "style": "muted", "text": "FOUND  |  {found.kind}" },
+    { "type": "image", "image": "{found.picture}", "size": [200, 200] },
+    { "type": "text", "style": "title", "text": "{found.name}" },
+    { "type": "text", "style": "text", "text": "{found.does}", "wrap": true, "size": [480, 0], "textAlign": "center" },
+    { "type": "text", "style": "muted", "text": "It goes into your bag (I)." },
+    { "type": "button", "size": [200, 44], "text": "Take it", "action": "take" }
+  ] }
+}

@@ -17,6 +17,7 @@ namespace umbra::night
         float beatSeconds = 1.5F;        // a seen bot action stays on screen
         float fastBeatSeconds = 0.3F;    // ... after Space
         float unseenBeatSeconds = 0.2F;  // an action out of sight
+        float diceSeconds = 0.0F;        // a die tumbles this long before it lands
         bool tapToContinue = false;      // a beat where something happens waits for a tap
         bool moments = false;            // ... and is shown at full size on the stage
         float cameraDistance = 11.0F;    // metres from the table
