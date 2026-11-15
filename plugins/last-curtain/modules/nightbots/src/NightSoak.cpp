@@ -49,6 +49,8 @@ namespace umbra::night
                         (e.other < 0 ? r.byHouse : state.guests[U(e.other)].ghost ? r.byGhosts : r.byGuests) += 1;
                     r.monsterKills += e.kind == LogKind::Monster && e.other == 1 ? 1 : 0;
                     r.levels += e.kind == LogKind::Level ? 1 : 0;
+                    r.quests += e.kind == LogKind::Quest ? 1 : 0;
+                    r.powers += e.kind == LogKind::Power ? 1 : 0;
                 }
             }
             // 2. The outcome.
@@ -76,7 +78,8 @@ namespace umbra::night
             << def.rules.balance.nightsMax << ")\n"
             << "escaped " << share(r.escapes, done) << "%, the house won " << share(r.houseWins, done) << "% (at most " << def.rules.balance.houseMax << "%)\n"
             << "per night: deaths " << tenths(r.deaths, nights) << " (by guests " << tenths(r.byGuests, nights) << ", ghosts " << tenths(r.byGhosts, nights)
-            << ", the house " << tenths(r.byHouse, nights) << "), monster kills " << tenths(r.monsterKills, nights) << ", levels " << tenths(r.levels, nights) << "\n"
+            << ", the house " << tenths(r.byHouse, nights) << "), monster kills " << tenths(r.monsterKills, nights) << ", levels " << tenths(r.levels, nights) << ", quests " << tenths(r.quests, nights)
+            << ", powers used " << tenths(r.powers, nights) << "\n"
             << "winners (at most " << def.rules.balance.winnerMax << "% each):\n";
         for (std::size_t g = 0; g < def.guests.size(); ++g)
             out << "  " << def.guests[g].id << ": " << share(r.wins[g], done) << "%\n";
@@ -87,6 +90,6 @@ namespace umbra::night
     {
         return {{"runs", r.runs}, {"faults", r.faults}, {"escapes", r.escapes}, {"houseWins", r.houseWins}, {"wins", r.wins}, {"nights", r.nights},
                 {"deaths", r.deaths}, {"byGuests", r.byGuests}, {"byGhosts", r.byGhosts}, {"byHouse", r.byHouse}, {"monsterKills", r.monsterKills},
-                {"levels", r.levels}};
+                {"levels", r.levels}, {"quests", r.quests}, {"powers", r.powers}};
     }
 }

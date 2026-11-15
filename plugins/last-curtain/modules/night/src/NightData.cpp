@@ -515,12 +515,40 @@ namespace umbra::night
                 goals.Bad(goals.file, d.guests[g].id + " needs two or three goals");
         }
 
+        // Quests: rooms and items by id, the power by name, the stat rewarded.
+        Sheet quests(diagnostics, folder, "quests.csv", {"id", "name", "kind", "roomA", "roomB", "item", "count", "power", "stat", "amount", "text"});
+        for (int r = 0; r < quests.Rows() && rooms.ok && items.ok; ++r)
+        {
+            QuestDef q;
+            q.id = quests.Text(r, "id");
+            q.name = quests.Text(r, "name");
+            q.text = quests.Text(r, "text");
+            q.kind = static_cast<QuestKind>(quests.Pick(r, "kind", {"carry", "visit", "slay", "endure"}));
+            q.roomA = quests.Ref(r, "roomA", d.rooms, true);
+            q.roomB = quests.Ref(r, "roomB", d.rooms, true);
+            q.item = quests.Ref(r, "item", d.items, true);
+            q.count = quests.Int(r, "count");
+            q.power = quests.Ref(r, "power", d.powers);
+            q.stat = static_cast<StatKind>(quests.Pick(r, "stat", {"might", "sanity", "speed", "maxhp"}));
+            q.amount = quests.Int(r, "amount");
+            const bool rooms2 = q.kind == QuestKind::Carry || q.kind == QuestKind::Visit;
+            if (rooms2 && (q.roomA < 0 || q.roomB < 0))
+                quests.Bad(quests.Where(r, "roomA"), "carry and visit quests name two rooms");
+            if (q.kind == QuestKind::Carry && q.item < 0)
+                quests.Bad(quests.Where(r, "item"), "a carry quest names its item");
+            if (q.count < 1)
+                quests.Bad(quests.Where(r, "count"), "must be 1 or more");
+            d.quests.push_back(q);
+        }
+        if (d.quests.size() > static_cast<std::size_t>(maxQuests))
+            quests.Bad(quests.file, "at most 16 quests");
+
         if (diagnostics.size() != before)
             return false;
         // The fingerprint: every file's bytes, in a fixed order.
         d.fingerprint = 14695981039346656037ULL;
         for (const char *name : {"rules.json", "powers.json", "buffs.csv", "styles.csv", "items.csv", "monsters.csv", "rooms.csv",
-                                 "events.csv", "guests.csv", "minions.csv", "questions.csv", "bonds.csv", "goals.csv"})
+                                 "events.csv", "guests.csv", "minions.csv", "questions.csv", "bonds.csv", "goals.csv", "quests.csv"})
         {
             std::ifstream file(folder / name, std::ios::binary);
             for (char c; file.get(c);)

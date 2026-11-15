@@ -369,6 +369,21 @@ namespace umbra::night
                         if (kind == RoomKind::Bonus && !me.bonusUsed[U(c)])
                             goal(c, style.bonus);
                     }
+                    // The race for quests: the item to fetch, the room to bring it to, the rooms to visit (all known).
+                    for (std::size_t q = 0; q < def.quests.size(); ++q)
+                    {
+                        const QuestDef &quest = def.quests[q];
+                        if (state.questBy[q] != 0)
+                            continue;
+                        const bool carrying = std::find(me.items.begin(), me.items.end(), static_cast<std::int8_t>(quest.item)) != me.items.end();
+                        const int room = quest.kind == QuestKind::Carry ? (carrying ? quest.roomB : -1) : quest.kind == QuestKind::Visit ? (me.quest[q] ? quest.roomB : quest.roomA) : -1;
+                        for (int c = 0; room >= 0 && c < maxCells; ++c)
+                            if (state.cells[U(c)].opened && state.cells[U(c)].room == room)
+                                goal(c, 9);
+                        for (const FloorItem &f : state.floor)
+                            if (quest.kind == QuestKind::Carry && !carrying && f.item == quest.item)
+                                goal(f.cell, 9);
+                    }
                     for (int o = 0; o < state.count; ++o) // prey it would beat, in its light
                         if (o != g && Up(o) && Sees(state.guests[U(o)].cell) && Edge(o) > 0)
                             goal(state.guests[U(o)].cell, style.fight);
@@ -391,7 +406,12 @@ namespace umbra::night
                 case ActionKind::UseItem:
                     return a.b < 0 && Below(style.healBelowPercent) ? 50 : a.b >= 0 ? 40 : -1; // relics wake the fallen
                 case ActionKind::PickUp:
+                {
+                    for (const QuestDef &q : def.quests) // a quest's item: always worth taking
+                        if (q.kind == QuestKind::Carry && state.floor[U(a.a)].item == q.item)
+                            return 95;
                     return style.greed * style.loot - 1; // greed 0: never (needed items go by Purpose)
+                }
                 case ActionKind::Attack:
                     if (a.b >= 0) // a guest (or a ghost) in the room: only a fight it would win
                         return state.guests[U(a.b)].ghost ? (Edge(a.b) > 0 ? style.fight * 5 : -100) : Edge(a.b) > 0 ? style.fight * 10 + 5 : -100;
@@ -459,6 +479,25 @@ namespace umbra::night
                 // 5. A chatty bot, or one fond of the player, asks the player a question first.
                 if (state.player >= 0 && Has({ActionKind::OpenChat, I8(state.player)}) && (style.chatty >= 7 || Bond(state, g, state.player) > 0))
                     return {ActionKind::OpenChat, I8(state.player)};
+                // 5b. A power that hurts: on the weakest it can reach; reflect when someone is in the room.
+                {
+                    Action power{};
+                    int weakest = INT_MAX;
+                    for (const Action &a : legal)
+                        if (a.kind == ActionKind::Power)
+                        {
+                            const PowerKind kind = def.powers[U(me.power)].kind;
+                            const bool hurts = kind == PowerKind::Line || kind == PowerKind::Pull || kind == PowerKind::Area;
+                            const int hp = a.a >= 0 && a.a < state.count ? state.guests[U(a.a)].hp : 50;
+                            bool company = false;
+                            for (int o = 0; o < state.count; ++o)
+                                company = company || (o != g && Living(state, o) && state.guests[U(o)].cell == me.cell);
+                            if ((hurts || (kind == PowerKind::Reflect && company)) && hp < weakest)
+                                power = a, weakest = hp;
+                        }
+                    if (power.kind == ActionKind::Power)
+                        return power;
+                }
                 // 6. Otherwise the best score; ties to the first.
                 Action best = legal.front();
                 int bestScore = INT_MIN;

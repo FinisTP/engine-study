@@ -13,6 +13,7 @@ target_sources(
         src/Company.cpp
         src/Hunt.cpp
         src/Killer.cpp
+        src/Quests.cpp
         src/NightSave.cpp
     PUBLIC
         FILE_SET HEADERS

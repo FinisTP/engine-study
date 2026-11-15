@@ -470,12 +470,12 @@ TEST_CASE("Meeting a persistent event's condition clears it without a roll (T146
         def.events[0].clear = ClearKind::Stat, def.events[0].clearStat = StatKind::Speed, def.events[0].clearAmount = 1;
         NightState state = FoyerNight(def, 4);
         Guest &first = state.guests[static_cast<std::size_t>(Current(state))];
-        first.goal = static_cast<std::int8_t>(std::find_if(def.goals.begin(), def.goals.end(), [](const GoalDef &g) { return g.kind == GoalKind::Events; }) - def.goals.begin());
-        const int count = first.goalCount;
+        const std::size_t nerve = static_cast<std::size_t>(NightDef::Find(def.quests, "nerve"));
+        const int count = first.quest[nerve];
         const std::vector<LogEntry> log = Enter(def, state, FreshMove(def, state));
         CHECK(Has(log, LogKind::Cleared));
         CHECK_FALSE(Has(log, LogKind::Check));
-        CHECK(first.goalCount == count + 1); // cleared by its condition counts as passed (events goal)
+        CHECK(first.quest[nerve] == count + 1); // cleared by its condition counts as passed (the endure quest)
     }
     SECTION("an item carried")
     {

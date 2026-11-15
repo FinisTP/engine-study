@@ -41,3 +41,8 @@ dread negative plus "buildings in foreground, people, ground, street, frame, bor
 
 Seeds 11 and 33 were rejected: 11 showed a flat field (before) and a pale moon (after); 33 a flat
 green poster sky.
+
+`items/corpse.png` (the battle royale's "singer's body" quest, 2026-11-16): text to image, seed 51 of
+51/52/53 ("game item icon: a long rolled bundle of faded red velvet cloth tied with rope at both ends,
+lying horizontally ... plain flat cream background", short dread style; negative adds gore, bodies
+and scenery). Seeds 41 and 42 with the item prompt drew whole curtained rooms.

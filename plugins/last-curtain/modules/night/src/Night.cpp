@@ -58,6 +58,9 @@ namespace umbra::night
         state.eventsUsed = state.itemsUsed = 0;
         state.battle = {}, state.chat = {};
         state.killer = {}; // asleep until midnight again
+        state.questBy = {}; // the quests open again
+        for (Guest &g : state.guests)
+            g.quest = {};
         std::vector<int> starts = BuildBoard(def, state);
         // 3. The living keep what they have and wake healed, far apart; the ghosts wait at the under-stage.
         std::size_t next = 0;

@@ -121,6 +121,19 @@ namespace umbra::night
         std::string text;
     };
 
+    // A quest (quests.csv): open to all, done once a night by the first to finish it (Night.md "Quests").
+    enum class QuestKind : std::uint8_t { Carry, Visit, Slay, Endure };
+    struct QuestDef
+    {
+        std::string id, name, text;
+        QuestKind kind = QuestKind::Carry;
+        int roomA = -1, roomB = -1, item = -1, count = 1; // carry: item from A to B; visit: A then B; slay/endure: count
+        int power = -1;                                    // powers.json entry granted
+        StatKind stat = StatKind::None;
+        int amount = 0;                                    // ... and this much of the stat
+    };
+    inline constexpr int maxQuests = 16;
+
     struct BuffDef
     {
         std::string id, name;
@@ -177,6 +190,7 @@ namespace umbra::night
         std::vector<StyleDef> styles;
         std::vector<QuestionDef> questions; // five per guest
         std::vector<GoalDef> goals;         // two or three per guest
+        std::vector<QuestDef> quests;       // at most maxQuests
         std::uint64_t fingerprint = 0; // a hash of every data file, so saves match their data
 
         // The index of the row with this id, or -1.

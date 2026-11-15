@@ -101,9 +101,9 @@ namespace umbra::night
             Fighter &attacker = At(state, from), &target = At(state, to);
             const int damage = Damage(def, state, attacker, target);
             // 0. A reflecting Taken turns the blow back on a guest who strikes it.
-            if (target.taken && state.taken.reflect && attacker.guest >= 0)
+            if (target.guest >= 0 && state.guests[U(target.guest)].reflect && attacker.guest >= 0)
             {
-                state.taken.reflect = false;
+                state.guests[U(target.guest)].reflect = false;
                 Hurt(def, state, attacker.guest, damage, target.guest);
                 Log(state, LogKind::Hit, target.guest, attacker.guest, damage, state.guests[U(attacker.guest)].hp);
                 return;
@@ -127,11 +127,7 @@ namespace umbra::night
                 {
                     Log(state, LogKind::Monster, attacker.guest, 1, m.kind, target.monster); // other 1: killed
                     if (attacker.guest >= 0 && def.monsters[U(m.kind)].taken < 0)
-                    {
-                        Guest &killer = state.guests[U(attacker.guest)];
-                        if (killer.goal >= 0 && def.goals[U(killer.goal)].kind == GoalKind::Monsters)
-                            killer.goalCount = I8(killer.goalCount + 1);
-                    }
+                        QuestCount(def, state, attacker.guest, QuestKind::Slay);
                     // A minion takes its share of the Taken's life with it.
                     const MonsterDef &md = def.monsters[U(m.kind)];
                     if (md.taken >= 0 && state.taken.present && attacker.guest >= 0)

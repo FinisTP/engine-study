@@ -16,7 +16,7 @@ namespace umbra::night
         std::array<int, maxGuests> wins{};        // runs each guest escaped
         long long nights = 0, deaths = 0;         // nights played, living guests who died
         long long byGuests = 0, byGhosts = 0, byHouse = 0; // who dealt the deaths
-        long long monsterKills = 0, levels = 0;
+        long long monsterKills = 0, levels = 0, quests = 0, powers = 0; // quests finished, powers used
 
         // No faults, and every band of rules.json "balance" holds.
         bool Holds(const NightDef &def) const;

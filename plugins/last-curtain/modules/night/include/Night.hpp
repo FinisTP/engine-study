@@ -43,6 +43,9 @@ namespace umbra::night
         std::int8_t origin = -1, budget = 0;
         std::int8_t steps = 0; // steps this turn, capped at rules.moves.stepsPerSpeed x Speed
         std::bitset<maxCells> visited; // the rooms this guest has stood in this turn (bots do not go back)
+        std::array<std::int8_t, maxQuests> quest{}; // progress tonight: visit 1 = the first room seen; slay/endure a count
+        std::int8_t power = -1, powerCooldown = 0;  // powers.json entry won by a quest (-1 none)
+        bool reflect = false;                       // the reflect power is up: the next blow turns back
         std::int8_t goal = -1, goalCount = 0; // goals.csv row drawn tonight; events passed or monsters destroyed for it
         bool goalRoomSeen = false;           // a room goal: the room was entered
         std::uint8_t knows = 0;              // guests whose goal this guest knows, as bits
@@ -79,7 +82,8 @@ namespace umbra::night
         Cleared, // a persistent event or trap is gone: who, a = events.csv row
         Dawn,    // a new night: a = its number
         Rose,    // a ghost appears at the under-stage: who
-        Killer   // the killer: a = its cell, b = 0 woke, 1 moved
+        Killer,  // the killer: a = its cell, b = 0 woke, 1 moved
+        Quest    // who finished quests.csv row a
     };
 
     // One thing that happened. Check: a = die, other = stat, b = target. Effect: a = Effect, b = amount.
@@ -115,6 +119,7 @@ namespace umbra::night
     struct Mark
     {
         std::int8_t cell = -1, direction = -1, untilRound = 0;
+        std::int8_t by = -1; // the guest whose power made it (flood damage is theirs)
     };
 
     // The marked guest after midnight. Its cell and HP are its Guest record's.
@@ -176,6 +181,7 @@ namespace umbra::night
         Outcome outcome = Outcome::Running;
         std::int8_t night = 1, winner = -1; // nights until one guest is left (Night.md "Nights")
         Killer killer;
+        std::array<std::int8_t, maxQuests> questBy{}; // tonight's quests: 0 open, else the guest who finished it + 1
         Taken taken;
         std::array<Mark, 16> flooded{}, sealed{};
         ChatState chat;

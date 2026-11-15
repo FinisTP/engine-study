@@ -26,6 +26,7 @@ inline umbra::night::NightState FoyerNight(const umbra::night::NightDef &def, st
 {
     using namespace umbra::night;
     NightState state = NewNight(def, seed, player);
+    state.floor.clear(); // no quest items lying about (RoyaleTests covers them)
     for (int g = 0; g < state.count; ++g)
     {
         Guest &guest = state.guests[static_cast<std::size_t>(g)];

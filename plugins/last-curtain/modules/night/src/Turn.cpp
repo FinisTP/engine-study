@@ -171,11 +171,10 @@ namespace umbra::night
                 if (event.persist)
                     Log(state, LogKind::Cleared, g, -1, e);
             };
-            // 2. Its other condition met: cleared at the door, no roll (an event counts as passed for an events goal).
-            Guest &guest = G(state, g);
+            // 2. Its other condition met: cleared at the door, no roll (it counts as passed for an endure quest).
             const auto passed = [&] {
-                if (!event.trap && guest.goal >= 0 && def.goals[U(guest.goal)].kind == GoalKind::Events)
-                    guest.goalCount = I8(guest.goalCount + 1);
+                if (!event.trap)
+                    QuestCount(def, state, g, QuestKind::Endure);
             };
             if (event.persist && MeetsClear(def, state, g, event))
             {
@@ -258,11 +257,10 @@ namespace umbra::night
     void inner::StartTurn(const NightDef &def, NightState &state)
     {
         const int g = BoardGuest(state); // not Current(): a level being chosen is not a turn
-        if (IsTaken(state, g))
-            TakenTurnStart(state);
         if (g >= 0)
         {
             Guest &guest = G(state, g);
+            guest.powerCooldown = I8(std::max(0, guest.powerCooldown - 1)), guest.reflect = false; // a power cools a turn
             guest.movesLeft = guest.budget = I8(Stat(def, state, g, StatKind::Speed));
             guest.origin = guest.cell, guest.steps = 0;
             guest.visited.reset(), guest.visited.set(U(guest.cell));
@@ -397,8 +395,7 @@ namespace umbra::night
             legal.push_back({ActionKind::Attack, I8(monster)});
         CompanyLegal(def, state, g, legal);
 
-        if (taken)
-            PowerLegal(def, state, legal);
+        PowerLegal(def, state, g, legal); // a power won by a quest, when it has cooled
         legal.push_back({ActionKind::EndTurn});
         return legal;
     }
@@ -431,7 +428,7 @@ namespace umbra::night
                 StartBattle(def, state, guest.cell, Side(state, g), {Fighter{-1, action.a}});
             break;
         case ActionKind::Power:
-            UsePower(def, state, action);
+            UsePower(def, state, g, action);
             break;
         case ActionKind::Chat:
             OpenChat(def, state, g, action.a, false); // the other guest asks
@@ -467,6 +464,7 @@ namespace umbra::night
                 break;
             }
             Enter(def, state, g, to);
+            Quests(def, state, g);
             // A monster in the room: a fight at once, the monster's side first.
             if (const int monster = MonsterAt(state, to); monster >= 0)
             {
@@ -495,6 +493,7 @@ namespace umbra::night
             auto slot = std::find(guest.items.begin(), guest.items.end(), std::int8_t(-1));
             *slot = state.floor[U(action.a)].item;
             state.floor.erase(state.floor.begin() + action.a);
+            Quests(def, state, g);
             break;
         }
         case ActionKind::EndTurn:

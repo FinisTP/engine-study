@@ -37,46 +37,19 @@ namespace umbra::night
         return false;
     }
 
-    bool inner::ContactBattle(const NightDef &def, NightState &state, int mover, int cell)
-    {
-        // The Taken and every company guest standing in the room; monsters there side with the Taken.
-        const int t = state.taken.guest;
-        if (state.guests[U(t)].cell != cell || state.guests[U(t)].dead)
-            return false;
-        std::vector<Fighter> company, theirs{Fighter{I8(t), -1, true}};
-        for (int g = 0; g < state.count; ++g)
-            if (g != t && state.guests[U(g)].cell == cell && !state.guests[U(g)].dead && !state.guests[U(g)].down)
-                company.push_back(Fighter{I8(g)});
-        if (company.empty())
-            return false;
-        for (std::size_t m = 0; m < state.monsters.size() && theirs.size() + company.size() < 8; ++m)
-            if (state.monsters[m].cell == cell && state.monsters[m].hp > 0)
-                theirs.push_back(Fighter{-1, I8(m)});
-        if (mover == t)
-            StartBattle(def, state, cell, theirs, company);
-        else
-            StartBattle(def, state, cell, company, theirs);
-        return true;
-    }
 }
 
-// The seven powers: one code path per kind; every number from powers.json (Night.md "Powers").
+// The seven powers, won by quests: one code path per kind; every number from powers.json (Night.md "Powers").
 namespace umbra::night
 {
     using namespace inner;
 
     namespace
     {
-        const PowerDef &PowerOf(const NightDef &def, const NightState &state)
-        {
-            return def.powers[U(def.guests[U(state.taken.guest)].power)];
-        }
+        const PowerDef &PowerOf(const NightDef &def, const NightState &state, int g) { return def.powers[U(state.guests[U(g)].power)]; }
 
-        bool Hunted(const NightState &state, int g)
-        {
-            const Guest &guest = state.guests[U(g)];
-            return !IsTaken(state, g) && !guest.dead && !guest.down && guest.cell >= 0;
-        }
+        // A power's target: any other living guest on the board.
+        bool Target(const NightState &state, int user, int g) { return g != user && Living(state, g) && state.guests[U(g)].cell >= 0; }
 
         void Add(std::array<Mark, 16> &marks, Mark mark)
         {
@@ -86,18 +59,6 @@ namespace umbra::night
                     m = mark;
                     return;
                 }
-        }
-
-        // Would sealing this passage cut a company guest off from the Taken?
-        bool SealCuts(const NightDef &def, const NightState &state, int cell, int direction)
-        {
-            NightState trial = state;
-            Add(trial.sealed, {I8(cell), I8(direction), 0});
-            const int at = state.guests[U(state.taken.guest)].cell;
-            for (int g = 0; g < state.count; ++g)
-                if (Hunted(state, g) && Steps(def, state, state.guests[U(g)].cell, at) >= 0 && Steps(def, trial, state.guests[U(g)].cell, at) < 0)
-                    return true;
-            return false;
         }
     }
 
@@ -109,25 +70,25 @@ namespace umbra::night
         return false;
     }
 
-    void inner::TakenTurnStart(NightState &state)
-    {
-        if (state.taken.cooldown > 0)
-            --state.taken.cooldown;
-        state.taken.reflect = false;
-    }
-
     void inner::FloodEndTurn(const NightDef &def, NightState &state, int g)
     {
-        if (state.taken.present && !IsTaken(state, g) && Flooded(state, state.guests[U(g)].cell))
-            Hurt(def, state, g, PowerOf(def, state).damage, state.taken.guest);
+        // Ending a turn in someone else's water hurts, by their power's damage.
+        for (const Mark &m : state.flooded)
+            if (m.cell >= 0 && m.cell == state.guests[U(g)].cell && state.round <= m.untilRound && m.by >= 0 && m.by != g &&
+                state.guests[U(m.by)].power >= 0)
+            {
+                Hurt(def, state, g, PowerOf(def, state, m.by).damage, m.by);
+                return;
+            }
     }
 
-    void inner::PowerLegal(const NightDef &def, const NightState &state, std::vector<Action> &legal)
+    void inner::PowerLegal(const NightDef &def, const NightState &state, int user, std::vector<Action> &legal)
     {
-        if (state.taken.cooldown > 0)
+        const Guest &me = state.guests[U(user)];
+        if (me.power < 0 || me.powerCooldown > 0 || me.ghost)
             return;
-        const PowerDef &p = PowerOf(def, state);
-        const int at = state.guests[U(state.taken.guest)].cell;
+        const PowerDef &p = PowerOf(def, state, user);
+        const int at = me.cell;
         auto steps = [&](int g) { return Steps(def, state, at, state.guests[U(g)].cell); };
         bool any = false;
         switch (p.kind)
@@ -136,14 +97,13 @@ namespace umbra::night
         case PowerKind::Pull:
         case PowerKind::Swap:
             for (int g = 0; g < state.count; ++g)
-                if (Hunted(state, g) && state.cells[U(state.guests[U(g)].cell)].opened &&
-                    (p.kind == PowerKind::Swap || (p.kind == PowerKind::Line ? InLine(def, state, at, state.guests[U(g)].cell)
-                                                                             : steps(g) >= 1 && steps(g) <= p.range)))
+                if (Target(state, user, g) && (p.kind == PowerKind::Swap || (p.kind == PowerKind::Line ? InLine(def, state, at, state.guests[U(g)].cell)
+                                                                                                         : steps(g) >= 1 && steps(g) <= p.range)))
                     legal.push_back({ActionKind::Power, I8(g)});
             break;
         case PowerKind::Area:
             for (int g = 0; g < state.count; ++g)
-                any = any || (Hunted(state, g) && steps(g) >= 0 && steps(g) <= p.range);
+                any = any || (Target(state, user, g) && steps(g) >= 0 && steps(g) <= p.range);
             if (any)
                 legal.push_back({ActionKind::Power});
             break;
@@ -151,63 +111,52 @@ namespace umbra::night
         case PowerKind::Reflect:
             legal.push_back({ActionKind::Power});
             break;
-        case PowerKind::Seal:
+        case PowerKind::Seal: // any passage within range: shut for a while (it stops the killer too)
             for (int c = 0; c < maxCells; ++c)
-            {
-                const int dist = Steps(def, state, at, c);
-                if (dist < 0 || dist > p.range)
-                    continue;
-                for (int d = 0; d < 4; ++d)
-                    if (Passage(def, state, c, d) && !SealCuts(def, state, c, d))
-                        legal.push_back({ActionKind::Power, I8(c), I8(d)});
-            }
+                if (const int dist = Steps(def, state, at, c); dist >= 0 && dist <= p.range)
+                    for (int d = 0; d < 4; ++d)
+                        if (Passage(def, state, c, d))
+                            legal.push_back({ActionKind::Power, I8(c), I8(d)});
             break;
         }
     }
 
-    void inner::UsePower(const NightDef &def, NightState &state, const Action &action)
+    void inner::UsePower(const NightDef &def, NightState &state, int user, const Action &action)
     {
-        const PowerDef &p = PowerOf(def, state);
-        const int t = state.taken.guest;
-        Guest &taken = state.guests[U(t)];
-        const int at = taken.cell;
-        state.taken.cooldown = I8(p.cooldown);
-        Log(state, LogKind::Power, t, action.a, static_cast<int>(p.kind), action.b);
+        const PowerDef &p = PowerOf(def, state, user);
+        Guest &me = state.guests[U(user)];
+        const int at = me.cell;
+        me.powerCooldown = I8(p.cooldown);
+        Log(state, LogKind::Power, user, action.a, static_cast<int>(p.kind), action.b);
         switch (p.kind)
         {
         case PowerKind::Line:
-            Hurt(def, state, action.a, p.damage, t);
+            Hurt(def, state, action.a, p.damage, user);
             break;
         case PowerKind::Area:
             for (int g = 0; g < state.count; ++g)
-            {
-                const int n = Steps(def, state, at, state.guests[U(g)].cell);
-                if (Hunted(state, g) && n >= 0 && n <= p.range)
-                    Hurt(def, state, g, p.damage, t);
-            }
+                if (const int n = Steps(def, state, at, state.guests[U(g)].cell); Target(state, user, g) && n >= 0 && n <= p.range)
+                    Hurt(def, state, g, p.damage, user);
             break;
-        case PowerKind::Flood:
-            // The Taken's room and every room joined to it by a passage.
-            Add(state.flooded, {I8(at), -1, I8(state.round + p.rounds)});
+        case PowerKind::Flood: // its room and every room joined to it, for a while
+            Add(state.flooded, {I8(at), -1, I8(state.round + p.rounds), I8(user)});
             for (int d = 0; d < 4; ++d)
                 if (Passage(def, state, at, d))
-                    Add(state.flooded, {I8(Neighbour(def, at, d)), -1, I8(state.round + p.rounds)});
+                    Add(state.flooded, {I8(Neighbour(def, at, d)), -1, I8(state.round + p.rounds), I8(user)});
             break;
         case PowerKind::Pull:
             state.guests[U(action.a)].cell = I8(at);
-            Hurt(def, state, action.a, p.damage, t);
-            if (!state.over)
-                ContactBattle(def, state, t, at);
+            Hurt(def, state, action.a, p.damage, user);
             break;
         case PowerKind::Seal:
-            Add(state.sealed, {action.a, action.b, I8(state.round + p.rounds)});
+            Add(state.sealed, {action.a, action.b, I8(state.round + p.rounds), I8(user)});
             break;
         case PowerKind::Swap:
-            std::swap(taken.cell, state.guests[U(action.a)].cell);
-            taken.visited.set(U(taken.cell)); // a room it has now stood in this turn
+            std::swap(me.cell, state.guests[U(action.a)].cell);
+            me.visited.set(U(me.cell));
             break;
         case PowerKind::Reflect:
-            state.taken.reflect = true;
+            me.reflect = true;
             break;
         }
     }

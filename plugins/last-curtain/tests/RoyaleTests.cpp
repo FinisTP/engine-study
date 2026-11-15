@@ -287,3 +287,120 @@ TEST_CASE("Monsters grow likelier and more numerous with the hour (T240)", "[nig
     CHECK(MonsterChance(def, state) == std::min(100, chance + 6 * def.rules.monsters.chancePerHour));
     CHECK(MonsterMax(def, state) == most + 6 / def.rules.monsters.maxPerHours);
 }
+
+// Stage 3: quests and powers (Night.md "Quests", "Powers").
+namespace
+{
+    int CellOfRoom(const NightState &state, int room)
+    {
+        for (int c = 0; c < maxCells; ++c)
+            if (state.cells[U(c)].opened && state.cells[U(c)].room == room)
+                return c;
+        return -1;
+    }
+
+    int QuestRow(const NightDef &def, const char *id) { return NightDef::Find(def.quests, id); }
+
+    // Puts guest g in `cell` with moves to spare, as if it walked there now (the quest checks on entering).
+    void StandIn(const NightDef &def, NightState &state, int g, int cell)
+    {
+        TurnOf(def, state, g);
+        Guest &guest = state.guests[U(g)];
+        int from = -1, dir = -1;
+        for (int d = 0; d < 4 && from < 0; ++d)
+            if (Passage(def, state, cell, d))
+                from = Neighbour(def, cell, d), dir = (d + 2) % 4;
+        REQUIRE(from >= 0);
+        guest.cell = guest.origin = static_cast<std::int8_t>(from);
+        guest.budget = guest.movesLeft = 5, guest.steps = 0, guest.visited.reset();
+        REQUIRE(Apply(def, state, {ActionKind::Move, static_cast<std::int8_t>(dir)}));
+    }
+}
+
+TEST_CASE("Every map holds its quests' rooms, and each carry quest's item lies in its first room (T241)", "[night][royale][quest]")
+{
+    const NightDef def = Data();
+    REQUIRE(def.quests.size() >= 8);
+    for (std::uint64_t seed = 1; seed <= 20; ++seed)
+    {
+        const NightState state = NewNight(def, seed);
+        for (const QuestDef &q : def.quests)
+        {
+            if (q.roomA >= 0)
+                CHECK(CellOfRoom(state, q.roomA) >= 0);
+            if (q.roomB >= 0)
+                CHECK(CellOfRoom(state, q.roomB) >= 0);
+            if (q.kind == QuestKind::Carry)
+                CHECK(std::any_of(state.floor.begin(), state.floor.end(),
+                                  [&](const FloorItem &f) { return f.item == q.item && state.cells[U(f.cell)].room == q.roomA; }));
+        }
+    }
+}
+
+TEST_CASE("A carry quest is done by bringing its item into its second room: a power and a stat; the next finisher gets nothing (T242)", "[night][royale][quest]")
+{
+    NightDef def = NoMonsters();
+    NightState state = NewNight(def, 7);
+    const int q = QuestRow(def, "body");
+    REQUIRE(q >= 0);
+    const QuestDef &quest = def.quests[U(q)];
+    const int g = state.order[0], other = state.order[1];
+    const int might = state.guests[U(g)].might;
+    state.guests[U(g)].items[0] = static_cast<std::int8_t>(quest.item);
+    StandIn(def, state, g, CellOfRoom(state, quest.roomB));
+    CHECK(state.questBy[U(q)] == g + 1);
+    CHECK(state.guests[U(g)].power == quest.power);
+    CHECK(state.guests[U(g)].might == might + quest.amount);
+    // The race is won: a second guest with the item gains nothing.
+    state.guests[U(other)].items[0] = static_cast<std::int8_t>(quest.item);
+    StandIn(def, state, other, CellOfRoom(state, quest.roomB));
+    CHECK(state.questBy[U(q)] == g + 1);
+    CHECK(state.guests[U(other)].power != quest.power);
+}
+
+TEST_CASE("A visit quest needs its rooms in order (T243)", "[night][royale][quest]")
+{
+    NightDef def = NoMonsters();
+    NightState state = NewNight(def, 8);
+    const int q = QuestRow(def, "pilgrim");
+    const QuestDef &quest = def.quests[U(q)];
+    const int g = state.order[0];
+    StandIn(def, state, g, CellOfRoom(state, quest.roomB)); // the second room first: nothing yet
+    CHECK(state.questBy[U(q)] == 0);
+    StandIn(def, state, g, CellOfRoom(state, quest.roomA));
+    StandIn(def, state, g, CellOfRoom(state, quest.roomB));
+    CHECK(state.questBy[U(q)] == g + 1);
+}
+
+TEST_CASE("A guest's power: legal when ready, used on another guest, then cooling down (T244)", "[night][royale][power]")
+{
+    const NightDef def = NoMonsters();
+    NightState state = FoyerNight(def, 9);
+    const int g = Current(state);
+    const int other = state.order[1];
+    state.guests[U(g)].power = static_cast<std::int8_t>(NightDef::Find(def.powers, "area")); // everyone within its range
+    const std::vector<Action> legal = LegalActions(def, state);
+    const auto power = std::find_if(legal.begin(), legal.end(), [](const Action &a) { return a.kind == ActionKind::Power; });
+    REQUIRE(power != legal.end());
+    const int hp = state.guests[U(other)].hp;
+    REQUIRE(Apply(def, state, *power));
+    CHECK(state.guests[U(other)].hp < hp);
+    CHECK(state.guests[U(g)].hp == Stat(def, state, g, StatKind::MaxHp)); // never itself
+    const std::vector<Action> after = LegalActions(def, state);
+    CHECK(std::none_of(after.begin(), after.end(), [](const Action &a) { return a.kind == ActionKind::Power; }));
+    CHECK(state.guests[U(g)].powerCooldown > 0);
+}
+
+TEST_CASE("Quests open again on a new night (T245)", "[night][royale][quest]")
+{
+    NightDef def = NoMonsters();
+    def.rules.killer.wakeRound = 99;
+    NightState state = NewNight(def, 10);
+    state.questBy[0] = 1;
+    state.guests[0].quest[5] = 1;
+    while (state.night == 1 && !state.over)
+        REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
+    REQUIRE(state.night == 2);
+    CHECK(state.questBy[0] == 0);
+    CHECK(state.guests[0].quest[5] == 0);
+}

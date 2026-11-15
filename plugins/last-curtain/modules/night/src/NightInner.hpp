@@ -34,6 +34,8 @@ namespace umbra::night::inner
     std::vector<int> Spawns(const NightDef &def, NightState &state); // start rooms, as far apart as the map allows
     void Dawn(const NightDef &def, NightState &state);                // a new night for the living (Night.cpp)
     void KillerRound(const NightDef &def, NightState &state);         // wakes or moves the killer (Killer.cpp)
+    void Quests(const NightDef &def, NightState &state, int guest);   // a quest finished where the guest stands (Quests.cpp)
+    void QuestCount(const NightDef &def, NightState &state, int guest, QuestKind kind); // a monster destroyed, a test passed
     bool IntoKiller(const NightDef &def, NightState &state, int guest); // a guest walked into the killer: dead
     int OpenRoom(const NightDef &def, NightState &state, int from, int direction, bool forceUnderStage, bool allowUnderStage = true);
     void ForceUnderStage(const NightDef &def, NightState &state); // at the Turn, if nobody found it
@@ -52,12 +54,10 @@ namespace umbra::night::inner
     void EndNight(NightState &state, Outcome outcome);
     // Hunt.cpp
     void PlaceKeepsake(const NightDef &def, NightState &state, int cell); // a just-opened room's keepsake, if a drawn goal needs it
-    bool ContactBattle(const NightDef &def, NightState &state, int mover, int cell); // the Taken meets the company
     bool CompanyAlive(const NightState &state);
-    void PowerLegal(const NightDef &def, const NightState &state, std::vector<Action> &legal);
-    void UsePower(const NightDef &def, NightState &state, const Action &action);
+    void PowerLegal(const NightDef &def, const NightState &state, int user, std::vector<Action> &legal);
+    void UsePower(const NightDef &def, NightState &state, int user, const Action &action);
     bool Flooded(const NightState &state, int cell);
-    void TakenTurnStart(NightState &state);
     void FloodEndTurn(const NightDef &def, NightState &state, int guest); // damage for ending a turn in the water
     void BattleLegal(const NightDef &def, const NightState &state, std::vector<Action> &legal);
     void BattleApply(const NightDef &def, NightState &state, const Action &action);

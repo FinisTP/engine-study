@@ -50,6 +50,16 @@ namespace umbra::night
         }
         for (int i = state.deckSize - 1; i > 0; --i)
             std::swap(state.deck[U(i)], state.deck[U(Below(state, i + 1))]);
+        // 1b. The quests' rooms come out first, so every map holds them (Night.md "Quests").
+        int front = 0;
+        for (const QuestDef &q : def.quests)
+            for (const int room : {q.roomA, q.roomB})
+                for (int i = front; room >= 0 && i < state.deckSize; ++i)
+                    if (state.deck[U(i)] == room)
+                    {
+                        std::rotate(state.deck.begin() + front, state.deck.begin() + i, state.deck.begin() + i + 1), ++front;
+                        break;
+                    }
 
         // 2. The foyer, bottom centre; then the whole map at once through random doorways (the battle royale:
         //    nothing is opened during the night). The under-stage comes out on the way (OpenRoom).
@@ -69,6 +79,19 @@ namespace umbra::night
         }
         if (state.understage < 0)
             ForceUnderStage(def, state);
+        // 3. Each carry quest's item lies in its first room (unless a guest still carries it from a night before).
+        for (const QuestDef &q : def.quests)
+        {
+            bool carried = false;
+            for (int g = 0; g < state.count; ++g)
+                carried = carried || std::find(state.guests[U(g)].items.begin(), state.guests[U(g)].items.end(), I8(q.item)) != state.guests[U(g)].items.end();
+            for (int c = 0; q.kind == QuestKind::Carry && !carried && c < maxCells; ++c)
+                if (state.cells[U(c)].opened && state.cells[U(c)].room == q.roomA)
+                {
+                    state.floor.push_back({I8(c), I8(q.item)});
+                    break;
+                }
+        }
         return Spawns(def, state);
     }
 

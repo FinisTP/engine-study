@@ -1,0 +1,10 @@
+id,name,kind,roomA,roomB,item,count,power,stat,amount,text
+body,The singer's body,carry,wigroom,waitingroom,corpse,1,line,might,2,"Carry the body hidden in the wig room to the artists' waiting room."
+crown,The phoenix crown,carry,bar,royalbox,crown,1,area,sanity,2,"Take the phoenix crown from the interval bar back to the royal box."
+ledger,The patron's ledger,carry,stairwell,office,ledger,1,seal,speed,1,"Bring the ledger from the service stairwell to the shuttered office."
+mask,The gilded mask,carry,orchestraroom,maskcabinet,mask,1,reflect,maxhp,4,"Return the gilded mask from the orchestra room to its cabinet."
+keys,The vault keys,carry,corridor,vault,keys,1,swap,speed,1,"Carry the ring of keys from the back corridor to the dusty vault."
+rehearsal,The last rehearsal,visit,balletroom,pit,none,1,pull,might,2,"Dance in the ballet room, then take a bow in the orchestra pit."
+pilgrim,The pilgrim's round,visit,shrine,chapel,none,1,flood,sanity,2,"Light incense at the little shrine, then pray in the chapel."
+hunter,The house's vermin,slay,none,none,none,3,area,might,2,"Destroy three of the house's monsters in one night."
+nerve,Nerve of steel,endure,none,none,none,2,reflect,sanity,2,"Pass two of the house's tests in one night."
