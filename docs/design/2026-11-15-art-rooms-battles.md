@@ -28,6 +28,14 @@ at full size is still one board action.
 - A room opens at full size only for Look; battles (the player's and bots' in the player's light)
   play at full size; events stay on the table.
 - A free display font.
+- Every room in `rooms.csv` (62) gets its own painted tile, and every event (33) its own picture
+  (user, 2026-11-15: generation is quick). Feature rooms still stand out: the foyer, the
+  under-stage, the seven start rooms and the rooms named in goals get a gold frame and a brighter,
+  stronger painting.
+- Top-down tiles are painted by ComfyUI over a simple layout sketch drawn by a script
+  (image-to-image), since SDXL alone paints rooms in perspective.
+- The user leaves the laptop running: all of 4a, 4b and 4c are built without waiting; pictures are
+  redone as often as needed (up to 4 tries each), the weak ones listed.
 
 ## Why
 
@@ -49,21 +57,21 @@ paint, and a fight should look like a fight, not a battle panel over a board.
 
 | Today | Plan 4a |
 |---|---|
-| Room: a coloured box | a painted top-down tile per room kind (and per named room where it matters: foyer, under-stage, dressing room, royal box), on a thin painted base |
+| Room: a coloured box | a painted top-down tile for every room (62), on a thin painted base; feature rooms in a gold frame |
 | Wall stub: dark box | a painted wall strip (the room's wall colour with a moulding line) |
 | Doorway bar | a painted door on the floor edge |
 | Monster: brown or violet box | a standing painted card (a flat cut-out on a little base, like the props) |
 | Items in a room: not shown | a small painted token lying on the tile |
 | UI: flat panels | the poster frame (style board sb06) as the panel skin, the cream paper colour, a free display face (user) for titles: "Abril Fatface" [call; SIL OFL, its licence beside it], Poppins stays for body text |
 | Portraits: none | one painted portrait per guest in the HUD, chat and inspect screens (7) |
-| Event picture: none | one picture shown in the event dialog (`ev01_applause`), the rest keep the text |
+| Event picture: none | a picture for every event (33) in the event dialog |
 
 Tiles are 1024 px squares from ComfyUI (SDXL), cut and colour-checked by a small script
 (`tools/art/`), stored as JPEG under `apps/LastCurtain/assets/art/`. Each room keeps its kind's
 colour as a border, so the board still reads at a glance (the colour coding of plan 2 is not lost).
 
-Counts for 4a: about 20 room tiles, 4 wall/door pieces, 3 monster cards, 12 item tokens, 7
-portraits, 1 event picture, a UI skin of 6-8 pieces. About 55 pictures of the ~210 in the art plan.
+Counts for 4a: 62 room tiles, 4 wall/door pieces, the monster and minion cards, an item token per
+item, 7 portraits, 33 event pictures, a UI skin of 6-8 pieces: about 140 pictures.
 
 ## 4b. A room at full size
 

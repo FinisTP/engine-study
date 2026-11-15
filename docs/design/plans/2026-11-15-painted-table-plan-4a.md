@@ -2,72 +2,68 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Status:** ready; the style board's direction is approved (user, 2026-11-15). Not started; plan 3 comes first. Plans 4b (a room at full size) and 4c (battles in the room) are written after 4a works, as the spec says.
+> **Status:** in progress (user, 2026-11-15: build 4a, 4b and 4c while away; a tile per room, a picture per event; feature rooms stand out; tiles painted over layout sketches; redo pictures freely).
 
-**Goal:** the table's rooms, walls, doors, monsters, items, portraits, event picture and UI skin are painted 2D art in the 1960s Saigon poster style.
+**Goal:** the table's rooms, walls, doors, monsters, items, portraits, event pictures and UI skin are painted 2D art in the 1960s Saigon poster style; feature rooms stand out.
 
-**Architecture:** pictures are made in ComfyUI on the user's PC (SDXL), cut and colour-checked by one Python script, and stored as JPEG/PNG under `apps/LastCurtain/assets/art/`. `art.json` maps room kinds and named rooms to tiles, guests to portraits, monsters and item kinds to cards and tokens. `Table` draws textured quads with those textures; the ui skin uses the frame as a 9-slice panel.
+**Architecture:** pictures are made in ComfyUI on the user's PC (SDXL base; room tiles image-to-image over a sketch drawn in the page), from `tools/art/lastcurtain_prompts.json` (made by `tools/art/make_prompts.py` from the night's data). `tools/art/cut.py` resizes and stores them as JPEG/PNG under `apps/LastCurtain/assets/art/<set>/<data id>.<ext>`: no mapping file, the data ids are the names. `Art.{hpp,cpp}` (in `UmbraNightPlay`, no renderer) gives each picture's path, which rooms are featured, and checks that every picture exists. `Table` draws textured quads.
 
-**Tech Stack:** C++20, the engine's `Renderer::CreateTexture` and ui skin (`skin.json`), Python 3 + Pillow for `tools/art/`, ComfyUI (SDXL base) driven over its HTTP API.
+**Tech Stack:** C++20, `Renderer::CreateTexture`, the ui skin, Python 3 + Pillow, ComfyUI over HTTP (driven from the user's built-in browser).
 
 **Spec:** `docs/design/2026-11-15-art-rooms-battles.md` (part 4a)
 
 ## Global Constraints
 
-- 2D for rooms, walls, items, props, monsters, portraits, UI; props and monsters are flat painted cards.
-- Each room tile keeps its kind's plan-2 colour as a border, so kinds still read at a glance.
-- The Saigon Opera House keeps its real name and 1960s look; nothing from *Betrayal at House on the Hill*.
-- Generated pictures: prompts and seeds recorded in `art/README.md`; no text in pictures (titles are drawn by the ui).
+- 2D for rooms, walls, items, props, monsters, portraits, UI; monsters are flat painted cards.
+- Every room keeps its kind's plan-2 colour as a border; featured rooms (foyer, under-stage, this night's seven start rooms, the rooms named in goals) get a gold frame.
+- The Saigon Opera House keeps its real name; nothing from *Betrayal at House on the Hill*; no text in pictures.
 - A missing picture falls back to today's coloured box, with one log line.
-- Code style per CLAUDE.md; picture files are committed (JPEG ≤ 300 KB each [call]).
+- Pictures committed small: tiles 512 px JPEG, cards/items 256 px PNG with the cream background keyed out, events and portraits 512 px JPEG [call].
+- Code style per CLAUDE.md.
 
 ## Review Focus
 
-1. A room with no tile in `art.json` (a new row in `rooms.csv`) → its kind's tile, then the box (Task 1 test).
-2. Very dark tiles under the red hunt ambient → the room kind border still visible (Task 3 capture).
-3. A 9-slice frame stretched to a wide panel → corners not smeared (Task 5 ui-preview).
-4. Portrait for a guest added later → a plain silhouette card, not a crash (Task 1 test).
-5. Picture files missing in a package → the boxes and flat panels, and `UmbraTool package-check` lists them (Task 6).
+1. A room added to `rooms.csv` without a picture → the box, and the asset test names the missing file.
+2. Start rooms come from the night's seed, not the save: a restored night shows the same gold frames.
+3. Dark tiles under the red hunt light → the kind border and gold frame still read.
+4. Picture files missing in a package → boxes and plain panels, and `package-check` lists them.
+5. A very long event picture load on a slow disk → loaded once at start, not per frame.
 
 ---
 
-### Task 1: `art.json` and its check
+### Task 1: Art paths and featured rooms
 
-**Files:** Create `apps/LastCurtain/assets/art/art.json`, `apps/LastCurtain/Art.{hpp,cpp}` (in `UmbraNightPlay`, no renderer); Test `tests/ArtTests.cpp`
+**Files:** Create `apps/LastCurtain/Art.{hpp,cpp,md}`; Test `tests/ArtTests.cpp`
 
-**Interfaces:** Produces `struct ArtDef { std::map<std::string, std::string> rooms, kinds, portraits, monsters, items; std::string event, frame; };` `bool LoadArt(const std::filesystem::path &, const NightDef &, ArtDef &, std::vector<core::Diagnostic> &);` and `std::string TileFor(const ArtDef &, const RoomDef &)` (named room, else kind, else `""`).
+**Interfaces:** Produces `std::filesystem::path ArtPath(const std::string &set, const std::string &id)` (`"art/rooms/foyer.jpg"`: sets `rooms`, `events`, `portraits` jpg; `items`, `cards`, `ui` png), `std::vector<int> StartCells(const NightDef &, const NightState &)` (the cells of `NewNight(def, state.seed, state.player)`), `bool Featured(const NightDef &, const NightState &, int cell)`, `std::vector<std::string> MissingArt(const NightDef &, const std::filesystem::path &assets)`.
 
-- [ ] Tests (T140): every room kind has a tile and every file named exists; `TileFor` picks the named room's tile, else the kind's; an unknown guest id in `portraits` is refused with its field.
+- [ ] Tests (T140): the foyer, the under-stage and every goal room are featured, a plain room is not; the start cells match the guests' cells at the night's start and are featured; a restored save gives the same start cells; `MissingArt` names a removed file.
 - [ ] RED, implement, GREEN, commit.
 
-### Task 2: Make the pictures
+### Task 2: The pictures
 
-**Files:** Create `tools/art/comfy_batch.json` (prompt list), `tools/art/cut.py` (square crop, resize 1024/512, colour-check against the palette, JPEG), `apps/LastCurtain/assets/art/README.md` (prompts, seeds, model)
+**Files:** `tools/art/make_prompts.py`, `tools/art/lastcurtain_prompts.json`, `tools/art/cut.py`, `apps/LastCurtain/assets/art/**`, `apps/LastCurtain/assets/art/README.md`
 
-- [ ] Queue the 4a set in ComfyUI (about 55: 20 tiles, 4 wall/door pieces, 3 monster cards, 12 item tokens, 7 portraits, 1 event, 6-8 ui pieces), with the style suffix and negative prompt of the style board.
-- [ ] Review each; redo misses with a new seed (keep a list of rejects in the README). Run `cut.py`. Commit the pictures and README.
+- [ ] Calibrate image-to-image strength on two rooms; queue every picture; review contact sheets; redo misses with new seeds (up to 4 tries); cut; `MissingArt` is empty (T141 asserts it on the real folder). Commit.
 
 ### Task 3: Painted tiles, walls and doors on the table
 
-**Files:** Modify `Table.{hpp,cpp}`, `Table.md`; Main passes `ArtDef`
+**Files:** `Table.{hpp,cpp}`, `Table.md`
 
-**Interfaces:** Consumes `ArtDef`, `TileFor`. `Table` gains a textured quad mesh and a `std::map<std::string, core::TextureHandle>` loaded once.
-
-- [ ] A capture (`--seed 7 --player huy`) with painted tiles, the kind border, wall strips and doors; a capture in the hunt (red ambient). Compare with today's capture in the record. Commit.
+- [ ] Each lit room is its tile on a thin base, with a kind-coloured border, featured ones in gold; walls are dark strips with a moulding line; doorways stay open. Captures in the evening and in the hunt. Commit.
 
 ### Task 4: Monster cards and item tokens
 
-**Files:** Modify `Table.cpp`, `BoardView` (items lying in a cell, if not already in the view), `tests/BoardViewTests.cpp`
+**Files:** `Table.cpp`, `BoardView` (`items` lying in a lit cell, if missing), `tests/BoardViewTests.cpp`
 
-- [ ] Test (T141): the view lists the items lying in each lit cell.
-- [ ] Monsters as standing cards facing the camera (billboard about Y); items as small flat tokens. Capture. Commit.
+- [ ] Test (T142): the view lists the items lying in each lit cell. Monsters as standing cards facing the camera; items as small flat tokens. Capture. Commit.
 
-### Task 5: The poster skin, portraits and the event picture
+### Task 5: The poster skin, portraits and event pictures
 
-**Files:** Modify `assets/ui/skin.json`, `hud`, `chat`, `inspect`, `event` screens, `sample.json`; add Abril Fatface (SIL OFL) and its licence for titles; Poppins stays for body text
+**Files:** `assets/ui/skin.json`, `hud`, `chat`, `inspect`, `event` screens, `Play::UiData` (`portrait`, `picture` paths), `sample.json`, Abril Fatface (SIL OFL) and its licence
 
-- [ ] `UmbraTool ui-preview` of hud, chat, inspect, event, menu with the new skin; portraits in hud/chat/inspect; the event picture on `applause` only. Commit.
+- [ ] Test (T143): `UiData` carries the event's picture and the chat asker's portrait. `ui-preview` of hud, chat, inspect, event, menu. Commit.
 
 ### Task 6: Package and records
 
-- [ ] `UmbraTool package-check` includes `art/`; a package capture. `docs/testing/s30-painted-table.md` with captures and the Windows look check (§4); ROADMAP, status, HANDOFF; update the art resource Claude Doc with what was made. Commit.
+- [ ] `package-check` includes `art/`; `docs/testing/s30-painted-table.md`; ROADMAP, status, HANDOFF, CLAUDE.md; the art resource Claude Doc. Commit, verify, ship.
