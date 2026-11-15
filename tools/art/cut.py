@@ -1,8 +1,8 @@
 # Cuts ComfyUI outputs into The Last Curtain's art folder (plan 4a, apps/LastCurtain/Art.md).
 #   python tools/art/cut.py <comfy output>/lastcurtain/art plugins/last-curtain/apps/LastCurtain/assets/art [picks.json]
 # Input: <set>/<id>_00001_.png ... (one per try). The last try wins unless picks.json says
-# {"rooms/foyer": 2}. Rooms, events, portraits: 512 px JPEG. Items and cards: 256 px PNG with the
-# cream background keyed out. UI: 512 px PNG.
+# {"rooms/foyer": 2}. Rooms, events, portraits: 512 px JPEG. Items: 256 px PNG with the cream
+# background keyed out. Cards (whole, in their frames on the stage): 256 px PNG. UI: 512 px PNG.
 import json, os, re, sys
 from PIL import Image, ImageFilter
 
@@ -39,9 +39,9 @@ def main(src, dst, picks_file=None):
         for id_, files in tries.items():
             pick = picks.get(set_name + '/' + id_, max(files))
             image = Image.open(files[pick]).resize((size, size), Image.LANCZOS)
-            if set_name in ('items', 'cards'):
+            if set_name == 'items':
                 key_out(image).save(os.path.join(dst, set_name, id_ + '.png'), optimize=True)
-            elif set_name == 'ui':
+            elif set_name in ('ui', 'cards'):  # cards stand whole in their frames
                 image.convert('RGB').save(os.path.join(dst, set_name, id_ + '.png'), optimize=True)
             else:
                 image.convert('RGB').save(os.path.join(dst, set_name, id_ + '.jpg'), quality=85, optimize=True)
