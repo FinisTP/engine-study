@@ -75,7 +75,7 @@ TEST_CASE("Minions and the Taken show only in light (T108)", "[night][board]")
     state.monsters.push_back({0, I8(Left(def, 2)), 99, 5, 1, 1});
     state.monsters.push_back({0, I8(Left(def, 1)), 99, 5, 1, 1});
     BoardView view = MakeView(def, state, 0);
-    CHECK_FALSE(Shows(view, 3));
+    CHECK(Shows(view, 3)); // the Taken: everyone knows where it is after midnight (T167)
     REQUIRE(view.monsters.size() == 1);
     CHECK(view.monsters[0].monster == 1);
     state.guests[3].cell = I8(Left(def, 1));

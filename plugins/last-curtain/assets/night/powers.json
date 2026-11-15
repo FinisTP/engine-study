@@ -1,5 +1,5 @@
 {
-  "line": { "kind": "line", "damage": 10, "cooldown": 1 },
+  "line": { "kind": "line", "damage": 11, "cooldown": 1 },
   "area": { "kind": "area", "damage": 5, "range": 2, "cooldown": 1 },
   "flood": { "kind": "flood", "damage": 2, "rounds": 2, "cooldown": 1 },
   "pull": { "kind": "pull", "damage": 2, "range": 2, "cooldown": 3 },

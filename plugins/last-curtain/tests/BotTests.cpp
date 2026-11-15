@@ -208,7 +208,7 @@ TEST_CASE("A bot never steps back the way it came in a turn (T121)", "[night][bo
             REQUIRE(Apply(def, state, a));
             if (a.kind == ActionKind::Move && state.logCount == logBefore) // a plain step (a room or trap may move the guest)
             {
-                INFO("seed " << seed << " guest " << g);
+                INFO("seed " << seed << " guest " << g << " taken " << state.taken.present << " round " << state.round << " move " << int(a.a) << " visited " << state.guests[U(g)].visited.count() << " steps " << int(state.guests[U(g)].steps));
                 CHECK((state.guests[U(g)].cell != left[U(g)] || left[U(g)] == before));
                 left[U(g)] = before;
             }
@@ -299,4 +299,34 @@ TEST_CASE("A very chatty bot talks before moving only once its goal is done (T12
     CHECK_FALSE(ChooseAction(def, state, g).kind == ActionKind::Chat); // a test still to pass: it goes looking
     state.guests[U(g)].goalCount = 2;
     CHECK(ChooseAction(def, state, g).kind == ActionKind::Chat);
+}
+
+TEST_CASE("A bot never walks into a room twice in one turn (T167)", "[night][bots]")
+{
+    const NightDef def = Data();
+    for (std::uint64_t seed = 1; seed <= 60; ++seed)
+    {
+        NightState state = NewNight(def, seed);
+        std::array<std::bitset<maxCells>, maxGuests> seen{}; // per guest: chats hand the turn over for a moment
+        int turnKey = -1, applies = 0;
+        while (Current(state) >= 0 && applies++ < 4000)
+        {
+            const int g = Current(state);
+            if (state.round * 8 + state.turn != turnKey)
+            {
+                for (auto &s : seen)
+                    s.reset();
+                turnKey = state.round * 8 + state.turn;
+            }
+            seen[U(g)].set(U(state.guests[U(g)].cell));
+            const Action a = ChooseAction(def, state, g);
+            const std::uint32_t log = state.logCount;
+            REQUIRE(Apply(def, state, a));
+            if (a.kind == ActionKind::Move && state.logCount == log && Current(state) == g)
+            {
+                INFO("seed " << seed << " guest " << g);
+                CHECK_FALSE(seen[U(g)].test(U(state.guests[U(g)].cell)));
+            }
+        }
+    }
 }

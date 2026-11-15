@@ -1,6 +1,6 @@
 id,name,pronoun,weapon,hp,might,sanity,speed,style,taken,takenHp,takenMight,takenSanity,takenSpeed,color,voice,takenVoice,power
-nhi,Truong Uyen Nhi,she,physical,16,3,6,5,explorer,The Folded Girl,38,7,10,5,3E8E7E,"polite schoolgirl, short sentences","sing-song, childlike, cruel",line
-thanh,Le Thanh,she,magical,20,2,7,4,loner,The Opera Specter,24,6,11,4,B3261E,"theatrical, warm, proud","operatic, burning, mocking",area
+nhi,Truong Uyen Nhi,she,physical,16,3,6,5,explorer,The Folded Girl,40,7,10,5,3E8E7E,"polite schoolgirl, short sentences","sing-song, childlike, cruel",line
+thanh,Le Thanh,she,magical,20,2,7,4,loner,The Opera Specter,26,6,11,4,B3261E,"theatrical, warm, proud","operatic, burning, mocking",area
 bao,Dinh Quoc Bao,he,physical,24,4,6,4,protector,The Drowned Physician,38,8,10,3,C9C2B2,"careful doctor, formal","drowned whisper, clinical",flood
 khang,Vo Minh Khang,he,physical,30,7,2,3,fighter,The Iron Debtor,51,7,6,3,D9A21B,"blunt, few words","flat debt-collector's threats",pull
 mai,Phan Thi Mai,she,magical,18,2,8,3,schemer,The Rooted Caretaker,28,6,12,3,A0662B,"dry, practical, knows the house","slow, rooted, the house speaking",seal

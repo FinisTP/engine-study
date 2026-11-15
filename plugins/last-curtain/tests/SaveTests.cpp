@@ -63,7 +63,7 @@ TEST_CASE("Same data and seed, same night (T103)", "[night][save]")
     CHECK(Fingerprint(a) == Fingerprint(b));
     CHECK(Fingerprint(a) != Fingerprint(NewNight(def, 1)));
     // Golden: update when the data or the rules change (Night.md "Fingerprint").
-    CHECK(Fingerprint(a) == 0x64a80c475f6eda7aULL);
+    CHECK(Fingerprint(a) == 0xd1fd4e7f6589f6f4ULL);
 }
 
 TEST_CASE("A save at any point continues to the same end (T103)", "[night][save]")
@@ -211,11 +211,11 @@ TEST_CASE("An older save is refused (T122, T146, T157)", "[night][save]")
 {
     const NightDef def = Data();
     nlohmann::json saved = SaveNight(def, FoyerNight(def, 3));
-    CHECK(saved["version"] == 4);
-    saved["version"] = 3;
+    CHECK(saved["version"] == 5);
+    saved["version"] = 4;
     std::vector<umbra::core::Diagnostic> diagnostics;
     NightState out;
     CHECK_FALSE(LoadNightState(def, saved, out, diagnostics));
     REQUIRE_FALSE(diagnostics.empty());
-    CHECK(diagnostics.front().message.find("version 4") != std::string::npos);
+    CHECK(diagnostics.front().message.find("version 5") != std::string::npos);
 }

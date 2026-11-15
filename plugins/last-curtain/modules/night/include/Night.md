@@ -59,7 +59,8 @@ code holds only the mechanics. Design: `docs/design/game-design.md` (GDD); bots 
   the budget): opening a room, and a room that stops the guest (item, event and trap rooms until
   resolved, an unused bonus room, a fight; `Stop`). Transport rooms join the pair as a passage of 1
   (`Action{Move, transportMove}`). `rules.json` `moves.stepsPerSpeed` x Speed caps the steps of a
-  turn (bots cannot pace forever; bots also never step straight back the way they came).
+  turn. `Guest::visited` holds the rooms a guest has stood in this turn; bots never walk into one
+  again (they head somewhere; no pacing).
 - Items, drop and pick up are free. Resolving an item, event or trap room ends the turn; so does
   persuading, or a battle.
 - Ending the turn in an unused bonus room adds its stat (once per guest per room).
@@ -122,6 +123,10 @@ its own (`Guest::knows`, bits). A passed chat answer tells the answerer the aske
 opened, only if a drawn goal asks for it.
 
 ## The Turn and the hunt (`Hunt.cpp`)
+
+After midnight the Taken knows where every guest is, and every guest knows where the Taken is,
+whatever the light (the user, 2026-11-15): `MakeView` shows those pawns, and the company's bots
+head for the Taken's room. (The Taken's bot already weighed every guest.)
 
 At the end of round `turnAfterRound` every living guest's goal is checked (`GoalDone`, a `Goal` log
 entry each). If all are done, the company wins at once. Otherwise chance picks the Taken among

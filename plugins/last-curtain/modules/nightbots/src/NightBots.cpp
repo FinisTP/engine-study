@@ -26,9 +26,8 @@ namespace umbra::night
                 : def(d), state(s), g(guest), me(s.guests[U(guest)]), style(d.styles[U(d.guests[U(guest)].style)]), legal(LegalActions(d, s)),
                   chaseMinions(minions)
             {
-                // In the evening a bot never steps back the way it came this turn.
-                if (!state.taken.present && me.steps > 0)
-                    std::erase_if(legal, [&](const Action &a) { return a.kind == ActionKind::Move && Next(a) == me.from; });
+                // A bot never walks into a room it has already been in this turn (it heads somewhere; no pacing).
+                std::erase_if(legal, [&](const Action &a) { return a.kind == ActionKind::Move && Next(a) >= 0 && me.visited.test(U(Next(a))); });
             }
 
             bool Has(const Action &a) const { return std::find(legal.begin(), legal.end(), a) != legal.end(); }
@@ -182,10 +181,7 @@ namespace umbra::night
             {
                 // The company: go for the Taken when strong and not alone, else gather.
                 const int taken = state.taken.guest, at = state.guests[U(taken)].cell;
-                bool known = false;
-                for (int o = 0; o < state.count; ++o)
-                    known = known || (o != taken && Up(o) && Lit(def, state, state.guests[U(o)].cell, at, Stat(def, state, o, StatKind::Light)));
-                const int goal = known ? at : state.understage;
+                const int goal = at; // after midnight everyone knows where the Taken is (the user)
                 bool friendNear = false;
                 int nearest = -1, nearestSteps = INT_MAX;
                 for (int o = 0; o < state.count; ++o)

@@ -1,4 +1,5 @@
 #include "NightTestData.hpp"
+#include <BoardView.hpp>
 
 #include <algorithm>
 
@@ -509,4 +510,17 @@ TEST_CASE("Killing a minion takes its share of the Taken's life (T101)", "[night
     REQUIRE(Apply(def, state, {ActionKind::Attack, 0}));
     FightOut(def, state);
     CHECK(state.guests[U(taken)].hp == hp - def.guests[U(taken)].takenHp * md.hpShare / 100);
+}
+
+TEST_CASE("After midnight the Taken knows where everyone is, and everyone knows where the Taken is (T167)", "[night][hunt][view]")
+{
+    Hunt h = MakeHunt("line");
+    // The Taken in the corridor, guest 0 shut in the far closet: no light between them.
+    REQUIRE_FALSE(Lit(h.def, h.state, h.state.guests[0].cell, h.state.guests[6].cell, 4));
+    const BoardView company = MakeView(h.def, h.state, 0);
+    CHECK(std::any_of(company.pawns.begin(), company.pawns.end(), [](const PawnView &p) { return p.guest == 6 && p.taken; }));
+    const BoardView taken = MakeView(h.def, h.state, 6);
+    for (int g = 0; g < h.state.count; ++g)
+        if (!h.state.guests[U(g)].dead)
+            CHECK(std::any_of(taken.pawns.begin(), taken.pawns.end(), [&](const PawnView &p) { return p.guest == g; }));
 }

@@ -265,6 +265,7 @@ namespace umbra::night
             Guest &guest = G(state, g);
             guest.movesLeft = guest.budget = I8(Stat(def, state, g, StatKind::Speed));
             guest.origin = guest.cell, guest.steps = 0;
+            guest.visited.reset(), guest.visited.set(U(guest.cell));
         }
     }
 
@@ -461,6 +462,7 @@ namespace umbra::night
             guest.steps = I8(guest.steps + 1);
             guest.from = guest.cell;
             guest.cell = I8(to);
+            guest.visited.set(U(to));
             if (opened)
                 guest.budget = I8(guest.movesLeft - 1), guest.origin = I8(to);
             guest.movesLeft = I8(guest.budget - std::max(0, Distance(def, state, guest.origin, to)));

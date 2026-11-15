@@ -256,6 +256,7 @@ namespace umbra::night
             break;
         case PowerKind::Swap:
             std::swap(taken.cell, state.guests[U(action.a)].cell);
+            taken.visited.set(U(taken.cell)); // a room it has now stood in this turn
             break;
         case PowerKind::Reflect:
             state.taken.reflect = true;

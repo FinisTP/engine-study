@@ -62,11 +62,13 @@ namespace umbra::night
                     view.cells[U(Neighbour(def, state.guests[U(acting)].cell, legal[i].a))].step = static_cast<std::int8_t>(i);
         }
 
-        // 3. Pawns and monsters in lit cells only (the viewer's own pawn always).
+        // 3. Pawns and monsters in lit cells only (the viewer's own pawn always). After midnight the Taken
+        //    knows where everyone is, and everyone knows where the Taken is (the user, 2026-11-15).
         for (int g = 0; g < state.count; ++g)
         {
             const Guest &guest = state.guests[U(g)];
-            if (guest.dead || (g != viewer && !view.cells[U(guest.cell)].lit))
+            const bool hunted = viewer >= 0 && (IsTaken(state, viewer) || IsTaken(state, g));
+            if (guest.dead || (g != viewer && !view.cells[U(guest.cell)].lit && !hunted))
                 continue;
             view.pawns.push_back({g, guest.cell, g == viewer, g != viewer && Controls(state, viewer, g), IsTaken(state, g)});
         }

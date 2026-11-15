@@ -40,6 +40,7 @@ namespace umbra::night
         std::int8_t movesLeft = 0; // budget minus the shortest way from origin to here
         std::int8_t origin = -1, budget = 0;
         std::int8_t steps = 0; // steps this turn, capped at rules.moves.stepsPerSpeed x Speed
+        std::bitset<maxCells> visited; // the rooms this guest has stood in this turn (bots do not go back)
         std::int8_t goal = -1, goalCount = 0; // goals.csv row drawn tonight; events passed or monsters destroyed for it
         bool goalRoomSeen = false;           // a room goal: the room was entered
         std::uint8_t knows = 0;              // guests whose goal this guest knows, as bits
