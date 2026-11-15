@@ -1,5 +1,7 @@
 #include "NightTestData.hpp"
 
+#include <NightBots.hpp>
+
 #include <algorithm>
 
 // The battle royale's rules core (docs/design/2026-11-16-battle-royale.md, plan stage 1).
@@ -403,4 +405,129 @@ TEST_CASE("Quests open again on a new night (T245)", "[night][royale][quest]")
     REQUIRE(state.night == 2);
     CHECK(state.questBy[0] == 0);
     CHECK(state.guests[0].quest[5] == 0);
+}
+
+// Stage 4: persuading (Night.md "Persuading") and natures.
+namespace
+{
+    NightDef EasyTalk()
+    {
+        NightDef def = NoMonsters();
+        for (QuestionDef &q : def.questions)
+            q.physicalTarget = q.magicalTarget = -50; // every answer passes
+        return def;
+    }
+
+    bool Legal(const NightDef &def, const NightState &state, const Action &a)
+    {
+        const std::vector<Action> legal = LegalActions(def, state);
+        return std::find(legal.begin(), legal.end(), a) != legal.end();
+    }
+
+    // The current guest asks guest `o` for `request` (b: -1 spare, -2 an item, a guest: go after them) and passes.
+    void Persuade(const NightDef &def, NightState &state, int o, int request)
+    {
+        REQUIRE(Apply(def, state, {ActionKind::Chat, static_cast<std::int8_t>(o), static_cast<std::int8_t>(request)}));
+        REQUIRE(state.chat.active);
+        REQUIRE(Apply(def, state, {ActionKind::Answer, 0}));
+    }
+}
+
+TEST_CASE("Talking offers requests: spare me, an item (if they carry one), go after someone (T246)", "[night][royale][persuade]")
+{
+    const NightDef def = EasyTalk();
+    NightState state = FoyerNight(def, 11);
+    const int g = Current(state), o = state.order[1], v = state.order[2];
+    CHECK(Legal(def, state, {ActionKind::Chat, static_cast<std::int8_t>(o), -1}));
+    CHECK_FALSE(Legal(def, state, {ActionKind::Chat, static_cast<std::int8_t>(o), -2}));
+    state.guests[U(o)].items[0] = static_cast<std::int8_t>(NightDef::Find(def.items, "bandage"));
+    CHECK(Legal(def, state, {ActionKind::Chat, static_cast<std::int8_t>(o), -2}));
+    CHECK(Legal(def, state, {ActionKind::Chat, static_cast<std::int8_t>(o), static_cast<std::int8_t>(v)}));
+    CHECK_FALSE(Legal(def, state, {ActionKind::Chat, static_cast<std::int8_t>(o), static_cast<std::int8_t>(g)}));
+}
+
+TEST_CASE("A passed request is granted: a truce, an item on the floor, a guest hunted (T247)", "[night][royale][persuade]")
+{
+    const NightDef def = EasyTalk();
+    SECTION("spare me")
+    {
+        NightState state = FoyerNight(def, 12);
+        const int g = Current(state), o = state.order[1];
+        Persuade(def, state, o, -1);
+        CHECK(Truced(state, g, o));
+        CHECK(Truced(state, o, g));
+    }
+    SECTION("an item")
+    {
+        NightState state = FoyerNight(def, 12);
+        const int o = state.order[1];
+        const std::int8_t bandage = static_cast<std::int8_t>(NightDef::Find(def.items, "bandage"));
+        state.guests[U(o)].items[0] = bandage;
+        Persuade(def, state, o, -2);
+        CHECK(state.guests[U(o)].items[0] == -1);
+        CHECK(std::any_of(state.floor.begin(), state.floor.end(), [&](const FloorItem &f) { return f.item == bandage && f.cell == state.foyer; }));
+    }
+    SECTION("go after someone")
+    {
+        NightState state = FoyerNight(def, 12);
+        const int o = state.order[1], v = state.order[2];
+        Persuade(def, state, o, v);
+        CHECK(state.guests[U(o)].hunt == v);
+        CHECK(state.guests[U(o)].huntUntil > state.round);
+    }
+}
+
+TEST_CASE("Natures: a wicked guest is harder to persuade, a kind one easier (T248)", "[night][royale][persuade]")
+{
+    const NightDef def = NoMonsters();
+    NightState state = FoyerNight(def, 13);
+    const int g = Current(state);
+    int kind = -1, wicked = -1;
+    for (int o = 0; o < state.count; ++o)
+        if (o != g)
+            (def.guests[U(o)].nature == Nature::Kind ? kind : def.guests[U(o)].nature == Nature::Wicked ? wicked : o) = o;
+    REQUIRE(kind >= 0);
+    REQUIRE(wicked >= 0);
+    REQUIRE(Apply(def, state, {ActionKind::Chat, static_cast<std::int8_t>(kind), -1}));
+    const int easy = AnswerTarget(def, state, 0) - def.questions[U(state.chat.question)].physicalTarget;
+    NightState other = FoyerNight(def, 13);
+    REQUIRE(Apply(def, other, {ActionKind::Chat, static_cast<std::int8_t>(wicked), -1}));
+    const int hard = AnswerTarget(def, other, 0) - def.questions[U(other.chat.question)].physicalTarget;
+    CHECK(easy == def.rules.persuade.kindTarget);
+    CHECK(hard == def.rules.persuade.wickedTarget);
+}
+
+TEST_CASE("A kind bot keeps its truce; a hunting bot goes after its target (T249)", "[night][royale][persuade]")
+{
+    const NightDef def = NoMonsters();
+    NightState state = FoyerNight(def, 14);
+    const int g = Current(state);
+    // Make the bot overwhelmingly strong, so it would attack anyone it may.
+    state.guests[U(g)].might = 30, state.guests[U(g)].sanity = 30;
+    NightDef kind = def;
+    kind.guests[U(g)].nature = Nature::Kind;
+    kind.guests[U(g)].style = NightDef::Find(def.styles, "fighter"); // a fighter: the fight beats a quest
+    const Action free = ChooseAction(kind, state, g); // no truce yet: it strikes
+    CHECK((free.kind == ActionKind::Attack && free.b >= 0));
+    for (int o = 0; o < state.count; ++o)
+        if (o != g)
+            state.truces[U(o)] = {static_cast<std::int8_t>(g), static_cast<std::int8_t>(o), 99};
+    const Action choice = ChooseAction(kind, state, g);
+    CHECK_FALSE((choice.kind == ActionKind::Attack && choice.b >= 0));
+    // Told to go after someone: it heads for them when they are not here.
+    NightState hunting = FoyerNight(def, 14);
+    const int v = hunting.order[3];
+    int far = -1;
+    for (int c = 0; c < maxCells && far < 0; ++c)
+        if (hunting.cells[U(c)].opened && Steps(def, hunting, hunting.foyer, c) == 3)
+            far = c;
+    REQUIRE(far >= 0);
+    for (int o = 0; o < hunting.count; ++o)
+        if (o != g)
+            hunting.guests[U(o)].cell = static_cast<std::int8_t>(o == v ? far : 0);
+    Closet(def, hunting, 0);
+    hunting.guests[U(g)].hunt = static_cast<std::int8_t>(v), hunting.guests[U(g)].huntUntil = 99;
+    const Action step = ChooseAction(def, hunting, g);
+    REQUIRE(step.kind == ActionKind::Move);
+    CHECK(Steps(def, hunting, Neighbour(def, hunting.foyer, step.a), far) == 2);
 }

@@ -22,6 +22,19 @@ using umbra::platform::InputKey;
 
 namespace
 {
+    // The data with every guest kind and no killer: the screens' tests want a quiet foyer, not a brawl.
+    umbra::night::NightDef Calm()
+    {
+        umbra::night::NightDef def = Data();
+        for (umbra::night::GuestDef &g : def.guests) // kind and evenly matched: no one is worth a fight
+            g.nature = umbra::night::Nature::Kind, g.hp = 20, g.might = g.sanity = 3;
+        def.rules.killer.wakeRound = 99;
+        return def;
+    }
+}
+
+namespace
+{
     // Dismisses the event and dice screens, which hold the bots.
     void Settle(Play &play)
     {
@@ -74,7 +87,7 @@ namespace
 
 TEST_CASE("A click on a step cell moves; elsewhere nothing (T111)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, FoyerNight(def, 4, 0));
     ToPlayer(play);
     const int me = play.State().player;
@@ -95,7 +108,7 @@ TEST_CASE("A click on a step cell moves; elsewhere nothing (T111)", "[night][pla
 
 TEST_CASE("Keys do nothing on a bot's turn (T111)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, FoyerNight(def, 4, 0));
     ToPlayer(play);
     play.Key(InputKey::Enter);
@@ -112,7 +125,7 @@ TEST_CASE("Keys do nothing on a bot's turn (T111)", "[night][play]")
 
 TEST_CASE("End turn works with moves left (T111)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, FoyerNight(def, 4, 0));
     ToPlayer(play);
     const int turn = play.State().turn, round = play.State().round;
@@ -131,7 +144,7 @@ TEST_CASE("End turn works with moves left (T111)", "[night][play]")
 
 TEST_CASE("UiData has the keys the screens bind (T111)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, FoyerNight(def, 4, 0));
     ToPlayer(play);
     const nlohmann::json data = play.UiData();
@@ -163,7 +176,10 @@ namespace
         {
             Play play(def, FoyerNight(def, seed, 0));
             const int bot = Current(play.State());
-            if (!play.PlayerTurn() && ChooseAction(def, play.State(), bot).kind != ActionKind::OpenChat)
+            const Action first = ChooseAction(def, play.State(), bot);
+            NightState after = play.State(); // its first deed leaves its turn going (no room resolved, no chat)
+            const bool going = Apply(def, after, first) && Current(after) == bot;
+            if (!play.PlayerTurn() && first.kind != ActionKind::OpenChat && going)
             {
                 std::vector<umbra::core::Diagnostic> diagnostics;
                 Captions captions;
@@ -189,7 +205,7 @@ namespace
 
 TEST_CASE("Bot turns advance with time and hold on seen beats (T112)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play = BotFirst(def);
     Think(play); // the bot acts in the foyer, in the player's light
     REQUIRE(play.Beats() == 1);
@@ -203,7 +219,7 @@ TEST_CASE("Bot turns advance with time and hold on seen beats (T112)", "[night][
 
 TEST_CASE("Space makes the bots' beats short (T112)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play = BotFirst(def);
     play.Key(InputKey::Space);
     Think(play);
@@ -214,7 +230,7 @@ TEST_CASE("Space makes the bots' beats short (T112)", "[night][play]")
 
 TEST_CASE("A minimised window does not lose a beat (T112)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play = BotFirst(def);
     for (int i = 0; i < 100; ++i)
         play.Update(0.0F);
@@ -242,7 +258,7 @@ namespace
 
 TEST_CASE("Every chance shown matches the rules (T113)", "[night][play]")
 {
-    NightDef def = Data();
+    NightDef def = Calm();
     SECTION("chat answers")
     {
         Play play(def, FoyerNight(def, 4, 0));
@@ -282,7 +298,7 @@ TEST_CASE("Every chance shown matches the rules (T113)", "[night][play]")
 
 TEST_CASE("The dice screen shows the logged roll (T113)", "[night][play]")
 {
-    NightDef def = Data();
+    NightDef def = Calm();
     for (RoomDef &room : def.rooms)
         if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
             room.kind = RoomKind::Event, room.doors = 15;
@@ -311,7 +327,7 @@ TEST_CASE("The dice screen shows the logged roll (T113)", "[night][play]")
 
 TEST_CASE("No screen waits after the night ended (T113)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     NightState state = PlayerFirst(def);
     state.chat = {true, 1, 0, 5};
     state.over = true;
@@ -342,7 +358,7 @@ namespace
 
 TEST_CASE("The battle data lists both sides and the expected damage (T114)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play = FightMonster(def, PlayerFirst(def), 99, 1);
     REQUIRE(play.Screen() == "battle");
     const nlohmann::json battle = play.UiData()["battle"];
@@ -368,7 +384,7 @@ TEST_CASE("The battle data lists both sides and the expected damage (T114)", "[n
 
 TEST_CASE("Leave is offered from round 2 only (T114)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play = FightMonster(def, PlayerFirst(def), 99, 1);
     CHECK(play.UiData()["battle"]["canLeave"] == false);
     CHECK_FALSE(play.HandleUi("battle", "leave", ""));
@@ -382,7 +398,7 @@ TEST_CASE("Leave is offered from round 2 only (T114)", "[night][play]")
 
 TEST_CASE("The player's death mid-battle ends the screen and the watching begins (T114)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     NightState state = PlayerFirst(def);
     // After midnight 0 HP is death; the Taken waits far away, shut in a closet.
     const int far = CellAt(def, 0, 0);
@@ -434,7 +450,7 @@ namespace
 
 TEST_CASE("A save and Continue give the same night (T115)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, FoyerNight(def, 11, 2));
     PlayUntil(play, [&] { return play.State().round >= 4; });
     const nlohmann::json saved = play.Save();
@@ -450,7 +466,7 @@ TEST_CASE("A save and Continue give the same night (T115)", "[night][play]")
 
 TEST_CASE("A save from other data hides Continue (T115)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     const nlohmann::json saved = Play(def, FoyerNight(def, 11, 2)).Save();
     NightDef other = def;
     other.rules.battle.rounds += 1;
@@ -468,7 +484,7 @@ TEST_CASE("A save from other data hides Continue (T115)", "[night][play]")
 
 TEST_CASE("The start screen shows each guest's portrait and biography (T212)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     const nlohmann::json start = Play::StartData(def, false)["start"];
     for (std::size_t g = 0; g < def.guests.size(); ++g)
     {
@@ -480,7 +496,7 @@ TEST_CASE("The start screen shows each guest's portrait and biography (T212)", "
 
 TEST_CASE("Picking a guest shows their biography before the night starts (T212)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     CHECK_FALSE(Play::StartData(def, false).contains("bio")); // nobody picked: the list
     const nlohmann::json data = Play::StartData(def, false, 2);
     REQUIRE(data.contains("bio"));
@@ -491,7 +507,7 @@ TEST_CASE("Picking a guest shows their biography before the night starts (T212)"
 
 TEST_CASE("A push-back event names the room it happened in (final review)", "[night][play]")
 {
-    NightDef def = Data();
+    NightDef def = Calm();
     for (RoomDef &room : def.rooms)
         if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
             room.kind = RoomKind::Event, room.doors = 15;
@@ -544,7 +560,7 @@ namespace
 
 TEST_CASE("A click walks a lit square three steps away, one sliding step at a time (T125)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, PlayerCorridor(def, 3, 4));
     REQUIRE(play.Screen() == "menu");
     play.Click(West(def, 3));
@@ -566,7 +582,7 @@ TEST_CASE("A click walks a lit square three steps away, one sliding step at a ti
 
 TEST_CASE("A square beyond the moves left is ignored; its path shows red past the last affordable step (T125)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, PlayerCorridor(def, 3, 2));
     REQUIRE(play.HandleUi("menu", "move", ""));
     CHECK(play.TurnMode() == Play::Mode::Picking);
@@ -582,7 +598,7 @@ TEST_CASE("A square beyond the moves left is ignored; its path shows red past th
 
 TEST_CASE("Illegal squares are ignored in the menu and in picking (T125)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, PlayerCorridor(def, 2, 4));
     for (int pass = 0; pass < 2; ++pass)
     {
@@ -600,7 +616,7 @@ TEST_CASE("Illegal squares are ignored in the menu and in picking (T125)", "[nig
 
 TEST_CASE("A dialog part-way along a walk drops the rest of the walk (T125)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     NightState state = PlayerCorridor(def, 3, 4);
     state.cells[static_cast<std::size_t>(West(def, 1))].room = static_cast<std::int8_t>(NightDef::Find(def.rooms, "lighting")); // an event room
     state.cells[static_cast<std::size_t>(West(def, 1))].resolved = false;
@@ -620,7 +636,7 @@ TEST_CASE("A dialog part-way along a walk drops the rest of the walk (T125)", "[
 
 TEST_CASE("dt 0 changes nothing mid-walk (T125)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, PlayerCorridor(def, 3, 4));
     play.Click(West(def, 3));
     play.Update(Play::slideSeconds); // the first step starts sliding
@@ -636,7 +652,7 @@ TEST_CASE("dt 0 changes nothing mid-walk (T125)", "[night][play]")
 
 TEST_CASE("Continue mid-walk opens the menu with the moves that were left (T125)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, PlayerCorridor(def, 3, 4));
     play.Click(West(def, 3));
     play.Update(Play::slideSeconds);
@@ -650,7 +666,7 @@ TEST_CASE("Continue mid-walk opens the menu with the moves that were left (T125)
 
 TEST_CASE("Input: menu, Esc opens the save menu (T126)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, PlayerCorridor(def, 2, 4));
     play.Key(InputKey::Escape);
     CHECK(play.Screen() == "pause");
@@ -663,7 +679,7 @@ TEST_CASE("Input: menu, Esc opens the save menu (T126)", "[night][play]")
 
 TEST_CASE("Input: menu, an arrow steps that way in pick mode (T126)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, PlayerCorridor(def, 2, 4));
     play.Key(InputKey::Left);
     CHECK(play.TurnMode() == Play::Mode::Picking);
@@ -673,7 +689,7 @@ TEST_CASE("Input: menu, an arrow steps that way in pick mode (T126)", "[night][p
 
 TEST_CASE("Input: menu, Enter ends the turn (T126)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, PlayerCorridor(def, 2, 4));
     play.Key(InputKey::Enter);
     CHECK_FALSE(play.PlayerTurn());
@@ -681,7 +697,7 @@ TEST_CASE("Input: menu, Enter ends the turn (T126)", "[night][play]")
 
 TEST_CASE("Input: menu and picking, a right click inspects (T126)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, PlayerCorridor(def, 2, 4));
     play.Click(West(def, 1), true);
     CHECK(play.Screen() == "inspect");
@@ -696,7 +712,7 @@ TEST_CASE("Input: menu and picking, a right click inspects (T126)", "[night][pla
 
 TEST_CASE("Input: picking, Esc goes back to the menu and keeps the steps taken (T126)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, PlayerCorridor(def, 3, 4));
     play.Click(West(def, 3));
     play.Update(Play::slideSeconds); // one step under way
@@ -709,7 +725,7 @@ TEST_CASE("Input: picking, Esc goes back to the menu and keeps the steps taken (
 
 TEST_CASE("Input: picking, Enter walks to the hovered square (T126)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, PlayerCorridor(def, 2, 4));
     REQUIRE(play.HandleUi("menu", "move", ""));
     play.Hover(West(def, 2));
@@ -720,7 +736,7 @@ TEST_CASE("Input: picking, Enter walks to the hovered square (T126)", "[night][p
 
 TEST_CASE("Input: a dialog ignores clicks on the board; Esc closes it where it can (T126)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, PlayerCorridor(def, 2, 4));
     REQUIRE(play.HandleUi("menu", "bag", ""));
     REQUIRE(play.Screen() == "bag");
@@ -735,7 +751,7 @@ TEST_CASE("Input: a dialog ignores clicks on the board; Esc closes it where it c
 
 TEST_CASE("Input: a bot's turn, Esc opens the save menu; only a right click inspects (T126, T216)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play = BotFirst(def);
     REQUIRE_FALSE(play.PlayerTurn());
     play.Key(InputKey::Escape);
@@ -752,7 +768,7 @@ TEST_CASE("Input: a bot's turn, Esc opens the save menu; only a right click insp
 
 TEST_CASE("Inspect shows only what the player may know (T126)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     NightState state = PlayerCorridor(def, 2, 4);
     // A bot in the lit room west of the foyer, carrying a bandage; cell 0 a dark closet.
     state.guests[1].cell = static_cast<std::int8_t>(West(def, 1));
@@ -813,7 +829,7 @@ namespace
 
 TEST_CASE("A bot in view thinks max(0.4 s, its decision time) before its first action (T127)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     for (const float took : {0.1F, 0.9F})
     {
         Play play = SeenBotFirst(def);
@@ -841,7 +857,7 @@ TEST_CASE("A bot in view thinks max(0.4 s, its decision time) before its first a
 
 TEST_CASE("A bot the player cannot see does not think on screen (T127)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     NightState state = PlayerCorridor(def, 1, 4);
     Apply(def, state, {ActionKind::EndTurn}); // the bots stand in the dark closet
     Play play(def, state);
@@ -853,7 +869,7 @@ TEST_CASE("A bot the player cannot see does not think on screen (T127)", "[night
 
 TEST_CASE("A bot's step slides (T127)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     // A bot in the corridor west of the player, with a bandage lying one room further west to walk to.
     NightState state = PlayerCorridor(def, 2, 4);
     Apply(def, state, {ActionKind::EndTurn});
@@ -880,7 +896,7 @@ TEST_CASE("A bot's step slides (T127)", "[night][play]")
 
 TEST_CASE("The camera follows each step of a walk (T128)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, PlayerCorridor(def, 3, 4));
     CHECK(play.CameraCell() == play.State().foyer);
     play.Click(West(def, 3));
@@ -896,7 +912,7 @@ TEST_CASE("The camera follows each step of a walk (T128)", "[night][play]")
 
 TEST_CASE("A drag stops following until the portrait is clicked (T128, T163)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, PlayerCorridor(def, 2, 4));
     CHECK(play.Following());
     play.Drag();
@@ -907,7 +923,7 @@ TEST_CASE("A drag stops following until the portrait is clicked (T128, T163)", "
 
 TEST_CASE("A dead player still follows the beats; Focus and Esc are safe (T128)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     NightState state = PlayerCorridor(def, 1, 4);
     Apply(def, state, {ActionKind::EndTurn});
     state.guests[0].dead = true;
@@ -931,7 +947,7 @@ TEST_CASE("A dead player still follows the beats; Focus and Esc are safe (T128)"
 
 TEST_CASE("Rings are numbered by group, the player's first (T129)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     NightState state = PlayerCorridor(def, 1, 4);
     state.guests[3].group = state.guests[5].group = 4; // a bot group, lowest member 3
     state.guests[6].group = 7;                         // a group of one: no ring
@@ -944,7 +960,7 @@ TEST_CASE("Rings are numbered by group, the player's first (T129)", "[night][pla
 
 TEST_CASE("The HUD shows a goal's progress (T129)", "[night][play]")
 {
-    NightDef def = Data();
+    NightDef def = Calm();
     NightState state = PlayerCorridor(def, 1, 4);
     def.goals.push_back({0, "test", GoalKind::Events, -1, 2, "Pass two tests."});
     state.guests[0].goal = static_cast<std::int8_t>(def.goals.size() - 1);
@@ -959,7 +975,7 @@ TEST_CASE("The HUD shows a goal's progress (T129)", "[night][play]")
 
 TEST_CASE("An arrow with no move left does nothing, not even the door's question (final review)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     NightState state = PlayerCorridor(def, 0, 0); // the foyer's west door leads to an unopened cell
     Play play(def, state);
     play.Key(InputKey::Left);
@@ -1006,7 +1022,7 @@ namespace
 
 TEST_CASE("A seen bot's caption waits up to 3 s for its line, then shows the template (T135)", "[night][play][words]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     auto mind = std::make_unique<StandIn>();
     mind->never = true;
     mind->answer = [](const umbra::town::MindRequest &) { return std::string{}; };
@@ -1029,7 +1045,7 @@ TEST_CASE("A seen bot's caption waits up to 3 s for its line, then shows the tem
 
 TEST_CASE("A seen bot's caption is the model's line; the result stays the template (T135)", "[night][play][words]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     auto mind = std::make_unique<StandIn>();
     mind->answer = [](const umbra::town::MindRequest &request) { return "Quietly, " + LineOf(request); };
     Words words(def, std::move(mind));
@@ -1049,7 +1065,7 @@ TEST_CASE("A seen bot's caption is the model's line; the result stays the templa
 
 TEST_CASE("The night plays the same with the model as without it (T135)", "[night][play][words]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     auto mind = std::make_unique<StandIn>();
     mind->answer = [](const umbra::town::MindRequest &request) { return "Quietly, " + LineOf(request); };
     Words words(def, std::move(mind));
@@ -1073,7 +1089,7 @@ TEST_CASE("The night plays the same with the model as without it (T135)", "[nigh
 
 TEST_CASE("A chat question waits for its line and shows it; the answers stay (T135)", "[night][play][words]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     auto mind = std::make_unique<StandIn>();
     mind->answer = [](const umbra::town::MindRequest &request) {
         return request.prompt.find("never hint") != std::string::npos ? "Tell me truly, " + LineOf(request) : std::string{};
@@ -1096,7 +1112,7 @@ TEST_CASE("A chat question waits for its line and shows it; the answers stay (T1
 
 TEST_CASE("Line seeds come from the night, so Continue words the same lines (T135)", "[night][play][words]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     const auto seedsAfter = [&](const NightState &state) {
         std::vector<std::uint32_t> seeds;
         auto mind = std::make_unique<StandIn>();
@@ -1131,7 +1147,7 @@ TEST_CASE("Line seeds come from the night, so Continue words the same lines (T13
 
 TEST_CASE("The save menu says when the written lines are used (T135)", "[night][play][words]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, FoyerNight(def, 4, 0));
     CHECK(play.UiData()["writtenLines"] == true);
     Words none(def, nullptr);
@@ -1146,7 +1162,7 @@ TEST_CASE("The save menu says when the written lines are used (T135)", "[night][
 
 TEST_CASE("Screens carry their pictures: the event's, the asker's and my portrait (T143)", "[night][play][art]")
 {
-    NightDef def = Data();
+    NightDef def = Calm();
     SECTION("an event")
     {
         for (RoomDef &room : def.rooms)
@@ -1175,7 +1191,7 @@ TEST_CASE("Screens carry their pictures: the event's, the asker's and my portrai
 
 TEST_CASE("Room view is a switch: the player plays on in it; the night does not stop (T144, T158)", "[night][play][stage]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, PlayerFirst(def));
     REQUIRE(play.Screen() == "menu");
     CHECK_FALSE(play.RoomView());
@@ -1209,7 +1225,7 @@ TEST_CASE("Room view is a switch: the player plays on in it; the night does not 
 
 TEST_CASE("In room view a click on a figure engages it; a click on a floor item picks it up (T158)", "[night][play][stage]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     NightState state = PlayerCorridor(def, 1, 3);
     const int bandage = NightDef::Find(def.items, "bandage");
     state.floor.push_back({static_cast<std::int8_t>(state.foyer), static_cast<std::int8_t>(bandage)});
@@ -1235,7 +1251,7 @@ TEST_CASE("In room view a click on a figure engages it; a click on a floor item 
 
 TEST_CASE("A battle in the player's light plays on the stage with both sides; one in the dark does not (T144)", "[night][play][stage]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     NightState state = PlayerFirst(def);
     const int here = state.guests[0].cell;
     Monster moths;
@@ -1297,7 +1313,7 @@ namespace
 
 TEST_CASE("A bot beat where something happens waits for a tap, shown at full size (T148)", "[night][play][pace]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, FoyerNight(def, 4, 0));
     std::vector<umbra::core::Diagnostic> diagnostics;
     Captions captions;
@@ -1323,7 +1339,7 @@ TEST_CASE("A bot beat where something happens waits for a tap, shown at full siz
 
 TEST_CASE("Skip runs the bots to the player's turn without stopping (T148)", "[night][play][pace]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     NightState state = FoyerNight(def, 4, 0);
     Play play(def, state);
     play.SetOptions(Designed());
@@ -1344,7 +1360,7 @@ TEST_CASE("Skip runs the bots to the player's turn without stopping (T148)", "[n
 
 TEST_CASE("The HUD: the turn order, a goal panel that folds, no room panel and no light list (T219)", "[night][play][room]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     const NightState state = FoyerNight(def, 4, 0);
     Play play(def, state);
     const nlohmann::json data = play.UiData();
@@ -1369,7 +1385,7 @@ TEST_CASE("The HUD: the turn order, a goal panel that folds, no room panel and n
 
 TEST_CASE("A bot's walk stays on the table; only what it does opens the room and waits (T150)", "[night][play][pace]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, FoyerNight(def, 4, 0));
     std::vector<umbra::core::Diagnostic> diagnostics;
     Captions captions;
@@ -1412,7 +1428,7 @@ TEST_CASE("A bot's walk stays on the table; only what it does opens the room and
 
 TEST_CASE("After a room resolves the player may still look around; the bots wait for End turn (T151)", "[night][play][rest]")
 {
-    NightDef def = Data();
+    NightDef def = Calm();
     for (RoomDef &room : def.rooms)
         if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
             room.kind = RoomKind::Event, room.doors = 15;
@@ -1469,7 +1485,7 @@ namespace
 
 TEST_CASE("Walking into a room plays it step by step: arrival, card, tumbling die, a plain result (T152)", "[night][play][flow]")
 {
-    NightDef def = Data();
+    NightDef def = Calm();
     const int sandbag = NightDef::Find(def.events, "sandbag");
     SECTION("a lasting trap: arrival names it, the card says it stays, the die tumbles, the result is plain")
     {
@@ -1531,7 +1547,7 @@ TEST_CASE("Walking into a room plays it step by step: arrival, card, tumbling di
 
 TEST_CASE("A bot's roll in sight names the event it faced (T152)", "[night][play][flow]")
 {
-    NightDef def = Data();
+    NightDef def = Calm();
     for (RoomDef &room : def.rooms)
         if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
             room.kind = RoomKind::Event, room.doors = 15;
@@ -1557,7 +1573,7 @@ TEST_CASE("A bot's roll in sight names the event it faced (T152)", "[night][play
 
 TEST_CASE("A bot's last beat that waits still shows its caption when the player's turn comes (T153)", "[night][play][pace]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     std::vector<umbra::core::Diagnostic> diagnostics;
     Captions captions;
     REQUIRE(LoadCaptions(std::filesystem::path(UMBRA_NIGHT_DATA) / "captions.json", captions, diagnostics));
@@ -1589,7 +1605,7 @@ TEST_CASE("A bot's last beat that waits still shows its caption when the player'
 
 TEST_CASE("The camera follows whoever acts; a drag frees it only until the next turn (T154)", "[night][play][camera]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, FoyerNight(def, 4, 0));
     ToPlayer(play);
     REQUIRE(play.PlayerTurn());
@@ -1606,7 +1622,7 @@ TEST_CASE("The camera follows whoever acts; a drag frees it only until the next 
 
 TEST_CASE("The top bar shows whoever acts; the Taken go by their risen name (T155)", "[night][play][hud]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     NightState state = FoyerNight(def, 4, 0);
     // 1. The Taken's name once risen.
     const int g = 1;
@@ -1633,7 +1649,7 @@ TEST_CASE("The top bar shows whoever acts; the Taken go by their risen name (T15
 
 TEST_CASE("A bonus room says what it gives on the way in, and announces it when paid (T156)", "[night][play][flow]")
 {
-    NightDef def = Data();
+    NightDef def = Calm();
     Play play = IntoRoom(def, "rehearsal", -1);
     // 1. Walking in: what it will give.
     REQUIRE(play.Screen() == "arrive");
@@ -1656,7 +1672,7 @@ TEST_CASE("A bonus room says what it gives on the way in, and announces it when 
 
 TEST_CASE("A walk back toward where moves count from is always affordable (T157)", "[night][play][moves]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, PlayerCorridor(def, 3, 1));
     GoTo(play, West(def, 1));
     REQUIRE(play.State().guests[0].cell == West(def, 1));
@@ -1672,7 +1688,7 @@ TEST_CASE("A walk back toward where moves count from is always affordable (T157)
 
 TEST_CASE("A bot's deed in sight: it walks in first, then what it faces, its roll, then the result (T159, T166)", "[night][play][pace]")
 {
-    NightDef def = Data();
+    NightDef def = Calm();
     for (RoomDef &room : def.rooms)
         if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
             room.kind = RoomKind::Event, room.doors = 15;
@@ -1718,7 +1734,7 @@ TEST_CASE("A bot's deed in sight: it walks in first, then what it faces, its rol
 
 TEST_CASE("A die slows to a stop, shows its number, then tells (T166)", "[night][play][flow]")
 {
-    NightDef def = Data();
+    NightDef def = Calm();
     const int sandbag = NightDef::Find(def.events, "sandbag");
     def.events[static_cast<std::size_t>(sandbag)].clear = ClearKind::None;
     Play play = IntoRoom(def, "loosestairs", sandbag);
@@ -1754,7 +1770,7 @@ TEST_CASE("A die slows to a stop, shows its number, then tells (T166)", "[night]
 
 TEST_CASE("Answering a chat gets a reply from the asker, pleased or not (T160)", "[night][play][chat]")
 {
-    NightDef def = Data();
+    NightDef def = Calm();
     Play play(def, FoyerNight(def, 4, 0));
     std::vector<umbra::core::Diagnostic> diagnostics;
     Captions captions;
@@ -1773,7 +1789,7 @@ TEST_CASE("Answering a chat gets a reply from the asker, pleased or not (T160)",
 
 TEST_CASE("A blow in a bot's fight says who hit whom, for how much, and what is left (T161)", "[night][narrate]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     std::vector<umbra::core::Diagnostic> diagnostics;
     Captions captions;
     REQUIRE(LoadCaptions(std::filesystem::path(UMBRA_NIGHT_DATA) / "captions.json", captions, diagnostics));
@@ -1788,7 +1804,7 @@ TEST_CASE("A blow in a bot's fight says who hit whom, for how much, and what is 
 
 TEST_CASE("A blow puts its damage over the struck guest for a moment (T161)", "[night][play][battle]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     for (std::uint64_t seed = 1; seed < 60; ++seed)
     {
         Play play(def, FoyerNight(def, seed, 0));
@@ -1824,7 +1840,7 @@ TEST_CASE("A blow puts its damage over the struck guest for a moment (T161)", "[
 
 TEST_CASE("During the rest after a room the top bar is still the player's (T164)", "[night][play][hud]")
 {
-    NightDef def = Data();
+    NightDef def = Calm();
     for (RoomDef &room : def.rooms)
         if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
             room.kind = RoomKind::Event, room.doors = 15;
@@ -1838,7 +1854,7 @@ TEST_CASE("During the rest after a room the top bar is still the player's (T164)
 
 TEST_CASE("When the turn comes to the player the camera goes to them at once (T164)", "[night][play][camera]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, FoyerNight(def, 4, 0));
     for (int i = 0; i < 4000; ++i)
     {
@@ -1861,7 +1877,7 @@ TEST_CASE("When the turn comes to the player the camera goes to them at once (T1
 
 TEST_CASE("Picking a walk has a Done button back to the menu (T165)", "[night][play]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, PlayerCorridor(def, 2, 4));
     REQUIRE(play.HandleUi("menu", "move", ""));
     REQUIRE(play.Screen() == "picking");
@@ -1871,7 +1887,7 @@ TEST_CASE("Picking a walk has a Done button back to the menu (T165)", "[night][p
 
 TEST_CASE("A found item can be left on the floor (T165)", "[night][play][flow]")
 {
-    NightDef def = Data();
+    NightDef def = Calm();
     Play play = IntoRoom(def, "armoury", -1);
     REQUIRE(play.HandleUi("arrive", "onward", ""));
     REQUIRE(play.Screen() == "found");
@@ -1886,7 +1902,7 @@ TEST_CASE("A found item can be left on the floor (T165)", "[night][play][flow]")
 
 TEST_CASE("The player's goal room is known to the table, to shine (T170)", "[night][play][hud]")
 {
-    NightDef def = Data();
+    NightDef def = Calm();
     NightState state = PlayerCorridor(def, 2, 3);
     const int room = state.cells[static_cast<std::size_t>(West(def, 2))].room;
     def.goals.push_back({0, "test", GoalKind::Room, room, 1, "test"});
@@ -1898,7 +1914,7 @@ TEST_CASE("The player's goal room is known to the table, to shine (T170)", "[nig
 
 TEST_CASE("A chat is shown in its room from the moment it opens (T171)", "[night][play][chat]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play(def, FoyerNight(def, 4, 0));
     play.SetOptions(Designed());
     for (int i = 0; i < 400 && !(play.State().chat.active && play.PlayerTurn()); ++i)
@@ -1909,7 +1925,7 @@ TEST_CASE("A chat is shown in its room from the moment it opens (T171)", "[night
 
 TEST_CASE("Taps closer than tapGap are ignored, so spam clicks cannot skip a step (T216)", "[night][play][flow]")
 {
-    NightDef def = Data();
+    NightDef def = Calm();
     const int sandbag = NightDef::Find(def.events, "sandbag");
     def.events[static_cast<std::size_t>(sandbag)].clear = ClearKind::None;
     Play play = IntoRoom(def, "loosestairs", sandbag);
@@ -1928,7 +1944,7 @@ TEST_CASE("Taps closer than tapGap are ignored, so spam clicks cannot skip a ste
 
 TEST_CASE("Each turn opens with a banner naming whose turn it is; the bot waits for it (T220)", "[night][play][pace]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play = BotFirst(def);
     umbra::night::GameOptions options;
     options.turnBannerSeconds = 1.0F;
@@ -1948,7 +1964,7 @@ TEST_CASE("Each turn opens with a banner naming whose turn it is; the bot waits 
 
 TEST_CASE("A bot's plain walk holds plainBeatSeconds, not the full beat (T221)", "[night][play][pace]")
 {
-    NightDef def = Data();
+    NightDef def = Calm();
     for (RoomDef &room : def.rooms)
         if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
             room.kind = RoomKind::Plain, room.doors = 15;
@@ -1989,7 +2005,7 @@ namespace
 
 TEST_CASE("A new night opens with its scene on the board; the bots wait; Skip ends it (T223)", "[night][play][scene]")
 {
-    const NightDef def = Data();
+    const NightDef def = Calm();
     Play play = BotFirst(def);
     Play fresh(def, play.State().seed, play.State().player);
     fresh.SetCutscenes(Scenes());
@@ -2015,7 +2031,7 @@ TEST_CASE("A new night opens with its scene on the board; the bots wait; Skip en
 
 TEST_CASE("Play names the sounds to play: steps, the die, a door, a blow (T226)", "[night][play][sound]")
 {
-    NightDef def = Data();
+    NightDef def = Calm();
     const int sandbag = NightDef::Find(def.events, "sandbag");
     def.events[static_cast<std::size_t>(sandbag)].clear = ClearKind::None;
     Play play = IntoRoom(def, "loosestairs", sandbag);

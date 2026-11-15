@@ -602,7 +602,7 @@ std::string Play::Screen() const
         return "pause";
     if (inspect_ >= 0)
         return "inspect";
-    if (slide_.guest >= 0 && PlayerTurn()) // a slide takes its time; a dialog waits for it
+    if (slide_.guest >= 0 && PlayerTurn() && Controls(state_, state_.player, slide_.guest)) // the player's own slide; a dialog waits for it
         return "picking";
     if (arrive_.cell >= 0)
         return "arrive";

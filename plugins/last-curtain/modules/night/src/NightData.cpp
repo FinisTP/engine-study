@@ -162,6 +162,9 @@ namespace umbra::night
                 get("ghost", key, *value);
             get("spawn", "minSteps", r.spawn.minSteps);
             get("monsters", "chancePerHour", r.monsters.chancePerHour);
+            for (const auto &[key, value] : {std::pair<const char *, int *>{"truceRounds", &r.persuade.truceRounds}, {"kindTarget", &r.persuade.kindTarget},
+                                             {"wickedTarget", &r.persuade.wickedTarget}, {"dirtyBreakPercent", &r.persuade.dirtyBreakPercent}})
+                get("persuade", key, *value);
             get("monsters", "maxPerHours", r.monsters.maxPerHours);
             for (const auto &[key, value] : {std::pair<const char *, int *>{"wakeRound", &r.killer.wakeRound}, {"speed", &r.killer.speed},
                                              {"speedPerHours", &r.killer.speedPerHours}, {"senseSteps", &r.killer.senseSteps}, {"hearSteps", &r.killer.hearSteps}})
@@ -405,7 +408,7 @@ namespace umbra::night
             events.Bad(events.file, "at most 64 events and traps");
 
         Sheet guests(diagnostics, folder, "guests.csv", {"id", "name", "pronoun", "weapon", "hp", "might", "sanity", "speed", "style",
-                                                         "taken", "takenHp", "takenMight", "takenSanity", "takenSpeed", "color", "voice", "takenVoice", "power", "takenStory", "bio"});
+                                                         "taken", "takenHp", "takenMight", "takenSanity", "takenSpeed", "color", "voice", "takenVoice", "power", "takenStory", "bio", "nature"});
         for (int r = 0; r < guests.Rows(); ++r)
         {
             GuestDef g;
@@ -428,6 +431,7 @@ namespace umbra::night
             g.takenVoice = guests.Text(r, "takenVoice");
             g.takenStory = guests.Text(r, "takenStory");
             g.bio = guests.Text(r, "bio");
+            g.nature = static_cast<Nature>(guests.Pick(r, "nature", {"kind", "dirty", "wicked"}));
             g.power = guests.Ref(r, "power", d.powers);
             if (g.hp < 1 || g.takenHp < 1)
                 guests.Bad(guests.Where(r, "hp"), "hp and takenHp must be 1 or more");

@@ -20,6 +20,9 @@ namespace umbra::night
     enum class GoalKind : std::uint8_t { Room, Item, Events, Monsters }; // no ally goals (user)
     enum class BuffStat : std::uint8_t { Guard, Might, Sanity };
     enum class PowerKind : std::uint8_t { Line, Area, Flood, Pull, Seal, Swap, Reflect };
+    // How a guest deals with the others (guests.csv `nature`; Night.md "Persuading"): a kind one keeps its
+    // word and is easy to talk to; a dirty one breaks truces when it pays; a wicked one is hard to move.
+    enum class Nature : std::uint8_t { Kind, Dirty, Wicked };
 
     struct Rules
     {
@@ -37,7 +40,7 @@ namespace umbra::night
         struct { std::vector<int> xp; int hp = 4, stat = 1; } levels;
         struct { int fromRound = 3, chancePercent = 35, stayRounds = 3, max = 2, chancePerHour = 5, maxPerHours = 3; } monsters;
         struct { int failHp = 1, earlyRooms = 35, roomGoalRooms = 65; } goals; // HP a failed guest keeps at midnight; keepsake / goal rooms come out within this many
-        struct { int approvals = 3, bond = 3; } persuade; // approvals that make an ally; the bond's pull on a target
+        struct { int approvals = 3, bond = 3, truceRounds = 3, kindTarget = -3, wickedTarget = 4, dirtyBreakPercent = 40; } persuade;
         struct { int downedReturnHp = 1, attackBondLoss = 300; } guests;
         struct
         {
@@ -62,6 +65,7 @@ namespace umbra::night
         std::string takenVoice;  // the same, once Taken
         std::string takenStory;  // who the guest was and what the Taken form is, for the Turn's screen
         std::string bio;         // who the guest is, for the start screen (no secrets)
+        Nature nature = Nature::Kind;
     };
 
     struct BondDef { int from = 0, to = 0, bond = 0; };

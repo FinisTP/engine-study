@@ -46,6 +46,7 @@ namespace umbra::night
         std::array<std::int8_t, maxQuests> quest{}; // progress tonight: visit 1 = the first room seen; slay/endure a count
         std::int8_t power = -1, powerCooldown = 0;  // powers.json entry won by a quest (-1 none)
         bool reflect = false;                       // the reflect power is up: the next blow turns back
+        std::int8_t hunt = -1, huntUntil = 0;       // talked into going after this guest until that round
         std::int8_t goal = -1, goalCount = 0; // goals.csv row drawn tonight; events passed or monsters destroyed for it
         bool goalRoomSeen = false;           // a room goal: the room was entered
         std::uint8_t knows = 0;              // guests whose goal this guest knows, as bits
@@ -109,10 +110,19 @@ namespace umbra::night
     enum class Outcome : std::uint8_t { Running, Escaped, House };
 
     // A chat in progress: `asker` asked `answerer` question `question` (questions.csv row).
+    // The answerer asked the asker for something (request: -1 spare me, -2 an item, a guest: go after them);
+    // the asker tests them with a question (Night.md "Persuading").
     struct ChatState
     {
         bool active = false;
         std::int8_t asker = -1, answerer = -1, question = -1;
+        std::int8_t request = -1;
+    };
+
+    // Two guests who agreed not to fight, until a round (Night.md "Persuading"). Bots honour it by their nature.
+    struct Truce
+    {
+        std::int8_t a = -1, b = -1, untilRound = 0;
     };
 
     // A flooded cell, or a sealed passage (cell + direction), until the end of a round.
@@ -182,6 +192,7 @@ namespace umbra::night
         std::int8_t night = 1, winner = -1; // nights until one guest is left (Night.md "Nights")
         Killer killer;
         std::array<std::int8_t, maxQuests> questBy{}; // tonight's quests: 0 open, else the guest who finished it + 1
+        std::array<Truce, 16> truces{};
         Taken taken;
         std::array<Mark, 16> flooded{}, sealed{};
         ChatState chat;
@@ -215,6 +226,7 @@ namespace umbra::night
     bool Living(const NightState &state, int guest); // a guest still alive (not a ghost)
     bool InPlay(const NightState &state, int guest); // living, or a ghost on the board
     int LivingCount(const NightState &state);
+    bool Truced(const NightState &state, int a, int b); // a truce holds between them this round
     int KillerMoves(const NightDef &def, const NightState &state); // rooms the killer crosses this round
     // The house grows bolder with the hour: a monster's chance to appear each round, and how many at most.
     int MonsterChance(const NightDef &def, const NightState &state);

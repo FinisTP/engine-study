@@ -59,6 +59,7 @@ namespace umbra::night
         state.battle = {}, state.chat = {};
         state.killer = {}; // asleep until midnight again
         state.questBy = {}; // the quests open again
+        state.truces = {};
         for (Guest &g : state.guests)
             g.quest = {};
         std::vector<int> starts = BuildBoard(def, state);

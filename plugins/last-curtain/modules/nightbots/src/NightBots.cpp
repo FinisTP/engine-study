@@ -116,6 +116,25 @@ namespace umbra::night
                 return (Damage(def, state, mine, theirs) * rounds - state.guests[U(o)].hp) - (Damage(def, state, theirs, mine) * rounds - me.hp);
             }
 
+            // Whether its nature lets it attack guest `o` now (Night.md "Persuading"): the one it was told to hunt
+            // when the fight is near even; otherwise kind only when overwhelming, dirty when ahead, wicked even a
+            // little behind. A truce binds a kind guest; a dirty one breaks it now and then; a wicked one ignores it.
+            bool WouldAttack(int o) const
+            {
+                const Nature nature = def.guests[U(g)].nature;
+                const int edge = Edge(o);
+                if (Truced(state, g, o))
+                {
+                    if (nature == Nature::Kind)
+                        return false;
+                    if (nature == Nature::Dirty && (state.round * 37 + g * 11 + o * 7) % 100 >= def.rules.persuade.dirtyBreakPercent)
+                        return false;
+                }
+                if (me.hunt == o && state.round <= me.huntUntil)
+                    return edge > -2;
+                return nature == Nature::Kind ? edge > 8 : nature == Nature::Dirty ? edge > 0 : edge > -3;
+            }
+
             // A ghost of the house: strike the living in its room, else go after the nearest.
             Action Ghost() const
             {
@@ -384,9 +403,9 @@ namespace umbra::night
                             if (quest.kind == QuestKind::Carry && !carrying && f.item == quest.item)
                                 goal(f.cell, 9);
                     }
-                    for (int o = 0; o < state.count; ++o) // prey it would beat, in its light
-                        if (o != g && Up(o) && Sees(state.guests[U(o)].cell) && Edge(o) > 0)
-                            goal(state.guests[U(o)].cell, style.fight);
+                    for (int o = 0; o < state.count; ++o) // prey its nature would attack, in its light; its hunt anywhere
+                        if (o != g && Up(o) && ((Sees(state.guests[U(o)].cell) && WouldAttack(o)) || (me.hunt == o && state.round <= me.huntUntil)))
+                            goal(state.guests[U(o)].cell, me.hunt == o ? 15 : style.fight);
                     for (const FloorItem &f : state.floor)
                         if (Sees(f.cell))
                             goal(f.cell, style.loot);
@@ -413,8 +432,8 @@ namespace umbra::night
                     return style.greed * style.loot - 1; // greed 0: never (needed items go by Purpose)
                 }
                 case ActionKind::Attack:
-                    if (a.b >= 0) // a guest (or a ghost) in the room: only a fight it would win
-                        return state.guests[U(a.b)].ghost ? (Edge(a.b) > 0 ? style.fight * 5 : -100) : Edge(a.b) > 0 ? style.fight * 10 + 5 : -100;
+                    if (a.b >= 0) // a guest (or a ghost) in the room: as its nature allows
+                        return state.guests[U(a.b)].ghost ? (Edge(a.b) > 0 ? style.fight * 5 : -100) : WouldAttack(a.b) ? style.fight * 10 + 5 + std::min(Edge(a.b), 40) : -100;
                     return a.a >= 0 && Beatable(a.a) ? style.fight * 10 : -100;
                 case ActionKind::EndTurn:
                 {
@@ -471,13 +490,13 @@ namespace umbra::night
                 // 3. Goal work: its own, then a group member's.
                 if (const Action purpose = Purpose(); purpose.kind != ActionKind::EndTurn)
                     return purpose;
-                // 4. A very chatty bot whose goal is done talks with someone in the room before it moves.
-                if (style.chatty >= 6 && (me.goal < 0 || GoalDone(def, state, g)) && me.movesLeft == Stat(def, state, g, StatKind::Speed))
-                    for (const Action &a : legal)
-                        if (a.kind == ActionKind::Chat)
-                            return a;
-                // 5. A chatty bot, or one fond of the player, asks the player a question first.
-                if (state.player >= 0 && Has({ActionKind::OpenChat, I8(state.player)}) && (style.chatty >= 7 || Bond(state, g, state.player) > 0))
+                // 4. A guest in the room who would win a fight: ask it to spare this one (a truce).
+                for (const Action &a : legal)
+                    if (a.kind == ActionKind::Chat && a.b == -1 && Edge(a.a) < 0 && !Truced(state, g, a.a) && state.guests[U(a.a)].hunt != g)
+                        return a;
+                // 5. A chatty bot, or one fond of the player, asks the player a question first (a truce if the player passes).
+                if (state.player >= 0 && Has({ActionKind::OpenChat, I8(state.player)}) && !Truced(state, g, state.player) &&
+                    (style.chatty >= 7 || Bond(state, g, state.player) > 0))
                     return {ActionKind::OpenChat, I8(state.player)};
                 // 5b. A power that hurts: on the weakest it can reach; reflect when someone is in the room.
                 {
@@ -504,10 +523,10 @@ namespace umbra::night
                 for (const Action &a : legal)
                     if (const int s = Score(a); s > bestScore)
                         best = a, bestScore = s;
-                // 7. Nothing better to do here: talk with someone in the room.
+                // 7. Nothing better to do here: a chatty bot asks someone in the room for a truce.
                 if (best.kind == ActionKind::EndTurn && style.chatty > 0)
                     for (const Action &a : legal)
-                        if (a.kind == ActionKind::Chat)
+                        if (a.kind == ActionKind::Chat && a.b == -1 && !Truced(state, g, a.a))
                             return a;
                 return best;
             }

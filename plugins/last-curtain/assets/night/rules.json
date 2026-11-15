@@ -12,7 +12,7 @@
   "levels": { "xp": [1, 3, 6, 10], "hp": 4, "stat": 1 },
   "monsters": { "fromRound": 2, "chancePercent": 60, "stayRounds": 5, "max": 2, "chancePerHour": 6, "maxPerHours": 3 },
   "goals": { "failHp": 1, "earlyRooms": 35, "roomGoalRooms": 70 },
-  "persuade": { "approvals": 3, "bond": 3 },
+  "persuade": { "approvals": 3, "bond": 3, "truceRounds": 3, "kindTarget": -3, "wickedTarget": 4, "dirtyBreakPercent": 40 },
   "guests": { "downedReturnHp": 1, "attackBondLoss": 300 },
   "balance": { "nightsMin": 2, "nightsMax": 4, "winnerMax": 35, "houseMax": 30, "deathsPerNightMin": 1 }
 }

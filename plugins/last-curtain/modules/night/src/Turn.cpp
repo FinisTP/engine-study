@@ -431,7 +431,7 @@ namespace umbra::night
             UsePower(def, state, g, action);
             break;
         case ActionKind::Chat:
-            OpenChat(def, state, g, action.a, false); // the other guest asks
+            OpenChat(def, state, g, action.a, false, action.b); // the other guest asks; b is the request
             break;
         case ActionKind::OpenChat:
             OpenChat(def, state, g, action.a, true); // the bot asks the player

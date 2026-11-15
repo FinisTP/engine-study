@@ -69,3 +69,4 @@ Soak bands, docs (Night.md, Play.md, Balance.md), testing record `s38`, ROADMAP 
 Stage 1: complete (#UMBRA-218; RoyaleTests T228-T234, suite 181/182, the balance soak open: 2 faults in 400 runs, Khang wins 50%)
 Stage 2: complete (#UMBRA-219; T236-T240; soak 0 faults, 1.7 nights per run: too deadly, for stage 6)
 Stage 3: complete (#UMBRA-220; T241-T245; quests.csv, 9 quests; powers for guests; bots race quests and use powers: 3.3 quests and 2.1 powers a night; soak 0 faults, 1.6 nights per run)
+Stage 4: complete (#UMBRA-221; T246-T249; requests spare/item/target, truces, hunts, natures kind/dirty/wicked; Play tests use calm, even guests)

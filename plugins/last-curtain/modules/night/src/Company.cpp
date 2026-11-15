@@ -23,7 +23,17 @@ namespace umbra::night
     {
         const QuestionDef &q = def.questions[U(state.chat.question)];
         const int bond = Bond(state, state.chat.asker, state.chat.answerer);
-        return (answer == 0 ? q.physicalTarget : q.magicalTarget) + (bond > 0 ? -def.rules.persuade.bond : bond < 0 ? def.rules.persuade.bond : 0);
+        const Nature nature = def.guests[U(state.chat.asker)].nature; // the one asked for something
+        const int moved = nature == Nature::Kind ? def.rules.persuade.kindTarget : nature == Nature::Wicked ? def.rules.persuade.wickedTarget : 0;
+        return (answer == 0 ? q.physicalTarget : q.magicalTarget) + (bond > 0 ? -def.rules.persuade.bond : bond < 0 ? def.rules.persuade.bond : 0) + moved;
+    }
+
+    bool Truced(const NightState &state, int a, int b)
+    {
+        for (const Truce &t : state.truces)
+            if (t.untilRound >= state.round && ((t.a == a && t.b == b) || (t.a == b && t.b == a)))
+                return true;
+        return false;
     }
 
     void inner::CompanyLegal(const NightDef &def, const NightState &state, int g, std::vector<Action> &legal)
@@ -45,16 +55,24 @@ namespace umbra::night
                 continue;
             //    The player is never the asker (bots ask the player through OpenChat), and the
             //    player's allies are not won away.
-            if (o != player && state.approvals[U(o * maxGuests + g)] < def.rules.persuade.approvals)
-                legal.push_back({ActionKind::Chat, I8(o)});
+            //    A chat is a request (Night.md "Persuading"): spare me, an item they carry, or go after someone.
+            if (o != player)
+            {
+                legal.push_back({ActionKind::Chat, I8(o), -1});
+                if (std::any_of(other.items.begin(), other.items.end(), [](std::int8_t i) { return i >= 0; }))
+                    legal.push_back({ActionKind::Chat, I8(o), -2});
+                for (int v = 0; v < state.count; ++v)
+                    if (v != g && v != o && Living(state, v))
+                        legal.push_back({ActionKind::Chat, I8(o), I8(v)});
+            }
             // 3. A bot may ask the player a question, before it moves.
-            if (o == player && state.approvals[U(g * maxGuests + o)] < def.rules.persuade.approvals &&
+            if (o == player &&
                 me.movesLeft == Stat(def, state, g, StatKind::Speed))
                 legal.push_back({ActionKind::OpenChat, I8(o)});
         }
     }
 
-    void inner::OpenChat(const NightDef &def, NightState &state, int opener, int other, bool askedByOpener)
+    void inner::OpenChat(const NightDef &def, NightState &state, int opener, int other, bool askedByOpener, int request)
     {
         // The asker puts a question of its pool not asked yet (all asked: any of them) to the answerer.
         const int asker = askedByOpener ? opener : other, answerer = askedByOpener ? other : opener;
@@ -72,7 +90,7 @@ namespace umbra::night
         const int pick = fresh.empty() ? Below(state, static_cast<int>(pool.size())) : fresh[U(Below(state, static_cast<int>(fresh.size())))];
         guest.asked = static_cast<std::uint8_t>(guest.asked | (1u << pick));
         state.guests[U(opener)].chatRound = state.round;
-        state.chat = {true, I8(asker), I8(answerer), I8(pool[U(pick)])};
+        state.chat = {true, I8(asker), I8(answerer), I8(pool[U(pick)]), I8(request)};
     }
 
     void inner::AnswerChat(const NightDef &def, NightState &state, int answer)
@@ -89,7 +107,33 @@ namespace umbra::night
             if (asker != state.player && answerer != state.player)
                 a.knows = static_cast<std::uint8_t>(a.knows | (1u << answerer));
         }
-        Log(state, LogKind::Persuade, answerer, asker, check.passed ? 1 : 0, approvals);
+        // 2. Passed: the asker grants the answerer's request (a bot that asked the player: a truce).
+        if (check.passed)
+        {
+            Guest &giver = state.guests[U(asker)];
+            const int request = state.chat.request;
+            if (request == -1)
+            {
+                for (Truce &t : state.truces)
+                    if (t.untilRound < state.round)
+                    {
+                        t = {I8(answerer), I8(asker), I8(state.round + def.rules.persuade.truceRounds)};
+                        break;
+                    }
+            }
+            else if (request == -2)
+            {
+                for (std::int8_t &item : giver.items)
+                    if (item >= 0)
+                    {
+                        state.floor.push_back({giver.cell, item}), item = -1;
+                        break;
+                    }
+            }
+            else if (request >= 0 && request < state.count)
+                giver.hunt = I8(request), giver.huntUntil = I8(state.round + def.rules.persuade.truceRounds);
+        }
+        Log(state, LogKind::Persuade, answerer, asker, check.passed ? 1 : 0, state.chat.request);
         state.chat.active = false;
     }
 

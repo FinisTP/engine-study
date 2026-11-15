@@ -12,6 +12,8 @@ namespace
     {
         NightDef def = Data();
         def.rules.monsters.chancePercent = 0;
+        for (GuestDef &g : def.guests) // dirty: no nature moves the answers (RoyaleTests covers natures)
+            g.nature = Nature::Dirty;
         return def;
     }
 
