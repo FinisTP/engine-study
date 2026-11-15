@@ -92,6 +92,18 @@ TEST_CASE("Every guest has a colour from the 1960s palette (T130)", "[night][dat
     CHECK(def.guests[static_cast<std::size_t>(NightDef::Find(def.guests, "mai"))].color == 0xA0662BU);   // ochre
 }
 
+TEST_CASE("Every guest has a voice and a Taken voice (T132)", "[night][data]")
+{
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    NightDef def;
+    REQUIRE(LoadNight(UMBRA_NIGHT_DATA, def, diagnostics));
+    const auto &thanh = def.guests[static_cast<std::size_t>(NightDef::Find(def.guests, "thanh"))];
+    CHECK(thanh.voice == "theatrical, warm, proud");
+    CHECK(thanh.takenVoice == "operatic, burning, mocking");
+    for (const auto &guest : def.guests)
+        CHECK((guest.voice.size() >= 3 && guest.takenVoice.size() >= 3));
+}
+
 TEST_CASE("Bad data is refused with file, row and column (T94)", "[night][data]")
 {
     SECTION("a missing file")
@@ -121,6 +133,12 @@ TEST_CASE("Bad data is refused with file, row and column (T94)", "[night][data]"
         const fs::path folder = CopyData("unknown");
         Replace(folder / "guests.csv", ",line\n", ",nosuch\n");
         CHECK(Refused(folder).field == "guests.csv:1:power");
+    }
+    SECTION("a blank Taken voice")
+    {
+        const fs::path folder = CopyData("voice");
+        Replace(folder / "guests.csv", "\"sing-song, childlike, cruel\"", "");
+        CHECK(Refused(folder).field == "guests.csv:1:takenVoice");
     }
     SECTION("a colour that is not six hex digits")
     {

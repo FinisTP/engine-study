@@ -373,7 +373,7 @@ namespace umbra::night
             events.Bad(events.file, "at most 64 events and traps");
 
         Sheet guests(diagnostics, folder, "guests.csv", {"id", "name", "pronoun", "weapon", "hp", "might", "sanity", "speed", "style",
-                                                         "taken", "takenHp", "takenMight", "takenSanity", "takenSpeed", "color", "power"});
+                                                         "taken", "takenHp", "takenMight", "takenSanity", "takenSpeed", "color", "voice", "takenVoice", "power"});
         for (int r = 0; r < guests.Rows(); ++r)
         {
             GuestDef g;
@@ -392,6 +392,8 @@ namespace umbra::night
             g.takenSanity = guests.Int(r, "takenSanity");
             g.takenSpeed = guests.Int(r, "takenSpeed");
             g.color = guests.Color(r, "color");
+            g.voice = guests.Text(r, "voice");
+            g.takenVoice = guests.Text(r, "takenVoice");
             g.power = guests.Ref(r, "power", d.powers);
             if (g.hp < 1 || g.takenHp < 1)
                 guests.Bad(guests.Where(r, "hp"), "hp and takenHp must be 1 or more");
