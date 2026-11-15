@@ -4,8 +4,13 @@
   "modal": true,
   "dim": true,
   "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [680, 0], "align": "stretch", "gap": 14, "children": [
-    { "type": "text", "style": "title", "text": "{chat.name}" },
-    { "type": "text", "style": "small", "text": "{chat.approvals} of {chat.goal} approvals" },
+    { "type": "stack", "direction": "horizontal", "gap": 16, "align": "center", "children": [
+      { "type": "image", "image": "{chat.portrait}", "size": [112, 112] },
+      { "type": "stack", "gap": 4, "children": [
+        { "type": "text", "style": "title", "text": "{chat.name}" },
+        { "type": "text", "style": "small", "text": "{chat.approvals} of {chat.goal} approvals" }
+      ] }
+    ] },
     { "type": "text", "style": "good", "text": "{chat.bondNote}", "visible": "{chat.likes}" },
     { "type": "text", "style": "bad", "text": "{chat.bondNote}", "visible": "{chat.distrusts}" },
     { "type": "text", "style": "heading", "text": "{chat.question}", "wrap": true, "size": [640, 0] },

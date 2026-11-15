@@ -4,6 +4,7 @@
   "modal": true,
   "dim": true,
   "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [720, 0], "align": "stretch", "gap": 12, "children": [
+    { "type": "stack", "align": "center", "children": [ { "type": "image", "image": "{event.picture}", "size": [300, 300] } ] },
     { "type": "text", "style": "muted", "text": "EVENT  |  {event.room}" },
     { "type": "text", "style": "title", "text": "{event.name}" },
     { "type": "text", "style": "text", "text": "{event.text}", "wrap": true, "size": [680, 0] },

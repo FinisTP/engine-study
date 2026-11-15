@@ -6,6 +6,7 @@
       { "type": "text", "style": "title", "text": "{clock}" },
       { "type": "text", "style": "small", "text": "Round {round} of {rounds}  |  {phase}" },
       { "type": "spacer", "size": [120, 0] },
+      { "type": "image", "image": "{me.portrait}", "size": [44, 44] },
       { "type": "text", "style": "heading", "text": "{me.name}  Lv {me.level}" },
       { "type": "text", "style": "strong", "text": "HP {me.hp}/{me.maxHp}   Might {me.might}   Sanity {me.sanity}   Speed {me.speed}" },
       { "type": "text", "style": "good", "text": "{me.buffs}", "visible": "{me.buffs}" }

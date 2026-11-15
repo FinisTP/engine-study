@@ -1,5 +1,7 @@
 #include "Play.hpp"
 
+#include "Art.hpp"
+
 #include <BoardView.hpp>
 #include <NightBots.hpp>
 #include <NightSave.hpp>
@@ -503,7 +505,7 @@ nlohmann::json Play::UiData() const
             for (const std::int8_t b : state_.battle.fighters[U(f)].buff)
                 if (b >= 0)
                     buffs += (buffs.empty() ? "" : ", ") + def_.buffs[U(b)].name;
-    data["me"] = {{"name", def_.guests[U(me)].name}, {"hp", guest.hp}, {"maxHp", Stat(def_, state_, me, StatKind::MaxHp)},
+    data["me"] = {{"name", def_.guests[U(me)].name}, {"portrait", ArtPath("portraits", def_.guests[U(me)].id).generic_string()}, {"hp", guest.hp}, {"maxHp", Stat(def_, state_, me, StatKind::MaxHp)},
                   {"might", Stat(def_, state_, me, StatKind::Might)}, {"sanity", Stat(def_, state_, me, StatKind::Sanity)},
                   {"speed", Stat(def_, state_, me, StatKind::Speed)}, {"level", guest.level}, {"buffs", buffs}};
     data["moves"] = guest.movesLeft;
@@ -567,6 +569,7 @@ nlohmann::json Play::UiData() const
     {
         const EventDef &ev = def_.events[U(event_)];
         data["event"] = {{"room", def_.rooms[U(state_.cells[U(eventCell_)].room)].name}, {"name", ev.name}, {"text", ev.text},
+                         {"picture", ArtPath("events", ev.id).generic_string()},
                          {"stat", StatName(ev.stat)}, {"statValue", eventStat_}, {"target", ev.target},
                          {"chance", ChancePercent(eventStat_, ev.target)},
                          {"pass", EffectText(ev.passEffect, ev.passAmount)}, {"fail", EffectText(ev.failEffect, ev.failAmount)}};
@@ -593,7 +596,7 @@ nlohmann::json Play::UiData() const
                                {"chance", ChancePercent(stat, target)}, {"answer", std::to_string(a)}});
         }
         const std::string name = def_.guests[U(asker)].name;
-        data["chat"] = {{"name", name}, {"question", chatFor_ == ChatKey() && !chatWords_.empty() ? chatWords_ : q.text}, {"approvals", state_.approvals[U(asker * maxGuests + state_.player)]},
+        data["chat"] = {{"name", name}, {"portrait", ArtPath("portraits", def_.guests[U(asker)].id).generic_string()}, {"question", chatFor_ == ChatKey() && !chatWords_.empty() ? chatWords_ : q.text}, {"approvals", state_.approvals[U(asker * maxGuests + state_.player)]},
                         {"goal", def_.rules.persuade.approvals}, {"answers", answers},
                         {"bondNote", bond > 0 ? name + " likes you: the targets are lower." : bond < 0 ? name + " distrusts you: the targets are higher." : ""},
                         {"likes", bond > 0}, {"distrusts", bond < 0}};

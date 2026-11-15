@@ -1331,3 +1331,31 @@ TEST_CASE("The save menu says when the written lines are used (T135)", "[night][
     play.SetWords(&words);
     CHECK(play.UiData()["writtenLines"] == false);
 }
+
+TEST_CASE("Screens carry their pictures: the event's, the asker's and my portrait (T143)", "[night][play][art]")
+{
+    NightDef def = Data();
+    SECTION("an event")
+    {
+        for (RoomDef &room : def.rooms)
+            if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
+                room.kind = RoomKind::Event, room.doors = 15;
+        Play play(def, PlayerFirst(def));
+        GoTo(play, StepCell(def, play));
+        REQUIRE(play.Screen() == "event");
+        const nlohmann::json event = play.UiData()["event"];
+        const auto drawn = std::find_if(def.events.begin(), def.events.end(), [&](const EventDef &e) { return e.name == event["name"].get<std::string>(); });
+        REQUIRE(drawn != def.events.end());
+        CHECK(event["picture"] == "art/events/" + drawn->id + ".jpg");
+    }
+    SECTION("a chat and the HUD")
+    {
+        Play play(def, FoyerNight(def, 4, 0));
+        CHECK(play.UiData()["me"]["portrait"] == "art/portraits/" + def.guests[0].id + ".jpg");
+        for (int i = 0; i < 400 && !(play.State().chat.active && play.PlayerTurn()); ++i)
+            play.PlayerTurn() ? play.Key(InputKey::Enter) : play.Update(10.0F);
+        REQUIRE(play.State().chat.active);
+        const int asker = play.State().chat.asker;
+        CHECK(play.UiData()["chat"]["portrait"] == "art/portraits/" + def.guests[static_cast<std::size_t>(asker)].id + ".jpg");
+    }
+}

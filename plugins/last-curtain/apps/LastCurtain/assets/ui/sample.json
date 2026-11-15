@@ -11,7 +11,8 @@
     "sanity": 6,
     "speed": 5,
     "level": 2,
-    "buffs": ""
+    "buffs": "",
+    "portrait": "art/portraits/huy.jpg"
   },
   "moves": 4,
   "goal": {
@@ -142,7 +143,8 @@
       }
     ],
     "likes": true,
-    "distrusts": false
+    "distrusts": false,
+    "portrait": "art/portraits/thanh.jpg"
   },
   "event": {
     "room": "Green room",
@@ -153,7 +155,8 @@
     "target": 16,
     "chance": 55,
     "pass": "+2 max HP",
-    "fail": "-1 Sanity"
+    "fail": "-1 Sanity",
+    "picture": "art/events/applause.jpg"
   },
   "dice": {
     "die": 14,
