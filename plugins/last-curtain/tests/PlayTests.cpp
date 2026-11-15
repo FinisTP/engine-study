@@ -2074,3 +2074,15 @@ TEST_CASE("A found item can be left on the floor (T165)", "[night][play][flow]")
     CHECK(std::all_of(play.State().guests[0].items.begin(), play.State().guests[0].items.end(), [](std::int8_t i) { return i < 0; }));
     CHECK(play.Screen() == "rest");
 }
+
+TEST_CASE("The player's goal room is known to the table, to shine (T170)", "[night][play][hud]")
+{
+    NightDef def = Data();
+    NightState state = PlayerCorridor(def, 2, 3);
+    const int room = state.cells[static_cast<std::size_t>(West(def, 2))].room;
+    def.goals.push_back({0, "test", GoalKind::Room, room, 1, "test"});
+    state.guests[0].goal = static_cast<std::int8_t>(def.goals.size() - 1);
+    Play play(def, state);
+    const std::vector<int> cells = play.GoalCells();
+    CHECK(std::find(cells.begin(), cells.end(), West(def, 2)) != cells.end());
+}

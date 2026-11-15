@@ -69,6 +69,10 @@ public:
     void NewNight() { pawns_.clear(); }
     // The painted pictures (Art.md), once; a missing one leaves its box (logged).
     void LoadArt(const umbra::night::NightDef &def, const umbra::assets::AssetFolders &assets);
+    // The player's goal rooms: their frames glow, pulsing (Play::GoalCells).
+    void SetGoalCells(std::vector<int> cells) { goalCells_ = std::move(cells); }
+    // Where a room's name sits on screen: the near edge of its tile, or of the room (render pixels).
+    [[nodiscard]] std::optional<glm::vec2> RoomLabel(const umbra::night::NightDef &def, int cell, glm::vec2 pixels) const;
     // Tonight's featured cells (FeaturedCells), set when a night starts.
     void SetFeatured(std::vector<bool> featured) { featured_ = std::move(featured); }
     // The figures: a sliding pawn faces its step and walks, the others stand idle (Table.md).
@@ -111,6 +115,7 @@ private:
     std::vector<umbra::core::TextureHandle> cardArt_; // by monsters.csv row (minions too)
     std::vector<umbra::core::TextureHandle> itemArt_; // by items.csv row
     std::vector<bool> featured_;                      // by cell: a gold frame
+    std::vector<int> goalCells_;                      // the player's goal rooms: a pulsing glow
     TableCamera view_; // the camera, the table or the room view (TableCamera.hpp)
     int battleCell_ = -1;
     std::vector<StageActor> battleActors_;

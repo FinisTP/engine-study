@@ -18,8 +18,14 @@ void TableCamera::Pan(glm::vec2 pixels)
 {
     // A pixel covers about distance / 700 metres; in the room view the rooms are roomScale times
     // larger, so the same drag moves the table that much less.
+    // Screen right and down follow the view: straight on the table; slanted, as the corner sees it, in
+    // the room view (right = forward x up, both flat on the floor).
     const float metres = roomT_ > 0.0F ? roomDistance_ / roomScale : distance_;
-    from_ = to_ = Target() - glm::vec3{pixels.x, 0.0F, pixels.y} * (metres / 700.0F);
+    const glm::vec3 corner = glm::normalize(glm::vec3{-5.2F, 0.0F, -7.5F});
+    const float e = roomT_ * roomT_ * (3.0F - 2.0F * roomT_);
+    const glm::vec3 forward = glm::normalize(glm::mix(glm::vec3{0.0F, 0.0F, -1.0F}, corner, e));
+    const glm::vec3 right{-forward.z, 0.0F, forward.x};
+    from_ = to_ = Target() - (right * pixels.x - forward * pixels.y) * (metres / 700.0F);
     elapsed_ = seconds_;
 }
 

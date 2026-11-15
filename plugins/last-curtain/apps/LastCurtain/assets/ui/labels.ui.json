@@ -2,6 +2,12 @@
   "format": "umbra.ui",
   "version": 1,
   "root": { "type": "panel", "anchor": "fill", "style": "layer", "children": [
+    { "type": "list", "items": "{rooms}", "as": "r",
+      "entry": { "type": "text", "style": "muted", "at": "{r.at}", "text": "{r.text}" } },
+    { "type": "list", "items": "{names}", "as": "n",
+      "entry": { "type": "stack", "direction": "horizontal", "gap": 4, "at": "{n.at}", "children": [
+        { "type": "image", "image": "{n.portrait}", "size": [28, 28] },
+        { "type": "text", "style": "small", "text": "{n.text}" } ] } },
     { "type": "list", "items": "{labels}", "as": "l",
       "entry": { "type": "text", "style": "strong", "at": "{l.at}", "text": "{l.text}" } }
   ] }

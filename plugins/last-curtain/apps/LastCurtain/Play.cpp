@@ -1311,3 +1311,15 @@ int Play::RoomEvent(const NightState &before, const NightState &after, const Act
 }
 
 float Play::DiceSettle() const { return options_.diceSeconds > 0.0F ? 0.4F : 0.0F; } // the landed number holds this long
+
+std::vector<int> Play::GoalCells() const
+{
+    std::vector<int> cells;
+    if (state_.player < 0 || state_.guests[U(state_.player)].goal < 0)
+        return cells;
+    const GoalDef &goal = def_.goals[U(state_.guests[U(state_.player)].goal)];
+    for (int c = 0; goal.kind == GoalKind::Room && c < maxCells; ++c)
+        if (state_.cells[U(c)].opened && state_.cells[U(c)].room == goal.target)
+            cells.push_back(c);
+    return cells;
+}

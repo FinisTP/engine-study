@@ -208,11 +208,9 @@ namespace
                 table.SetFeatured(FeaturedCells(def, play->State()));
                 table.NewNight(), seenLog = play->State().logCount;
                 if (screens.Ready())
-                    screens.Ui().Open("dread"); // under the HUD
+                    screens.Ui().Open("dread"), screens.Ui().Open("labels"); // under the HUD
                 if (screens.Ready() && play->State().player >= 0)
                     screens.Ui().Open("hud");
-                if (screens.Ready())
-                    screens.Ui().Open("labels");
                 aimed = -1, savedRound = -1, fresh = true;
             };
             const auto backToStart = [&] {
@@ -321,6 +319,7 @@ namespace
                         for (const Play::Actor &a : play->StageActors())
                             actors.push_back({a.guest, a.monsterKind, a.side, a.taken});
                     table.SetBattle(actors.empty() ? -1 : state.battle.cell, actors);
+                    table.SetGoalCells(play->GoalCells());
                     play->Hover(table.Pick(def, uiInput.mouse, pixels));
                     table.Draw(def, view, play->Previewed().path, play->Previewed().affordable, ToDraw(play->Sliding()), play->Rings(), drawList);
                     // Saves: at each new round, and gone once the night is over.
@@ -359,6 +358,20 @@ namespace
                             label(play->ThinkingGuest(), "thinking...", 0.5F);
                         for (const nlohmann::json &p : data["popups"])
                             label(p["guest"].get<int>(), p["text"].get<std::string>(), 0.9F);
+                        // Each figure's portrait and name, above its arrow (Table.md "Labels").
+                        data["names"] = nlohmann::json::array();
+                        const float lift = table.InRoomView() ? 0.35F : 0.5F; // just over the arrow
+                        for (const PawnView &pawn : view.pawns)
+                            if (const auto at = table.ScreenPoint(table.Above(def, view, pawn.guest, ToDraw(play->Sliding())) + glm::vec3{0.0F, lift, 0.0F}, pixels))
+                                data["names"].push_back({{"text", ShownName(def, play->State(), pawn.guest)},
+                                                         {"portrait", ArtPath("portraits", def.guests[static_cast<std::size_t>(pawn.guest)].id).generic_string()},
+                                                         {"at", {at->x - 14.0F, at->y - 28.0F}}});
+                        // The rooms in light, by name, at the near edge.
+                        data["rooms"] = nlohmann::json::array();
+                        for (int c = 0; c < maxCells; ++c)
+                            if (const CellView &cv = view.cells[static_cast<std::size_t>(c)]; cv.lit && cv.room >= 0)
+                                if (const auto at = table.RoomLabel(def, c, pixels))
+                                    data["rooms"].push_back({{"text", def.rooms[static_cast<std::size_t>(cv.room)].name}, {"at", {at->x - 40.0F, at->y - 8.0F}}});
                     }
                     for (const umbra::ui::UiAction &action : screens.Ui().Update(data, pixels, uiInput, drawList.ui))
                     {

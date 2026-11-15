@@ -38,3 +38,17 @@ TEST_CASE("A drag in the room view moves the table target a little and stays fin
     cam.Aim({0.0F, 0.0F, 0.0F}, 0.0F); // Focus brings it back
     CHECK(glm::length(cam.Target()) < 1e-4F);
 }
+
+TEST_CASE("In the room view a sideways drag moves along the screen, slanted like the view (T169)", "[night][camera]")
+{
+    TableCamera cam;
+    cam.SetRoomView(true);
+    cam.Update(1.0F);
+    cam.Aim({0.0F, 0.0F, 0.0F}, 0.0F);
+    cam.Pan({50.0F, 0.0F});
+    const glm::vec3 moved = cam.Target();
+    const umbra::core::Camera c = cam.Camera();
+    const glm::vec3 forward = glm::normalize(glm::vec3{c.target.x - c.position.x, 0.0F, c.target.z - c.position.z});
+    CHECK(std::abs(glm::dot(glm::normalize(moved), forward)) < 1e-3F); // across the view, not into it
+    CHECK(std::abs(moved.z) > 0.01F);                                   // slanted: not only along x
+}

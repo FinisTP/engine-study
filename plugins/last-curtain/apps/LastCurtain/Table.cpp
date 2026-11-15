@@ -242,7 +242,9 @@ void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<i
             // The frame (gold for a featured room, else the kind's colour), the painted tile on it; dim out of the light.
             const glm::vec4 shade = cell.lit ? glm::vec4{1.0F} : glm::vec4{0.32F, 0.32F, 0.36F, 1.0F};
             const bool featured = static_cast<std::size_t>(c) < featured_.size() && featured_[static_cast<std::size_t>(c)];
-            Box(out, box_, at - glm::vec3{0, tileThick * 0.5F, 0}, {tile, tileThick, tile}, (featured ? Hex(0xD4AF37) : RoomColor(cell.kind)) * shade);
+            const bool goal = std::find(goalCells_.begin(), goalCells_.end(), c) != goalCells_.end();
+            Box(out, box_, at - glm::vec3{0, tileThick * 0.5F, 0}, {tile, tileThick, tile}, (featured || goal ? Hex(0xD4AF37) : RoomColor(cell.kind)) * shade,
+                goal ? 0.6F + 0.4F * std::sin(clock_ * 3.0F) : 0.0F);
             const float inner = featured ? 0.84F : 0.9F;
             Floor(out, art, glm::scale(glm::translate(glm::mat4{1.0F}, at - glm::vec3{0, tileThick * 0.5F - 0.004F, 0}), {tile * inner, tileThick, tile * inner}), shade);
         }
@@ -374,7 +376,7 @@ glm::vec3 Table::Above(const NightDef &def, const BoardView &view, int guest, co
     for (const PawnView &pawn : view.pawns)
         taken = pawn.guest == guest ? pawn.taken : taken;
     if (view_.RoomT() > 0.0F)
-        return Place(def, view, guest, slide) * roomScale + glm::vec3{0.0F, taken ? 3.0F : 2.4F, 0.0F};
+        return Place(def, view, guest, slide) * roomScale + glm::vec3{0.0F, taken ? 2.3F : 1.9F, 0.0F};
     return Place(def, view, guest, slide) + glm::vec3{0.0F, taken ? 1.45F : 1.2F, 0.0F};
 }
 
@@ -463,10 +465,16 @@ void Table::DrawRooms(const NightDef &def, const BoardView &view, const std::vec
     // 2. Every opened room at full size where its tile lies; out of the light, dim.
     const int cells = def.rules.board.width * def.rules.board.height;
     for (int c = 0; c < cells; ++c)
-        if (const CellView &cell = view.cells[static_cast<std::size_t>(c)]; cell.opened)
-            StageRoom(cell, CellCenter(def, c) * roomScale, cell.lit ? 1.0F : 0.35F,
-                      static_cast<std::size_t>(c) < featured_.size() && featured_[static_cast<std::size_t>(c)], out),
-                Marker(out, box_, CellCenter(def, c) * roomScale + glm::vec3{2.6F, 2.8F, -2.6F}, 1.0F, cell.mark, clock_);
+    {
+        const CellView &cell = view.cells[static_cast<std::size_t>(c)];
+        if (!cell.opened)
+            continue;
+        if (std::find(goalCells_.begin(), goalCells_.end(), c) != goalCells_.end()) // the goal room: a glowing rim
+            Box(out, box_, CellCenter(def, c) * roomScale - glm::vec3{0.0F, 0.06F, 0.0F}, {8.6F, 0.1F, 8.6F}, Hex(0xD4AF37), 0.6F + 0.4F * std::sin(clock_ * 3.0F));
+        StageRoom(cell, CellCenter(def, c) * roomScale, cell.lit ? 1.0F : 0.35F,
+                  static_cast<std::size_t>(c) < featured_.size() && featured_[static_cast<std::size_t>(c)], out);
+        Marker(out, box_, CellCenter(def, c) * roomScale + glm::vec3{2.6F, 2.8F, -2.6F}, 1.0F, cell.mark, clock_);
+    }
     // 3. The rooms one step away (a pale plate), and the walk being picked: gold per affordable step, red beyond.
     for (int c = 0; c < cells; ++c)
         if (const CellView &v = view.cells[static_cast<std::size_t>(c)]; v.step >= 0) // smaller over a room not yet opened
@@ -565,12 +573,14 @@ void Table::StageRoom(const CellView &room, glm::vec3 offset, float shade, bool 
     const umbra::core::TextureHandle art = room.room >= 0 && static_cast<std::size_t>(room.room) < roomArt_.size() ? roomArt_[static_cast<std::size_t>(room.room)] : umbra::core::TextureHandle{};
     Floor(out, art, glm::scale(glm::translate(glm::mat4{1.0F}, offset + glm::vec3{0.0F, -0.05F, 0.0F}), {2 * stageHalf, 0.1F, 2 * stageHalf}),
           (art ? glm::vec4{1.0F} : RoomColor(room.kind)) * glm::vec4{shade, shade, shade, 1.0F});
-    // 2. Walls: 1.2 m at the back (N, W), 0.4 m at the front (E, S); a gap at each door.
+    // 2. Walls: 1 m on every side; a gap where a guest can pass.
     const glm::vec3 side[] = {{0, 0, -1}, {1, 0, 0}, {0, 0, 1}, {-1, 0, 0}};
     for (int d = 0; d < 4; ++d)
     {
-        const bool back = d == 0 || d == 3, across = d == 1 || d == 3, door = (room.doors & (1u << d)) != 0;
-        const float height = back ? 1.2F : 0.4F; // low enough to see the rooms behind
+        // A gap where a guest can pass (a passage or a doorway); a whole wall elsewhere (the user: no
+        // pieces missing where the plan has a door to nowhere).
+        const bool across = d == 1 || d == 3, door = (room.walls & (1u << d)) == 0;
+        const float height = 1.0F;
         const glm::vec3 edge = offset + side[d] * (stageHalf - 0.1F); // inset: two rooms' walls stand side by side
         const glm::vec4 paint = ((featured ? Hex(0xD4AF37) : RoomColor(room.kind)) * 0.55F + glm::vec4{0.0F, 0.0F, 0.0F, 0.45F}) * glm::vec4{shade, shade, shade, 1.0F};
         // Two pieces either side of the doorway (or one whole wall).
@@ -645,4 +655,12 @@ void Table::React(const std::vector<LogEntry> &entries)
             lie(e.who, true);
         else if (e.kind == LogKind::Woke)
             lie(e.who, false);
+}
+
+std::optional<glm::vec2> Table::RoomLabel(const NightDef &def, int cell, glm::vec2 pixels) const
+{
+    // The near (south) edge of the tile, or of the room in the room view.
+    const glm::vec3 at = view_.RoomT() > 0.0F ? CellCenter(def, cell) * roomScale + glm::vec3{0.0F, 0.2F, 3.3F}
+                                               : CellCenter(def, cell) + glm::vec3{0.0F, 0.05F, tile * 0.42F};
+    return ScreenPoint(at, pixels);
 }

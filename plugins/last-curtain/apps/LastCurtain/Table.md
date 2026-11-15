@@ -22,7 +22,9 @@
    point shifts by the drag times `distance / 700` metres a pixel (x across, y toward the camera),
    so the board stays under the cursor at any zoom. A drag stops the camera following (`Play::Drag`)
    until the next turn or a click on the top bar's portrait. A board click is the button let go without a drag.
-7. **Labels**: "thinking..." and the group numbers float over pawns. `Above` is the pawn's top;
+7. **Labels**: each figure's portrait and name float just over its arrow; every room in light has its
+   name at its near edge (`RoomLabel`); "thinking..." and the group numbers float over pawns. The
+   labels sit under the HUD's panels. `Above` is the pawn's top;
    `ScreenPoint` takes it through the camera's view and projection to clip space, divides by `w`
    (points behind the eye are dropped) and maps -1..1 to pixels, y down. The `labels` screen draws
    each at its point (`"at"`). Rings: gold for the player's group (1), teal (2), violet (3), red for
@@ -37,8 +39,9 @@ battle in light, `Play::StageCell`) shows the room view on its own. The night go
 
 1. **The world:** every opened room at full size, 8 × 8 m, where its tile lies on the table: a
    cell's centre times `roomScale` (8 m over the 2.4 m between cells). The floor is the room's
-   painting; back walls (N, W) are 1.2 m, front ones 0.4 m, 0.1 m inside the room, with a 1.8 m
-   gap at each door; featured rooms have gold walls. Out of the player's light a room is drawn at
+   painting; walls are 1 m on every side, 0.1 m inside the room, with a 1.8 m gap where a guest can
+   pass (a passage or a doorway); featured rooms have gold walls; the player's goal rooms glow,
+   pulsing, on the table and in the room view. Out of the player's light a room is drawn at
    35 % brightness. Guests stand where their pawns stand (`Place` × `roomScale`, so a slide walks
    them from room to room); monsters are framed cards at the back of their room, floor items
    painted tokens at the front. A battle in sight stands its sides apart in its room.
