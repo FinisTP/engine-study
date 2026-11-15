@@ -13,6 +13,7 @@
 #include <glm/vec2.hpp>
 
 #include <memory>
+#include <array>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -71,8 +72,6 @@ public:
     void LoadArt(const umbra::night::NightDef &def, const umbra::assets::AssetFolders &assets);
     // The player's goal rooms: their frames glow, pulsing (Play::GoalCells).
     void SetGoalCells(std::vector<int> cells) { goalCells_ = std::move(cells); }
-    // Where a room's name sits on screen: the near edge of its tile, or of the room (render pixels).
-    [[nodiscard]] std::optional<glm::vec2> RoomLabel(const umbra::night::NightDef &def, int cell, glm::vec2 pixels) const;
     // Tonight's featured cells (FeaturedCells), set when a night starts.
     void SetFeatured(std::vector<bool> featured) { featured_ = std::move(featured); }
     // The figures: a sliding pawn faces its step and walks, the others stand idle (Table.md).
@@ -108,12 +107,15 @@ private:
     static int Crowd(const umbra::night::BoardView &view, int cell); // pawns standing in the cell
     static glm::vec3 Place(const umbra::night::NightDef &def, const umbra::night::BoardView &view, int guest, const Slide &slide);
     umbra::render::Renderer &renderer_;
-    umbra::core::MeshHandle box_; // a 1 m cube centred on the origin
+    umbra::core::MeshHandle box_;  // a 1 m cube centred on the origin
+    umbra::core::MeshHandle quad_; // a 1 m square facing +Z, the picture upright
     Figure guest_, taken_;        // one guest model for all seven, one Taken; tinted by guests.csv's color
     std::vector<Pawn> pawns_;     // by guest
     std::vector<umbra::core::TextureHandle> roomArt_; // by rooms.csv row; empty handle = a box
     std::vector<umbra::core::TextureHandle> cardArt_; // by monsters.csv row (minions too)
     std::vector<umbra::core::TextureHandle> itemArt_; // by items.csv row
+    std::vector<umbra::core::TextureHandle> plaqueArt_; // by rooms.csv row: the name plaque on its floor
+    std::array<umbra::core::TextureHandle, 2> skyArt_{}; // the sky before and after midnight
     std::vector<bool> featured_;                      // by cell: a gold frame
     std::vector<int> goalCells_;                      // the player's goal rooms: a pulsing glow
     TableCamera view_; // the camera, the table or the room view (TableCamera.hpp)
@@ -139,4 +141,7 @@ private:
     [[nodiscard]] float Lamp() const;                    // the lamp's strength now (flicker)
     [[nodiscard]] glm::vec3 HuntTint() const;            // the ambient's tint now (the hunt pulses red)
     void Floor(umbra::core::DrawList &out, umbra::core::TextureHandle art, const glm::mat4 &model, glm::vec4 color) const;
+    void Sky(umbra::core::DrawList &out) const; // the painted sky behind the board (Table.md "Sky")
+    // A room's brass plaque, flat on the floor at `at`, `width` metres across (Table.md "Plaques").
+    void Plaque(umbra::core::DrawList &out, int room, glm::vec3 at, float width, float shade) const;
 };

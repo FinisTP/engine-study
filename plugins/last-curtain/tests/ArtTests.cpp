@@ -66,6 +66,9 @@ TEST_CASE("ArtPath names a picture by its data id; MissingArt lists what is not 
     CHECK(std::find(missing.begin(), missing.end(), "art/rooms/foyer.jpg") != missing.end());
     CHECK(std::find(missing.begin(), missing.end(), "art/events/applause.jpg") != missing.end());
     CHECK(std::find(missing.begin(), missing.end(), "art/portraits/thanh.jpg") != missing.end());
+    CHECK(std::find(missing.begin(), missing.end(), "art/plaques/foyer.png") != missing.end()); // its floor plaque (T213)
+    CHECK(std::find(missing.begin(), missing.end(), "art/sky/before.jpg") != missing.end());    // the two skies (T214)
+    CHECK(std::find(missing.begin(), missing.end(), "art/sky/after.jpg") != missing.end());
     std::filesystem::create_directories(folder / "art/rooms");
     std::ofstream(folder / "art/rooms/foyer.jpg") << "x";
     const std::vector<std::string> fewer = MissingArt(def, folder);

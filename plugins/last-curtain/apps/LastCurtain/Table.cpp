@@ -68,6 +68,16 @@ namespace
     }
 
     // The turn arrow: a glowing gold diamond pointing down at `top`, bobbing with the clock.
+    // A 1 m square facing +Z: u across, v down the picture.
+    umbra::core::MeshData Quad()
+    {
+        umbra::core::MeshData mesh;
+        for (const glm::vec2 c : {glm::vec2{-0.5F, -0.5F}, glm::vec2{0.5F, -0.5F}, glm::vec2{0.5F, 0.5F}, glm::vec2{-0.5F, 0.5F}})
+            mesh.vertices.push_back({{c.x, c.y, 0.0F}, {0.0F, 0.0F, 1.0F}, {c.x + 0.5F, 0.5F - c.y}});
+        mesh.indices = {0, 1, 2, 0, 2, 3};
+        return mesh;
+    }
+
     void Arrow(umbra::core::DrawList &out, umbra::core::MeshHandle mesh, glm::vec3 top, float size, float clock)
     {
         const glm::vec3 at = top + glm::vec3{0.0F, size * (0.9F + 0.25F * std::sin(clock * 3.0F)), 0.0F};
@@ -105,17 +115,20 @@ namespace
 }
 
 Table::Table(umbra::render::Renderer &renderer, const umbra::assets::AssetFolders &assets)
-    : renderer_(renderer), box_(renderer.CreateMesh(Cube())), guest_(Load(assets / "models/guest.glb", assets / "animations/guest.anim.json", 0.55F)),
+    : renderer_(renderer), box_(renderer.CreateMesh(Cube())), quad_(renderer.CreateMesh(Quad())), guest_(Load(assets / "models/guest.glb", assets / "animations/guest.anim.json", 0.55F)),
       taken_(Load(assets / "models/taken.glb", assets / "animations/taken.anim.json", 0.65F))
 {
 }
 
 Table::~Table()
 {
-    for (const auto *art : {&roomArt_, &cardArt_, &itemArt_})
+    for (const auto *art : {&roomArt_, &cardArt_, &itemArt_, &plaqueArt_})
         for (const umbra::core::TextureHandle texture : *art)
             if (texture)
                 renderer_.DestroyTexture(texture);
+    for (const umbra::core::TextureHandle texture : skyArt_)
+        if (texture)
+            renderer_.DestroyTexture(texture);
     for (const Figure *figure : {&guest_, &taken_})
     {
         if (figure->mesh)
@@ -123,8 +136,9 @@ Table::~Table()
         if (figure->texture)
             renderer_.DestroyTexture(figure->texture);
     }
-    if (box_)
-        renderer_.DestroyMesh(box_);
+    for (const umbra::core::MeshHandle mesh : {box_, quad_})
+        if (mesh)
+            renderer_.DestroyMesh(mesh);
 }
 
 Table::Figure Table::Load(const std::filesystem::path &model, const std::filesystem::path &graph, float scale)
@@ -162,7 +176,8 @@ void Table::LoadArt(const NightDef &def, const umbra::assets::AssetFolders &asse
         return ok ? renderer_.CreateTexture(data) : umbra::core::TextureHandle{};
     };
     for (const RoomDef &room : def.rooms)
-        roomArt_.push_back(load("rooms", room.id));
+        roomArt_.push_back(load("rooms", room.id)), plaqueArt_.push_back(load("plaques", room.id));
+    skyArt_ = {load("sky", "before"), load("sky", "after")};
     for (const MonsterDef &monster : def.monsters)
         cardArt_.push_back(load("cards", monster.id));
     for (const ItemDef &item : def.items)
@@ -224,6 +239,7 @@ void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<i
     out.environment = umbra::core::EvaluateEnvironment(settings, 20.0F);
     out.lights.push_back({{0.0F, 7.0F, 0.0F}, {1.0F, 0.82F, 0.6F}, 30.0F * Lamp(), 40.0F, 0.0F});
     out.camera = Camera();
+    Sky(out);
 
     // 2. Rooms: a floor tile, a wall stub on every side a guest cannot pass, a faint bar at each doorway.
     const int cells = def.rules.board.width * def.rules.board.height;
@@ -248,6 +264,7 @@ void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<i
             const float inner = featured ? 0.84F : 0.9F;
             Floor(out, art, glm::scale(glm::translate(glm::mat4{1.0F}, at - glm::vec3{0, tileThick * 0.5F - 0.004F, 0}), {tile * inner, tileThick, tile * inner}), shade);
         }
+        Plaque(out, cell.room, at + glm::vec3{0.0F, 0.008F, tile * 0.36F}, tile * 0.72F, cell.lit ? 1.0F : 0.4F);
         if (cell.step >= 0)
             Box(out, box_, at + glm::vec3{0, 0.01F, 0}, {tile * 0.6F, 0.02F, tile * 0.6F}, Hex(0xF2D58A));
         Marker(out, box_, at + glm::vec3{0.0F, 1.0F, 0.0F}, 0.35F, cell.mark, clock_);
@@ -462,6 +479,7 @@ void Table::DrawRooms(const NightDef &def, const BoardView &view, const std::vec
     out.environment = umbra::core::EvaluateEnvironment(settings, 20.0F);
     out.camera = Camera();
     out.lights.push_back({out.camera.target + glm::vec3{0.0F, 7.0F, 0.0F}, {1.0F, 0.82F, 0.6F}, 30.0F * Lamp(), 45.0F, 0.0F});
+    Sky(out);
     // 2. Every opened room at full size where its tile lies; out of the light, dim.
     const int cells = def.rules.board.width * def.rules.board.height;
     for (int c = 0; c < cells; ++c)
@@ -473,6 +491,7 @@ void Table::DrawRooms(const NightDef &def, const BoardView &view, const std::vec
             Box(out, box_, CellCenter(def, c) * roomScale - glm::vec3{0.0F, 0.06F, 0.0F}, {8.6F, 0.1F, 8.6F}, Hex(0xD4AF37), 0.6F + 0.4F * std::sin(clock_ * 3.0F));
         StageRoom(cell, CellCenter(def, c) * roomScale, cell.lit ? 1.0F : 0.35F,
                   static_cast<std::size_t>(c) < featured_.size() && featured_[static_cast<std::size_t>(c)], out);
+        Plaque(out, cell.room, CellCenter(def, c) * roomScale + glm::vec3{0.0F, 0.01F, 2.7F}, 3.4F, cell.lit ? 1.0F : 0.4F);
         Marker(out, box_, CellCenter(def, c) * roomScale + glm::vec3{2.6F, 2.8F, -2.6F}, 1.0F, cell.mark, clock_);
     }
     // 3. The rooms one step away (a pale plate), and the walk being picked: gold per affordable step, red beyond.
@@ -657,10 +676,32 @@ void Table::React(const std::vector<LogEntry> &entries)
             lie(e.who, false);
 }
 
-std::optional<glm::vec2> Table::RoomLabel(const NightDef &def, int cell, glm::vec2 pixels) const
+void Table::Sky(umbra::core::DrawList &out) const
 {
-    // The near (south) edge of the tile, or of the room in the room view.
-    const glm::vec3 at = view_.RoomT() > 0.0F ? CellCenter(def, cell) * roomScale + glm::vec3{0.0F, 0.2F, 3.3F}
-                                               : CellCenter(def, cell) + glm::vec3{0.0F, 0.05F, tile * 0.42F};
-    return ScreenPoint(at, pixels);
+    // 1. A painted backdrop far behind the board, square to the camera, filling the view (Table.md "Sky").
+    const umbra::core::TextureHandle art = skyArt_[hunt_ ? 1 : 0];
+    if (!art)
+        return;
+    const umbra::core::Camera &camera = out.camera;
+    const glm::vec3 forward = glm::normalize(camera.target - camera.position);
+    const glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3{0.0F, 1.0F, 0.0F}));
+    const glm::vec3 up = glm::cross(right, forward);
+    // 2. Its height covers the view; its width keeps the picture's 2.4:1 (wide screens up to that).
+    const float distance = camera.farPlane * 0.8F;
+    const float height = 2.0F * distance * std::tan(glm::radians(camera.fovYDegrees) * 0.5F) * 1.02F, width = height * 2.4F;
+    glm::mat4 model{1.0F};
+    model[0] = glm::vec4{right * width, 0.0F}, model[1] = glm::vec4{up * height, 0.0F}, model[2] = glm::vec4{-forward, 0.0F};
+    model[3] = glm::vec4{camera.position + forward * distance, 1.0F};
+    // 3. Lit by itself; the hunt's red ambient still tints it a little.
+    out.items.push_back({quad_, art, model, glm::vec4{0.85F, 0.85F, 0.85F, 1.0F}, 0.0F, 0.9F});
+}
+
+void Table::Plaque(umbra::core::DrawList &out, int room, glm::vec3 at, float width, float shade) const
+{
+    // A thin plate lying on the floor, its lettering facing up and reading from the south.
+    const umbra::core::TextureHandle art = room >= 0 && static_cast<std::size_t>(room) < plaqueArt_.size() ? plaqueArt_[static_cast<std::size_t>(room)] : umbra::core::TextureHandle{};
+    if (!art)
+        return;
+    const glm::mat4 model = glm::scale(glm::rotate(glm::translate(glm::mat4{1.0F}, at), -1.5708F, {1, 0, 0}), glm::vec3{width, width * 0.1875F, 1.0F});
+    out.items.push_back({quad_, art, model, glm::vec4{shade, shade, shade, 1.0F}, 0.0F, 0.35F * shade + readable_ * 0.5F});
 }

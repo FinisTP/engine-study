@@ -22,8 +22,8 @@
    point shifts by the drag times `distance / 700` metres a pixel (x across, y toward the camera),
    so the board stays under the cursor at any zoom. A drag stops the camera following (`Play::Drag`)
    until the next turn or a click on the top bar's portrait. A board click is the button let go without a drag.
-7. **Labels**: each figure's portrait and name float just over its arrow; every room in light has its
-   name at its near edge (`RoomLabel`); "thinking..." and the group numbers float over pawns. The
+7. **Labels**: each figure's portrait and name float just over its arrow; "thinking..." and the group
+   numbers float over pawns. Room names are not labels but plaques on the floor (below). The
    labels sit under the HUD's panels. `Above` is the pawn's top;
    `ScreenPoint` takes it through the camera's view and projection to clip space, divides by `w`
    (points behind the eye are dropped) and maps -1..1 to pixels, y down. The `labels` screen draws
@@ -70,5 +70,20 @@ a bonus room the player has not had, a green plus. On the table at 1 m, in the r
 room's back corner. Walls, figures, cards and item tokens glow by `Readability(mood)` (0.2 in the
 evening, up to 0.7 in the hunt), so they stay readable under the dark and red grade; walls on the
 table are pale.
+
+## Plaques and sky (the user, 2026-11-15)
+
+**Plaques:** each opened room has its name on a brass plaque lying flat on its floor near the south
+(near) edge: on the table 1.6 m wide, in the room view 3.4 m, 1.3 m in from the south wall so the
+wall does not hide it. `Plaque` lays the picture quad down (rotated -90 degrees about x), so the
+picture's top points north and the lettering reads from the camera's side. It glows a little
+(`0.35 + Readability / 2`) and dims out of the light like the room.
+
+**Sky:** behind the board a painted Saigon sky: dusk turning to night before midnight, a red moon
+in storm clouds after the Turn. The camera looks down 30 to 50 degrees, so a real sky dome would
+show mostly its lower half; `Sky` instead hangs the picture as a backdrop, square to the camera at
+0.8 of the far plane, tall enough to fill the view (`2 d tan(fov / 2)`) and 2.4 times as wide (the
+picture's shape; wider screens than 2.4:1 would see its edges). It moves with the camera, like a
+painted backcloth on a stage.
 
 `--look` switches to the room view on the player's first menu (for pictures).

@@ -12,6 +12,8 @@ its picture in the right folder. `MissingArt` lists what is not there (the asset
 | `art/items/` | item in `items.csv` | 256 px PNG, background keyed out |
 | `art/cards/` | monster and minion (`monsters.csv`, `minions.csv`) | 256 px PNG, background keyed out |
 | `art/ui/` | `panel`, `paper`, `title` | PNG |
+| `art/plaques/` | room in `rooms.csv`: its floor plaque | 1024 x 192 PNG, `tools/art/make_plaques.py` |
+| `art/sky/` | `before` and `after` midnight | 1536 x 640 JPEG |
 
 ## Featured rooms
 
@@ -25,3 +27,7 @@ where the guests began, so a restored night shows the same frames.
 `tools/art/make_prompts.py` writes one prompt per picture from the data; ComfyUI paints them (room
 tiles over a simple top-down sketch, so they stay flat); `tools/art/cut.py` sizes and stores them.
 Prompts, seeds and rejects: `art/README.md`.
+
+The plaques are drawn, not painted: `python3 tools/art/make_plaques.py` writes one per room from
+`rooms.csv` (a near-black plate, a gold border and screws, the name in Lora capitals sized to fit).
+Run it again when a room is added or renamed.

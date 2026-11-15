@@ -13,6 +13,8 @@ portraits: 512 px JPEG; items: 256 px PNG with the cream background keyed out; c
 | `cards/` | 10 | text to image, whole |
 | `items/` | 19 | text to image, keyed out |
 | `ui/` | 3 + 2 | `panel`, `paper`, `title` text to image; `blood_lut`, `drips` drawn |
+| `plaques/` | 62 | drawn by `tools/art/make_plaques.py` |
+| `sky/` | 2 | text to image at 1536 x 640, seed 22 of 11/22/33 (2026-11-15) |
 
 - Prompts and seeds: `tools/art/lastcurtain_prompts2.json` (the "dread" style the user asked for:
   subtly uncanny, 1960s horror-poster gouache, jade and blood red).
@@ -24,3 +26,18 @@ portraits: 512 px JPEG; items: 256 px PNG with the cream background keyed out; c
   night comes from the shaders after the Turn.
 - The Saigon Opera House is named in the room prompts by its real name; nothing is drawn from any
   board game.
+
+Sky prompts (SDXL base, dpmpp_2m karras, 30 steps, cfg 6.5, the dread style appended; negative: the
+dread negative plus "buildings in foreground, people, ground, street, frame, border"):
+
+- `before`: wide panoramic night sky over old Saigon at the end of dusk, last violet and burnt orange
+  glow low on the horizon fading into deep indigo night above, first faint stars, thin drifting
+  clouds, distant silhouettes of colonial rooftops and tamarind trees only at the very bottom edge,
+  empty sky fills the image.
+- `after`: wide panoramic midnight sky over old Saigon, a huge blood red full moon behind heavy
+  churning storm clouds, clouds lit crimson from beneath, faint lightning in the distance,
+  oppressive black and dark red sky, distant silhouettes of colonial rooftops only at the very
+  bottom edge, empty sky fills the image.
+
+Seeds 11 and 33 were rejected: 11 showed a flat field (before) and a pale moon (after); 33 a flat
+green poster sky.

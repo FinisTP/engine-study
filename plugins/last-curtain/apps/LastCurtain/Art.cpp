@@ -6,7 +6,7 @@ namespace umbra::night
 {
     std::filesystem::path ArtPath(const std::string &set, const std::string &id)
     {
-        const bool painting = set == "rooms" || set == "events" || set == "portraits";
+        const bool painting = set == "rooms" || set == "events" || set == "portraits" || set == "sky";
         return std::filesystem::path("art") / set / (id + (painting ? ".jpg" : ".png"));
     }
 
@@ -80,7 +80,9 @@ namespace umbra::night
                 missing.push_back(path.generic_string());
         };
         for (const RoomDef &r : def.rooms)
-            need("rooms", r.id);
+            need("rooms", r.id), need("plaques", r.id);
+        for (const char *sky : {"before", "after"})
+            need("sky", sky);
         for (const EventDef &e : def.events)
             need("events", e.id);
         for (const GuestDef &g : def.guests)
