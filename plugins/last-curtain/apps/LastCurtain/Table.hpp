@@ -39,7 +39,8 @@ public:
     [[nodiscard]] std::optional<glm::vec2> ScreenPoint(glm::vec3 world, glm::vec2 pixels) const;
     void SetHunt(bool hunt) { hunt_ = hunt; } // after the Turn the ambient turns red
     // The night's mood (Art.hpp NightMood): blood on the floors, how much the lamp flickers.
-    void SetMood(float blood, float flicker) { blood_ = blood, flicker_ = flicker; }
+    // readable: the glow of walls, figures and items (Art.hpp Readability), so they read under the mood.
+    void SetMood(float blood, float flicker, float readable) { blood_ = blood, flicker_ = flicker, readable_ = readable; }
     void Aim(glm::vec3 target, float seconds);
     void Update(float dt);
     // The room view (Table.md "Room view"): every opened room at full size, 8 m apart where its tile
@@ -136,7 +137,7 @@ private:
     float distance_ = 11.0F, minDistance_ = 5.0F, maxDistance_ = 22.0F, tilt_ = 50.0F;
     int acting_ = -1;
     bool hunt_ = false;
-    float blood_ = 0.0F, flicker_ = 0.0F, clock_ = 0.0F; // clock_: seconds, for the flicker and pulse
+    float blood_ = 0.0F, flicker_ = 0.0F, clock_ = 0.0F, readable_ = 0.2F; // clock_: seconds, for the flicker and pulse
     [[nodiscard]] float Lamp() const;                    // the lamp's strength now (flicker)
     [[nodiscard]] glm::vec3 HuntTint() const;            // the ambient's tint now (the hunt pulses red)
     void Floor(umbra::core::DrawList &out, umbra::core::TextureHandle art, const glm::mat4 &model, glm::vec4 color) const;

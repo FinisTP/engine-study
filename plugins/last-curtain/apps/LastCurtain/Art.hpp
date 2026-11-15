@@ -31,6 +31,8 @@ namespace umbra::night
         umbra::core::PostSettings post;
     };
     [[nodiscard]] Mood NightMood(const NightDef &def, const NightState &state);
+    // How much walls, figures and items glow so they stay readable under the mood (their emissive).
+    [[nodiscard]] float Readability(const Mood &mood);
 
     // Every picture the data needs that is not under `assets` (paths as ArtPath gives them).
     [[nodiscard]] std::vector<std::string> MissingArt(const NightDef &def, const std::filesystem::path &assets);

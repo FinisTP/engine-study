@@ -56,4 +56,14 @@ battle in light, `Play::StageCell`) shows the room view on its own. The night go
    a roll plays `talk` (a reach); a trap or event that hurts plays `hit`; a chat plays `talk` on
    both; a guest down or dead lies down (`dead`) until woken. A gold arrow bobs over whoever acts.
 
+## Markers and readability
+
+A lit room that holds something for the player has a marker floating over it (`BoardView`
+`CellView::mark`), each its own shape as well as colour: an item room still holding its item, a
+gold tablet; an event (armed, or a room still holding one), a violet diamond; a trap, a red spike;
+a bonus room the player has not had, a green plus. On the table at 1 m, in the room view over the
+room's back corner. Walls, figures, cards and item tokens glow by `Readability(mood)` (0.2 in the
+evening, up to 0.7 in the hunt), so they stay readable under the dark and red grade; walls on the
+table are pale.
+
 `--look` switches to the room view on the player's first menu (for pictures).

@@ -42,6 +42,8 @@ namespace umbra::night
 
     bool Featured(const NightDef &def, const NightState &state, int cell) { return FeaturedCells(def, state)[static_cast<std::size_t>(cell)]; }
 
+    float Readability(const Mood &mood) { return 0.2F + 0.35F * mood.creep + (mood.blood > 0.0F ? 0.15F : 0.0F); }
+
     Mood NightMood(const NightDef &def, const NightState &state)
     {
         Mood mood;

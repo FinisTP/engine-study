@@ -301,7 +301,7 @@ namespace
                     const Mood mood = NightMood(def, state);
                     drawList.post = mood.post;
                     drawList.postLut = mood.bloodGrade && bloodLut ? bloodLut : nullptr;
-                    table.SetMood(mood.blood, mood.flicker);
+                    table.SetMood(mood.blood, mood.flicker, Readability(mood));
                     // On the board the arrows, Enter and I move and end the turn; a dialog takes them otherwise.
                     if (board)
                     {

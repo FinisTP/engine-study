@@ -548,6 +548,7 @@ void Play::Update(float dt)
                 if (captionTicket_ != 0)
                     b.caption = previewCaption_ = words_->Take(captionTicket_, b.caption), captionTicket_ = 0;
                 b.result.clear();
+                b.camera = state_.guests[U(acting)].cell; // where the bot stands: the room ahead may not be open yet
                 beat_ = b;
                 int entered = -1;
                 beatEvent_ = RoomEvent(state_, trial, next, acting, entered);

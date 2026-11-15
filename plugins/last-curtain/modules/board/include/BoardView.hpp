@@ -11,6 +11,9 @@
 // reaches, and where things stand on the table in metres. No renderer here: it is tested headless.
 namespace umbra::night
 {
+    // What a lit room holds for the viewer, as a marker over it (Table.md "Markers").
+    enum class RoomMark : std::uint8_t { None, Item, Event, Trap, Bonus };
+
     struct CellView
     {
         bool opened = false, lit = false;
@@ -19,6 +22,7 @@ namespace umbra::night
         std::uint8_t doors = 0;    // NESW, bit 0 = N
         std::uint8_t doorways = 0; // doors that lead to a room not yet opened
         std::uint8_t walls = 0;    // sides a guest cannot pass: neither a passage nor a doorway
+        RoomMark mark = RoomMark::None;
         std::int8_t step = -1;     // index in LegalActions of the Move into this cell, on the viewer's turn
     };
 

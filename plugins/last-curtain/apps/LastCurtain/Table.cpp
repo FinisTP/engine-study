@@ -78,9 +78,31 @@ namespace
         out.items.push_back({mesh, {}, model, glm::vec4{0.95F, 0.8F, 0.3F, 1.0F}, 0.0F, 1.0F});
     }
 
-    void Box(umbra::core::DrawList &out, umbra::core::MeshHandle mesh, glm::vec3 centre, glm::vec3 size, glm::vec4 color)
+    void Box(umbra::core::DrawList &out, umbra::core::MeshHandle mesh, glm::vec3 centre, glm::vec3 size, glm::vec4 color, float glow = 0.0F)
     {
-        out.items.push_back({mesh, {}, glm::scale(glm::translate(glm::mat4{1.0F}, centre), size), color});
+        out.items.push_back({mesh, {}, glm::scale(glm::translate(glm::mat4{1.0F}, centre), size), color, 0.0F, glow});
+    }
+
+    // A room's marker floating over it (Table.md "Markers"), each its own shape and colour, glowing:
+    // an item a gold tablet, an event a violet diamond, a trap a red spike, a bonus a green plus.
+    void Marker(umbra::core::DrawList &out, umbra::core::MeshHandle mesh, glm::vec3 at, float size, RoomMark mark, float clock)
+    {
+        if (mark == RoomMark::None)
+            return;
+        at.y += size * 0.15F * std::sin(clock * 2.0F);
+        const glm::mat4 spin = glm::rotate(glm::translate(glm::mat4{1.0F}, at), clock * 0.8F, {0, 1, 0});
+        const auto put = [&](const glm::mat4 &m, std::uint32_t rgb) { out.items.push_back({mesh, {}, m, Hex(rgb), 0.0F, 0.9F}); };
+        switch (mark)
+        {
+        case RoomMark::Item: put(glm::scale(spin, glm::vec3{size * 0.6F, size * 0.6F, size * 0.12F}), 0xF2D58A); break;
+        case RoomMark::Event: put(glm::scale(glm::rotate(spin, 0.7854F, {0, 0, 1}), glm::vec3{size * 0.5F, size * 0.5F, size * 0.15F}), 0xB28DFF); break;
+        case RoomMark::Trap: put(glm::scale(spin, glm::vec3{size * 0.18F, size * 0.9F, size * 0.18F}), 0xD62828); break;
+        case RoomMark::Bonus:
+            put(glm::scale(spin, glm::vec3{size * 0.6F, size * 0.18F, size * 0.18F}), 0x5FC9A0);
+            put(glm::scale(spin, glm::vec3{size * 0.18F, size * 0.6F, size * 0.18F}), 0x5FC9A0);
+            break;
+        default: break;
+        }
     }
 }
 
@@ -228,12 +250,13 @@ void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<i
         }
         if (cell.step >= 0)
             Box(out, box_, at + glm::vec3{0, 0.01F, 0}, {tile * 0.6F, 0.02F, tile * 0.6F}, Hex(0xF2D58A));
+        Marker(out, box_, at + glm::vec3{0.0F, 1.0F, 0.0F}, 0.35F, cell.mark, clock_);
         for (int d = 0; d < 4; ++d)
         {
             const bool across = d == 1 || d == 3;
             const glm::vec3 edge = at + side[d] * (tile * 0.5F);
-            if (cell.walls & (1u << d))
-                Box(out, box_, edge + glm::vec3{0, 0.17F, 0}, across ? glm::vec3{0.12F, 0.35F, tile} : glm::vec3{tile, 0.35F, 0.12F}, Hex(0x3A3A44));
+            if (cell.walls & (1u << d)) // pale and glowing a little, so they read under the mood
+                Box(out, box_, edge + glm::vec3{0, 0.17F, 0}, across ? glm::vec3{0.12F, 0.35F, tile} : glm::vec3{tile, 0.35F, 0.12F}, Hex(0x8A8272), readable_);
             else if (cell.doorways & (1u << d))
                 Box(out, box_, edge + side[d] * 0.2F, across ? glm::vec3{0.3F, 0.03F, 0.6F} : glm::vec3{0.6F, 0.03F, 0.3F}, Hex(0xC9C1AD));
         }
@@ -259,7 +282,7 @@ void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<i
                                     glm::translate(glm::mat4{1.0F}, {0, 1, 0});
             const std::vector<glm::mat4> &palette = p->animator->Palette();
             // Lightened a quarter toward white and a faint glow, so dark tints still read in the dim room.
-            out.items.push_back({figure.mesh, figure.texture, model, glm::mix(color, glm::vec4{1.0F}, 0.25F), 0.0F, 0.12F});
+            out.items.push_back({figure.mesh, figure.texture, model, glm::mix(color, glm::vec4{1.0F}, 0.25F), 0.0F, std::max(0.12F, readable_)});
             out.items.back().jointOffset = static_cast<std::uint32_t>(out.joints.size());
             out.items.back().jointCount = static_cast<std::uint32_t>(palette.size());
             out.joints.insert(out.joints.end(), palette.begin(), palette.end());
@@ -293,7 +316,7 @@ void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<i
         if (const umbra::core::TextureHandle card = art(cardArt_, monster.kind))
         {
             Box(out, box_, at + glm::vec3{0, 0.45F, 0}, {0.68F, 0.9F, 0.04F}, frame);
-            out.items.push_back({box_, card, glm::scale(glm::translate(glm::mat4{1.0F}, at + glm::vec3{0, 0.46F, 0.005F}), {0.6F, 0.8F, 0.04F}), glm::vec4{1.0F}});
+            out.items.push_back({box_, card, glm::scale(glm::translate(glm::mat4{1.0F}, at + glm::vec3{0, 0.46F, 0.005F}), {0.6F, 0.8F, 0.04F}), glm::vec4{1.0F}, 0.0F, readable_});
             Box(out, box_, at + glm::vec3{0, 0.02F, 0}, {0.5F, 0.04F, 0.25F}, frame); // its stand
         }
         else
@@ -307,7 +330,7 @@ void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<i
         const glm::vec3 at = CellCenter(def, item.cell) + glm::vec3{-tile * 0.3F + static_cast<float>(i) * 0.45F, 0.0F, tile * 0.32F};
         Box(out, box_, at + glm::vec3{0, 0.015F, 0}, {0.42F, 0.03F, 0.42F}, Hex(0x2A1E16));
         if (const umbra::core::TextureHandle token = art(itemArt_, item.item))
-            out.items.push_back({box_, token, glm::scale(glm::translate(glm::mat4{1.0F}, at + glm::vec3{0, 0.02F, 0}), {0.36F, 0.03F, 0.36F}), glm::vec4{1.0F}});
+            out.items.push_back({box_, token, glm::scale(glm::translate(glm::mat4{1.0F}, at + glm::vec3{0, 0.02F, 0}), {0.36F, 0.03F, 0.36F}), glm::vec4{1.0F}, 0.0F, readable_});
         else
             Box(out, box_, at + glm::vec3{0, 0.02F, 0}, {0.3F, 0.03F, 0.3F}, Hex(0xF2D58A));
     }
@@ -492,11 +515,12 @@ void Table::DrawRooms(const NightDef &def, const BoardView &view, const std::vec
     for (int c = 0; c < cells; ++c)
         if (const CellView &cell = view.cells[static_cast<std::size_t>(c)]; cell.opened)
             StageRoom(cell, CellCenter(def, c) * roomScale, cell.lit ? 1.0F : 0.35F,
-                      static_cast<std::size_t>(c) < featured_.size() && featured_[static_cast<std::size_t>(c)], out);
+                      static_cast<std::size_t>(c) < featured_.size() && featured_[static_cast<std::size_t>(c)], out),
+                Marker(out, box_, CellCenter(def, c) * roomScale + glm::vec3{2.6F, 2.8F, -2.6F}, 1.0F, cell.mark, clock_);
     // 3. The rooms one step away (a pale plate), and the walk being picked: gold per affordable step, red beyond.
     for (int c = 0; c < cells; ++c)
-        if (view.cells[static_cast<std::size_t>(c)].step >= 0)
-            Box(out, box_, CellCenter(def, c) * roomScale + glm::vec3{0, 0.03F, 0}, {2.6F, 0.03F, 2.6F}, Hex(0xF2D58A) * glm::vec4{1.0F, 1.0F, 1.0F, 0.6F});
+        if (const CellView &v = view.cells[static_cast<std::size_t>(c)]; v.step >= 0) // smaller over a room not yet opened
+            Box(out, box_, CellCenter(def, c) * roomScale + glm::vec3{0, 0.03F, 0}, glm::vec3{v.opened ? 2.6F : 1.2F, 0.03F, v.opened ? 2.6F : 1.2F}, Hex(0xF2D58A));
     for (std::size_t i = 0; i < path.size(); ++i)
         Box(out, box_, CellCenter(def, path[i]) * roomScale + glm::vec3{0, 0.05F, 0}, {1.4F, 0.05F, 1.4F},
             static_cast<int>(i) < affordable ? Hex(0xF2D58A) : Hex(0xD62828));
@@ -546,7 +570,7 @@ void Table::DrawRooms(const NightDef &def, const BoardView &view, const std::vec
         Box(out, box_, at + glm::vec3{0, 0.03F, 0}, {1.1F, 0.06F, 1.1F}, Hex(0x2A1E16));
         const umbra::core::TextureHandle token = item.item >= 0 && static_cast<std::size_t>(item.item) < itemArt_.size() ? itemArt_[static_cast<std::size_t>(item.item)] : umbra::core::TextureHandle{};
         out.items.push_back({box_, token, glm::scale(glm::translate(glm::mat4{1.0F}, at + glm::vec3{0, 0.07F, 0}), {0.95F, 0.03F, 0.95F}),
-                             token ? glm::vec4{1.0F} : Hex(0xF2D58A), 0.0F, 0.15F});
+                             token ? glm::vec4{1.0F} : Hex(0xF2D58A), 0.0F, std::max(0.15F, readable_)});
         hits_.push_back({at, 0.7F, {ThingKind::Item, item.floor}});
     }
 }
@@ -606,8 +630,9 @@ void Table::StageRoom(const CellView &room, glm::vec3 offset, float shade, bool 
             const float mid = sign * (from + length * 0.5F);
             const glm::vec3 at = edge + (across ? glm::vec3{0, 0, mid} : glm::vec3{mid, 0, 0});
             const glm::vec3 size = across ? glm::vec3{0.15F, height, length} : glm::vec3{length, height, 0.15F};
-            Box(out, box_, at + glm::vec3{0, height * 0.5F, 0}, size, paint);
-            Box(out, box_, at + glm::vec3{0, height + 0.04F, 0}, size * glm::vec3{1.0F, 0.0F, 1.0F} + glm::vec3{0.0F, 0.08F, 0.0F} + (across ? glm::vec3{0.06F, 0, 0} : glm::vec3{0, 0, 0.06F}), Hex(0xD4AF37) * glm::vec4{shade, shade, shade, 1.0F});
+            Box(out, box_, at + glm::vec3{0, height * 0.5F, 0}, size, paint, readable_ * shade);
+            Box(out, box_, at + glm::vec3{0, height + 0.04F, 0}, size * glm::vec3{1.0F, 0.0F, 1.0F} + glm::vec3{0.0F, 0.08F, 0.0F} + (across ? glm::vec3{0.06F, 0, 0} : glm::vec3{0, 0, 0.06F}),
+                Hex(0xD4AF37) * glm::vec4{shade, shade, shade, 1.0F}, 0.3F + readable_ * shade);
             if (!door)
                 break;
         }
@@ -619,7 +644,7 @@ void Table::StageCard(int kind, glm::vec3 at, umbra::core::DrawList &out) const
     // A monster: a framed card on a stand.
     const umbra::core::TextureHandle card = kind >= 0 && static_cast<std::size_t>(kind) < cardArt_.size() ? cardArt_[static_cast<std::size_t>(kind)] : umbra::core::TextureHandle{};
     Box(out, box_, at + glm::vec3{0, 0.85F, 0}, {1.25F, 1.7F, 0.06F}, Hex(0x2A1E16));
-    out.items.push_back({box_, card, glm::scale(glm::translate(glm::mat4{1.0F}, at + glm::vec3{0, 0.87F, 0.01F}), {1.1F, 1.5F, 0.06F}), card ? glm::vec4{1.0F} : Hex(0x8B5A2B)});
+    out.items.push_back({box_, card, glm::scale(glm::translate(glm::mat4{1.0F}, at + glm::vec3{0, 0.87F, 0.01F}), {1.1F, 1.5F, 0.06F}), card ? glm::vec4{1.0F} : Hex(0x8B5A2B), 0.0F, readable_});
 }
 
 void Table::StageFigure(const NightDef &def, int guest, bool taken, glm::vec3 at, float yaw, umbra::core::DrawList &out) const
@@ -639,7 +664,7 @@ void Table::StageFigure(const NightDef &def, int guest, bool taken, glm::vec3 at
     const glm::mat4 model = glm::scale(glm::rotate(glm::translate(glm::mat4{1.0F}, at), yaw, {0, 1, 0}), glm::vec3{figure.scale * stageScale}) *
                             glm::translate(glm::mat4{1.0F}, {0, 1, 0});
     const std::vector<glm::mat4> &palette = p->animator->Palette();
-    out.items.push_back({figure.mesh, figure.texture, model, color, 0.0F, 0.12F});
+    out.items.push_back({figure.mesh, figure.texture, model, color, 0.0F, std::max(0.12F, readable_)});
     out.items.back().jointOffset = static_cast<std::uint32_t>(out.joints.size());
     out.items.back().jointCount = static_cast<std::uint32_t>(palette.size());
     out.joints.insert(out.joints.end(), palette.begin(), palette.end());

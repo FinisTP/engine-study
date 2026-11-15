@@ -39,6 +39,17 @@ namespace umbra::night
             for (int g = 0; g < state.count && !v.lit; ++g)
                 if (Controls(state, viewer, g) && Up(state.guests[U(g)]))
                     v.lit = Lit(def, state, state.guests[U(g)].cell, c, Stat(def, state, g, StatKind::Light));
+            // Its marker: an armed event or trap, a room still holding one, a bonus the viewer has not had.
+            if (v.lit && cell.event >= 0)
+                v.mark = def.events[U(cell.event)].trap ? RoomMark::Trap : RoomMark::Event;
+            else if (v.lit && !cell.resolved && v.kind == RoomKind::Trap)
+                v.mark = RoomMark::Trap;
+            else if (v.lit && !cell.resolved && v.kind == RoomKind::Event)
+                v.mark = RoomMark::Event;
+            else if (v.lit && !cell.resolved && v.kind == RoomKind::Item)
+                v.mark = RoomMark::Item;
+            else if (v.lit && v.kind == RoomKind::Bonus && viewer >= 0 && !state.guests[U(viewer)].bonusUsed[U(c)])
+                v.mark = RoomMark::Bonus;
         }
 
         // 2. The viewer's steps: legal moves on a turn the viewer plays.

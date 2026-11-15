@@ -112,3 +112,17 @@ TEST_CASE("The night's mood: a creep from 19:00, a snap to blood at the Turn (T1
     CHECK(NightMood(def, state).blood > turned.blood);
     CHECK(NightMood(def, state).blood <= 1.0F);
 }
+
+TEST_CASE("Walls, figures and items glow more as the night darkens, so they stay readable (T162)", "[night][art][mood]")
+{
+    const NightDef def = Data();
+    NightState state = NewNight(def, 3);
+    const float evening = Readability(NightMood(def, state));
+    state.round = def.rules.clock.turnAfterRound;
+    const float late = Readability(NightMood(def, state));
+    state.taken.present = true;
+    const float hunt = Readability(NightMood(def, state));
+    CHECK(evening > 0.0F);
+    CHECK(late > evening);
+    CHECK(hunt >= late);
+}

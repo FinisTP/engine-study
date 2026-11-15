@@ -228,3 +228,34 @@ TEST_CASE("The view lists items lying in lit cells and each monster's kind (T142
     REQUIRE(found != view.monsters.end());
     CHECK(found->kind == moths.kind);
 }
+
+TEST_CASE("The view marks rooms with something for the viewer: item, event, trap, bonus (T162)", "[night][view]")
+{
+    const NightDef def = Data();
+    NightState state = Corridor(def);
+    const int a = Left(def, 1), b = Left(def, 2);
+    const auto mark = [&](const NightState &s, int cell) { return MakeView(def, s, 0).cells[static_cast<std::size_t>(cell)].mark; };
+    CHECK(mark(state, a) == RoomMark::None);
+    // 1. An armed trap and an armed event; an unresolved item room.
+    NightState armed = state;
+    const auto eventOf = [&](bool trap) {
+        for (std::size_t e = 0; e < def.events.size(); ++e)
+            if (def.events[e].trap == trap)
+                return static_cast<std::int8_t>(e);
+        return std::int8_t{-1};
+    };
+    armed.cells[static_cast<std::size_t>(a)].event = eventOf(true);
+    armed.cells[static_cast<std::size_t>(b)].event = eventOf(false);
+    CHECK(mark(armed, a) == RoomMark::Trap);
+    CHECK(mark(armed, b) == RoomMark::Event);
+    NightState item = state;
+    item.cells[static_cast<std::size_t>(a)].room = static_cast<std::int8_t>(NightDef::Find(def.rooms, "armoury"));
+    item.cells[static_cast<std::size_t>(a)].resolved = false;
+    CHECK(mark(item, a) == RoomMark::Item);
+    // 2. A bonus room: marked until the viewer has had it.
+    NightState bonus = state;
+    bonus.cells[static_cast<std::size_t>(a)].room = static_cast<std::int8_t>(NightDef::Find(def.rooms, "rehearsal"));
+    CHECK(mark(bonus, a) == RoomMark::Bonus);
+    bonus.guests[0].bonusUsed.set(static_cast<std::size_t>(a));
+    CHECK(mark(bonus, a) == RoomMark::None);
+}
