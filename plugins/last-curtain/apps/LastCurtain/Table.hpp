@@ -40,6 +40,22 @@ public:
     void SetHunt(bool hunt) { hunt_ = hunt; } // after the Turn the ambient turns red
     void Aim(glm::vec3 target, float seconds);
     void Update(float dt);
+    // The room at full size (plan 4b/4c, Table.md "The stage"), drawn instead of the table.
+    struct StageActor
+    {
+        int guest = -1, monsterKind = -1, side = 0;
+        bool taken = false;
+    };
+    void DrawStage(const umbra::night::NightDef &def, const umbra::night::BoardView &view, int cell, const std::vector<StageActor> &actors,
+                   umbra::core::DrawList &out) const;
+    // A click on the stage floor: the point, and the doorway's side (NESW) or -1.
+    bool StagePick(const umbra::night::BoardView &view, int cell, glm::vec2 mouse, glm::vec2 pixels, glm::vec3 &floor, int &door) const;
+    // The player's figure on the stage: where it stands, where it walks to (Look).
+    void StageStart(int guest);
+    void WalkTo(glm::vec3 floor) { walkTarget_ = floor; }
+    // Clips from new log entries: attack, hit, power; down and dead lie down until woken.
+    void React(const std::vector<umbra::night::LogEntry> &entries);
+    void NewNight() { pawns_.clear(), stageGuest_ = -1; }
     // The painted pictures (Art.md), once; a missing one leaves its box (logged).
     void LoadArt(const umbra::night::NightDef &def, const umbra::assets::AssetFolders &assets);
     // Tonight's featured cells (FeaturedCells), set when a night starts.
@@ -80,6 +96,9 @@ private:
     std::vector<umbra::core::TextureHandle> cardArt_; // by monsters.csv row (minions too)
     std::vector<umbra::core::TextureHandle> itemArt_; // by items.csv row
     std::vector<bool> featured_;                      // by cell: a gold frame
+    int stageGuest_ = -1;                             // the figure that walks on the stage
+    glm::vec3 walkAt_{0.0F}, walkTarget_{0.0F};
+    [[nodiscard]] umbra::core::Camera StageCamera() const;
     glm::vec3 from_{0.0F}, to_{0.0F};
     float seconds_ = 0.0F, elapsed_ = 0.0F;
     float distance_ = 11.0F;

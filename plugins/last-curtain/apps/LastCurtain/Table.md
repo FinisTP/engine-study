@@ -28,3 +28,23 @@
    each at its point (`"at"`). Rings: gold for the player's group (1), teal (2), violet (3), red for
    the Taken.
 8. **Picking**: the mouse position goes back through the projection and view (`inverse(projection * view)`) at the near and far planes. The line between those two points is the ray from the eye; `CellUnderRay` finds where it meets the table top, y = 0.
+
+## The stage (plans 4b and 4c)
+
+While `Play::StageCell()` is a cell (Look, or a battle in the player's light), the table is not
+drawn; that one room is, at full size:
+
+1. **Camera:** fixed high in the front corner (user), like a seat in the stalls: position
+   (5.2, 5.8, 7.0), looking at (0, 0.7, -0.5).
+2. **Room:** 8 × 8 m; the floor is the room's own painting. The back walls (N, W) are painted flats
+   3 m high, the front ones (E, S) 0.4 m so they never hide the room; each has a gold moulding and a
+   1.8 m gap where the board has a door.
+3. **Actors:** guests are their figures at 1.55 × their table size (1.7 m); monsters are framed
+   cards on stands. In a battle side 0 stands at x = -1.7 facing +X, side 1 at x = +1.7 facing -X,
+   1.3 m apart. In a Look the player's figure walks where the floor is clicked, at 1.6 m/s, and a
+   click in a doorway's gap takes the passage (`Play::LookDoor`, the board's Move).
+4. **Clips:** `React` reads each frame's new log entries: a hit plays `attack` on the attacker and
+   `hit` on the target, a Taken's power plays `power`, a guest down or dead lies down (`dead`) until
+   woken. This works on the table too.
+
+`--look` opens Look on the player's first menu (for pictures of the stage).

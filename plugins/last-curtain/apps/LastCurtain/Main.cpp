@@ -42,6 +42,7 @@ namespace
         std::uint64_t seed = 0;        // 0 = from the clock
         std::string player;            // a guest id: start at once as that guest
         bool watch = false;            // all seven are bots
+        bool look = false;             // open Look on the player's first menu (pictures of the stage)
         std::filesystem::path capture; // save the last frame here and quit
         int frames = 0;                // frames to run (0 = until closed; 3 with --capture)
     };
@@ -121,7 +122,7 @@ namespace
     // Play's slide as the table draws it.
     Table::Slide ToDraw(const Play::Slide &s) { return {s.guest, s.from, s.to, s.t}; }
 
-    int Run(const Options &options)
+    int Run(Options options)
     {
         umbra::platform::Platform platform;
         if (!platform.Initialize())
@@ -167,6 +168,8 @@ namespace
             umbra::core::DrawList drawList;
             const int frames = options.frames > 0 ? options.frames : (options.capture.empty() ? 0 : 3);
             int frame = 0, aimed = -1, savedRound = -1;
+            std::uint32_t seenLog = 0; // log entries the figures have played (Table::React)
+            bool wasLooking = false;
             bool wasHeld = false, dragging = false, pressTook = false; // the left button: a drag looks around, a release without one clicks
             glm::vec2 pressAt{0.0F}, lastMouse{0.0F};
             BoardView view; // what the player sees this frame
@@ -194,6 +197,7 @@ namespace
                 play->SetCaptions(captions);
                 play->SetWords(&words);
                 table.SetFeatured(FeaturedCells(def, play->State()));
+                table.NewNight(), seenLog = play->State().logCount, wasLooking = false;
                 if (screens.Ready() && play->State().player >= 0)
                     screens.Ui().Open("hud");
                 if (screens.Ready())
@@ -259,6 +263,8 @@ namespace
                     if (input.IsKeyPressed(InputKey::Escape))
                         play->Key(InputKey::Escape), uiInput.back = false;
                     play->Update(dt);
+                    if (options.look && play->Screen() == "menu")
+                        (void)play->HandleUi("menu", "look", ""), options.look = false;
                     const NightState &state = play->State();
                     // While following, the camera eases to whatever Play says to look at; a drag frees it.
                     const int look = play->CameraCell();
@@ -273,7 +279,7 @@ namespace
                         pressAt = uiInput.mouse, dragging = false;
                     if (held && !dragging && glm::length(uiInput.mouse - pressAt) > 4.0F)
                         dragging = true, play->Drag();
-                    if (held && dragging)
+                    if (held && dragging && play->StageCell() < 0)
                         table.Pan(uiInput.mouse - lastMouse);
                     table.Zoom(input.Wheel());
                     table.Update(dt);
@@ -286,10 +292,25 @@ namespace
                             if (input.IsKeyPressed(key))
                                 play->Key(key);
                     }
-                    play->Hover(table.Pick(def, uiInput.mouse, pixels));
                     view = MakeView(def, state, state.player);
+                    // The figures play what the log says: blows, powers, falls.
+                    table.React(NewLog(state, seenLog)), seenLog = state.logCount;
+                    if (play->Looking() != wasLooking)
+                        table.StageStart(play->Looking() ? state.player : -1), wasLooking = play->Looking();
                     table.Animate(def, view, ToDraw(play->Sliding()), dt);
-                    table.Draw(def, view, play->Previewed().path, play->Previewed().affordable, ToDraw(play->Sliding()), play->Rings(), drawList);
+                    // The room at full size (Look, or a battle in the player's light), else the table.
+                    if (const int stage = play->StageCell(); stage >= 0)
+                    {
+                        std::vector<Table::StageActor> actors;
+                        for (const Play::Actor &a : play->StageActors())
+                            actors.push_back({a.guest, a.monsterKind, a.side, a.taken});
+                        table.DrawStage(def, view, stage, actors, drawList);
+                    }
+                    else
+                    {
+                        play->Hover(table.Pick(def, uiInput.mouse, pixels));
+                        table.Draw(def, view, play->Previewed().path, play->Previewed().affordable, ToDraw(play->Sliding()), play->Rings(), drawList);
+                    }
                     // Saves: at each new round, and gone once the night is over.
                     if (state.player >= 0 && !state.over && state.round != savedRound)
                         WriteSave(*play), savedRound = state.round;
@@ -312,7 +333,7 @@ namespace
                     data["warnings"] = screens.Problems();
                     // Labels over pawns in view: "thinking..." and the group numbers (Table.md).
                     data["labels"] = nlohmann::json::array();
-                    if (play)
+                    if (play && play->StageCell() < 0)
                     {
                         const auto label = [&](int guest, const std::string &text, float up) {
                             for (const PawnView &pawn : view.pawns)
@@ -356,7 +377,15 @@ namespace
                 if (uiInput.click)
                     pressTook = uiTook;
                 if (play && wasHeld && !input.IsMouseButtonHeld(0) && !dragging && !pressTook)
-                    play->Click(table.Pick(def, uiInput.mouse, pixels));
+                {
+                    // On the stage a click walks the figure, or takes the passage at a doorway.
+                    glm::vec3 floor{0.0F};
+                    int door = -1;
+                    if (play->Looking() && table.StagePick(view, play->StageCell(), uiInput.mouse, pixels, floor, door))
+                        door >= 0 ? (void)play->LookDoor(door) : table.WalkTo(floor);
+                    else if (play->StageCell() < 0)
+                        play->Click(table.Pick(def, uiInput.mouse, pixels));
+                }
                 wasHeld = input.IsMouseButtonHeld(0), lastMouse = uiInput.mouse;
                 if (play && input.IsMouseButtonPressed(2) && !uiTook) // the right button inspects
                     play->Click(table.Pick(def, uiInput.mouse, pixels), true);
@@ -392,7 +421,7 @@ namespace
 
 int main(int argc, char **argv)
 {
-    // --seed N, --player <guest id>, --watch, --capture <png>, --frames N.
+    // --seed N, --player <guest id>, --watch, --look, --capture <png>, --frames N.
     Options options;
     for (int i = 1; i < argc; ++i)
     {
@@ -404,6 +433,8 @@ int main(int argc, char **argv)
             options.player = argv[++i];
         else if (arg == "--watch")
             options.watch = true;
+        else if (arg == "--look")
+            options.look = true;
         else if (arg == "--capture" && more)
             options.capture = argv[++i];
         else if (arg == "--frames" && more)
