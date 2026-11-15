@@ -6,7 +6,7 @@
       { "type": "text", "style": "title", "text": "{clock}" },
       { "type": "text", "style": "small", "text": "Round {round} of {rounds}  |  {phase}" },
       { "type": "spacer", "size": [120, 0] },
-      { "type": "image", "image": "{top.portrait}", "size": [44, 44] },
+      { "type": "list", "items": "{topList}", "as": "p", "action": "focus", "entry": { "type": "image", "image": "{p.portrait}", "size": [44, 44] } },
       { "type": "text", "style": "heading", "text": "{top.name}  Lv {top.level}" },
       { "type": "text", "style": "strong", "text": "HP {top.hp}/{top.maxHp}   Might {top.might}   Sanity {top.sanity}   Speed {top.speed}" },
       { "type": "text", "style": "warning", "text": "THEIR TURN", "visible": "{top.theirs}" },
@@ -29,9 +29,8 @@
       { "type": "text", "style": "heading", "text": "In your light", "visible": "{inLight}" },
       { "type": "list", "items": "{inLight}", "as": "g", "entry": { "type": "text", "style": "small", "text": "{g.name}  |  {g.room}", "wrap": true, "size": [230, 0] } }
     ] },
-    { "type": "button", "anchor": "bottom-right", "offset": [-24, -60], "size": [140, 44], "text": "Focus", "action": "focus", "visible": "{focus}" },
-    { "type": "button", "anchor": "bottom-right", "offset": [-24, -116], "size": [140, 44], "text": "Skip", "action": "skip", "visible": "{canSkip}" },
-    { "type": "button", "anchor": "bottom-right", "offset": [-24, -172], "size": [140, 44], "text": "{view}", "action": "look" },
+    { "type": "button", "anchor": "bottom-right", "offset": [-24, -60], "size": [140, 44], "text": "Skip", "action": "skip", "visible": "{canSkip}" },
+    { "type": "button", "anchor": "bottom-right", "offset": [-24, -116], "size": [140, 44], "text": "{view}", "action": "look", "visible": "{canView}" },
     { "type": "stack", "anchor": "bottom-left", "offset": [24, -48], "style": "panel", "gap": 4, "size": [260, 0], "visible": "{here}", "children": [
       { "type": "text", "style": "heading", "text": "{here.name}", "wrap": true, "size": [230, 0] },
       { "type": "text", "style": "small", "text": "{here.what}", "wrap": true, "size": [230, 0] },

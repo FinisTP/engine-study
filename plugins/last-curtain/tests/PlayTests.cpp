@@ -1055,15 +1055,13 @@ TEST_CASE("The camera follows each step of a walk (T128)", "[night][play]")
     CHECK(looked == std::vector<int>{West(def, 1), West(def, 2), West(def, 3)});
 }
 
-TEST_CASE("A drag stops following until Focus (T128)", "[night][play]")
+TEST_CASE("A drag stops following until the portrait is clicked (T128, T163)", "[night][play]")
 {
     const NightDef def = Data();
     Play play(def, PlayerCorridor(def, 2, 4));
     CHECK(play.Following());
-    CHECK(play.UiData()["focus"] == false);
     play.Drag();
     CHECK_FALSE(play.Following());
-    CHECK(play.UiData()["focus"] == true);
     REQUIRE(play.HandleUi("hud", "focus", ""));
     CHECK(play.Following());
 }
@@ -1386,9 +1384,19 @@ TEST_CASE("Room view is a switch: the player plays on in it; the night does not 
     GoTo(play, step); // a click on a room's floor walks, as on the table
     CHECK(play.State().guests[0].cell == step);
     CHECK(play.RoomView()); // the view stays as chosen
-    // 2. The switch works on a bot's turn too, and the bots go on.
+    // 2. Off the player's turn the switch does nothing (the user: it is the player's to use).
     REQUIRE(play.HandleUi("hud", "look", ""));
     CHECK_FALSE(play.RoomView());
+    Play bot = BotFirst(def);
+    REQUIRE_FALSE(bot.PlayerTurn());
+    CHECK_FALSE(bot.HandleUi("hud", "look", ""));
+    CHECK_FALSE(bot.RoomView());
+    CHECK(bot.UiData()["canView"] == false);
+    // 3. The top bar's portrait is the focus: a list of one, its action "focus".
+    bot.Drag();
+    REQUIRE(bot.HandleUi("hud", "focus", ""));
+    CHECK(bot.Following());
+    CHECK(bot.UiData()["topList"].size() == 1);
 }
 
 TEST_CASE("In room view a click on a figure engages it; a click on a floor item picks it up (T158)", "[night][play][stage]")

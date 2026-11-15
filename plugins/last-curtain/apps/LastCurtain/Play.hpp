@@ -74,6 +74,7 @@ public:
     };
     // The room view (the user's switch, "look"; Table.md "Room view"), or a moment that shows its room.
     [[nodiscard]] bool RoomView() const { return roomView_ || StageCell() >= 0; }
+    [[nodiscard]] bool CanView() const { return !state_.over && state_.player >= 0 && (PlayerTurn() || resting_); }
     [[nodiscard]] int StageCell() const; // a moment's room (an event, a deed in sight, a battle in light); -1: none
     [[nodiscard]] std::vector<Actor> StageActors() const; // who stands in StageCell, a battle's sides apart
     // Clicks on things in the room view: a floor item (state.floor index), a guest, a monster (state.monsters index).

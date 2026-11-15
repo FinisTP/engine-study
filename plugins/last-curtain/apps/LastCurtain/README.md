@@ -22,7 +22,7 @@ with the vcpkg feature `town-model-gpu`; without it the night uses its written l
 ## Playing
 
 Everything is done with the mouse; keys are shortcuts. Your turn opens with a menu (Move, Room
-view, fights, chats, Use item, End turn). **Room view** (or the HUD button) switches between the
+view, fights, chats, Use item, End turn). **Room view** (or the HUD button; on your own turn only) switches between the
 table and every opened room at full size, zooming in; play on in either: click a room to walk there
 (Move first shows the path: gold for the steps you can pay for, red beyond), in the room view click
 a guest to talk (or fight, after midnight), a monster card to fight it, an item on the floor to take
@@ -30,7 +30,7 @@ it. Moves count as the shortest way back to where your turn began, so walking ba
 a room, or a room that stops you, makes the moves final. A closed door asks Stay (open it) or Back.
 An event, trap or item room plays step by step at the side of the screen: the room, the card, a
 tumbling die, the result in words; then you may look around before End turn. Drag to look, the wheel
-zooms, Focus brings the camera back to whoever acts. A gold arrow bobs over whoever's turn it is
+zooms; a click on the portrait in the top bar brings the camera back to whoever acts. A gold arrow bobs over whoever's turn it is
 (the top bar shows their stats); the bottom-left panel tells what waits in your room and how to
 clear it. On a bot's turn, a deed in your sight shows its room and waits for a click (or Space);
 Skip runs the bots to your turn. A right-click inspects a room. Esc goes back one step; from the

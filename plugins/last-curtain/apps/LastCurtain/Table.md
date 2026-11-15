@@ -21,7 +21,7 @@
 6. **Looking around**: dragging with the left button moves the table with the mouse: the look-at
    point shifts by the drag times `distance / 700` metres a pixel (x across, y toward the camera),
    so the board stays under the cursor at any zoom. A drag stops the camera following (`Play::Drag`)
-   until the Focus button. A board click is the button let go without a drag.
+   until the next turn or a click on the top bar's portrait. A board click is the button let go without a drag.
 7. **Labels**: "thinking..." and the group numbers float over pawns. `Above` is the pawn's top;
    `ScreenPoint` takes it through the camera's view and projection to clip space, divides by `w`
    (points behind the eye are dropped) and maps -1..1 to pixels, y down. The `labels` screen draws
@@ -31,8 +31,8 @@
 
 ## Room view (plans 4b and 4c, the user's feedback of 2026-11-15)
 
-The player switches between the table and the room view at any time (`Room view` / `Board view`
-in the turn menu, or the HUD button; `Play::RoomView`); a moment (an event, a deed in sight, a
+On their own turn (or its rest) the player switches between the table and the room view (`Room
+view` / `Board view` in the turn menu, or the HUD button; `Play::RoomView`, `CanView`); a moment (an event, a deed in sight, a
 battle in light, `Play::StageCell`) shows the room view on its own. The night goes on in either.
 
 1. **The world:** every opened room at full size, 8 × 8 m, where its tile lies on the table: a
@@ -42,7 +42,9 @@ battle in light, `Play::StageCell`) shows the room view on its own. The night go
    35 % brightness. Guests stand where their pawns stand (`Place` × `roomScale`, so a slide walks
    them from room to room); monsters are framed cards at the back of their room, floor items
    painted tokens at the front. A battle in sight stands its sides apart in its room.
-2. **The camera:** the table's camera target, scaled, seen from the front corner
+2. **The camera** (`TableCamera`): the target always stays on the table (an Aim from the room view
+   once took the scaled target for a table one and flew off: blank screen); the room view scales it,
+   seen from the front corner
    (normalize(5.2, 5.1, 7.5) × the room distance). Switching eases `roomT_` 0 → 1 over 0.6 s; on
    the way the camera glides from the table's seat (scaled, so the rooms first appear exactly
    where the tiles were) to the corner: a zoom-in. Drag pans (the same pixels move the table

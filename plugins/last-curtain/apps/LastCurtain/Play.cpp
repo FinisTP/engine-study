@@ -388,8 +388,8 @@ bool Play::HandleUi(const std::string &, const std::string &action, const std::s
         return !(pause_ = false);
     if (action == "close" && inspect_ >= 0)
         return (inspect_ = -1), true;
-    if (action == "look") // the view switch, from any screen
-        return roomView_ = !roomView_, true;
+    if (action == "look") // the view switch: the player's own, on their turn or its rest (the user)
+        return CanView() && (roomView_ = !roomView_, true);
     if (resting_ && Screen() == "rest" && action == "end")
         return !(resting_ = false);
     if (!PlayerTurn())
@@ -631,13 +631,13 @@ nlohmann::json Play::UiData() const
     if (state_.player >= 0)
         data["here"] = HereData();
     data["view"] = roomView_ ? "Board view" : "Room view"; // the switch's label
+    data["canView"] = CanView();
     if (state_.over)
         data["end"] = EndData();
     if (turn_ && !state_.over)
         data["turn"] = TurnData();
     if (inspect_ >= 0)
         data["inspect"] = InspectData();
-    data["focus"] = !following_;
     if (beat_.seen && (hold_ > 0.0F || waitTap_))
         data["caption"] = {{"guest", ShownName(def_, state_, beat_.guest)}, {"line", beat_.caption}, {"result", beat_.result}, {"tap", waitTap_},
                            {"preview", preview_}, {"event", beatEvent_ >= 0 ? def_.events[U(beatEvent_)].name : ""}, {"eventText", beatEvent_ >= 0 ? def_.events[U(beatEvent_)].text : ""},
@@ -663,13 +663,15 @@ nlohmann::json Play::UiData() const
                   {"might", Stat(def_, state_, me, StatKind::Might)}, {"sanity", Stat(def_, state_, me, StatKind::Sanity)},
                   {"speed", Stat(def_, state_, me, StatKind::Speed)}, {"level", guest.level}, {"buffs", buffs},
                   {"flash", flashClock_ > 0.0F ? flash_ : ""}}; // an HP change, for a moment
-    // The top bar: whoever acts (a bot on its turn, marked as theirs), else the player.
+    // The top bar: whoever acts (a bot on its turn, marked as theirs), else the player; its portrait,
+    // a list of one so it can be clicked, brings the camera back to them ("focus").
     const int top = !PlayerTurn() && !state_.over && Current(state_) >= 0 ? Current(state_) : me;
     const Guest &t = state_.guests[U(top)];
     data["top"] = {{"name", ShownName(def_, state_, top)}, {"portrait", ArtPath("portraits", def_.guests[U(top)].id).generic_string()},
                    {"hp", t.hp}, {"maxHp", Stat(def_, state_, top, StatKind::MaxHp)}, {"might", Stat(def_, state_, top, StatKind::Might)},
                    {"sanity", Stat(def_, state_, top, StatKind::Sanity)}, {"speed", Stat(def_, state_, top, StatKind::Speed)},
                    {"level", t.level}, {"theirs", top != me}};
+    data["topList"] = nlohmann::json::array({data["top"]});
     data["moves"] = guest.movesLeft;
     // The player's own goal, and the goals it has learnt in chats.
     data["knownGoals"] = nlohmann::json::array();
@@ -1081,7 +1083,7 @@ int Play::CameraCell() const
 
 void Play::Follow()
 {
-    // A new turn: the camera follows again (a drag frees it only until then; Focus brings it back at once).
+    // A new turn: the camera follows again (a drag frees it only until then; a click on the top bar's portrait brings it back at once).
     const int key = state_.round * 8 + state_.turn;
     if (key != followTurn_)
         following_ = true, followTurn_ = key;

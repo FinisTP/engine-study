@@ -24,8 +24,6 @@ using namespace umbra::night;
 namespace
 {
     constexpr float tile = 2.2F, tileThick = 0.15F;
-    constexpr float roomScale = 8.0F / cellSize; // the room view: an 8 m room where a cell's tile lies
-    constexpr float viewSeconds = 0.6F;          // the zoom between the table and the room view
 
     glm::vec4 Hex(std::uint32_t rgb)
     {
@@ -214,7 +212,7 @@ void Table::Animate(const NightDef &def, const BoardView &view, const Slide &sli
 void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<int> &path, int affordable, const Slide &slide,
                  const std::vector<std::pair<int, int>> &rings, umbra::core::DrawList &out) const
 {
-    if (roomT_ > 0.0F)
+    if (view_.RoomT() > 0.0F)
         return DrawRooms(def, view, path, affordable, slide, rings, out);
     // 1. Light: indoors, dim ambient (red in the hunt), one warm lamp over the middle of the table.
     umbra::core::EnvironmentSettings settings;
@@ -375,7 +373,7 @@ glm::vec3 Table::Above(const NightDef &def, const BoardView &view, int guest, co
     bool taken = false;
     for (const PawnView &pawn : view.pawns)
         taken = pawn.guest == guest ? pawn.taken : taken;
-    if (roomT_ > 0.0F)
+    if (view_.RoomT() > 0.0F)
         return Place(def, view, guest, slide) * roomScale + glm::vec3{0.0F, taken ? 3.0F : 2.4F, 0.0F};
     return Place(def, view, guest, slide) + glm::vec3{0.0F, taken ? 1.45F : 1.2F, 0.0F};
 }
@@ -394,19 +392,10 @@ std::optional<glm::vec2> Table::ScreenPoint(glm::vec3 world, glm::vec2 pixels) c
     return glm::vec2{(ndc.x * 0.5F + 0.5F) * pixels.x, (0.5F - ndc.y * 0.5F) * pixels.y};
 }
 
-void Table::Aim(glm::vec3 target, float seconds)
-{
-    from_ = Camera().target;
-    to_ = target;
-    seconds_ = seconds;
-    elapsed_ = 0.0F;
-}
-
 void Table::Update(float dt)
 {
-    elapsed_ = std::min(elapsed_ + dt, seconds_), clock_ += dt;
-    // The view zooms between the table and the rooms over viewSeconds.
-    roomT_ = std::clamp(roomT_ + (wantRoom_ ? dt : -dt) / viewSeconds, 0.0F, 1.0F);
+    clock_ += dt;
+    view_.Update(dt);
 }
 
 float Table::Lamp() const
@@ -433,45 +422,6 @@ void Table::Floor(umbra::core::DrawList &out, umbra::core::TextureHandle art, co
     out.items.back().surface = out.SurfaceIndex("dread");
 }
 
-void Table::Pan(glm::vec2 pixels)
-{
-    // A pixel covers more of the table the farther the camera is: about distance / 700 metres (in the
-    // room view the rooms are roomScale times larger, so the same drag moves the table that much less).
-    const float metres = roomT_ > 0.0F ? roomDistance_ / roomScale : distance_;
-    const float t = seconds_ > 0.0F ? elapsed_ / seconds_ : 1.0F;
-    const glm::vec3 target = from_ + (to_ - from_) * (t * t * (3.0F - 2.0F * t)) - glm::vec3{pixels.x, 0.0F, pixels.y} * (metres / 700.0F);
-    from_ = to_ = target;
-    elapsed_ = seconds_;
-}
-
-void Table::Zoom(float steps)
-{
-    if (wantRoom_)
-        roomDistance_ = std::clamp(roomDistance_ - steps * 2.0F, 6.0F, 45.0F);
-    else
-        distance_ = std::clamp(distance_ - steps, minDistance_, maxDistance_);
-}
-
-umbra::core::Camera Table::Camera() const
-{
-    // Ease in and out (smoothstep) from the old target to the new; the camera sits up and back at `tilt`.
-    const float t = seconds_ > 0.0F ? elapsed_ / seconds_ : 1.0F;
-    umbra::core::Camera camera;
-    camera.target = from_ + (to_ - from_) * (t * t * (3.0F - 2.0F * t));
-    const glm::vec3 up{0.0F, std::sin(glm::radians(tilt_)), std::cos(glm::radians(tilt_))};
-    camera.position = camera.target + distance_ * up;
-    if (roomT_ <= 0.0F)
-        return camera;
-    // The room view: the same place, roomScale times larger, seen from the front corner (Table.md "Room
-    // view"). Halfway, the camera glides between the table's seat (scaled) and the corner's.
-    const float e = roomT_ * roomT_ * (3.0F - 2.0F * roomT_);
-    const glm::vec3 target = camera.target * roomScale;
-    camera.target = target + glm::vec3{0.0F, 0.7F * e, 0.0F};
-    camera.position = glm::mix(target + up * (distance_ * roomScale), camera.target + glm::normalize(glm::vec3{5.2F, 5.1F, 7.5F}) * roomDistance_, e);
-    camera.farPlane = std::max(camera.farPlane, 400.0F);
-    return camera;
-}
-
 int Table::Pick(const NightDef &def, glm::vec2 mouse, glm::vec2 pixels) const
 {
     // 1. The mouse in normalized device coordinates (screen y grows downward).
@@ -486,7 +436,7 @@ int Table::Pick(const NightDef &def, glm::vec2 mouse, glm::vec2 pixels) const
     const glm::vec4 nearPoint = inverse * glm::vec4{ndc, -1.0F, 1.0F}, farPoint = inverse * glm::vec4{ndc, 1.0F, 1.0F};
     const glm::vec3 origin = glm::vec3(nearPoint) / nearPoint.w;
     // In the room view the world is roomScale times larger: scale the ray back to the table.
-    const float scale = roomT_ > 0.0F ? roomScale : 1.0F;
+    const float scale = view_.RoomT() > 0.0F ? roomScale : 1.0F;
     return CellUnderRay(def, origin / scale, glm::vec3(farPoint) / farPoint.w - origin);
 }
 
@@ -590,7 +540,7 @@ glm::vec3 Table::Ray(glm::vec2 mouse, glm::vec2 pixels, glm::vec3 &origin) const
 std::optional<Table::Thing> Table::PickThing(glm::vec2 mouse, glm::vec2 pixels) const
 {
     // 1. In the room view only: the ray at knee height (0.6 m) and at the floor.
-    if (roomT_ < 1.0F || pixels.x <= 0.0F || pixels.y <= 0.0F)
+    if (view_.RoomT() < 1.0F || pixels.x <= 0.0F || pixels.y <= 0.0F)
         return std::nullopt;
     glm::vec3 origin{0.0F};
     const glm::vec3 direction = Ray(mouse, pixels, origin);

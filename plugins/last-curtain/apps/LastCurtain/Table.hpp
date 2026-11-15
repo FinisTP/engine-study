@@ -1,5 +1,7 @@
 #pragma once
 
+#include "TableCamera.hpp"
+
 #include <BoardView.hpp>
 
 #include <Animator.hpp>
@@ -41,12 +43,12 @@ public:
     // The night's mood (Art.hpp NightMood): blood on the floors, how much the lamp flickers.
     // readable: the glow of walls, figures and items (Art.hpp Readability), so they read under the mood.
     void SetMood(float blood, float flicker, float readable) { blood_ = blood, flicker_ = flicker, readable_ = readable; }
-    void Aim(glm::vec3 target, float seconds);
+    void Aim(glm::vec3 target, float seconds) { view_.Aim(target, seconds); }
     void Update(float dt);
     // The room view (Table.md "Room view"): every opened room at full size, 8 m apart where its tile
     // lies on the table; the camera zooms between the two views. Draw draws whichever is on.
-    void SetRoomView(bool on) { wantRoom_ = on; }
-    [[nodiscard]] bool InRoomView() const { return roomT_ > 0.0F; }
+    void SetRoomView(bool on) { view_.SetRoomView(on); }
+    [[nodiscard]] bool InRoomView() const { return view_.RoomT() > 0.0F; }
     struct StageActor
     {
         int guest = -1, monsterKind = -1, side = 0;
@@ -71,16 +73,13 @@ public:
     void SetFeatured(std::vector<bool> featured) { featured_ = std::move(featured); }
     // The figures: a sliding pawn faces its step and walks, the others stand idle (Table.md).
     void Animate(const umbra::night::NightDef &def, const umbra::night::BoardView &view, const Slide &slide, float dt);
-    void Zoom(float steps);
+    void Zoom(float steps) { view_.Zoom(steps); }
     // The camera's distance (and its zoom range) and tilt in degrees (options.csv).
-    void SetCamera(float distance, float minDistance, float maxDistance, float tilt)
-    {
-        baseDistance_ = distance_ = distance, minDistance_ = minDistance, maxDistance_ = maxDistance, tilt_ = tilt;
-    }
+    void SetCamera(float distance, float minDistance, float maxDistance, float tilt) { view_.Set(distance, minDistance, maxDistance, tilt); }
     // The guest whose turn it is: a gold arrow bobs over them (-1: none).
     void SetActing(int guest) { acting_ = guest; }
-    void Pan(glm::vec2 pixels); // a drag: the table moves with the mouse (Table.md)
-    [[nodiscard]] umbra::core::Camera Camera() const;
+    void Pan(glm::vec2 pixels) { view_.Pan(pixels); } // a drag: the table moves with the mouse (Table.md)
+    [[nodiscard]] umbra::core::Camera Camera() const { return view_.Camera(); }
     // The cell under the mouse (render pixels), -1 if none.
     [[nodiscard]] int Pick(const umbra::night::NightDef &def, glm::vec2 mouse, glm::vec2 pixels) const;
 
@@ -112,9 +111,7 @@ private:
     std::vector<umbra::core::TextureHandle> cardArt_; // by monsters.csv row (minions too)
     std::vector<umbra::core::TextureHandle> itemArt_; // by items.csv row
     std::vector<bool> featured_;                      // by cell: a gold frame
-    bool wantRoom_ = false;
-    float roomT_ = 0.0F;          // 0 the table, 1 the room view; eased over viewSeconds
-    float roomDistance_ = 11.0F;  // the room view's camera distance (metres; the wheel)
+    TableCamera view_; // the camera, the table or the room view (TableCamera.hpp)
     int battleCell_ = -1;
     std::vector<StageActor> battleActors_;
     struct HitBox
@@ -131,10 +128,6 @@ private:
     void StageRoom(const umbra::night::CellView &room, glm::vec3 offset, float shade, bool featured, umbra::core::DrawList &out) const;
     void StageCard(int kind, glm::vec3 at, umbra::core::DrawList &out) const;
     void StageFigure(const umbra::night::NightDef &def, int guest, bool taken, glm::vec3 at, float yaw, umbra::core::DrawList &out) const;
-    glm::vec3 from_{0.0F}, to_{0.0F};
-    float seconds_ = 0.0F, elapsed_ = 0.0F;
-    float baseDistance_ = 11.0F; // the designed distance: the stage seat's zoom is distance_ / this
-    float distance_ = 11.0F, minDistance_ = 5.0F, maxDistance_ = 22.0F, tilt_ = 50.0F;
     int acting_ = -1;
     bool hunt_ = false;
     float blood_ = 0.0F, flicker_ = 0.0F, clock_ = 0.0F, readable_ = 0.2F; // clock_: seconds, for the flicker and pulse
