@@ -451,8 +451,6 @@ namespace umbra::ui
                     {
                         if (input.mouseMoved)
                             focus = i;
-                        if (input.click)
-                            actions.push_back({target, choices[static_cast<std::size_t>(i)].action, choices[static_cast<std::size_t>(i)].arg});
                     }
                 if (input.confirm)
                     actions.push_back({target, choices[static_cast<std::size_t>(focus)].action, choices[static_cast<std::size_t>(focus)].arg});
@@ -460,6 +458,19 @@ namespace umbra::ui
             if (input.back && !screens_.at(target).back.empty())
                 actions.push_back({target, screens_.at(target).back, ""});
         }
+        // 1b. A click: the topmost screen with a choice under the mouse takes it; a dimmed screen blocks those below.
+        if (input.click)
+            for (auto it = stack_.rbegin(); it != stack_.rend(); ++it)
+            {
+                const auto hit = std::find_if(choices_[*it].begin(), choices_[*it].end(), [&](const Choice &c) { return c.rect.Contains(input.mouse); });
+                if (hit != choices_[*it].end())
+                {
+                    actions.push_back({*it, hit->action, hit->arg});
+                    break;
+                }
+                if (screens_.at(*it).dim)
+                    break;
+            }
         // 2. The UI's own actions: "close" closes the screen, "open:<screen>" opens one.
         for (const UiAction &action : actions)
         {

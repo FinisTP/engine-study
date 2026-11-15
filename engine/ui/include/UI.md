@@ -36,7 +36,7 @@ All under a project's or plugin's `assets/ui/` (project files win, see `AssetFol
   ] } }
 ```
 
-- `modal`: takes the input; screens below it get none. `dim`: darkens what is behind it.
+- `modal`: takes the keys (screens below get none; clicks follow rule 4 below). `dim`: darkens what is behind it.
 - `back`: the action for Esc / gamepad B (`close` closes the screen).
 
 ### Widgets
@@ -83,8 +83,10 @@ The top modal screen takes the input (`UiInput`, mapped from keys, mouse and gam
 1. The choosable widgets (buttons and list entries with an action, not disabled) are collected
    while drawing, in reading order.
 2. Next frame, up/left and down/right move the focus through that list (wrapping); the mouse
-   focuses what it is over; confirm or a click sends the focused one's action.
+   focuses what it is over; confirm sends the focused one's action.
 3. Back sends the screen's `back` action.
+4. A click goes to the topmost screen with a choice under the mouse, modal or not, so a HUD's
+   buttons work beside a menu; a dimmed (`dim`) screen blocks clicks on everything below it.
 
 Two actions belong to the UI itself: `close` closes the screen and `open:<screen>` opens one on
 top. Everything else goes back to the game from `Update`.

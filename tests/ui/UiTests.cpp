@@ -255,3 +255,44 @@ TEST_CASE("Turn menu: Attack -> move -> target arrow at its point; hotkeys scree
     // Hotkeys: the first choice is key 1.
     CHECK(press("hotkeys", confirm) == std::vector<std::string>{"slot 0"});
 }
+
+TEST_CASE("A click goes to the topmost screen with a choice under it; a dimmed screen blocks those below (UI.md)")
+{
+    const auto screen = [](bool modal, bool dim, const char *anchor, const char *action) {
+        return json{{"format", "umbra.ui"}, {"version", 1}, {"modal", modal}, {"dim", dim},
+                    {"root", {{"type", "button"}, {"anchor", anchor}, {"size", {200, 50}}, {"text", action}, {"action", action}}}};
+    };
+    ui::UiSystem uiSystem;
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(uiSystem.Load(TestProject("click", {{"hud", screen(false, false, "top-left", "focus")}, {"menu", screen(true, false, "center", "move")},
+                                                 {"dialog", screen(true, true, "bottom", "roll")}}),
+                          diagnostics));
+    core::UiDrawList draw;
+    const auto press = [&](glm::vec2 at) {
+        ui::UiInput click;
+        click.mouse = at;
+        click.mouseMoved = click.click = true;
+        draw.Clear();
+        uiSystem.Update({}, {1280, 720}, {}, draw); // lay out first
+        draw.Clear();
+        std::vector<std::string> got;
+        for (const ui::UiAction &a : uiSystem.Update({}, {1280, 720}, click, draw))
+            got.push_back(a.screen + " " + a.action);
+        return got;
+    };
+    // 1. No modal screen: the HUD's button takes the click.
+    REQUIRE(uiSystem.Open("hud"));
+    CHECK(press({100, 25}) == std::vector<std::string>{"hud focus"});
+    // 2. A modal menu on top takes the keys, but a click on the HUD still reaches it; the menu's own works.
+    REQUIRE(uiSystem.Open("menu"));
+    CHECK(press({100, 25}) == std::vector<std::string>{"hud focus"});
+    CHECK(press({640, 360}) == std::vector<std::string>{"menu move"});
+    ui::UiInput confirm;
+    confirm.confirm = true;
+    draw.Clear();
+    CHECK(uiSystem.Update({}, {1280, 720}, confirm, draw).at(0).action == "move");
+    // 3. A dimmed dialog blocks every click below it.
+    REQUIRE(uiSystem.Open("dialog"));
+    CHECK(press({100, 25}).empty());
+    CHECK(press({640, 695}) == std::vector<std::string>{"dialog roll"});
+}
