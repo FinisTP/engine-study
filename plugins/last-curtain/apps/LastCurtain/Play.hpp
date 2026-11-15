@@ -172,7 +172,9 @@ private:
     int pendingGuest_ = -1;
     float think_ = 0.0F;
     int thoughtTurn_ = -1;
-    bool following_ = true; // round * 8 + turn of the last bot turn that thought
+    bool following_ = true;
+    int followTurn_ = -1; // round * 8 + turn when the camera last began following
+    void Follow(); // round * 8 + turn of the last bot turn that thought
     umbra::night::Words *words_ = nullptr;
     float clock_ = 0.0F;                      // seconds of Update, for the line waits
     float askedAt_ = 0.0F, turnAskedAt_ = 0.0F, chatAskedAt_ = 0.0F;

@@ -1759,3 +1759,20 @@ TEST_CASE("A bot's last beat that waits still shows its caption when the player'
     }
     CHECK(seen > 0);
 }
+
+TEST_CASE("The camera follows whoever acts; a drag frees it only until the next turn (T154)", "[night][play][camera]")
+{
+    const NightDef def = Data();
+    Play play(def, FoyerNight(def, 4, 0));
+    ToPlayer(play);
+    REQUIRE(play.PlayerTurn());
+    play.Drag();
+    CHECK_FALSE(play.Following());
+    play.Key(InputKey::Enter); // end the turn: the next guest acts
+    REQUIRE_FALSE(play.PlayerTurn());
+    CHECK(play.Following());
+    // A bot in the player's sight: the camera is on it.
+    const int bot = Current(play.State());
+    if (MakeView(def, play.State(), play.State().player).cells[static_cast<std::size_t>(play.State().guests[static_cast<std::size_t>(bot)].cell)].lit)
+        CHECK(play.CameraCell() == play.State().guests[static_cast<std::size_t>(bot)].cell);
+}

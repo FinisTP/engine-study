@@ -122,6 +122,7 @@ bool Play::Do(const Action &action)
     if (!Apply(def_, state_, action))
         return false;
     Notice(before.logCount);
+    Follow();
     // 1b. A room resolved on a move ends the turn in the rules; the player may still look around it.
     resting_ = action.kind == ActionKind::Move && !PlayerTurn() && !state_.over && !state_.battle.active;
     if (resting_)
@@ -501,6 +502,7 @@ void Play::Update(float dt)
     const Action action = pendingAction_;
     if (!Apply(def_, state_, action))
         return;
+    Follow();
     if (action.kind == ActionKind::Move && before.guests[U(acting)].cell != state_.guests[U(acting)].cell)
         slide_ = {acting, before.guests[U(acting)].cell, state_.guests[U(acting)].cell, 0.0F};
     Notice(before.logCount);
@@ -984,7 +986,20 @@ int Play::CameraCell() const
         return beat_.camera;
     if (ThinkingGuest() >= 0)
         return state_.guests[U(ThinkingGuest())].cell;
-    return PlayerTurn() ? state_.guests[U(Current(state_))].cell : -1;
+    // Whoever acts: the player's guest always, a bot while the player can see it.
+    const int acting = Current(state_);
+    if (acting < 0 || state_.over)
+        return -1;
+    const int cell = state_.guests[U(acting)].cell;
+    return PlayerTurn() || state_.player < 0 || MakeView(def_, state_, state_.player).cells[U(cell)].lit ? cell : -1;
+}
+
+void Play::Follow()
+{
+    // A new turn: the camera follows again (a drag frees it only until then; Focus brings it back at once).
+    const int key = state_.round * 8 + state_.turn;
+    if (key != followTurn_)
+        following_ = true, followTurn_ = key;
 }
 
 nlohmann::json Play::InspectData() const
