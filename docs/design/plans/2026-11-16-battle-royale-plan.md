@@ -70,3 +70,4 @@ Stage 1: complete (#UMBRA-218; RoyaleTests T228-T234, suite 181/182, the balance
 Stage 2: complete (#UMBRA-219; T236-T240; soak 0 faults, 1.7 nights per run: too deadly, for stage 6)
 Stage 3: complete (#UMBRA-220; T241-T245; quests.csv, 9 quests; powers for guests; bots race quests and use powers: 3.3 quests and 2.1 powers a night; soak 0 faults, 1.6 nights per run)
 Stage 4: complete (#UMBRA-221; T246-T249; requests spare/item/target, truces, hunts, natures kind/dirty/wicked; Play tests use calm, even guests)
+Stage 5: complete (#UMBRA-222; T250-T255; quest panel, power, ghost HUD and figure, the killer drawn and heard, every seen death staged, midnight/dawn/ending scenes; suite 202/202; the killer's look on the table not yet seen in a capture: it wakes at round 7). Ruling: the persuade picker is the turn menu's labelled requests (no extra screen) — fewer clicks, same choices — if wrong, a picker screen later.

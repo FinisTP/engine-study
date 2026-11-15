@@ -72,18 +72,23 @@ the page's data under `bio` when a guest is chosen.
 - **Clicks:** only the right click inspects. A dialog's whole box takes a click (`action` on its
   root, `engine/ui/include/UI.md` 5). Taps that go on (next, onward, continue, roll, begin, take,
   leave) count once per `tapGap`, so spam clicks skip nothing.
-- **The hunt:** the top bar shows the Taken's HP all hunt long. Killing a minion bound to it shows
-  the share it takes over the Taken ("-8 (its Stagehand)"). When the Taken dies, `Fall` reads the
-  last entries for the blow: a strike (who, how much), a bound minion destroyed, or a power. The
-  `fall` screen stages it in its room: the one who dealt it facing the Taken lying where it fell,
-  with the cause; then the ending's scene; then the end screen.
+- **Falls (battle royale, 2026-11-16):** every living guest's death the player sees (in a lit room,
+  or their own death or kill) is staged on the `fall` screen in the room it happened (the `Died`
+  entry keeps the room in `b`): the striker facing the fallen, and the cause (a blow and its damage,
+  a power, the killer, or the house). The night waits until Continue.
+- **The battle royale HUD:** the night number; the Quests panel (open quests with their reward, then
+  the taken ones and who took them), the player's power and its cooldown; "YOU ARE A GHOST" once dead
+  (the player plays on as a ghost); and "The killer is near. Run." when the killer is within
+  `killer.hearSteps` rooms, with its steps heard (`killer` cue) when it moves. The killer stands on
+  the table in the Taken's figure, dark red on a red ring, when its room is in sight; ghosts are
+  their guest's figure, pale blue and glowing.
 
 ## Cutscenes
 
-`assets/night/cutscenes.json` holds three scenes played on the real board: `opening` (a new
-night, not a restored one), `midnight` (at the Turn, before its screen) and `ending_company` or
-`ending_taken` (after the fall). Each shot looks at a place (`board`: the opened room nearest the
-middle; `foyer`; `player`; `taken`; `fall`), from a distance and turned by a yaw that both ease
+`assets/night/cutscenes.json` holds the scenes played on the real board: `opening` (a new
+night, not a restored one), `midnight` (the killer wakes: the `Killer` entry with `b` 0), `dawn`
+(the survivors' next night) and `ending_escaped` or `ending_house`. Each shot looks at a place (`board`: the opened room nearest the
+middle; `foyer`; `player`; `killer`; `fall`), from a distance and turned by a yaw that both ease
 (smoothstep) from the shot's start to its end, at a tilt, with a caption line and a clip for the
 shot's figure. `Shot()` gives Main the camera (`TableCamera::SetShot`: the seat at `tilt`, turned
 `yaw` degrees around the target); the HUD and labels hide. A click or Space shows the next shot,

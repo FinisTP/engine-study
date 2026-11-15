@@ -107,8 +107,8 @@ Play::Play(const NightDef &def, const NightState &state) : def_(def), state_(sta
 bool Play::PlayerTurn() const
 {
     const int acting = Current(state_);
-    // A dead player only watches; their allies go back to their bots.
-    return state_.player >= 0 && acting >= 0 && !state_.guests[U(state_.player)].dead && Controls(state_, state_.player, acting);
+    // A dead player plays on as a ghost of the house (Night.md "Ghosts").
+    return state_.player >= 0 && acting >= 0 && InPlay(state_, state_.player) && Controls(state_, state_.player, acting);
 }
 
 BoardView Play::View() const { return MakeView(def_, state_, state_.player, options_.light); }
@@ -155,6 +155,8 @@ Play::CameraShot Play::Shot() const
     shot.clip = s.value("clip", "none") == "none" ? "" : s.value("clip", "");
     if (at == "foyer")
         shot.cell = state_.foyer, shot.clipGuest = state_.player;
+    else if (at == "killer")
+        shot.cell = state_.killer.cell;
     else if (at == "player" && state_.player >= 0)
         shot.cell = state_.guests[U(state_.player)].cell, shot.clipGuest = state_.player;
     else if ((at == "taken" || at == "fall") && taken >= 0)
@@ -185,15 +187,13 @@ std::string Play::SceneLine() const
 {
     // The shot's line with its names filled in.
     std::string line = scenes_[scene_][U(shot_)].value("line", "");
-    const int taken = state_.taken.guest >= 0 ? state_.taken.guest : state_.marked;
     std::string survivors;
     for (int g = 0; g < state_.count; ++g)
-        if (!state_.guests[U(g)].dead && !IsTaken(state_, g))
+        if (Living(state_, g))
             survivors += (survivors.empty() ? "" : ", ") + def_.guests[U(g)].name;
     const std::pair<const char *, std::string> names[] = {
         {"{player}", state_.player >= 0 ? def_.guests[U(state_.player)].name : "the company"},
-        {"{guest}", taken >= 0 ? def_.guests[U(taken)].name : "someone"},
-        {"{taken}", taken >= 0 ? def_.guests[U(taken)].taken : "the Taken"},
+        {"{night}", std::to_string(state_.night)},
         {"{survivors}", survivors.empty() ? "No one" : survivors}};
     for (const auto &[key, value] : names)
         for (std::size_t at = line.find(key); at != std::string::npos; at = line.find(key, at + value.size()))
@@ -541,7 +541,7 @@ bool Play::Handle(const std::string &, const std::string &action, const std::str
         return !(pause_ = false);
     if (action == "close" && inspect_ >= 0)
         return (inspect_ = -1), true;
-    if (action == "continue" && Screen() == "fall") // the fall seen: the end
+    if (action == "continue" && Screen() == "fall") // the fall seen: the night goes on
         return fallSeen_ = true;
     if (action == "goals") // the goal panel folds and opens
         return goalOpen_ = !goalOpen_, true;
@@ -592,7 +592,7 @@ bool Play::Handle(const std::string &, const std::string &action, const std::str
 
 std::string Play::Screen() const
 {
-    if (state_.over && fall_.cell >= 0 && !fallSeen_)
+    if (fall_.cell >= 0 && !fallSeen_)
         return "fall";
     if (!scene_.empty())
         return "cutscene";
@@ -637,6 +637,8 @@ void Play::Update(float dt)
     clock_ += dt, tapClock_ += dt;
     diceClock_ += dt, flashClock_ = std::max(0.0F, flashClock_ - dt);
     std::erase_if(popups_, [&](const Popup &p) { return p.until <= clock_; });
+    if (Screen() == "fall") // a death on show: the night waits for Continue
+        return;
     // 0. A scene holds everything while its shots play, each for its seconds.
     if (Screen() == "cutscene")
     {
@@ -773,7 +775,10 @@ std::string Play::Label(const Action &action) const
     case ActionKind::PickUp: return "Pick up the " + def_.items[U(state_.floor[U(action.a)].item)].name;
     case ActionKind::UseItem: return "Use the " + def_.items[U(state_.guests[U(Me())].items[U(action.a)])].name;
     case ActionKind::DropItem: return "Drop the " + def_.items[U(state_.guests[U(Me())].items[U(action.a)])].name;
-    case ActionKind::Chat: return "Chat with " + name(action.a);
+    case ActionKind::Chat: // a request (Night.md "Persuading")
+        return action.b == -2 ? "Ask " + name(action.a) + " for an item"
+             : action.b >= 0  ? "Ask " + name(action.a) + " to go after " + name(action.b)
+                              : "Ask " + name(action.a) + " to spare you";
     case ActionKind::Attack: return "Attack " + (action.a >= 0 ? "the " + monster(action.a) : name(action.b));
     case ActionKind::Strike:
     {
@@ -783,7 +788,11 @@ std::string Play::Label(const Action &action) const
     case ActionKind::Guard: return "Guard";
     case ActionKind::Leave: return "Leave the battle";
     case ActionKind::LevelUp: return action.a == 0 ? "Level up: +1 Might" : "Level up: +1 Sanity";
-    case ActionKind::Power: return action.a >= 0 && action.b < 0 ? "Use your power on " + name(action.a) : "Use your power";
+    case ActionKind::Power:
+    {
+        const std::string power = def_.powers[U(state_.guests[U(Me())].power)].id;
+        return action.a >= 0 && action.b < 0 ? "Power (" + power + ") on " + name(action.a) : "Power (" + power + ")";
+    }
     case ActionKind::OpenChat: return "Talk";
     case ActionKind::Answer: return action.a == 0 ? "Answer: physical" : "Answer: magical";
     }
@@ -838,7 +847,7 @@ nlohmann::json Play::UiData() const
     data["clock"] = clock;
     data["round"] = state_.round;
     data["rounds"] = def_.rules.clock.rounds;
-    data["phase"] = state_.taken.present ? "the hunt" : "evening";
+    data["phase"] = state_.killer.cell >= 0 ? "the killer walks" : "evening";
     std::string buffs;
     for (int f = 0; state_.battle.active && f < state_.battle.count; ++f)
         if (state_.battle.fighters[U(f)].guest == me && !state_.battle.fighters[U(f)].taken)
@@ -849,7 +858,23 @@ nlohmann::json Play::UiData() const
                   {"might", Stat(def_, state_, me, StatKind::Might)}, {"sanity", Stat(def_, state_, me, StatKind::Sanity)},
                   {"speed", Stat(def_, state_, me, StatKind::Speed)}, {"level", guest.level}, {"buffs", buffs},
                   {"flash", flashClock_ > 0.0F ? flash_ : ""}, // an HP change, for a moment
-                  {"down", guest.down}};
+                  {"down", guest.down}, {"ghost", guest.ghost}};
+    // The battle royale's HUD: the night, the quests (Night.md "Quests"), the player's power, the killer near.
+    data["night"] = state_.night;
+    data["quests"] = data["openQuests"] = data["takenQuests"] = nlohmann::json::array();
+    for (std::size_t q = 0; q < def_.quests.size(); ++q)
+    {
+        const QuestDef &quest = def_.quests[q];
+        const int by = state_.questBy[q] - 1;
+        const std::string stat = quest.stat == StatKind::Might ? "Might" : quest.stat == StatKind::Sanity ? "Sanity" : quest.stat == StatKind::Speed ? "Speed" : "max HP";
+        data["quests"].push_back({{"name", quest.name}, {"text", quest.text}, {"open", by < 0}, {"by", by >= 0 ? def_.guests[U(by)].name : ""},
+                                  {"reward", def_.powers[U(quest.power)].id + " power, +" + std::to_string(quest.amount) + " " + stat}});
+        data[by < 0 ? "openQuests" : "takenQuests"].push_back(data["quests"].back());
+    }
+    if (guest.power >= 0)
+        data["power"] = {{"name", def_.powers[U(guest.power)].id}, {"cooldown", guest.powerCooldown}};
+    const int near = state_.killer.cell >= 0 && guest.cell >= 0 ? Steps(def_, state_, guest.cell, state_.killer.cell) : -1;
+    data["killerNear"] = near >= 0 && near <= def_.rules.killer.hearSteps && Living(state_, me);
     // The top bar: whoever acts (a bot on its turn, marked as theirs), else the player; its portrait,
     // a list of one so it can be clicked, brings the camera back to them ("focus").
     const int top = Acting() >= 0 ? Acting() : me;
@@ -1068,11 +1093,16 @@ void Play::Notice(std::uint32_t since)
     const std::vector<LogEntry> entries = NewLog(state_, since);
     for (const LogEntry &e : entries) // the sounds of what happened (all of it heard: the house is loud)
         if (const char *cue = e.kind == LogKind::Hit ? "hit" : e.kind == LogKind::Died || e.kind == LogKind::Down ? "death" : e.kind == LogKind::Opened ? "door"
-                            : e.kind == LogKind::Item ? "item" : e.kind == LogKind::Turned ? "bell" : nullptr)
+                            : e.kind == LogKind::Item ? "item" : e.kind == LogKind::Killer && e.b == 0 ? "bell" : nullptr)
             cues_.push_back(cue);
+    // The killer's steps, when it comes within hearing (Night.md "The killer").
+    if (const nlohmann::json data = UiData(); data.value("killerNear", false) && std::any_of(entries.begin(), entries.end(), [](const LogEntry &e) { return e.kind == LogKind::Killer && e.b == 1; }))
+        cues_.push_back("killer");
     for (const LogEntry &e : entries)
-        if (e.kind == LogKind::Turned)
-            turn_ = true, AskTurn(), StartScene("midnight");
+        if (e.kind == LogKind::Killer && e.b == 0) // midnight: the killer wakes
+            StartScene("midnight");
+        else if (e.kind == LogKind::Dawn) // the survivors' next night
+            StartScene("dawn");
         else if (e.kind == LogKind::Ended) // after the fall (if any), the ending's scene
             StartScene(static_cast<Outcome>(e.a) == Outcome::House ? "ending_house" : "ending_escaped");
         else if (e.kind == LogKind::Hit && e.other >= 0) // the damage over the struck guest, for a moment
@@ -1083,25 +1113,31 @@ void Play::Notice(std::uint32_t since)
             const MonsterDef &m = def_.monsters[U(e.a)];
             popups_.push_back({state_.taken.guest, "-" + std::to_string(def_.guests[U(m.taken)].takenHp * m.hpShare / 100) + " (its " + m.name + ")", clock_ + 3.0F});
         }
-        else if (e.kind == LogKind::Died && e.who == state_.taken.guest)
-            fall_ = Fall(entries, e); // the Taken is gone: the night's last moment is staged (Play.md "The fall")
+        else if (e.kind == LogKind::Died && e.a == 1 && state_.player >= 0 && (e.who == state_.player || e.other == state_.player || SawFall(e.b)))
+            fall_ = Fall(entries, e), fallSeen_ = false; // a death in sight is staged (Play.md "The fall")
+}
+
+bool Play::SawFall(int cell) const
+{
+    return cell >= 0 && View().cells[U(cell)].lit; // the room the guest died in
 }
 
 Play::Falling Play::Fall(const std::vector<LogEntry> &entries, const LogEntry &died) const
 {
-    // 1. Who dealt the last of its life, and how: a blow, a bound minion destroyed, a power.
-    const int taken = died.who, killer = died.other;
-    const std::string it = def_.guests[U(taken)].taken, who = killer >= 0 ? def_.guests[U(killer)].name : std::string{};
-    std::string cause = killer >= 0 ? who + " brought it down." : "The house itself finished it.";
+    // 1. Who dealt the last of their life, and how: a blow, a power, the killer, the house's traps and monsters.
+    const int fallen = died.who, killer = died.other;
+    const std::string it = def_.guests[U(fallen)].name, who = killer >= 0 ? def_.guests[U(killer)].name : std::string{};
+    std::string cause = killer >= 0 ? who + " brought " + it + " down." : "The house took " + it + ".";
     for (const LogEntry &e : entries)
-        if (e.kind == LogKind::Hit && e.other == taken && e.who == killer && killer >= 0)
+        if (e.kind == LogKind::Hit && e.other == fallen && e.who == killer && killer >= 0)
             cause = who + " struck the last blow: " + std::to_string(e.a) + " damage, and " + it + " had nothing left.";
-        else if (e.kind == LogKind::Monster && e.other == 1 && e.who == killer && killer >= 0 && def_.monsters[U(e.a)].taken >= 0)
-            cause = who + " destroyed the " + def_.monsters[U(e.a)].name + ", a piece of " + it + "'s own life; with it went the last of " + it + ".";
         else if (e.kind == LogKind::Power && e.who == killer && killer >= 0)
             cause = who + "'s power struck " + it + " down.";
-    // 2. Staged where it fell.
-    return {state_.guests[U(taken)].cell, it + " falls", cause, killer};
+
+    if (killer < 0 && state_.killer.cell >= 0 && state_.killer.cell == died.b)
+        cause = "The killer found " + it + ". It cannot be fought; only fled.";
+    // 2. Staged where it fell (the Died entry keeps the room).
+    return {died.b, it + " falls", cause, killer, fallen};
 }
 
 std::uint32_t Play::LineSeed(int kind) const { return static_cast<std::uint32_t>(state_.seed + state_.logCount * 4U + static_cast<std::uint32_t>(kind)); }
@@ -1363,7 +1399,7 @@ nlohmann::json Play::InspectData() const
 
 int Play::StageCell() const
 {
-    // 0. The Taken's fall, where it fell.
+    // 0. A death in sight, where it fell.
     if (Screen() == "fall")
         return fall_.cell;
     // 1. Something that happened in the player's sight (options "moments"): their event, a bot's beat.
@@ -1388,12 +1424,12 @@ std::vector<Play::Actor> Play::StageActors() const
     const int cell = StageCell();
     if (cell < 0)
         return actors;
-    // 0. The fall: the one who dealt it facing the Taken, who lies where it fell.
+    // 0. The fall: the one who dealt it facing the fallen, who lies where they fell.
     if (Screen() == "fall")
     {
         if (fall_.killer >= 0 && !state_.guests[U(fall_.killer)].dead)
             actors.push_back({fall_.killer, -1, 0, false});
-        actors.push_back({state_.taken.guest, -1, 1, true});
+        actors.push_back({fall_.guest, -1, 1, true});
         return actors;
     }
     // 1. A battle: its fighters, by side.

@@ -169,9 +169,10 @@ private:
     {
         int cell = -1;
         std::string title, cause;
-        int killer = -1;
+        int killer = -1, guest = -1; // who struck, who fell
     };
     [[nodiscard]] Falling Fall(const std::vector<umbra::night::LogEntry> &entries, const umbra::night::LogEntry &died) const;
+    [[nodiscard]] bool SawFall(int cell) const; // the room is in the player's light
     Falling fall_;
     bool fallSeen_ = false;
     // The model's lines: a bot's coming beat (caption, goal line), the Turn, the chat question.

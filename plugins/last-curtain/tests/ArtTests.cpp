@@ -148,5 +148,5 @@ TEST_CASE("Every sound cue in sounds.csv names a WAV the engine plays (T227)", "
         CHECK(error.empty());
         ++cues;
     }
-    CHECK(cues == 9);
+    CHECK(cues == 10); // with the killer (battle royale)
 }

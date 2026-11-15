@@ -30,6 +30,7 @@ namespace umbra::night
     {
         int guest = -1, cell = -1;
         bool player = false, ally = false, taken = false;
+        bool ghost = false; // a dead guest playing for the house (Night.md "Ghosts")
     };
 
     struct MonsterView
@@ -52,6 +53,7 @@ namespace umbra::night
         std::vector<PawnView> pawns;
         std::vector<MonsterView> monsters;
         std::vector<FloorView> items;
+        int killer = -1; // the killer's cell when in sight (Night.md "The killer")
     };
 
     // viewer: the player's guest; -1 (or a dead viewer) sees everything.

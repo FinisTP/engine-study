@@ -19,6 +19,7 @@
     "good": { "base": "small", "color": "#8fd48a" },
     "bad": { "base": "small", "color": "#f08a7a" },
     "warning": { "base": "small", "color": "#ffcf66" },
+    "alarm": { "base": "title", "color": "#f08a7a", "background": "#1a0a0ad0", "padding": [18, 8] },
     "layer": {},
     "target": { "padding": 2 },
     "target-name": { "base": "small", "color": "#00000000", "hover": { "color": "#fff4d0" } },

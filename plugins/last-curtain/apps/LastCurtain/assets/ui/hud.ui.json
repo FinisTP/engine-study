@@ -4,16 +4,13 @@
   "root": { "type": "panel", "anchor": "fill", "style": "layer", "visible": "{noScene}", "children": [
     { "type": "stack", "anchor": "top", "style": "hud", "direction": "horizontal", "gap": 28, "size": [1280, 52], "align": "center", "children": [
       { "type": "text", "style": "title", "text": "{clock}" },
-      { "type": "text", "style": "small", "text": "Round {round} of {rounds}  |  {phase}" },
+      { "type": "text", "style": "small", "text": "Night {night}  |  Round {round} of {rounds}  |  {phase}" },
       { "type": "spacer", "size": [120, 0] },
       { "type": "list", "items": "{topList}", "as": "p", "action": "focus", "entry": { "type": "image", "image": "{p.portrait}", "size": [44, 44] } },
       { "type": "text", "style": "heading", "text": "{top.name}  Lv {top.level}" },
       { "type": "text", "style": "strong", "text": "HP {top.hp}/{top.maxHp}   Might {top.might}   Sanity {top.sanity}   Speed {top.speed}" },
       { "type": "text", "style": "warning", "text": "THEIR TURN", "visible": "{top.theirs}" },
-      { "type": "stack", "direction": "horizontal", "gap": 8, "align": "center", "visible": "{taken}", "children": [
-        { "type": "text", "style": "bad", "text": "{taken.name}" },
-        { "type": "bar", "style": "enemy", "size": [140, 16], "value": "{taken.hp}", "max": "{taken.maxHp}", "text": "{taken.hp}/{taken.maxHp}" }
-      ] },
+      { "type": "text", "style": "bad", "text": "YOU ARE A GHOST", "visible": "{me.ghost}" },
       { "type": "text", "style": "bad", "text": "YOU ARE DOWN", "visible": "{me.down}" },
     { "type": "text", "style": "small", "text": "You: HP {me.hp}/{me.maxHp}", "visible": "{top.theirs}" },
     { "type": "text", "style": "bad", "text": "{me.flash}", "visible": "{me.flash}" },
@@ -24,19 +21,20 @@
       { "type": "text", "style": "title", "text": "Your turn", "visible": "{banner.yours}" },
       { "type": "text", "style": "title", "text": "{banner.name}'s turn", "visible": "{banner.theirs}" }
     ] },
-    { "type": "button", "anchor": "top-left", "offset": [24, 76], "size": [260, 40], "text": "Your goal  +", "action": "goals", "visible": "{goalFolded}" },
-    { "type": "stack", "anchor": "top-left", "offset": [24, 76], "style": "panel", "gap": 6, "size": [260, 0], "visible": "{goalOpen}", "children": [
-      { "type": "button", "size": [230, 34], "text": "Your goal  -", "action": "goals" },
-      { "type": "text", "style": "small", "text": "{goal.text}", "wrap": true, "size": [230, 0], "visible": "{goal}" },
-      { "type": "text", "style": "small", "text": "{goal.progress}", "visible": "{goal.progress}" },
-      { "type": "text", "style": "good", "text": "Done", "visible": "{goal.done}" },
-      { "type": "text", "style": "heading", "text": "Goals you know", "visible": "{knownGoals}" },
-      { "type": "list", "items": "{knownGoals}", "as": "k", "entry": { "type": "text", "style": "small", "text": "{k.name}: {k.text}", "wrap": true, "size": [230, 0] } },
-      { "type": "text", "style": "heading", "text": "Allies", "visible": "{allies}" },
-      { "type": "list", "items": "{allies}", "as": "a", "entry": { "type": "text", "style": "small", "text": "{a.name}  HP {a.hp}/{a.maxHp}" } },
-      { "type": "text", "style": "heading", "text": "Winning over", "visible": "{winning}" },
-      { "type": "list", "items": "{winning}", "as": "w", "entry": { "type": "text", "style": "small", "text": "{w.name}  {w.approvals} of {w.goal}" } }
+    { "type": "button", "anchor": "top-left", "offset": [24, 76], "size": [300, 40], "text": "Quests  +", "action": "goals", "visible": "{goalFolded}" },
+    { "type": "stack", "anchor": "top-left", "offset": [24, 76], "style": "panel", "gap": 6, "size": [300, 0], "visible": "{goalOpen}", "children": [
+      { "type": "button", "size": [270, 34], "text": "Quests  -", "action": "goals" },
+      { "type": "text", "style": "muted", "text": "First to finish one wins its power.", "wrap": true, "size": [270, 0] },
+      { "type": "list", "items": "{openQuests}", "as": "q", "gap": 8, "entry": { "type": "stack", "gap": 2, "children": [
+        { "type": "text", "style": "strong", "text": "{q.name}" },
+        { "type": "text", "style": "small", "text": "{q.text}", "wrap": true, "size": [270, 0] },
+        { "type": "text", "style": "good", "text": "Reward: {q.reward}", "wrap": true, "size": [270, 0] }
+      ] } },
+      { "type": "list", "items": "{takenQuests}", "as": "q", "entry": { "type": "text", "style": "muted", "text": "{q.name}: taken by {q.by}" } },
+      { "type": "text", "style": "heading", "text": "Your power: {power.name}", "visible": "{power}" },
+      { "type": "text", "style": "small", "text": "Ready again in {power.cooldown} turns", "visible": "{power.cooldown}" }
     ] },
+    { "type": "text", "anchor": "top", "offset": [0, 140], "style": "alarm", "text": "The killer is near. Run.", "visible": "{killerNear}" },
     { "type": "stack", "anchor": "top-right", "offset": [-24, 62], "direction": "horizontal", "gap": 6, "align": "center", "children": [
       { "type": "text", "style": "small", "text": "Turn order" },
       { "type": "list", "items": "{turnOrder}", "as": "t", "direction": "horizontal", "gap": 4,

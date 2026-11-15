@@ -8,3 +8,4 @@ death,audio/death.wav,0.9,someone falls (down or dead)
 bell,audio/bell.wav,1,midnight: the Turn
 turn,audio/turn.wav,0.4,a turn opens with its banner
 click,audio/click.wav,0.4,a button or a dialog is clicked
+killer,audio/killer.wav,0.8,the killer's steps come within hearing

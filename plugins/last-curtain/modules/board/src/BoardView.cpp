@@ -69,9 +69,9 @@ namespace umbra::night
         {
             const Guest &guest = state.guests[U(g)];
             const bool hunted = viewer >= 0 && (IsTaken(state, viewer) || IsTaken(state, g));
-            if (guest.dead || (g != viewer && !view.cells[U(guest.cell)].lit && !hunted))
+            if (!InPlay(state, g) || guest.cell < 0 || (g != viewer && !view.cells[U(guest.cell)].lit && !hunted))
                 continue;
-            view.pawns.push_back({g, guest.cell, g == viewer, g != viewer && Controls(state, viewer, g), IsTaken(state, g)});
+            view.pawns.push_back({g, guest.cell, g == viewer, g != viewer && Controls(state, viewer, g), IsTaken(state, g), guest.ghost});
         }
         for (std::size_t m = 0; m < state.monsters.size(); ++m)
         {
@@ -79,6 +79,9 @@ namespace umbra::night
             if (monster.hp > 0 && view.cells[U(monster.cell)].lit)
                 view.monsters.push_back({static_cast<int>(m), monster.cell, monster.kind, def.monsters[U(monster.kind)].taken >= 0});
         }
+        // The killer, in a lit room.
+        if (state.killer.cell >= 0 && view.cells[U(state.killer.cell)].lit)
+            view.killer = state.killer.cell;
         // Items lying where the player can see.
         for (std::size_t i = 0; i < state.floor.size(); ++i)
             if (const FloorItem &f = state.floor[i]; f.cell >= 0 && f.item >= 0 && view.cells[U(f.cell)].lit)

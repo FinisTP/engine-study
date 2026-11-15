@@ -116,6 +116,7 @@ private:
     umbra::core::MeshHandle quad_; // a 1 m square facing +Z, the picture upright
     Figure guest_, taken_;        // one guest model for all seven, one Taken; tinted by guests.csv's color
     std::vector<Pawn> pawns_;     // by guest
+    Pawn killer_;                 // the wandering killer, in the Taken's figure (Night.md "The killer")
     std::vector<umbra::core::TextureHandle> roomArt_; // by rooms.csv row; empty handle = a box
     std::vector<umbra::core::TextureHandle> cardArt_; // by monsters.csv row (minions too)
     std::vector<umbra::core::TextureHandle> itemArt_; // by items.csv row

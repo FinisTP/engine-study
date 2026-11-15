@@ -414,6 +414,8 @@ TEST_CASE("The player's death mid-battle ends the screen and the watching begins
     CHECK_FALSE(play.PlayerTurn());
     CHECK(play.Screen() != "battle");
     CHECK_FALSE(play.UiData().contains("battle"));
+    CHECK(play.Screen() == "fall"); // the player's own death is staged first
+    CHECK(play.HandleUi("fall", "continue", ""));
     const int beats = play.Beats();
     play.Update(10.0F);
     play.Update(10.0F);
@@ -2042,4 +2044,111 @@ TEST_CASE("Play names the sounds to play: steps, the die, a door, a blow (T226)"
     REQUIRE(play.HandleUi("event", "roll", ""));
     const std::vector<std::string> rolled = play.TakeCues();
     CHECK(std::find(rolled.begin(), rolled.end(), "dice") != rolled.end());
+}
+
+// The battle royale's screens (stage 5).
+TEST_CASE("The HUD lists tonight's quests, who won each, and the player's power (T250)", "[night][play][royale]")
+{
+    const NightDef def = Calm();
+    NightState state = FoyerNight(def, 4, 0);
+    state.questBy[1] = 3; // guest 2 finished the second quest
+    state.guests[0].power = static_cast<std::int8_t>(NightDef::Find(def.powers, "line"));
+    state.guests[0].powerCooldown = 1;
+    Play play(def, state);
+    const nlohmann::json data = play.UiData();
+    REQUIRE(data["quests"].size() == def.quests.size());
+    CHECK(data["quests"][0]["name"] == def.quests[0].name);
+    CHECK(data["quests"][0]["open"] == true);
+    CHECK(data["quests"][1]["open"] == false);
+    CHECK(data["quests"][1]["by"] == def.guests[2].name);
+    CHECK_FALSE(data["quests"][0]["reward"].get<std::string>().empty());
+    CHECK(data["power"]["name"] == "line");
+    CHECK(data["power"]["cooldown"] == 1);
+    CHECK(data["night"] == 1);
+}
+
+TEST_CASE("Talk, fight and power choices are named plainly (T251)", "[night][play][royale]")
+{
+    const NightDef def = Calm();
+    Play play(def, PlayerFirst(def)); // everyone still in the foyer
+    ToPlayer(play);
+    std::vector<std::string> labels;
+    const nlohmann::json data = play.UiData();
+    for (const nlohmann::json &a : data["actions"])
+        labels.push_back(a["label"].get<std::string>());
+    const auto has = [&](const std::string &part) {
+        return std::any_of(labels.begin(), labels.end(), [&](const std::string &l) { return l.find(part) != std::string::npos; });
+    };
+    CHECK(has("to spare you"));
+    CHECK(has("to go after"));
+    CHECK(has("Attack "));
+}
+
+TEST_CASE("A dead player plays on as a ghost (T252)", "[night][play][royale]")
+{
+    const NightDef def = Calm();
+    NightState state = FoyerNight(def, 4, 0);
+    Hurt(def, state, 0, 999, -1);
+    Play play(def, state);
+    for (int i = 0; i < 400 && !play.PlayerTurn(); ++i)
+    {
+        Settle(play);
+        play.Update(10.0F);
+    }
+    REQUIRE(play.PlayerTurn());
+    CHECK(play.State().guests[0].ghost);
+    CHECK(play.UiData()["me"]["ghost"] == true);
+}
+
+TEST_CASE("The killer shows when in sight and warns when near (T253)", "[night][play][royale]")
+{
+    const NightDef def = Calm();
+    NightState state = FoyerNight(def, 4, 0);
+    int next = -1;
+    for (int d = 0; d < 4 && next < 0; ++d)
+        if (Passage(def, state, state.foyer, d))
+            next = Neighbour(def, state.foyer, d);
+    REQUIRE(next >= 0);
+    state.killer = {static_cast<std::int8_t>(next), 1};
+    Play play(def, state);
+    CHECK(play.View().killer == next);
+    CHECK(play.UiData()["killerNear"] == true);
+}
+
+TEST_CASE("Every death in sight is staged: who fell, by whom (T254)", "[night][play][royale]")
+{
+    const NightDef def = Calm();
+    NightState state = FoyerNight(def, 4, 0);
+    Play play(def, state);
+    ToPlayer(play);
+    // The player strikes a guest down with a power.
+    NightState now = play.State();
+    now.guests[0].power = static_cast<std::int8_t>(NightDef::Find(def.powers, "area"));
+    const int victim = now.order[1] == 0 ? now.order[2] : now.order[1];
+    now.guests[static_cast<std::size_t>(victim)].hp = 1;
+    Play staged(def, now);
+    const std::vector<Action> legal = LegalActions(def, staged.State());
+    const auto power = std::find_if(legal.begin(), legal.end(), [](const Action &a) { return a.kind == ActionKind::Power; });
+    REQUIRE(power != legal.end());
+    REQUIRE(staged.HandleUi("menu", "act", std::to_string(power - legal.begin())));
+    REQUIRE(staged.Screen() == "fall");
+    CHECK(staged.UiData()["fall"]["title"].get<std::string>().find(def.guests[static_cast<std::size_t>(victim)].name) != std::string::npos);
+    CHECK(staged.UiData()["fall"]["cause"].get<std::string>().find(def.guests[0].name) != std::string::npos);
+    REQUIRE(staged.HandleUi("fall", "continue", ""));
+    CHECK(staged.Screen() != "fall");
+}
+
+TEST_CASE("The killer's waking plays the midnight scene, its steps heard (T255)", "[night][play][royale][scene]")
+{
+    NightDef def = Calm();
+    def.rules.killer.wakeRound = 2;
+    Play play(def, PlayerFirst(def));
+    play.SetCutscenes(Scenes());
+    REQUIRE(play.Screen() != "cutscene"); // a restored night has no opening
+    PlayUntil(play, [&] { return play.State().killer.cell >= 0; });
+    REQUIRE(play.State().killer.cell >= 0);
+    CHECK(play.Screen() == "cutscene");
+    CHECK(play.UiData()["cutscene"]["line"].get<std::string>().find("Midnight") != std::string::npos);
+    const std::vector<std::string> cues = play.TakeCues();
+    CHECK(std::find(cues.begin(), cues.end(), "bell") != cues.end());
 }

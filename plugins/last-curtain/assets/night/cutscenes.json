@@ -1,21 +1,163 @@
 {
-  "_note": "The night's three scenes, played on the board (Play.md 'Cutscenes'). Each shot: at (board, foyer, player, taken, fall), seconds, distance [from, to] in metres, yaw [from, to] in degrees around the target, tilt in degrees, the caption line, and a clip the shot's figure plays (talk, attack, power, hit or none). Lines may use {player}, {guest} (the Taken's own name), {taken} (its risen name) and {survivors}.",
+  "_note": "The night's scenes, played on the board (Play.md 'Cutscenes'). Each shot: at (board, foyer, player, killer, fall), seconds, distance [from, to] in metres, yaw [from, to] in degrees around the target, tilt in degrees, the caption line, and a clip the shot's figure plays (talk, attack, power, hit or none). Lines may use {player}, {night} and {survivors}.",
   "opening": [
-    { "at": "board", "seconds": 5, "distance": [22, 15], "yaw": [-40, -10], "tilt": 62, "line": "Saigon, seven in the evening. The Opera House opens its doors for one last gala.", "clip": "none" },
-    { "at": "foyer", "seconds": 4.5, "distance": [16, 11], "yaw": [-10, 15], "tilt": 52, "line": "Seven guests were invited by a patron none of them has met.", "clip": "talk" },
-    { "at": "player", "seconds": 4, "distance": [12, 8], "yaw": [15, 0], "tilt": 50, "line": "You are {player}. Find what you came for before midnight.", "clip": "talk" }
+    {
+      "at": "board",
+      "seconds": 5,
+      "distance": [
+        22,
+        15
+      ],
+      "yaw": [
+        -40,
+        -10
+      ],
+      "tilt": 62,
+      "line": "Saigon, eight in the evening. The Opera House locks its doors behind its last guests.",
+      "clip": "none"
+    },
+    {
+      "at": "foyer",
+      "seconds": 4.5,
+      "distance": [
+        16,
+        11
+      ],
+      "yaw": [
+        -10,
+        15
+      ],
+      "tilt": 52,
+      "line": "Seven were invited. Only one will be let out.",
+      "clip": "talk"
+    },
+    {
+      "at": "player",
+      "seconds": 4,
+      "distance": [
+        12,
+        8
+      ],
+      "yaw": [
+        15,
+        0
+      ],
+      "tilt": 50,
+      "line": "You are {player}. Outlive the others.",
+      "clip": "talk"
+    }
   ],
   "midnight": [
-    { "at": "board", "seconds": 4, "distance": [20, 30], "yaw": [0, 25], "tilt": 64, "line": "Midnight. Somewhere below the stage, a bell nobody rang.", "clip": "none" },
-    { "at": "taken", "seconds": 4.5, "distance": [14, 7], "yaw": [25, -10], "tilt": 45, "line": "{guest} stops in the dark and does not breathe.", "clip": "hit" },
-    { "at": "taken", "seconds": 4.5, "distance": [7, 9], "yaw": [-10, -30], "tilt": 38, "line": "What rises is not {guest} any more. It is {taken}.", "clip": "power" }
+    {
+      "at": "board",
+      "seconds": 4,
+      "distance": [
+        20,
+        30
+      ],
+      "yaw": [
+        0,
+        25
+      ],
+      "tilt": 64,
+      "line": "Midnight. Somewhere below the stage, a bell nobody rang.",
+      "clip": "none"
+    },
+    {
+      "at": "killer",
+      "seconds": 4.5,
+      "distance": [
+        14,
+        7
+      ],
+      "yaw": [
+        25,
+        -10
+      ],
+      "tilt": 45,
+      "line": "Something climbs out of the understage. It cannot be killed. Run.",
+      "clip": "none"
+    }
   ],
-  "ending_company": [
-    { "at": "fall", "seconds": 4, "distance": [8, 14], "yaw": [0, 30], "tilt": 45, "line": "The house goes quiet.", "clip": "none" },
-    { "at": "board", "seconds": 5, "distance": [16, 36], "yaw": [30, 70], "tilt": 66, "line": "Dawn reaches the Opera House. {survivors} walk out into the morning.", "clip": "none" }
+  "dawn": [
+    {
+      "at": "board",
+      "seconds": 4.5,
+      "distance": [
+        18,
+        30
+      ],
+      "yaw": [
+        20,
+        50
+      ],
+      "tilt": 64,
+      "line": "Dawn, and the doors stay shut. {survivors} are still breathing.",
+      "clip": "none"
+    },
+    {
+      "at": "player",
+      "seconds": 4,
+      "distance": [
+        12,
+        8
+      ],
+      "yaw": [
+        0,
+        15
+      ],
+      "tilt": 50,
+      "line": "The house rearranges itself. Night {night} begins.",
+      "clip": "none"
+    }
   ],
-  "ending_taken": [
-    { "at": "taken", "seconds": 4, "distance": [9, 14], "yaw": [0, -25], "tilt": 42, "line": "{taken} stands alone on the stage.", "clip": "power" },
-    { "at": "board", "seconds": 5, "distance": [16, 36], "yaw": [-25, -70], "tilt": 66, "line": "The theatre keeps its guests. The gala will be held again.", "clip": "none" }
+  "ending_escaped": [
+    {
+      "at": "fall",
+      "seconds": 4,
+      "distance": [
+        8,
+        14
+      ],
+      "yaw": [
+        0,
+        30
+      ],
+      "tilt": 45,
+      "line": "The last rival falls. The house goes quiet.",
+      "clip": "none"
+    },
+    {
+      "at": "board",
+      "seconds": 5,
+      "distance": [
+        16,
+        36
+      ],
+      "yaw": [
+        30,
+        70
+      ],
+      "tilt": 66,
+      "line": "The doors open. {survivors} walks out into the Saigon morning, alone.",
+      "clip": "none"
+    }
+  ],
+  "ending_house": [
+    {
+      "at": "board",
+      "seconds": 5,
+      "distance": [
+        16,
+        36
+      ],
+      "yaw": [
+        -25,
+        -70
+      ],
+      "tilt": 66,
+      "line": "No one is left alive. The theatre keeps its guests; the gala will be held again.",
+      "clip": "none"
+    }
   ]
 }

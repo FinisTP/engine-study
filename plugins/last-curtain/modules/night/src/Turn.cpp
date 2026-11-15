@@ -521,7 +521,7 @@ namespace umbra::night
         guest.hp = I16(std::max(0, guest.hp - amount));
         if (guest.hp > 0)
             return;
-        Log(state, LogKind::Died, g, byGuest, guest.ghost ? 0 : 1); // a 1: a living guest died
+        Log(state, LogKind::Died, g, byGuest, guest.ghost ? 0 : 1, guest.cell); // a 1: a living guest died; b: where
         // 1. A ghost struck down leaves the board and comes back later (Night.md "Ghosts").
         if (guest.ghost)
         {

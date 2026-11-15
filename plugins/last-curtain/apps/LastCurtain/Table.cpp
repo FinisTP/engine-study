@@ -233,6 +233,14 @@ void Table::Animate(const NightDef &def, const BoardView &view, const Slide &sli
         p.animator->SetNumber("speed", walking ? 1.0F : 0.0F);
         p.animator->Update(dt);
     }
+    // The killer stands in the Taken's figure, idle.
+    if (view.killer >= 0 && taken_.mesh)
+    {
+        if (!killer_.animator)
+            killer_.animator.emplace(MakeAnimator(taken_));
+        killer_.animator->SetNumber("speed", 0.0F);
+        killer_.animator->Update(dt);
+    }
 }
 
 void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<int> &path, int affordable, const Slide &slide,
@@ -300,7 +308,9 @@ void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<i
     for (const PawnView &pawn : view.pawns)
     {
         const glm::vec3 at = Place(def, view, pawn.guest, slide);
-        const glm::vec4 color = Hex(def.guests[static_cast<std::size_t>(pawn.guest)].color);
+        // A ghost is a pale, glowing blue-white version of its guest.
+        const glm::vec4 color = pawn.ghost ? glm::mix(Hex(def.guests[static_cast<std::size_t>(pawn.guest)].color), Hex(0xBFD8FF), 0.7F)
+                                           : Hex(def.guests[static_cast<std::size_t>(pawn.guest)].color);
         const Figure &figure = pawn.taken ? taken_ : guest_;
         const Pawn *p = static_cast<std::size_t>(pawn.guest) < pawns_.size() ? &pawns_[static_cast<std::size_t>(pawn.guest)] : nullptr;
         if (figure.mesh && p != nullptr && p->animator && p->taken == pawn.taken)
@@ -310,7 +320,7 @@ void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<i
                                     glm::translate(glm::mat4{1.0F}, {0, 1, 0});
             const std::vector<glm::mat4> &palette = p->animator->Palette();
             // Lightened a quarter toward white and a faint glow, so dark tints still read in the dim room.
-            out.items.push_back({figure.mesh, figure.texture, model, glm::mix(color, glm::vec4{1.0F}, 0.25F), 0.0F, std::max(0.12F, readable_)});
+            out.items.push_back({figure.mesh, figure.texture, model, glm::mix(color, glm::vec4{1.0F}, 0.25F), 0.0F, pawn.ghost ? 0.6F : std::max(0.12F, readable_)});
             out.items.back().jointOffset = static_cast<std::uint32_t>(out.joints.size());
             out.items.back().jointCount = static_cast<std::uint32_t>(palette.size());
             out.joints.insert(out.joints.end(), palette.begin(), palette.end());
@@ -335,6 +345,20 @@ void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<i
         const float angle = static_cast<float>(i) * 2.399F;
         return CellCenter(def, cell) + (i == 0 ? glm::vec3{0} : 0.6F * glm::vec3{std::cos(angle), 0, std::sin(angle)});
     };
+    // The killer: the Taken's figure, dark red, on a red ring.
+    if (view.killer >= 0 && taken_.mesh && killer_.animator)
+    {
+        const glm::vec3 at = spot(view.killer);
+        const glm::mat4 model = glm::scale(glm::translate(glm::mat4{1.0F}, at), glm::vec3{taken_.scale}) * glm::translate(glm::mat4{1.0F}, {0, 1, 0});
+        const std::vector<glm::mat4> &palette = killer_.animator->Palette();
+        out.items.push_back({taken_.mesh, taken_.texture, model, Hex(0x8A1C1C), 0.0F, 0.3F});
+        out.items.back().jointOffset = static_cast<std::uint32_t>(out.joints.size());
+        out.items.back().jointCount = static_cast<std::uint32_t>(palette.size());
+        out.joints.insert(out.joints.end(), palette.begin(), palette.end());
+        Box(out, box_, at + glm::vec3{0, 0.02F, 0}, {0.9F, 0.04F, 0.9F}, Hex(0xD62828));
+    }
+    else if (view.killer >= 0)
+        Box(out, box_, spot(view.killer) + glm::vec3{0, 0.6F, 0}, {0.6F, 1.2F, 0.6F}, Hex(0x8A1C1C));
     // 5. Monsters: a painted card standing in a dark frame, facing the camera (+Z); a box without its picture.
     const auto art = [](const std::vector<umbra::core::TextureHandle> &set, int row) {
         return row >= 0 && static_cast<std::size_t>(row) < set.size() ? set[static_cast<std::size_t>(row)] : umbra::core::TextureHandle{};
