@@ -459,8 +459,9 @@ umbra::core::Camera Table::StageCamera() const
 {
     // A seat high in the front corner (user): the back walls (N, W) face it.
     umbra::core::Camera camera;
+    // The wheel pulls the seat back toward the eight rooms around (distance against the designed one).
     camera.target = {0.0F, 0.7F, -0.5F};
-    camera.position = {5.2F, 5.8F, 7.0F};
+    camera.position = camera.target + glm::vec3{5.2F, 5.1F, 7.5F} * (distance_ / baseDistance_);
     return camera;
 }
 
@@ -472,7 +473,6 @@ void Table::StageStart(int guest)
 
 void Table::DrawStage(const NightDef &def, const BoardView &view, int cell, const std::vector<StageActor> &actors, umbra::core::DrawList &out) const
 {
-    const CellView &room = view.cells[static_cast<std::size_t>(cell)];
     // 1. Light: the table's own, and a lamp over the room.
     umbra::core::EnvironmentSettings settings;
     settings.indoor = true, settings.ambient = 0.85F, settings.fog = 0.0F, settings.shadows = false;
@@ -480,18 +480,59 @@ void Table::DrawStage(const NightDef &def, const BoardView &view, int cell, cons
     out.environment = umbra::core::EvaluateEnvironment(settings, 20.0F);
     out.lights.push_back({{0.0F, 6.0F, 0.0F}, {1.0F, 0.82F, 0.6F}, 25.0F * Lamp(), 30.0F, 0.0F});
     out.camera = StageCamera();
-    // 2. The floor: the room's own painting, 8 m across.
+    // 2. The room and the eight around it, 8 m apart; an unopened one is dark, an unlit one dim.
+    const int w = def.rules.board.width, x = cell % w, y = cell / w;
+    for (int dy = -1; dy <= 1; ++dy)
+        for (int dx = -1; dx <= 1; ++dx)
+        {
+            const int c = CellAt(def, x + dx, y + dy);
+            const CellView *v = c >= 0 ? &view.cells[static_cast<std::size_t>(c)] : nullptr;
+            if (v == nullptr || !v->opened)
+                continue;
+            const glm::vec3 offset{static_cast<float>(dx) * 2.0F * stageHalf, 0.0F, static_cast<float>(dy) * 2.0F * stageHalf};
+            StageRoom(*v, offset, c == cell || v->lit ? 1.0F : 0.35F, out);
+            if (c == cell)
+                continue;
+            // Who stands there: guests idle in a row, monsters as cards.
+            float slot = -1.5F;
+            for (const PawnView &pawn : view.pawns)
+                if (pawn.cell == c)
+                    StageFigure(def, pawn.guest, pawn.taken, offset + glm::vec3{slot, 0.0F, 0.5F}, 3.14159265F, out), slot += 1.4F;
+            for (const MonsterView &monster : view.monsters)
+                if (monster.cell == c)
+                    StageCard(monster.kind, offset + glm::vec3{slot, 0.0F, -1.0F}, out), slot += 1.6F;
+        }
+    // 3. The actors: a battle's sides face each other; in a Look they stand about the room.
+    const bool battle = std::any_of(actors.begin(), actors.end(), [](const StageActor &a) { return a.side == 1; }) &&
+                        std::any_of(actors.begin(), actors.end(), [](const StageActor &a) { return a.guest >= 0 && a.side == 0; }) && stageGuest_ < 0;
+    std::array<int, 2> count{};
+    for (const StageActor &actor : actors)
+    {
+        const int i = count[static_cast<std::size_t>(std::clamp(actor.side, 0, 1))]++;
+        const float lane = (static_cast<float>(i) - 1.0F) * 1.3F;
+        const glm::vec3 at = battle ? glm::vec3{actor.side == 0 ? -1.7F : 1.7F, 0.0F, lane} : glm::vec3{-1.8F + static_cast<float>(i) * 1.4F, 0.0F, actor.side == 0 ? 0.4F : -1.8F};
+        const float yaw = battle ? (actor.side == 0 ? -1.5708F : 1.5708F) : 3.14159265F;
+        if (actor.guest < 0)
+            StageCard(actor.monsterKind, at, out);
+        else
+            StageFigure(def, actor.guest, actor.taken, at, yaw, out);
+    }
+}
+
+void Table::StageRoom(const CellView &room, glm::vec3 offset, float shade, umbra::core::DrawList &out) const
+{
+    // 1. The floor: the room's own painting, 8 m across.
     const umbra::core::TextureHandle art = room.room >= 0 && static_cast<std::size_t>(room.room) < roomArt_.size() ? roomArt_[static_cast<std::size_t>(room.room)] : umbra::core::TextureHandle{};
-    Floor(out, art, glm::scale(glm::translate(glm::mat4{1.0F}, {0.0F, -0.05F, 0.0F}), {2 * stageHalf, 0.1F, 2 * stageHalf}),
-          art ? glm::vec4{1.0F} : RoomColor(room.kind));
-    // 3. Walls: tall painted flats at the back (N, W), low ones at the front (E, S); a gap at each door.
+    Floor(out, art, glm::scale(glm::translate(glm::mat4{1.0F}, offset + glm::vec3{0.0F, -0.05F, 0.0F}), {2 * stageHalf, 0.1F, 2 * stageHalf}),
+          (art ? glm::vec4{1.0F} : RoomColor(room.kind)) * glm::vec4{shade, shade, shade, 1.0F});
+    // 2. Walls: 1.2 m at the back (N, W), 0.4 m at the front (E, S); a gap at each door.
     const glm::vec3 side[] = {{0, 0, -1}, {1, 0, 0}, {0, 0, 1}, {-1, 0, 0}};
     for (int d = 0; d < 4; ++d)
     {
         const bool back = d == 0 || d == 3, across = d == 1 || d == 3, door = (room.doors & (1u << d)) != 0;
-        const float height = back ? 3.0F : 0.4F;
-        const glm::vec3 edge = side[d] * stageHalf;
-        const glm::vec4 paint = RoomColor(room.kind) * 0.55F + glm::vec4{0.0F, 0.0F, 0.0F, 0.45F};
+        const float height = back ? 1.2F : 0.4F; // low enough to see the rooms behind
+        const glm::vec3 edge = offset + side[d] * (stageHalf - 0.1F); // inset: two rooms' walls stand side by side
+        const glm::vec4 paint = (RoomColor(room.kind) * 0.55F + glm::vec4{0.0F, 0.0F, 0.0F, 0.45F}) * glm::vec4{shade, shade, shade, 1.0F};
         // Two pieces either side of the doorway (or one whole wall).
         for (const float sign : {-1.0F, 1.0F})
         {
@@ -500,53 +541,44 @@ void Table::DrawStage(const NightDef &def, const BoardView &view, int cell, cons
             const glm::vec3 at = edge + (across ? glm::vec3{0, 0, mid} : glm::vec3{mid, 0, 0});
             const glm::vec3 size = across ? glm::vec3{0.15F, height, length} : glm::vec3{length, height, 0.15F};
             Box(out, box_, at + glm::vec3{0, height * 0.5F, 0}, size, paint);
-            Box(out, box_, at + glm::vec3{0, height + 0.04F, 0}, size * glm::vec3{1.0F, 0.0F, 1.0F} + glm::vec3{0.0F, 0.08F, 0.0F} + (across ? glm::vec3{0.06F, 0, 0} : glm::vec3{0, 0, 0.06F}), Hex(0xD4AF37));
+            Box(out, box_, at + glm::vec3{0, height + 0.04F, 0}, size * glm::vec3{1.0F, 0.0F, 1.0F} + glm::vec3{0.0F, 0.08F, 0.0F} + (across ? glm::vec3{0.06F, 0, 0} : glm::vec3{0, 0, 0.06F}), Hex(0xD4AF37) * glm::vec4{shade, shade, shade, 1.0F});
             if (!door)
                 break;
         }
     }
-    // 4. The actors: a battle's sides face each other; in a Look they stand about the room.
-    const bool battle = std::any_of(actors.begin(), actors.end(), [](const StageActor &a) { return a.side == 1; }) &&
-                        std::any_of(actors.begin(), actors.end(), [](const StageActor &a) { return a.guest >= 0 && a.side == 0; }) && stageGuest_ < 0;
-    std::array<int, 2> count{};
-    for (const StageActor &actor : actors)
+}
+
+void Table::StageCard(int kind, glm::vec3 at, umbra::core::DrawList &out) const
+{
+    // A monster: a framed card on a stand.
+    const umbra::core::TextureHandle card = kind >= 0 && static_cast<std::size_t>(kind) < cardArt_.size() ? cardArt_[static_cast<std::size_t>(kind)] : umbra::core::TextureHandle{};
+    Box(out, box_, at + glm::vec3{0, 0.85F, 0}, {1.25F, 1.7F, 0.06F}, Hex(0x2A1E16));
+    out.items.push_back({box_, card, glm::scale(glm::translate(glm::mat4{1.0F}, at + glm::vec3{0, 0.87F, 0.01F}), {1.1F, 1.5F, 0.06F}), card ? glm::vec4{1.0F} : Hex(0x8B5A2B)});
+}
+
+void Table::StageFigure(const NightDef &def, int guest, bool taken, glm::vec3 at, float yaw, umbra::core::DrawList &out) const
+{
+    // A guest at full size, as on the table; the walking figure stands where it walked, facing its way.
+    const std::size_t g = static_cast<std::size_t>(guest);
+    const Figure &figure = taken ? taken_ : guest_;
+    const Pawn *p = g < pawns_.size() ? &pawns_[g] : nullptr;
+    const glm::vec4 color = glm::mix(Hex(def.guests[g].color), glm::vec4{1.0F}, 0.25F);
+    if (guest == stageGuest_)
+        at = walkAt_, yaw = p != nullptr ? p->yaw : yaw;
+    if (guest == acting_)
+        Arrow(out, box_, at + glm::vec3{0.0F, 2.0F * figure.scale * stageScale, 0.0F}, 0.6F, clock_);
+    if (!figure.mesh || p == nullptr || !p->animator)
     {
-        const int i = count[static_cast<std::size_t>(std::clamp(actor.side, 0, 1))]++;
-        const float lane = (static_cast<float>(i) - 1.0F) * 1.3F;
-        glm::vec3 at = battle ? glm::vec3{actor.side == 0 ? -1.7F : 1.7F, 0.0F, lane} : glm::vec3{-1.8F + static_cast<float>(i) * 1.4F, 0.0F, actor.side == 0 ? 0.4F : -1.8F};
-        float yaw = battle ? (actor.side == 0 ? -1.5708F : 1.5708F) : 3.14159265F;
-        // 4a. A monster: a framed card on a stand.
-        if (actor.guest < 0)
-        {
-            const umbra::core::TextureHandle card = actor.monsterKind >= 0 && static_cast<std::size_t>(actor.monsterKind) < cardArt_.size() ? cardArt_[static_cast<std::size_t>(actor.monsterKind)] : umbra::core::TextureHandle{};
-            Box(out, box_, at + glm::vec3{0, 0.85F, 0}, {1.25F, 1.7F, 0.06F}, Hex(0x2A1E16));
-            out.items.push_back({box_, card, glm::scale(glm::translate(glm::mat4{1.0F}, at + glm::vec3{0, 0.87F, 0.01F}), {1.1F, 1.5F, 0.06F}), card ? glm::vec4{1.0F} : Hex(0x8B5A2B)});
-            continue;
-        }
-        // 4b. A guest: its figure at full size, as on the table.
-        const std::size_t g = static_cast<std::size_t>(actor.guest);
-        if (actor.guest == stageGuest_)
-            at = walkAt_;
-        const Figure &figure = actor.taken ? taken_ : guest_;
-        const Pawn *p = g < pawns_.size() ? &pawns_[g] : nullptr;
-        const glm::vec4 color = glm::mix(Hex(def.guests[g].color), glm::vec4{1.0F}, 0.25F);
-        if (!figure.mesh || p == nullptr || !p->animator)
-        {
-            Box(out, box_, at + glm::vec3{0, 0.85F, 0}, {0.6F, 1.7F, 0.6F}, color);
-            continue;
-        }
-        if (actor.guest == stageGuest_ || !battle)
-            yaw = actor.guest == stageGuest_ ? p->yaw : yaw;
-        const glm::mat4 model = glm::scale(glm::rotate(glm::translate(glm::mat4{1.0F}, at), yaw, {0, 1, 0}), glm::vec3{figure.scale * stageScale}) *
-                                glm::translate(glm::mat4{1.0F}, {0, 1, 0});
-        if (actor.guest == acting_)
-            Arrow(out, box_, at + glm::vec3{0.0F, 2.0F * figure.scale * stageScale, 0.0F}, 0.6F, clock_);
-        const std::vector<glm::mat4> &palette = p->animator->Palette();
-        out.items.push_back({figure.mesh, figure.texture, model, color, 0.0F, 0.12F});
-        out.items.back().jointOffset = static_cast<std::uint32_t>(out.joints.size());
-        out.items.back().jointCount = static_cast<std::uint32_t>(palette.size());
-        out.joints.insert(out.joints.end(), palette.begin(), palette.end());
+        Box(out, box_, at + glm::vec3{0, 0.85F, 0}, {0.6F, 1.7F, 0.6F}, color);
+        return;
     }
+    const glm::mat4 model = glm::scale(glm::rotate(glm::translate(glm::mat4{1.0F}, at), yaw, {0, 1, 0}), glm::vec3{figure.scale * stageScale}) *
+                            glm::translate(glm::mat4{1.0F}, {0, 1, 0});
+    const std::vector<glm::mat4> &palette = p->animator->Palette();
+    out.items.push_back({figure.mesh, figure.texture, model, color, 0.0F, 0.12F});
+    out.items.back().jointOffset = static_cast<std::uint32_t>(out.joints.size());
+    out.items.back().jointCount = static_cast<std::uint32_t>(palette.size());
+    out.joints.insert(out.joints.end(), palette.begin(), palette.end());
 }
 
 bool Table::StagePick(const BoardView &view, int cell, glm::vec2 mouse, glm::vec2 pixels, glm::vec3 &floor, int &door) const

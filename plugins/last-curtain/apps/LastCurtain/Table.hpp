@@ -68,7 +68,7 @@ public:
     // The camera's distance (and its zoom range) and tilt in degrees (options.csv).
     void SetCamera(float distance, float minDistance, float maxDistance, float tilt)
     {
-        distance_ = distance, minDistance_ = minDistance, maxDistance_ = maxDistance, tilt_ = tilt;
+        baseDistance_ = distance_ = distance, minDistance_ = minDistance, maxDistance_ = maxDistance, tilt_ = tilt;
     }
     // The guest whose turn it is: a gold arrow bobs over them (-1: none).
     void SetActing(int guest) { acting_ = guest; }
@@ -108,8 +108,13 @@ private:
     int stageGuest_ = -1;                             // the figure that walks on the stage
     glm::vec3 walkAt_{0.0F}, walkTarget_{0.0F};
     [[nodiscard]] umbra::core::Camera StageCamera() const;
+    // The stage's parts (Table.md "The stage"): a room's floor and walls at `offset`, a monster card, a figure.
+    void StageRoom(const umbra::night::CellView &room, glm::vec3 offset, float shade, umbra::core::DrawList &out) const;
+    void StageCard(int kind, glm::vec3 at, umbra::core::DrawList &out) const;
+    void StageFigure(const umbra::night::NightDef &def, int guest, bool taken, glm::vec3 at, float yaw, umbra::core::DrawList &out) const;
     glm::vec3 from_{0.0F}, to_{0.0F};
     float seconds_ = 0.0F, elapsed_ = 0.0F;
+    float baseDistance_ = 11.0F; // the designed distance: the stage seat's zoom is distance_ / this
     float distance_ = 11.0F, minDistance_ = 5.0F, maxDistance_ = 22.0F, tilt_ = 50.0F;
     int acting_ = -1;
     bool hunt_ = false;

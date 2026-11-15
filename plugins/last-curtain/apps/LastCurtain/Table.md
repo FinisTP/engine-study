@@ -31,14 +31,17 @@
 
 ## The stage (plans 4b and 4c)
 
-While `Play::StageCell()` is a cell (Look, or a battle in the player's light), the table is not
-drawn; that one room is, at full size:
+While `Play::StageCell()` is a cell (Look, a battle in the player's light, or a deed in sight), the
+table is not drawn; that room is, at full size, with the eight around it:
 
-1. **Camera:** fixed high in the front corner (user), like a seat in the stalls: position
-   (5.2, 5.8, 7.0), looking at (0, 0.7, -0.5).
-2. **Room:** 8 × 8 m; the floor is the room's own painting. The back walls (N, W) are painted flats
-   3 m high, the front ones (E, S) 0.4 m so they never hide the room; each has a gold moulding and a
-   1.8 m gap where the board has a door.
+1. **Camera:** fixed high in the front corner (user), like a seat in the stalls: looking at
+   (0, 0.7, -0.5) from (5.2, 5.1, 7.5) further along, scaled by the wheel's distance over the
+   designed one (`options.csv` `cameraDistance`), so zooming out shows all nine rooms.
+2. **Rooms:** 8 × 8 m, side by side; the floor is the room's own painting. The back walls (N, W)
+   are 1.2 m, low enough to see the rooms behind; the front ones (E, S) 0.4 m. Each has a gold
+   moulding and a 1.8 m gap where the board has a door, and stands 0.1 m inside the room, so two
+   rooms' walls stand side by side. An unopened room is not drawn; one out of the player's light is
+   drawn at 35 % brightness. Guests in a neighbour stand in a row; monsters stand as cards.
 3. **Actors:** guests are their figures at 1.55 × their table size (1.7 m); monsters are framed
    cards on stands. In a battle side 0 stands at x = -1.7 facing +X, side 1 at x = +1.7 facing -X,
    1.3 m apart. In a Look the player's figure walks where the floor is clicked, at 1.6 m/s, and a
