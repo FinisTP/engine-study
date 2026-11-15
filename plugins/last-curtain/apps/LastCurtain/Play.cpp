@@ -475,6 +475,7 @@ std::string Play::Label(const Action &action) const
 nlohmann::json Play::UiData() const
 {
     nlohmann::json data;
+    data["writtenLines"] = words_ == nullptr || !words_->HasModel(); // the save menu says so
     if (state_.over)
         data["end"] = EndData();
     if (turn_ && !state_.over)

@@ -16,8 +16,13 @@
 #include <TextureTools.hpp>
 #include <Window.hpp>
 
+#if UMBRA_TOWN_LLAMA
+#include <LlamaMind.hpp>
+#endif
+
 #include <glm/geometric.hpp>
 
+#include <algorithm>
 #include <chrono>
 #include <cstdlib>
 #include <fstream>
@@ -91,6 +96,27 @@ namespace
             umbra::diagnostics::Error("Could not save the night: " + error.message());
     }
 
+    // The built-in model (plan 3): models/night.gguf beside the program's assets folder, never
+    // committed. No file or no llama.cpp in this build: null, and the night uses its written lines.
+    std::unique_ptr<umbra::town::Mind> LoadModel(const umbra::assets::AssetFolders &assets)
+    {
+        const std::filesystem::path file = (assets / "ui/skin.json").parent_path().parent_path().parent_path() / "models/night.gguf";
+#if UMBRA_TOWN_LLAMA
+        umbra::town::LlamaOptions options;
+        options.threads = std::max(2, static_cast<int>(std::thread::hardware_concurrency()) / 2);
+        std::string error;
+        if (std::unique_ptr<umbra::town::Mind> model = umbra::town::LoadLlamaMind(file, options, error))
+        {
+            umbra::diagnostics::Info("The Last Curtain: model " + model->Name() + " loaded (" + (umbra::town::LlamaHasGpu() ? "graphics card" : "CPU") + ")");
+            return model;
+        }
+        umbra::diagnostics::Info("The Last Curtain: no model (" + error + "); the written lines are used");
+#else
+        umbra::diagnostics::Info("The Last Curtain: this build has no llama.cpp; the written lines are used (" + file.string() + ")");
+#endif
+        return nullptr;
+    }
+
     // Play's slide as the table draws it.
     Table::Slide ToDraw(const Play::Slide &s) { return {s.guest, s.from, s.to, s.t}; }
 
@@ -110,6 +136,7 @@ namespace
             (void)LoadCaptions(assets / "night/captions.json", captions, diagnostics);
             for (const umbra::core::Diagnostic &d : diagnostics)
                 umbra::diagnostics::Error(umbra::core::Format(d));
+            umbra::night::Words words(def, LoadModel(assets)); // outlives every Play below
             const int named = options.player.empty() ? -1 : NightDef::Find(def.guests, options.player);
             if (!loaded || (!options.player.empty() && named < 0))
             {
@@ -163,6 +190,7 @@ namespace
                 else
                     play.emplace(def, options.seed ? options.seed : random(), player);
                 play->SetCaptions(captions);
+                play->SetWords(&words);
                 if (screens.Ready() && play->State().player >= 0)
                     screens.Ui().Open("hud");
                 if (screens.Ready())

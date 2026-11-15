@@ -39,6 +39,7 @@ target_link_libraries(
         Umbra::NightBots
         Umbra::NightBoard
         Umbra::NightPlay
+        $<TARGET_NAME_IF_EXISTS:Umbra::TownLlama>
         Umbra::Warnings
         Umbra::Sanitizers
 )

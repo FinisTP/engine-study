@@ -32,3 +32,4 @@ vcpkg_installed/
 Thumbs.db
 # The living town's model file (large; downloaded once, see plugins/living-town Mind.md)
 projects/*/models/*.gguf
+plugins/last-curtain/apps/LastCurtain/models/*.gguf

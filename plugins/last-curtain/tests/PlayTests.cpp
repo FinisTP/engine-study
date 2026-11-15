@@ -1316,3 +1316,18 @@ TEST_CASE("Line seeds come from the night, so Continue words the same lines (T13
     CHECK_FALSE(a.empty());
     CHECK(a == b);
 }
+
+TEST_CASE("The save menu says when the written lines are used (T135)", "[night][play][words]")
+{
+    const NightDef def = Data();
+    Play play(def, FoyerNight(def, 4, 0));
+    CHECK(play.UiData()["writtenLines"] == true);
+    Words none(def, nullptr);
+    play.SetWords(&none);
+    CHECK(play.UiData()["writtenLines"] == true);
+    auto mind = std::make_unique<StandIn>();
+    mind->answer = [](const umbra::town::MindRequest &) { return std::string{}; };
+    Words words(def, std::move(mind));
+    play.SetWords(&words);
+    CHECK(play.UiData()["writtenLines"] == false);
+}

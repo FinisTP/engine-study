@@ -8,6 +8,7 @@
     { "type": "text", "style": "title", "text": "The night waits" },
     { "type": "button", "size": [300, 44], "text": "Save", "action": "save" },
     { "type": "button", "size": [300, 44], "text": "Resume", "action": "resume" },
-    { "type": "button", "size": [300, 44], "text": "Save and quit", "action": "savequit" }
+    { "type": "button", "size": [300, 44], "text": "Save and quit", "action": "savequit" },
+    { "type": "text", "style": "muted", "text": "Written lines: the model is not installed", "visible": "{writtenLines}", "wrap": true, "size": [300, 0] }
   ] }
 }
