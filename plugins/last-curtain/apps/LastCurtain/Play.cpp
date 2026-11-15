@@ -122,6 +122,10 @@ bool Play::Do(const Action &action)
     if (!Apply(def_, state_, action))
         return false;
     Notice(before.logCount);
+    // 1b. A room resolved on a move ends the turn in the rules; the player may still look around it.
+    resting_ = action.kind == ActionKind::Move && !PlayerTurn() && !state_.over && !state_.battle.active;
+    if (resting_)
+        walk_.clear(), walking_ = false, mode_ = Mode::Menu; // the rest of a walk is dropped
     // 2. An event drawn on this move: shown before its roll (a new bit in eventsUsed).
     const std::uint64_t drawn = state_.eventsUsed & ~before.eventsUsed;
     if (drawn)
@@ -235,6 +239,8 @@ void Play::Key(umbra::platform::InputKey key)
     // 2. Each key does what a legal action of this turn allows, or nothing; never behind a dialog.
     if (key == InputKey::Space && !PlayerTurn())
         fast_ = true, waitTap_ = false;
+    if (key == InputKey::Enter && Screen() == "rest")
+        resting_ = false;
     if (key == InputKey::I && (Screen() == "menu" || Screen() == "bag") && !state_.chat.active)
         bag_ = !bag_;
     const std::string screen = Screen();
@@ -307,6 +313,10 @@ bool Play::HandleUi(const std::string &, const std::string &action, const std::s
         return !(pause_ = false);
     if (action == "close" && inspect_ >= 0)
         return (inspect_ = -1), true;
+    if (resting_ && Screen() == "rest" && (action == "look" || action == "end"))
+        return action == "look" ? (looking_ = true) : !(resting_ = false);
+    if (action == "back" && looking_ && resting_)
+        return !(looking_ = false);
     if (!PlayerTurn())
         return false;
     // 2. Choices: answers, battle moves.
@@ -370,6 +380,8 @@ std::string Play::Screen() const
         return "dice";
     if (turn_)
         return turnTicket_ != 0 ? "" : "turn"; // its line is still coming
+    if (resting_)
+        return "rest";
     if (!PlayerTurn())
         return (hold_ > 0.0F || waitTap_) && beat_.seen ? "caption" : "";
     if (state_.chat.active)
@@ -395,7 +407,7 @@ void Play::Update(float dt)
             return;
         slide_ = {};
     }
-    if (event_ >= 0 || !dice_.empty() || turn_ || waitTap_)
+    if (event_ >= 0 || !dice_.empty() || turn_ || waitTap_ || resting_)
         return;
     hold_ -= dt;
     if (hold_ > 0.0F)

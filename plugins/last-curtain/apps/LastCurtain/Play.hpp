@@ -143,6 +143,7 @@ private:
     umbra::night::GameOptions options_;
     bool waitTap_ = false;  // a bot's beat where something happened waits for a tap (options)
     bool moment_ = false;   // ... and is shown at full size (options)
+    bool resting_ = false;  // the player resolved a room: the rules ended the turn, the screen holds (Look, End turn)
     bool skipping_ = false; // Skip: no taps, pauses or line waits until the player's turn
     [[nodiscard]] bool Notable(const std::vector<umbra::night::LogEntry> &entries, const umbra::night::Action &action) const;
     [[nodiscard]] nlohmann::json HereData() const;

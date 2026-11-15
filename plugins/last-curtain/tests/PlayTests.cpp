@@ -1578,3 +1578,32 @@ TEST_CASE("A bot's walk stays on the table; only what it does opens the room and
     }
     CHECK(waits > 0);
 }
+
+TEST_CASE("After a room resolves the player may still look around; the bots wait for End turn (T151)", "[night][play][rest]")
+{
+    NightDef def = Data();
+    for (RoomDef &room : def.rooms)
+        if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
+            room.kind = RoomKind::Event, room.doors = 15;
+    Play play(def, PlayerFirst(def));
+    const int step = StepCell(def, play);
+    REQUIRE(step >= 0);
+    GoTo(play, step);
+    Settle(play);
+    // 1. The rules ended the turn, but the screen holds: Look around and End turn.
+    CHECK_FALSE(play.PlayerTurn());
+    REQUIRE(play.Screen() == "rest");
+    play.Update(10.0F);
+    CHECK(play.Beats() == 0);
+    // 2. Look shows the room just entered; Back returns to the rest menu.
+    REQUIRE(play.HandleUi("rest", "look", ""));
+    CHECK(play.Screen() == "look");
+    CHECK(play.StageCell() == play.State().guests[static_cast<std::size_t>(play.State().player)].cell);
+    REQUIRE(play.HandleUi("look", "back", ""));
+    CHECK(play.Screen() == "rest");
+    // 3. End turn lets the bots go (Enter does too).
+    REQUIRE(play.HandleUi("rest", "end", ""));
+    for (int i = 0; i < 20 && play.Beats() == 0; ++i)
+        play.Update(1.0F);
+    CHECK(play.Beats() > 0);
+}
