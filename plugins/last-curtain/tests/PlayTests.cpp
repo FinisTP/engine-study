@@ -5,6 +5,7 @@
 #include <NightBots.hpp>
 #include <NightSave.hpp>
 #include <Play.hpp>
+#include <Options.hpp>
 #include <Words.hpp>
 
 #include <algorithm>
@@ -1457,4 +1458,90 @@ TEST_CASE("A battle in the player's light plays on the stage with both sides; on
         }
     REQUIRE_FALSE(view.cells[static_cast<std::size_t>(far.battle.cell)].lit);
     CHECK(Play(def, far).StageCell() == -1);
+}
+
+namespace
+{
+    // Bots play (with Space off) until a seen beat that waits for a tap, or `limit` updates.
+    bool UntilTap(Play &play, int limit)
+    {
+        for (int i = 0; i < limit; ++i)
+        {
+            Settle(play);
+            if (play.WaitingForTap())
+                return true;
+            if (play.State().chat.active && play.PlayerTurn() && play.Screen() == "chat")
+                play.HandleUi("chat", "answer", "0");
+            else if (play.PlayerTurn() && play.Screen() == "menu")
+                play.Key(InputKey::Enter);
+            else
+                play.Update(1.0F);
+        }
+        return false;
+    }
+
+    umbra::night::GameOptions Designed()
+    {
+        umbra::night::GameOptions options;
+        options.tapToContinue = options.moments = true;
+        return options;
+    }
+}
+
+TEST_CASE("A bot beat where something happens waits for a tap, shown at full size (T148)", "[night][play][pace]")
+{
+    const NightDef def = Data();
+    Play play(def, FoyerNight(def, 4, 0));
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    Captions captions;
+    REQUIRE(LoadCaptions(std::filesystem::path(UMBRA_NIGHT_DATA) / "captions.json", captions, diagnostics));
+    play.SetCaptions(captions);
+    play.SetOptions(Designed());
+    REQUIRE(UntilTap(play, 3000));
+    // 1. It waits however long, on the caption with a Continue, its room on the stage.
+    const int beats = play.Beats();
+    CHECK(play.Screen() == "caption");
+    CHECK(play.UiData()["caption"]["tap"] == true);
+    CHECK(play.StageCell() == play.LastBeat().camera);
+    play.Update(100.0F);
+    CHECK(play.Beats() == beats);
+    // 2. A tap lets the night go on.
+    REQUIRE(play.HandleUi("caption", "next", ""));
+    CHECK_FALSE(play.WaitingForTap());
+}
+
+TEST_CASE("Skip runs the bots to the player's turn without stopping (T148)", "[night][play][pace]")
+{
+    const NightDef def = Data();
+    NightState state = FoyerNight(def, 4, 0);
+    Play play(def, state);
+    play.SetOptions(Designed());
+    // Off the player's turn: skip, then plain time reaches the player's menu with no taps.
+    for (int i = 0; i < 50 && play.PlayerTurn(); ++i)
+        play.Key(InputKey::Enter);
+    REQUIRE_FALSE(play.PlayerTurn());
+    CHECK(play.UiData()["canSkip"] == true);
+    REQUIRE(play.HandleUi("hud", "skip", ""));
+    for (int i = 0; i < 2000 && !play.PlayerTurn(); ++i)
+    {
+        Settle(play);
+        CHECK_FALSE(play.WaitingForTap());
+        play.Update(1.0F);
+    }
+    CHECK(play.PlayerTurn());
+}
+
+TEST_CASE("The room panel says where the player stands and what waits there (T149)", "[night][play][room]")
+{
+    NightDef def = Data();
+    NightState state = FoyerNight(def, 4, 0);
+    Play play(def, state);
+    const nlohmann::json here = play.UiData()["here"];
+    CHECK(here["name"] == def.rooms[static_cast<std::size_t>(state.cells[static_cast<std::size_t>(state.foyer)].room)].name);
+    // An armed trap in the player's room: named, with how to clear it.
+    const int sandbag = NightDef::Find(def.events, "sandbag");
+    state.cells[static_cast<std::size_t>(state.foyer)].event = static_cast<std::int8_t>(sandbag);
+    const std::string text = Play(def, state).UiData()["here"]["what"].get<std::string>();
+    CHECK(text.find(def.events[static_cast<std::size_t>(sandbag)].name) != std::string::npos);
+    CHECK(text.find("Speed 5") != std::string::npos);
 }

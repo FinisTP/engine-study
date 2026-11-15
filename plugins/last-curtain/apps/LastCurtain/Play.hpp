@@ -2,6 +2,7 @@
 
 #include <Narrate.hpp>
 #include <Night.hpp>
+#include <Options.hpp>
 #include <Words.hpp>
 
 #include <Input.hpp>
@@ -60,6 +61,9 @@ public:
     void Update(float dt);
     void SetCaptions(umbra::night::Captions captions) { captions_ = std::move(captions); }
     void SetDecider(Decider decider) { decider_ = std::move(decider); }
+    // The pace (options.csv); the defaults are plan 2c's.
+    void SetOptions(const umbra::night::GameOptions &options) { options_ = options; }
+    [[nodiscard]] bool WaitingForTap() const { return waitTap_; }
     // The model's lines (plan 3); null or no model: the written lines.
     void SetWords(umbra::night::Words *words) { words_ = words; }
     // The room at full size (plan 4b/4c): Look on the player's turn, or a battle in the player's light.
@@ -136,6 +140,13 @@ private:
     int hover_ = -1;
     bool pause_ = false; // the save menu; the night waits
     bool looking_ = false; // Look: the room at full size; the night waits
+    umbra::night::GameOptions options_;
+    bool waitTap_ = false;  // a bot's beat where something happened waits for a tap (options)
+    bool moment_ = false;   // ... and is shown at full size (options)
+    bool skipping_ = false; // Skip: no taps, pauses or line waits until the player's turn
+    [[nodiscard]] bool Notable(const umbra::night::NightState &before, const std::vector<umbra::night::LogEntry> &entries,
+                               const umbra::night::Action &action, int actor) const;
+    [[nodiscard]] nlohmann::json HereData() const;
     int inspect_ = -1;   // the cell being inspected; the night waits
     Slide slide_;
     Decider decider_;

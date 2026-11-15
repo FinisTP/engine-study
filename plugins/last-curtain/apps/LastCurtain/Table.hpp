@@ -65,6 +65,13 @@ public:
     // The figures: a sliding pawn faces its step and walks, the others stand idle (Table.md).
     void Animate(const umbra::night::NightDef &def, const umbra::night::BoardView &view, const Slide &slide, float dt);
     void Zoom(float steps);
+    // The camera's distance (and its zoom range) and tilt in degrees (options.csv).
+    void SetCamera(float distance, float minDistance, float maxDistance, float tilt)
+    {
+        distance_ = distance, minDistance_ = minDistance, maxDistance_ = maxDistance, tilt_ = tilt;
+    }
+    // The guest whose turn it is: a gold arrow bobs over them (-1: none).
+    void SetActing(int guest) { acting_ = guest; }
     void Pan(glm::vec2 pixels); // a drag: the table moves with the mouse (Table.md)
     [[nodiscard]] umbra::core::Camera Camera() const;
     // The cell under the mouse (render pixels), -1 if none.
@@ -103,7 +110,8 @@ private:
     [[nodiscard]] umbra::core::Camera StageCamera() const;
     glm::vec3 from_{0.0F}, to_{0.0F};
     float seconds_ = 0.0F, elapsed_ = 0.0F;
-    float distance_ = 11.0F;
+    float distance_ = 11.0F, minDistance_ = 5.0F, maxDistance_ = 22.0F, tilt_ = 50.0F;
+    int acting_ = -1;
     bool hunt_ = false;
     float blood_ = 0.0F, flicker_ = 0.0F, clock_ = 0.0F; // clock_: seconds, for the flicker and pulse
     [[nodiscard]] float Lamp() const;                    // the lamp's strength now (flicker)

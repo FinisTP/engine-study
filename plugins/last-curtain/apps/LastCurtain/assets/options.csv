@@ -1,0 +1,14 @@
+key,value,note
+slideSeconds,0.4,one step of a pawn on the table (seconds)
+thinkSeconds,0.7,"the shortest ""thinking..."" of a bot in view"
+lineSeconds,3,the longest wait for the model's line (user)
+beatSeconds,2.5,a seen bot action stays on screen when it does not wait for a tap
+fastBeatSeconds,0.4,the same after Space
+unseenBeatSeconds,0.2,an action out of the player's sight
+tapToContinue,1,1: a bot action where something happens waits for a tap (user)
+moments,1,1: things that happen in the player's sight are shown in the room at full size (user)
+cameraDistance,11,metres from the table at the start
+cameraMinDistance,5,the mouse wheel's closest
+cameraMaxDistance,22,the mouse wheel's farthest
+cameraTilt,50,degrees above the table
+cameraEaseSeconds,0.6,the camera's glide to a new place

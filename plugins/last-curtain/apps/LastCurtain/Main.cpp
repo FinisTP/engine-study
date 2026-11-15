@@ -136,6 +136,9 @@ namespace
             std::vector<umbra::core::Diagnostic> diagnostics;
             const bool loaded = LoadNight(assets.RootOf("night/rules.json") / "night", def, diagnostics);
             (void)LoadCaptions(assets / "night/captions.json", captions, diagnostics);
+            GameOptions gameOptions; // the pace and camera (options.csv); a bad file keeps the defaults
+            if (!LoadOptions(assets / "options.csv", gameOptions, diagnostics))
+                gameOptions = {};
             for (const umbra::core::Diagnostic &d : diagnostics)
                 umbra::diagnostics::Error(umbra::core::Format(d));
             umbra::night::Words words(def, LoadModel(assets)); // outlives every Play below
@@ -164,6 +167,7 @@ namespace
                 return 1;
             Screens screens(renderer, assets);
             Table table(renderer, assets);
+            table.SetCamera(gameOptions.cameraDistance, gameOptions.cameraMinDistance, gameOptions.cameraMaxDistance, gameOptions.cameraTilt);
             table.LoadArt(def, assets);
             // The night's mood: the blood colour table after the Turn (Art.md).
             auto bloodLut = std::make_shared<umbra::core::TextureData>();
@@ -200,6 +204,7 @@ namespace
                 else
                     play.emplace(def, options.seed ? options.seed : random(), player);
                 play->SetCaptions(captions);
+                play->SetOptions(gameOptions);
                 play->SetWords(&words);
                 table.SetFeatured(FeaturedCells(def, play->State()));
                 table.NewNight(), seenLog = play->State().logCount, wasLooking = false;
@@ -278,7 +283,7 @@ namespace
                     if (fresh && look >= 0)
                         table.Aim(CellCenter(def, look), 0.0F), aimed = look, fresh = false;
                     if (play->Following() && look >= 0 && look != aimed)
-                        table.Aim(CellCenter(def, look), 0.4F), aimed = look;
+                        table.Aim(CellCenter(def, look), gameOptions.cameraEaseSeconds), aimed = look;
                     if (!play->Following())
                         aimed = -1; // Focus aims again at once
                     const bool held = input.IsMouseButtonHeld(0);
@@ -291,6 +296,7 @@ namespace
                     table.Zoom(input.Wheel());
                     table.Update(dt);
                     table.SetHunt(state.taken.present);
+                    table.SetActing(state.over ? -1 : Current(state));
                     // The mood: the post grade per hour, the blood table and stains after the Turn.
                     const Mood mood = NightMood(def, state);
                     drawList.post = mood.post;

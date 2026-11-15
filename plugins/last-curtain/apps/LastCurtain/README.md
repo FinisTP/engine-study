@@ -27,8 +27,10 @@ doorway to take the passage, Back returns to the table. A battle you fight, or s
 its room at full size. A click on a lit square
 walks there one sliding step at a time (Move first shows the path: gold for the steps you can pay
 for, red beyond); the arrows take one step. A closed door asks Stay (open it) or Back. I opens the
-bag; Enter ends the turn from the menu (moves may be left); the wheel zooms; Space shortens the
-bots' turns. A right-click (or any click on a bot's turn) inspects a room and who is in it. Esc
+bag; Enter ends the turn from the menu (moves may be left); the wheel zooms. A gold arrow bobs over
+whoever's turn it is; the bottom-left panel tells what waits in your room and how to clear it. On a
+bots' turn, a beat where something happens in your sight shows its room at full size and waits for
+Continue (or Space); Skip runs the bots to your turn. A right-click (or any click on a bot's turn) inspects a room and who is in it. Esc
 goes back one step (a door: Back; picking: the menu; a dialog: closed); from the menu or a bot's
 turn it opens the save menu (Save, Resume, Save and quit to the start screen). The start screen's
 Esc quits. Quitting mid-night saves to
@@ -41,5 +43,6 @@ Esc quits. Quitting mid-night saves to
 | `Main.cpp` | window, renderer, the loop, the start screen, saves |
 | `Play.*` | the night as the person plays it, without a window (tested in `tests/PlayTests.cpp`) |
 | `Table.*`, `Table.md` | the board drawn as boxes, the light and the camera |
+| `Options.*`, `assets/options.csv` | the pace, the waits and the camera, for design (`key,value,note`; a bad row keeps the defaults) |
 | `Screens.*` | `engine/ui` set up for this program |
 | `assets/ui/` | the screens, skin and fonts (here, not in the plugin's `assets/`, which the Umbra game also loads) |

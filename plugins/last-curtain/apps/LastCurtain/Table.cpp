@@ -23,7 +23,7 @@ using namespace umbra::night;
 
 namespace
 {
-    constexpr float tile = 2.2F, tileThick = 0.15F, tilt = 50.0F;
+    constexpr float tile = 2.2F, tileThick = 0.15F;
 
     glm::vec4 Hex(std::uint32_t rgb)
     {
@@ -65,6 +65,15 @@ namespace
             mesh.indices.insert(mesh.indices.end(), {base, base + 1, base + 2, base, base + 2, base + 3});
         }
         return mesh;
+    }
+
+    // The turn arrow: a glowing gold diamond pointing down at `top`, bobbing with the clock.
+    void Arrow(umbra::core::DrawList &out, umbra::core::MeshHandle mesh, glm::vec3 top, float size, float clock)
+    {
+        const glm::vec3 at = top + glm::vec3{0.0F, size * (0.9F + 0.25F * std::sin(clock * 3.0F)), 0.0F};
+        const glm::mat4 model = glm::scale(glm::rotate(glm::rotate(glm::translate(glm::mat4{1.0F}, at), clock * 1.5F, {0, 1, 0}), 0.7854F, {0, 0, 1}),
+                                           glm::vec3{size * 0.5F, size * 0.5F, size * 0.2F});
+        out.items.push_back({mesh, {}, model, glm::vec4{0.95F, 0.8F, 0.3F, 1.0F}, 0.0F, 1.0F});
     }
 
     void Box(umbra::core::DrawList &out, umbra::core::MeshHandle mesh, glm::vec3 centre, glm::vec3 size, glm::vec4 color)
@@ -264,6 +273,8 @@ void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<i
         }
         else
             Box(out, box_, at + glm::vec3{0, 0.45F, 0}, {0.5F, 0.9F, 0.5F}, color);
+        if (pawn.guest == acting_)
+            Arrow(out, box_, at + glm::vec3{0.0F, 1.2F, 0.0F}, 0.6F, clock_);
         int group = 0;
         for (const auto &[guest, number] : rings)
             group = guest == pawn.guest ? number : group;
@@ -407,7 +418,7 @@ void Table::Pan(glm::vec2 pixels)
     elapsed_ = seconds_;
 }
 
-void Table::Zoom(float steps) { distance_ = std::clamp(distance_ - steps, 5.0F, 22.0F); }
+void Table::Zoom(float steps) { distance_ = std::clamp(distance_ - steps, minDistance_, maxDistance_); }
 
 umbra::core::Camera Table::Camera() const
 {
@@ -415,7 +426,7 @@ umbra::core::Camera Table::Camera() const
     const float t = seconds_ > 0.0F ? elapsed_ / seconds_ : 1.0F;
     umbra::core::Camera camera;
     camera.target = from_ + (to_ - from_) * (t * t * (3.0F - 2.0F * t));
-    camera.position = camera.target + distance_ * glm::vec3{0.0F, std::sin(glm::radians(tilt)), std::cos(glm::radians(tilt))};
+    camera.position = camera.target + distance_ * glm::vec3{0.0F, std::sin(glm::radians(tilt_)), std::cos(glm::radians(tilt_))};
     return camera;
 }
 
@@ -528,6 +539,8 @@ void Table::DrawStage(const NightDef &def, const BoardView &view, int cell, cons
             yaw = actor.guest == stageGuest_ ? p->yaw : yaw;
         const glm::mat4 model = glm::scale(glm::rotate(glm::translate(glm::mat4{1.0F}, at), yaw, {0, 1, 0}), glm::vec3{figure.scale * stageScale}) *
                                 glm::translate(glm::mat4{1.0F}, {0, 1, 0});
+        if (actor.guest == acting_)
+            Arrow(out, box_, at + glm::vec3{0.0F, 2.0F * figure.scale * stageScale, 0.0F}, 0.6F, clock_);
         const std::vector<glm::mat4> &palette = p->animator->Palette();
         out.items.push_back({figure.mesh, figure.texture, model, color, 0.0F, 0.12F});
         out.items.back().jointOffset = static_cast<std::uint32_t>(out.joints.size());
@@ -576,8 +589,14 @@ void Table::React(const std::vector<LogEntry> &entries)
     for (const LogEntry &e : entries)
         if (e.kind == LogKind::Hit)
             play(e.who, "attack"), play(e.other, "hit");
-        else if (e.kind == LogKind::Power)
-            play(e.who, "power");
+        else if (e.kind == LogKind::Power || e.kind == LogKind::Cleared || (e.kind == LogKind::Goal && e.a == 1))
+            play(e.who, "attack"); // the graph has no power clip: a strong gesture
+        else if (e.kind == LogKind::Item || e.kind == LogKind::Check)
+            play(e.who, "talk"); // reaches out: picks it up, braces for the roll
+        else if (e.kind == LogKind::Effect && e.b < 0)
+            play(e.who, "hit"); // a trap or an event hurts
+        else if (e.kind == LogKind::Persuade)
+            play(e.who, "talk"), play(e.other, "talk");
         else if (e.kind == LogKind::Down || e.kind == LogKind::Died)
             lie(e.who, true);
         else if (e.kind == LogKind::Woke)

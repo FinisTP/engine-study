@@ -234,7 +234,7 @@ void Play::Key(umbra::platform::InputKey key)
     if (key == InputKey::Left) direction = 3;
     // 2. Each key does what a legal action of this turn allows, or nothing; never behind a dialog.
     if (key == InputKey::Space && !PlayerTurn())
-        fast_ = true;
+        fast_ = true, waitTap_ = false;
     if (key == InputKey::I && (Screen() == "menu" || Screen() == "bag") && !state_.chat.active)
         bag_ = !bag_;
     const std::string screen = Screen();
@@ -295,6 +295,14 @@ bool Play::HandleUi(const std::string &, const std::string &action, const std::s
     }
     if (action == "focus")
         return following_ = true;
+    // A tap on a waiting beat; Skip runs the bots to the player's turn.
+    if (action == "next" && waitTap_)
+        return !(waitTap_ = false);
+    if (action == "skip" && !PlayerTurn() && state_.player >= 0 && !state_.over)
+    {
+        skipping_ = fast_ = true, waitTap_ = false;
+        return true;
+    }
     if (action == "resume" && pause_)
         return !(pause_ = false);
     if (action == "close" && inspect_ >= 0)
@@ -363,7 +371,7 @@ std::string Play::Screen() const
     if (turn_)
         return turnTicket_ != 0 ? "" : "turn"; // its line is still coming
     if (!PlayerTurn())
-        return hold_ > 0.0F && beat_.seen ? "caption" : "";
+        return (hold_ > 0.0F || waitTap_) && beat_.seen ? "caption" : "";
     if (state_.chat.active)
         return ChatWaiting() ? "" : "chat";
     if (state_.battle.active)
@@ -382,12 +390,12 @@ void Play::Update(float dt)
     ResolveLines();
     if (slide_.guest >= 0)
     {
-        slide_.t += dt / slideSeconds;
+        slide_.t += dt / options_.slideSeconds;
         if (slide_.t < 1.0F)
             return;
         slide_ = {};
     }
-    if (event_ >= 0 || !dice_.empty() || turn_)
+    if (event_ >= 0 || !dice_.empty() || turn_ || waitTap_)
         return;
     hold_ -= dt;
     if (hold_ > 0.0F)
@@ -397,7 +405,7 @@ void Play::Update(float dt)
     if (acting < 0 || PlayerTurn())
     {
         beat_ = {};
-        fast_ = false;
+        fast_ = skipping_ = moment_ = false;
         if (acting >= 0 && !state_.chat.active && !state_.battle.active && !bag_ && mode_ != Mode::Confirm)
             WalkOn();
         return;
@@ -418,7 +426,9 @@ void Play::Update(float dt)
         if (turnKey != thoughtTurn_ && seen && !state_.battle.active && !state_.chat.active)
         {
             thoughtTurn_ = turnKey;
-            think_ = std::max(thinkSeconds, took);
+            think_ = skipping_ ? 0.0F : std::max(options_.thinkSeconds, took);
+            if (skipping_)
+                return;
             return;
         }
     }
@@ -447,7 +457,10 @@ void Play::Update(float dt)
     if (captionTicket_ != 0)
         beat_.caption = words_->Take(captionTicket_, beat_.caption), captionTicket_ = 0;
     said_ = saidTicket_ != 0 ? words_->Take(saidTicket_, "") : "", saidTicket_ = 0;
-    hold_ = beat_.seen ? (fast_ ? 0.3F : 1.5F) : 0.2F;
+    const bool notable = beat_.seen && Notable(before, NewLog(state_, before.logCount), action, acting);
+    hold_ = !beat_.seen || skipping_ ? options_.unseenBeatSeconds : fast_ ? options_.fastBeatSeconds : options_.beatSeconds;
+    waitTap_ = notable && options_.tapToContinue && !skipping_ && !fast_;
+    moment_ = notable && options_.moments && !skipping_;
     if (!beat_.seen)
         slide_ = {}; // only what the player sees slides
 }
@@ -485,6 +498,9 @@ nlohmann::json Play::UiData() const
     nlohmann::json data;
     data["writtenLines"] = words_ == nullptr || !words_->HasModel(); // the save menu says so
     data["dread"] = state_.taken.present;                              // blood runs down the screen
+    data["canSkip"] = !PlayerTurn() && state_.player >= 0 && !state_.over;
+    if (state_.player >= 0)
+        data["here"] = HereData();
     if (looking_ && state_.player >= 0)
         data["look"] = {{"room", def_.rooms[U(state_.cells[U(state_.guests[U(state_.player)].cell)].room)].name}};
     if (state_.over)
@@ -494,8 +510,8 @@ nlohmann::json Play::UiData() const
     if (inspect_ >= 0)
         data["inspect"] = InspectData();
     data["focus"] = !following_;
-    if (beat_.seen && hold_ > 0.0F)
-        data["caption"] = {{"guest", def_.guests[U(beat_.guest)].name}, {"line", beat_.caption}, {"result", beat_.result},
+    if (beat_.seen && (hold_ > 0.0F || waitTap_))
+        data["caption"] = {{"guest", def_.guests[U(beat_.guest)].name}, {"line", beat_.caption}, {"result", beat_.result}, {"tap", waitTap_},
                            {"said", said_}, {"saidBy", saidGuest_ >= 0 ? def_.guests[U(saidGuest_)].name : ""}};
     const int me = Me();
     if (me < 0)
@@ -713,7 +729,10 @@ void Play::Notice(std::uint32_t since)
 
 std::uint32_t Play::LineSeed(int kind) const { return static_cast<std::uint32_t>(state_.seed + state_.logCount * 4U + static_cast<std::uint32_t>(kind)); }
 
-bool Play::LineWaiting(int ticket, float askedAt) const { return ticket != 0 && !words_->Ready(ticket) && clock_ - askedAt < lineSeconds; }
+bool Play::LineWaiting(int ticket, float askedAt) const
+{
+    return ticket != 0 && !skipping_ && !words_->Ready(ticket) && clock_ - askedAt < options_.lineSeconds;
+}
 
 int Play::ChatKey() const { return ((state_.round * 8 + state_.turn) * 100 + state_.chat.question) * 10 + state_.chat.asker; }
 
@@ -945,7 +964,12 @@ int Play::StageCell() const
     // 1. Look: the player's own room.
     if (looking_ && state_.player >= 0)
         return state_.guests[U(state_.player)].cell;
-    // 2. A battle the player can see (their own, or bots' in their light).
+    // 2. Something that happened in the player's sight (options "moments"): their event, a bot's beat.
+    if (options_.moments && (event_ >= 0 || !dice_.empty()) && state_.player >= 0)
+        return eventCell_ >= 0 ? eventCell_ : state_.guests[U(state_.player)].cell;
+    if (moment_ && beat_.seen && beat_.camera >= 0 && (waitTap_ || hold_ > 0.0F))
+        return beat_.camera;
+    // 3. A battle the player can see (their own, or bots' in their light).
     if (state_.battle.active && state_.battle.cell >= 0 && MakeView(def_, state_, state_.player).cells[U(state_.battle.cell)].lit)
         return state_.battle.cell;
     return -1;
@@ -989,4 +1013,60 @@ bool Play::LookDoor(int side)
         return true;
     looking_ = true;
     return false;
+}
+
+bool Play::Notable(const NightState &before, const std::vector<LogEntry> &entries, const Action &action, int actor) const
+{
+    // Something happened: an item, a roll, a fight, a fall, a chat, a clearing, a goal, the Turn.
+    for (const LogEntry &e : entries)
+        switch (e.kind)
+        {
+        case LogKind::Item: case LogKind::Check: case LogKind::Battle: case LogKind::Hit: case LogKind::Down: case LogKind::Died:
+        case LogKind::Persuade: case LogKind::Cleared: case LogKind::Goal: case LogKind::Turned: case LogKind::Power: case LogKind::Monster:
+            return true;
+        default:
+            break;
+        }
+    if (action.kind == ActionKind::OpenChat)
+        return true;
+    // ... or a guest walked into a featured room.
+    const int to = state_.guests[U(actor)].cell;
+    return to != before.guests[U(actor)].cell && Featured(def_, state_, to);
+}
+
+nlohmann::json Play::HereData() const
+{
+    // The player's room: its name, what waits there (and how to clear it), what lies there, who is there.
+    const int cell = state_.guests[U(state_.player)].cell;
+    const Cell &c = state_.cells[U(cell)];
+    const RoomDef &room = def_.rooms[U(c.room)];
+    std::string what;
+    if (c.event >= 0)
+    {
+        const EventDef &e = def_.events[U(c.event)];
+        what = e.name + (e.trap ? " (a trap)" : "") + " waits here. Clear it: pass a " + StatName(e.stat) + " roll";
+        if (e.clear == ClearKind::Stat)
+            what += ", or walk in with " + std::string(StatName(e.clearStat)) + " " + std::to_string(e.clearAmount) + "+";
+        else if (e.clear == ClearKind::Carry)
+            what += ", or carry the " + def_.items[U(e.clearItem)].name;
+        what += ".";
+    }
+    else if (!c.resolved && room.kind == RoomKind::Trap)
+        what = "A trap waits here.";
+    else if (!c.resolved && room.kind == RoomKind::Event)
+        what = "Something waits here.";
+    else if (!c.resolved && room.kind == RoomKind::Item)
+        what = "Something lies hidden here.";
+    else if (room.kind == RoomKind::Bonus)
+        what = "Once for each guest: +" + std::to_string(room.amount) + " " + StatName(room.stat) + ".";
+    else
+        what = "Quiet now.";
+    std::string items, people;
+    for (const FloorItem &f : state_.floor)
+        if (f.cell == cell && f.item >= 0)
+            items += (items.empty() ? "" : ", ") + def_.items[U(f.item)].name;
+    for (int g = 0; g < state_.count; ++g)
+        if (g != state_.player && state_.guests[U(g)].cell == cell && !state_.guests[U(g)].dead)
+            people += (people.empty() ? "" : ", ") + def_.guests[U(g)].name;
+    return {{"name", room.name}, {"what", what}, {"items", items}, {"people", people}};
 }

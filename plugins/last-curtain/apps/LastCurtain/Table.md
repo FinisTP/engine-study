@@ -44,7 +44,13 @@ drawn; that one room is, at full size:
    1.3 m apart. In a Look the player's figure walks where the floor is clicked, at 1.6 m/s, and a
    click in a doorway's gap takes the passage (`Play::LookDoor`, the board's Move).
 4. **Clips:** `React` reads each frame's new log entries: a hit plays `attack` on the attacker and
-   `hit` on the target, a Taken's power plays `power`, a guest down or dead lies down (`dead`) until
-   woken. This works on the table too.
+   `hit` on the target; a power, a cleared event or a goal met plays `attack` (the graph has no power
+   clip); picking up an item or a roll plays `talk` (a reach); a trap or event that hurts plays `hit`;
+   a chat plays `talk` on both; a guest down or dead lies down (`dead`) until woken. This works on
+   the table too.
+5. **Moments** (options `moments`): when something happens in the player's sight (an item, a roll,
+   a fight, a fall, a chat, a clearing, a walk into a featured room) the stage shows that room, and
+   with `tapToContinue` the bot waits for Continue (or Space). Skip runs the bots to the player's
+   turn with no waits. A gold arrow bobs over whoever's turn it is, on the table and the stage.
 
 `--look` opens Look on the player's first menu (for pictures of the stage).

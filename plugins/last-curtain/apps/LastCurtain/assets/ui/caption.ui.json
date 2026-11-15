@@ -6,6 +6,7 @@
     { "type": "text", "style": "heading", "text": "{caption.line}", "wrap": true, "size": [660, 0] },
     { "type": "text", "style": "strong", "text": "{caption.saidBy}: \"{caption.said}\"", "visible": "{caption.said}", "wrap": true, "size": [660, 0] },
     { "type": "text", "style": "small", "text": "{caption.result}", "visible": "{caption.result}", "wrap": true, "size": [660, 0] },
-    { "type": "text", "style": "muted", "text": "Space: faster bot turns" }
+    { "type": "button", "text": "Continue", "action": "next", "size": [160, 40], "visible": "{caption.tap}" },
+    { "type": "text", "style": "muted", "text": "Space: continue, faster bot turns   Skip: to your turn" }
   ] }
 }
