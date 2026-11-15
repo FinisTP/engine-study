@@ -42,22 +42,28 @@ public:
     void SetMood(float blood, float flicker) { blood_ = blood, flicker_ = flicker; }
     void Aim(glm::vec3 target, float seconds);
     void Update(float dt);
-    // The room at full size (plan 4b/4c, Table.md "The stage"), drawn instead of the table.
+    // The room view (Table.md "Room view"): every opened room at full size, 8 m apart where its tile
+    // lies on the table; the camera zooms between the two views. Draw draws whichever is on.
+    void SetRoomView(bool on) { wantRoom_ = on; }
+    [[nodiscard]] bool InRoomView() const { return roomT_ > 0.0F; }
     struct StageActor
     {
         int guest = -1, monsterKind = -1, side = 0;
         bool taken = false;
     };
-    void DrawStage(const umbra::night::NightDef &def, const umbra::night::BoardView &view, int cell, const std::vector<StageActor> &actors,
-                   umbra::core::DrawList &out) const;
-    // A click on the stage floor: the point, and the doorway's side (NESW) or -1.
-    bool StagePick(const umbra::night::BoardView &view, int cell, glm::vec2 mouse, glm::vec2 pixels, glm::vec3 &floor, int &door) const;
-    // The player's figure on the stage: where it stands, where it walks to (Look).
-    void StageStart(int guest);
-    void WalkTo(glm::vec3 floor) { walkTarget_ = floor; }
+    // A battle in sight: its room, and its sides standing apart (Play::StageActors); -1: none.
+    void SetBattle(int cell, std::vector<StageActor> actors) { battleCell_ = cell, battleActors_ = std::move(actors); }
+    // What a click in the room view lands on: a guest, a monster (state.monsters index), a floor item (state.floor index).
+    enum class ThingKind { Guest, Monster, Item };
+    struct Thing
+    {
+        ThingKind kind = ThingKind::Guest;
+        int id = -1;
+    };
+    [[nodiscard]] std::optional<Thing> PickThing(glm::vec2 mouse, glm::vec2 pixels) const;
     // Clips from new log entries: attack, hit, power; down and dead lie down until woken.
     void React(const std::vector<umbra::night::LogEntry> &entries);
-    void NewNight() { pawns_.clear(), stageGuest_ = -1; }
+    void NewNight() { pawns_.clear(); }
     // The painted pictures (Art.md), once; a missing one leaves its box (logged).
     void LoadArt(const umbra::night::NightDef &def, const umbra::assets::AssetFolders &assets);
     // Tonight's featured cells (FeaturedCells), set when a night starts.
@@ -105,11 +111,23 @@ private:
     std::vector<umbra::core::TextureHandle> cardArt_; // by monsters.csv row (minions too)
     std::vector<umbra::core::TextureHandle> itemArt_; // by items.csv row
     std::vector<bool> featured_;                      // by cell: a gold frame
-    int stageGuest_ = -1;                             // the figure that walks on the stage
-    glm::vec3 walkAt_{0.0F}, walkTarget_{0.0F};
-    [[nodiscard]] umbra::core::Camera StageCamera() const;
+    bool wantRoom_ = false;
+    float roomT_ = 0.0F;          // 0 the table, 1 the room view; eased over viewSeconds
+    float roomDistance_ = 11.0F;  // the room view's camera distance (metres; the wheel)
+    int battleCell_ = -1;
+    std::vector<StageActor> battleActors_;
+    struct HitBox
+    {
+        glm::vec3 at{0.0F};
+        float radius = 0.0F;
+        Thing thing;
+    };
+    mutable std::vector<HitBox> hits_; // the things drawn last frame, for PickThing
+    void DrawRooms(const umbra::night::NightDef &def, const umbra::night::BoardView &view, const std::vector<int> &path, int affordable,
+                   const Slide &slide, const std::vector<std::pair<int, int>> &rings, umbra::core::DrawList &out) const;
+    [[nodiscard]] glm::vec3 Ray(glm::vec2 mouse, glm::vec2 pixels, glm::vec3 &origin) const; // the mouse's ray (direction)
     // The stage's parts (Table.md "The stage"): a room's floor and walls at `offset`, a monster card, a figure.
-    void StageRoom(const umbra::night::CellView &room, glm::vec3 offset, float shade, umbra::core::DrawList &out) const;
+    void StageRoom(const umbra::night::CellView &room, glm::vec3 offset, float shade, bool featured, umbra::core::DrawList &out) const;
     void StageCard(int kind, glm::vec3 at, umbra::core::DrawList &out) const;
     void StageFigure(const umbra::night::NightDef &def, int guest, bool taken, glm::vec3 at, float yaw, umbra::core::DrawList &out) const;
     glm::vec3 from_{0.0F}, to_{0.0F};

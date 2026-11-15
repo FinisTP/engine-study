@@ -21,20 +21,21 @@ with the vcpkg feature `town-model-gpu`; without it the night uses its written l
 
 ## Playing
 
-Your turn opens with a menu (Move, Look around, fights, chats, Use item, End turn). Look around
-shows your room at full size from a corner of the stalls: click the floor to walk, walk through a
-doorway to take the passage, Back returns to the table. A battle you fight, or see fought, plays in
-its room at full size. A click on a lit square
-walks there one sliding step at a time (Move first shows the path: gold for the steps you can pay
-for, red beyond); the arrows take one step. A closed door asks Stay (open it) or Back. I opens the
-bag; Enter ends the turn from the menu (moves may be left); the wheel zooms. A gold arrow bobs over
-whoever's turn it is; the bottom-left panel tells what waits in your room and how to clear it. On a
-bots' turn, a beat where something happens in your sight shows its room at full size and waits for
-Continue (or Space); Skip runs the bots to your turn. A right-click (or any click on a bot's turn) inspects a room and who is in it. Esc
-goes back one step (a door: Back; picking: the menu; a dialog: closed); from the menu or a bot's
-turn it opens the save menu (Save, Resume, Save and quit to the start screen). The start screen's
-Esc quits. Quitting mid-night saves to
-`<preferences>/last-curtain/night.json`; the start screen offers Continue.
+Everything is done with the mouse; keys are shortcuts. Your turn opens with a menu (Move, Room
+view, fights, chats, Use item, End turn). **Room view** (or the HUD button) switches between the
+table and every opened room at full size, zooming in; play on in either: click a room to walk there
+(Move first shows the path: gold for the steps you can pay for, red beyond), in the room view click
+a guest to talk (or fight, after midnight), a monster card to fight it, an item on the floor to take
+it. Moves count as the shortest way back to where your turn began, so walking back is free; opening
+a room, or a room that stops you, makes the moves final. A closed door asks Stay (open it) or Back.
+An event, trap or item room plays step by step at the side of the screen: the room, the card, a
+tumbling die, the result in words; then you may look around before End turn. Drag to look, the wheel
+zooms, Focus brings the camera back to whoever acts. A gold arrow bobs over whoever's turn it is
+(the top bar shows their stats); the bottom-left panel tells what waits in your room and how to
+clear it. On a bot's turn, a deed in your sight shows its room and waits for a click (or Space);
+Skip runs the bots to your turn. A right-click inspects a room. Esc goes back one step; from the
+menu or a bot's turn it opens the save menu (Save, Resume, Save and quit). Quitting mid-night saves
+to `<preferences>/last-curtain/night.json`; the start screen offers Continue.
 
 ## Files
 

@@ -7,6 +7,6 @@
     { "type": "text", "style": "small", "text": "{moves} moves left.", "wrap": true, "size": [250, 0] },
     { "type": "list", "items": "{actions}", "as": "a", "gap": 8, "action": "{a.action}", "arg": "{a.arg}",
       "entry": { "type": "button", "size": [254, 44], "text": "{a.label}" } },
-    { "type": "text", "style": "muted", "text": "Move, then click a lit square or use the arrows. You may end your turn at any time.", "wrap": true, "size": [250, 0] }
+    { "type": "text", "style": "muted", "text": "Click a lit room to walk there; walking back is free. You may end your turn at any time.", "wrap": true, "size": [250, 0] }
   ] }
 }

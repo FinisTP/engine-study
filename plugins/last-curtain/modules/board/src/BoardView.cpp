@@ -66,9 +66,9 @@ namespace umbra::night
                 view.monsters.push_back({static_cast<int>(m), monster.cell, monster.kind, def.monsters[U(monster.kind)].taken >= 0});
         }
         // Items lying where the player can see.
-        for (const FloorItem &f : state.floor)
-            if (f.cell >= 0 && f.item >= 0 && view.cells[U(f.cell)].lit)
-                view.items.push_back({f.cell, f.item});
+        for (std::size_t i = 0; i < state.floor.size(); ++i)
+            if (const FloorItem &f = state.floor[i]; f.cell >= 0 && f.item >= 0 && view.cells[U(f.cell)].lit)
+                view.items.push_back({f.cell, f.item, static_cast<int>(i)});
         return view;
     }
 

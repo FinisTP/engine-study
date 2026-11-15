@@ -24,6 +24,8 @@ using namespace umbra::night;
 namespace
 {
     constexpr float tile = 2.2F, tileThick = 0.15F;
+    constexpr float roomScale = 8.0F / cellSize; // the room view: an 8 m room where a cell's tile lies
+    constexpr float viewSeconds = 0.6F;          // the zoom between the table and the room view
 
     glm::vec4 Hex(std::uint32_t rgb)
     {
@@ -176,22 +178,11 @@ void Table::Animate(const NightDef &def, const BoardView &view, const Slide &sli
         if (!p.animator || p.taken != pawn.taken)
             p.animator.emplace(MakeAnimator(figure)), p.taken = pawn.taken;
         // 2. Sliding: face the step (the model faces -Z, so yaw = atan2(-x, -z)) and walk.
-        bool walking = pawn.guest == slide.guest && slide.from >= 0 && slide.to >= 0 && slide.from != slide.to;
+        const bool walking = pawn.guest == slide.guest && slide.from >= 0 && slide.to >= 0 && slide.from != slide.to;
         if (walking)
         {
             const glm::vec3 step = CellCenter(def, slide.to) - CellCenter(def, slide.from);
             p.yaw = std::atan2(-step.x, -step.z);
-        }
-        // 3. The stage walker heads for its target at 1.6 m/s.
-        if (pawn.guest == stageGuest_)
-        {
-            const glm::vec3 left = walkTarget_ - walkAt_;
-            const float distance = glm::length(left);
-            if (distance > 0.05F)
-            {
-                walkAt_ += left * std::min(1.0F, 1.6F * dt / distance);
-                p.yaw = std::atan2(-left.x, -left.z), walking = true;
-            }
         }
         p.animator->SetNumber("speed", walking ? 1.0F : 0.0F);
         p.animator->Update(dt);
@@ -201,6 +192,8 @@ void Table::Animate(const NightDef &def, const BoardView &view, const Slide &sli
 void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<int> &path, int affordable, const Slide &slide,
                  const std::vector<std::pair<int, int>> &rings, umbra::core::DrawList &out) const
 {
+    if (roomT_ > 0.0F)
+        return DrawRooms(def, view, path, affordable, slide, rings, out);
     // 1. Light: indoors, dim ambient (red in the hunt), one warm lamp over the middle of the table.
     umbra::core::EnvironmentSettings settings;
     settings.indoor = true;
@@ -359,6 +352,8 @@ glm::vec3 Table::Above(const NightDef &def, const BoardView &view, int guest, co
     bool taken = false;
     for (const PawnView &pawn : view.pawns)
         taken = pawn.guest == guest ? pawn.taken : taken;
+    if (roomT_ > 0.0F)
+        return Place(def, view, guest, slide) * roomScale + glm::vec3{0.0F, taken ? 3.0F : 2.4F, 0.0F};
     return Place(def, view, guest, slide) + glm::vec3{0.0F, taken ? 1.45F : 1.2F, 0.0F};
 }
 
@@ -384,7 +379,12 @@ void Table::Aim(glm::vec3 target, float seconds)
     elapsed_ = 0.0F;
 }
 
-void Table::Update(float dt) { elapsed_ = std::min(elapsed_ + dt, seconds_), clock_ += dt; }
+void Table::Update(float dt)
+{
+    elapsed_ = std::min(elapsed_ + dt, seconds_), clock_ += dt;
+    // The view zooms between the table and the rooms over viewSeconds.
+    roomT_ = std::clamp(roomT_ + (wantRoom_ ? dt : -dt) / viewSeconds, 0.0F, 1.0F);
+}
 
 float Table::Lamp() const
 {
@@ -412,13 +412,22 @@ void Table::Floor(umbra::core::DrawList &out, umbra::core::TextureHandle art, co
 
 void Table::Pan(glm::vec2 pixels)
 {
-    // A pixel covers more of the table the farther the camera is: about distance / 700 metres.
-    const glm::vec3 target = Camera().target - glm::vec3{pixels.x, 0.0F, pixels.y} * (distance_ / 700.0F);
+    // A pixel covers more of the table the farther the camera is: about distance / 700 metres (in the
+    // room view the rooms are roomScale times larger, so the same drag moves the table that much less).
+    const float metres = roomT_ > 0.0F ? roomDistance_ / roomScale : distance_;
+    const float t = seconds_ > 0.0F ? elapsed_ / seconds_ : 1.0F;
+    const glm::vec3 target = from_ + (to_ - from_) * (t * t * (3.0F - 2.0F * t)) - glm::vec3{pixels.x, 0.0F, pixels.y} * (metres / 700.0F);
     from_ = to_ = target;
     elapsed_ = seconds_;
 }
 
-void Table::Zoom(float steps) { distance_ = std::clamp(distance_ - steps, minDistance_, maxDistance_); }
+void Table::Zoom(float steps)
+{
+    if (wantRoom_)
+        roomDistance_ = std::clamp(roomDistance_ - steps * 2.0F, 6.0F, 45.0F);
+    else
+        distance_ = std::clamp(distance_ - steps, minDistance_, maxDistance_);
+}
 
 umbra::core::Camera Table::Camera() const
 {
@@ -426,7 +435,17 @@ umbra::core::Camera Table::Camera() const
     const float t = seconds_ > 0.0F ? elapsed_ / seconds_ : 1.0F;
     umbra::core::Camera camera;
     camera.target = from_ + (to_ - from_) * (t * t * (3.0F - 2.0F * t));
-    camera.position = camera.target + distance_ * glm::vec3{0.0F, std::sin(glm::radians(tilt_)), std::cos(glm::radians(tilt_))};
+    const glm::vec3 up{0.0F, std::sin(glm::radians(tilt_)), std::cos(glm::radians(tilt_))};
+    camera.position = camera.target + distance_ * up;
+    if (roomT_ <= 0.0F)
+        return camera;
+    // The room view: the same place, roomScale times larger, seen from the front corner (Table.md "Room
+    // view"). Halfway, the camera glides between the table's seat (scaled) and the corner's.
+    const float e = roomT_ * roomT_ * (3.0F - 2.0F * roomT_);
+    const glm::vec3 target = camera.target * roomScale;
+    camera.target = target + glm::vec3{0.0F, 0.7F * e, 0.0F};
+    camera.position = glm::mix(target + up * (distance_ * roomScale), camera.target + glm::normalize(glm::vec3{5.2F, 5.1F, 7.5F}) * roomDistance_, e);
+    camera.farPlane = std::max(camera.farPlane, 400.0F);
     return camera;
 }
 
@@ -443,7 +462,9 @@ int Table::Pick(const NightDef &def, glm::vec2 mouse, glm::vec2 pixels) const
     const glm::mat4 inverse = glm::inverse(projection * view);
     const glm::vec4 nearPoint = inverse * glm::vec4{ndc, -1.0F, 1.0F}, farPoint = inverse * glm::vec4{ndc, 1.0F, 1.0F};
     const glm::vec3 origin = glm::vec3(nearPoint) / nearPoint.w;
-    return CellUnderRay(def, origin, glm::vec3(farPoint) / farPoint.w - origin);
+    // In the room view the world is roomScale times larger: scale the ray back to the table.
+    const float scale = roomT_ > 0.0F ? roomScale : 1.0F;
+    return CellUnderRay(def, origin / scale, glm::vec3(farPoint) / farPoint.w - origin);
 }
 
 // --- The stage: one room at full size (Table.md "The stage") ---
@@ -455,71 +476,116 @@ namespace
     constexpr float stageScale = 1.55F; // figures from 1.1 m on the table to 1.7 m
 }
 
-umbra::core::Camera Table::StageCamera() const
+void Table::DrawRooms(const NightDef &def, const BoardView &view, const std::vector<int> &path, int affordable, const Slide &slide,
+                      const std::vector<std::pair<int, int>> &rings, umbra::core::DrawList &out) const
 {
-    // A seat high in the front corner (user): the back walls (N, W) face it.
-    umbra::core::Camera camera;
-    // The wheel pulls the seat back toward the eight rooms around (distance against the designed one).
-    camera.target = {0.0F, 0.7F, -0.5F};
-    camera.position = camera.target + glm::vec3{5.2F, 5.1F, 7.5F} * (distance_ / baseDistance_);
-    return camera;
-}
-
-void Table::StageStart(int guest)
-{
-    stageGuest_ = guest;
-    walkAt_ = walkTarget_ = {0.0F, 0.0F, 1.5F};
-}
-
-void Table::DrawStage(const NightDef &def, const BoardView &view, int cell, const std::vector<StageActor> &actors, umbra::core::DrawList &out) const
-{
-    // 1. Light: the table's own, and a lamp over the room.
+    // 1. Light: the table's own, and a lamp over where the camera looks.
+    hits_.clear();
     umbra::core::EnvironmentSettings settings;
     settings.indoor = true, settings.ambient = 0.85F, settings.fog = 0.0F, settings.shadows = false;
     settings.tint = HuntTint();
     out.environment = umbra::core::EvaluateEnvironment(settings, 20.0F);
-    out.lights.push_back({{0.0F, 6.0F, 0.0F}, {1.0F, 0.82F, 0.6F}, 25.0F * Lamp(), 30.0F, 0.0F});
-    out.camera = StageCamera();
-    // 2. The room and the eight around it, 8 m apart; an unopened one is dark, an unlit one dim.
-    const int w = def.rules.board.width, x = cell % w, y = cell / w;
-    for (int dy = -1; dy <= 1; ++dy)
-        for (int dx = -1; dx <= 1; ++dx)
-        {
-            const int c = CellAt(def, x + dx, y + dy);
-            const CellView *v = c >= 0 ? &view.cells[static_cast<std::size_t>(c)] : nullptr;
-            if (v == nullptr || !v->opened)
-                continue;
-            const glm::vec3 offset{static_cast<float>(dx) * 2.0F * stageHalf, 0.0F, static_cast<float>(dy) * 2.0F * stageHalf};
-            StageRoom(*v, offset, c == cell || v->lit ? 1.0F : 0.35F, out);
-            if (c == cell)
-                continue;
-            // Who stands there: guests idle in a row, monsters as cards.
-            float slot = -1.5F;
-            for (const PawnView &pawn : view.pawns)
-                if (pawn.cell == c)
-                    StageFigure(def, pawn.guest, pawn.taken, offset + glm::vec3{slot, 0.0F, 0.5F}, 3.14159265F, out), slot += 1.4F;
-            for (const MonsterView &monster : view.monsters)
-                if (monster.cell == c)
-                    StageCard(monster.kind, offset + glm::vec3{slot, 0.0F, -1.0F}, out), slot += 1.6F;
-        }
-    // 3. The actors: a battle's sides face each other; in a Look they stand about the room.
-    const bool battle = std::any_of(actors.begin(), actors.end(), [](const StageActor &a) { return a.side == 1; }) &&
-                        std::any_of(actors.begin(), actors.end(), [](const StageActor &a) { return a.guest >= 0 && a.side == 0; }) && stageGuest_ < 0;
+    out.camera = Camera();
+    out.lights.push_back({out.camera.target + glm::vec3{0.0F, 7.0F, 0.0F}, {1.0F, 0.82F, 0.6F}, 30.0F * Lamp(), 45.0F, 0.0F});
+    // 2. Every opened room at full size where its tile lies; out of the light, dim.
+    const int cells = def.rules.board.width * def.rules.board.height;
+    for (int c = 0; c < cells; ++c)
+        if (const CellView &cell = view.cells[static_cast<std::size_t>(c)]; cell.opened)
+            StageRoom(cell, CellCenter(def, c) * roomScale, cell.lit ? 1.0F : 0.35F,
+                      static_cast<std::size_t>(c) < featured_.size() && featured_[static_cast<std::size_t>(c)], out);
+    // 3. The rooms one step away (a pale plate), and the walk being picked: gold per affordable step, red beyond.
+    for (int c = 0; c < cells; ++c)
+        if (view.cells[static_cast<std::size_t>(c)].step >= 0)
+            Box(out, box_, CellCenter(def, c) * roomScale + glm::vec3{0, 0.03F, 0}, {2.6F, 0.03F, 2.6F}, Hex(0xF2D58A) * glm::vec4{1.0F, 1.0F, 1.0F, 0.6F});
+    for (std::size_t i = 0; i < path.size(); ++i)
+        Box(out, box_, CellCenter(def, path[i]) * roomScale + glm::vec3{0, 0.05F, 0}, {1.4F, 0.05F, 1.4F},
+            static_cast<int>(i) < affordable ? Hex(0xF2D58A) : Hex(0xD62828));
+    // 4. A battle in sight: its sides face each other in its room.
+    const glm::vec3 arena = battleCell_ >= 0 ? CellCenter(def, battleCell_) * roomScale : glm::vec3{0.0F};
     std::array<int, 2> count{};
-    for (const StageActor &actor : actors)
+    for (const StageActor &actor : battleActors_)
     {
         const int i = count[static_cast<std::size_t>(std::clamp(actor.side, 0, 1))]++;
-        const float lane = (static_cast<float>(i) - 1.0F) * 1.3F;
-        const glm::vec3 at = battle ? glm::vec3{actor.side == 0 ? -1.7F : 1.7F, 0.0F, lane} : glm::vec3{-1.8F + static_cast<float>(i) * 1.4F, 0.0F, actor.side == 0 ? 0.4F : -1.8F};
-        const float yaw = battle ? (actor.side == 0 ? -1.5708F : 1.5708F) : 3.14159265F;
+        const glm::vec3 at = arena + glm::vec3{actor.side == 0 ? -1.7F : 1.7F, 0.0F, (static_cast<float>(i) - 1.0F) * 1.3F};
         if (actor.guest < 0)
             StageCard(actor.monsterKind, at, out);
         else
-            StageFigure(def, actor.guest, actor.taken, at, yaw, out);
+            StageFigure(def, actor.guest, actor.taken, at, actor.side == 0 ? -1.5708F : 1.5708F, out), hits_.push_back({at, 0.8F, {ThingKind::Guest, actor.guest}});
+    }
+    // 5. Guests where their pawns stand (scaled up), facing their way; the player's and groups' rings.
+    constexpr std::array<std::uint32_t, 4> groupColors{0xF2D58A, 0xF2D58A, 0x5FC9C9, 0xB28DFF};
+    for (const PawnView &pawn : view.pawns)
+    {
+        if (battleCell_ >= 0 && pawn.cell == battleCell_)
+            continue; // drawn with the battle
+        const glm::vec3 at = Place(def, view, pawn.guest, slide) * roomScale;
+        const Pawn *p = static_cast<std::size_t>(pawn.guest) < pawns_.size() ? &pawns_[static_cast<std::size_t>(pawn.guest)] : nullptr;
+        StageFigure(def, pawn.guest, pawn.taken, at, p != nullptr ? p->yaw : 3.14159265F, out);
+        hits_.push_back({at, 0.8F, {ThingKind::Guest, pawn.guest}});
+        int group = 0;
+        for (const auto &[guest, number] : rings)
+            group = guest == pawn.guest ? number : group;
+        if (pawn.taken)
+            Box(out, box_, at + glm::vec3{0, 0.03F, 0}, {1.4F, 0.05F, 1.4F}, Hex(0xD62828));
+        else if (pawn.player || group > 0)
+            Box(out, box_, at + glm::vec3{0, 0.03F, 0}, {1.4F, 0.05F, 1.4F}, Hex(groupColors[static_cast<std::size_t>(std::clamp(group, 0, 3))]));
+    }
+    // 6. Monsters as cards toward the back of their room; floor items as painted tokens toward the front.
+    std::map<int, int> inCell, tokens;
+    for (const MonsterView &monster : view.monsters)
+    {
+        if (battleCell_ >= 0 && monster.cell == battleCell_)
+            continue;
+        const glm::vec3 at = CellCenter(def, monster.cell) * roomScale + glm::vec3{-1.5F + 1.6F * static_cast<float>(inCell[monster.cell]++), 0.0F, -2.0F};
+        StageCard(monster.kind, at, out);
+        hits_.push_back({at, 0.9F, {ThingKind::Monster, monster.monster}});
+    }
+    for (const FloorView &item : view.items)
+    {
+        const glm::vec3 at = CellCenter(def, item.cell) * roomScale + glm::vec3{-2.0F + 1.3F * static_cast<float>(tokens[item.cell]++), 0.0F, 2.4F};
+        Box(out, box_, at + glm::vec3{0, 0.03F, 0}, {1.1F, 0.06F, 1.1F}, Hex(0x2A1E16));
+        const umbra::core::TextureHandle token = item.item >= 0 && static_cast<std::size_t>(item.item) < itemArt_.size() ? itemArt_[static_cast<std::size_t>(item.item)] : umbra::core::TextureHandle{};
+        out.items.push_back({box_, token, glm::scale(glm::translate(glm::mat4{1.0F}, at + glm::vec3{0, 0.07F, 0}), {0.95F, 0.03F, 0.95F}),
+                             token ? glm::vec4{1.0F} : Hex(0xF2D58A), 0.0F, 0.15F});
+        hits_.push_back({at, 0.7F, {ThingKind::Item, item.floor}});
     }
 }
 
-void Table::StageRoom(const CellView &room, glm::vec3 offset, float shade, umbra::core::DrawList &out) const
+glm::vec3 Table::Ray(glm::vec2 mouse, glm::vec2 pixels, glm::vec3 &origin) const
+{
+    // The mouse back through the projection and view at the near and far planes (as Pick).
+    const glm::vec2 ndc{mouse.x / pixels.x * 2.0F - 1.0F, 1.0F - mouse.y / pixels.y * 2.0F};
+    const umbra::core::Camera camera = Camera();
+    const glm::mat4 inverse = glm::inverse(glm::perspectiveRH_NO(glm::radians(camera.fovYDegrees), pixels.x / pixels.y, camera.nearPlane, camera.farPlane) *
+                                           glm::lookAtRH(camera.position, camera.target, glm::vec3{0.0F, 1.0F, 0.0F}));
+    const glm::vec4 nearPoint = inverse * glm::vec4{ndc, -1.0F, 1.0F}, farPoint = inverse * glm::vec4{ndc, 1.0F, 1.0F};
+    origin = glm::vec3(nearPoint) / nearPoint.w;
+    return glm::vec3(farPoint) / farPoint.w - origin;
+}
+
+std::optional<Table::Thing> Table::PickThing(glm::vec2 mouse, glm::vec2 pixels) const
+{
+    // 1. In the room view only: the ray at knee height (0.6 m) and at the floor.
+    if (roomT_ < 1.0F || pixels.x <= 0.0F || pixels.y <= 0.0F)
+        return std::nullopt;
+    glm::vec3 origin{0.0F};
+    const glm::vec3 direction = Ray(mouse, pixels, origin);
+    if (std::abs(direction.y) < 1e-6F)
+        return std::nullopt;
+    // 2. The nearest thing drawn last frame whose circle holds either point (figures stand, items lie).
+    std::optional<Thing> best;
+    float bestDistance = 1e9F;
+    for (const float height : {0.6F, 0.0F})
+    {
+        const glm::vec3 point = origin + direction * ((height - origin.y) / direction.y);
+        for (const HitBox &hit : hits_)
+            if (const float d = glm::length(glm::vec2{point.x - hit.at.x, point.z - hit.at.z}); d < hit.radius && d < bestDistance)
+                best = hit.thing, bestDistance = d;
+    }
+    return best;
+}
+
+void Table::StageRoom(const CellView &room, glm::vec3 offset, float shade, bool featured, umbra::core::DrawList &out) const
 {
     // 1. The floor: the room's own painting, 8 m across.
     const umbra::core::TextureHandle art = room.room >= 0 && static_cast<std::size_t>(room.room) < roomArt_.size() ? roomArt_[static_cast<std::size_t>(room.room)] : umbra::core::TextureHandle{};
@@ -532,7 +598,7 @@ void Table::StageRoom(const CellView &room, glm::vec3 offset, float shade, umbra
         const bool back = d == 0 || d == 3, across = d == 1 || d == 3, door = (room.doors & (1u << d)) != 0;
         const float height = back ? 1.2F : 0.4F; // low enough to see the rooms behind
         const glm::vec3 edge = offset + side[d] * (stageHalf - 0.1F); // inset: two rooms' walls stand side by side
-        const glm::vec4 paint = (RoomColor(room.kind) * 0.55F + glm::vec4{0.0F, 0.0F, 0.0F, 0.45F}) * glm::vec4{shade, shade, shade, 1.0F};
+        const glm::vec4 paint = ((featured ? Hex(0xD4AF37) : RoomColor(room.kind)) * 0.55F + glm::vec4{0.0F, 0.0F, 0.0F, 0.45F}) * glm::vec4{shade, shade, shade, 1.0F};
         // Two pieces either side of the doorway (or one whole wall).
         for (const float sign : {-1.0F, 1.0F})
         {
@@ -563,8 +629,6 @@ void Table::StageFigure(const NightDef &def, int guest, bool taken, glm::vec3 at
     const Figure &figure = taken ? taken_ : guest_;
     const Pawn *p = g < pawns_.size() ? &pawns_[g] : nullptr;
     const glm::vec4 color = glm::mix(Hex(def.guests[g].color), glm::vec4{1.0F}, 0.25F);
-    if (guest == stageGuest_)
-        at = walkAt_, yaw = p != nullptr ? p->yaw : yaw;
     if (guest == acting_)
         Arrow(out, box_, at + glm::vec3{0.0F, 2.0F * figure.scale * stageScale, 0.0F}, 0.6F, clock_);
     if (!figure.mesh || p == nullptr || !p->animator)
@@ -579,33 +643,6 @@ void Table::StageFigure(const NightDef &def, int guest, bool taken, glm::vec3 at
     out.items.back().jointOffset = static_cast<std::uint32_t>(out.joints.size());
     out.items.back().jointCount = static_cast<std::uint32_t>(palette.size());
     out.joints.insert(out.joints.end(), palette.begin(), palette.end());
-}
-
-bool Table::StagePick(const BoardView &view, int cell, glm::vec2 mouse, glm::vec2 pixels, glm::vec3 &floor, int &door) const
-{
-    // 1. The mouse ray (as Pick) meets the floor plane y = 0.
-    if (pixels.x <= 0.0F || pixels.y <= 0.0F)
-        return false;
-    const glm::vec2 ndc{mouse.x / pixels.x * 2.0F - 1.0F, 1.0F - mouse.y / pixels.y * 2.0F};
-    const umbra::core::Camera camera = StageCamera();
-    const glm::mat4 inverse = glm::inverse(glm::perspectiveRH_NO(glm::radians(camera.fovYDegrees), pixels.x / pixels.y, camera.nearPlane, camera.farPlane) *
-                                           glm::lookAtRH(camera.position, camera.target, glm::vec3{0.0F, 1.0F, 0.0F}));
-    const glm::vec4 nearPoint = inverse * glm::vec4{ndc, -1.0F, 1.0F}, farPoint = inverse * glm::vec4{ndc, 1.0F, 1.0F};
-    const glm::vec3 origin = glm::vec3(nearPoint) / nearPoint.w, direction = glm::vec3(farPoint) / farPoint.w - origin;
-    if (std::abs(direction.y) < 1e-6F || origin.y / -direction.y < 0.0F)
-        return false;
-    floor = origin + direction * (origin.y / -direction.y);
-    if (std::abs(floor.x) > stageHalf + 0.5F || std::abs(floor.z) > stageHalf + 0.5F)
-        return false;
-    // 2. Near a wall, inside a doorway's gap: that door.
-    door = -1;
-    const std::uint8_t doors = view.cells[static_cast<std::size_t>(cell)].doors;
-    const float edge = stageHalf - 0.6F;
-    const int side = floor.z < -edge ? 0 : floor.x > edge ? 1 : floor.z > edge ? 2 : floor.x < -edge ? 3 : -1;
-    if (side >= 0 && (doors & (1u << side)) && std::abs(side % 2 == 0 ? floor.x : floor.z) < doorHalf)
-        door = side;
-    floor = glm::clamp(floor, glm::vec3{-stageHalf + 0.4F, 0.0F, -stageHalf + 0.4F}, glm::vec3{stageHalf - 0.4F, 0.0F, stageHalf - 0.4F});
-    return true;
 }
 
 void Table::React(const std::vector<LogEntry> &entries)

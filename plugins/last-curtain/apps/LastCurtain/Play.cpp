@@ -375,10 +375,10 @@ bool Play::HandleUi(const std::string &, const std::string &action, const std::s
         return !(pause_ = false);
     if (action == "close" && inspect_ >= 0)
         return (inspect_ = -1), true;
-    if (resting_ && Screen() == "rest" && (action == "look" || action == "end"))
-        return action == "look" ? (looking_ = true) : !(resting_ = false);
-    if (action == "back" && looking_ && resting_)
-        return !(looking_ = false);
+    if (action == "look") // the view switch, from any screen
+        return roomView_ = !roomView_, true;
+    if (resting_ && Screen() == "rest" && action == "end")
+        return !(resting_ = false);
     if (!PlayerTurn())
         return false;
     // 2. Choices: answers, battle moves.
@@ -390,10 +390,6 @@ bool Play::HandleUi(const std::string &, const std::string &action, const std::s
     // 2. The turn menu and the door; Look opens the room at full size.
     if (action == "move" && Screen() == "menu")
         return (mode_ = Mode::Picking), true;
-    if (action == "look" && Screen() == "menu")
-        return looking_ = true;
-    if (action == "back" && looking_)
-        return !(looking_ = false);
     if (action == "back" && mode_ == Mode::Confirm)
     {
         walk_.clear(), walking_ = false, mode_ = Mode::Picking;
@@ -432,8 +428,6 @@ std::string Play::Screen() const
         return "pause";
     if (inspect_ >= 0)
         return "inspect";
-    if (looking_)
-        return "look";
     if (slide_.guest >= 0 && PlayerTurn()) // a slide takes its time; a dialog waits for it
         return "picking";
     if (arrive_.cell >= 0)
@@ -464,7 +458,7 @@ std::string Play::Screen() const
 void Play::Update(float dt)
 {
     // 1. Nothing moves without time; a slide plays out first; then the player's rolls wait.
-    if (dt <= 0.0F || pause_ || inspect_ >= 0 || looking_)
+    if (dt <= 0.0F || pause_ || inspect_ >= 0)
         return;
     clock_ += dt;
     diceClock_ += dt, flashClock_ = std::max(0.0F, flashClock_ - dt);
@@ -586,10 +580,9 @@ nlohmann::json Play::UiData() const
     data["writtenLines"] = words_ == nullptr || !words_->HasModel(); // the save menu says so
     data["dread"] = state_.taken.present;                              // blood runs down the screen
     data["canSkip"] = !PlayerTurn() && state_.player >= 0 && !state_.over;
-    if (state_.player >= 0 && !looking_)
-        data["here"] = HereData(); // Look's own bar names the room
-    if (looking_ && state_.player >= 0)
-        data["look"] = {{"room", def_.rooms[U(state_.cells[U(state_.guests[U(state_.player)].cell)].room)].name}};
+    if (state_.player >= 0)
+        data["here"] = HereData();
+    data["view"] = roomView_ ? "Board view" : "Room view"; // the switch's label
     if (state_.over)
         data["end"] = EndData();
     if (turn_ && !state_.over)
@@ -651,7 +644,7 @@ nlohmann::json Play::UiData() const
     if (std::any_of(legal.begin(), legal.end(), [](const Action &a) { return a.kind == ActionKind::Move && a.a < transportMove; }))
         data["actions"].push_back({{"label", "Move"}, {"action", "move"}, {"arg", ""}});
     if (Screen() == "menu")
-        data["actions"].push_back({{"label", "Look around"}, {"action", "look"}, {"arg", ""}});
+        data["actions"].push_back({{"label", roomView_ ? "Board view" : "Room view"}, {"action", "look"}, {"arg", ""}});
     int endTurn = -1;
     for (std::size_t i = 0; i < legal.size(); ++i)
     {
@@ -1082,10 +1075,7 @@ nlohmann::json Play::InspectData() const
 
 int Play::StageCell() const
 {
-    // 1. Look: the player's own room.
-    if (looking_ && state_.player >= 0)
-        return state_.guests[U(state_.player)].cell;
-    // 2. Something that happened in the player's sight (options "moments"): their event, a bot's beat.
+    // 1. Something that happened in the player's sight (options "moments"): their event, a bot's beat.
     if (options_.moments && arrive_.cell >= 0)
         return arrive_.cell;
     if (options_.moments && (event_ >= 0 || found_ >= 0 || !dice_.empty()) && state_.player >= 0)
@@ -1125,16 +1115,33 @@ std::vector<Play::Actor> Play::StageActors() const
     return actors;
 }
 
-bool Play::LookDoor(int side)
+bool Play::ClickItem(int floor)
 {
-    // The board's Move through that side, if it is legal; the look ends with it.
-    if (!looking_ || state_.player < 0)
+    // A floor item where the player stands: picked up (the bag's pickup).
+    return HandleUi("bag", "pickup", std::to_string(floor));
+}
+
+bool Play::ClickGuest(int guest)
+{
+    // A guest: talk to them, else fight them (after midnight), else look into their room.
+    if (!PlayerTurn() || Screen() != "menu" || guest < 0 || guest >= state_.count)
         return false;
-    const int to = Neighbour(def_, state_.guests[U(state_.player)].cell, side);
-    looking_ = false;
-    if (to >= 0 && Step(to))
-        return true;
-    looking_ = true;
+    for (const Action &a : LegalActions(def_, state_))
+        if ((a.kind == ActionKind::Chat && a.a == guest) || (a.kind == ActionKind::Attack && a.a < 0 && a.b == guest))
+            return Do(a);
+    inspect_ = state_.guests[U(guest)].cell;
+    return false;
+}
+
+bool Play::ClickMonster(int monster)
+{
+    // A monster: fight it if it can be fought from here, else look into its room.
+    if (!PlayerTurn() || Screen() != "menu" || monster < 0 || static_cast<std::size_t>(monster) >= state_.monsters.size())
+        return false;
+    for (const Action &a : LegalActions(def_, state_))
+        if (a.kind == ActionKind::Attack && a.a == monster)
+            return Do(a);
+    inspect_ = state_.monsters[U(monster)].cell;
     return false;
 }
 

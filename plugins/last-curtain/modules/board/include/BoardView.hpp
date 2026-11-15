@@ -39,6 +39,7 @@ namespace umbra::night
     struct FloorView
     {
         int cell = -1, item = -1; // item: items.csv row
+        int floor = -1;           // its index in NightState::floor (to pick it up)
     };
 
     struct BoardView

@@ -29,31 +29,31 @@
    the Taken.
 8. **Picking**: the mouse position goes back through the projection and view (`inverse(projection * view)`) at the near and far planes. The line between those two points is the ray from the eye; `CellUnderRay` finds where it meets the table top, y = 0.
 
-## The stage (plans 4b and 4c)
+## Room view (plans 4b and 4c, the user's feedback of 2026-11-15)
 
-While `Play::StageCell()` is a cell (Look, a battle in the player's light, or a deed in sight), the
-table is not drawn; that room is, at full size, with the eight around it:
+The player switches between the table and the room view at any time (`Room view` / `Board view`
+in the turn menu, or the HUD button; `Play::RoomView`); a moment (an event, a deed in sight, a
+battle in light, `Play::StageCell`) shows the room view on its own. The night goes on in either.
 
-1. **Camera:** fixed high in the front corner (user), like a seat in the stalls: looking at
-   (0, 0.7, -0.5) from (5.2, 5.1, 7.5) further along, scaled by the wheel's distance over the
-   designed one (`options.csv` `cameraDistance`), so zooming out shows all nine rooms.
-2. **Rooms:** 8 × 8 m, side by side; the floor is the room's own painting. The back walls (N, W)
-   are 1.2 m, low enough to see the rooms behind; the front ones (E, S) 0.4 m. Each has a gold
-   moulding and a 1.8 m gap where the board has a door, and stands 0.1 m inside the room, so two
-   rooms' walls stand side by side. An unopened room is not drawn; one out of the player's light is
-   drawn at 35 % brightness. Guests in a neighbour stand in a row; monsters stand as cards.
-3. **Actors:** guests are their figures at 1.55 × their table size (1.7 m); monsters are framed
-   cards on stands. In a battle side 0 stands at x = -1.7 facing +X, side 1 at x = +1.7 facing -X,
-   1.3 m apart. In a Look the player's figure walks where the floor is clicked, at 1.6 m/s, and a
-   click in a doorway's gap takes the passage (`Play::LookDoor`, the board's Move).
+1. **The world:** every opened room at full size, 8 × 8 m, where its tile lies on the table: a
+   cell's centre times `roomScale` (8 m over the 2.4 m between cells). The floor is the room's
+   painting; back walls (N, W) are 1.2 m, front ones 0.4 m, 0.1 m inside the room, with a 1.8 m
+   gap at each door; featured rooms have gold walls. Out of the player's light a room is drawn at
+   35 % brightness. Guests stand where their pawns stand (`Place` × `roomScale`, so a slide walks
+   them from room to room); monsters are framed cards at the back of their room, floor items
+   painted tokens at the front. A battle in sight stands its sides apart in its room.
+2. **The camera:** the table's camera target, scaled, seen from the front corner
+   (normalize(5.2, 5.1, 7.5) × the room distance). Switching eases `roomT_` 0 → 1 over 0.6 s; on
+   the way the camera glides from the table's seat (scaled, so the rooms first appear exactly
+   where the tiles were) to the corner: a zoom-in. Drag pans (the same pixels move the table
+   `roomScale` times less); the wheel changes the room distance (6-45 m).
+3. **Clicks:** `PickThing` checks the things drawn last frame (figures at knee height, items on
+   the floor); a figure engages (chat, or a fight after midnight), a monster card is fought, an
+   item is picked up. Otherwise `Pick` (the ray scaled back to the table) gives the room: a walk
+   there, as on the table. Rooms one step away have a pale plate; a walk shows gold and red discs.
 4. **Clips:** `React` reads each frame's new log entries: a hit plays `attack` on the attacker and
-   `hit` on the target; a power, a cleared event or a goal met plays `attack` (the graph has no power
-   clip); picking up an item or a roll plays `talk` (a reach); a trap or event that hurts plays `hit`;
-   a chat plays `talk` on both; a guest down or dead lies down (`dead`) until woken. This works on
-   the table too.
-5. **Moments** (options `moments`): when something happens in the player's sight (an item, a roll,
-   a fight, a fall, a chat, a clearing; a walk alone stays on the table) the stage shows that room, and
-   with `tapToContinue` the bot waits for Continue (or Space). Skip runs the bots to the player's
-   turn with no waits. A gold arrow bobs over whoever's turn it is, on the table and the stage.
+   `hit` on the target; a power, a cleared event or a goal met plays `attack`; picking up an item or
+   a roll plays `talk` (a reach); a trap or event that hurts plays `hit`; a chat plays `talk` on
+   both; a guest down or dead lies down (`dead`) until woken. A gold arrow bobs over whoever acts.
 
-`--look` opens Look on the player's first menu (for pictures of the stage).
+`--look` switches to the room view on the player's first menu (for pictures).

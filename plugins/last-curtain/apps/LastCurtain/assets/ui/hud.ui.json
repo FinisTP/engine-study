@@ -31,6 +31,7 @@
     ] },
     { "type": "button", "anchor": "bottom-right", "offset": [-24, -60], "size": [140, 44], "text": "Focus", "action": "focus", "visible": "{focus}" },
     { "type": "button", "anchor": "bottom-right", "offset": [-24, -116], "size": [140, 44], "text": "Skip", "action": "skip", "visible": "{canSkip}" },
+    { "type": "button", "anchor": "bottom-right", "offset": [-24, -172], "size": [140, 44], "text": "{view}", "action": "look" },
     { "type": "stack", "anchor": "bottom-left", "offset": [24, -48], "style": "panel", "gap": 4, "size": [260, 0], "visible": "{here}", "children": [
       { "type": "text", "style": "heading", "text": "{here.name}", "wrap": true, "size": [230, 0] },
       { "type": "text", "style": "small", "text": "{here.what}", "wrap": true, "size": [230, 0] },
@@ -40,6 +41,6 @@
     { "type": "list", "anchor": "top-right", "offset": [-16, 64], "items": "{warnings}", "as": "w", "visible": "{warnings}",
       "entry": { "type": "text", "style": "warning", "text": "{w}", "wrap": true, "size": [460, 0] } },
     { "type": "text", "anchor": "bottom-left", "offset": [24, -18], "style": "muted",
-      "text": "Click: walk   Right-click: inspect   Arrows: step   I: bag   Enter: end turn   Drag: look   Wheel: zoom   Esc: menu" }
+      "text": "Click: walk, talk, take, fight   Right-click: inspect   Drag: look   Wheel: zoom   Esc: menu" }
   ] }
 }

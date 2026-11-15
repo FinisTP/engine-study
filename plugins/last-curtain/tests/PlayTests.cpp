@@ -1367,69 +1367,50 @@ TEST_CASE("Screens carry their pictures: the event's, the asker's and my portrai
     }
 }
 
-TEST_CASE("Look opens the player's room at full size; the night waits (T144)", "[night][play][stage]")
+TEST_CASE("Room view is a switch: the player plays on in it; the night does not stop (T144, T158)", "[night][play][stage]")
 {
     const NightDef def = Data();
     Play play(def, PlayerFirst(def));
     REQUIRE(play.Screen() == "menu");
-    const int here = play.State().guests[0].cell;
-    CHECK(play.StageCell() == -1);
-    // 1. Look is in the menu and opens the stage on the player's room.
+    CHECK_FALSE(play.RoomView());
+    // 1. The menu's switch turns the room view on; the menu stays and moves still work there.
     const nlohmann::json actions = play.UiData()["actions"];
-    CHECK(std::any_of(actions.begin(), actions.end(), [](const nlohmann::json &a) { return a["action"] == "look"; }));
+    CHECK(std::any_of(actions.begin(), actions.end(), [](const nlohmann::json &a) { return a["action"] == "look" && a["label"] == "Room view"; }));
     REQUIRE(play.HandleUi("menu", "look", ""));
-    CHECK(play.Looking());
-    CHECK(play.Screen() == "look");
-    CHECK(play.StageCell() == here);
-    const std::vector<Play::Actor> actors = play.StageActors();
-    CHECK(std::any_of(actors.begin(), actors.end(), [](const Play::Actor &a) { return a.guest == 0; }));
-    // 2. The night waits; Back returns to the menu.
-    const NightState before = play.State();
-    play.Update(10.0F);
-    CHECK(Fingerprint(play.State()) == Fingerprint(before));
-    REQUIRE(play.HandleUi("look", "back", ""));
-    CHECK_FALSE(play.Looking());
+    CHECK(play.RoomView());
     CHECK(play.Screen() == "menu");
-}
-
-TEST_CASE("A doorway in the room is the board's Move; a barred side does nothing (T144)", "[night][play][stage]")
-{
-    const NightDef def = Data();
-    Play play(def, PlayerFirst(def));
-    const int here = play.State().guests[0].cell;
+    const nlohmann::json again = play.UiData()["actions"];
+    CHECK(std::any_of(again.begin(), again.end(), [](const nlohmann::json &a) { return a["action"] == "look" && a["label"] == "Board view"; }));
     const int step = StepCell(def, play);
     REQUIRE(step >= 0);
-    int open = -1, barred = -1;
-    for (int d = 0; d < 4; ++d)
-        if (Neighbour(def, here, d) == step)
-            open = d;
-        else if (barred < 0)
-            barred = d;
-    REQUIRE(open >= 0);
-    REQUIRE(play.HandleUi("menu", "look", ""));
-    const int moves = play.State().guests[0].movesLeft;
-    if (barred >= 0 && Neighbour(def, here, barred) != step)
-    {
-        const BoardView view = MakeView(def, play.State(), 0);
-        const bool canGo = Neighbour(def, here, barred) >= 0 && view.cells[static_cast<std::size_t>(Neighbour(def, here, barred))].step >= 0;
-        if (!canGo)
-        {
-            CHECK_FALSE(play.LookDoor(barred));
-            CHECK(play.Looking());
-        }
-    }
-    REQUIRE(play.LookDoor(open));
-    CHECK_FALSE(play.Looking());
+    GoTo(play, step); // a click on a room's floor walks, as on the table
     CHECK(play.State().guests[0].cell == step);
-    CHECK(play.State().guests[0].movesLeft < moves); // the board's Move: one step, or all if the room is new
+    CHECK(play.RoomView()); // the view stays as chosen
+    // 2. The switch works on a bot's turn too, and the bots go on.
+    REQUIRE(play.HandleUi("hud", "look", ""));
+    CHECK_FALSE(play.RoomView());
 }
 
-TEST_CASE("Look is refused off the player's own menu (T144)", "[night][play][stage]")
+TEST_CASE("In room view a click on a figure engages it; a click on a floor item picks it up (T158)", "[night][play][stage]")
 {
     const NightDef def = Data();
-    Play bot = BotFirst(def);
-    CHECK_FALSE(bot.HandleUi("menu", "look", ""));
-    CHECK_FALSE(bot.Looking());
+    NightState state = PlayerCorridor(def, 1, 3);
+    const int bandage = NightDef::Find(def.items, "bandage");
+    state.floor.push_back({static_cast<std::int8_t>(state.foyer), static_cast<std::int8_t>(bandage)});
+    Play play(def, state);
+    REQUIRE(play.HandleUi("menu", "look", ""));
+    // 1. The item on the floor: picked up.
+    REQUIRE(play.ClickItem(static_cast<int>(play.State().floor.size()) - 1));
+    CHECK(std::find(play.State().guests[0].items.begin(), play.State().guests[0].items.end(), bandage) != play.State().guests[0].items.end());
+    // 2. Another guest in the room: the chat with them opens, if the rules allow one.
+    NightState together = PlayerCorridor(def, 1, 3);
+    together.guests[1].cell = together.foyer;
+    Play chat(def, together);
+    const std::vector<Action> legal = LegalActions(def, chat.State());
+    const bool canChat = std::any_of(legal.begin(), legal.end(), [](const Action &a) { return a.kind == ActionKind::Chat && a.a == 1; });
+    CHECK(chat.ClickGuest(1) == canChat);
+    if (canChat)
+        CHECK(chat.State().chat.active);
 }
 
 TEST_CASE("A battle in the player's light plays on the stage with both sides; one in the dark does not (T144)", "[night][play][stage]")
@@ -1601,11 +1582,9 @@ TEST_CASE("After a room resolves the player may still look around; the bots wait
     REQUIRE(play.Screen() == "rest");
     play.Update(10.0F);
     CHECK(play.Beats() == 0);
-    // 2. Look shows the room just entered; Back returns to the rest menu.
+    // 2. The switch shows the room just entered; the rest menu stays.
     REQUIRE(play.HandleUi("rest", "look", ""));
-    CHECK(play.Screen() == "look");
-    CHECK(play.StageCell() == play.State().guests[static_cast<std::size_t>(play.State().player)].cell);
-    REQUIRE(play.HandleUi("look", "back", ""));
+    CHECK(play.RoomView());
     CHECK(play.Screen() == "rest");
     // 3. End turn lets the bots go (Enter does too).
     REQUIRE(play.HandleUi("rest", "end", ""));

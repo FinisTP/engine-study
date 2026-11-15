@@ -72,10 +72,14 @@ public:
         int guest = -1, monsterKind = -1, side = 0; // side 1: the monsters or the other side of a battle
         bool taken = false;
     };
-    [[nodiscard]] bool Looking() const { return looking_; }
-    [[nodiscard]] int StageCell() const; // -1: the table
-    [[nodiscard]] std::vector<Actor> StageActors() const;
-    bool LookDoor(int side); // leave the room through a doorway: the board's Move (NESW)
+    // The room view (the user's switch, "look"; Table.md "Room view"), or a moment that shows its room.
+    [[nodiscard]] bool RoomView() const { return roomView_ || StageCell() >= 0; }
+    [[nodiscard]] int StageCell() const; // a moment's room (an event, a deed in sight, a battle in light); -1: none
+    [[nodiscard]] std::vector<Actor> StageActors() const; // who stands in StageCell, a battle's sides apart
+    // Clicks on things in the room view: a floor item (state.floor index), a guest, a monster (state.monsters index).
+    bool ClickItem(int floor);
+    bool ClickGuest(int guest);
+    bool ClickMonster(int monster);
     // The camera: the cell to look at (-1: nothing), and whether it follows (a drag stops it until Focus).
     [[nodiscard]] int CameraCell() const;
     // (guest, number) for every guest in a group of two or more: the player's group is 1, the
@@ -157,7 +161,7 @@ private:
     bool walking_ = false;  // a walk is under way (the menu returns when it ends)
     int hover_ = -1;
     bool pause_ = false; // the save menu; the night waits
-    bool looking_ = false; // Look: the room at full size; the night waits
+    bool roomView_ = false; // the player's choice of view; the night goes on in either
     umbra::night::GameOptions options_;
     bool waitTap_ = false;  // a bot's beat where something happened waits for a tap (options)
     bool moment_ = false;   // ... and is shown at full size (options)

@@ -178,7 +178,6 @@ namespace
             const int frames = options.frames > 0 ? options.frames : (options.capture.empty() ? 0 : 3);
             int frame = 0, aimed = -1, savedRound = -1;
             std::uint32_t seenLog = 0; // log entries the figures have played (Table::React)
-            bool wasLooking = false;
             bool wasHeld = false, dragging = false, pressTook = false; // the left button: a drag looks around, a release without one clicks
             glm::vec2 pressAt{0.0F}, lastMouse{0.0F};
             BoardView view; // what the player sees this frame
@@ -207,7 +206,7 @@ namespace
                 play->SetOptions(gameOptions);
                 play->SetWords(&words);
                 table.SetFeatured(FeaturedCells(def, play->State()));
-                table.NewNight(), seenLog = play->State().logCount, wasLooking = false;
+                table.NewNight(), seenLog = play->State().logCount;
                 if (screens.Ready())
                     screens.Ui().Open("dread"); // under the HUD
                 if (screens.Ready() && play->State().player >= 0)
@@ -278,11 +277,12 @@ namespace
                     if (options.look && play->Screen() == "menu")
                         (void)play->HandleUi("menu", "look", ""), options.look = false;
                     const NightState &state = play->State();
-                    // While following, the camera eases to whatever Play says to look at; a drag frees it.
-                    const int look = play->CameraCell();
+                    // The camera eases to a moment's room always, else (while following) to whoever acts; a drag frees it.
+                    const int moment = play->StageCell();
+                    const int look = moment >= 0 ? moment : play->CameraCell();
                     if (fresh && look >= 0)
                         table.Aim(CellCenter(def, look), 0.0F), aimed = look, fresh = false;
-                    if (play->Following() && look >= 0 && look != aimed)
+                    if ((play->Following() || moment >= 0) && look >= 0 && look != aimed)
                         table.Aim(CellCenter(def, look), gameOptions.cameraEaseSeconds), aimed = look;
                     if (!play->Following())
                         aimed = -1; // Focus aims again at once
@@ -291,7 +291,7 @@ namespace
                         pressAt = uiInput.mouse, dragging = false;
                     if (held && !dragging && glm::length(uiInput.mouse - pressAt) > 4.0F)
                         dragging = true, play->Drag();
-                    if (held && dragging && play->StageCell() < 0)
+                    if (held && dragging)
                         table.Pan(uiInput.mouse - lastMouse);
                     table.Zoom(input.Wheel());
                     table.Update(dt);
@@ -313,22 +313,16 @@ namespace
                     view = MakeView(def, state, state.player);
                     // The figures play what the log says: blows, powers, falls.
                     table.React(NewLog(state, seenLog)), seenLog = state.logCount;
-                    if (play->Looking() != wasLooking)
-                        table.StageStart(play->Looking() ? state.player : -1), wasLooking = play->Looking();
                     table.Animate(def, view, ToDraw(play->Sliding()), dt);
-                    // The room at full size (Look, or a battle in the player's light), else the table.
-                    if (const int stage = play->StageCell(); stage >= 0)
-                    {
-                        std::vector<Table::StageActor> actors;
+                    // The table or the room view (the player's switch, or a moment); a battle in sight stands apart.
+                    table.SetRoomView(play->RoomView());
+                    std::vector<Table::StageActor> actors;
+                    if (state.battle.active && play->StageCell() == state.battle.cell)
                         for (const Play::Actor &a : play->StageActors())
                             actors.push_back({a.guest, a.monsterKind, a.side, a.taken});
-                        table.DrawStage(def, view, stage, actors, drawList);
-                    }
-                    else
-                    {
-                        play->Hover(table.Pick(def, uiInput.mouse, pixels));
-                        table.Draw(def, view, play->Previewed().path, play->Previewed().affordable, ToDraw(play->Sliding()), play->Rings(), drawList);
-                    }
+                    table.SetBattle(actors.empty() ? -1 : state.battle.cell, actors);
+                    play->Hover(table.Pick(def, uiInput.mouse, pixels));
+                    table.Draw(def, view, play->Previewed().path, play->Previewed().affordable, ToDraw(play->Sliding()), play->Rings(), drawList);
                     // Saves: at each new round, and gone once the night is over.
                     if (state.player >= 0 && !state.over && state.round != savedRound)
                         WriteSave(*play), savedRound = state.round;
@@ -351,7 +345,7 @@ namespace
                     data["warnings"] = screens.Problems();
                     // Labels over pawns in view: "thinking..." and the group numbers (Table.md).
                     data["labels"] = nlohmann::json::array();
-                    if (play && play->StageCell() < 0)
+                    if (play)
                     {
                         const auto label = [&](int guest, const std::string &text, float up) {
                             for (const PawnView &pawn : view.pawns)
@@ -396,12 +390,18 @@ namespace
                     pressTook = uiTook;
                 if (play && wasHeld && !input.IsMouseButtonHeld(0) && !dragging && !pressTook)
                 {
-                    // On the stage a click walks the figure, or takes the passage at a doorway.
-                    glm::vec3 floor{0.0F};
-                    int door = -1;
-                    if (play->Looking() && table.StagePick(view, play->StageCell(), uiInput.mouse, pixels, floor, door))
-                        door >= 0 ? (void)play->LookDoor(door) : table.WalkTo(floor);
-                    else if (play->StageCell() < 0)
+                    // In the room view a figure or an item takes the click; else the room under it (walk there).
+                    // A waiting bot beat: any click on the board goes on (mouse first, user).
+                    const std::optional<Table::Thing> thing = table.PickThing(uiInput.mouse, pixels);
+                    if (play->WaitingForTap())
+                        (void)play->HandleUi("caption", "next", "");
+                    else if (thing && thing->kind == Table::ThingKind::Item)
+                        (void)play->ClickItem(thing->id);
+                    else if (thing && thing->kind == Table::ThingKind::Guest && thing->id != play->State().player)
+                        (void)play->ClickGuest(thing->id);
+                    else if (thing && thing->kind == Table::ThingKind::Monster)
+                        (void)play->ClickMonster(thing->id);
+                    else
                         play->Click(table.Pick(def, uiInput.mouse, pixels));
                 }
                 wasHeld = input.IsMouseButtonHeld(0), lastMouse = uiInput.mouse;
