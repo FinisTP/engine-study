@@ -1563,6 +1563,8 @@ TEST_CASE("A bot's walk stays on the table; only what it does opens the room and
             play.Update(1.0F);
         if (!play.WaitingForTap())
             continue;
+        // A bot that only waits is never staged (T165).
+        CHECK((play.LastBeat().camera < 0 || play.StageCell() < 0 || play.State().chat.active || play.UiData()["caption"]["line"].get<std::string>().find("waits") == std::string::npos));
         // Something was done (a logged deed or a chat), or is about to be (a preview), never a plain step.
         bool deed = play.State().chat.active || play.UiData()["caption"]["preview"] == true;
         for (const LogEntry &e : NewLog(play.State(), before))
@@ -1989,4 +1991,29 @@ TEST_CASE("A guest knocked down is told plainly, and the HUD says so (T164)", "[
     const std::string result = play.UiData()["dice"]["result"].get<std::string>();
     CHECK(result.find("down") != std::string::npos);
     CHECK(play.UiData()["me"]["down"] == true);
+}
+
+TEST_CASE("Picking a walk has a Done button back to the menu (T165)", "[night][play]")
+{
+    const NightDef def = Data();
+    Play play(def, PlayerCorridor(def, 2, 4));
+    REQUIRE(play.HandleUi("menu", "move", ""));
+    REQUIRE(play.Screen() == "picking");
+    REQUIRE(play.HandleUi("picking", "done", ""));
+    CHECK(play.Screen() == "menu");
+}
+
+TEST_CASE("A found item can be left on the floor (T165)", "[night][play][flow]")
+{
+    NightDef def = Data();
+    Play play = IntoRoom(def, "armoury", -1);
+    REQUIRE(play.HandleUi("arrive", "onward", ""));
+    REQUIRE(play.Screen() == "found");
+    const int cell = play.State().guests[0].cell;
+    const std::size_t floor = play.State().floor.size();
+    REQUIRE(play.HandleUi("found", "leave", ""));
+    CHECK(play.State().floor.size() == floor + 1);
+    CHECK(play.State().floor.back().cell == cell);
+    CHECK(std::all_of(play.State().guests[0].items.begin(), play.State().guests[0].items.end(), [](std::int8_t i) { return i < 0; }));
+    CHECK(play.Screen() == "rest");
 }

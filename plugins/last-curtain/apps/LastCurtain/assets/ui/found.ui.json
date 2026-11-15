@@ -7,7 +7,9 @@
     { "type": "image", "image": "{found.picture}", "size": [160, 160] },
     { "type": "text", "style": "title", "text": "{found.name}" },
     { "type": "text", "style": "text", "text": "{found.does}", "wrap": true, "size": [400, 0], "textAlign": "center" },
-    { "type": "text", "style": "muted", "text": "It goes into your bag (I)." },
-    { "type": "button", "size": [200, 44], "text": "Take it", "action": "take" }
+    { "type": "text", "style": "muted", "text": "Take it into your bag, or leave it here on the floor." },
+    { "type": "stack", "direction": "horizontal", "gap": 12, "children": [
+      { "type": "button", "size": [180, 44], "text": "Take it", "action": "take" },
+      { "type": "button", "size": [180, 44], "text": "Leave it", "action": "leave" } ] }
   ] }
 }

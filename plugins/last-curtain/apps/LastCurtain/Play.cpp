@@ -360,6 +360,17 @@ bool Play::HandleUi(const std::string &, const std::string &action, const std::s
     }
     if (action == "take" && found_ >= 0)
         return (found_ = -1), true;
+    if (action == "leave" && found_ >= 0 && state_.player >= 0)
+    {
+        // The found item back on the floor (the last slot holding it: the one just filled).
+        const auto &items = state_.guests[U(state_.player)].items;
+        for (int s = maxCarry - 1; s >= 0; --s)
+            if (items[U(s)] == found_)
+                return LeaveItem(state_, state_.player, s) && (found_ = -1, true);
+        return false;
+    }
+    if (action == "done" && mode_ == Mode::Picking && !walking_) // the walk picker's Done
+        return (mode_ = Mode::Menu), true;
     if (action == "continue" && !dice_.empty() && diceClock_ >= options_.diceSeconds)
     {
         // The HUD shows an HP change for a moment.
@@ -582,7 +593,7 @@ void Play::Update(float dt)
         const RoomDef &room = def_.rooms[U(state_.cells[U(state_.guests[U(acting)].cell)].room)];
         beat_.result += (beat_.result.empty() ? "" : "; ") + std::string("+") + std::to_string(room.amount) + " " + StatName(room.stat) + " from the " + room.name;
     }
-    const bool notable = beat_.seen && Notable(NewLog(state_, before.logCount), action);
+    const bool notable = beat_.seen && NotableBeat(NewLog(state_, before.logCount), action);
     hold_ = !beat_.seen || skipping_ ? options_.unseenBeatSeconds : fast_ ? options_.fastBeatSeconds : options_.beatSeconds;
     waitTap_ = notable && options_.tapToContinue && !skipping_ && !fast_;
     moment_ = notable && options_.moments && !skipping_;
@@ -1218,6 +1229,14 @@ bool Play::Notable(const std::vector<LogEntry> &entries, const Action &action) c
         }
     // ... or a chat; a walk alone stays on the table (the user, 2026-11-15).
     return action.kind == ActionKind::OpenChat;
+}
+
+bool Play::NotableBeat(const std::vector<LogEntry> &entries, const Action &action) const
+{
+    // A bot that only waits stays on the table, unless someone falls (a flood, say).
+    if (action.kind == ActionKind::EndTurn)
+        return std::any_of(entries.begin(), entries.end(), [](const LogEntry &e) { return e.kind == LogKind::Down || e.kind == LogKind::Died; });
+    return Notable(entries, action);
 }
 
 nlohmann::json Play::HereData() const

@@ -193,6 +193,9 @@ namespace umbra::night
     bool IsTaken(const NightState &state, int guest);
     // The name to show: the Taken form's once the curse has taken the guest, else the guest's.
     std::string ShownName(const NightDef &def, const NightState &state, int guest);
+    // A guest leaves an item it carries (bag slot) on the floor where it stands, whoever's turn it is:
+    // a found item the player declines (dropping is free). False for an empty slot.
+    bool LeaveItem(NightState &state, int guest, int slot);
     // Fewest steps from `from` to `to` through passages and the transport pair (-1: no way). Night.md "Moves".
     int Distance(const NightDef &def, const NightState &state, int from, int to);
     // The guest's goal is done now (a room seen, a keepsake carried, an ally in its group, the count reached).

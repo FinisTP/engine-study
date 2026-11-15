@@ -618,3 +618,18 @@ namespace umbra::night
         return -1;
     }
 }
+
+namespace umbra::night
+{
+    bool LeaveItem(NightState &state, int guest, int slot)
+    {
+        if (guest < 0 || guest >= state.count || slot < 0 || slot >= maxCarry)
+            return false;
+        Guest &g = state.guests[inner::U(guest)];
+        if (g.items[inner::U(slot)] < 0)
+            return false;
+        state.floor.push_back({g.cell, g.items[inner::U(slot)]});
+        g.items[inner::U(slot)] = -1;
+        return true;
+    }
+}
