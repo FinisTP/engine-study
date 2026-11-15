@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cctype>
 #include <charconv>
+#include <cstdlib>
 #include <fstream>
 #include <initializer_list>
 
@@ -350,7 +351,7 @@ namespace umbra::night
                 rooms.Bad(rooms.file, "fewer rooms than rules.json board.rooms");
         }
 
-        Sheet events(diagnostics, folder, "events.csv", {"id", "name", "kind", "stat", "target", "passEffect", "passAmount", "failEffect", "failAmount", "text"});
+        Sheet events(diagnostics, folder, "events.csv", {"id", "name", "kind", "stat", "target", "passEffect", "passAmount", "failEffect", "failAmount", "text", "persist", "clear"});
         const auto effects = {"none", "hp", "hproom", "maxhp", "might", "sanity", "speed", "item", "xp", "buff", "armor", "light", "revive", "back"};
         for (int r = 0; r < events.Rows(); ++r)
         {
@@ -366,6 +367,28 @@ namespace umbra::night
             e.passAmount = events.Int(r, "passAmount");
             e.failEffect = static_cast<Effect>(events.Pick(r, "failEffect", effects));
             e.failAmount = events.Int(r, "failAmount");
+            e.persist = events.Int(r, "persist") != 0;
+            // "none", "might>=6" (sanity, speed too) or "carry:<item id>".
+            const std::string clear = events.Text(r, "clear");
+            const std::size_t at = clear.find(">=");
+            if (clear.rfind("carry:", 0) == 0)
+            {
+                e.clear = ClearKind::Carry;
+                e.clearItem = NightDef::Find(d.items, clear.substr(6));
+                if (e.clearItem < 0)
+                    events.Bad(events.Where(r, "clear"), "no item " + clear.substr(6) + " in items.csv");
+            }
+            else if (at != std::string::npos)
+            {
+                const std::string stat = clear.substr(0, at);
+                e.clear = ClearKind::Stat;
+                e.clearStat = stat == "might" ? StatKind::Might : stat == "sanity" ? StatKind::Sanity : StatKind::Speed;
+                e.clearAmount = std::atoi(clear.c_str() + at + 2);
+                if ((stat != "might" && stat != "sanity" && stat != "speed") || e.clearAmount <= 0)
+                    events.Bad(events.Where(r, "clear"), "'" + clear + "' is not might>=N, sanity>=N or speed>=N");
+            }
+            else if (clear != "none")
+                events.Bad(events.Where(r, "clear"), "'" + clear + "' is not none, <stat>>=N or carry:<item>");
             d.events.push_back(e);
         }
 

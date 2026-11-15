@@ -19,6 +19,7 @@ namespace umbra::night
         std::uint8_t doors = 0;
         bool opened = false;
         bool resolved = false; // its item, event or trap is taken care of
+        std::int8_t event = -1; // an armed persistent event or trap staying here (events.csv row)
     };
 
     struct Guest
@@ -69,7 +70,8 @@ namespace umbra::night
     enum class LogKind : std::uint8_t
     {
         Opened, Check, Effect, Item, Down, Woke,
-        Battle, Hit, Turned, Power, Died, Ended, Monster, Level, Persuade, Goal
+        Battle, Hit, Turned, Power, Died, Ended, Monster, Level, Persuade, Goal,
+        Cleared // a persistent event or trap is gone: who, a = events.csv row
     };
 
     // One thing that happened. Check: a = die, other = stat, b = target. Effect: a = Effect, b = amount.

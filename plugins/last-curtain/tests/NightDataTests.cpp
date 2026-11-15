@@ -210,3 +210,21 @@ TEST_CASE("Bad data is refused with file, row and column (T94)", "[night][data]"
         CHECK(Refused(folder).code == "night.rooms");
     }
 }
+
+TEST_CASE("Persistent events and their conditions load (T146)", "[night][data][persist]")
+{
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    NightDef def;
+    REQUIRE(LoadNight(UMBRA_NIGHT_DATA, def, diagnostics));
+    const auto event = [&](const char *id) { return def.events[static_cast<std::size_t>(NightDef::Find(def.events, id))]; };
+    CHECK(event("cold").persist);
+    CHECK(event("cold").clear == ClearKind::Carry);
+    CHECK(event("cold").clearItem == NightDef::Find(def.items, "crucifix"));
+    CHECK(event("song").clear == ClearKind::Stat);
+    CHECK(event("song").clearStat == StatKind::Sanity);
+    CHECK(event("song").clearAmount == 7);
+    CHECK_FALSE(event("script").persist);
+    for (const EventDef &e : def.events)
+        if (e.trap)
+            CHECK(e.persist); // every trap stays armed (user)
+}

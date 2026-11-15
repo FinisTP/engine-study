@@ -442,3 +442,80 @@ TEST_CASE("A push back cannot be undone for a refund (T119)", "[night][turn]")
     CHECK(state.guests[static_cast<std::size_t>(g)].cell == state.foyer);
     CHECK(state.guests[static_cast<std::size_t>(g)].undo == -1);
 }
+
+namespace
+{
+    // Applies `move` for whoever acts and returns the log it wrote.
+    std::vector<LogEntry> Enter(const NightDef &def, NightState &state, const Action &move)
+    {
+        const std::uint32_t since = state.logCount;
+        REQUIRE(Apply(def, state, move));
+        return NewLog(state, since);
+    }
+
+    bool Has(const std::vector<LogEntry> &log, LogKind kind)
+    {
+        return std::any_of(log.begin(), log.end(), [&](const LogEntry &e) { return e.kind == kind; });
+    }
+}
+
+TEST_CASE("A persistent trap stays armed until a guest passes its roll, then is gone for everyone (T146)", "[night][check][persist]")
+{
+    NightDef def = OneEvent(RoomKind::Trap, StatKind::Speed, 99, Effect::None, 0, Effect::Hp, -1);
+    def.events[0].persist = true;
+    NightState state = FoyerNight(def, 3);
+    const Action move = First(LegalActions(def, state), ActionKind::Move);
+    // 1. The first guest fails and the trap stays armed in the room.
+    REQUIRE(Has(Enter(def, state, move), LogKind::Check));
+    const int cell = state.guests[static_cast<std::size_t>(state.order[0])].cell;
+    CHECK(state.cells[static_cast<std::size_t>(cell)].event == 0);
+    CHECK_FALSE(state.cells[static_cast<std::size_t>(cell)].resolved);
+    // 2. The next guest walks in and is caught again.
+    const int second = Current(state);
+    const int hp = state.guests[static_cast<std::size_t>(second)].hp;
+    REQUIRE(Has(Enter(def, state, move), LogKind::Check));
+    CHECK(state.guests[static_cast<std::size_t>(second)].hp == hp - 1);
+    // 3. A guest who passes clears it for everyone.
+    def.events[0].target = -99;
+    const int third = Current(state);
+    const std::vector<LogEntry> cleared = Enter(def, state, move);
+    REQUIRE(Has(cleared, LogKind::Cleared));
+    CHECK(std::find_if(cleared.begin(), cleared.end(), [](const LogEntry &e) { return e.kind == LogKind::Cleared; })->who == third);
+    CHECK(state.cells[static_cast<std::size_t>(cell)].resolved);
+    CHECK(state.cells[static_cast<std::size_t>(cell)].event == -1);
+    // 4. The next one walks in freely and may move on.
+    const int fourth = Current(state);
+    CHECK_FALSE(Has(Enter(def, state, move), LogKind::Check));
+    CHECK(Current(state) == fourth);
+}
+
+TEST_CASE("Meeting a persistent event's condition clears it without a roll (T146)", "[night][check][persist]")
+{
+    NightDef def = OneEvent(RoomKind::Event, StatKind::Sanity, 99, Effect::None, 0, Effect::Hp, -1);
+    def.events[0].persist = true;
+    SECTION("a stat")
+    {
+        def.events[0].clear = ClearKind::Stat, def.events[0].clearStat = StatKind::Speed, def.events[0].clearAmount = 1;
+        NightState state = FoyerNight(def, 4);
+        Guest &first = state.guests[static_cast<std::size_t>(Current(state))];
+        first.goal = static_cast<std::int8_t>(std::find_if(def.goals.begin(), def.goals.end(), [](const GoalDef &g) { return g.kind == GoalKind::Events; }) - def.goals.begin());
+        const int count = first.goalCount;
+        const std::vector<LogEntry> log = Enter(def, state, First(LegalActions(def, state), ActionKind::Move));
+        CHECK(Has(log, LogKind::Cleared));
+        CHECK_FALSE(Has(log, LogKind::Check));
+        CHECK(first.goalCount == count + 1); // cleared by its condition counts as passed (events goal)
+    }
+    SECTION("an item carried")
+    {
+        def.events[0].clear = ClearKind::Carry, def.events[0].clearItem = Slot(def, "crucifix");
+        NightState state = FoyerNight(def, 4);
+        const Action move = First(LegalActions(def, state), ActionKind::Move);
+        // Without it: a roll, and it stays.
+        CHECK(Has(Enter(def, state, move), LogKind::Check));
+        // With it: cleared at the door.
+        state.guests[static_cast<std::size_t>(Current(state))].items[0] = static_cast<std::int8_t>(Slot(def, "crucifix"));
+        const std::vector<LogEntry> log = Enter(def, state, move);
+        CHECK(Has(log, LogKind::Cleared));
+        CHECK_FALSE(Has(log, LogKind::Check));
+    }
+}

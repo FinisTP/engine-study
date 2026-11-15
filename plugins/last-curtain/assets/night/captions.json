@@ -23,6 +23,7 @@
   "killed": "the {foe} is destroyed",
   "goalDone": "{who} did what they came for",
   "goalFailed": "{who} failed what they came for",
+  "cleared": "{who} breaks it: {event} is gone",
   "joined": "{other} joins {who}",
   "told": "{other} tells {who} what they came for"
 }

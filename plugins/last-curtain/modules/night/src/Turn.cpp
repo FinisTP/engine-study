@@ -134,26 +134,63 @@ namespace umbra::night
             Log(state, LogKind::Effect, g, -1, static_cast<int>(effect), amount);
         }
 
-        // The first guest into an item, event or trap room takes care of it.
+        // A persistent event's other way to clear: the stat, or the item carried.
+        bool MeetsClear(const NightDef &def, const NightState &state, int g, const EventDef &event)
+        {
+            const Guest &guest = state.guests[U(g)];
+            if (event.clear == ClearKind::Stat)
+                return Stat(def, state, g, event.clearStat) >= event.clearAmount;
+            return event.clear == ClearKind::Carry && std::find(guest.items.begin(), guest.items.end(), I8(event.clearItem)) != guest.items.end();
+        }
+
+        // The first guest into an item, event or trap room takes care of it; a persistent event or
+        // trap stays armed (Cell::event) and catches every guest until one clears it (Night.md).
         void Resolve(const NightDef &def, NightState &state, int g, int cell)
         {
             Cell &c = state.cells[U(cell)];
-            c.resolved = true;
             const RoomKind kind = RoomOf(def, state, cell).kind;
             if (kind == RoomKind::Item)
-                return GiveItem(def, state, g, DrawItem(def, state));
-            const int e = DrawEvent(def, state, kind == RoomKind::Trap);
-            if (e < 0)
+            {
+                c.resolved = true;
+                GiveItem(def, state, g, DrawItem(def, state));
                 return;
+            }
+            // 1. The armed one, or a new draw.
+            const int e = c.event >= 0 ? c.event : DrawEvent(def, state, kind == RoomKind::Trap);
+            if (e < 0)
+            {
+                c.resolved = true;
+                return;
+            }
             const EventDef &event = def.events[U(e)];
-            const Check check = RollCheck(def, state, g, event.stat, event.target);
+            const auto clear = [&] {
+                c.resolved = true, c.event = -1;
+                if (event.persist)
+                    Log(state, LogKind::Cleared, g, -1, e);
+            };
+            // 2. Its other condition met: cleared at the door, no roll (an event counts as passed for an events goal).
             Guest &guest = G(state, g);
-            if (check.passed && !event.trap && guest.goal >= 0 && def.goals[U(guest.goal)].kind == GoalKind::Events)
-                guest.goalCount = I8(guest.goalCount + 1);
+            const auto passed = [&] {
+                if (!event.trap && guest.goal >= 0 && def.goals[U(guest.goal)].kind == GoalKind::Events)
+                    guest.goalCount = I8(guest.goalCount + 1);
+            };
+            if (event.persist && MeetsClear(def, state, g, event))
+            {
+                passed();
+                return clear();
+            }
+            const Check check = RollCheck(def, state, g, event.stat, event.target);
+            if (check.passed)
+                passed();
             if (check.passed)
                 ApplyEffect(def, state, g, event.passEffect, event.passAmount);
             else
                 ApplyEffect(def, state, g, event.failEffect, event.failAmount);
+            // 3. Once only, or passed: gone; failed and persistent: it stays.
+            if (!event.persist || check.passed)
+                clear();
+            else
+                c.event = I8(e);
         }
 
         void UseItem(const NightDef &def, NightState &state, int g, int slot, int target)

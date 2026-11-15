@@ -77,6 +77,9 @@ namespace umbra::night
         int amount = 0, count = 0;
     };
 
+    // A persistent event's other way to clear (any passed roll clears it too): a stat, or an item carried.
+    enum class ClearKind : std::uint8_t { None, Stat, Carry };
+
     struct EventDef
     {
         std::string id, name;
@@ -86,6 +89,10 @@ namespace umbra::night
         Effect passEffect = Effect::None, failEffect = Effect::None;
         int passAmount = 0, failAmount = 0;
         std::string text; // a short story for the screen
+        bool persist = false;            // stays armed in its room until cleared (every trap; user)
+        ClearKind clear = ClearKind::None; // ... or cleared on entry without a roll by this:
+        StatKind clearStat = StatKind::Might;
+        int clearAmount = 0, clearItem = -1;
     };
 
     struct ItemDef

@@ -24,7 +24,7 @@ namespace nlohmann
 namespace umbra::night
 {
     // Field lists: every member of every struct in the state.
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Cell, room, doors, opened, resolved)
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Cell, room, doors, opened, resolved, event)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Guest, hp, maxHp, might, sanity, speed, cell, from, level, group, xp, items, bonusUsed, down, dead,
                                        downedBy, pending, asked, chatRound, movesLeft, undo, barred, goal, goalCount,
                                        goalRoomSeen, knows)
@@ -59,7 +59,7 @@ namespace umbra::night
                 !in(s.deckNext, 0, s.deckSize + 1) || !in(s.marked, -1, s.count) || !in(s.player, -1, s.count))
                 return "the night's counters are out of range";
             for (const Cell &c : s.cells)
-                if (!in(c.room, -1, rooms) || (c.opened && c.room < 0))
+                if (!in(c.room, -1, rooms) || (c.opened && c.room < 0) || !in(c.event, -1, static_cast<int>(def.events.size())))
                     return "a cell names a room that does not exist";
             for (int i = 0; i < s.deckSize; ++i)
                 if (!in(s.deck[inner::U(i)], 0, rooms))
@@ -110,7 +110,7 @@ namespace umbra::night
 
     nlohmann::json SaveNight(const NightDef &def, const NightState &state)
     {
-        return {{"format", "umbra.night"}, {"version", 2}, {"data", def.fingerprint}, {"state", state}};
+        return {{"format", "umbra.night"}, {"version", 3}, {"data", def.fingerprint}, {"state", state}};
     }
 
     bool LoadNightState(const NightDef &def, const nlohmann::json &saved, NightState &out, std::vector<core::Diagnostic> &diagnostics)
@@ -119,8 +119,8 @@ namespace umbra::night
             diagnostics.push_back({core::Severity::Error, "night.save", "", "", message});
             return false;
         };
-        if (!saved.is_object() || saved.value("format", "") != "umbra.night" || saved.value("version", 0) != 2)
-            return fail("not a night save of version 2");
+        if (!saved.is_object() || saved.value("format", "") != "umbra.night" || saved.value("version", 0) != 3)
+            return fail("not a night save of version 3");
         if (saved.value("data", std::uint64_t{0}) != def.fingerprint)
             return fail("the save was made with other data; start a new night");
         NightState state;

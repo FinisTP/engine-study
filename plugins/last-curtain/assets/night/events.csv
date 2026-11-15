@@ -1,34 +1,34 @@
-id,name,kind,stat,target,passEffect,passAmount,failEffect,failAmount,text
-applause,Applause from an empty hall,event,sanity,normal,sanity,1,hp,-3,"Someone is clapping in the dark stalls, slow and steady, as if the show has just ended. Do you take a bow, or does it shake you?"
-script,A script with your name,event,sanity,hard,xp,1,sanity,-1,"A script lies open on a chair. Your name is in the cast list, and tonight's date is on the cover."
-cold,A cold hand on the shoulder,event,might,normal,might,1,back,0,"A hand rests on your shoulder. It is very cold, and there is no one behind you."
-song,A song from the walls,event,sanity,easy,hp,4,hp,-3,"A woman's voice sings through the walls, an old cai luong air. It wants you to listen to the end."
-mirror,Your reflection is late,event,sanity,normal,item,1,hp,-4,In the dressing-room mirror your reflection moves a moment after you do. It is holding something out.
-dust,Dust sheets that breathe,event,might,easy,hp,3,hp,-2,"The dust sheets over the old seats rise and fall, as if something beneath them breathes."
-locker,A stuck locker,event,might,normal,item,1,hp,-2,A locker is jammed shut. Something inside rattles when you pull at the door.
-bell,The interval bell,event,speed,normal,speed,1,back,0,The interval bell rings and rings. Every door slams at once; you must move before they lock.
-portrait,A portrait that turns,event,sanity,hard,maxhp,2,sanity,-1,A portrait of a forgotten singer slowly turns its eyes to follow you across the room.
-rain,Rain on the stage,event,speed,easy,xp,1,hp,-2,"Rain falls on the stage, indoors, from nowhere. The boards are slick under your feet."
-prompt,A voice gives you your line,event,sanity,normal,item,1,hp,-3,"A voice from the prompt box whispers your line. If you say it right, the house may reward you."
-weights,The counterweights shift,event,might,hard,might,1,hp,-5,The counterweights groan and start to drop. Someone has to hold the rope.
-sandbag,A falling sandbag,trap,speed,normal,none,0,hp,-5,A rope creaks overhead. A sandbag is coming down.
-floor,The floor gives way,trap,might,normal,none,0,hp,-6,The old boards crack under your weight.
-wire,A snapped wire,trap,speed,hard,none,0,hp,-4,A lighting wire snaps and whips across the room.
-smoke,Smoke from the wings,trap,sanity,normal,none,0,hp,-4,"Thick smoke pours from the wings, and in it you hear your name."
-spotlight,A falling spotlight,trap,speed,easy,none,0,hp,-7,A spotlight tears loose from the rig above you.
-hook,A loose hook,trap,might,easy,none,0,hp,-5,A loose scenery hook swings out of the dark.
-ticket,A ticket for tonight,event,sanity,normal,xp,1,hp,-2,"A ticket lies on the counter, for tonight's show, row A, your seat. The ink is still wet."
-dancers,Dancers in the dark,event,speed,normal,speed,1,back,0,"Footsteps whirl around you in a waltz you cannot see. Keep pace, or be swept back the way you came."
-letter,An unsent letter,event,sanity,hard,item,0,sanity,-1,"A love letter, never sent, signed with a name from the old programme. Reading it is like hearing the voice."
-costume,The costume that fits,event,might,normal,maxhp,2,hp,-3,"A costume hangs exactly your size. Putting it on is warm, then very tight."
-reel,A film reel turning,event,sanity,normal,sanity,1,hp,-3,"A projector runs by itself, showing this room, now, with one more person in it than there is."
-bell2,The prompt bell,event,might,easy,xp,1,back,0,"A bell rings for a cue nobody gave. Answer it on the stage, or retreat before the next one."
-stairs,Stairs that give,trap,speed,normal,none,0,hp,-4,"The steps tilt under you, one after another."
-steam,A burst of steam,trap,might,normal,none,0,hp,-5,An old pipe bursts across the room.
-pitfall,The pit cover,trap,speed,hard,none,0,hp,-4,The cover over the orchestra pit cracks in two.
-tuning,An orchestra tuning up,event,sanity,normal,sanity,1,hp,-2,"From the empty pit comes the long A of an orchestra tuning, then the shuffle of pages. Do you listen until it stops?"
-curtaincall,A curtain that will not fall,event,might,normal,xp,1,hp,-3,"A heavy curtain hangs half down, its rope jammed. Do you haul it the rest of the way?"
-programme,Tonight's programme,event,sanity,easy,item,1,sanity,-1,A fresh programme lies on a seat. The cast list has one name scratched out so hard the paper tore.
-footsteps,Footsteps overhead,event,speed,normal,speed,1,back,0,"Someone runs across the floor above, then again, closer. Do you run to meet them?"
-makeup,A painted face in the glass,event,sanity,hard,maxhp,2,hp,-3,"The face in the dressing glass is made up for the stage, and it is not yours. Do you hold its gaze?"
-trunk,A locked costume trunk,event,might,normal,item,1,hp,-2,"A travelling trunk, its lock rusted shut. Something inside shifts when you touch it."
+id,name,kind,stat,target,passEffect,passAmount,failEffect,failAmount,persist,clear,text
+applause,Applause from an empty hall,event,sanity,normal,sanity,1,hp,-3,1,none,"Someone is clapping in the dark stalls, slow and steady, as if the show has just ended. Do you take a bow, or does it shake you?"
+script,A script with your name,event,sanity,hard,xp,1,sanity,-1,0,none,"A script lies open on a chair. Your name is in the cast list, and tonight's date is on the cover."
+cold,A cold hand on the shoulder,event,might,normal,might,1,back,0,1,carry:crucifix,"A hand rests on your shoulder. It is very cold, and there is no one behind you."
+song,A song from the walls,event,sanity,easy,hp,4,hp,-3,1,sanity>=7,"A woman's voice sings through the walls, an old cai luong air. It wants you to listen to the end."
+mirror,Your reflection is late,event,sanity,normal,item,1,hp,-4,1,carry:rosary,In the dressing-room mirror your reflection moves a moment after you do. It is holding something out.
+dust,Dust sheets that breathe,event,might,easy,hp,3,hp,-2,1,carry:lantern,"The dust sheets over the old seats rise and fall, as if something beneath them breathes."
+locker,A stuck locker,event,might,normal,item,1,hp,-2,0,none,A locker is jammed shut. Something inside rattles when you pull at the door.
+bell,The interval bell,event,speed,normal,speed,1,back,0,0,none,The interval bell rings and rings. Every door slams at once; you must move before they lock.
+portrait,A portrait that turns,event,sanity,hard,maxhp,2,sanity,-1,1,sanity>=7,A portrait of a forgotten singer slowly turns its eyes to follow you across the room.
+rain,Rain on the stage,event,speed,easy,xp,1,hp,-2,0,none,"Rain falls on the stage, indoors, from nowhere. The boards are slick under your feet."
+prompt,A voice gives you your line,event,sanity,normal,item,1,hp,-3,0,none,"A voice from the prompt box whispers your line. If you say it right, the house may reward you."
+weights,The counterweights shift,event,might,hard,might,1,hp,-5,0,none,The counterweights groan and start to drop. Someone has to hold the rope.
+sandbag,A falling sandbag,trap,speed,normal,none,0,hp,-5,1,speed>=5,A rope creaks overhead. A sandbag is coming down.
+floor,The floor gives way,trap,might,normal,none,0,hp,-6,1,might>=6,The old boards crack under your weight.
+wire,A snapped wire,trap,speed,hard,none,0,hp,-4,1,carry:coat,A lighting wire snaps and whips across the room.
+smoke,Smoke from the wings,trap,sanity,normal,none,0,hp,-4,1,carry:lantern,"Thick smoke pours from the wings, and in it you hear your name."
+spotlight,A falling spotlight,trap,speed,easy,none,0,hp,-7,1,speed>=5,A spotlight tears loose from the rig above you.
+hook,A loose hook,trap,might,easy,none,0,hp,-5,1,might>=5,A loose scenery hook swings out of the dark.
+ticket,A ticket for tonight,event,sanity,normal,xp,1,hp,-2,0,none,"A ticket lies on the counter, for tonight's show, row A, your seat. The ink is still wet."
+dancers,Dancers in the dark,event,speed,normal,speed,1,back,0,1,speed>=6,"Footsteps whirl around you in a waltz you cannot see. Keep pace, or be swept back the way you came."
+letter,An unsent letter,event,sanity,hard,item,0,sanity,-1,0,none,"A love letter, never sent, signed with a name from the old programme. Reading it is like hearing the voice."
+costume,The costume that fits,event,might,normal,maxhp,2,hp,-3,0,none,"A costume hangs exactly your size. Putting it on is warm, then very tight."
+reel,A film reel turning,event,sanity,normal,sanity,1,hp,-3,1,carry:lantern,"A projector runs by itself, showing this room, now, with one more person in it than there is."
+bell2,The prompt bell,event,might,easy,xp,1,back,0,0,none,"A bell rings for a cue nobody gave. Answer it on the stage, or retreat before the next one."
+stairs,Stairs that give,trap,speed,normal,none,0,hp,-4,1,speed>=5,"The steps tilt under you, one after another."
+steam,A burst of steam,trap,might,normal,none,0,hp,-5,1,carry:coat,An old pipe bursts across the room.
+pitfall,The pit cover,trap,speed,hard,none,0,hp,-4,1,carry:lantern,The cover over the orchestra pit cracks in two.
+tuning,An orchestra tuning up,event,sanity,normal,sanity,1,hp,-2,1,sanity>=7,"From the empty pit comes the long A of an orchestra tuning, then the shuffle of pages. Do you listen until it stops?"
+curtaincall,A curtain that will not fall,event,might,normal,xp,1,hp,-3,0,none,"A heavy curtain hangs half down, its rope jammed. Do you haul it the rest of the way?"
+programme,Tonight's programme,event,sanity,easy,item,1,sanity,-1,0,none,A fresh programme lies on a seat. The cast list has one name scratched out so hard the paper tore.
+footsteps,Footsteps overhead,event,speed,normal,speed,1,back,0,1,might>=6,"Someone runs across the floor above, then again, closer. Do you run to meet them?"
+makeup,A painted face in the glass,event,sanity,hard,maxhp,2,hp,-3,1,carry:mask,"The face in the dressing glass is made up for the stage, and it is not yours. Do you hold its gaze?"
+trunk,A locked costume trunk,event,might,normal,item,1,hp,-2,0,none,"A travelling trunk, its lock rusted shut. Something inside shifts when you touch it."

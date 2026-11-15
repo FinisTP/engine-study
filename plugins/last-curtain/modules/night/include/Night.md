@@ -64,6 +64,14 @@ code holds only the mechanics. Design: `docs/design/game-design.md` (GDD); bots 
 
 ## Checks, events, items (`Turn.cpp`)
 
+**Persistent events and traps** (user, 2026-11-15): every trap, and the events marked `persist` in
+`events.csv`, stay armed in the room they were drawn in (`Cell::event`) and catch every guest who
+walks in (the turn ends there, as on the first entry). A passed roll clears it for everyone
+(`LogKind::Cleared`); so does walking in while meeting its `clear` condition, without a roll:
+`might>=N` / `sanity>=N` / `speed>=N` (the stat with items and buffs) or `carry:<item>`. Clearing an
+event (not a trap) either way counts as a passed event for an `events` goal. Events not marked happen
+once, as before. Save version 3 carries `Cell::event`.
+
 `RollCheck`: d20 + stat >= target. Events and traps are drawn without replacement; items by
 `weight`, without replacement (so each relic at most once a night). A full guest finds the item on
 the floor. Before the Turn 0 HP is *down*; a relic wakes a downed guest in the same room. An event outcome `back` pushes the guest to the room

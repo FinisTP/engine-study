@@ -63,7 +63,7 @@ TEST_CASE("Same data and seed, same night (T103)", "[night][save]")
     CHECK(Fingerprint(a) == Fingerprint(b));
     CHECK(Fingerprint(a) != Fingerprint(NewNight(def, 1)));
     // Golden: update when the data or the rules change (Night.md "Fingerprint").
-    CHECK(Fingerprint(a) == 0x33b287b0c65deaf9ULL);
+    CHECK(Fingerprint(a) == 0xf0a6784f1bf69e14ULL);
 }
 
 TEST_CASE("A save at any point continues to the same end (T103)", "[night][save]")
@@ -171,6 +171,7 @@ TEST_CASE("A mid-evening save round-trips goals, groups, approvals and undo (T12
     state.guests[3].group = 3;
     state.approvals[3 * maxGuests + 2] = 2;
     state.chat = {true, 3, 2, 0};
+    state.cells[static_cast<std::size_t>(state.foyer)].event = 4; // an armed event (version 3)
     const NightState loaded = RoundTrip(def, state);
     CHECK(Fingerprint(loaded) == Fingerprint(state));
     const Guest &l = loaded.guests[2];
@@ -184,17 +185,20 @@ TEST_CASE("A mid-evening save round-trips goals, groups, approvals and undo (T12
     CHECK(loaded.guests[3].group == 3);
     CHECK(loaded.approvals[3 * maxGuests + 2] == 2);
     CHECK((loaded.chat.asker == 3 && loaded.chat.answerer == 2));
+    CHECK(loaded.cells[static_cast<std::size_t>(state.foyer)].event == 4);
 
     // Out-of-range values in the new fields are refused.
     std::vector<umbra::core::Diagnostic> diagnostics;
     NightState out;
-    for (const char *field : {"answerer", "undo", "approvals"})
+    for (const char *field : {"answerer", "undo", "approvals", "event"})
     {
         nlohmann::json bad = SaveNight(def, state);
         if (std::string(field) == "answerer")
             bad["state"]["chat"]["answerer"] = 9;
         else if (std::string(field) == "undo")
             bad["state"]["guests"][2]["undo"] = 120;
+        else if (std::string(field) == "event")
+            bad["state"]["cells"][0]["event"] = 99;
         else
             bad["state"]["approvals"][0] = 9;
         INFO(field);
@@ -202,15 +206,15 @@ TEST_CASE("A mid-evening save round-trips goals, groups, approvals and undo (T12
     }
 }
 
-TEST_CASE("A version-1 save is refused (T122)", "[night][save]")
+TEST_CASE("An older save is refused (T122, T146)", "[night][save]")
 {
     const NightDef def = Data();
     nlohmann::json saved = SaveNight(def, FoyerNight(def, 3));
-    CHECK(saved["version"] == 2);
-    saved["version"] = 1;
+    CHECK(saved["version"] == 3);
+    saved["version"] = 2;
     std::vector<umbra::core::Diagnostic> diagnostics;
     NightState out;
     CHECK_FALSE(LoadNightState(def, saved, out, diagnostics));
     REQUIRE_FALSE(diagnostics.empty());
-    CHECK(diagnostics.front().message.find("version 2") != std::string::npos);
+    CHECK(diagnostics.front().message.find("version 3") != std::string::npos);
 }
