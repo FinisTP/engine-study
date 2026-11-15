@@ -63,3 +63,15 @@ late-night readability.
 5. Answer a chat: the asker replies.
 6. Markers over item, event, trap and bonus rooms; walls readable at 23:00 and after the Turn.
 7. The top bar on a bot's turn shows the bot, THEIR TURN and your HP.
+
+## 5. Follow-up (19:44): three more items
+
+| Item | Where |
+|---|---|
+| A drag in the room view blanked the screen for good: an Aim taken there read the camera's scaled room-space target as a table one, so every later Aim flew further off. The camera's math is now `TableCamera` (its target always on the table), tested | `#UMBRA-201`, T163 |
+| The Focus button is gone: a click on the top bar's portrait (a list of one with the action `focus`) brings the camera back to whoever acts | `#UMBRA-201`, T128, T144 |
+| The view switch works only on the player's turn or its rest (`Play::CanView`); the HUD button hides otherwise | `#UMBRA-201`, T144 |
+
+Checks: the night suite 216 cases under GCC and ASan; Clang full CTest 55/55. The new camera tests
+passed at once, being written with the fix (the old camera lived in `Table`, which needs a GPU);
+the drag is not checked on a GPU here.
