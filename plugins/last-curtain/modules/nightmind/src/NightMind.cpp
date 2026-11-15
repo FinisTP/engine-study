@@ -96,6 +96,15 @@ namespace umbra::night
         }
     }
 
+    std::vector<int> Named(const NightDef &def, const std::string &line)
+    {
+        std::vector<int> guests;
+        for (std::size_t g = 0; g < def.guests.size(); ++g)
+            if (line.find(def.guests[g].name) != std::string::npos || line.find(def.guests[g].taken) != std::string::npos)
+                guests.push_back(static_cast<int>(g));
+        return guests;
+    }
+
     umbra::town::MindRequest Request(const NightDef &def, const LineAsk &ask)
     {
         const Kind &kind = KindOf(ask.kind);

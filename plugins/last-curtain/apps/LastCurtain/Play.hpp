@@ -108,7 +108,6 @@ private:
     [[nodiscard]] bool ChatWaiting() const;
     [[nodiscard]] int ChatKey() const;
     [[nodiscard]] std::uint32_t LineSeed(int kind) const;
-    [[nodiscard]] std::vector<int> Named(const std::string &line) const;
 
     const umbra::night::NightDef &def_;
     umbra::night::NightState state_;

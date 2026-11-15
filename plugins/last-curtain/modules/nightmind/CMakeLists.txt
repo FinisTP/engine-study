@@ -5,6 +5,7 @@ target_sources(
     UmbraNightMind
     PRIVATE
         src/NightMind.cpp
+        src/TryLines.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
@@ -21,8 +22,10 @@ target_link_libraries(
     UmbraNightMind
     PUBLIC
         Umbra::Night
+        Umbra::NightBoard
         Umbra::TownMind
     PRIVATE
+        Umbra::NightBots
         Umbra::Warnings
         Umbra::Sanitizers
 )

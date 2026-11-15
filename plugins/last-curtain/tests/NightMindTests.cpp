@@ -1,8 +1,12 @@
 #include "NightTestData.hpp"
 
 #include <NightMind.hpp>
+#include <Narrate.hpp>
 
 #include <catch2/catch_test_macros.hpp>
+
+#include <filesystem>
+#include <sstream>
 
 using namespace umbra::night;
 
@@ -50,4 +54,37 @@ TEST_CASE("The guard keeps names, pronouns and meaning, and hides outcomes and h
     CHECK_FALSE(Guard(def, question, "Would you dare to sing for the empty hall, darling?").empty());
     CHECK(Guard(def, question, "Would you sing for the empty hall, if your Sanity holds?").empty());
     CHECK(Guard(def, question, "Would you sing for the empty hall? It is the easy answer.").empty());
+}
+
+namespace
+{
+    struct Echo final : umbra::town::Mind
+    {
+        std::string Name() const override { return "echo"; }
+        std::string Complete(const umbra::town::MindRequest &request) override
+        {
+            const std::size_t at = request.prompt.rfind("Line: ") + 6;
+            return "Quietly, " + request.prompt.substr(at, request.prompt.find('\n', at) - at);
+        }
+    };
+}
+
+TEST_CASE("TryLines words a few bot nights and counts what the guard accepts (T136)", "[night][mind]")
+{
+    const NightDef def = Data();
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    Captions captions;
+    REQUIRE(LoadCaptions(std::filesystem::path(UMBRA_NIGHT_DATA) / "captions.json", captions, diagnostics));
+    Echo echo;
+    std::ostringstream out;
+    const LineReport report = TryLines(def, captions, echo, 3, 1, 8, out);
+    CHECK(report.lines >= 3 * 4); // spread over each night: captions, chat questions, the Turn
+    CHECK(report.accepted > 0);
+    CHECK(report.accepted <= report.lines);
+    const std::string text = out.str();
+    CHECK(text.find("night 3") != std::string::npos);
+    CHECK(text.find("template: ") != std::string::npos);
+    CHECK(text.find("model:    Quietly, ") != std::string::npos);
+    CHECK(text.find("accepted") != std::string::npos);
+    CHECK(text.find("[the Turn]") != std::string::npos);
 }

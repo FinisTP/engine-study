@@ -699,15 +699,6 @@ void Play::Notice(std::uint32_t since)
 
 std::uint32_t Play::LineSeed(int kind) const { return static_cast<std::uint32_t>(state_.seed + state_.logCount * 4U + static_cast<std::uint32_t>(kind)); }
 
-std::vector<int> Play::Named(const std::string &line) const
-{
-    std::vector<int> guests;
-    for (std::size_t g = 0; g < def_.guests.size(); ++g)
-        if (line.find(def_.guests[g].name) != std::string::npos || line.find(def_.guests[g].taken) != std::string::npos)
-            guests.push_back(static_cast<int>(g));
-    return guests;
-}
-
 bool Play::LineWaiting(int ticket, float askedAt) const { return ticket != 0 && !words_->Ready(ticket) && clock_ - askedAt < lineSeconds; }
 
 int Play::ChatKey() const { return ((state_.round * 8 + state_.turn) * 100 + state_.chat.question) * 10 + state_.chat.asker; }
@@ -739,7 +730,7 @@ void Play::AskLines(int acting)
     // 3. Its caption, as the Taken's taunt when the Taken acts.
     const bool taken = IsTaken(state_, acting);
     if (!beat.caption.empty())
-        captionTicket_ = words_->Ask({taken ? LineKind::Taken : LineKind::Caption, acting, taken, Named(beat.caption), beat.caption, LineSeed(0)});
+        captionTicket_ = words_->Ask({taken ? LineKind::Taken : LineKind::Caption, acting, taken, Named(def_, beat.caption), beat.caption, LineSeed(0)});
     // 4. A goal settled in it: that guest says so (the player's own first).
     const LogEntry *goal = nullptr;
     for (const LogEntry &e : entries)
@@ -778,7 +769,7 @@ void Play::ResolveLines()
     {
         const QuestionDef &q = def_.questions[U(state_.chat.question)];
         chatFor_ = ChatKey(), chatWords_.clear(), chatAskedAt_ = clock_;
-        chatTicket_ = words_->Ask({LineKind::Question, state_.chat.asker, false, Named(q.text), q.text, LineSeed(1)});
+        chatTicket_ = words_->Ask({LineKind::Question, state_.chat.asker, false, Named(def_, q.text), q.text, LineSeed(1)});
     }
     if (chatTicket_ != 0 && !LineWaiting(chatTicket_, chatAskedAt_))
         chatWords_ = words_->Take(chatTicket_, ""), chatTicket_ = 0;

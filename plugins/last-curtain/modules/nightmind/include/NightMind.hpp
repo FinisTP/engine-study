@@ -1,9 +1,11 @@
 #pragma once
 
 #include <Mind.hpp>
+#include <Narrate.hpp>
 #include <NightDef.hpp>
 
 #include <cstdint>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -35,4 +37,16 @@ namespace umbra::night
 
     // The tidied answer if it passes every check, else "" (show the template).
     [[nodiscard]] std::string Guard(const NightDef &def, const LineAsk &ask, const std::string &answer);
+
+    // The guests a line names, by name or Taken name (for LineAsk::about).
+    [[nodiscard]] std::vector<int> Named(const NightDef &def, const std::string &line);
+
+    // UmbraTool night-mind: `nights` nights of bots; spread over each night, up to `perNight` of their
+    // captions and chat questions, and every Turn, asked of `mind` and printed with the verdict and time.
+    struct LineReport
+    {
+        int lines = 0, accepted = 0;
+        long long totalMs = 0, slowestMs = 0;
+    };
+    LineReport TryLines(const NightDef &def, const Captions &captions, umbra::town::Mind &mind, int nights, std::uint64_t seed, int perNight, std::ostream &out);
 }
