@@ -78,7 +78,8 @@ namespace umbra::night
         Battle, Hit, Turned, Power, Died, Ended, Monster, Level, Persuade, Goal,
         Cleared, // a persistent event or trap is gone: who, a = events.csv row
         Dawn,    // a new night: a = its number
-        Rose     // a ghost appears at the under-stage: who
+        Rose,    // a ghost appears at the under-stage: who
+        Killer   // the killer: a = its cell, b = 0 woke, 1 moved
     };
 
     // One thing that happened. Check: a = die, other = stat, b = target. Effect: a = Effect, b = amount.
@@ -122,6 +123,12 @@ namespace umbra::night
         bool present = false;
         std::int8_t guest = -1, cooldown = 0;
         bool reflect = false;
+    };
+
+    // The house's killer: it cannot be fought (Night.md "The killer"). cell -1: asleep.
+    struct Killer
+    {
+        std::int8_t cell = -1, wokeRound = 0;
     };
 
     struct Monster
@@ -168,6 +175,7 @@ namespace umbra::night
         std::int8_t marked = -1; // the guest who turns, set at midnight
         Outcome outcome = Outcome::Running;
         std::int8_t night = 1, winner = -1; // nights until one guest is left (Night.md "Nights")
+        Killer killer;
         Taken taken;
         std::array<Mark, 16> flooded{}, sealed{};
         ChatState chat;
@@ -201,6 +209,10 @@ namespace umbra::night
     bool Living(const NightState &state, int guest); // a guest still alive (not a ghost)
     bool InPlay(const NightState &state, int guest); // living, or a ghost on the board
     int LivingCount(const NightState &state);
+    int KillerMoves(const NightDef &def, const NightState &state); // rooms the killer crosses this round
+    // The house grows bolder with the hour: a monster's chance to appear each round, and how many at most.
+    int MonsterChance(const NightDef &def, const NightState &state);
+    int MonsterMax(const NightDef &def, const NightState &state);
     // The name to show: the Taken form's once the curse has taken the guest, else the guest's.
     std::string ShownName(const NightDef &def, const NightState &state, int guest);
     // A guest leaves an item it carries (bag slot) on the floor where it stands, whoever's turn it is:

@@ -1394,8 +1394,11 @@ TEST_CASE("A bot's walk stays on the table; only what it does opens the room and
             play.Update(1.0F);
         if (!play.WaitingForTap())
             continue;
-        // A bot that only waits is never staged (T165).
-        CHECK((play.LastBeat().camera < 0 || play.StageCell() < 0 || play.State().chat.active || play.UiData()["caption"]["line"].get<std::string>().find("waits") == std::string::npos));
+        // A bot that only waits is never staged (T165); the killer's round (it moves as the round turns) is its own.
+        bool killer = false;
+        for (const LogEntry &e : NewLog(play.State(), before))
+            killer = killer || e.kind == LogKind::Killer;
+        CHECK((killer || play.LastBeat().camera < 0 || play.StageCell() < 0 || play.State().chat.active || play.UiData()["caption"]["line"].get<std::string>().find("waits") == std::string::npos));
         // Something was done (a logged deed or a chat), or is about to be (a preview), never a plain step.
         bool deed = play.State().chat.active || play.UiData()["caption"]["preview"] == true;
         for (const LogEntry &e : NewLog(play.State(), before))

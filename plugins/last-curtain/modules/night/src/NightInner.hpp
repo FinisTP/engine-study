@@ -33,6 +33,8 @@ namespace umbra::night::inner
     std::vector<int> BuildBoard(const NightDef &def, NightState &state);
     std::vector<int> Spawns(const NightDef &def, NightState &state); // start rooms, as far apart as the map allows
     void Dawn(const NightDef &def, NightState &state);                // a new night for the living (Night.cpp)
+    void KillerRound(const NightDef &def, NightState &state);         // wakes or moves the killer (Killer.cpp)
+    bool IntoKiller(const NightDef &def, NightState &state, int guest); // a guest walked into the killer: dead
     int OpenRoom(const NightDef &def, NightState &state, int from, int direction, bool forceUnderStage, bool allowUnderStage = true);
     void ForceUnderStage(const NightDef &def, NightState &state); // at the Turn, if nobody found it
 

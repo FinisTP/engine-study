@@ -166,3 +166,124 @@ TEST_CASE("At dawn with two or more alive, a new night on a new map; the living 
         changed = changed || before[U(c)].room != state.cells[U(c)].room;
     CHECK(changed);
 }
+
+// Stage 2: the wandering killer (Night.md "The killer").
+namespace
+{
+    // Ends turns until a new round has begun (its start moves the killer).
+    void NextRound(const NightDef &def, NightState &state)
+    {
+        const int round = state.round;
+        for (int i = 0; i < 40 && state.round == round && !state.over; ++i)
+            REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
+    }
+
+    // A night just before the killer wakes, no monsters, guests where they spawned.
+    NightState BeforeWake(const NightDef &def, std::uint64_t seed)
+    {
+        NightState state = NewNight(def, seed, -1);
+        while (state.round < def.rules.killer.wakeRound - 1)
+            NextRound(def, state);
+        return state;
+    }
+
+    NightDef NoMonsters()
+    {
+        NightDef def = Data();
+        def.rules.monsters.chancePercent = 0;
+        return def;
+    }
+}
+
+TEST_CASE("The killer wakes at midnight in the under-stage (T236)", "[night][royale][killer]")
+{
+    const NightDef def = NoMonsters();
+    NightState state = BeforeWake(def, 3);
+    CHECK(state.killer.cell < 0);
+    NextRound(def, state);
+    REQUIRE(state.round == def.rules.killer.wakeRound);
+    CHECK(state.killer.cell >= 0);
+    bool woke = false;
+    for (const LogEntry &e : NewLog(state, 0))
+        woke = woke || (e.kind == LogKind::Killer && e.b == 0);
+    CHECK(woke);
+}
+
+TEST_CASE("The killer closes on the nearest living guest it senses, and kills one in a room it enters (T237)", "[night][royale][killer]")
+{
+    const NightDef def = NoMonsters();
+    NightState state = BeforeWake(def, 4);
+    NextRound(def, state); // awake
+    const int g = 2;
+    // 1. A guest two rooms off: after a round it is nearer (or dead).
+    int two = -1;
+    for (int c = 0; c < maxCells && two < 0; ++c)
+        if (state.cells[U(c)].opened && Steps(def, state, state.killer.cell, c) == 2)
+            two = c;
+    REQUIRE(two >= 0);
+    for (int o = 0; o < state.count; ++o) // everyone else far away
+        if (o != g)
+            state.guests[U(o)].cell = state.foyer;
+    state.guests[U(g)].cell = static_cast<std::int8_t>(two);
+    NextRound(def, state);
+    // Speed 2 at least: it reaches the room and kills.
+    CHECK(state.guests[U(g)].dead);
+    CHECK(state.killer.cell == two);
+    bool logged = false;
+    for (const LogEntry &e : NewLog(state, 0))
+        logged = logged || (e.kind == LogKind::Died && e.who == g && e.other == -1);
+    CHECK(logged);
+}
+
+TEST_CASE("A guest who walks into the killer's room dies; a ghost there is untouched; it cannot be attacked (T238)", "[night][royale][killer]")
+{
+    const NightDef def = NoMonsters();
+    NightState state = BeforeWake(def, 5);
+    NextRound(def, state);
+    const int g = Current(state);
+    REQUIRE(g >= 0);
+    // A passage from a neighbour into the killer's room: the guest stands there and steps in.
+    int from = -1, dir = -1;
+    for (int d = 0; d < 4 && from < 0; ++d)
+        if (const int n = Neighbour(def, state.killer.cell, d); n >= 0 && Passage(def, state, state.killer.cell, d))
+            from = n, dir = (d + 2) % 4;
+    REQUIRE(from >= 0);
+    Guest &guest = state.guests[U(g)];
+    guest.cell = guest.origin = static_cast<std::int8_t>(from);
+    guest.budget = guest.movesLeft = 3;
+    for (const Action &a : LegalActions(def, state))
+        CHECK_FALSE((a.kind == ActionKind::Attack && a.a < 0 && a.b < 0));
+    REQUIRE(Apply(def, state, {ActionKind::Move, static_cast<std::int8_t>(dir)}));
+    CHECK(guest.dead);
+    // A ghost standing with the killer is never harmed by it.
+    NightState ghostly = BeforeWake(def, 5);
+    NextRound(def, ghostly);
+    Kill(def, ghostly, 1);
+    ghostly.guests[1].cell = ghostly.killer.cell, ghostly.guests[1].hp = def.rules.ghost.hp;
+    NextRound(def, ghostly);
+    CHECK(ghostly.guests[1].hp == def.rules.ghost.hp);
+}
+
+TEST_CASE("Each new night the killer sleeps until midnight again (T239)", "[night][royale][killer]")
+{
+    const NightDef def = NoMonsters();
+    NightState state = BeforeWake(def, 6);
+    NextRound(def, state);
+    REQUIRE(state.killer.cell >= 0);
+    while (state.night == 1 && !state.over)
+        NextRound(def, state);
+    if (!state.over)
+        CHECK(state.killer.cell < 0);
+}
+
+TEST_CASE("Monsters grow likelier and more numerous with the hour (T240)", "[night][royale]")
+{
+    const NightDef def = Data();
+    NightState state = NewNight(def, 1);
+    const int chance = MonsterChance(def, state), most = MonsterMax(def, state);
+    CHECK(chance == def.rules.monsters.chancePercent);
+    CHECK(most == def.rules.monsters.max);
+    state.round = 9; // six hours on
+    CHECK(MonsterChance(def, state) == std::min(100, chance + 6 * def.rules.monsters.chancePerHour));
+    CHECK(MonsterMax(def, state) == most + 6 / def.rules.monsters.maxPerHours);
+}

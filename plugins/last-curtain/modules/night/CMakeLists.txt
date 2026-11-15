@@ -12,6 +12,7 @@ target_sources(
         src/Battle.cpp
         src/Company.cpp
         src/Hunt.cpp
+        src/Killer.cpp
         src/NightSave.cpp
     PUBLIC
         FILE_SET HEADERS

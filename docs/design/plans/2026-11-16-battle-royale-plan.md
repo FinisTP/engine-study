@@ -67,3 +67,4 @@ Soak bands, docs (Night.md, Play.md, Balance.md), testing record `s38`, ROADMAP 
 (appended as stages finish)
 
 Stage 1: complete (#UMBRA-218; RoyaleTests T228-T234, suite 181/182, the balance soak open: 2 faults in 400 runs, Khang wins 50%)
+Stage 2: complete (#UMBRA-219; T236-T240; soak 0 faults, 1.7 nights per run: too deadly, for stage 6)

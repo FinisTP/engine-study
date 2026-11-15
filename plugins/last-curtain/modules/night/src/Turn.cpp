@@ -460,6 +460,12 @@ namespace umbra::night
             guest.movesLeft = I8(guest.budget - std::max(0, Distance(def, state, guest.origin, to)));
             if (guest.ghost) // a ghost passes rooms and monsters by
                 break;
+            if (IntoKiller(def, state, g)) // walked into the killer's room: dead, the turn passes
+            {
+                if (!state.over)
+                    inner::EndTurn(def, state);
+                break;
+            }
             Enter(def, state, g, to);
             // A monster in the room: a fight at once, the monster's side first.
             if (const int monster = MonsterAt(state, to); monster >= 0)

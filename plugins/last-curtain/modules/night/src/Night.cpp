@@ -57,6 +57,7 @@ namespace umbra::night
         state.flooded = {}, state.sealed = {};
         state.eventsUsed = state.itemsUsed = 0;
         state.battle = {}, state.chat = {};
+        state.killer = {}; // asleep until midnight again
         std::vector<int> starts = BuildBoard(def, state);
         // 3. The living keep what they have and wake healed, far apart; the ghosts wait at the under-stage.
         std::size_t next = 0;

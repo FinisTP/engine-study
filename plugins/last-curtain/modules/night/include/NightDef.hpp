@@ -25,7 +25,9 @@ namespace umbra::night
     {
         struct { int startHour = 19, rounds = 20, turnAfterRound = 10, minutesPerRound = 30; } clock;
         struct { int hp = 6, might = 2, sanity = 2, speed = 3, respawnRounds = 3; } ghost; // the dead of the house
-        struct { int minSteps = 4; } spawn; // guests start at least this far apart when the map allows
+        struct { int minSteps = 4; } spawn;
+        // The wandering killer (Night.md "The killer"): wakes at wakeRound, moves after each round's start.
+        struct { int wakeRound = 7, speed = 2, speedPerHours = 2, senseSteps = 5, hearSteps = 2; } killer; // guests start at least this far apart when the map allows
         struct { int width = 5, height = 5, rooms = 20; } board;
         struct { int easy = 10, normal = 13, hard = 16; } checks;
         struct { int steps = 4; } light;
@@ -33,7 +35,7 @@ namespace umbra::night
         int carry = 4;
         struct { int rounds = 3, minDamage = 1, base = 3, defenseDivisor = 2, guardDivisor = 2; } battle;
         struct { std::vector<int> xp; int hp = 4, stat = 1; } levels;
-        struct { int fromRound = 3, chancePercent = 35, stayRounds = 3, max = 2; } monsters;
+        struct { int fromRound = 3, chancePercent = 35, stayRounds = 3, max = 2, chancePerHour = 5, maxPerHours = 3; } monsters;
         struct { int failHp = 1, earlyRooms = 35, roomGoalRooms = 65; } goals; // HP a failed guest keeps at midnight; keepsake / goal rooms come out within this many
         struct { int approvals = 3, bond = 3; } persuade; // approvals that make an ally; the bond's pull on a target
         struct { int downedReturnHp = 1, attackBondLoss = 300; } guests;

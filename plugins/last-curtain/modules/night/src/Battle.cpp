@@ -226,7 +226,7 @@ namespace umbra::night
         return std::max(rules.minDamage, damage);
     }
 
-    std::vector<Fighter> inner::Side(const NightState &state, int guest)
+    std::vector<Fighter> inner::Side(const NightState &, int guest)
     {
         return {Fighter{I8(guest)}}; // no allies in the battle royale
     }
@@ -321,6 +321,10 @@ namespace umbra::night
                 ghost.cell = ghost.origin = state.understage, ghost.hp = I16(def.rules.ghost.hp);
                 Log(state, LogKind::Rose, g, -1, state.understage);
             }
+        // 0c. The killer wakes or roams (Killer.cpp).
+        KillerRound(def, state);
+        if (state.over)
+            return;
         // 1. Monsters whose time is up leave.
         state.monsters.erase(std::remove_if(state.monsters.begin(), state.monsters.end(),
                                             [&](const Monster &m) { return m.leavesRound <= state.round || m.hp <= 0; }),
@@ -330,8 +334,8 @@ namespace umbra::night
         int ordinary = 0;
         for (const MonsterDef &m : def.monsters)
             ordinary += m.taken < 0 ? 1 : 0;
-        if (state.round < rules.fromRound || static_cast<int>(state.monsters.size()) >= rules.max || ordinary == 0 ||
-            Below(state, 100) >= rules.chancePercent)
+        if (state.round < rules.fromRound || static_cast<int>(state.monsters.size()) >= MonsterMax(def, state) || ordinary == 0 ||
+            Below(state, 100) >= MonsterChance(def, state))
             return;
         std::vector<int> cells;
         for (int c = 0; c < maxCells; ++c)

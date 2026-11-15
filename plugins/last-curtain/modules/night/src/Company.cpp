@@ -10,7 +10,7 @@ namespace umbra::night
 
     int Bond(const NightState &state, int from, int to) { return state.bonds[U(from * maxGuests + to)]; }
 
-    bool Controls(const NightState &state, int controller, int guest)
+    bool Controls(const NightState &, int controller, int guest)
     {
         return controller >= 0 && guest == controller; // no allies in the battle royale (user)
     }

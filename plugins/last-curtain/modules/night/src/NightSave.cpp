@@ -30,6 +30,7 @@ namespace umbra::night
                                        goalRoomSeen, knows, ghost, returnRound)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FloorItem, cell, item)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LogEntry, tick, kind, who, other, a, b)
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Killer, cell, wokeRound)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Monster, kind, cell, leavesRound, hp, might, sanity)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Fighter, guest, monster, taken, side, buff, buffRounds)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Battle, active, round, turn, count, fighters, cell, owner)
@@ -38,7 +39,7 @@ namespace umbra::night
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ChatState, active, asker, answerer, question)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(NightState, seed, random, cells, deck, deckSize, deckNext, placed, foyer, understage, guests, order, count,
                                        round, turn, player, over, floor, eventsUsed, itemsUsed, log, logCount, bonds, approvals, marked,
-                                       outcome, night, winner, taken, flooded, sealed, chat, battle, monsters)
+                                       outcome, night, winner, killer, taken, flooded, sealed, chat, battle, monsters)
 
     namespace
     {

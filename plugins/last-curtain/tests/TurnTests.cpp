@@ -167,7 +167,8 @@ TEST_CASE("Items: four carried, any number on a floor, all free (T96)", "[night]
 
 TEST_CASE("Twelve rounds run from 20:00, 45 minutes each, then dawn brings a new night (T96, T234)", "[night][turn]")
 {
-    const NightDef def = Data();
+    NightDef def = Data();
+    def.rules.killer.wakeRound = 99; // no killer: every guest lives to dawn
     NightState state = FoyerNight(def, 5);
     CHECK(Hour(def, state) == 20);
     CHECK(Minute(def, state) == 0);

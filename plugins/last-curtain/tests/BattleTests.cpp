@@ -172,7 +172,7 @@ TEST_CASE("Monsters appear, grow with the hour, leave, and force a fight when me
         }
         if (state.round < def.rules.monsters.fromRound)
             CHECK(state.monsters.empty());
-        CHECK(static_cast<int>(state.monsters.size()) <= def.rules.monsters.max);
+        CHECK(static_cast<int>(state.monsters.size()) <= MonsterMax(def, state)); // more with the hour (T240)
         for (const Monster &m : state.monsters)
         {
             CHECK(m.leavesRound > state.round);

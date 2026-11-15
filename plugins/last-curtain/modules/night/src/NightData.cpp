@@ -161,6 +161,11 @@ namespace umbra::night
                                              {"speed", &r.ghost.speed}, {"respawnRounds", &r.ghost.respawnRounds}})
                 get("ghost", key, *value);
             get("spawn", "minSteps", r.spawn.minSteps);
+            get("monsters", "chancePerHour", r.monsters.chancePerHour);
+            get("monsters", "maxPerHours", r.monsters.maxPerHours);
+            for (const auto &[key, value] : {std::pair<const char *, int *>{"wakeRound", &r.killer.wakeRound}, {"speed", &r.killer.speed},
+                                             {"speedPerHours", &r.killer.speedPerHours}, {"senseSteps", &r.killer.senseSteps}, {"hearSteps", &r.killer.hearSteps}})
+                get("killer", key, *value);
             get("board", "width", r.board.width);
             get("board", "height", r.board.height);
             get("board", "rooms", r.board.rooms);
@@ -205,6 +210,8 @@ namespace umbra::night
             check(r.board.rooms >= 2 && r.board.rooms <= r.board.width * r.board.height, "board.rooms", "must fit the grid and hold the foyer and the under-stage");
             check(r.clock.rounds >= 1 && r.clock.rounds <= 100, "clock.rounds", "must be 1 to 100");
             check(r.clock.minutesPerRound >= 1 && r.clock.minutesPerRound <= 120, "clock.minutesPerRound", "must be 1 to 120");
+            check(r.monsters.maxPerHours >= 1, "monsters.maxPerHours", "must be 1 or more");
+            check(r.killer.wakeRound >= 1 && r.killer.speed >= 1 && r.killer.speedPerHours >= 1, "killer", "wakeRound, speed and speedPerHours must be 1 or more");
             check(r.ghost.hp >= 1 && r.ghost.speed >= 1 && r.ghost.respawnRounds >= 1, "ghost", "hp, speed and respawnRounds must be 1 or more");
             check(r.clock.turnAfterRound >= 1 && r.clock.turnAfterRound < r.clock.rounds, "clock.turnAfterRound", "must come before the last round");
             check(r.battle.rounds >= 1 && r.battle.minDamage >= 0, "battle", "rounds must be 1 or more, minDamage 0 or more");

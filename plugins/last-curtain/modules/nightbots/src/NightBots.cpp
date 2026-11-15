@@ -343,6 +343,15 @@ namespace umbra::night
                         }();
                         m >= 0)
                         return Beatable(m) ? style.fight * 10 : -100;
+                    // The killer: never into its room; keep out of its reach (it senses senseSteps away).
+                    if (state.killer.cell >= 0)
+                    {
+                        const int k = StepsTo(next, state.killer.cell), now = StepsTo(me.cell, state.killer.cell);
+                        if (k == 0)
+                            return -1000;
+                        if (k >= 0 && k <= def.rules.killer.senseSteps && (now < 0 || k <= now))
+                            return -200 + k * 20 + (now >= 0 && k > now ? 100 : 0);
+                    }
                     int score = -1;
                     const auto fromHere = Distances(me.cell), fromNext = Distances(next);
                     auto goal = [&](int cell, int weight) {
@@ -417,6 +426,10 @@ namespace umbra::night
                     return Ghost();
                 if (IsTaken(state, g))
                     return Taken();
+                // 1b. The killer in sense: run (its reach grows with the hour).
+                if (state.killer.cell >= 0 && StepsTo(me.cell, state.killer.cell) >= 0 && StepsTo(me.cell, state.killer.cell) <= def.rules.killer.senseSteps)
+                    if (const Action away = AwayFrom({state.killer.cell}); away.kind == ActionKind::Move)
+                        return away;
                 // 2. Hurt: heal, else get away from monsters (and the Taken).
                 if (Below(style.fleeBelowHpPercent))
                 {
