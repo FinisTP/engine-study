@@ -5,8 +5,13 @@
 #include <NightBots.hpp>
 #include <NightSave.hpp>
 #include <Play.hpp>
+#include <Words.hpp>
 
 #include <algorithm>
+#include <atomic>
+#include <cctype>
+#include <chrono>
+#include <thread>
 #include <filesystem>
 
 using namespace umbra::night;
@@ -1117,4 +1122,197 @@ TEST_CASE("An arrow with no move left does nothing, not even the door's question
     play.Key(InputKey::Left);
     play.Update(Play::slideSeconds);
     CHECK(play.Screen() == "menu");
+}
+
+namespace
+{
+    // A stand-in model: `answer(prompt)`, or never (until the test ends) when `never` is set.
+    struct StandIn final : umbra::town::Mind
+    {
+        std::function<std::string(const umbra::town::MindRequest &)> answer;
+        std::atomic<bool> never{false};
+        std::vector<std::uint32_t> *seeds = nullptr;
+        std::string Name() const override { return "stand-in"; }
+        std::string Complete(const umbra::town::MindRequest &request) override
+        {
+            if (seeds)
+                seeds->push_back(request.seed);
+            while (never)
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            return answer(request);
+        }
+    };
+
+    // The template line out of a request's prompt (after the last "Line: ").
+    std::string LineOf(const umbra::town::MindRequest &request)
+    {
+        const std::size_t at = request.prompt.rfind("Line: ") + 6;
+        return request.prompt.substr(at, request.prompt.find('\n', at) - at);
+    }
+
+    // Small steps of real time until `done` (the stand-in answers on its own thread).
+    template <typename Done> void Until(Play &play, Done done)
+    {
+        for (int i = 0; i < 3000 && !done(); ++i)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            play.Update(0.001F);
+        }
+    }
+}
+
+TEST_CASE("A seen bot's caption waits up to 3 s for its line, then shows the template (T135)", "[night][play][words]")
+{
+    const NightDef def = Data();
+    auto mind = std::make_unique<StandIn>();
+    mind->never = true;
+    mind->answer = [](const umbra::town::MindRequest &) { return std::string{}; };
+    StandIn &standIn = *mind;
+    Words words(def, std::move(mind));
+    Play play = SeenBotFirst(def);
+    play.SetWords(&words);
+    play.Update(0.01F);  // decides and asks
+    play.Update(0.5F);   // thought; the line is not in
+    CHECK(play.Beats() == 0);
+    CHECK(play.ThinkingGuest() >= 0);
+    play.Update(2.4F);   // 2.91 s since asked
+    CHECK(play.Beats() == 0);
+    play.Update(0.15F);  // past 3 s: the template
+    CHECK(play.Beats() == 1);
+    CHECK(play.Screen() == "caption");
+    CHECK(play.UiData()["caption"]["line"] == play.LastBeat().caption);
+    standIn.never = false;
+}
+
+TEST_CASE("A seen bot's caption is the model's line; the result stays the template (T135)", "[night][play][words]")
+{
+    const NightDef def = Data();
+    auto mind = std::make_unique<StandIn>();
+    mind->answer = [](const umbra::town::MindRequest &request) { return "Quietly, " + LineOf(request); };
+    Words words(def, std::move(mind));
+    Play reference = SeenBotFirst(def); // the same beat without the model
+    Think(reference);
+    REQUIRE(reference.Beats() == 1);
+    Play play = SeenBotFirst(def);
+    play.SetWords(&words);
+    play.Update(0.01F);
+    play.Update(Play::thinkSeconds + 0.01F);
+    Until(play, [&] { return play.Beats() == 1; });
+    REQUIRE(play.Beats() == 1);
+    const nlohmann::json caption = play.UiData()["caption"];
+    CHECK(caption["line"] == "Quietly, " + reference.LastBeat().caption);
+    CHECK(caption["result"] == reference.LastBeat().result);
+}
+
+TEST_CASE("The night plays the same with the model as without it (T135)", "[night][play][words]")
+{
+    const NightDef def = Data();
+    auto mind = std::make_unique<StandIn>();
+    mind->answer = [](const umbra::town::MindRequest &request) { return "Quietly, " + LineOf(request); };
+    Words words(def, std::move(mind));
+    const auto run = [&](Words *w) {
+        Play play(def, FoyerNight(def, 9, 0));
+        play.SetWords(w);
+        for (int i = 0; i < 6000 && play.Beats() < 40 && !play.State().over; ++i)
+        {
+            Settle(play);
+            if (play.State().chat.active && play.PlayerTurn() && play.Screen() == "chat")
+                play.HandleUi("chat", "answer", "0");
+            else if (play.PlayerTurn() && play.Screen() == "menu")
+                play.Key(InputKey::Enter);
+            else
+                play.Update(10.0F);
+        }
+        return Fingerprint(play.State());
+    };
+    CHECK(run(&words) == run(nullptr));
+}
+
+TEST_CASE("A chat question waits for its line and shows it; the answers stay (T135)", "[night][play][words]")
+{
+    const NightDef def = Data();
+    auto mind = std::make_unique<StandIn>();
+    mind->answer = [](const umbra::town::MindRequest &request) {
+        return request.prompt.find("never hint") != std::string::npos ? "Tell me truly, " + LineOf(request) : std::string{};
+    };
+    Words words(def, std::move(mind));
+    Play play(def, FoyerNight(def, 4, 0));
+    play.SetWords(&words);
+    for (int i = 0; i < 400 && !(play.State().chat.active && play.PlayerTurn()); ++i)
+        play.PlayerTurn() ? play.Key(InputKey::Enter) : play.Update(10.0F);
+    REQUIRE(play.State().chat.active);
+    const QuestionDef &q = def.questions[static_cast<std::size_t>(play.State().chat.question)];
+    Until(play, [&] { return play.Screen() == "chat"; });
+    REQUIRE(play.Screen() == "chat");
+    const nlohmann::json chat = play.UiData()["chat"];
+    std::string lower = q.text;
+    lower[0] = static_cast<char>(std::tolower(static_cast<unsigned char>(lower[0])));
+    CHECK((chat["question"] == "Tell me truly, " + q.text || chat["question"] == "Tell me truly, " + lower));
+    CHECK(chat["answers"][0]["label"] == q.physicalText);
+}
+
+TEST_CASE("The Turn screen shows the model's two sentences (T135)", "[night][play][words]")
+{
+    const NightDef def = Data();
+    auto mind = std::make_unique<StandIn>();
+    mind->answer = [&def](const umbra::town::MindRequest &request) {
+        return request.prompt.find("Midnight:") != std::string::npos
+                   ? def.guests[3].name + ", I am so cold. " + def.guests[3].taken + " comes to collect."
+                   : std::string{};
+    };
+    Words words(def, std::move(mind));
+    NightState state = FoyerNight(def, 11, 0);
+    state.marked = 3;
+    state.round = static_cast<std::int8_t>(def.rules.clock.turnAfterRound);
+    Play play(def, state);
+    play.SetWords(&words);
+    for (int i = 0; i < 3000 && !play.State().taken.present; ++i)
+    {
+        Settle(play);
+        if (play.State().chat.active && play.PlayerTurn() && play.Screen() == "chat")
+            play.HandleUi("chat", "answer", "0");
+        else if (play.PlayerTurn() && play.Screen() == "menu")
+            play.Key(InputKey::Enter);
+        else
+            play.Update(0.5F);
+    }
+    REQUIRE(play.State().taken.present);
+    Until(play, [&] { return play.Screen() == "turn"; });
+    REQUIRE(play.Screen() == "turn");
+    CHECK(play.UiData()["turn"]["words"] == def.guests[3].name + ", I am so cold. " + def.guests[3].taken + " comes to collect.");
+}
+
+TEST_CASE("Line seeds come from the night, so Continue words the same lines (T135)", "[night][play][words]")
+{
+    const NightDef def = Data();
+    const auto seedsAfter = [&](const NightState &state) {
+        std::vector<std::uint32_t> seeds;
+        auto mind = std::make_unique<StandIn>();
+        mind->seeds = &seeds;
+        mind->answer = [](const umbra::town::MindRequest &) { return std::string{}; };
+        {
+            Words words(def, std::move(mind));
+            Play play = Play(def, state);
+            play.SetWords(&words);
+            for (int i = 0; i < 200 && play.Beats() < 6; ++i)
+            {
+                Settle(play);
+                if (play.State().chat.active && play.PlayerTurn() && play.Screen() == "chat")
+                    play.HandleUi("chat", "answer", "0");
+                else if (play.PlayerTurn() && play.Screen() == "menu")
+                    play.Key(InputKey::Enter);
+                else
+                    play.Update(10.0F);
+                std::this_thread::sleep_for(std::chrono::milliseconds(2));
+            }
+        }
+        return seeds;
+    };
+    // The same state, played twice (as a save and its Continue would be): the same seeds.
+    NightState state = FoyerNight(def, 9, 0);
+    NightState restored;
+    REQUIRE(Play::Restore(def, Play(def, state).Save(), restored));
+    const std::vector<std::uint32_t> a = seedsAfter(state), b = seedsAfter(restored);
+    CHECK_FALSE(a.empty());
+    CHECK(a == b);
 }

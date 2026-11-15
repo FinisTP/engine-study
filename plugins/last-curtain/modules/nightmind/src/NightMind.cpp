@@ -121,7 +121,7 @@ namespace umbra::night
         }
         request.prompt += (about.empty() ? "" : about + "\n") + "Line: " + ask.line + "\nReworded:";
         // 3. One plain sentence (two for the Turn): a capital, letters and light punctuation, no digits.
-        const std::string sentence = "[A-Z] [a-zA-Z ,'-]{8,110} [.!?]";
+        const std::string sentence = "[A-Z] [a-zA-Z ,:'-]{8,110} [.!?]";
         request.grammar = "root ::= \" \"? " + sentence + (ask.kind == LineKind::Turn ? " \" \" " + sentence : "") + "\n";
         request.maxTokens = ask.kind == LineKind::Turn ? 80 : 40;
         request.seed = ask.seed;
@@ -136,7 +136,7 @@ namespace umbra::night
         if (line.size() < 8 || line.size() > longest || !std::isupper(static_cast<unsigned char>(line.front())) || std::string(".!?").find(line.back()) == std::string::npos)
             return {};
         for (const char c : line)
-            if (!std::isalpha(static_cast<unsigned char>(c)) && std::string(" ,'-.!?").find(c) == std::string::npos)
+            if (!std::isalpha(static_cast<unsigned char>(c)) && std::string(" ,:'-.!?").find(c) == std::string::npos)
                 return {};
         // 2. Names: every guest or Taken named in the template is still named in full; no other
         //    guest, Taken or example person appears, even by a given name alone.

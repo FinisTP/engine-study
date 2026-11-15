@@ -27,7 +27,7 @@ sound like themselves. It only words; the night's rules never see its answer.
 In order; the first that objects wins:
 
 1. Plain text: 8 to 120 characters (230 for the Turn), a capital first, `.`, `!` or `?` last,
-   only letters, spaces and `, ' - . ! ?`.
+   only letters, spaces and `, : ' - . ! ?` (captions use colons: "opens a door: the Rope room").
 2. Names: every guest or Taken named in the template is still named in full. No other guest
    (even by the given name alone, "Mai"), no other Taken and no example person is added.
 3. Pronouns: "he" or "she" only if someone the line is about is one (or the speaker, except in a

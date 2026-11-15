@@ -4,6 +4,7 @@
   "root": { "type": "stack", "anchor": "bottom", "offset": [0, -52], "style": "panel", "size": [700, 0], "gap": 6, "children": [
     { "type": "text", "style": "good", "text": "{caption.guest}" },
     { "type": "text", "style": "heading", "text": "{caption.line}", "wrap": true, "size": [660, 0] },
+    { "type": "text", "style": "strong", "text": "{caption.saidBy}: \"{caption.said}\"", "visible": "{caption.said}", "wrap": true, "size": [660, 0] },
     { "type": "text", "style": "small", "text": "{caption.result}", "visible": "{caption.result}", "wrap": true, "size": [660, 0] },
     { "type": "text", "style": "muted", "text": "Space: faster bot turns" }
   ] }

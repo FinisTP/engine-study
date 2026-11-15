@@ -2,6 +2,7 @@
 
 #include <Narrate.hpp>
 #include <Night.hpp>
+#include <Words.hpp>
 
 #include <Input.hpp>
 
@@ -36,6 +37,7 @@ public:
     };
     static constexpr float slideSeconds = 0.25F;
     static constexpr float thinkSeconds = 0.4F; // the shortest "thinking..." (user)
+    static constexpr float lineSeconds = 3.0F;  // the longest wait for the model's line (user)
     // How a bot decides; `seconds` is how long the decision took (it sets the thinking pause).
     using Decider = std::function<umbra::night::Action(const umbra::night::NightState &, int guest, float &seconds)>;
 
@@ -58,6 +60,8 @@ public:
     void Update(float dt);
     void SetCaptions(umbra::night::Captions captions) { captions_ = std::move(captions); }
     void SetDecider(Decider decider) { decider_ = std::move(decider); }
+    // The model's lines (plan 3); null or no model: the written lines.
+    void SetWords(umbra::night::Words *words) { words_ = words; }
     // The camera: the cell to look at (-1: nothing), and whether it follows (a drag stops it until Focus).
     [[nodiscard]] int CameraCell() const;
     // (guest, number) for every guest in a group of two or more: the player's group is 1, the
@@ -66,7 +70,7 @@ public:
     void Drag() { following_ = false; }
     [[nodiscard]] bool Following() const { return following_; }
     [[nodiscard]] float Thinking() const { return think_; }      // seconds of "thinking..." left
-    [[nodiscard]] int ThinkingGuest() const { return think_ > 0.0F ? pendingGuest_ : -1; }
+    [[nodiscard]] int ThinkingGuest() const { return think_ > 0.0F || lineWaiting_ ? pendingGuest_ : -1; }
     [[nodiscard]] const umbra::night::Beat &LastBeat() const { return beat_; }
     [[nodiscard]] int Beats() const { return beats_; } // bot actions so far
     [[nodiscard]] const umbra::night::NightState &State() const { return state_; }
@@ -96,6 +100,15 @@ private:
     [[nodiscard]] nlohmann::json EndData() const;
     [[nodiscard]] nlohmann::json InspectData() const;
     void Notice(std::uint32_t since); // the Turn in new log entries
+    // The model's lines: a bot's coming beat (caption, goal line), the Turn, the chat question.
+    void AskLines(int acting);
+    void AskTurn();
+    void ResolveLines();
+    [[nodiscard]] bool LineWaiting(int ticket, float askedAt) const;
+    [[nodiscard]] bool ChatWaiting() const;
+    [[nodiscard]] int ChatKey() const;
+    [[nodiscard]] std::uint32_t LineSeed(int kind) const;
+    [[nodiscard]] std::vector<int> Named(const std::string &line) const;
 
     const umbra::night::NightDef &def_;
     umbra::night::NightState state_;
@@ -122,4 +135,11 @@ private:
     float think_ = 0.0F;
     int thoughtTurn_ = -1;
     bool following_ = true; // round * 8 + turn of the last bot turn that thought
+    umbra::night::Words *words_ = nullptr;
+    float clock_ = 0.0F;                      // seconds of Update, for the line waits
+    float askedAt_ = 0.0F, turnAskedAt_ = 0.0F, chatAskedAt_ = 0.0F;
+    int captionTicket_ = 0, saidTicket_ = 0, turnTicket_ = 0, chatTicket_ = 0;
+    int saidGuest_ = -1, chatFor_ = -1;       // who says the goal line; the chat question the line is for
+    std::string said_, turnWords_, chatWords_; // worded lines ("" = none: the written ones show)
+    bool lineWaiting_ = false;
 };

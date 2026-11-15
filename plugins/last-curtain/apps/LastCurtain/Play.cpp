@@ -353,11 +353,11 @@ std::string Play::Screen() const
     if (!dice_.empty())
         return "dice";
     if (turn_)
-        return "turn";
+        return turnTicket_ != 0 ? "" : "turn"; // its line is still coming
     if (!PlayerTurn())
         return hold_ > 0.0F && beat_.seen ? "caption" : "";
     if (state_.chat.active)
-        return "chat";
+        return ChatWaiting() ? "" : "chat";
     if (state_.battle.active)
         return bag_ ? "bag" : "battle";
     if (bag_)
@@ -370,6 +370,8 @@ void Play::Update(float dt)
     // 1. Nothing moves without time; a slide plays out first; then the player's rolls wait.
     if (dt <= 0.0F || pause_ || inspect_ >= 0)
         return;
+    clock_ += dt;
+    ResolveLines();
     if (slide_.guest >= 0)
     {
         slide_.t += dt / slideSeconds;
@@ -401,6 +403,7 @@ void Play::Update(float dt)
         float took = 0.0F;
         pendingAction_ = decider_(state_, acting, took);
         pending_ = true, pendingGuest_ = acting;
+        AskLines(acting);
         const int turnKey = state_.round * 8 + state_.turn;
         const auto pawns = MakeView(def_, state_, state_.player).pawns;
         const bool seen = std::any_of(pawns.begin(), pawns.end(), [&](const PawnView &p) { return p.guest == acting; });
@@ -418,7 +421,11 @@ void Play::Update(float dt)
             return;
         think_ = 0.0F;
     }
-    // 4. It acts; the narrator says what the player could see of it; a step slides.
+    // 4. Its lines: the model's, up to lineSeconds since they were asked (user).
+    lineWaiting_ = LineWaiting(captionTicket_, askedAt_) || LineWaiting(saidTicket_, askedAt_);
+    if (lineWaiting_)
+        return;
+    // 5. It acts; the narrator says what the player could see of it; a step slides.
     pending_ = false;
     const NightState before = state_;
     const Action action = pendingAction_;
@@ -429,6 +436,9 @@ void Play::Update(float dt)
     Notice(before.logCount);
     ++beats_;
     beat_ = captions_.lines.empty() ? Beat{} : Narrate(def_, before, state_, NewLog(state_, before.logCount), action, acting, state_.player, captions_);
+    if (captionTicket_ != 0)
+        beat_.caption = words_->Take(captionTicket_, beat_.caption), captionTicket_ = 0;
+    said_ = saidTicket_ != 0 ? words_->Take(saidTicket_, "") : "", saidTicket_ = 0;
     hold_ = beat_.seen ? (fast_ ? 0.3F : 1.5F) : 0.2F;
     if (!beat_.seen)
         slide_ = {}; // only what the player sees slides
@@ -473,7 +483,8 @@ nlohmann::json Play::UiData() const
         data["inspect"] = InspectData();
     data["focus"] = !following_;
     if (beat_.seen && hold_ > 0.0F)
-        data["caption"] = {{"guest", def_.guests[U(beat_.guest)].name}, {"line", beat_.caption}, {"result", beat_.result}};
+        data["caption"] = {{"guest", def_.guests[U(beat_.guest)].name}, {"line", beat_.caption}, {"result", beat_.result},
+                           {"said", said_}, {"saidBy", saidGuest_ >= 0 ? def_.guests[U(saidGuest_)].name : ""}};
     const int me = Me();
     if (me < 0)
         return data;
@@ -581,7 +592,7 @@ nlohmann::json Play::UiData() const
                                {"chance", ChancePercent(stat, target)}, {"answer", std::to_string(a)}});
         }
         const std::string name = def_.guests[U(asker)].name;
-        data["chat"] = {{"name", name}, {"question", q.text}, {"approvals", state_.approvals[U(asker * maxGuests + state_.player)]},
+        data["chat"] = {{"name", name}, {"question", chatFor_ == ChatKey() && !chatWords_.empty() ? chatWords_ : q.text}, {"approvals", state_.approvals[U(asker * maxGuests + state_.player)]},
                         {"goal", def_.rules.persuade.approvals}, {"answers", answers},
                         {"bondNote", bond > 0 ? name + " likes you: the targets are lower." : bond < 0 ? name + " distrusts you: the targets are higher." : ""},
                         {"likes", bond > 0}, {"distrusts", bond < 0}};
@@ -682,7 +693,94 @@ void Play::Notice(std::uint32_t since)
 {
     for (const LogEntry &e : NewLog(state_, since))
         if (e.kind == LogKind::Turned)
-            turn_ = true;
+            turn_ = true, AskTurn();
+}
+
+std::uint32_t Play::LineSeed(int kind) const { return static_cast<std::uint32_t>(state_.seed + state_.logCount * 4U + static_cast<std::uint32_t>(kind)); }
+
+std::vector<int> Play::Named(const std::string &line) const
+{
+    std::vector<int> guests;
+    for (std::size_t g = 0; g < def_.guests.size(); ++g)
+        if (line.find(def_.guests[g].name) != std::string::npos || line.find(def_.guests[g].taken) != std::string::npos)
+            guests.push_back(static_cast<int>(g));
+    return guests;
+}
+
+bool Play::LineWaiting(int ticket, float askedAt) const { return ticket != 0 && !words_->Ready(ticket) && clock_ - askedAt < lineSeconds; }
+
+int Play::ChatKey() const { return ((state_.round * 8 + state_.turn) * 100 + state_.chat.question) * 10 + state_.chat.asker; }
+
+bool Play::ChatWaiting() const
+{
+    // With a model, the chat screen waits until its question's line is resolved.
+    return words_ != nullptr && words_->HasModel() && (chatFor_ != ChatKey() || chatTicket_ != 0);
+}
+
+void Play::AskLines(int acting)
+{
+    // 1. A decision never acted on leaves its tickets: forget them.
+    for (int *ticket : {&captionTicket_, &saidTicket_})
+        if (*ticket != 0)
+            words_->Take(*ticket, ""), *ticket = 0;
+    saidGuest_ = -1, lineWaiting_ = false;
+    if (words_ == nullptr || !words_->HasModel() || captions_.lines.empty())
+        return;
+    // 2. The beat this action will make, on a copy: only one the player will see is worded.
+    NightState preview = state_;
+    if (!Apply(def_, preview, pendingAction_))
+        return;
+    const std::vector<LogEntry> entries = NewLog(preview, state_.logCount);
+    const Beat beat = Narrate(def_, state_, preview, entries, pendingAction_, acting, state_.player, captions_);
+    if (!beat.seen)
+        return;
+    askedAt_ = clock_;
+    // 3. Its caption, as the Taken's taunt when the Taken acts.
+    const bool taken = IsTaken(state_, acting);
+    if (!beat.caption.empty())
+        captionTicket_ = words_->Ask({taken ? LineKind::Taken : LineKind::Caption, acting, taken, Named(beat.caption), beat.caption, LineSeed(0)});
+    // 4. A goal settled in it: that guest says so (the player's own first).
+    const LogEntry *goal = nullptr;
+    for (const LogEntry &e : entries)
+        if (e.kind == LogKind::Goal && (goal == nullptr || e.who == state_.player))
+            goal = &e;
+    if (goal != nullptr)
+    {
+        saidGuest_ = goal->who;
+        const std::string line = goal->a ? "I did what I came here to do tonight." : "I could not do what I came here to do tonight.";
+        saidTicket_ = words_->Ask({goal->a ? LineKind::GoalDone : LineKind::GoalFailed, goal->who, false, {}, line, LineSeed(3)});
+    }
+}
+
+void Play::AskTurn()
+{
+    turnWords_.clear();
+    if (words_ == nullptr || !words_->HasModel() || state_.taken.guest < 0)
+        return;
+    const int t = state_.taken.guest;
+    const GuestDef &g = def_.guests[U(t)];
+    turnTicket_ = words_->Ask({LineKind::Turn, t, false, {t}, g.name + " becomes " + g.taken + ".", LineSeed(2)});
+    turnAskedAt_ = clock_;
+}
+
+void Play::ResolveLines()
+{
+    if (words_ == nullptr)
+        return;
+    // 1. The Turn's words: in, or out of time.
+    if (turnTicket_ != 0 && !LineWaiting(turnTicket_, turnAskedAt_))
+        turnWords_ = words_->Take(turnTicket_, ""), turnTicket_ = 0;
+    // 2. A chat question to the player: asked once, then in or out of time.
+    if (!words_->HasModel() || !state_.chat.active || !PlayerTurn())
+        return;
+    if (chatFor_ != ChatKey())
+    {
+        const QuestionDef &q = def_.questions[U(state_.chat.question)];
+        chatFor_ = ChatKey(), chatWords_.clear(), chatAskedAt_ = clock_;
+        chatTicket_ = words_->Ask({LineKind::Question, state_.chat.asker, false, Named(q.text), q.text, LineSeed(1)});
+    }
+    if (chatTicket_ != 0 && !LineWaiting(chatTicket_, chatAskedAt_))
+        chatWords_ = words_->Take(chatTicket_, ""), chatTicket_ = 0;
 }
 
 nlohmann::json Play::Save() const { return SaveNight(def_, state_); }
@@ -722,7 +820,7 @@ nlohmann::json Play::TurnData() const
     char clock[8];
     std::snprintf(clock, sizeof(clock), "%d:%02d", Hour(def_, state_), Minute(def_, state_));
     const PowerDef &power = def_.powers[U(g.power)];
-    return {{"who", g.name}, {"isYou", t == state_.player}, {"form", g.taken}, {"hp", state_.guests[U(t)].hp},
+    return {{"who", g.name}, {"isYou", t == state_.player}, {"form", g.taken}, {"hp", state_.guests[U(t)].hp}, {"words", turnWords_},
             {"power", power.id + ": " + PowerText(power)}, {"minions", minions}, {"minionName", minionName},
             {"minionShare", share}, {"clock", clock}};
 }
