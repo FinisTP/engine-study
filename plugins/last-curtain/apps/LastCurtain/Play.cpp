@@ -264,8 +264,8 @@ void Play::Key(umbra::platform::InputKey key)
     if (key == InputKey::Down) direction = 2;
     if (key == InputKey::Left) direction = 3;
     // 2. Each key does what a legal action of this turn allows, or nothing; never behind a dialog.
-    if (key == InputKey::Space && !PlayerTurn())
-        fast_ = true, waitTap_ = false;
+    if (key == InputKey::Space && (!PlayerTurn() || waitTap_))
+        fast_ = !PlayerTurn(), waitTap_ = false;
     if (key == InputKey::Enter && Screen() == "rest")
         resting_ = false;
     if (key == InputKey::I && (Screen() == "menu" || Screen() == "bag") && !state_.chat.active)
@@ -421,6 +421,8 @@ std::string Play::Screen() const
         return turnTicket_ != 0 ? "" : "turn"; // its line is still coming
     if (resting_)
         return "rest";
+    if (waitTap_ && beat_.seen) // a bot's beat waits, even one that handed the turn to the player
+        return "caption";
     if (!PlayerTurn())
         return (hold_ > 0.0F || waitTap_) && beat_.seen ? "caption" : "";
     if (state_.chat.active)

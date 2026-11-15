@@ -1727,3 +1727,35 @@ TEST_CASE("A bot's roll in sight names the event it faced (T152)", "[night][play
     }
     CHECK(named);
 }
+
+TEST_CASE("A bot's last beat that waits still shows its caption when the player's turn comes (T153)", "[night][play][pace]")
+{
+    const NightDef def = Data();
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    Captions captions;
+    REQUIRE(LoadCaptions(std::filesystem::path(UMBRA_NIGHT_DATA) / "captions.json", captions, diagnostics));
+    int seen = 0;
+    for (std::uint64_t seed = 1; seed < 40 && seen == 0; ++seed)
+    {
+        Play play(def, FoyerNight(def, seed, 0));
+        play.SetCaptions(captions);
+        play.SetOptions(Designed());
+        for (int i = 0; i < 60; ++i)
+        {
+            if (!UntilTap(play, 3000))
+                break;
+            if (play.PlayerTurn())
+            {
+                // The beat ended the bot's turn: its caption must still be there to tap, then the board.
+                ++seen;
+                CHECK(play.Screen() == "caption");
+                REQUIRE(play.HandleUi("caption", "next", ""));
+                play.Update(10.0F);
+                CHECK((play.StageCell() < 0 || play.State().chat.active || play.State().battle.active));
+                break;
+            }
+            play.HandleUi("caption", "next", "");
+        }
+    }
+    CHECK(seen > 0);
+}
