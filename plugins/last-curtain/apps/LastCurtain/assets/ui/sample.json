@@ -317,5 +317,8 @@
         380
       ]
     }
-  ]
+  ],
+  "look": {
+    "room": "Dressing room"
+  }
 }

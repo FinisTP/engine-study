@@ -1359,3 +1359,102 @@ TEST_CASE("Screens carry their pictures: the event's, the asker's and my portrai
         CHECK(play.UiData()["chat"]["portrait"] == "art/portraits/" + def.guests[static_cast<std::size_t>(asker)].id + ".jpg");
     }
 }
+
+TEST_CASE("Look opens the player's room at full size; the night waits (T144)", "[night][play][stage]")
+{
+    const NightDef def = Data();
+    Play play(def, PlayerFirst(def));
+    REQUIRE(play.Screen() == "menu");
+    const int here = play.State().guests[0].cell;
+    CHECK(play.StageCell() == -1);
+    // 1. Look is in the menu and opens the stage on the player's room.
+    const nlohmann::json actions = play.UiData()["actions"];
+    CHECK(std::any_of(actions.begin(), actions.end(), [](const nlohmann::json &a) { return a["action"] == "look"; }));
+    REQUIRE(play.HandleUi("menu", "look", ""));
+    CHECK(play.Looking());
+    CHECK(play.Screen() == "look");
+    CHECK(play.StageCell() == here);
+    const std::vector<Play::Actor> actors = play.StageActors();
+    CHECK(std::any_of(actors.begin(), actors.end(), [](const Play::Actor &a) { return a.guest == 0; }));
+    // 2. The night waits; Back returns to the menu.
+    const NightState before = play.State();
+    play.Update(10.0F);
+    CHECK(Fingerprint(play.State()) == Fingerprint(before));
+    REQUIRE(play.HandleUi("look", "back", ""));
+    CHECK_FALSE(play.Looking());
+    CHECK(play.Screen() == "menu");
+}
+
+TEST_CASE("A doorway in the room is the board's Move; a barred side does nothing (T144)", "[night][play][stage]")
+{
+    const NightDef def = Data();
+    Play play(def, PlayerFirst(def));
+    const int here = play.State().guests[0].cell;
+    const int step = StepCell(def, play);
+    REQUIRE(step >= 0);
+    int open = -1, barred = -1;
+    for (int d = 0; d < 4; ++d)
+        if (Neighbour(def, here, d) == step)
+            open = d;
+        else if (barred < 0)
+            barred = d;
+    REQUIRE(open >= 0);
+    REQUIRE(play.HandleUi("menu", "look", ""));
+    const int moves = play.State().guests[0].movesLeft;
+    if (barred >= 0 && Neighbour(def, here, barred) != step)
+    {
+        const BoardView view = MakeView(def, play.State(), 0);
+        const bool canGo = Neighbour(def, here, barred) >= 0 && view.cells[static_cast<std::size_t>(Neighbour(def, here, barred))].step >= 0;
+        if (!canGo)
+        {
+            CHECK_FALSE(play.LookDoor(barred));
+            CHECK(play.Looking());
+        }
+    }
+    REQUIRE(play.LookDoor(open));
+    CHECK_FALSE(play.Looking());
+    CHECK(play.State().guests[0].cell == step);
+    CHECK(play.State().guests[0].movesLeft < moves); // the board's Move: one step, or all if the room is new
+}
+
+TEST_CASE("Look is refused off the player's own menu (T144)", "[night][play][stage]")
+{
+    const NightDef def = Data();
+    Play bot = BotFirst(def);
+    CHECK_FALSE(bot.HandleUi("menu", "look", ""));
+    CHECK_FALSE(bot.Looking());
+}
+
+TEST_CASE("A battle in the player's light plays on the stage with both sides; one in the dark does not (T144)", "[night][play][stage]")
+{
+    const NightDef def = Data();
+    NightState state = PlayerFirst(def);
+    const int here = state.guests[0].cell;
+    Monster moths;
+    moths.kind = static_cast<std::int8_t>(NightDef::Find(def.monsters, "moths"));
+    moths.cell = static_cast<std::int8_t>(here);
+    moths.hp = 3, moths.might = 2, moths.sanity = 1;
+    state.monsters.push_back(moths);
+    // 1. The player attacks the monster in their own room: the stage shows both sides.
+    Play play(def, state);
+    const std::vector<Action> legal = LegalActions(def, play.State());
+    const auto attack = std::find_if(legal.begin(), legal.end(), [](const Action &a) { return a.kind == ActionKind::Attack; });
+    REQUIRE(attack != legal.end());
+    REQUIRE(play.HandleUi("menu", "act", std::to_string(attack - legal.begin())));
+    REQUIRE(play.State().battle.active);
+    CHECK(play.StageCell() == play.State().battle.cell);
+    const std::vector<Play::Actor> actors = play.StageActors();
+    CHECK(std::any_of(actors.begin(), actors.end(), [](const Play::Actor &a) { return a.guest == 0 && a.side == 0; }));
+    CHECK(std::any_of(actors.begin(), actors.end(), [&](const Play::Actor &a) { return a.monsterKind == moths.kind && a.side == 1; }));
+    // 2. The same battle moved to a cell the player cannot see: not staged.
+    NightState far = play.State();
+    const BoardView view = MakeView(def, far, 0);
+    for (int c = 0; c < maxCells; ++c)
+        if (!view.cells[static_cast<std::size_t>(c)].lit)
+        {
+            far.battle.cell = static_cast<std::int8_t>(c);
+            break;
+        }
+    REQUIRE_FALSE(view.cells[static_cast<std::size_t>(far.battle.cell)].lit);
+    CHECK(Play(def, far).StageCell() == -1);
+}
