@@ -156,7 +156,8 @@ namespace umbra::night
                 const std::string name = Name(def, static_cast<int>(g), taken);
                 if (Has(was, name) && !Has(words, name))
                     return {};
-                const bool speaker = static_cast<int>(g) == ask.speaker;
+                // The speaker may name themselves, but only by the name they speak as.
+                const bool speaker = static_cast<int>(g) == ask.speaker && taken == ask.taken;
                 if (!Has(was, name) && !speaker && (Has(words, name) || (!taken && Has(words, Given(name)) && !Has(was, Given(name)))))
                     return {};
             }

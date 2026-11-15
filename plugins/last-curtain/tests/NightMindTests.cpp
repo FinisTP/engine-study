@@ -88,3 +88,14 @@ TEST_CASE("TryLines words a few bot nights and counts what the guard accepts (T1
     CHECK(text.find("accepted") != std::string::npos);
     CHECK(text.find("[the Turn]") != std::string::npos);
 }
+
+TEST_CASE("A Taken line keeps to the form's name (final review)", "[night][mind]")
+{
+    const NightDef def = Data();
+    const int thanh = G(def, "thanh"), lan = G(def, "lan");
+    const std::string form = def.guests[static_cast<std::size_t>(thanh)].taken;
+    const LineAsk taunt{LineKind::Taken, thanh, true, {lan}, form + " attacks Tran Ngoc Lan.", 1};
+    CHECK_FALSE(Guard(def, taunt, "Sing with me, Tran Ngoc Lan, says " + form + ".").empty());
+    CHECK(Guard(def, taunt, "Le Thanh is gone, Tran Ngoc Lan, only " + form + " remains.").empty());
+    CHECK(Guard(def, taunt, "Thanh is gone, Tran Ngoc Lan, only " + form + " remains.").empty());
+}
