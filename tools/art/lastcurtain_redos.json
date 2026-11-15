@@ -1,0 +1,30 @@
+{
+  "why": "Second tries after review (2026-11-15). Rooms: img2img at denoise 0.84 over the sketch; others: text to image. Negative = DREAD's plus the extra words.",
+  "rooms": {
+    "extraNegative": "blood, gore, red splatter, side view, front view, staircase in perspective, balcony view",
+    "tries": [
+      {"id": "auditorium", "seed": 5202, "why": "drawn from the front", "prompt": "top-down view from directly above, seen from the ceiling, flat floor plan of curved rows of red velvet seats in bands, an orchestra pit at one edge, gilt balcony rails, inside the old Saigon Opera House, game map tile"},
+      {"id": "armoury", "seed": 5240, "why": "too much blood", "prompt": "top-down view from directly above, flat floor plan of a stage armoury, racks of prop spears, shields, a breastplate on a table, inside the old Saigon Opera House, game map tile"},
+      {"id": "loosestairs", "seed": 5255, "why": "drawn from the side", "prompt": "top-down view from directly above, flat floor plan of a stair landing, wooden steps seen from above as parallel planks, missing planks, a broken rail, inside the old Saigon Opera House, game map tile"},
+      {"id": "pitcover", "seed": 5256, "why": "too much blood", "prompt": "top-down view from directly above, flat floor plan of a broken pit cover, cracked boards over a dark hole, inside the old Saigon Opera House, game map tile"},
+      {"id": "weaponrack", "seed": 5260, "why": "drawn from the side, too much blood", "prompt": "top-down view from directly above, flat floor plan of a fencing hall, a rack of foils against a wall, a long fencing strip on the floor, inside the old Saigon Opera House, game map tile"}
+    ]
+  },
+  "events": {
+    "extraNegative": "text, title, lettering, caption, poster text, typography, words, signature, skeleton, gore",
+    "tries": [
+      {"id": "sandbag", "seed": 6212, "why": "a garbled poster title", "prompt": "uncanny scene in a dark empty old opera house at night: a heavy sandbag hangs on a creaking rope high above an empty stage, long shadow"},
+      {"id": "wire", "seed": 6214, "why": "garbled text", "prompt": "uncanny scene in a dark empty old opera house at night: a snapped lighting cable whips through the air in a dressing room, sparks"},
+      {"id": "programme", "seed": 6229, "why": "garbled text, a skeleton", "prompt": "uncanny scene in a dark empty old opera house at night: a folded blank paper programme lies alone on an empty red velvet seat in the stalls"}
+    ]
+  },
+  "items": {
+    "extraNegative": "people, person, hands, landscape, trees, building, scenery, label, text, blood, knife",
+    "tries": [
+      {"id": "bandage", "seed": 8200, "why": "a pot with text", "prompt": "still life of a rolled cloth bandage, a single object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"},
+      {"id": "whetstone", "seed": 8203, "why": "a shed", "prompt": "still life of a grey sharpening whetstone block, a single object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"},
+      {"id": "coat", "seed": 8205, "why": "a man with a bloody knife", "prompt": "still life of an empty padded winter coat laid flat, no one wearing it, a single object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"},
+      {"id": "fan", "seed": 8207, "why": "a landscape", "prompt": "still life of an open folding silk hand fan with painted ribs, a single object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"}
+    ]
+  }
+}
