@@ -17,7 +17,7 @@
 
 | Part | Where |
 |---|---|
-| `color` column in `guests.csv` (RRGGBB): Nhi jade, Thanh lacquer red, Bao cream-grey, Khang mustard, Mai ochre, Huy ink blue, Lan rose [call] | `#UMBRA-158`, `NightData.cpp` |
+| `color` column in `guests.csv` (RRGGBB): Nhi jade, Thanh lacquer red, Bao cream-grey, Khang mustard, Mai ochre, Huy ink blue, Lan rose (the user confirmed them, 2026-11-15) | `#UMBRA-158`, `NightData.cpp` |
 | The guest model and the Taken model, rigged and packed with 7 and 6 clips | `#UMBRA-159`, `apps/LastCurtain/assets/models/` (`README.md` there) |
 | Their animation graphs (idle, walk, attack, hit, death, plus talk / power) | `assets/animations/guest.anim.json`, `taken.anim.json` |
 | Pawns drawn as tinted skinned figures; a sliding pawn faces its step and walks; a turned guest becomes the Taken model in its colour; a model that fails to load falls back to the box | `Table.{hpp,cpp}`, `Table.md` §2 |

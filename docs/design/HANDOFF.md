@@ -48,7 +48,11 @@ For whoever continues this work, in any session. Read this first.
   painted table, 4b a room at full size, 4c battles in it) and plan
   `plans/2026-11-15-painted-table-plan-4a.md`. Neither is started. The style board (13 SDXL
   pictures from the user's ComfyUI) waits for the user's direction.
-- **Next:** the user's answers on the plan 3 and 4 drafts and the style board, then plan 3.
+- **Answered 2026-11-15 (user):** chat questions are reworded; the game waits up to 3 s for a line;
+  lines are not saved; the style board's direction is right; full-size rooms use a fixed stage-like
+  corner camera and open only for Look; battles (the player's and bots' in the player's light) play
+  at full size; a free display face; the seven colours fit the cast. Both specs and plans updated.
+- **Next: plan 3, the model's lines** (`plans/2026-11-15-model-lines-plan.md`), then plan 4a.
 
 ## Decided by the user (2026-11-14)
 
@@ -74,11 +78,7 @@ For whoever continues this work, in any session. Read this first.
 
 ## Waiting on the user
 
-0. The overnight drafts: the open questions in `2026-11-15-model-lines.md` (rewording chat
-   questions, the 1.0 s wait, lines not in saves) and `2026-11-15-art-rooms-battles.md` (the style
-   board, the room camera, when rooms open at full size, bots' battles, fonts); the look of the
-   figures (`../testing/s28b-pawn-figures.md` §4); the seven colours [call].
-
+0. (Answered 2026-11-15: the overnight drafts' questions.)
 1. MSVC warnings in `plugins/last-curtain` (not yet reported).
 2. The Windows check and a first play of plan 2 (`../testing/s26-board-on-screen.md` §4), and
    whether chatty bots asking in round 1 feels like too much (§3).

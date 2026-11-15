@@ -477,6 +477,8 @@ build phases.
 | 2026-11-15 | Plan 3: the model words what the player sees and hears, in English; without the model the night plays on with written lines | user |
 | 2026-11-15 | Plan 4: art, walking the rooms at full size and real-size battles; art in 1960s Saigon poster style, 3D guests and one shared Taken, 2D rooms, items and UI, made mostly locally | user |
 | 2026-11-15 | A 9x9 board of 70 rooms; seven start rooms, one per guest; a free step back without pacing; guests chat with each other and form groups that help members' goals | user |
+| 2026-11-15 | Plan 3: chat questions are reworded too; the game waits up to 3 s for a line; lines are not saved | user |
+| 2026-11-15 | Plan 4: the style board's direction; full-size rooms with a fixed stage-like corner camera, opened only for Look; battles (the player's and bots' in the player's light) at full size; a free display face; the seven guest colours | user |
 | 2026-11-14 | After midnight the Taken's own minions (one kind per form, a fixed set at the Turn) replace ordinary monsters; destroying one takes a share of the Taken's HP | user |
 
 ## Sources (the house's history)

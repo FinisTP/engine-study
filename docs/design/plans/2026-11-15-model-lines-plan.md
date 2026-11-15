@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Status:** draft for the user's review. Not started. The open questions in the spec are answered first.
+> **Status:** ready; the spec's questions are answered (user, 2026-11-15). Not started.
 
 **Goal:** the built-in model rewords captions, chat questions, goal lines, the Turn and the Taken's lines in each guest's voice, with the written templates as the fallback.
 
-**Architecture:** a new `nightmind` module in the last-curtain plugin builds requests (prompt + grammar + seed) and guards answers; it depends on the living town's `Mind` interface only. `Play` asks for lines through a small `Words` object that owns a worker thread, a bounded job list and a deadline; `Play` shows whatever is ready when the line is due. Only `LastCurtain.exe` links `LlamaMind`.
+**Architecture:** a new `nightmind` module in the last-curtain plugin builds requests (prompt + grammar + seed) and guards answers; it depends on the living town's `Mind` interface only. `Play` asks for lines through a small `Words` object that owns a worker thread, a bounded job list and a deadline; `Play` holds a line back until its answer is ready or 3 s have passed since it was asked, then shows it. Only `LastCurtain.exe` links `LlamaMind`.
 
 **Tech Stack:** C++20, llama.cpp (vcpkg feature `town-model-gpu`), Catch2, the scripted stand-in mind.
 
@@ -15,7 +15,7 @@
 ## Global Constraints
 
 - The model never changes `NightState`; a night with and without it ends in the same state.
-- Template first, always ready; late (> 1.0 s [call]), empty or refused → template. A shown line is never swapped.
+- Template first, always ready. The game waits for the model's line up to 3.0 s (user); past that, empty or refused → template. A shown line is never swapped.
 - Grammar: one line, `[A-Z]`, letters/spaces/`,'-`, 8-120 chars, ends `.!?`; no digits.
 - The `result` line, chat answers, numbers and names are never reworded.
 - Seed per request = night seed + beat number.
@@ -61,18 +61,18 @@
 
 **Files:** Create `plugins/last-curtain/apps/LastCurtain/Words.{hpp,cpp}` (in `UmbraNightPlay`); Test `tests/WordsTests.cpp`
 
-**Interfaces:** Produces `class Words { Words(const NightDef &, std::unique_ptr<umbra::town::Mind>); int Ask(LineAsk); std::string Take(int ticket, const std::string &fallback); void Stop(); };` — `Take` returns the guarded answer if it arrived, else the fallback, and forgets the ticket. A null mind answers every `Take` with the fallback.
+**Interfaces:** Produces `class Words { Words(const NightDef &, std::unique_ptr<umbra::town::Mind>); int Ask(LineAsk); bool Ready(int ticket) const; std::string Take(int ticket, const std::string &fallback); void Stop(); };` — `Ready` is true once the answer arrived, was refused or failed; `Take` returns the guarded answer if it arrived, else the fallback, and forgets the ticket (a late answer is then dropped). A null mind answers every `Take` with the fallback.
 
-- [ ] Tests (T134) with the scripted stand-in: a fast answer is taken; a slow one (sleeps past the deadline) gives the fallback and is not shown later; an empty or refused answer gives the fallback; at most 4 jobs wait (the oldest is dropped); `Stop` with jobs queued returns within the running job's time.
+- [ ] Tests (T134) with the scripted stand-in: a fast answer is taken; `Ready` turns true when the stand-in answers; a slow one (the test takes before it answers) gives the fallback and is not shown later; an empty or refused answer gives the fallback; at most 4 jobs wait (the oldest is dropped); `Stop` with jobs queued returns within the running job's time.
 - [ ] RED, implement (one thread, `std::deque` of jobs, `std::condition_variable`), GREEN, commit.
 
 ### Task 4: Play asks and shows
 
 **Files:** Modify `Play.{hpp,cpp}`; Test `tests/PlayTests.cpp`
 
-**Interfaces:** Consumes `Words`. Produces `void Play::SetWords(Words *words)`; the beat's caption, chat question, goal line, Turn screen text and Taken captions come from `Words::Take` at the moment they are shown; tickets are asked when the beat is made (bots: at decision, so the thinking pause covers the wait).
+**Interfaces:** Consumes `Words`. Produces `void Play::SetWords(Words *words)`; the beat's caption, chat question, goal line, Turn screen text and Taken captions come from `Words::Take` at the moment they are shown; tickets are asked when the beat is made; the line waits on screen-time until `Ready` or 3.0 s since `Ask` (`Play::lineWait = 3.0F`), so a bot's pause is `max(0.4 s, decision time, line ready)` capped at 3 s.
 
-- [ ] Tests (T135): with a stand-in that uppercases the first word, a bot's caption in light shows the model's line and the `result` line is the template's; the same night with and without `Words` ends in the same `Fingerprint(State())` (`NightSave.hpp`); the Turn screen shows two worded sentences; a Restore continues seeds from the saved beat count.
+- [ ] Tests (T135): a bot's beat is not shown while its line is not `Ready` and less than 3 s passed; it shows at 3 s with the template when the stand-in never answers. With a stand-in that uppercases the first word, a bot's caption in light shows the model's line and the `result` line is the template's; the same night with and without `Words` ends in the same `Fingerprint(State())` (`NightSave.hpp`); the Turn screen shows two worded sentences; a Restore continues seeds from the saved beat count.
 - [ ] RED, implement, GREEN, commit.
 
 ### Task 5: The real model in the program

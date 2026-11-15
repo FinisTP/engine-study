@@ -1,6 +1,6 @@
 # The Last Curtain: the model's lines (plan 3)
 
-> **Status:** Draft for the user's review (written overnight 2026-11-15)
+> **Status:** Approved by the user 2026-11-15 (open questions answered); not started
 > **Author:** the user + Claude · **Last updated:** 2026-11-15
 > **Quick reference** — Layer: presentation over the night rules · Key deps: the night (`Night.md`), the narrator (`Narrate.hpp`, `captions.json`), the built-in model (`plugins/living-town/modules/mind`, S23)
 
@@ -19,6 +19,9 @@ missing, late or refused.
   player's chats, goals done or failed, the Turn, and the Taken's lines.
 - English.
 - No model file or no capable graphics card: the night plays on with the written lines.
+- The chat questions are reworded too (guarded; the answers stay as written).
+- The game waits up to **3 seconds** for a line before it shows the written one.
+- The model's lines are not kept in saves.
 
 ## Why
 
@@ -68,11 +71,13 @@ template line*. The answer must keep every name and the meaning (`Mind.md`, "Wor
 ## How a line is made
 
 1. The rules run and the template line is made exactly as today.
-2. A request goes to the model on a worker thread, with a deadline **[call] 1.0 s** (the user's PC
-   measured 0.8 s a line for Qwen3 4B on the graphics card, 2026-11-12). Bots already pause
-   `max(0.4 s, decision time)` before acting, so most lines arrive inside that pause.
-3. The answer passes the guard or is dropped. Late, empty or refused: the template shows. A line is
-   never swapped after it is on screen (no flicker) [call].
+2. A request goes to the model on a worker thread when the beat is made. The game **waits for it,
+   up to 3 s** (user), before the line goes on screen: a bot's thinking pause becomes
+   `max(0.4 s, decision time, line ready)`, capped at 3 s; the player's own caption, chat question
+   or goal line waits the same way. The user's PC measured 0.8 s a line for Qwen3 4B on the
+   graphics card (2026-11-12), so most lines arrive well inside the cap.
+3. The answer passes the guard or is dropped. Past 3 s, empty or refused: the template shows. A line
+   is never swapped after it is on screen (no flicker) [call].
 4. The model's output goes into the beat's caption only; nothing in `NightState` changes.
 
 The Turn and goal lines can be asked a little ahead: the Taken is known the moment it is drawn,
@@ -91,7 +96,7 @@ and the Turn screen's fade-in (about 1 s) covers the wait.
 ### Same seed, same words
 
 Each request's seed is `night seed + beat number`, so a replayed night with the same model file
-words the same lines. Lines are **not** stored in the save [call]: a save is taken at a round's
+words the same lines. Lines are **not** stored in the save (user): a save is taken at a round's
 start, when nothing worded is on screen. (The living town stores its worded lines because they
 become rumours the town repeats; here a line is shown once.)
 
@@ -129,12 +134,11 @@ become rumours the town repeats; here a line is shown once.)
 - The user's real-model check on Windows: a list of 30 lines from three nights (`UmbraTool
   night-mind --show`), accepted count, seconds per line, and a read for voice.
 
-## Open questions for the user
+## Answers (user, 2026-11-15)
 
-1. Should the **chat question** be reworded at all? It carries the challenge; rewording risks
-   hinting at the safe answer. Proposed: yes, guarded; the answers stay as written.
-2. Is **1.0 s** the right longest wait, or should bots simply wait for the line (up to, say, 2 s)?
-3. Lines **not stored in saves** (above): fine?
+1. The chat question is reworded, guarded; the answers stay as written.
+2. The longest wait is 3 s; the game waits for the line up to then.
+3. Lines are not stored in saves.
 
 ## What is left to the builder
 

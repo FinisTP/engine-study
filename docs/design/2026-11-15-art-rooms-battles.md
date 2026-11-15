@@ -1,6 +1,6 @@
 # The Last Curtain: art, rooms at full size and real-size battles (plan 4)
 
-> **Status:** Draft for the user's review (written overnight 2026-11-15)
+> **Status:** Approved by the user 2026-11-15 (open questions answered); 4a ready, not started
 > **Author:** the user + Claude · **Last updated:** 2026-11-15
 > **Quick reference** — Layer: presentation over the night rules · Key deps: `LastCurtain.exe` (plans 2-2c), the pawn figures (`#UMBRA-159`), the art resource plan (Claude Doc), the night's battle rules (`game-design.md` §10)
 
@@ -21,7 +21,13 @@ at full size is still one board action.
   walls, items, props, monsters, portraits and UI. Props are always flat painted (stage flats).
   Painted top-down room tiles. Mostly free and local (ComfyUI on the user's laptop, Meshy Pro).
 - One event picture for now.
-- Guest colours from the 1960s palette, matched to their story (`#UMBRA-158`).
+- Guest colours from the 1960s palette, matched to their story (`#UMBRA-158`); the user confirmed
+  the seven colours fit the cast.
+- The style board's direction is right (2026-11-15).
+- A room at full size uses a fixed corner camera, like a stage.
+- A room opens at full size only for Look; battles (the player's and bots' in the player's light)
+  play at full size; events stay on the table.
+- A free display font.
 
 ## Why
 
@@ -48,7 +54,7 @@ paint, and a fight should look like a fight, not a battle panel over a board.
 | Doorway bar | a painted door on the floor edge |
 | Monster: brown or violet box | a standing painted card (a flat cut-out on a little base, like the props) |
 | Items in a room: not shown | a small painted token lying on the tile |
-| UI: flat panels | the poster frame (style board sb06) as the panel skin, the cream paper colour, an ink-black display face [call: a free 1960s-like face, e.g. "Playfair Display" or "Abril Fatface", SIL OFL] |
+| UI: flat panels | the poster frame (style board sb06) as the panel skin, the cream paper colour, a free display face (user) for titles: "Abril Fatface" [call; SIL OFL, its licence beside it], Poppins stays for body text |
 | Portraits: none | one painted portrait per guest in the HUD, chat and inspect screens (7) |
 | Event picture: none | one picture shown in the event dialog (`ev01_applause`), the rest keep the text |
 
@@ -61,24 +67,23 @@ portraits, 1 event picture, a UI skin of 6-8 pieces. About 55 pictures of the ~2
 
 ## 4b. A room at full size
 
-- **When:** the player clicks "Look" on the turn menu in their own room, or enters a room with an
-  event or a battle [call]. The camera flies down from the table into the room (about 1 s) and back up
+- **When:** only when the player clicks "Look" on the turn menu in their own room (user). Events
+  stay on the table; battles open their room as 4c says. The camera flies down from the table into the room (about 1 s) and back up
   when done. No loading screen: the room is built from the same pieces as its tile.
 - **What it is:** the painted floor tile scaled to a 8 × 8 m floor, the walls as tall painted flats
   with doorways where the board has doors, a few prop flats from the room's list (`rooms.csv` gains a
   `props` column [call]), the room's light. The guests in the room stand at full size (the same
   figures, now 1.7 m).
 - **What the player can do there:** the same actions as on the table (the turn menu stays), plus
-  walking their figure around the room to look (no rule effect) [call]. Leaving through a doorway is
+  walking their figure around the room by clicking the floor, to look (no rule effect) [call]. Leaving through a doorway is
   the board's Move and costs a move, as on the table.
-- **Camera:** third person behind the player's figure, the engine's `third-person` plugin camera
-  [call; the alternative is a fixed high corner camera like a stage, which hides less of the flats'
-  flatness].
+- **Camera:** fixed in a high front corner, like a seat in the stalls looking at a stage (user). It
+  never goes behind the flats, so they always face the camera. Height and angle are the builder's.
 
 ## 4c. Battles in the room
 
-- A battle that involves the player (or happens in the player's light [call]) is shown in the room at
-  full size: the two sides face each other, each attack plays `attack` (`power` for a Taken's
+- A battle that involves the player, or that bots fight in the player's light (user), is shown in
+  its room at full size, with the same fixed corner camera: the two sides face each other, each attack plays `attack` (`power` for a Taken's
   power), the target plays `hit`, a guest at 0 HP plays `death`, damage numbers float up.
 - The battle rules and menu are the existing ones (attack, item, guard, leave after round 1; at most
   3 rounds). Only the presentation moves from the battle panel to the room.
@@ -105,16 +110,14 @@ portraits, 1 event picture, a UI skin of 6-8 pieces. About 55 pictures of the ~2
   panel battle; capture of each clip.
 - The user's Windows play check for each part.
 
-## Open questions for the user
+## Answers (user, 2026-11-15)
 
-1. **Style board:** do the eight pictures (plus the five redos) set the right direction? What to
-   change?
-2. **Camera in rooms:** third person behind the player, or a fixed stage-like corner?
-3. **When rooms open at full size:** only on "Look", events and battles, or every time the player
-   enters a room?
-4. **Bots' battles in the player's light:** play them at full size too (slower nights), or only the
-   player's own?
-5. **Fonts:** a free display face (proposed above), or a hand-lettered title only?
+1. The style board's direction is very good.
+2. The camera in a full-size room stays in a fixed corner, like a stage.
+3. Rooms open at full size only for Look (battles still play at full size, 4c).
+4. Bots' battles in the player's light also play at full size.
+5. A free display face for titles.
+6. The seven guest colours fit the cast.
 
 ## What is left to the builder
 

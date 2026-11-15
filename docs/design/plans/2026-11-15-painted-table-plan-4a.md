@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Status:** draft for the user's review. Not started; waits for the user's word on the style board. Plans 4b (a room at full size) and 4c (battles in the room) are written after 4a works, as the spec says.
+> **Status:** ready; the style board's direction is approved (user, 2026-11-15). Not started; plan 3 comes first. Plans 4b (a room at full size) and 4c (battles in the room) are written after 4a works, as the spec says.
 
 **Goal:** the table's rooms, walls, doors, monsters, items, portraits, event picture and UI skin are painted 2D art in the 1960s Saigon poster style.
 
@@ -64,7 +64,7 @@
 
 ### Task 5: The poster skin, portraits and the event picture
 
-**Files:** Modify `assets/ui/skin.json`, `hud`, `chat`, `inspect`, `event` screens, `sample.json`; add the display font file (SIL OFL) and its licence
+**Files:** Modify `assets/ui/skin.json`, `hud`, `chat`, `inspect`, `event` screens, `sample.json`; add Abril Fatface (SIL OFL) and its licence for titles; Poppins stays for body text
 
 - [ ] `UmbraTool ui-preview` of hud, chat, inspect, event, menu with the new skin; portraits in hud/chat/inspect; the event picture on `applause` only. Commit.
 
