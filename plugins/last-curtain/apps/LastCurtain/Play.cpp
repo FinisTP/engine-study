@@ -427,8 +427,6 @@ void Play::Update(float dt)
         {
             thoughtTurn_ = turnKey;
             think_ = skipping_ ? 0.0F : std::max(options_.thinkSeconds, took);
-            if (skipping_)
-                return;
             return;
         }
     }
