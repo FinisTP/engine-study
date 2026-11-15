@@ -102,6 +102,7 @@ private:
         int die = 0, statValue = 0, target = 0;
         std::string stat, result;
         bool passed = false;
+        int hp = 0; // the HP it took or gave, for the HUD's flash
     };
 
     bool Do(const umbra::night::Action &action); // applies a legal action on the player's turn

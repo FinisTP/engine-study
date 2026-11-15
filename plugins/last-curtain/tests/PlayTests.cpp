@@ -1672,8 +1672,11 @@ TEST_CASE("Walking into a room plays it step by step: arrival, card, tumbling di
         // 4. The result in plain words, with what is left.
         const std::string result = play.UiData()["dice"]["result"].get<std::string>();
         CHECK(result.find(play.UiData()["dice"]["passed"] == true ? "Speed" : "now") != std::string::npos);
+        const bool failed = play.UiData()["dice"]["failed"] == true;
         REQUIRE(play.HandleUi("dice", "continue", ""));
         CHECK(play.Screen() == "rest");
+        // 5. The HUD flashes what it cost.
+        CHECK(play.UiData()["me"]["flash"] == (failed ? "-5 HP" : ""));
     }
     SECTION("its condition met: the card says so, and no die")
     {

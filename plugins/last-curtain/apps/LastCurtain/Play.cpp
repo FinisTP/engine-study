@@ -150,7 +150,7 @@ bool Play::Do(const Action &action)
                                                     : "Your " + std::string(StatName(ev.clearStat)) + " " + std::to_string(Stat(def_, before, g, ev.clearStat)) +
                                                           " carries you through. " + ev.name + " is gone for everyone.";
     }
-    found_ = entered >= 0 && logged(LogKind::Item) != entries.end() && def_.rooms[U(before.cells[U(entered)].room)].kind == RoomKind::Item ? logged(LogKind::Item)->a : -1;
+    found_ = entered >= 0 && logged(LogKind::Item) != entries.end() && state_.cells[U(entered)].room >= 0 && def_.rooms[U(state_.cells[U(entered)].room)].kind == RoomKind::Item ? logged(LogKind::Item)->a : -1;
     if (entered >= 0 && (event_ >= 0 || found_ >= 0 || logged(LogKind::Effect) != entries.end()))
     {
         const RoomDef &room = def_.rooms[U(state_.cells[U(entered)].room)];
@@ -166,7 +166,7 @@ bool Play::Do(const Action &action)
     {
         if (e.kind != LogKind::Check || !Controls(state_, state_.player, e.who))
             continue;
-        Dice d{e.a, e.other, e.b, "", "", e.a + e.other >= e.b};
+        Dice d{e.a, e.other, e.b, "", "", e.a + e.other >= e.b, 0};
         if (action.kind == ActionKind::Answer)
         {
             d.stat = action.a == 0 ? "Might" : "Sanity";
@@ -174,8 +174,10 @@ bool Play::Do(const Action &action)
         }
         else if (event_ >= 0)
         {
-            d.stat = StatName(def_.events[U(event_)].stat);
-            d.result = RollResult(def_.events[U(event_)], d.passed, e.who);
+            const EventDef &ev = def_.events[U(event_)];
+            d.stat = StatName(ev.stat);
+            d.result = RollResult(ev, d.passed, e.who);
+            d.hp = (d.passed ? ev.passEffect : ev.failEffect) == Effect::Hp ? (d.passed ? ev.passAmount : ev.failAmount) : 0;
         }
         dice_.push_back(d);
     }
@@ -321,9 +323,9 @@ bool Play::HandleUi(const std::string &, const std::string &action, const std::s
     if (action == "continue" && !dice_.empty() && diceClock_ >= options_.diceSeconds)
     {
         // The HUD shows an HP change for a moment.
-        const std::size_t cut = dice_.front().result.find(" HP");
-        flash_ = cut != std::string::npos ? dice_.front().result.substr(dice_.front().result.rfind(' ', cut - 1) + 1, cut - dice_.front().result.rfind(' ', cut - 1) - 1) + " HP" : "";
-        flashClock_ = flash_.empty() ? 0.0F : 2.0F;
+        const int hp = dice_.front().hp;
+        flash_ = hp == 0 ? "" : (hp > 0 ? "+" : "") + std::to_string(hp) + " HP";
+        flashClock_ = hp == 0 ? 0.0F : 2.0F;
         dice_.pop_front(), diceClock_ = 0.0F;
         return true;
     }
