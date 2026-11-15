@@ -18,7 +18,7 @@ namespace umbra::night
         // The other transport room, if it is on the board.
         int Pair(const NightDef &def, const NightState &state, int cell)
         {
-            if (RoomOf(def, state, cell).kind != RoomKind::Transport)
+            if (!state.cells[U(cell)].opened || RoomOf(def, state, cell).kind != RoomKind::Transport)
                 return -1;
             for (int c = 0; c < maxCells; ++c)
                 if (c != cell && state.cells[U(c)].opened && RoomOf(def, state, c).kind == RoomKind::Transport)

@@ -3,77 +3,65 @@
 Balancing means editing files under `plugins/last-curtain/assets/night/` and running the soak
 test again. Code changes only when a new kind of mechanic is needed.
 
-## The bots
+## The bots (the battle royale, 2026-11-16)
 
 `ChooseAction(def, state, guest)` follows rules, not the model. No dice: the same state gives
 the same choice.
 
-1. A level: the stat of its weapon.
+1. A level: the stat of its weapon. A ghost: strike the weakest living guest in its room, else go
+   after the nearest.
 2. In battle: heal below `healBelowPercent`, a boost in round 1, leave below
    `fleeBelowHpPercent`; otherwise strike the weakest enemy.
 3. A question to answer (any bot, and guest 0 in the soak): the answer with the higher chance.
-4. Hurt below `fleeBelowHpPercent`: heal, else move away from monsters and the Taken.
-5. After midnight (company), when above `huntHpPercent`: attack the Taken in the room; else a
-   minion in the room; else walk to the nearest minion; else, with a friend within
-   `huntNearSteps`, toward the Taken (where any company light shows it, else the under-stage);
-   otherwise toward the nearest guest.
-6. The Taken: its power on the weakest guest it can reach; attack or approach a lone guest; keep
-   away from `crowd` or more guests together.
-7. Purpose (the evening), recomputed every action from what the guest knows:
-   - pick up healing, or a keepsake its own goal or a known group member's goal needs;
-   - a monsters goal: attack a beatable monster in the room;
-   - else walk the shortest path to the nearest target of its own goal (the goal room once opened;
-     the keepsake on its room's floor, or a holder only while lit; an unresolved
-     event room; a lit beatable monster), then of a known group member's keepsake.
-8. A chat before moving: `chatty` 6 or more, once its own goal is done. A chat with the player:
-   `chatty` 7 or more, or the bot likes the player.
-9. Otherwise the best score: new rooms `explore`, floor items `loot` x `greed` (greed 0: none),
-   beatable monsters `fight`, unused bonus rooms `bonus`, `chatty` toward lit guests to talk with
-   (+5 once its goal is done), minus `avoidGuests` for walking toward a disliked guest. If that is to wait, a bot with `chatty` above 0 talks with someone in the room.
+4. Hurt below `fleeBelowHpPercent`: heal, else move away from monsters.
+5. Its power on the weakest guest it can reach (damaging kinds); reflect when someone is in the room.
+6. A guest in the room who would win a fight (`Edge` below 0): ask it to spare this one.
+7. A chatty bot, or one fond of the player, asks the player a question first (a truce if passed).
+8. Otherwise the best score: new rooms `explore`, rooms still holding an item or event, bonus
+   rooms, quest goals (the quest item, the room to bring it to, the rooms to visit: weight 9; a
+   quest item on the floor: 95 to pick up), prey its nature would attack in its light (its hunt
+   anywhere: 15), loot, beatable monsters; minus `avoidGuests` toward a stronger guest, a ghost or
+   one it dislikes. **The killer:** never into its room (-1000), and away from it within
+   `senseSteps`. An attack scores `fight` x 10 + 5 + the edge (at most 40).
+9. Nothing better here: a chatty bot asks someone in the room for a truce.
 
-In the evening no bot steps back into the cell it just left during the same turn.
+**Natures** (`guests.csv` `nature`; `WouldAttack`): a kind bot keeps every truce and attacks only
+with a big edge (more than 8); a dirty one breaks a truce `persuade.dirtyBreakPercent` of the time
+and attacks with any edge; a wicked one ignores truces and attacks unless clearly weaker (edge -3
+or worse). A guest it was told to hunt it attacks unless much weaker. Natures also move how easily
+it grants a request (`persuade.kindTarget`, `wickedTarget`).
 
 ## Running it
 
 ```
 UmbraTool night-check [<data folder>]
 UmbraTool night-run [--data <folder>] [--seed 1] [--player <guest id>] [--json]
-UmbraTool night-soak [--data <folder>] [--nights 1000] [--seed 1] [--strategy 0] [--json]
+UmbraTool night-soak [--data <folder>] [--runs 200] [--seed 1] [--strategy 0] [--json]
 ```
 
-`night-soak` exits 1 when the data does not hold: a fault, or a form with 50 or more hunts
-outside `rules.json` `balance.companyWinMin..Max`. Try a variant without touching the shipped
-data: copy the folder, edit the copy, pass `--data <copy>`. Strategy 1: the company leaves
-minions alone (must lose clearly more often).
+A run is one whole game: nights until one guest escapes or the house wins. `night-soak` exits 1
+when the data does not hold: a fault (a stall or an illegal state), nights per run outside
+`balance.nightsMin..nightsMax`, house wins above `houseMax`%, any guest winning more than
+`winnerMax`%, or fewer than `deathsPerNightMin` deaths a night. Try a variant without touching the
+shipped data: copy the folder, edit the copy, pass `--data <copy>`.
 
 ## What moves which line of the report
 
 | Report line | Moved by |
 |---|---|
-| company wins by form | `guests.csv` `takenHp`, `takenMight`, `takenSanity`, `takenSpeed`; that form's entry in `powers.json` and `minions.csv` |
-| monster kills, levels | `monsters` in `rules.json` (chance, max, from which round), `monsters.csv` HP and growth, `levels.xp` |
-| minion kills, and the gap to strategy 1 | `minions.csv` (HP, stats, `hpShare`, `count`), `styles.csv` `huntHpPercent` |
-| downs, deaths | `events.csv` fail amounts, `monsters.csv`, the Taken forms and minions |
-| guest 0's side won | everything above |
-| the Taken in % of nights | the goals: whoever fails is drawn, so harder goals for a guest make it the Taken more often |
-| all finished (no hunt) | every goal's difficulty together |
-| rooms open by midnight (the foyer and start rooms count) | `styles.csv` `explore`, guests' `speed`; chats and goal walks lower it |
-| evening rounds with a chat between bots | `styles.csv` `chatty` (6 or more: a chat before moving; any above 0: walks toward lit guests and talks instead of waiting) |
-| goals finished, per goal | room goals: `goals.roomGoalRooms`; keepsakes: the item's `room` in `items.csv` (plain rooms are harder than rooms that stop movement), `goals.earlyRooms`; events / monsters: the goal's `count`, event rooms' `count` in `rooms.csv`, `monsters` in `rules.json` |
+| nights per run, deaths per night | the killer (`wakeRound`, `speed`, `speedPerHours`, `senseSteps`), `clock.rounds`, `monsters`, `spawn.minSteps`, natures |
+| deaths by guests | natures, `styles.csv` `fight`, `persuade` (truces) |
+| deaths by ghosts | `ghost` stats and `respawnRounds` |
+| deaths by the house | the killer, monsters, `events.csv` fail amounts |
+| the house won | the killer (it can kill the last two in one round only by luck) |
+| winners | guests' stats, natures and styles; the quests' powers and stats |
+| quests, powers used | `quests.csv` (rooms, counts), `powers.json` |
 
 ## Tuning order
 
-1. All forms' `takenHp` together until the hunt is near 50% overall.
-2. Each form (its stats, then its power's numbers) until it is inside the band. A power's numbers
-   matter less than the form's stats: change the stats first when a form is far out.
-3. Monsters and level steps. More monsters also help the Taken after midnight (they take its
-   side), so the forms need retuning afterwards.
-
-Check on more than one seed range (`--seed 1`, `--seed 20001`, `--seed 50001`): a form's share
-moves about 3 points either way between ranges of 2,000 nights.
-
-Goals of guest 0 are reported but not banded: in the soak it
-is the player's seat, which bots treat as the player (they ask it questions first).
+1. Nights per run with the killer and the night's length.
+2. Deaths by guests with natures and `persuade`.
+3. The winners' spread with stats and quests.
 
 ## Tuning record
 
@@ -104,3 +92,13 @@ needs `chatty` 7. Chatty: explorer 6, fighter 6, loner 5, protector 5; protector
 `roomGoalRooms` 70. `takenHp` re-measured: nhi 34, thanh 24, bao 42, khang 53, mai 28, huy 59,
 lan 29. Result on the three seed ranges: the data holds; every form 46-60%, rooms 49, bot chats
 73-75%, banded goals 47-62%.
+
+**The battle royale, stage 6 (2026-11-16).** Start: 1.7-1.8 nights per run (band 2-4), 3.2-3.3
+deaths a night, the house 0%, khang 28-29%, lan 23%. Tried, 200 runs each: killer speed 1 →
+2.2 nights; monsters 30% → 1.8; spawn 6 apart → 1.7; speed 1 and wake at round 8 → 2.2; speed 1
+and +1 every 3 hours → 2.3; speed 1 and 11 rounds → 2.5. Kept: killer `speed` 2 → 1,
+`speedPerHours` 2 → 3 (the night keeps its 12 rounds). Result, 400 runs: the data holds; 2.3
+nights per run, 2.5 deaths a night (guests 1.5, ghosts 0.2, the house 0.7), 3.2 quests and 1.7
+powers a night; winners khang 29%, lan 27%, mai 13%, bao 12%, thanh 11%, nhi 3%, huy 2%; the
+house 0%. Open: the kind guests (nhi, huy) rarely win, and the house almost never does (the last
+two must die in the same round).

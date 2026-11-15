@@ -217,10 +217,11 @@ TEST_CASE("The killer closes on the nearest living guest it senses, and kills on
     NightState state = BeforeWake(def, 4);
     NextRound(def, state); // awake
     const int g = 2;
-    // 1. A guest two rooms off: after a round it is nearer (or dead).
+    // 1. A guest as many rooms off as the killer walks in a round: it reaches the room and kills.
+    const int reach = KillerMoves(def, state);
     int two = -1;
     for (int c = 0; c < maxCells && two < 0; ++c)
-        if (state.cells[U(c)].opened && Steps(def, state, state.killer.cell, c) == 2)
+        if (state.cells[U(c)].opened && Steps(def, state, state.killer.cell, c) == reach)
             two = c;
     REQUIRE(two >= 0);
     for (int o = 0; o < state.count; ++o) // everyone else far away
@@ -228,7 +229,6 @@ TEST_CASE("The killer closes on the nearest living guest it senses, and kills on
             state.guests[U(o)].cell = state.foyer;
     state.guests[U(g)].cell = static_cast<std::int8_t>(two);
     NextRound(def, state);
-    // Speed 2 at least: it reaches the room and kills.
     CHECK(state.guests[U(g)].dead);
     CHECK(state.killer.cell == two);
     bool logged = false;

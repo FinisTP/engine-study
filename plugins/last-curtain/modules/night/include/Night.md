@@ -1,32 +1,36 @@
-# The night, as built (plan 1)
+# The night, as built (the battle royale, 2026-11-16)
 
 The whole night of *The Last Curtain* without graphics: one copyable `NightState`, and the rules
 behind `LegalActions` / `Apply`. Every number comes from `plugins/last-curtain/assets/night/`; the
-code holds only the mechanics. Design: `docs/design/game-design.md` (GDD); bots and tuning:
+code holds only the mechanics. Design: `docs/design/2026-11-16-battle-royale.md` (the co-op game it replaced stays on branch `main`); bots and tuning:
 `../../nightbots/include/Balance.md`.
 
 ## How a night runs
 
-1. `NewNight(def, seed, player)` draws each guest's goal, builds the deck, puts the foyer bottom
-   centre and opens one start room per guest through random doorways around it (never the
-   under-stage, never a room a drawn goal needs); each guest starts in its own, which gives it
-   nothing on that entry (resolved, its bonus used). The rooms the goals need move to random places
-   among the next deck entries, so they come out within `goals.earlyRooms` rooms. Then a d20 each
-   sets the order (high first, ties to higher Speed, then lower index).
-2. `Current(state)` names who acts: the guest fighter whose battle turn it is, else a guest with a
-   level to choose, else the board guest. -1 = over.
+Seven guests are locked in the Saigon Opera House; the last one alive walks out (the user, 2026-11-16).
+
+1. `NewNight(def, seed, player)` builds the whole map at once (`BuildBoard`: the quest rooms first
+   in the deck, then the rest, up to `board.rooms`; carry-quest items laid in their rooms) and spawns
+   the guests far apart (`Spawns`: farthest-point picking, never the under-stage). A d20 each sets
+   the order.
+2. `Current(state)` names who acts: the fighter whose battle turn it is, else a guest with a level to
+   choose, else the board guest. -1 = over.
 3. `LegalActions` lists what that guest may do; `Apply` refuses anything else and changes nothing.
-4. Monsters never choose: they act inside `Apply`. Bots and people use the same two calls.
+4. Monsters and the killer never choose: they act inside `Apply`. Bots and people use the same calls.
+5. A night lasts `clock.rounds` rounds. One guest left alive: they escape (`Outcome::Escaped`, the
+   `winner`). None: the house wins (`Outcome::House`; a ghost player wins with it). Two or more at
+   dawn: `Dawn` starts the next night (`NightState::night`) on a new map; the living keep their
+   items, levels and powers and wake healed and far apart; the quests open again.
 
 ## Data: which file owns which number
 
 | File | Owns |
 |---|---|
-| `rules.json` | clock (start hour, 20 rounds, the Turn after round 10), grid size and rooms placed, check targets, light steps, carry limit, battle formula, level steps, curse targets and their rise per hour, monster spawning, persuading, downed HP, the balance band |
-| `guests.csv` | the seven guests: stats, weapon type, style, Taken form stats and power |
+| `rules.json` | clock (start hour, rounds, minutes a round), ghosts, spawn distance, the killer, grid size and rooms placed, check targets, light steps, carry limit, battle formula, level steps, monster spawning and its rise per hour, persuading, the balance band |
+| `guests.csv` | the seven guests: stats, weapon type, style, `nature` (kind, dirty, wicked) |
+| `quests.csv` | the night's quests: kind (carry, visit, slay, endure), rooms, item, count, the power and stat they give, text |
 | `questions.csv` | five questions per guest: text, a physical and a magical answer, each with its target word |
-| `goals.csv` | two or three goals per guest: kind (room, item, events, monsters; no ally goals, user), target, count, text |
-| `minions.csv` | each Taken form's minions: stats, attack, resistance, XP, debuff, share of the Taken's HP, how many |
+| `goals.csv`, `minions.csv` | the co-op game's goals and the Taken's minions: still loaded, unused |
 | `bonds.csv` | starting bonds, -1000..1000 |
 | `powers.json` | each power's kind and numbers (damage, range, rounds, cooldown) |
 | `rooms.csv` | the room set: kind, doors before rotation, bonus stat, how many of each |
@@ -64,8 +68,7 @@ code holds only the mechanics. Design: `docs/design/game-design.md` (GDD); bots 
 - Items, drop and pick up are free. Resolving an item, event or trap room ends the turn; so does
   persuading, or a battle.
 - Ending the turn in an unused bonus room adds its stat (once per guest per room).
-- `Stat` = base + worn items + battle buffs; in water Speed is 1; the Taken has its form's
-  fixed numbers.
+- `Stat` = base + worn items + battle buffs; in water Speed is 1; a ghost has `ghost` stats.
 
 ## Checks, events, items (`Turn.cpp`)
 
@@ -97,61 +100,58 @@ themselves. A battle ends after `battle.rounds` rounds, when a side has nobody s
 Killing a monster gives its XP to every standing guest on the other side; a level is chosen
 (`LevelUp`) before anything else. Monsters appear at round start from `monsters.fromRound`.
 
-## The company (`Company.cpp`)
+## Fights and persuading (`Company.cpp`)
 
-Guests never fight each other before midnight; afterwards only the Taken. Allies of the player
-in the room fight on the player's side.
+Any guest may attack any other guest or ghost in its room, at any hour (the battle royale); spawns
+are `spawn.minSteps` apart so nobody dies in the first turn.
 
-Talking (before midnight, once a round each): any guest may `Chat` with a guest in the room
-who is not in its group, is not the player and is not one of the player's allies (it uses the turn). The other guest asks it one of its five questions
-(`questions.csv`, not one asked before while any remain); a bot may also ask the player at the
-start of its turn (`OpenChat`; it does not use the player's turn). The answerer (`Current`) picks
-`Answer` 0 (d20 + Might) or 1 (d20 + Sanity) against that answer's target, `persuade.bond` easier
-if the asker likes the answerer, harder if not (`AnswerTarget`). A pass is one approval
-(`NightState::approvals`, asker * 7 + answerer) and tells the answerer the asker's goal (between
-two bots, both ways). At `persuade.approvals` the asker joins the answerer's group, while it has
-fewer than 3: the player's group is 0, a bot's is 1 + its index. `ChancePercent(stat, target)` is
-what the screens show.
+Persuading (once a round): a living guest asks another for one thing, a `Chat` with a request in
+`b`: -1 spare me (a truce, `persuade.truceRounds` rounds: neither attacks the other), -2 an item
+(they drop one they carry), or a guest index (they go after that guest, `Guest::hunt`, for
+`truceRounds`). The one asked puts one of its five questions (`questions.csv`); the asker answers
+with Might or Sanity against that answer's target, `persuade.bond` easier if the one asked likes
+them, harder if not, and moved by its nature (`kindTarget`, `wickedTarget`; `AnswerTarget`). A pass
+grants the request. A bot may ask the player too (`OpenChat`, before it moves; a pass is a truce).
+The rules record truces; keeping them is the bots' choice (`Balance.md` "Natures").
 
-## Goals (`Company.cpp`, `Turn.cpp`, `Battle.cpp`)
+## Quests (`Quests.cpp`)
 
-Each guest draws one of its own `goals.csv` rows at `NewNight`, before the board; it knows only
-its own (`Guest::knows`, bits). A passed chat answer tells the answerer the asker's goal (see Talking). Kinds:
-`room` (entering the room sets `goalRoomSeen`), `item` (a keepsake carried at midnight), `events` (passed event rolls, traps not counted) and
-`monsters` (ordinary monsters this guest destroyed): `goalCount` against `count`. A keepsake
-(`items.csv` kind `keepsake`, weight 0, `room`) lies on the floor of its room when the room is
-opened, only if a drawn goal asks for it.
+Every quest is open to every living guest; the first to finish one takes it for the night
+(`NightState::questBy`, guest + 1), with its power (replacing any other, cooling from now) and its
+stat. Kinds: `carry` (the item in the bag, into the second room; the item is handed over), `visit`
+(the first room, then the second), `slay` (monsters destroyed) and `endure` (events and traps
+passed), counted in `Guest::quest`. Ghosts do not quest.
 
-## The Turn and the hunt (`Hunt.cpp`)
+## Powers (`Hunt.cpp`)
 
-After midnight the Taken knows where every guest is, and every guest knows where the Taken is,
-whatever the light (the user, 2026-11-15): `MakeView` shows those pawns, and the company's bots
-head for the Taken's room. (The Taken's bot already weighed every guest.)
-
-At the end of round `turnAfterRound` every living guest's goal is checked (`GoalDone`, a `Goal` log
-entry each). If all are done, the company wins at once. Otherwise chance picks the Taken among
-the failed, and every other failed guest keeps at most `goals.failHp` HP (the downed are left as
-they are). The Taken leaves every group and
-rises as the Taken in the under-stage at its form's HP; everyone else gathers in the foyer, the
-downed stand with `downedReturnHp`; the Taken moves to the end of the order. Ordinary monsters
-vanish and stop appearing; the form's minions (`minions.csv`, `count` of each) wait in the opened
-rooms farthest from the foyer. Killing a minion takes `hpShare`% of the form's `takenHp` from the
-Taken at once. After midnight 0 HP is death and items fall. The house never hurts the Taken; it
-ignores rooms and minions; minions fight on its side. A battle starts when the Taken and company
-guests share a room, with every company guest there.
-
-Powers (one code path per `kind`, numbers from `powers.json`, at most one use per turn, then
-`cooldown` Taken turns):
+A guest's power (numbers from `powers.json`, one use a turn, then `cooldown` of its turns):
 
 | Kind | Legal when | Effect |
 |---|---|---|
 | line | a guest is `InLine` | `damage` to that guest |
-| area | a guest within `range` steps | `damage` to every guest within `range` |
-| flood | always | its room and rooms joined to it: Speed 1, `damage` on ending a turn there, `rounds` |
+| area | a guest within `range` steps | `damage` to every other guest within `range` |
+| flood | always | its room and rooms joined to it: Speed 1, `damage` on ending a turn there, `rounds` (`Mark.by` spares the user) |
 | pull | a guest 1..`range` steps away | that guest comes to its room, takes `damage`, battle |
-| seal | a passage within `range` steps that cuts nobody off from it | shut for `rounds` |
-| swap | always, on any guest | the two change places; the Taken moves on |
+| seal | a passage within `range` steps | shut for `rounds` |
+| swap | always, on any guest | the two change places |
 | reflect | always | the next strike on it, until its next turn, hits the striker |
+
+## Ghosts and the killer (`Turn.cpp`, `Killer.cpp`, `Battle.cpp`)
+
+**Ghosts.** 0 HP is death: items fall, and the guest rises next round as a ghost of the house on
+the under-stage with `ghost` stats. A ghost may attack the living; struck down, it leaves the board
+and comes back after `ghost.respawnRounds`. `Living` = not dead; `InPlay` = living, or a ghost on
+the board. The `Died` log entry has `a` 1 for a living guest and the room in `b`.
+
+**The killer.** It wakes in the under-stage at round `killer.wakeRound` (`Killer` entry, `b` 0) and
+can never be destroyed, only escaped. Each round it walks `speed` rooms, +1 every `speedPerHours`
+hours since it woke (half in water), toward the nearest living guest within `senseSteps`, else at
+random (`Killer` entries, `b` 1). Entering a room it kills its weakest living guest and stops; a
+guest who walks into its room dies. Ghosts are untouched. Seal shuts it out; flood slows it. The
+screens warn within `hearSteps`.
+
+**Monsters** appear from round `monsters.fromRound` (chance and cap rise per hour:
+`chancePerHour`, `maxPerHours`).
 
 ## Saves and the fingerprint (`NightSave.cpp`)
 

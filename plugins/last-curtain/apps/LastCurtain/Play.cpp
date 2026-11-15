@@ -873,8 +873,7 @@ nlohmann::json Play::UiData() const
     }
     if (guest.power >= 0)
         data["power"] = {{"name", def_.powers[U(guest.power)].id}, {"cooldown", guest.powerCooldown}};
-    const int near = state_.killer.cell >= 0 && guest.cell >= 0 ? Steps(def_, state_, guest.cell, state_.killer.cell) : -1;
-    data["killerNear"] = near >= 0 && near <= def_.rules.killer.hearSteps && Living(state_, me);
+    data["killerNear"] = KillerNear();
     // The top bar: whoever acts (a bot on its turn, marked as theirs), else the player; its portrait,
     // a list of one so it can be clicked, brings the camera back to them ("focus").
     const int top = Acting() >= 0 ? Acting() : me;
@@ -1096,7 +1095,7 @@ void Play::Notice(std::uint32_t since)
                             : e.kind == LogKind::Item ? "item" : e.kind == LogKind::Killer && e.b == 0 ? "bell" : nullptr)
             cues_.push_back(cue);
     // The killer's steps, when it comes within hearing (Night.md "The killer").
-    if (const nlohmann::json data = UiData(); data.value("killerNear", false) && std::any_of(entries.begin(), entries.end(), [](const LogEntry &e) { return e.kind == LogKind::Killer && e.b == 1; }))
+    if (KillerNear() && std::any_of(entries.begin(), entries.end(), [](const LogEntry &e) { return e.kind == LogKind::Killer && e.b == 1; }))
         cues_.push_back("killer");
     for (const LogEntry &e : entries)
         if (e.kind == LogKind::Killer && e.b == 0) // midnight: the killer wakes
@@ -1115,6 +1114,16 @@ void Play::Notice(std::uint32_t since)
         }
         else if (e.kind == LogKind::Died && e.a == 1 && state_.player >= 0 && (e.who == state_.player || e.other == state_.player || SawFall(e.b)))
             fall_ = Fall(entries, e), fallSeen_ = false; // a death in sight is staged (Play.md "The fall")
+}
+
+bool Play::KillerNear() const
+{
+    // The living player within hearSteps rooms of the killer.
+    const int me = state_.player;
+    if (me < 0 || !Living(state_, me) || state_.killer.cell < 0 || state_.guests[U(me)].cell < 0)
+        return false;
+    const int near = Steps(def_, state_, state_.guests[U(me)].cell, state_.killer.cell);
+    return near >= 0 && near <= def_.rules.killer.hearSteps;
 }
 
 bool Play::SawFall(int cell) const
@@ -1427,7 +1436,7 @@ std::vector<Play::Actor> Play::StageActors() const
     // 0. The fall: the one who dealt it facing the fallen, who lies where they fell.
     if (Screen() == "fall")
     {
-        if (fall_.killer >= 0 && !state_.guests[U(fall_.killer)].dead)
+        if (fall_.killer >= 0 && InPlay(state_, fall_.killer)) // a ghost may have struck
             actors.push_back({fall_.killer, -1, 0, false});
         actors.push_back({fall_.guest, -1, 1, true});
         return actors;

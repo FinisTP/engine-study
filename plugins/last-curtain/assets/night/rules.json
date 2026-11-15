@@ -2,7 +2,7 @@
   "clock": { "startHour": 20, "rounds": 12, "turnAfterRound": 6, "minutesPerRound": 45 },
   "ghost": { "hp": 6, "might": 2, "sanity": 2, "speed": 3, "respawnRounds": 3 },
   "spawn": { "minSteps": 4 },
-  "killer": { "wakeRound": 7, "speed": 2, "speedPerHours": 2, "senseSteps": 5, "hearSteps": 2 },
+  "killer": { "wakeRound": 7, "speed": 1, "speedPerHours": 3, "senseSteps": 5, "hearSteps": 2 },
   "board": { "width": 9, "height": 9, "rooms": 45 },
   "checks": { "easy": 10, "normal": 13, "hard": 16 },
   "moves": { "stepsPerSpeed": 3 },

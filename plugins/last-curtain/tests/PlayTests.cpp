@@ -2152,3 +2152,31 @@ TEST_CASE("The killer's waking plays the midnight scene, its steps heard (T255)"
     const std::vector<std::string> cues = play.TakeCues();
     CHECK(std::find(cues.begin(), cues.end(), "bell") != cues.end());
 }
+
+TEST_CASE("A ghost's kill is staged with the ghost standing over the fallen (T256)", "[night][play][royale]")
+{
+    const NightDef def = Calm();
+    Play play(def, FoyerNight(def, 4, 0));
+    ToPlayer(play);
+    // The player is a ghost in the room of a guest with 1 HP.
+    NightState now = play.State();
+    now.guests[0].dead = now.guests[0].ghost = true;
+    now.guests[0].hp = 99, now.guests[0].might = 30;
+    const int victim = now.order[1] == 0 ? now.order[2] : now.order[1];
+    now.guests[static_cast<std::size_t>(victim)].hp = 1;
+    now.guests[static_cast<std::size_t>(victim)].cell = now.guests[0].cell;
+    Play staged(def, now);
+    const std::vector<Action> legal = LegalActions(def, staged.State());
+    const auto attack = std::find_if(legal.begin(), legal.end(), [&](const Action &a) { return a.kind == ActionKind::Attack && a.b == victim; });
+    REQUIRE(attack != legal.end());
+    REQUIRE(staged.HandleUi("menu", "act", std::to_string(attack - legal.begin())));
+    for (int i = 0; i < 6 && staged.Screen() != "fall" && staged.State().battle.active; ++i)
+    {
+        const nlohmann::json battle = staged.UiData()["battle"];
+        staged.HandleUi("battle", "strike", std::to_string(battle["enemies"][0]["index"].get<int>()));
+    }
+    REQUIRE(staged.Screen() == "fall");
+    const std::vector<Play::Actor> actors = staged.StageActors();
+    CHECK(std::any_of(actors.begin(), actors.end(), [](const Play::Actor &a) { return a.guest == 0; }));
+    CHECK(std::any_of(actors.begin(), actors.end(), [&](const Play::Actor &a) { return a.guest == victim; }));
+}
