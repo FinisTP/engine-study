@@ -44,8 +44,14 @@ namespace umbra::night
                 {"Speaker: The Paper Bride (whispering, sad)\nAbout: Ong Lam (he)\nLine: The Paper Bride attacks Ong Lam.\nReworded: Dance with me, Ong Lam, the music never stops.\n\n",
                  "Speaker: The Rusted Usher (cold, polite)\nAbout: Chi Tam (she)\nLine: The Rusted Usher moves toward Chi Tam.\nReworded: Your seat is waiting, Chi Tam, this way please.\n\n",
                  "Speaker: The Last Echo (repeating, hollow)\nLine: The Last Echo moves into the foyer.\nReworded: Into the foyer, the foyer, I hear you breathing.\n\n"}};
+            static const Kind reply{
+                "Reword what the speaker says back to the answer they were given, in their own voice. Keep whether they are pleased or not, and every name.",
+                {"Speaker: Co Hoa (nervous, kind)\nLine: That is what I hoped to hear.\nReworded: Oh, that is just what I hoped you would say.\n\n",
+                 "Speaker: Ong Lam (gruff, few words)\nLine: I do not believe you.\nReworded: I do not believe a word of it.\n\n",
+                 "Speaker: Chi Tam (sharp, curious)\nLine: Fair enough, I will remember that.\nReworded: Fair enough, I will keep that in mind.\n\n"}};
             switch (kind)
             {
+            case LineKind::Reply: return reply;
             case LineKind::Caption: return caption;
             case LineKind::Question: return question;
             case LineKind::GoalDone:
@@ -182,7 +188,8 @@ namespace umbra::night
         static const char *const outcomes[] = {"dies", "died", "dead", "kills", "killed", "misses", "missed", "hits", "wins", "won", "loses", "lost", "fails", "failed", "succeeds", "wounds", "wounded"};
         static const char *const hints[] = {"might", "sanity", "speed", "easy", "easier", "hard", "harder", "safe", "safer", "risky"};
         for (const char *word : flips)
-            if (Has(words, word) != Has(was, word) && (ask.kind == LineKind::Caption || ask.kind == LineKind::Question || ask.kind == LineKind::GoalDone || ask.kind == LineKind::GoalFailed))
+            if (Has(words, word) != Has(was, word) && (ask.kind == LineKind::Caption || ask.kind == LineKind::Question || ask.kind == LineKind::GoalDone || ask.kind == LineKind::GoalFailed ||
+                                                        ask.kind == LineKind::Reply))
                 return {};
         if (ask.kind == LineKind::Caption || ask.kind == LineKind::Taken)
             for (const char *word : outcomes)

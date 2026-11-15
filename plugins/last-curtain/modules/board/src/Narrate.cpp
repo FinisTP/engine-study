@@ -15,7 +15,8 @@ namespace umbra::night
         constexpr const char *keys[] = {
             "move", "open", "fight", "chat", "answer", "endTurn", "power", "strike",
             "guard", "leave", "item", "pickup", "drop", "level", "check", "passed", "failed", "found", "down",
-            "died", "hit", "killed", "goalDone", "goalFailed", "joined", "told", "cleared"};
+            "died", "hit", "killed", "goalDone", "goalFailed", "joined", "told", "cleared",
+            "passMight", "failMight", "passSanity", "failSanity", "passSpeed", "failSpeed", "replyYes", "replyNo"}; // Play's roll results and chat replies
 
         std::size_t U(int i) { return static_cast<std::size_t>(i); }
 
@@ -80,7 +81,11 @@ namespace umbra::night
             case ActionKind::EndTurn: return Fill(captions, "endTurn", v);
             case ActionKind::Guard: return Fill(captions, "guard", v);
             case ActionKind::Leave: return Fill(captions, "leave", v);
-            case ActionKind::UseItem: return Fill(captions, "item", v);
+            case ActionKind::UseItem: // the item by name (action.a: the bag slot)
+            {
+                const int item = action.a >= 0 && action.a < maxCarry ? before.guests[U(actor)].items[U(action.a)] : -1;
+                return v["item"] = item >= 0 ? def.items[U(item)].name : "item", Fill(captions, "item", v);
+            }
             case ActionKind::PickUp: return Fill(captions, "pickup", v);
             case ActionKind::DropItem: return Fill(captions, "drop", v);
             case ActionKind::LevelUp: return Fill(captions, "level", v);
@@ -89,7 +94,7 @@ namespace umbra::night
         }
 
         // The outcome lines from the log, joined with "; ".
-        std::string Result(const NightDef &def, const NightState &after, const std::vector<LogEntry> &entries,
+        std::string Result(const NightDef &def, const NightState &before, const NightState &after, const std::vector<LogEntry> &entries,
                             const Captions &captions)
         {
             std::string out;
@@ -116,7 +121,18 @@ namespace umbra::night
                         line += "; " + Fill(captions, "joined", pair);
                 }
                 else if (e.kind == LogKind::Hit)
-                    line = Fill(captions, "hit", {{"damage", std::to_string(e.a)}});
+                {
+                    // Who struck whom (a monster: the battle's first one), the damage and what is left.
+                    const auto side = [&](int g) {
+                        if (g >= 0)
+                            return GuestName(def, after, g);
+                        for (int i = 0; i < before.battle.count; ++i)
+                            if (before.battle.fighters[U(i)].monster >= 0)
+                                return "the " + MonsterName(def, before, before.battle.fighters[U(i)].monster);
+                        return std::string{"the monster"};
+                    };
+                    line = Fill(captions, "hit", {{"who", side(e.who)}, {"target", side(e.other)}, {"damage", std::to_string(e.a)}, {"hp", std::to_string(e.b)}});
+                }
                 else if (e.kind == LogKind::Monster && e.other == 1 && e.a >= 0)
                     line = Fill(captions, "killed", {{"foe", def.monsters[U(e.a)].name}});
                 if (!line.empty())
@@ -169,7 +185,7 @@ namespace umbra::night
         if (from != to)
             beat.path = {from, to};
         beat.caption = Decision(def, before, after, entries, action, actor, captions);
-        beat.result = Result(def, after, entries, captions);
+        beat.result = Result(def, before, after, entries, captions);
         return beat;
     }
 }

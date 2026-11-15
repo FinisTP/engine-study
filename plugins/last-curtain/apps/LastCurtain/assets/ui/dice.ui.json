@@ -11,6 +11,7 @@
     { "type": "text", "style": "heading", "text": "Passed", "visible": "{dice.passed}" },
     { "type": "text", "style": "bad", "text": "Failed", "visible": "{dice.failed}" },
     { "type": "text", "style": "text", "text": "{dice.result}", "wrap": true, "size": [400, 0], "textAlign": "center" },
+    { "type": "text", "style": "strong", "text": "{dice.replyBy}: \"{dice.reply}\"", "visible": "{dice.reply}", "wrap": true, "size": [400, 0], "textAlign": "center" },
     { "type": "button", "size": [200, 44], "text": "Continue", "action": "continue", "visible": "{dice.landed}" }
   ] }
 }

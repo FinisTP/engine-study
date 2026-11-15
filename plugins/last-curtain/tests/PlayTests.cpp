@@ -1555,8 +1555,8 @@ TEST_CASE("A bot's walk stays on the table; only what it does opens the room and
             play.Update(1.0F);
         if (!play.WaitingForTap())
             continue;
-        // Something was done: a logged deed or a chat, never a plain step.
-        bool deed = play.State().chat.active;
+        // Something was done (a logged deed or a chat), or is about to be (a preview), never a plain step.
+        bool deed = play.State().chat.active || play.UiData()["caption"]["preview"] == true;
         for (const LogEntry &e : NewLog(play.State(), before))
             deed = deed || (e.kind != LogKind::Opened && e.kind != LogKind::Effect && e.kind != LogKind::Woke && e.kind != LogKind::Level);
         CHECK(deed);
@@ -1820,4 +1820,110 @@ TEST_CASE("A walk back toward where moves count from is always affordable (T157)
     GoTo(play, play.State().foyer);
     CHECK(play.State().guests[0].cell == play.State().foyer);
     CHECK(play.State().guests[0].movesLeft == 1);
+}
+
+TEST_CASE("A bot's deed in sight is previewed before it happens, then its result shown (T159)", "[night][play][pace]")
+{
+    NightDef def = Data();
+    for (RoomDef &room : def.rooms)
+        if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
+            room.kind = RoomKind::Event, room.doors = 15;
+    Play play(def, FoyerNight(def, 4, 0));
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    Captions captions;
+    REQUIRE(LoadCaptions(std::filesystem::path(UMBRA_NIGHT_DATA) / "captions.json", captions, diagnostics));
+    play.SetCaptions(captions);
+    play.SetOptions(Designed());
+    int previews = 0;
+    for (int i = 0; i < 60 && previews == 0; ++i)
+    {
+        if (!UntilTap(play, 3000))
+            break;
+        if (play.UiData()["caption"]["preview"] == true)
+        {
+            // 1. The preview: what the bot faces, nothing decided yet (no result, the log unchanged by it).
+            ++previews;
+            const std::uint32_t log = play.State().logCount;
+            CHECK(play.UiData()["caption"]["result"] == "");
+            CHECK_FALSE(play.UiData()["caption"]["event"].get<std::string>().empty());
+            REQUIRE(play.HandleUi("caption", "next", ""));
+            // 2. Then the deed and its result, waiting again.
+            REQUIRE(UntilTap(play, 50));
+            CHECK(play.State().logCount > log);
+            CHECK(play.UiData()["caption"]["preview"] == false);
+            CHECK_FALSE(play.UiData()["caption"]["result"].get<std::string>().empty());
+        }
+        play.HandleUi("caption", "next", "");
+    }
+    CHECK(previews > 0);
+}
+
+TEST_CASE("Answering a chat gets a reply from the asker, pleased or not (T160)", "[night][play][chat]")
+{
+    NightDef def = Data();
+    Play play(def, FoyerNight(def, 4, 0));
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    Captions captions;
+    REQUIRE(LoadCaptions(std::filesystem::path(UMBRA_NIGHT_DATA) / "captions.json", captions, diagnostics));
+    play.SetCaptions(captions);
+    for (int i = 0; i < 400 && !(play.State().chat.active && play.PlayerTurn()); ++i)
+        play.PlayerTurn() ? play.Key(InputKey::Enter) : play.Update(10.0F);
+    REQUIRE(play.Screen() == "chat");
+    const int asker = play.State().chat.asker;
+    REQUIRE(play.HandleUi("chat", "answer", "0"));
+    REQUIRE(play.Screen() == "dice");
+    const nlohmann::json dice = play.UiData()["dice"];
+    CHECK(dice["replyBy"] == ShownName(def, play.State(), asker));
+    CHECK_FALSE(dice["reply"].get<std::string>().empty());
+}
+
+TEST_CASE("A blow in a bot's fight says who hit whom, for how much, and what is left (T161)", "[night][narrate]")
+{
+    const NightDef def = Data();
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    Captions captions;
+    REQUIRE(LoadCaptions(std::filesystem::path(UMBRA_NIGHT_DATA) / "captions.json", captions, diagnostics));
+    NightState before = FoyerNight(def, 4, -1), after = before;
+    after.log[after.logCount++ % after.log.size()] = {1, LogKind::Hit, 1, 2, 3, 9};
+    const Beat beat = Narrate(def, before, after, NewLog(after, before.logCount), Action{ActionKind::Strike, 0}, 1, -1, captions);
+    CHECK(beat.result.find(def.guests[1].name) != std::string::npos);
+    CHECK(beat.result.find(def.guests[2].name) != std::string::npos);
+    CHECK(beat.result.find("3") != std::string::npos);
+    CHECK(beat.result.find("9 HP left") != std::string::npos);
+}
+
+TEST_CASE("A blow puts its damage over the struck guest for a moment (T161)", "[night][play][battle]")
+{
+    const NightDef def = Data();
+    for (std::uint64_t seed = 1; seed < 60; ++seed)
+    {
+        Play play(def, FoyerNight(def, seed, 0));
+        play.SetOptions(Designed());
+        for (int i = 0; i < 6000 && !play.State().over; ++i)
+        {
+            const std::uint32_t before = play.State().logCount;
+            Settle(play);
+            if (play.WaitingForTap())
+                play.HandleUi("caption", "next", "");
+            else if (play.State().chat.active && play.PlayerTurn() && play.Screen() == "chat")
+                play.HandleUi("chat", "answer", "0");
+            else if (play.State().battle.active && play.PlayerTurn())
+                play.HandleUi("battle", "guard", "");
+            else if (play.PlayerTurn() && play.Screen() == "menu")
+                play.Key(InputKey::Enter);
+            else
+                play.Update(0.1F);
+            for (const LogEntry &e : NewLog(play.State(), before))
+                if (e.kind == LogKind::Hit && e.other >= 0)
+                {
+                    const nlohmann::json popups = play.UiData()["popups"];
+                    const bool shown = std::any_of(popups.begin(), popups.end(), [&](const nlohmann::json &p) {
+                        return p["guest"] == e.other && p["text"] == "-" + std::to_string(e.a);
+                    });
+                    CHECK(shown);
+                    return;
+                }
+        }
+    }
+    FAIL("no blow on a guest in 60 nights");
 }

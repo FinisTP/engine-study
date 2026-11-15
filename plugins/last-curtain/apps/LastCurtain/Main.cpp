@@ -357,6 +357,8 @@ namespace
                             label(guest, std::to_string(number), 0.0F);
                         if (play->ThinkingGuest() >= 0)
                             label(play->ThinkingGuest(), "thinking...", 0.5F);
+                        for (const nlohmann::json &p : data["popups"])
+                            label(p["guest"].get<int>(), p["text"].get<std::string>(), 0.9F);
                     }
                     for (const umbra::ui::UiAction &action : screens.Ui().Update(data, pixels, uiInput, drawList.ui))
                     {

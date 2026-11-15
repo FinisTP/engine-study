@@ -135,7 +135,7 @@ bool Play::Do(const Action &action)
         return std::find_if(entries.begin(), entries.end(), [&](const LogEntry &e) { return e.kind == kind && e.who == g; });
     };
     int entered = -1;
-    event_ = RoomEvent(before, action, g, entered);
+    event_ = RoomEvent(before, state_, action, g, entered);
     const bool drawn = (state_.eventsUsed & ~before.eventsUsed) != 0;
     const bool rolled = logged(LogKind::Check) != entries.end(), cleared = logged(LogKind::Cleared) != entries.end();
     lasting_ = cleared_ = "";
@@ -177,11 +177,24 @@ bool Play::Do(const Action &action)
     {
         if (e.kind != LogKind::Check || !Controls(state_, state_.player, e.who))
             continue;
-        Dice d{e.a, e.other, e.b, "", "", e.a + e.other >= e.b, 0};
+        Dice d{e.a, e.other, e.b, "", "", e.a + e.other >= e.b, 0, "", "", 0};
         if (action.kind == ActionKind::Answer)
         {
             d.stat = action.a == 0 ? "Might" : "Sanity";
             d.result = d.passed ? "An approval." : "No approval this time.";
+            // The asker answers back (captions.json reply lines, one by the seed; the model rewords it).
+            const int asker = before.chat.asker;
+            const auto lines = captions_.lines.find(d.passed ? "replyYes" : "replyNo");
+            if (asker >= 0 && lines != captions_.lines.end())
+            {
+                std::vector<std::string> options;
+                for (std::size_t at = 0, bar; at <= lines->second.size(); at = bar + 1)
+                    bar = std::min(lines->second.find('|', at), lines->second.size()), options.push_back(lines->second.substr(at, bar - at));
+                d.reply = options[LineSeed(4) % options.size()];
+                d.replyBy = ShownName(def_, state_, asker);
+                if (words_ != nullptr && words_->HasModel())
+                    d.replyTicket = words_->Ask({LineKind::Reply, asker, IsTaken(state_, asker), {state_.player}, d.reply, LineSeed(4)});
+            }
         }
         else if (event_ >= 0)
         {
@@ -462,6 +475,7 @@ void Play::Update(float dt)
         return;
     clock_ += dt;
     diceClock_ += dt, flashClock_ = std::max(0.0F, flashClock_ - dt);
+    std::erase_if(popups_, [&](const Popup &p) { return p.until <= clock_; });
     ResolveLines();
     if (slide_.guest >= 0)
     {
@@ -516,8 +530,34 @@ void Play::Update(float dt)
     lineWaiting_ = LineWaiting(captionTicket_, askedAt_) || LineWaiting(saidTicket_, askedAt_);
     if (lineWaiting_)
         return;
-    // 5. It acts; the narrator says what the player could see of it; a step slides.
-    pending_ = false;
+    // 5. A deed the player will see (a room, a fight, a chat, a power) is first shown as what the bot
+    //    faces, waiting for a tap; the rules decide nothing yet (Play.md "Bots").
+    const Action next = pendingAction_;
+    const bool facing = next.kind == ActionKind::Move || next.kind == ActionKind::Attack || next.kind == ActionKind::Power ||
+                        next.kind == ActionKind::Chat || next.kind == ActionKind::OpenChat;
+    if (!previewed_ && facing && options_.tapToContinue && !skipping_ && !fast_ && !captions_.lines.empty())
+    {
+        NightState trial = state_;
+        if (Apply(def_, trial, next))
+        {
+            const std::vector<LogEntry> entries = NewLog(trial, state_.logCount);
+            Beat b = Narrate(def_, state_, trial, entries, next, acting, state_.player, captions_);
+            if (b.seen && Notable(entries, next))
+            {
+                previewed_ = preview_ = true;
+                if (captionTicket_ != 0)
+                    b.caption = previewCaption_ = words_->Take(captionTicket_, b.caption), captionTicket_ = 0;
+                b.result.clear();
+                beat_ = b;
+                int entered = -1;
+                beatEvent_ = RoomEvent(state_, trial, next, acting, entered);
+                waitTap_ = true, moment_ = options_.moments, hold_ = 0.0F;
+                return;
+            }
+        }
+    }
+    // 6. It acts; the narrator says what the player could see of it; a step slides.
+    pending_ = previewed_ = preview_ = false;
     const NightState before = state_;
     const Action action = pendingAction_;
     if (!Apply(def_, state_, action))
@@ -530,9 +570,12 @@ void Play::Update(float dt)
     beat_ = captions_.lines.empty() ? Beat{} : Narrate(def_, before, state_, NewLog(state_, before.logCount), action, acting, state_.player, captions_);
     if (captionTicket_ != 0)
         beat_.caption = words_->Take(captionTicket_, beat_.caption), captionTicket_ = 0;
+    else if (!previewCaption_.empty())
+        beat_.caption = previewCaption_;
+    previewCaption_.clear();
     said_ = saidTicket_ != 0 ? words_->Take(saidTicket_, "") : "", saidTicket_ = 0;
     int entered = -1;
-    beatEvent_ = beat_.seen ? RoomEvent(before, action, acting, entered) : -1; // the caption names it
+    beatEvent_ = beat_.seen ? RoomEvent(before, state_, action, acting, entered) : -1; // the caption names it
     if (beat_.seen && (state_.guests[U(acting)].bonusUsed & ~before.guests[U(acting)].bonusUsed).any()) // a bonus room paid
     {
         const RoomDef &room = def_.rooms[U(state_.cells[U(state_.guests[U(acting)].cell)].room)];
@@ -579,6 +622,10 @@ nlohmann::json Play::UiData() const
     nlohmann::json data;
     data["writtenLines"] = words_ == nullptr || !words_->HasModel(); // the save menu says so
     data["dread"] = state_.taken.present;                              // blood runs down the screen
+    data["popups"] = nlohmann::json::array();
+    for (const Popup &p : popups_)
+        if (p.until > clock_)
+            data["popups"].push_back({{"guest", p.guest}, {"text", p.text}});
     data["canSkip"] = !PlayerTurn() && state_.player >= 0 && !state_.over;
     if (state_.player >= 0)
         data["here"] = HereData();
@@ -592,7 +639,7 @@ nlohmann::json Play::UiData() const
     data["focus"] = !following_;
     if (beat_.seen && (hold_ > 0.0F || waitTap_))
         data["caption"] = {{"guest", ShownName(def_, state_, beat_.guest)}, {"line", beat_.caption}, {"result", beat_.result}, {"tap", waitTap_},
-                           {"event", beatEvent_ >= 0 ? def_.events[U(beatEvent_)].name : ""}, {"eventText", beatEvent_ >= 0 ? def_.events[U(beatEvent_)].text : ""},
+                           {"preview", preview_}, {"event", beatEvent_ >= 0 ? def_.events[U(beatEvent_)].name : ""}, {"eventText", beatEvent_ >= 0 ? def_.events[U(beatEvent_)].text : ""},
                            {"said", said_}, {"saidBy", saidGuest_ >= 0 ? ShownName(def_, state_, saidGuest_) : ""}};
     const int me = Me();
     if (me < 0)
@@ -707,7 +754,8 @@ nlohmann::json Play::UiData() const
         const int face = rolling ? 1 + static_cast<int>(diceClock_ * 23.0F + static_cast<float>(d.die) * 7.0F) % 20 : d.die;
         data["dice"] = {{"die", face}, {"stat", d.stat}, {"statValue", d.statValue}, {"total", d.die + d.statValue},
                         {"target", d.target}, {"passed", landed && d.passed}, {"failed", landed && !d.passed}, {"result", landed ? d.result : ""},
-                        {"plain", landed && d.stat.empty()}, {"withStat", landed && !d.stat.empty()}, {"rolling", rolling}, {"landed", landed}};
+                        {"plain", landed && d.stat.empty()}, {"withStat", landed && !d.stat.empty()}, {"rolling", rolling}, {"landed", landed},
+                        {"reply", landed ? d.reply : ""}, {"replyBy", d.replyBy}};
     }
     if (!state_.over && PlayerTurn() && state_.chat.active)
     {
@@ -826,6 +874,8 @@ void Play::Notice(std::uint32_t since)
     for (const LogEntry &e : NewLog(state_, since))
         if (e.kind == LogKind::Turned)
             turn_ = true, AskTurn();
+        else if (e.kind == LogKind::Hit && e.other >= 0) // the damage over the struck guest, for a moment
+            popups_.push_back({e.other, "-" + std::to_string(e.a), clock_ + 2.0F});
 }
 
 std::uint32_t Play::LineSeed(int kind) const { return static_cast<std::uint32_t>(state_.seed + state_.logCount * 4U + static_cast<std::uint32_t>(kind)); }
@@ -896,6 +946,9 @@ void Play::ResolveLines()
     // 1. The Turn's words: in, or out of time.
     if (turnTicket_ != 0 && !LineWaiting(turnTicket_, turnAskedAt_))
         turnWords_ = words_->Take(turnTicket_, ""), turnTicket_ = 0;
+    // 1b. A chat reply: the model's words replace the written ones as soon as they are in.
+    if (!dice_.empty() && dice_.front().replyTicket != 0 && words_->Ready(dice_.front().replyTicket))
+        dice_.front().reply = words_->Take(dice_.front().replyTicket, dice_.front().reply), dice_.front().replyTicket = 0;
     // 2. A chat question to the player: asked once, then in or out of time.
     if (!words_->HasModel() || !state_.chat.active || !PlayerTurn())
         return;
@@ -1214,16 +1267,16 @@ std::string Play::RollResult(const EventDef &ev, bool passed, int guest) const
     return text + ".";
 }
 
-int Play::RoomEvent(const NightState &before, const Action &action, int guest, int &entered) const
+int Play::RoomEvent(const NightState &before, const NightState &after, const Action &action, int guest, int &entered) const
 {
     // The room moved into (a push may have sent the guest back), and the event it brought: a new draw
     // (a new bit in eventsUsed) or the lasting one armed there, if the guest rolled or cleared it.
     const int from = before.guests[U(guest)].cell;
-    entered = action.kind != ActionKind::Move ? -1 : action.a < transportMove ? Neighbour(def_, from, action.a) : state_.guests[U(guest)].cell;
-    if (const std::uint64_t drawn = state_.eventsUsed & ~before.eventsUsed)
+    entered = action.kind != ActionKind::Move ? -1 : action.a < transportMove ? Neighbour(def_, from, action.a) : after.guests[U(guest)].cell;
+    if (const std::uint64_t drawn = after.eventsUsed & ~before.eventsUsed)
         return std::countr_zero(drawn);
     bool faced = false;
-    for (const LogEntry &e : NewLog(state_, before.logCount))
+    for (const LogEntry &e : NewLog(after, before.logCount))
         faced = faced || ((e.kind == LogKind::Check || e.kind == LogKind::Cleared) && e.who == guest);
     return entered >= 0 && faced ? before.cells[U(entered)].event : -1;
 }

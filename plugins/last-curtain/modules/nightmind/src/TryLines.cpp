@@ -19,6 +19,7 @@ namespace umbra::night
             case LineKind::GoalFailed: return "goal failed";
             case LineKind::Turn: return "the Turn";
             case LineKind::Taken: return "Taken";
+            case LineKind::Reply: return "reply";
             }
             return "";
         }

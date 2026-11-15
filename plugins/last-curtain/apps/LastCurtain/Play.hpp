@@ -107,6 +107,8 @@ private:
         std::string stat, result;
         bool passed = false;
         int hp = 0; // the HP it took or gave, for the HUD's flash
+        std::string reply, replyBy; // a chat answer: the asker's reply (the model's words when ready)
+        int replyTicket = 0;
     };
 
     bool Do(const umbra::night::Action &action); // applies a legal action on the player's turn
@@ -152,7 +154,18 @@ private:
     std::string flash_;
     int beatEvent_ = -1; // the event a bot's seen beat faced, for the caption
     [[nodiscard]] int Affordable(int guest, const std::vector<int> &path) const;
-    [[nodiscard]] int RoomEvent(const umbra::night::NightState &before, const umbra::night::Action &action, int guest, int &entered) const;
+    [[nodiscard]] int RoomEvent(const umbra::night::NightState &before, const umbra::night::NightState &after, const umbra::night::Action &action,
+                                int guest, int &entered) const;
+    struct Popup
+    {
+        int guest = -1;
+        std::string text;
+        float until = 0.0F; // clock_ when it goes
+    };
+    std::vector<Popup> popups_; // damage over struck guests (Main draws them as labels)
+    bool previewed_ = false;     // the pending bot deed was previewed (shown before it happens)
+    bool preview_ = false;       // the caption on show is that preview
+    std::string previewCaption_; // the model's words for it, kept for the deed
     [[nodiscard]] std::string RollResult(const umbra::night::EventDef &ev, bool passed, int guest) const;
     std::deque<Dice> dice_;
     bool turn_ = false; // the Turn happened and its screen waits

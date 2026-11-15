@@ -29,3 +29,16 @@ A bot's beat the player can see is captioned. A beat where something is done (an
 fight, a fall, a chat, a clearing) waits for Continue with `tapToContinue` and is shown at full
 size with `moments`; the caption names the event the bot faced. A walk alone stays on the table.
 Skip runs the bots to the player's turn with no waits.
+
+Before a deed the player will see (a walk into a room that does something, a fight, a chat, a
+power), the bot's action is tried on a copy of the night (the rules are deterministic, so the copy
+comes out the same): if it is a deed, its caption is shown first as a **preview** (what the bot
+faces: the room, its event and story, no result) and waits for a tap; then the action is applied
+and its result shown. A blow in a fight says who hit whom, for how much and the HP left, and puts
+the damage over the struck guest for 2 s; an item used is named.
+
+## Chats
+
+After the player answers a question, the dice screen shows the asker's reply: a line from
+captions.json `replyYes` or `replyNo` (alternatives split by `|`, one picked by the night's seed),
+reworded by the built-in model in the asker's voice when it is ready (`LineKind::Reply`).

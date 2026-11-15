@@ -20,7 +20,8 @@ namespace umbra::night
         GoalDone,   // a guest on their goal, done
         GoalFailed, // ... or failed
         Turn,       // midnight: the guest's last words, then the Taken's first
-        Taken       // the Taken's taunt as it acts
+        Taken,      // the Taken's taunt as it acts
+        Reply       // a guest answers the player's answer to its question: pleased or not
     };
 
     struct LineAsk
