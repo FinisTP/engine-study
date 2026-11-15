@@ -36,7 +36,7 @@
 | T135 a seen caption waits up to 3 s then shows the template; the model's caption with the template result; the same night with and without the model (`Fingerprint`); the chat question; the Turn's two sentences; seeds the same after a save; the save menu's note | pass (RED first; 20 repeated runs) |
 | T136 `TryLines` with an echo model: captions, chat questions and the Turn over three nights | pass (RED first) |
 | The `UMBRA_TOWN_LLAMA` branches of `Main.cpp` and `NightMindCommand.cpp` | compile (`-fsyntax-only` with the macro on); not linked or run here |
-| Full suites (`verify.sh`: GCC, Clang, GCC ASan+UBSan) | see the session summary |
+| Full suites (`verify.sh`: GCC, Clang, GCC ASan+UBSan) | GCC 55/55, Clang 55/55, ASan+UBSan 55/55 |
 
 `ui-preview` of the save menu with `writtenLines`: the note shows under the buttons.
 
