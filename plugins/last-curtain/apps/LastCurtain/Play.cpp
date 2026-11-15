@@ -994,13 +994,18 @@ bool Play::Restore(const NightDef &def, const nlohmann::json &saved, NightState 
     }
 }
 
-nlohmann::json Play::StartData(const NightDef &def, bool canContinue)
+nlohmann::json Play::StartData(const NightDef &def, bool canContinue, int chosen)
 {
     nlohmann::json guests = nlohmann::json::array();
     for (const GuestDef &g : def.guests)
         guests.push_back({{"id", g.id}, {"name", g.name}, {"style", def.styles[U(g.style)].id}, {"hp", g.hp},
-                          {"might", g.might}, {"sanity", g.sanity}, {"speed", g.speed}});
-    return {{"start", {{"guests", guests}, {"canContinue", canContinue}}}};
+                          {"might", g.might}, {"sanity", g.sanity}, {"speed", g.speed}, {"bio", g.bio},
+                          {"weapon", g.weapon == Weapon::Magical ? "magical (Sanity)" : "physical (Might)"},
+                          {"portrait", ArtPath("portraits", g.id).generic_string()}});
+    nlohmann::json data = {{"start", {{"guests", guests}, {"canContinue", canContinue}}}};
+    if (chosen >= 0 && U(chosen) < def.guests.size()) // a guest picked: their page, Start or Back
+        data["bio"] = guests[U(chosen)];
+    return data;
 }
 
 nlohmann::json Play::TurnData() const

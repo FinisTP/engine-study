@@ -1,0 +1,22 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "dim": true,
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [760, 0], "align": "stretch", "gap": 14, "children": [
+    { "type": "stack", "direction": "horizontal", "gap": 20, "children": [
+      { "type": "image", "image": "{bio.portrait}", "size": [240, 240] },
+      { "type": "stack", "gap": 8, "children": [
+        { "type": "text", "style": "title", "text": "{bio.name}", "wrap": true, "size": [460, 0] },
+        { "type": "text", "style": "muted", "text": "{bio.style}" },
+        { "type": "text", "style": "text", "text": "{bio.bio}", "wrap": true, "size": [460, 0] },
+        { "type": "text", "style": "small", "text": "HP {bio.hp}   Might {bio.might}   Sanity {bio.sanity}   Speed {bio.speed}" },
+        { "type": "text", "style": "small", "text": "Fights with: {bio.weapon}" }
+      ] }
+    ] },
+    { "type": "stack", "direction": "horizontal", "gap": 12, "children": [
+      { "type": "button", "size": [220, 44], "text": "Start the night", "action": "begin" },
+      { "type": "button", "size": [220, 44], "text": "Back to the guests", "action": "back" }
+    ] }
+  ] }
+}

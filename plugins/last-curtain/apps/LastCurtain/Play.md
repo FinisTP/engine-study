@@ -45,3 +45,11 @@ the time gone), lands on its number, holds it 0.4 s, then tells the verdict and 
 After the player answers a question, the dice screen shows the asker's reply: a line from
 captions.json `replyYes` or `replyNo` (alternatives split by `|`, one picked by the night's seed),
 reworded by the built-in model in the asker's voice when it is ready (`LineKind::Reply`).
+
+## The start screen (the user, 2026-11-15)
+
+The guests are shown with their portraits. Clicking one (or "A random guest") does not start the
+night: it opens that guest's page (`bio`): portrait, name, play style, the `bio` from `guests.csv`
+(who they are and why they came; never their secret), stats and weapon. "Start the night" begins
+it; "Back to the guests" (or Esc) returns to the list. `StartData(def, canContinue, chosen)` adds
+the page's data under `bio` when a guest is chosen.

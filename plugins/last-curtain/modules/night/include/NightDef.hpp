@@ -59,6 +59,7 @@ namespace umbra::night
         std::string voice;       // a few words of tone for the model's lines (plan 3)
         std::string takenVoice;  // the same, once Taken
         std::string takenStory;  // who the guest was and what the Taken form is, for the Turn's screen
+        std::string bio;         // who the guest is, for the start screen (no secrets)
     };
 
     struct BondDef { int from = 0, to = 0, bond = 0; };

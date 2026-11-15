@@ -24,6 +24,7 @@
 #include <glm/geometric.hpp>
 
 #include <algorithm>
+#include <utility>
 #include <chrono>
 #include <cstdlib>
 #include <fstream>
@@ -188,6 +189,7 @@ namespace
             // 3. A night starts (or continues); the start screen shows when none is running.
             std::optional<Play> play;
             bool canContinue = false;
+            int chosen = -1; // the guest whose page is open on the start screen
             const auto show = [&](const std::string &want) {
                 if (!screens.Ready() || want == shown)
                     return;
@@ -234,12 +236,14 @@ namespace
                 events.BeginFrame();
                 pump.PumpEvents(input, events);
                 using umbra::platform::ApplicationEventType;
-                const std::string screen = play ? play->Screen() : "start";
+                const std::string screen = play ? play->Screen() : chosen >= 0 ? "bio" : "start";
                 const bool board = screen.empty() || screen == "menu" || screen == "picking" || screen == "confirm" || screen == "caption"; // else a dialog has the keys
                 // Esc quits only from the start screen; in a night it means what the screen says (Play::Key).
                 if (events.IsEventRequested(ApplicationEventType::Quit) || events.IsEventRequested(ApplicationEventType::WindowClose) ||
                     (input.IsKeyPressed(InputKey::Escape) && screen == "start"))
                     break;
+                if (input.IsKeyPressed(InputKey::Escape) && screen == "bio")
+                    chosen = -1; // Esc on a guest's page goes back to the list
                 if (events.IsEventRequested(ApplicationEventType::WindowResize))
                 {
                     window.UpdateSizeFromEvent(events.GetWindowWidth(), events.GetWindowHeight());
@@ -334,13 +338,13 @@ namespace
                 }
                 else
                     table.Draw(def, BoardView{}, {}, 0, {}, {}, drawList); // the dark room behind the start screen
-                show(play ? play->Screen() : "start");
+                show(play ? play->Screen() : chosen >= 0 ? "bio" : "start");
 
                 // 6. The screens; their actions; a click no screen took goes to the board.
                 bool uiTook = false;
                 if (screens.Ready())
                 {
-                    nlohmann::json data = play ? play->UiData() : Play::StartData(def, canContinue);
+                    nlohmann::json data = play ? play->UiData() : Play::StartData(def, canContinue, chosen);
                     data["warnings"] = screens.Problems();
                     // Labels over pawns in view: "thinking..." and the group numbers (Table.md).
                     data["labels"] = nlohmann::json::array();
@@ -366,12 +370,6 @@ namespace
                                 data["names"].push_back({{"text", ShownName(def, play->State(), pawn.guest)},
                                                          {"portrait", ArtPath("portraits", def.guests[static_cast<std::size_t>(pawn.guest)].id).generic_string()},
                                                          {"at", {at->x - 14.0F, at->y - 28.0F}}});
-                        // The rooms in light, by name, at the near edge.
-                        data["rooms"] = nlohmann::json::array();
-                        for (int c = 0; c < maxCells; ++c)
-                            if (const CellView &cv = view.cells[static_cast<std::size_t>(c)]; cv.lit && cv.room >= 0)
-                                if (const auto at = table.RoomLabel(def, c, pixels))
-                                    data["rooms"].push_back({{"text", def.rooms[static_cast<std::size_t>(cv.room)].name}, {"at", {at->x - 40.0F, at->y - 8.0F}}});
                     }
                     for (const umbra::ui::UiAction &action : screens.Ui().Update(data, pixels, uiInput, drawList.ui))
                     {
@@ -379,10 +377,14 @@ namespace
                         NightState restored;
                         if (action.action == "quit")
                             quit = true;
-                        else if (action.screen == "start" && action.action == "pick")
-                            begin(NightDef::Find(def.guests, action.arg), nullptr);
+                        else if (action.screen == "start" && action.action == "pick") // a guest's page first (Play.md)
+                            chosen = NightDef::Find(def.guests, action.arg);
                         else if (action.screen == "start" && action.action == "random")
-                            begin(static_cast<int>(random() % def.guests.size()), nullptr);
+                            chosen = static_cast<int>(random() % def.guests.size());
+                        else if (action.screen == "bio" && action.action == "back")
+                            chosen = -1;
+                        else if (action.screen == "bio" && action.action == "begin")
+                            begin(std::exchange(chosen, -1), nullptr);
                         else if (action.screen == "start" && action.action == "continue" && ReadSave(def, restored))
                             begin(-1, &restored);
                         else if (action.screen == "end" && action.action == "new")

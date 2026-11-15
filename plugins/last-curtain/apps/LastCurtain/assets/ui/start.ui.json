@@ -7,7 +7,8 @@
     { "type": "text", "style": "title", "text": "The Last Curtain" },
     { "type": "text", "style": "small", "text": "One night in the Saigon Opera House. Choose the guest you will be; the other six are played by the house.", "wrap": true, "size": [860, 0] },
     { "type": "list", "items": "{start.guests}", "as": "g", "columns": 4, "gap": 10, "action": "pick", "arg": "{g.id}",
-      "entry": { "type": "stack", "style": "slot", "size": [205, 0], "gap": 4, "children": [
+      "entry": { "type": "stack", "style": "slot", "size": [205, 0], "gap": 4, "align": "center", "children": [
+        { "type": "image", "image": "{g.portrait}", "size": [120, 120] },
         { "type": "text", "style": "strong", "text": "{g.name}", "wrap": true, "size": [185, 0] },
         { "type": "text", "style": "muted", "text": "{g.style}" },
         { "type": "text", "style": "small", "text": "HP {g.hp}  Might {g.might}" },

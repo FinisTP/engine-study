@@ -6,6 +6,7 @@
 #include <NightSave.hpp>
 #include <Play.hpp>
 #include <Options.hpp>
+#include <Art.hpp>
 #include <Words.hpp>
 
 #include <algorithm>
@@ -495,6 +496,29 @@ TEST_CASE("A save from other data hides Continue (T115)", "[night][play]")
     REQUIRE(start["guests"].size() == def.guests.size());
     CHECK(start["guests"][0]["id"] == def.guests[0].id);
     CHECK(start["guests"][0]["hp"] == def.guests[0].hp);
+}
+
+TEST_CASE("The start screen shows each guest's portrait and biography (T212)", "[night][play]")
+{
+    const NightDef def = Data();
+    const nlohmann::json start = Play::StartData(def, false)["start"];
+    for (std::size_t g = 0; g < def.guests.size(); ++g)
+    {
+        CHECK_FALSE(def.guests[g].bio.empty());
+        CHECK(start["guests"][g]["bio"] == def.guests[g].bio);
+        CHECK(start["guests"][g]["portrait"] == ArtPath("portraits", def.guests[g].id).generic_string());
+    }
+}
+
+TEST_CASE("Picking a guest shows their biography before the night starts (T212)", "[night][play]")
+{
+    const NightDef def = Data();
+    CHECK_FALSE(Play::StartData(def, false).contains("bio")); // nobody picked: the list
+    const nlohmann::json data = Play::StartData(def, false, 2);
+    REQUIRE(data.contains("bio"));
+    CHECK(data["bio"]["id"] == def.guests[2].id);
+    CHECK(data["bio"]["bio"] == def.guests[2].bio);
+    CHECK_FALSE(Play::StartData(def, false, 99).contains("bio")); // out of range: the list
 }
 
 TEST_CASE("The Turn screen names the form and its numbers (T115)", "[night][play]")

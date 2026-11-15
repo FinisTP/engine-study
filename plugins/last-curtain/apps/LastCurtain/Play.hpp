@@ -100,7 +100,7 @@ public:
     [[nodiscard]] nlohmann::json Save() const;
     static bool Restore(const umbra::night::NightDef &def, const nlohmann::json &saved, umbra::night::NightState &out);
     // The start screen's data: the guests to pick, and whether Continue shows.
-    static nlohmann::json StartData(const umbra::night::NightDef &def, bool canContinue);
+    static nlohmann::json StartData(const umbra::night::NightDef &def, bool canContinue, int chosen = -1);
 
 private:
     // A roll the player made, shown on the dice screen.
