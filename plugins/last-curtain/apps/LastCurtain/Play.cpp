@@ -662,10 +662,11 @@ nlohmann::json Play::UiData() const
     data["me"] = {{"name", def_.guests[U(me)].name}, {"portrait", ArtPath("portraits", def_.guests[U(me)].id).generic_string()}, {"hp", guest.hp}, {"maxHp", Stat(def_, state_, me, StatKind::MaxHp)},
                   {"might", Stat(def_, state_, me, StatKind::Might)}, {"sanity", Stat(def_, state_, me, StatKind::Sanity)},
                   {"speed", Stat(def_, state_, me, StatKind::Speed)}, {"level", guest.level}, {"buffs", buffs},
-                  {"flash", flashClock_ > 0.0F ? flash_ : ""}}; // an HP change, for a moment
+                  {"flash", flashClock_ > 0.0F ? flash_ : ""}, // an HP change, for a moment
+                  {"down", guest.down}};
     // The top bar: whoever acts (a bot on its turn, marked as theirs), else the player; its portrait,
     // a list of one so it can be clicked, brings the camera back to them ("focus").
-    const int top = !PlayerTurn() && !state_.over && Current(state_) >= 0 ? Current(state_) : me;
+    const int top = !PlayerTurn() && !resting_ && !state_.over && Current(state_) >= 0 ? Current(state_) : me;
     const Guest &t = state_.guests[U(top)];
     data["top"] = {{"name", ShownName(def_, state_, top)}, {"portrait", ArtPath("portraits", def_.guests[U(top)].id).generic_string()},
                    {"hp", t.hp}, {"maxHp", Stat(def_, state_, top, StatKind::MaxHp)}, {"might", Stat(def_, state_, top, StatKind::Might)},
@@ -1069,6 +1070,8 @@ int Play::CameraCell() const
     // A step sliding, a bot's beat or thought the player sees, else the acting guest on the player's turn.
     if (slide_.guest >= 0)
         return slide_.to;
+    if (PlayerTurn() && !waitTap_ && Current(state_) >= 0) // the player's turn: on them at once
+        return state_.guests[U(Current(state_))].cell;
     if (beat_.seen && hold_ > 0.0F && beat_.camera >= 0)
         return beat_.camera;
     if (ThinkingGuest() >= 0)
@@ -1267,6 +1270,8 @@ std::string Play::RollResult(const EventDef &ev, bool passed, int guest) const
     text += " " + EffectText(effect, amount);
     if (effect == Effect::Hp)
         text += " (now " + std::to_string(state_.guests[U(guest)].hp) + " of " + std::to_string(Stat(def_, state_, guest, StatKind::MaxHp)) + ")";
+    if (state_.guests[U(guest)].down) // 0 HP: down, not dead (Night.md)
+        return text + ". You are down: you lie where you fell until someone helps you up, or until midnight, when you stand with 1 HP.";
     return text + ".";
 }
 

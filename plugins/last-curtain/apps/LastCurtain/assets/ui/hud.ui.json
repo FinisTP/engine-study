@@ -10,6 +10,7 @@
       { "type": "text", "style": "heading", "text": "{top.name}  Lv {top.level}" },
       { "type": "text", "style": "strong", "text": "HP {top.hp}/{top.maxHp}   Might {top.might}   Sanity {top.sanity}   Speed {top.speed}" },
       { "type": "text", "style": "warning", "text": "THEIR TURN", "visible": "{top.theirs}" },
+      { "type": "text", "style": "bad", "text": "YOU ARE DOWN", "visible": "{me.down}" },
     { "type": "text", "style": "small", "text": "You: HP {me.hp}/{me.maxHp}", "visible": "{top.theirs}" },
     { "type": "text", "style": "bad", "text": "{me.flash}", "visible": "{me.flash}" },
     { "type": "text", "style": "good", "text": "{me.buffs}", "visible": "{me.buffs}" }

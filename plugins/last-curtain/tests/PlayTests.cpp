@@ -1935,3 +1935,58 @@ TEST_CASE("A blow puts its damage over the struck guest for a moment (T161)", "[
     }
     FAIL("no blow on a guest in 60 nights");
 }
+
+TEST_CASE("During the rest after a room the top bar is still the player's (T164)", "[night][play][hud]")
+{
+    NightDef def = Data();
+    for (RoomDef &room : def.rooms)
+        if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
+            room.kind = RoomKind::Event, room.doors = 15;
+    Play play(def, PlayerFirst(def));
+    GoTo(play, StepCell(def, play));
+    Settle(play);
+    REQUIRE(play.Screen() == "rest");
+    CHECK(play.UiData()["top"]["theirs"] == false);
+    CHECK(play.UiData()["top"]["name"] == def.guests[0].name);
+}
+
+TEST_CASE("When the turn comes to the player the camera goes to them at once (T164)", "[night][play][camera]")
+{
+    const NightDef def = Data();
+    Play play(def, FoyerNight(def, 4, 0));
+    for (int i = 0; i < 4000; ++i)
+    {
+        Settle(play);
+        if (play.WaitingForTap())
+            play.HandleUi("caption", "next", "");
+        else if (play.State().chat.active && play.PlayerTurn() && play.Screen() == "chat")
+            play.HandleUi("chat", "answer", "0");
+        else if (play.PlayerTurn())
+        {
+            CHECK(play.CameraCell() == play.State().guests[0].cell);
+            if (play.Screen() != "menu")
+                break;
+            play.Key(InputKey::Enter);
+        }
+        else
+            play.Update(0.2F);
+    }
+}
+
+TEST_CASE("A guest knocked down is told plainly, and the HUD says so (T164)", "[night][play][flow]")
+{
+    NightDef def = Data();
+    const int sandbag = NightDef::Find(def.events, "sandbag");
+    def.events[static_cast<std::size_t>(sandbag)].clear = ClearKind::None;
+    def.events[static_cast<std::size_t>(sandbag)].target = 99;
+    def.events[static_cast<std::size_t>(sandbag)].failAmount = -99;
+    Play play = IntoRoom(def, "loosestairs", sandbag);
+    REQUIRE(play.HandleUi("arrive", "onward", ""));
+    REQUIRE(play.HandleUi("event", "roll", ""));
+    for (int i = 0; i < 20 && play.UiData()["dice"]["rolling"] == true; ++i)
+        play.Update(0.2F);
+    play.Update(1.0F);
+    const std::string result = play.UiData()["dice"]["result"].get<std::string>();
+    CHECK(result.find("down") != std::string::npos);
+    CHECK(play.UiData()["me"]["down"] == true);
+}
