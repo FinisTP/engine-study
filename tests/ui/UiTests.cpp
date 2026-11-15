@@ -296,3 +296,41 @@ TEST_CASE("A click goes to the topmost screen with a choice under it; a dimmed s
     CHECK(press({100, 25}).empty());
     CHECK(press({640, 695}) == std::vector<std::string>{"dialog roll"});
 }
+
+TEST_CASE("A panel or stack with an action is clicked anywhere in it; its own buttons still win; keys skip it (UI.md)")
+{
+    const json box = {{"format", "umbra.ui"}, {"version", 1}, {"modal", true},
+                      {"root", {{"type", "stack"}, {"anchor", "center"}, {"size", {400, 200}}, {"action", "next"},
+                                {"children", json::array({{{"type", "text"}, {"text", "A line"}},
+                                                          {{"type", "button"}, {"size", {120, 40}}, {"text", "Skip"}, {"action", "skip"}}})}}}};
+    ui::UiSystem uiSystem;
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(uiSystem.Load(TestProject("box", {{"caption", box}}), diagnostics));
+    REQUIRE(uiSystem.Open("caption"));
+    core::UiDrawList draw;
+    const auto send = [&](const ui::UiInput &input) {
+        draw.Clear();
+        uiSystem.Update({}, {1280, 720}, {}, draw); // lay out first
+        draw.Clear();
+        std::vector<std::string> got;
+        for (const ui::UiAction &a : uiSystem.Update({}, {1280, 720}, input, draw))
+            got.push_back(a.action);
+        return got;
+    };
+    ui::UiInput click;
+    click.mouseMoved = click.click = true;
+    // 1. Anywhere in the box (not on the button): the box's action.
+    click.mouse = {800, 440};
+    CHECK(send(click) == std::vector<std::string>{"next"});
+    // 2. Outside it: nothing.
+    click.mouse = {50, 50};
+    CHECK(send(click).empty());
+    // 3. On its button: the button's (the button sits at the stack's top left, under its line).
+    click.mouse = {500, 300};
+    const std::vector<std::string> onButton = send(click);
+    CHECK(onButton == std::vector<std::string>{"skip"});
+    // 4. Confirm goes to the focused button, never to the box.
+    ui::UiInput confirm;
+    confirm.confirm = true;
+    CHECK(send(confirm) == std::vector<std::string>{"skip"});
+}

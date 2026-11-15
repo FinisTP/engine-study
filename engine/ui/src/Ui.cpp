@@ -18,6 +18,7 @@ namespace umbra::ui
         bool input = false;          // this screen takes the input (focus is shown)
         int focus = 0;
         std::vector<Choice> choices; // collected while placing, in order
+        std::vector<Choice> boxes;   // panels and stacks with an action: clicked anywhere, never focused
         std::vector<std::pair<std::string, const json *>> scopes; // list entries: "item" -> its value
         std::vector<int> indices;    // their positions, for "{index}"
         std::optional<State> entryState; // the state of the next list entry's root widget
@@ -310,6 +311,8 @@ namespace umbra::ui
                 state = State::Hover;
             c.choices.push_back({rect, c.Text(node.action), c.Text(node.arg)});
         }
+        if ((node.type == "panel" || node.type == "stack") && !node.action.empty() && !disabled)
+            c.boxes.push_back({rect, c.Text(node.action), c.Text(node.arg)});
         if (disabled)
             state = State::Disabled;
         const Style style = skin_.Get(DefaultStyle(node), state);
@@ -468,6 +471,13 @@ namespace umbra::ui
                     actions.push_back({*it, hit->action, hit->arg});
                     break;
                 }
+                // ... else the innermost clickable box under it (the last placed).
+                const auto box = std::find_if(boxes_[*it].rbegin(), boxes_[*it].rend(), [&](const Choice &c) { return c.rect.Contains(input.mouse); });
+                if (box != boxes_[*it].rend())
+                {
+                    actions.push_back({*it, box->action, box->arg});
+                    break;
+                }
                 if (screens_.at(*it).dim)
                     break;
             }
@@ -491,6 +501,7 @@ namespace umbra::ui
             Context c{data, painter, name == target, focus_[name], {}, {}, {}, {}, State::Normal};
             Place(screen.root, AnchorRect(view, Measure(screen.root, c, view.w), screen.root.anchor, screen.root.offset), c);
             choices_[name] = std::move(c.choices);
+            boxes_[name] = std::move(c.boxes);
         }
         return actions;
     }

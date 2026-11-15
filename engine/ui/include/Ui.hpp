@@ -83,6 +83,7 @@ namespace umbra::ui
         std::vector<std::string> stack_;
         std::map<std::string, int> focus_;          // per screen
         std::map<std::string, std::vector<Choice>> choices_; // last frame's, per screen
+        std::map<std::string, std::vector<Choice>> boxes_;   // ... and its clickable boxes
         core::TextureHandle atlasTexture_;
         std::function<ImageRef(const std::string &)> images_;
     };

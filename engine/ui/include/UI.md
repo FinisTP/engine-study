@@ -87,6 +87,8 @@ The top modal screen takes the input (`UiInput`, mapped from keys, mouse and gam
 3. Back sends the screen's `back` action.
 4. A click goes to the topmost screen with a choice under the mouse, modal or not, so a HUD's
    buttons work beside a menu; a dimmed (`dim`) screen blocks clicks on everything below it.
+5. A `panel` or `stack` with an `action` is clicked anywhere inside it (a dialog's "click to go
+   on"). Its own buttons and lists win where they are; keys and the gamepad never focus the box.
 
 Two actions belong to the UI itself: `close` closes the screen and `open:<screen>` opens one on
 top. Everything else goes back to the game from `Update`.
