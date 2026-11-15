@@ -2,8 +2,7 @@
   "format": "umbra.ui",
   "version": 1,
   "modal": true,
-  "dim": true,
-  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [860, 0], "align": "stretch", "gap": 14, "children": [
+  "root": { "type": "stack", "anchor": "bottom", "offset": [0, -40], "style": "panel", "size": [860, 0], "align": "stretch", "gap": 14, "children": [
     { "type": "stack", "direction": "horizontal", "gap": 14, "align": "center", "children": [
       { "type": "text", "style": "title", "text": "Battle in the {battle.room}" },
       { "type": "text", "style": "small", "text": "Round {battle.round} of {battle.rounds}" }

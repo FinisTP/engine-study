@@ -2,8 +2,7 @@
   "format": "umbra.ui",
   "version": 1,
   "modal": true,
-  "dim": true,
-  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [680, 0], "align": "stretch", "gap": 14, "children": [
+  "root": { "type": "stack", "anchor": "right", "offset": [-24, 20], "style": "panel", "size": [460, 0], "align": "stretch", "gap": 14, "children": [
     { "type": "stack", "direction": "horizontal", "gap": 16, "align": "center", "children": [
       { "type": "image", "image": "{chat.portrait}", "size": [112, 112] },
       { "type": "stack", "gap": 4, "children": [
@@ -13,12 +12,12 @@
     ] },
     { "type": "text", "style": "good", "text": "{chat.bondNote}", "visible": "{chat.likes}" },
     { "type": "text", "style": "bad", "text": "{chat.bondNote}", "visible": "{chat.distrusts}" },
-    { "type": "text", "style": "heading", "text": "{chat.question}", "wrap": true, "size": [640, 0] },
+    { "type": "text", "style": "heading", "text": "{chat.question}", "wrap": true, "size": [420, 0] },
     { "type": "list", "items": "{chat.answers}", "as": "a", "gap": 10, "action": "answer", "arg": "{a.answer}",
-      "entry": { "type": "stack", "style": "button", "size": [640, 0], "gap": 4, "children": [
-        { "type": "text", "style": "strong", "text": "{a.label}", "wrap": true, "size": [600, 0] },
+      "entry": { "type": "stack", "style": "button", "size": [420, 0], "gap": 4, "children": [
+        { "type": "text", "style": "strong", "text": "{a.label}", "wrap": true, "size": [380, 0] },
         { "type": "text", "style": "small", "text": "{a.kind}: d20 + {a.stat} {a.statValue}, needs {a.target}   |   {a.chance}% chance" }
       ] } },
-    { "type": "text", "style": "muted", "text": "A passed roll is one approval; a failed one costs nothing.", "wrap": true, "size": [640, 0] }
+    { "type": "text", "style": "muted", "text": "A passed roll is one approval; a failed one costs nothing.", "wrap": true, "size": [420, 0] }
   ] }
 }
