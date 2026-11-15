@@ -38,6 +38,8 @@ public:
     [[nodiscard]] glm::vec3 Above(const umbra::night::NightDef &def, const umbra::night::BoardView &view, int guest, const Slide &slide) const;
     [[nodiscard]] std::optional<glm::vec2> ScreenPoint(glm::vec3 world, glm::vec2 pixels) const;
     void SetHunt(bool hunt) { hunt_ = hunt; } // after the Turn the ambient turns red
+    // The night's mood (Art.hpp NightMood): blood on the floors, how much the lamp flickers.
+    void SetMood(float blood, float flicker) { blood_ = blood, flicker_ = flicker; }
     void Aim(glm::vec3 target, float seconds);
     void Update(float dt);
     // The room at full size (plan 4b/4c, Table.md "The stage"), drawn instead of the table.
@@ -103,4 +105,8 @@ private:
     float seconds_ = 0.0F, elapsed_ = 0.0F;
     float distance_ = 11.0F;
     bool hunt_ = false;
+    float blood_ = 0.0F, flicker_ = 0.0F, clock_ = 0.0F; // clock_: seconds, for the flicker and pulse
+    [[nodiscard]] float Lamp() const;                    // the lamp's strength now (flicker)
+    [[nodiscard]] glm::vec3 HuntTint() const;            // the ambient's tint now (the hunt pulses red)
+    void Floor(umbra::core::DrawList &out, umbra::core::TextureHandle art, const glm::mat4 &model, glm::vec4 color) const;
 };

@@ -1,0 +1,746 @@
+{
+ "rooms": [
+  {
+   "id": "foyer",
+   "kind": "foyer",
+   "seed": 4200,
+   "prompt": "top-down view from directly above, flat floor plan of a grand marble foyer, chequered floor, twin staircases, gilt columns, red carpet runner, inside the old Saigon Opera House, rich gold ornament, warm glow, game map tile"
+  },
+  {
+   "id": "understage",
+   "kind": "understage",
+   "seed": 4201,
+   "prompt": "top-down view from directly above, flat floor plan of a cramped under-stage cellar, stone floor, wooden trap mechanisms, ropes and pulleys, candles, inside the old Saigon Opera House, rich gold ornament, warm glow, game map tile"
+  },
+  {
+   "id": "auditorium",
+   "kind": "plain",
+   "seed": 4202,
+   "prompt": "top-down view from directly above, flat floor plan of rows of red velvet seats facing a stage, gilt balcony fronts, inside the old Saigon Opera House, rich gold ornament, warm glow, game map tile"
+  },
+  {
+   "id": "pit",
+   "kind": "plain",
+   "seed": 4203,
+   "prompt": "top-down view from directly above, flat floor plan of an orchestra pit, music stands, chairs, a grand piano, sheet music on the floor, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "corridor",
+   "kind": "plain",
+   "seed": 4204,
+   "prompt": "top-down view from directly above, flat floor plan of a narrow back corridor, worn wooden floor, pipes along the walls, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "stairwell",
+   "kind": "plain",
+   "seed": 4205,
+   "prompt": "top-down view from directly above, flat floor plan of a service stairwell, iron steps spiralling, a bare bulb, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "boxes",
+   "kind": "plain",
+   "seed": 4206,
+   "prompt": "top-down view from directly above, flat floor plan of a row of private box seats, small gilt chairs, velvet curtains, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "balcony",
+   "kind": "plain",
+   "seed": 4207,
+   "prompt": "top-down view from directly above, flat floor plan of an upper balcony, curved rows of seats, a brass rail, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "costumes",
+   "kind": "item",
+   "seed": 4208,
+   "prompt": "top-down view from directly above, flat floor plan of a costume store, racks of colourful costumes, hat boxes, mannequins, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "props",
+   "kind": "item",
+   "seed": 4209,
+   "prompt": "top-down view from directly above, flat floor plan of a prop room, painted swords, crowns, a cardboard throne, crates, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "dressing",
+   "kind": "item",
+   "seed": 4210,
+   "prompt": "top-down view from directly above, flat floor plan of a dressing room, a dressing table with a round bulb mirror, a folding screen, a clothes rail, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "lighting",
+   "kind": "event",
+   "seed": 4211,
+   "prompt": "top-down view from directly above, flat floor plan of a lighting box, a console of brass switches, a spotlight on a stand, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "green",
+   "kind": "event",
+   "seed": 4212,
+   "prompt": "top-down view from directly above, flat floor plan of a green room, green walls, a worn sofa, a tea table, armchairs, inside the old Saigon Opera House, rich gold ornament, warm glow, game map tile"
+  },
+  {
+   "id": "archive",
+   "kind": "event",
+   "seed": 4213,
+   "prompt": "top-down view from directly above, flat floor plan of a programme archive, shelves of old programmes, paper stacks, a desk lamp, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "mirrors",
+   "kind": "event",
+   "seed": 4214,
+   "prompt": "top-down view from directly above, flat floor plan of a hall of mirrors, many tall mirrors on the walls, a polished floor, inside the old Saigon Opera House, rich gold ornament, warm glow, game map tile"
+  },
+  {
+   "id": "fly",
+   "kind": "trap",
+   "seed": 4215,
+   "prompt": "top-down view from directly above, flat floor plan of a fly loft, wooden walkways, coils of rope, hanging sandbags, inside the old Saigon Opera House, rich gold ornament, warm glow, game map tile"
+  },
+  {
+   "id": "boards",
+   "kind": "trap",
+   "seed": 4216,
+   "prompt": "top-down view from directly above, flat floor plan of rotten stage boards, broken planks, holes in the floor, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "rigging",
+   "kind": "trap",
+   "seed": 4217,
+   "prompt": "top-down view from directly above, flat floor plan of a rigging pit, iron counterweights, chains and ropes in the dark, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "patronbox",
+   "kind": "bonus",
+   "seed": 4218,
+   "prompt": "top-down view from directly above, flat floor plan of the patron's box, a gilt armchair, a small table with a decanter, red velvet, inside the old Saigon Opera House, rich gold ornament, warm glow, game map tile"
+  },
+  {
+   "id": "prompter",
+   "kind": "item",
+   "seed": 4219,
+   "prompt": "top-down view from directly above, flat floor plan of a prompter's box, a tiny desk, a script, a lamp, a bell, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "maskcabinet",
+   "kind": "item",
+   "seed": 4220,
+   "prompt": "top-down view from directly above, flat floor plan of a mask cabinet, glass cases of theatre masks, a velvet stool, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "office",
+   "kind": "event",
+   "seed": 4221,
+   "prompt": "top-down view from directly above, flat floor plan of a shuttered office, a desk with ledgers, a safe, closed shutters, inside the old Saigon Opera House, rich gold ornament, warm glow, game map tile"
+  },
+  {
+   "id": "vault",
+   "kind": "event",
+   "seed": 4222,
+   "prompt": "top-down view from directly above, flat floor plan of a dusty vault, old trunks, cobwebs, a heavy door, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "trapdoor",
+   "kind": "transport",
+   "seed": 4223,
+   "prompt": "top-down view from directly above, flat floor plan of the stage floor with a square trapdoor in the middle, chalk marks, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "catwalk",
+   "kind": "transport",
+   "seed": 4224,
+   "prompt": "top-down view from directly above, flat floor plan of a narrow iron catwalk over darkness, a rail, cables, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "rehearsal",
+   "kind": "bonus",
+   "seed": 4225,
+   "prompt": "top-down view from directly above, flat floor plan of a rehearsal room, a piano, mirrors, a wooden floor, chairs in a circle, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "chapel",
+   "kind": "bonus",
+   "seed": 4226,
+   "prompt": "top-down view from directly above, flat floor plan of a small chapel of the stage ancestors, an altar with incense, red candles, offerings of fruit, inside the old Saigon Opera House, rich gold ornament, warm glow, game map tile"
+  },
+  {
+   "id": "gallery",
+   "kind": "bonus",
+   "seed": 4227,
+   "prompt": "top-down view from directly above, flat floor plan of a rigging gallery, wooden rails, ropes tied to cleats, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "hallway",
+   "kind": "plain",
+   "seed": 4228,
+   "prompt": "top-down view from directly above, flat floor plan of a hallway, patterned tiles, a long rug, framed posters, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "passage",
+   "kind": "plain",
+   "seed": 4229,
+   "prompt": "top-down view from directly above, flat floor plan of a stone passageway, damp floor, a lantern, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "sidecorridor",
+   "kind": "plain",
+   "seed": 4230,
+   "prompt": "top-down view from directly above, flat floor plan of a side corridor, encaustic tiles, a bench, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "landing",
+   "kind": "plain",
+   "seed": 4231,
+   "prompt": "top-down view from directly above, flat floor plan of a stair landing, a window, a potted palm, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "emptyroom",
+   "kind": "plain",
+   "seed": 4232,
+   "prompt": "top-down view from directly above, flat floor plan of an empty room, bare boards, one chair, dust, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "cloakroom",
+   "kind": "plain",
+   "seed": 4233,
+   "prompt": "top-down view from directly above, flat floor plan of a cloakroom, a counter, rows of coat hooks, hats, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "storeroom",
+   "kind": "plain",
+   "seed": 4234,
+   "prompt": "top-down view from directly above, flat floor plan of a storeroom, boxes, paint tins, a ladder, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "servantstair",
+   "kind": "plain",
+   "seed": 4235,
+   "prompt": "top-down view from directly above, flat floor plan of a servants' stair, narrow wooden steps, a handrail, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "ticketlobby",
+   "kind": "plain",
+   "seed": 4236,
+   "prompt": "top-down view from directly above, flat floor plan of a ticket lobby, a ticket window, a queue rope, posters, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "bar",
+   "kind": "plain",
+   "seed": 4237,
+   "prompt": "top-down view from directly above, flat floor plan of an interval bar, a long counter, bottles, small round tables, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "orchestraroom",
+   "kind": "plain",
+   "seed": 4238,
+   "prompt": "top-down view from directly above, flat floor plan of an orchestra room, instrument cases, chairs, music stands, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "wigroom",
+   "kind": "item",
+   "seed": 4239,
+   "prompt": "top-down view from directly above, flat floor plan of a wig room, wigs on stands, a dressing table, combs, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "armoury",
+   "kind": "item",
+   "seed": 4240,
+   "prompt": "top-down view from directly above, flat floor plan of a stage armoury, racks of prop spears, shields, a breastplate, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "sewing",
+   "kind": "item",
+   "seed": 4241,
+   "prompt": "top-down view from directly above, flat floor plan of a sewing room, a sewing machine, bolts of cloth, a dress form, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "paintshop",
+   "kind": "item",
+   "seed": 4242,
+   "prompt": "top-down view from directly above, flat floor plan of a paint shop, a huge canvas backdrop on the floor, paint pots, brushes, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "lostfound",
+   "kind": "item",
+   "seed": 4243,
+   "prompt": "top-down view from directly above, flat floor plan of a lost property room, shelves of umbrellas, gloves, bags, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "pantry",
+   "kind": "item",
+   "seed": 4244,
+   "prompt": "top-down view from directly above, flat floor plan of an old pantry, shelves of jars, a sack of rice, a clay stove, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "flytower",
+   "kind": "event",
+   "seed": 4245,
+   "prompt": "top-down view from directly above, flat floor plan of a fly tower, a dizzying shaft of ropes and battens, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "flyloft2",
+   "kind": "event",
+   "seed": 4246,
+   "prompt": "top-down view from directly above, flat floor plan of a rope room, walls lined with ropes and pins, a winch, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "recording",
+   "kind": "event",
+   "seed": 4247,
+   "prompt": "top-down view from directly above, flat floor plan of a recording booth, a reel-to-reel tape machine, a microphone, padded walls, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "boxoffice",
+   "kind": "event",
+   "seed": 4248,
+   "prompt": "top-down view from directly above, flat floor plan of a box office, a cash register, ticket rolls, a ledger, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "dimmer",
+   "kind": "event",
+   "seed": 4249,
+   "prompt": "top-down view from directly above, flat floor plan of a dimmer room, big lever switches, cables, a warning lamp, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "projection",
+   "kind": "event",
+   "seed": 4250,
+   "prompt": "top-down view from directly above, flat floor plan of a projection room, a film projector, film reels, a small window, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "balletroom",
+   "kind": "event",
+   "seed": 4251,
+   "prompt": "top-down view from directly above, flat floor plan of a ballet room, a barre along the wall, a polished floor, a piano, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "shrine",
+   "kind": "event",
+   "seed": 4252,
+   "prompt": "top-down view from directly above, flat floor plan of a little shrine, a small altar, incense sticks, a photograph, flowers, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "royalbox",
+   "kind": "event",
+   "seed": 4253,
+   "prompt": "top-down view from directly above, flat floor plan of the royal box, a pair of gilt thrones, a balustrade, a canopy, inside the old Saigon Opera House, rich gold ornament, warm glow, game map tile"
+  },
+  {
+   "id": "waitingroom",
+   "kind": "event",
+   "seed": 4254,
+   "prompt": "top-down view from directly above, flat floor plan of an artists' waiting room, a bench, a clock, a coat stand, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "loosestairs",
+   "kind": "trap",
+   "seed": 4255,
+   "prompt": "top-down view from directly above, flat floor plan of loose wooden stairs, missing steps, a broken rail, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "pitcover",
+   "kind": "trap",
+   "seed": 4256,
+   "prompt": "top-down view from directly above, flat floor plan of a broken pit cover, cracked boards over a dark hole, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "boilerroom",
+   "kind": "trap",
+   "seed": 4257,
+   "prompt": "top-down view from directly above, flat floor plan of a boiler room, a big iron boiler, pipes, gauges, steam, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "roofterrace",
+   "kind": "bonus",
+   "seed": 4258,
+   "prompt": "top-down view from directly above, flat floor plan of a roof terrace at night, tiles, a parapet, potted plants, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "composer",
+   "kind": "bonus",
+   "seed": 4259,
+   "prompt": "top-down view from directly above, flat floor plan of a composer's room, a piano covered in scores, a desk, a candle, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "weaponrack",
+   "kind": "bonus",
+   "seed": 4260,
+   "prompt": "top-down view from directly above, flat floor plan of a fencing hall, a rack of foils, a fencing strip on the floor, inside the old Saigon Opera House, game map tile"
+  },
+  {
+   "id": "infirmary",
+   "kind": "bonus",
+   "seed": 4261,
+   "prompt": "top-down view from directly above, flat floor plan of an old infirmary, an iron bed, a medicine cabinet, a screen, inside the old Saigon Opera House, game map tile"
+  }
+ ],
+ "events": [
+  {
+   "id": "applause",
+   "seed": 5200,
+   "prompt": "a vast empty opera auditorium at night, every red velvet seat empty, no audience, a single pair of white gloved hands clapping alone in the dark stalls"
+  },
+  {
+   "id": "script",
+   "seed": 5201,
+   "prompt": "uncanny scene in a dark empty old opera house at night: A script lies open on a chair"
+  },
+  {
+   "id": "cold",
+   "seed": 5202,
+   "prompt": "close view over a person's shoulder in a dark empty opera corridor at night, a pale long-fingered cold hand resting on the shoulder, nobody behind"
+  },
+  {
+   "id": "song",
+   "seed": 5203,
+   "prompt": "uncanny scene in a dark empty old opera house at night: A woman's voice sings through the walls, an old cai luong air"
+  },
+  {
+   "id": "mirror",
+   "seed": 5204,
+   "prompt": "uncanny scene in a dark empty old opera house at night: In the dressing-room mirror your reflection moves a moment after you do"
+  },
+  {
+   "id": "dust",
+   "seed": 5205,
+   "prompt": "uncanny scene in a dark empty old opera house at night: The dust sheets over the old seats rise and fall, as if something beneath them breathes"
+  },
+  {
+   "id": "locker",
+   "seed": 5206,
+   "prompt": "uncanny scene in a dark empty old opera house at night: A locker is jammed shut"
+  },
+  {
+   "id": "bell",
+   "seed": 5207,
+   "prompt": "uncanny scene in a dark empty old opera house at night: The interval bell rings and rings"
+  },
+  {
+   "id": "portrait",
+   "seed": 5208,
+   "prompt": "uncanny scene in a dark empty old opera house at night: A portrait of a forgotten singer slowly turns its eyes to follow you across the room"
+  },
+  {
+   "id": "rain",
+   "seed": 5209,
+   "prompt": "uncanny scene in a dark empty old opera house at night: Rain falls on the stage, indoors, from nowhere"
+  },
+  {
+   "id": "prompt",
+   "seed": 5210,
+   "prompt": "uncanny scene in a dark empty old opera house at night: A voice from the prompt box whispers your line"
+  },
+  {
+   "id": "weights",
+   "seed": 5211,
+   "prompt": "uncanny scene in a dark empty old opera house at night: The counterweights groan and start to drop"
+  },
+  {
+   "id": "sandbag",
+   "seed": 5212,
+   "prompt": "uncanny scene in a dark empty old opera house at night: A rope creaks overhead"
+  },
+  {
+   "id": "floor",
+   "seed": 5213,
+   "prompt": "uncanny scene in a dark empty old opera house at night: The old boards crack under your weight"
+  },
+  {
+   "id": "wire",
+   "seed": 5214,
+   "prompt": "uncanny scene in a dark empty old opera house at night: A lighting wire snaps and whips across the room"
+  },
+  {
+   "id": "smoke",
+   "seed": 5215,
+   "prompt": "uncanny scene in a dark empty old opera house at night: Thick smoke pours from the wings, and in it you hear your name"
+  },
+  {
+   "id": "spotlight",
+   "seed": 5216,
+   "prompt": "uncanny scene in a dark empty old opera house at night: A spotlight tears loose from the rig above you"
+  },
+  {
+   "id": "hook",
+   "seed": 5217,
+   "prompt": "uncanny scene in a dark empty old opera house at night: A loose scenery hook swings out of the dark"
+  },
+  {
+   "id": "ticket",
+   "seed": 5218,
+   "prompt": "uncanny scene in a dark empty old opera house at night: A ticket lies on the counter, for tonight's show, row A, your seat"
+  },
+  {
+   "id": "dancers",
+   "seed": 5219,
+   "prompt": "uncanny scene in a dark empty old opera house at night: Footsteps whirl around you in a waltz you cannot see"
+  },
+  {
+   "id": "letter",
+   "seed": 5220,
+   "prompt": "uncanny scene in a dark empty old opera house at night: A love letter, never sent, signed with a name from the old programme"
+  },
+  {
+   "id": "costume",
+   "seed": 5221,
+   "prompt": "uncanny scene in a dark empty old opera house at night: A costume hangs exactly your size"
+  },
+  {
+   "id": "reel",
+   "seed": 5222,
+   "prompt": "uncanny scene in a dark empty old opera house at night: A projector runs by itself, showing this room, now, with one more person in it than there is"
+  },
+  {
+   "id": "bell2",
+   "seed": 5223,
+   "prompt": "uncanny scene in a dark empty old opera house at night: A bell rings for a cue nobody gave"
+  },
+  {
+   "id": "stairs",
+   "seed": 5224,
+   "prompt": "uncanny scene in a dark empty old opera house at night: The steps tilt under you, one after another"
+  },
+  {
+   "id": "steam",
+   "seed": 5225,
+   "prompt": "uncanny scene in a dark empty old opera house at night: An old pipe bursts across the room"
+  },
+  {
+   "id": "pitfall",
+   "seed": 5226,
+   "prompt": "uncanny scene in a dark empty old opera house at night: The cover over the orchestra pit cracks in two"
+  },
+  {
+   "id": "tuning",
+   "seed": 5227,
+   "prompt": "uncanny scene in a dark empty old opera house at night: From the empty pit comes the long A of an orchestra tuning, then the shuffle of pages"
+  },
+  {
+   "id": "curtaincall",
+   "seed": 5228,
+   "prompt": "uncanny scene in a dark empty old opera house at night: A heavy curtain hangs half down, its rope jammed"
+  },
+  {
+   "id": "programme",
+   "seed": 5229,
+   "prompt": "uncanny scene in a dark empty old opera house at night: A fresh programme lies on a seat"
+  },
+  {
+   "id": "footsteps",
+   "seed": 5230,
+   "prompt": "uncanny scene in a dark empty old opera house at night: Someone runs across the floor above, then again, closer"
+  },
+  {
+   "id": "makeup",
+   "seed": 5231,
+   "prompt": "uncanny scene in a dark empty old opera house at night: The face in the dressing glass is made up for the stage, and it is not yours"
+  },
+  {
+   "id": "trunk",
+   "seed": 5232,
+   "prompt": "uncanny scene in a dark empty old opera house at night: A travelling trunk, its lock rusted shut"
+  }
+ ],
+ "cards": [
+  {
+   "id": "moths",
+   "seed": 8200,
+   "prompt": "full body moth swarm, a monster of a haunted opera house, front view, standing, on a plain cream background, painted theatre cut-out"
+  },
+  {
+   "id": "stagehand",
+   "seed": 8201,
+   "prompt": "full body stagehand, a monster of a haunted opera house, front view, standing, on a plain cream background, painted theatre cut-out"
+  },
+  {
+   "id": "understudy",
+   "seed": 8202,
+   "prompt": "full body understudy, a monster of a haunted opera house, front view, standing, on a plain cream background, painted theatre cut-out"
+  },
+  {
+   "id": "crane",
+   "seed": 8203,
+   "prompt": "full body paper crane, a monster of a haunted opera house, front view, standing, on a plain cream background, painted theatre cut-out"
+  },
+  {
+   "id": "ember",
+   "seed": 8204,
+   "prompt": "full body ember chorister, a monster of a haunted opera house, front view, standing, on a plain cream background, painted theatre cut-out"
+  },
+  {
+   "id": "orderly",
+   "seed": 8205,
+   "prompt": "full body drowned orderly, a monster of a haunted opera house, front view, standing, on a plain cream background, painted theatre cut-out"
+  },
+  {
+   "id": "collector",
+   "seed": 8206,
+   "prompt": "full body chain collector, a monster of a haunted opera house, front view, standing, on a plain cream background, painted theatre cut-out"
+  },
+  {
+   "id": "root",
+   "seed": 8207,
+   "prompt": "full body root of the house, a monster of a haunted opera house, front view, standing, on a plain cream background, painted theatre cut-out"
+  },
+  {
+   "id": "shadow",
+   "seed": 8208,
+   "prompt": "full body lagging shadow, a monster of a haunted opera house, front view, standing, on a plain cream background, painted theatre cut-out"
+  },
+  {
+   "id": "shard",
+   "seed": 8209,
+   "prompt": "full body mirror shard, a monster of a haunted opera house, front view, standing, on a plain cream background, painted theatre cut-out"
+  }
+ ],
+ "portraits": [
+  {
+   "id": "nhi",
+   "seed": 6200,
+   "prompt": "head and shoulders portrait of a young Vietnamese elementary schoolgirl in a white school uniform, ponytail, serious eyes, a faint dark figure standing in the shadow behind them, an unsettling stillness, plain cream background, 1960s film poster portrait"
+  },
+  {
+   "id": "thanh",
+   "seed": 6201,
+   "prompt": "head and shoulders portrait of a young Vietnamese opera singer in a red bridal ao dai, hair ribbon, silver bracelets, proud, a faint dark figure standing in the shadow behind them, an unsettling stillness, plain cream background, 1960s film poster portrait"
+  },
+  {
+   "id": "bao",
+   "seed": 6202,
+   "prompt": "head and shoulders portrait of an old Vietnamese retired army doctor, grey suit a size too large, round glasses, kind tired face, a faint dark figure standing in the shadow behind them, an unsettling stillness, plain cream background, 1960s film poster portrait"
+  },
+  {
+   "id": "khang",
+   "seed": 6203,
+   "prompt": "head and shoulders portrait of a Vietnamese debt collector, former boxer, leather jacket, gold chain, broken nose, a faint dark figure standing in the shadow behind them, an unsettling stillness, plain cream background, 1960s film poster portrait"
+  },
+  {
+   "id": "mai",
+   "seed": 6204,
+   "prompt": "head and shoulders portrait of an older Vietnamese theatre caretaker woman, brown ao ba ba, tight bun, a ring of keys, a faint dark figure standing in the shadow behind them, an unsettling stillness, plain cream background, 1960s film poster portrait"
+  },
+  {
+   "id": "huy",
+   "seed": 6205,
+   "prompt": "head and shoulders portrait of a young Vietnamese university student, hooded jacket, headlamp on his forehead, camera strap, a faint dark figure standing in the shadow behind them, an unsettling stillness, plain cream background, 1960s film poster portrait"
+  },
+  {
+   "id": "lan",
+   "seed": 6206,
+   "prompt": "head and shoulders portrait of an elegant Vietnamese antique appraiser woman, dark silk blouse, white gloves, a loupe on a chain, a faint dark figure standing in the shadow behind them, an unsettling stillness, plain cream background, 1960s film poster portrait"
+  }
+ ],
+ "items": [
+  {
+   "id": "bandage",
+   "seed": 7200,
+   "prompt": "a single bandage, one object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"
+  },
+  {
+   "id": "tonic",
+   "seed": 7201,
+   "prompt": "a single small glass bottle of tonic medicine, one object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"
+  },
+  {
+   "id": "brandy",
+   "seed": 7202,
+   "prompt": "a single bottle of brandy, one object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"
+  },
+  {
+   "id": "whetstone",
+   "seed": 7203,
+   "prompt": "a single whetstone, one object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"
+  },
+  {
+   "id": "incense",
+   "seed": 7204,
+   "prompt": "a single bundle of incense sticks, one object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"
+  },
+  {
+   "id": "coat",
+   "seed": 7205,
+   "prompt": "a single padded coat, one object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"
+  },
+  {
+   "id": "sword",
+   "seed": 7206,
+   "prompt": "a single prop sword, one object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"
+  },
+  {
+   "id": "fan",
+   "seed": 7207,
+   "prompt": "a single opera fan, one object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"
+  },
+  {
+   "id": "shoes",
+   "seed": 7208,
+   "prompt": "a single dancer's shoes, one object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"
+  },
+  {
+   "id": "amulet",
+   "seed": 7209,
+   "prompt": "a single brass amulet, one object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"
+  },
+  {
+   "id": "armour",
+   "seed": 7210,
+   "prompt": "a single stage armour, one object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"
+  },
+  {
+   "id": "lantern",
+   "seed": 7211,
+   "prompt": "a single lantern, one object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"
+  },
+  {
+   "id": "crucifix",
+   "seed": 7212,
+   "prompt": "a single crucifix, one object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"
+  },
+  {
+   "id": "rosary",
+   "seed": 7213,
+   "prompt": "a single rosary, one object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"
+  },
+  {
+   "id": "crown",
+   "seed": 7214,
+   "prompt": "a single phoenix crown, one object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"
+  },
+  {
+   "id": "ledger",
+   "seed": 7215,
+   "prompt": "the patron's ledger, one object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"
+  },
+  {
+   "id": "mask",
+   "seed": 7216,
+   "prompt": "a single gilded mask, one object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"
+  },
+  {
+   "id": "watch",
+   "seed": 7217,
+   "prompt": "a pocket watch, one object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"
+  },
+  {
+   "id": "keys",
+   "seed": 7218,
+   "prompt": "a ring of keys, one object centred on a plain cream background, old and worn, faintly ominous, isolated item, game icon"
+  }
+ ],
+ "ui": [
+  {
+   "id": "panel",
+   "seed": 9200,
+   "prompt": "an ornate empty rectangular frame border, art deco 1960s cinema bill border, gold and lacquer red, plain dark centre, flat, symmetric"
+  },
+  {
+   "id": "paper",
+   "seed": 9201,
+   "prompt": "plain aged cream paper texture, faint halftone grain, subtle stains, flat, seamless"
+  },
+  {
+   "id": "title",
+   "seed": 9202,
+   "prompt": "the Saigon Opera House facade at night under a full moon, cinema poster key art, dramatic"
+  }
+ ]
+}

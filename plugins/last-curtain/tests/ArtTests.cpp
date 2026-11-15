@@ -73,3 +73,42 @@ TEST_CASE("ArtPath names a picture by its data id; MissingArt lists what is not 
     CHECK(fewer.size() == missing.size() - 1);
     std::filesystem::remove_all(folder);
 }
+
+TEST_CASE("Every picture the night's data needs is in LastCurtain's assets (T141)", "[night][art]")
+{
+    const NightDef def = Data();
+    const std::vector<std::string> missing = MissingArt(def, UMBRA_LASTCURTAIN_ASSETS);
+    for (const std::string &path : missing)
+        UNSCOPED_INFO("missing " << path);
+    CHECK(missing.empty());
+}
+
+TEST_CASE("The night's mood: a creep from 19:00, a snap to blood at the Turn (T145)", "[night][art][mood]")
+{
+    const NightDef def = Data();
+    NightState state = NewNight(def, 5, 0);
+    // 1. The first round looks normal.
+    state.round = 1;
+    const Mood start = NightMood(def, state);
+    CHECK(start.creep == 0.0F);
+    CHECK(start.blood == 0.0F);
+    CHECK(start.post.saturation == 1.0F);
+    // 2. Just before the Turn: drained, colder, darker corners; still no blood.
+    state.round = static_cast<std::int8_t>(def.rules.clock.turnAfterRound);
+    const Mood late = NightMood(def, state);
+    CHECK(late.creep == 1.0F);
+    CHECK(late.blood == 0.0F);
+    CHECK(late.post.saturation < 0.7F);
+    CHECK(late.post.temperature < 0.0F);
+    CHECK(late.post.vignette > start.post.vignette);
+    CHECK(late.flicker > start.flicker);
+    // 3. The Turn: blood at once, more as the hunt goes on, the blood grade on.
+    state.taken.present = true;
+    state.round = static_cast<std::int8_t>(def.rules.clock.turnAfterRound + 1);
+    const Mood turned = NightMood(def, state);
+    CHECK(turned.blood >= 0.3F);
+    CHECK(turned.bloodGrade);
+    state.round = static_cast<std::int8_t>(def.rules.clock.rounds);
+    CHECK(NightMood(def, state).blood > turned.blood);
+    CHECK(NightMood(def, state).blood <= 1.0F);
+}

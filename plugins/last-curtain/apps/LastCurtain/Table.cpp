@@ -198,9 +198,9 @@ void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<i
     settings.ambient = 0.8F;
     settings.fog = 0.0F;
     settings.shadows = false;
-    settings.tint = hunt_ ? glm::vec3{1.0F, 0.45F, 0.4F} : glm::vec3{1.0F};
+    settings.tint = HuntTint();
     out.environment = umbra::core::EvaluateEnvironment(settings, 20.0F);
-    out.lights.push_back({{0.0F, 7.0F, 0.0F}, {1.0F, 0.82F, 0.6F}, 30.0F, 40.0F, 0.0F});
+    out.lights.push_back({{0.0F, 7.0F, 0.0F}, {1.0F, 0.82F, 0.6F}, 30.0F * Lamp(), 40.0F, 0.0F});
     out.camera = Camera();
 
     // 2. Rooms: a floor tile, a wall stub on every side a guest cannot pass, a faint bar at each doorway.
@@ -222,7 +222,7 @@ void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<i
             const bool featured = static_cast<std::size_t>(c) < featured_.size() && featured_[static_cast<std::size_t>(c)];
             Box(out, box_, at - glm::vec3{0, tileThick * 0.5F, 0}, {tile, tileThick, tile}, (featured ? Hex(0xD4AF37) : RoomColor(cell.kind)) * shade);
             const float inner = featured ? 0.84F : 0.9F;
-            out.items.push_back({box_, art, glm::scale(glm::translate(glm::mat4{1.0F}, at - glm::vec3{0, tileThick * 0.5F - 0.004F, 0}), {tile * inner, tileThick, tile * inner}), shade});
+            Floor(out, art, glm::scale(glm::translate(glm::mat4{1.0F}, at - glm::vec3{0, tileThick * 0.5F - 0.004F, 0}), {tile * inner, tileThick, tile * inner}), shade);
         }
         if (cell.step >= 0)
             Box(out, box_, at + glm::vec3{0, 0.01F, 0}, {tile * 0.6F, 0.02F, tile * 0.6F}, Hex(0xF2D58A));
@@ -373,7 +373,31 @@ void Table::Aim(glm::vec3 target, float seconds)
     elapsed_ = 0.0F;
 }
 
-void Table::Update(float dt) { elapsed_ = std::min(elapsed_ + dt, seconds_); }
+void Table::Update(float dt) { elapsed_ = std::min(elapsed_ + dt, seconds_), clock_ += dt; }
+
+float Table::Lamp() const
+{
+    // Two waves beat against each other; only their peaks dim the lamp, so it stutters now and then.
+    const float stutter = std::max(0.0F, std::sin(clock_ * 7.3F) * std::sin(clock_ * 2.1F + 1.0F));
+    return 1.0F - flicker_ * stutter;
+}
+
+glm::vec3 Table::HuntTint() const
+{
+    // Red after the Turn, breathing slowly; plain before.
+    if (!hunt_)
+        return glm::vec3{1.0F};
+    const float breath = 0.5F + 0.5F * std::sin(clock_ * 1.6F);
+    return glm::vec3{1.0F, 0.45F, 0.4F} * (0.85F + 0.25F * breath);
+}
+
+void Table::Floor(umbra::core::DrawList &out, umbra::core::TextureHandle art, const glm::mat4 &model, glm::vec4 color) const
+{
+    // A painted floor with the stain shader: the tint's alpha says how far the blood has spread.
+    color.a = blood_;
+    out.items.push_back({box_, art, model, color});
+    out.items.back().surface = out.SurfaceIndex("dread");
+}
 
 void Table::Pan(glm::vec2 pixels)
 {
@@ -441,14 +465,14 @@ void Table::DrawStage(const NightDef &def, const BoardView &view, int cell, cons
     // 1. Light: the table's own, and a lamp over the room.
     umbra::core::EnvironmentSettings settings;
     settings.indoor = true, settings.ambient = 0.85F, settings.fog = 0.0F, settings.shadows = false;
-    settings.tint = hunt_ ? glm::vec3{1.0F, 0.45F, 0.4F} : glm::vec3{1.0F};
+    settings.tint = HuntTint();
     out.environment = umbra::core::EvaluateEnvironment(settings, 20.0F);
-    out.lights.push_back({{0.0F, 6.0F, 0.0F}, {1.0F, 0.82F, 0.6F}, 25.0F, 30.0F, 0.0F});
+    out.lights.push_back({{0.0F, 6.0F, 0.0F}, {1.0F, 0.82F, 0.6F}, 25.0F * Lamp(), 30.0F, 0.0F});
     out.camera = StageCamera();
     // 2. The floor: the room's own painting, 8 m across.
     const umbra::core::TextureHandle art = room.room >= 0 && static_cast<std::size_t>(room.room) < roomArt_.size() ? roomArt_[static_cast<std::size_t>(room.room)] : umbra::core::TextureHandle{};
-    out.items.push_back({box_, art, glm::scale(glm::translate(glm::mat4{1.0F}, {0.0F, -0.05F, 0.0F}), {2 * stageHalf, 0.1F, 2 * stageHalf}),
-                         art ? glm::vec4{1.0F} : RoomColor(room.kind)});
+    Floor(out, art, glm::scale(glm::translate(glm::mat4{1.0F}, {0.0F, -0.05F, 0.0F}), {2 * stageHalf, 0.1F, 2 * stageHalf}),
+          art ? glm::vec4{1.0F} : RoomColor(room.kind));
     // 3. Walls: tall painted flats at the back (N, W), low ones at the front (E, S); a gap at each door.
     const glm::vec3 side[] = {{0, 0, -1}, {1, 0, 0}, {0, 0, 1}, {-1, 0, 0}};
     for (int d = 0; d < 4; ++d)

@@ -36,6 +36,13 @@ at full size is still one board action.
   (image-to-image), since SDXL alone paints rooms in perspective.
 - The user leaves the laptop running: all of 4a, 4b and 4c are built without waiting; pictures are
   redone as often as needed (up to 4 tries each), the weak ones listed.
+- The look must be uncanny and frightening, not just retro (user, 2026-11-15 midday): the pictures
+  are **subtly uncanny** (deep shadows, small wrong details, still readable in the evening), and
+  **shaders** carry the night's shift: from 19:00 a **gradual creep** (colours drain, shadows and
+  vignette deepen, faint flicker and grain grow), then at the Turn (midnight) a **snap** to
+  bloody and bone-chilling: a blood-red grade, red vignette with **drips at the screen edges** and
+  dark red **stains spreading on the floors**, a pulse; no gore in the pictures. The effects reach
+  the table and the stage; the **UI stays clean**.
 
 ## Why
 

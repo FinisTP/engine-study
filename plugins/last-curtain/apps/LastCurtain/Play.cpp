@@ -484,6 +484,7 @@ nlohmann::json Play::UiData() const
 {
     nlohmann::json data;
     data["writtenLines"] = words_ == nullptr || !words_->HasModel(); // the save menu says so
+    data["dread"] = state_.taken.present;                              // blood runs down the screen
     if (looking_ && state_.player >= 0)
         data["look"] = {{"room", def_.rooms[U(state_.cells[U(state_.guests[U(state_.player)].cell)].room)].name}};
     if (state_.over)

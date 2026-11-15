@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Night.hpp>
+#include <Post.hpp>
 
 #include <filesystem>
 #include <string>
@@ -18,6 +19,18 @@ namespace umbra::night
     // Per cell: the foyer, the under-stage, a start cell or a room named in a goal (a gold frame).
     [[nodiscard]] std::vector<bool> FeaturedCells(const NightDef &def, const NightState &state);
     [[nodiscard]] bool Featured(const NightDef &def, const NightState &state, int cell);
+
+    // How the night looks at this hour (Art.md "The night's mood"; user 2026-11-15): from 19:00 a
+    // creep (colours drain, colder, darker corners, the lamp flickers), at the Turn a snap to blood.
+    struct Mood
+    {
+        float creep = 0.0F;      // 0 at 19:00 .. 1 at midnight
+        float blood = 0.0F;      // 0 before the Turn; 0.35 at it .. 1 at dawn: stains on the floors, drips
+        float flicker = 0.0F;    // how much the lamp flickers
+        bool bloodGrade = false; // the blood colour table (art/ui/blood_lut.png)
+        umbra::core::PostSettings post;
+    };
+    [[nodiscard]] Mood NightMood(const NightDef &def, const NightState &state);
 
     // Every picture the data needs that is not under `assets` (paths as ArtPath gives them).
     [[nodiscard]] std::vector<std::string> MissingArt(const NightDef &def, const std::filesystem::path &assets);

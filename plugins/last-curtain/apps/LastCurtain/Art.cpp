@@ -42,6 +42,33 @@ namespace umbra::night
 
     bool Featured(const NightDef &def, const NightState &state, int cell) { return FeaturedCells(def, state)[static_cast<std::size_t>(cell)]; }
 
+    Mood NightMood(const NightDef &def, const NightState &state)
+    {
+        Mood mood;
+        const float turn = static_cast<float>(def.rules.clock.turnAfterRound), rounds = static_cast<float>(def.rules.clock.rounds);
+        const float round = static_cast<float>(state.round);
+        // 1. The creep: round 1 is plain, the round before midnight is the full creep.
+        mood.creep = state.taken.present ? 1.0F : std::clamp((round - 1.0F) / std::max(1.0F, turn - 1.0F), 0.0F, 1.0F);
+        mood.flicker = 0.05F + 0.3F * mood.creep;
+        mood.post.saturation = 1.0F - 0.45F * mood.creep;
+        mood.post.contrast = 1.0F + 0.25F * mood.creep;
+        mood.post.temperature = -0.45F * mood.creep;
+        mood.post.vignette = 0.25F + 0.4F * mood.creep;
+        mood.post.exposure = -0.35F * mood.creep;
+        if (!state.taken.present)
+            return mood;
+        // 2. The snap: blood from the Turn on, spreading to dawn; the blood grade; heavy corners.
+        mood.blood = std::clamp(0.35F + 0.65F * (round - turn - 1.0F) / std::max(1.0F, rounds - turn - 1.0F), 0.35F, 1.0F);
+        mood.bloodGrade = true;
+        mood.flicker = 0.45F;
+        mood.post.saturation = 0.8F;
+        mood.post.contrast = 1.35F;
+        mood.post.temperature = 0.15F;
+        mood.post.vignette = 0.75F + 0.15F * mood.blood;
+        mood.post.exposure = -0.3F;
+        return mood;
+    }
+
     std::vector<std::string> MissingArt(const NightDef &def, const std::filesystem::path &assets)
     {
         std::vector<std::string> missing;
@@ -60,7 +87,7 @@ namespace umbra::night
             need("items", i.id);
         for (const MonsterDef &m : def.monsters)
             need("cards", m.id);
-        for (const char *ui : {"panel", "paper", "title"})
+        for (const char *ui : {"panel", "paper", "title", "drips", "blood_lut"})
             need("ui", ui);
         return missing;
     }

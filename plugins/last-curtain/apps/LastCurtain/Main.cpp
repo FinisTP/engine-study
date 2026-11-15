@@ -165,6 +165,11 @@ namespace
             Screens screens(renderer, assets);
             Table table(renderer, assets);
             table.LoadArt(def, assets);
+            // The night's mood: the blood colour table after the Turn (Art.md).
+            auto bloodLut = std::make_shared<umbra::core::TextureData>();
+            std::string lutError;
+            if (!umbra::assets::LoadImageFile(assets / ArtPath("ui", "blood_lut"), *bloodLut, lutError))
+                bloodLut.reset();
             umbra::core::DrawList drawList;
             const int frames = options.frames > 0 ? options.frames : (options.capture.empty() ? 0 : 3);
             int frame = 0, aimed = -1, savedRound = -1;
@@ -198,6 +203,8 @@ namespace
                 play->SetWords(&words);
                 table.SetFeatured(FeaturedCells(def, play->State()));
                 table.NewNight(), seenLog = play->State().logCount, wasLooking = false;
+                if (screens.Ready())
+                    screens.Ui().Open("dread"); // under the HUD
                 if (screens.Ready() && play->State().player >= 0)
                     screens.Ui().Open("hud");
                 if (screens.Ready())
@@ -207,7 +214,7 @@ namespace
             const auto backToStart = [&] {
                 play.reset();
                 if (screens.Ready())
-                    screens.Ui().Close("hud"), screens.Ui().Close("labels");
+                    screens.Ui().Close("hud"), screens.Ui().Close("labels"), screens.Ui().Close("dread");
                 NightState unused;
                 canContinue = ReadSave(def, unused);
             };
@@ -284,6 +291,11 @@ namespace
                     table.Zoom(input.Wheel());
                     table.Update(dt);
                     table.SetHunt(state.taken.present);
+                    // The mood: the post grade per hour, the blood table and stains after the Turn.
+                    const Mood mood = NightMood(def, state);
+                    drawList.post = mood.post;
+                    drawList.postLut = mood.bloodGrade && bloodLut ? bloodLut : nullptr;
+                    table.SetMood(mood.blood, mood.flicker);
                     // On the board the arrows, Enter and I move and end the turn; a dialog takes them otherwise.
                     if (board)
                     {
