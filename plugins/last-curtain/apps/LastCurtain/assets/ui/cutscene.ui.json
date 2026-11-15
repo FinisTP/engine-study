@@ -1,0 +1,14 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "back": "skip",
+  "root": { "type": "panel", "anchor": "fill", "style": "layer", "action": "next", "children": [
+    { "type": "panel", "anchor": "top", "style": "hud", "size": [4000, 90] },
+    { "type": "stack", "anchor": "bottom", "style": "hud", "size": [4000, 120], "align": "center", "children": [
+      { "type": "text", "style": "heading", "text": "{cutscene.line}", "wrap": true, "textAlign": "center", "size": [1000, 0] },
+      { "type": "text", "style": "muted", "text": "Click for the next shot" }
+    ] },
+    { "type": "button", "anchor": "bottom-right", "offset": [-24, -36], "size": [120, 40], "text": "Skip", "action": "skip" }
+  ] }
+}

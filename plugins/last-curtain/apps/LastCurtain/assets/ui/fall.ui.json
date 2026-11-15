@@ -1,0 +1,13 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "root": { "type": "stack", "action": "continue", "anchor": "bottom", "offset": [0, -40], "style": "panel", "size": [760, 0], "align": "stretch", "gap": 12, "children": [
+    { "type": "text", "style": "title", "text": "{fall.title}" },
+    { "type": "stack", "direction": "horizontal", "gap": 16, "align": "center", "children": [
+      { "type": "image", "image": "{fall.portrait}", "size": [72, 72], "visible": "{fall.portrait}" },
+      { "type": "text", "style": "text", "text": "{fall.cause}", "wrap": true, "size": [600, 0] }
+    ] },
+    { "type": "stack", "align": "center", "children": [ { "type": "button", "size": [200, 44], "text": "Continue", "action": "continue" } ] }
+  ] }
+}

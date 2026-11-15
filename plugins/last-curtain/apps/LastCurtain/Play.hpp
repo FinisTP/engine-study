@@ -1,5 +1,6 @@
 #pragma once
 
+#include <BoardView.hpp>
 #include <Narrate.hpp>
 #include <Night.hpp>
 #include <Options.hpp>
@@ -44,6 +45,29 @@ public:
     using Decider = std::function<umbra::night::Action(const umbra::night::NightState &, int guest, float &seconds)>;
 
     [[nodiscard]] bool PlayerTurn() const; // the acting guest is the player's or an ally's
+    // Whose turn the screen shows: the player's while they rest after a room, else the rules' (-1: over).
+    [[nodiscard]] int Acting() const;
+    // The banner that opens a turn: whose, and how far it has played (0 to 1); guest -1: none.
+    struct Banner
+    {
+        int guest = -1;
+        float t = 0.0F;
+    };
+    [[nodiscard]] Banner TurnBanner() const;
+    // The night's scenes on the board (cutscenes.json; Play.md "Cutscenes"): the opening of a new
+    // night, midnight, the ending. Shot: where the camera looks and from how far, turned how far.
+    void SetCutscenes(nlohmann::json scenes);
+    struct CameraShot
+    {
+        int cell = -1; // -1: no scene playing
+        float distance = 0.0F, yaw = 0.0F, tilt = 50.0F;
+        int index = -1;       // the shot's number in its scene (a new one starts its clip)
+        std::string clip;     // what the shot's figure plays ("" none)
+        int clipGuest = -1;
+    };
+    [[nodiscard]] CameraShot Shot() const;
+    // Sounds to play since the last call, by cue (sounds.csv): step, dice, door, item, hit, death, bell, turn.
+    [[nodiscard]] std::vector<std::string> TakeCues() { return std::exchange(cues_, {}); }
     [[nodiscard]] Mode TurnMode() const { return mode_; }
     // Left: walk to a lit square, one step at a time (on a bot's turn: inspect); right: inspect.
     void Click(int cell, bool right = false);
@@ -95,6 +119,7 @@ public:
     [[nodiscard]] const umbra::night::Beat &LastBeat() const { return beat_; }
     [[nodiscard]] int Beats() const { return beats_; } // bot actions so far
     [[nodiscard]] const umbra::night::NightState &State() const { return state_; }
+    [[nodiscard]] umbra::night::BoardView View() const; // what the player sees (all of it with the light off)
 
     // Saves (plan 1's SaveNight); Restore refuses a damaged save or one from other data.
     [[nodiscard]] nlohmann::json Save() const;
@@ -115,6 +140,20 @@ private:
         std::string who; // a bot's roll: its name (empty: the player's)
     };
 
+    bool Handle(const std::string &screen, const std::string &action, const std::string &arg); // HandleUi's work
+    float tapClock_ = 1.0e9F; // seconds since the last tap went on
+    float banner_ = 0.0F;     // seconds the turn's banner still shows
+    std::vector<std::string> cues_; // sounds waiting for Main
+    nlohmann::json scenes_;            // cutscenes.json
+    std::string scene_;                // the scene playing ("" none)
+    std::vector<std::string> queued_;  // scenes waiting their turn
+    int shot_ = 0;
+    float shotT_ = 0.0F;
+    bool opening_ = false; // a new night: its opening plays once scenes are given
+    void StartScene(const std::string &kind);
+    void NextScene();
+    [[nodiscard]] std::string SceneLine() const;
+    int bannerKey_ = -1;      // round * 8 + turn of the last banner
     bool Do(const umbra::night::Action &action); // applies a legal action on the player's turn
     bool Step(int to);                           // the legal Move into a neighbouring cell, with its slide
     void WalkOn();                               // the next step of the walk, on the player's turn
@@ -124,7 +163,17 @@ private:
     [[nodiscard]] nlohmann::json TurnData() const;
     [[nodiscard]] nlohmann::json EndData() const;
     [[nodiscard]] nlohmann::json InspectData() const;
-    void Notice(std::uint32_t since); // the Turn in new log entries
+    void Notice(std::uint32_t since); // the Turn in new log entries, popups, the Taken's fall
+    // The Taken's fall: where, the screen's title and cause, who dealt it (-1 the house).
+    struct Falling
+    {
+        int cell = -1;
+        std::string title, cause;
+        int killer = -1;
+    };
+    [[nodiscard]] Falling Fall(const std::vector<umbra::night::LogEntry> &entries, const umbra::night::LogEntry &died) const;
+    Falling fall_;
+    bool fallSeen_ = false;
     // The model's lines: a bot's coming beat (caption, goal line), the Turn, the chat question.
     void AskLines(int acting);
     void AskTurn();
@@ -183,11 +232,12 @@ private:
     umbra::night::GameOptions options_;
     bool waitTap_ = false;  // a bot's beat where something happened waits for a tap (options)
     bool moment_ = false;   // ... and is shown at full size (options)
+    int rester_ = -1;       // ... who rests (the player or an ally)
     bool resting_ = false;  // the player resolved a room: the rules ended the turn, the screen holds (Look, End turn)
     bool skipping_ = false; // Skip: no taps, pauses or line waits until the player's turn
     [[nodiscard]] bool Notable(const std::vector<umbra::night::LogEntry> &entries, const umbra::night::Action &action) const;
     [[nodiscard]] bool NotableBeat(const std::vector<umbra::night::LogEntry> &entries, const umbra::night::Action &action) const;
-    [[nodiscard]] nlohmann::json HereData() const;
+    bool goalOpen_ = true; // the HUD's goal panel, folded or open (the user)
     int inspect_ = -1;   // the cell being inspected; the night waits
     Slide slide_;
     Decider decider_;

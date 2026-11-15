@@ -1,7 +1,7 @@
 {
   "format": "umbra.ui",
   "version": 1,
-  "root": { "type": "panel", "anchor": "fill", "style": "layer", "children": [
+  "root": { "type": "panel", "anchor": "fill", "style": "layer", "visible": "{noScene}", "children": [
     { "type": "stack", "anchor": "top", "style": "hud", "direction": "horizontal", "gap": 28, "size": [1280, 52], "align": "center", "children": [
       { "type": "text", "style": "title", "text": "{clock}" },
       { "type": "text", "style": "small", "text": "Round {round} of {rounds}  |  {phase}" },
@@ -10,34 +10,40 @@
       { "type": "text", "style": "heading", "text": "{top.name}  Lv {top.level}" },
       { "type": "text", "style": "strong", "text": "HP {top.hp}/{top.maxHp}   Might {top.might}   Sanity {top.sanity}   Speed {top.speed}" },
       { "type": "text", "style": "warning", "text": "THEIR TURN", "visible": "{top.theirs}" },
+      { "type": "stack", "direction": "horizontal", "gap": 8, "align": "center", "visible": "{taken}", "children": [
+        { "type": "text", "style": "bad", "text": "{taken.name}" },
+        { "type": "bar", "style": "enemy", "size": [140, 16], "value": "{taken.hp}", "max": "{taken.maxHp}", "text": "{taken.hp}/{taken.maxHp}" }
+      ] },
       { "type": "text", "style": "bad", "text": "YOU ARE DOWN", "visible": "{me.down}" },
     { "type": "text", "style": "small", "text": "You: HP {me.hp}/{me.maxHp}", "visible": "{top.theirs}" },
     { "type": "text", "style": "bad", "text": "{me.flash}", "visible": "{me.flash}" },
     { "type": "text", "style": "good", "text": "{me.buffs}", "visible": "{me.buffs}" }
     ] },
-    { "type": "stack", "anchor": "top-left", "offset": [24, 76], "style": "panel", "gap": 6, "size": [260, 0], "children": [
-      { "type": "text", "style": "heading", "text": "Your goal", "visible": "{goal}" },
+    { "type": "stack", "anchor": "top", "offset": [0, 70], "style": "panel", "direction": "horizontal", "gap": 14, "align": "center", "visible": "{banner}", "children": [
+      { "type": "image", "image": "{banner.portrait}", "size": [64, 64] },
+      { "type": "text", "style": "title", "text": "Your turn", "visible": "{banner.yours}" },
+      { "type": "text", "style": "title", "text": "{banner.name}'s turn", "visible": "{banner.theirs}" }
+    ] },
+    { "type": "button", "anchor": "top-left", "offset": [24, 76], "size": [260, 40], "text": "Your goal  +", "action": "goals", "visible": "{goalFolded}" },
+    { "type": "stack", "anchor": "top-left", "offset": [24, 76], "style": "panel", "gap": 6, "size": [260, 0], "visible": "{goalOpen}", "children": [
+      { "type": "button", "size": [230, 34], "text": "Your goal  -", "action": "goals" },
       { "type": "text", "style": "small", "text": "{goal.text}", "wrap": true, "size": [230, 0], "visible": "{goal}" },
       { "type": "text", "style": "small", "text": "{goal.progress}", "visible": "{goal.progress}" },
       { "type": "text", "style": "good", "text": "Done", "visible": "{goal.done}" },
       { "type": "text", "style": "heading", "text": "Goals you know", "visible": "{knownGoals}" },
       { "type": "list", "items": "{knownGoals}", "as": "k", "entry": { "type": "text", "style": "small", "text": "{k.name}: {k.text}", "wrap": true, "size": [230, 0] } },
-      { "type": "text", "style": "heading", "text": "Allies" },
-      { "type": "text", "style": "muted", "text": "None yet", "visible": "{noAllies}" },
+      { "type": "text", "style": "heading", "text": "Allies", "visible": "{allies}" },
       { "type": "list", "items": "{allies}", "as": "a", "entry": { "type": "text", "style": "small", "text": "{a.name}  HP {a.hp}/{a.maxHp}" } },
       { "type": "text", "style": "heading", "text": "Winning over", "visible": "{winning}" },
-      { "type": "list", "items": "{winning}", "as": "w", "entry": { "type": "text", "style": "small", "text": "{w.name}  {w.approvals} of {w.goal}" } },
-      { "type": "text", "style": "heading", "text": "In your light", "visible": "{inLight}" },
-      { "type": "list", "items": "{inLight}", "as": "g", "entry": { "type": "text", "style": "small", "text": "{g.name}  |  {g.room}", "wrap": true, "size": [230, 0] } }
+      { "type": "list", "items": "{winning}", "as": "w", "entry": { "type": "text", "style": "small", "text": "{w.name}  {w.approvals} of {w.goal}" } }
+    ] },
+    { "type": "stack", "anchor": "top-right", "offset": [-24, 62], "direction": "horizontal", "gap": 6, "align": "center", "children": [
+      { "type": "text", "style": "small", "text": "Turn order" },
+      { "type": "list", "items": "{turnOrder}", "as": "t", "direction": "horizontal", "gap": 4,
+        "entry": { "type": "stack", "style": "slot", "selected": "{t.now}", "disabled": "{t.dead}", "children": [ { "type": "image", "image": "{t.portrait}", "size": [30, 30] } ] } }
     ] },
     { "type": "button", "anchor": "bottom-right", "offset": [-24, -60], "size": [140, 44], "text": "Skip", "action": "skip", "visible": "{canSkip}" },
     { "type": "button", "anchor": "bottom-right", "offset": [-24, -116], "size": [140, 44], "text": "{view}", "action": "look", "visible": "{canView}" },
-    { "type": "stack", "anchor": "bottom-left", "offset": [24, -48], "style": "panel", "gap": 4, "size": [260, 0], "visible": "{here}", "children": [
-      { "type": "text", "style": "heading", "text": "{here.name}", "wrap": true, "size": [230, 0] },
-      { "type": "text", "style": "small", "text": "{here.what}", "wrap": true, "size": [230, 0] },
-      { "type": "text", "style": "small", "text": "On the floor: {here.items}", "visible": "{here.items}", "wrap": true, "size": [230, 0] },
-      { "type": "text", "style": "small", "text": "Here too: {here.people}", "visible": "{here.people}", "wrap": true, "size": [230, 0] }
-    ] },
     { "type": "list", "anchor": "top-right", "offset": [-16, 64], "items": "{warnings}", "as": "w", "visible": "{warnings}",
       "entry": { "type": "text", "style": "warning", "text": "{w}", "wrap": true, "size": [460, 0] } },
     { "type": "text", "anchor": "bottom-left", "offset": [24, -18], "style": "muted",

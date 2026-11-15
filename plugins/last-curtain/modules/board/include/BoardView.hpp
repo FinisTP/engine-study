@@ -55,7 +55,7 @@ namespace umbra::night
     };
 
     // viewer: the player's guest; -1 (or a dead viewer) sees everything.
-    BoardView MakeView(const NightDef &def, const NightState &state, int viewer);
+    BoardView MakeView(const NightDef &def, const NightState &state, int viewer, bool light = true); // light false: all lit
 
     // The shortest walk of cardinal steps from the guest's cell to `cell` (start left out): through
     // passages, never into a cell barred this turn; the last step may go through a doorway. Empty

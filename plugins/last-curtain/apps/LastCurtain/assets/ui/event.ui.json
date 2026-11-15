@@ -2,7 +2,7 @@
   "format": "umbra.ui",
   "version": 1,
   "modal": true,
-  "root": { "type": "stack", "anchor": "right", "offset": [-24, 20], "style": "panel", "size": [440, 0], "align": "stretch", "gap": 12, "children": [
+  "root": { "type": "stack", "action": "roll", "anchor": "right", "offset": [-24, 20], "style": "panel", "size": [440, 0], "align": "stretch", "gap": 12, "children": [
     { "type": "stack", "align": "center", "children": [ { "type": "image", "image": "{event.picture}", "size": [220, 220] } ] },
     { "type": "text", "style": "muted", "text": "{event.kind}  |  {event.room}" },
     { "type": "text", "style": "title", "text": "{event.name}" },

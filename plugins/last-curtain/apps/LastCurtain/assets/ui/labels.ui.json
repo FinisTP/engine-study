@@ -1,7 +1,7 @@
 {
   "format": "umbra.ui",
   "version": 1,
-  "root": { "type": "panel", "anchor": "fill", "style": "layer", "children": [
+  "root": { "type": "panel", "anchor": "fill", "style": "layer", "visible": "{noScene}", "children": [
     { "type": "list", "items": "{names}", "as": "n",
       "entry": { "type": "stack", "direction": "horizontal", "gap": 4, "at": "{n.at}", "children": [
         { "type": "image", "image": "{n.portrait}", "size": [28, 28] },

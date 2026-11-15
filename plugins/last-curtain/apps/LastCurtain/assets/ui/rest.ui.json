@@ -2,7 +2,7 @@
   "format": "umbra.ui",
   "version": 1,
   "modal": true,
-  "root": { "type": "stack", "anchor": "top-right", "offset": [-24, 76], "style": "panel", "size": [290, 0], "align": "stretch", "gap": 10, "children": [
+  "root": { "type": "stack", "anchor": "top-right", "offset": [-24, 120], "style": "panel", "size": [290, 0], "align": "stretch", "gap": 10, "children": [
     { "type": "text", "style": "heading", "text": "Your turn" },
     { "type": "text", "style": "small", "text": "The room has had its way with you: no more moves this turn.", "wrap": true, "size": [250, 0] },
     { "type": "button", "size": [254, 44], "text": "Look around", "action": "look" },

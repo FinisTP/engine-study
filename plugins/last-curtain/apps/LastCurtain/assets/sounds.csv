@@ -1,0 +1,10 @@
+cue,file,volume,note
+step,audio/step.wav,0.5,a pawn steps into the next room
+dice,audio/dice.wav,0.8,a die is cast (it tumbles about a second)
+door,audio/door.wav,0.7,a new room is opened
+item,audio/item.wav,0.7,an item is taken
+hit,audio/hit.wav,0.9,a blow lands
+death,audio/death.wav,0.9,someone falls (down or dead)
+bell,audio/bell.wav,1,midnight: the Turn
+turn,audio/turn.wav,0.4,a turn opens with its banner
+click,audio/click.wav,0.4,a button or a dialog is clicked

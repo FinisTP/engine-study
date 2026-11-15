@@ -1,6 +1,7 @@
 #include "Art.hpp"
 #include "Play.hpp"
 #include "Screens.hpp"
+#include "Sounds.hpp"
 #include "Table.hpp"
 
 #include <BoardView.hpp>
@@ -137,6 +138,12 @@ namespace
             std::vector<umbra::core::Diagnostic> diagnostics;
             const bool loaded = LoadNight(assets.RootOf("night/rules.json") / "night", def, diagnostics);
             (void)LoadCaptions(assets / "night/captions.json", captions, diagnostics);
+            nlohmann::json scenes; // the night's scenes on the board (Play.md "Cutscenes"); none if the file is bad
+            if (std::ifstream in(assets / "night/cutscenes.json"); in)
+                scenes = nlohmann::json::parse(in, nullptr, false);
+            if (scenes.is_discarded())
+                diagnostics.push_back({umbra::core::Severity::Error, "night.cutscenes", "cutscenes.json", "", "not JSON"}), scenes = {};
+            Sounds sounds(assets); // the cues of sounds.csv; silent without a sound card or a file
             GameOptions gameOptions; // the pace and camera (options.csv); a bad file keeps the defaults
             if (!LoadOptions(assets / "options.csv", gameOptions, diagnostics))
                 gameOptions = {};
@@ -190,6 +197,7 @@ namespace
             std::optional<Play> play;
             bool canContinue = false;
             int chosen = -1; // the guest whose page is open on the start screen
+            int lastShot = -1; // the scene's shot last seen (a new one starts its figure's clip)
             const auto show = [&](const std::string &want) {
                 if (!screens.Ready() || want == shown)
                     return;
@@ -207,6 +215,7 @@ namespace
                 play->SetCaptions(captions);
                 play->SetOptions(gameOptions);
                 play->SetWords(&words);
+                play->SetCutscenes(scenes);
                 table.SetFeatured(FeaturedCells(def, play->State()));
                 table.NewNight(), seenLog = play->State().logCount;
                 if (screens.Ready())
@@ -276,11 +285,18 @@ namespace
                     if (input.IsKeyPressed(InputKey::Escape))
                         play->Key(InputKey::Escape), uiInput.back = false;
                     play->Update(dt);
+                    for (const std::string &cue : play->TakeCues())
+                        sounds.Play(cue);
                     if (options.look && play->Screen() == "menu")
                         (void)play->HandleUi("menu", "look", ""), options.look = false;
                     const NightState &state = play->State();
                     // The camera eases to a moment's room always, else (while following) to whoever acts; a drag frees it.
-                    const int moment = play->StageCell();
+                    const Play::CameraShot shot = play->Shot(); // a scene steers the camera itself
+                    table.SetShot(shot.cell >= 0, shot.distance, shot.yaw, shot.tilt);
+                    if (shot.index >= 0 && shot.index != lastShot && !shot.clip.empty())
+                        table.Gesture(shot.clipGuest, shot.clip);
+                    lastShot = shot.index;
+                    const int moment = shot.cell >= 0 ? shot.cell : play->StageCell();
                     const int look = moment >= 0 ? moment : play->CameraCell();
                     if (fresh && look >= 0)
                         table.Aim(CellCenter(def, look), 0.0F), aimed = look, fresh = false;
@@ -298,7 +314,8 @@ namespace
                     table.Zoom(input.Wheel());
                     table.Update(dt);
                     table.SetHunt(state.taken.present);
-                    table.SetActing(state.over ? -1 : Current(state));
+                    table.SetActing(play->Acting());
+                    table.SetBanner(play->TurnBanner().guest, play->TurnBanner().t);
                     // The mood: the post grade per hour, the blood table and stains after the Turn.
                     const Mood mood = NightMood(def, state);
                     drawList.post = mood.post;
@@ -312,17 +329,18 @@ namespace
                             if (input.IsKeyPressed(key))
                                 play->Key(key);
                     }
-                    view = MakeView(def, state, state.player);
+                    view = play->View();
                     // The figures play what the log says: blows, powers, falls.
                     table.React(NewLog(state, seenLog)), seenLog = state.logCount;
                     table.Animate(def, view, ToDraw(play->Sliding()), dt);
                     // The table or the room view (the player's switch, or a moment); a battle in sight stands apart.
-                    table.SetRoomView(play->RoomView());
+                    table.SetRoomView(play->RoomView() && shot.cell < 0); // a scene plays on the table
                     std::vector<Table::StageActor> actors;
-                    if (state.battle.active && play->StageCell() == state.battle.cell)
+                    const bool fall = play->Screen() == "fall"; // the Taken's fall is staged like a battle's end
+                    if (fall || (state.battle.active && play->StageCell() == state.battle.cell))
                         for (const Play::Actor &a : play->StageActors())
                             actors.push_back({a.guest, a.monsterKind, a.side, a.taken});
-                    table.SetBattle(actors.empty() ? -1 : state.battle.cell, actors);
+                    table.SetBattle(actors.empty() ? -1 : play->StageCell(), actors);
                     table.SetGoalCells(play->GoalCells());
                     play->Hover(table.Pick(def, uiInput.mouse, pixels));
                     table.Draw(def, view, play->Previewed().path, play->Previewed().affordable, ToDraw(play->Sliding()), play->Rings(), drawList);
@@ -364,7 +382,7 @@ namespace
                             label(p["guest"].get<int>(), p["text"].get<std::string>(), 0.9F);
                         // Each figure's portrait and name, above its arrow (Table.md "Labels").
                         data["names"] = nlohmann::json::array();
-                        const float lift = table.InRoomView() ? 0.35F : 0.5F; // just over the arrow
+                        const float lift = 0.0F; // just over the head; the arrow floats above it
                         for (const PawnView &pawn : view.pawns)
                             if (const auto at = table.ScreenPoint(table.Above(def, view, pawn.guest, ToDraw(play->Sliding())) + glm::vec3{0.0F, lift, 0.0F}, pixels))
                                 data["names"].push_back({{"text", ShownName(def, play->State(), pawn.guest)},
@@ -373,6 +391,7 @@ namespace
                     }
                     for (const umbra::ui::UiAction &action : screens.Ui().Update(data, pixels, uiInput, drawList.ui))
                     {
+                        sounds.Play("click");
                         uiTook = true;
                         NightState restored;
                         if (action.action == "quit")
@@ -410,15 +429,16 @@ namespace
                     // In the room view a figure or an item takes the click; else the room under it (walk there).
                     // A waiting bot beat: any click on the board goes on (mouse first, user).
                     const std::optional<Table::Thing> thing = table.PickThing(uiInput.mouse, pixels);
+                    bool took = false; // a thing that cannot be engaged lets the click walk to its room
                     if (play->WaitingForTap())
-                        (void)play->HandleUi("caption", "next", "");
+                        (void)play->HandleUi("caption", "next", ""), took = true;
                     else if (thing && thing->kind == Table::ThingKind::Item)
-                        (void)play->ClickItem(thing->id);
+                        took = play->ClickItem(thing->id);
                     else if (thing && thing->kind == Table::ThingKind::Guest && thing->id != play->State().player)
-                        (void)play->ClickGuest(thing->id);
+                        took = play->ClickGuest(thing->id);
                     else if (thing && thing->kind == Table::ThingKind::Monster)
-                        (void)play->ClickMonster(thing->id);
-                    else
+                        took = play->ClickMonster(thing->id);
+                    if (!took)
                         play->Click(table.Pick(def, uiInput.mouse, pixels));
                 }
                 wasHeld = input.IsMouseButtonHeld(0), lastMouse = uiInput.mouse;

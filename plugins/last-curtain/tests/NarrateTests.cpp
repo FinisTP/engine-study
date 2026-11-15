@@ -1,5 +1,6 @@
 #include "NightTestData.hpp"
 
+#include <BoardView.hpp>
 #include <Narrate.hpp>
 
 #include <fstream>
@@ -79,6 +80,47 @@ TEST_CASE("A turn in the dark shows nothing but the opened room (T109)", "[night
     CHECK(beat.path.empty());
     CHECK(beat.camera == -1);
     (void)bot;
+}
+
+TEST_CASE("A bot that walks out of the light into a dark room: the walk shows, the room's deed does not (T217)", "[night][narrate]")
+{
+    NightDef def = Data();
+    def.rules.light.steps = 0; // the viewer lights only their own room
+    for (RoomDef &room : def.rooms)
+        if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
+            room.kind = RoomKind::Event, room.doors = 15;
+    NightState state = FoyerNight(def, 2, 0);
+    while (Current(state) == 0)
+        REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
+    const Beat beat = Step(def, state, {ActionKind::Move, 0}, 0, Lines());
+    CHECK(beat.seen);            // it left the viewer's room
+    CHECK(beat.dark);            // ... into the dark
+    CHECK(beat.result.empty());  // what the room did is not told
+}
+
+TEST_CASE("With the light off everyone sees everything (T218)", "[night][narrate]")
+{
+    NightDef def = Data();
+    def.rules.light.steps = 0;
+    for (RoomDef &room : def.rooms)
+        if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
+            room.kind = RoomKind::Event, room.doors = 15;
+    NightState state = FoyerNight(def, 2, 0);
+    while (Current(state) == 0)
+        REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
+    const NightState before = state;
+    const int actor = Current(state);
+    REQUIRE(Apply(def, state, {ActionKind::Move, 0}));
+    const Beat beat = Narrate(def, before, state, NewLog(state, before.logCount), {ActionKind::Move, 0}, actor, 0, Lines(), false);
+    CHECK(beat.seen);
+    CHECK_FALSE(beat.dark);
+    CHECK(beat.result.find("rolled") != std::string::npos);
+    // The board shows every opened room lit and every guest.
+    const BoardView view = MakeView(def, state, 0, false);
+    for (int c = 0; c < maxCells; ++c)
+        CHECK(view.cells[static_cast<std::size_t>(c)].lit == state.cells[static_cast<std::size_t>(c)].opened);
+    CHECK(static_cast<int>(view.pawns.size()) == state.count);
+    CHECK(MakeView(def, state, 0, false).cells[static_cast<std::size_t>(state.foyer)].step == MakeView(def, state, 0).cells[static_cast<std::size_t>(state.foyer)].step);
 }
 
 TEST_CASE("Every action kind has a caption line (T109)", "[night][narrate]")

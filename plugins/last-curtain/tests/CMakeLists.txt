@@ -11,6 +11,7 @@ target_link_libraries(
     PRIVATE
         Umbra::Night
         Umbra::NightBots
+        Umbra::Audio
         Umbra::NightBoard
         Umbra::NightPlay
         Umbra::NightMind

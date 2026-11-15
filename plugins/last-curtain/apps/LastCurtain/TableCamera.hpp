@@ -20,6 +20,7 @@ public:
     void Zoom(float steps);                    // the wheel: the seat's distance, or the room view's
     void Update(float dt);
     void SetRoomView(bool on) { wantRoom_ = on; }
+    void SetShot(bool on, float distance, float yaw, float tilt) { shot_ = on, shotDistance_ = distance, shotYaw_ = yaw, shotTilt_ = tilt; }
     void Set(float distance, float minDistance, float maxDistance, float tilt)
     {
         distance_ = distance, minDistance_ = minDistance, maxDistance_ = maxDistance, tilt_ = tilt;
@@ -36,4 +37,6 @@ private:
     float roomDistance_ = 11.0F; // metres, in room space
     float roomT_ = 0.0F;
     bool wantRoom_ = false;
+    bool shot_ = false; // a scene's shot (Play.md "Cutscenes")
+    float shotDistance_ = 0.0F, shotYaw_ = 0.0F, shotTilt_ = 50.0F;
 };

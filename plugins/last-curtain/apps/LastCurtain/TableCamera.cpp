@@ -55,6 +55,14 @@ umbra::core::Camera TableCamera::Camera() const
     // 1. The table: up and back at `tilt`.
     umbra::core::Camera camera;
     camera.target = Target();
+    if (shot_ && roomT_ <= 0.0F)
+    {
+        // A scene's shot: the seat at its tilt, turned yaw degrees around the target.
+        const float t = glm::radians(shotTilt_), y = glm::radians(shotYaw_);
+        camera.position = camera.target + shotDistance_ * glm::vec3{std::cos(t) * std::sin(y), std::sin(t), std::cos(t) * std::cos(y)};
+        camera.farPlane = std::max(camera.farPlane, 2.0F * shotDistance_ + 60.0F);
+        return camera;
+    }
     const glm::vec3 up{0.0F, std::sin(glm::radians(tilt_)), std::cos(glm::radians(tilt_))};
     camera.position = camera.target + distance_ * up;
     if (roomT_ <= 0.0F)

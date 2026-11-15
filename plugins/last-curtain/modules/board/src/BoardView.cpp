@@ -12,10 +12,11 @@ namespace umbra::night
         bool Up(const Guest &g) { return !g.down && !g.dead; }
     }
 
-    BoardView MakeView(const NightDef &def, const NightState &state, int viewer)
+    BoardView MakeView(const NightDef &def, const NightState &state, int viewer, bool light)
     {
         BoardView view;
         const bool all = viewer < 0 || state.guests[U(viewer)].dead;
+        const bool seeAll = all || !light; // the light switched off (options.csv): every room is lit
 
         // 1. Each cell: its shape when opened; lit when a guest the viewer controls lights it.
         for (int c = 0; c < maxCells; ++c)
@@ -35,7 +36,7 @@ namespace umbra::night
                 else if (!Passage(def, state, c, d))
                     v.walls = static_cast<std::uint8_t>(v.walls | (1u << d));
             }
-            v.lit = all;
+            v.lit = seeAll;
             for (int g = 0; g < state.count && !v.lit; ++g)
                 if (Controls(state, viewer, g) && Up(state.guests[U(g)]))
                     v.lit = Lit(def, state, state.guests[U(g)].cell, c, Stat(def, state, g, StatKind::Light));

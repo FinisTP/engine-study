@@ -166,10 +166,10 @@ namespace umbra::night
 
     Beat Narrate(const NightDef &def, const NightState &before, const NightState &after,
                  const std::vector<LogEntry> &entries, const Action &action, int actor, int viewer,
-                 const Captions &captions)
+                 const Captions &captions, bool light)
     {
         // 1. Seen when the start cell was lit, or the end cell or an opened room is lit now.
-        const BoardView was = MakeView(def, before, viewer), now = MakeView(def, after, viewer);
+        const BoardView was = MakeView(def, before, viewer, light), now = MakeView(def, after, viewer, light);
         const int from = before.guests[U(actor)].cell, to = after.guests[U(actor)].cell;
         Beat beat;
         beat.guest = actor;
@@ -185,7 +185,10 @@ namespace umbra::night
         if (from != to)
             beat.path = {from, to};
         beat.caption = Decision(def, before, after, entries, action, actor, captions);
-        beat.result = Result(def, before, after, entries, captions);
+        // 4. Gone into the dark: what happened there stays there.
+        beat.dark = to >= 0 && !now.cells[U(to)].lit;
+        if (!beat.dark)
+            beat.result = Result(def, before, after, entries, captions);
         return beat;
     }
 }

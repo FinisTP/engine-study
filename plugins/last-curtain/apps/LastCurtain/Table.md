@@ -86,4 +86,13 @@ show mostly its lower half; `Sky` instead hangs the picture as a backdrop, squar
 picture's shape; wider screens than 2.4:1 would see its edges). It moves with the camera, like a
 painted backcloth on a stage.
 
+## Steps, turns and scenes (the user, 2026-11-16)
+
+A room the player can step into has a thin gold frame inside its edges, raised clear of the floor
+and pulsing (`Outline`); a flat plate on the floor flickered against it. The acting guest's arrow
+floats above the portrait label (table 2.2 m, room view 2.9 x the figure's height), the label
+just over the head. A turn's banner grows a ring under the figure (`SetBanner`). A scene's shot
+(`SetShot`) sets the camera's seat directly: `target + d (cos t sin y, sin t, cos t cos y)` for
+distance d, tilt t and yaw y.
+
 `--look` switches to the room view on the player's first menu (for pictures).

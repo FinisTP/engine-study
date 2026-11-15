@@ -1,7 +1,7 @@
 {
   "format": "umbra.ui",
   "version": 1,
-  "root": { "type": "stack", "anchor": "top-right", "offset": [-24, 76], "style": "panel", "size": [290, 0], "gap": 8, "children": [
+  "root": { "type": "stack", "anchor": "top-right", "offset": [-24, 120], "style": "panel", "size": [290, 0], "gap": 8, "children": [
     { "type": "text", "style": "heading", "text": "Move" },
     { "type": "text", "style": "small", "text": "{moves} moves left. Click a lit room to walk there; walking back is free.", "wrap": true, "size": [250, 0] },
     { "type": "text", "style": "muted", "text": "A red path is too far this turn.", "wrap": true, "size": [250, 0] },

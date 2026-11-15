@@ -45,6 +45,9 @@ public:
     // readable: the glow of walls, figures and items (Art.hpp Readability), so they read under the mood.
     void SetMood(float blood, float flicker, float readable) { blood_ = blood, flicker_ = flicker, readable_ = readable; }
     void Aim(glm::vec3 target, float seconds) { view_.Aim(target, seconds); }
+    // A scene's shot: the camera at `distance`, turned `yaw` degrees around its target, `tilt` above it.
+    void SetShot(bool on, float distance, float yaw, float tilt) { view_.SetShot(on, distance, yaw, tilt); }
+    void Gesture(int guest, const std::string &clip); // a figure plays a clip (talk, attack, power, hit)
     void Update(float dt);
     // The room view (Table.md "Room view"): every opened room at full size, 8 m apart where its tile
     // lies on the table; the camera zooms between the two views. Draw draws whichever is on.
@@ -81,6 +84,8 @@ public:
     void SetCamera(float distance, float minDistance, float maxDistance, float tilt) { view_.Set(distance, minDistance, maxDistance, tilt); }
     // The guest whose turn it is: a gold arrow bobs over them (-1: none).
     void SetActing(int guest) { acting_ = guest; }
+    // A turn opening: a gold ring grows under the guest and fades (t 0 to 1); the figure gestures once.
+    void SetBanner(int guest, float t);
     void Pan(glm::vec2 pixels) { view_.Pan(pixels); } // a drag: the table moves with the mouse (Table.md)
     [[nodiscard]] umbra::core::Camera Camera() const { return view_.Camera(); }
     // The cell under the mouse (render pixels), -1 if none.
@@ -135,6 +140,8 @@ private:
     void StageRoom(const umbra::night::CellView &room, glm::vec3 offset, float shade, bool featured, umbra::core::DrawList &out) const;
     void StageCard(int kind, glm::vec3 at, umbra::core::DrawList &out) const;
     void StageFigure(const umbra::night::NightDef &def, int guest, bool taken, glm::vec3 at, float yaw, umbra::core::DrawList &out) const;
+    int bannerGuest_ = -1;
+    float bannerT_ = 0.0F;
     int acting_ = -1;
     bool hunt_ = false;
     float blood_ = 0.0F, flicker_ = 0.0F, clock_ = 0.0F, readable_ = 0.2F; // clock_: seconds, for the flicker and pulse

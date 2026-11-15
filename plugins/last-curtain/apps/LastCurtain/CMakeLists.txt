@@ -17,6 +17,8 @@ target_sources(
         Main.cpp
         Screens.cpp
         Screens.hpp
+        Sounds.cpp
+        Sounds.hpp
         Table.cpp
         Table.hpp
         Table.md
@@ -35,6 +37,7 @@ target_link_libraries(
         Umbra::Assets
         Umbra::Scene
         Umbra::Ui
+        Umbra::Audio
         Umbra::Night
         Umbra::NightBots
         Umbra::NightBoard

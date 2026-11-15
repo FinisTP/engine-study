@@ -2,7 +2,7 @@
   "format": "umbra.ui",
   "version": 1,
   "modal": true,
-  "root": { "type": "stack", "anchor": "top", "offset": [0, 76], "style": "panel", "size": [560, 0], "align": "center", "gap": 8, "children": [
+  "root": { "type": "stack", "action": "onward", "anchor": "top", "offset": [0, 76], "style": "panel", "size": [560, 0], "align": "center", "gap": 8, "children": [
     { "type": "text", "style": "muted", "text": "{arrive.kind}" },
     { "type": "text", "style": "title", "text": "{arrive.room}" },
     { "type": "text", "style": "text", "text": "{arrive.line}", "wrap": true, "size": [520, 0], "textAlign": "center" },

@@ -13,3 +13,7 @@ cameraMinDistance,5,the mouse wheel's closest
 cameraMaxDistance,22,the mouse wheel's farthest
 cameraTilt,50,degrees above the table
 cameraEaseSeconds,0.6,the camera's glide to a new place
+tapGap,0.25,taps (clicks on a dialog) closer than this are ignored so spam clicks skip nothing
+light,0,"1: guests see only what is in their light; 0: everyone sees everything (the user's test, 2026-11-16)"
+turnBannerSeconds,1.2,each turn opens with a banner naming whose turn it is (seconds; a bot waits for it)
+plainBeatSeconds,0.6,a seen bot step where nothing happens (a plain room)

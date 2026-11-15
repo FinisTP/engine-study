@@ -25,6 +25,10 @@ namespace umbra::night
         float cameraMaxDistance = 22.0F; // the wheel's farthest
         float cameraTilt = 50.0F;        // degrees above the table
         float cameraEaseSeconds = 0.4F;  // the camera's glide to a new place
+        float turnBannerSeconds = 0.0F;  // each turn opens with its banner this long (the bot waits)
+        float plainBeatSeconds = 1.5F;   // a seen bot step where nothing happens (a plain room)
+        float tapGap = 0.0F;             // taps closer than this are ignored (spam clicks)
+        bool light = true;               // false: everyone sees everything (the user's test switch)
     };
 
     // Reads key,value,note rows; an unknown key or a bad value is refused with its row.

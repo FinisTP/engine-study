@@ -91,6 +91,17 @@ namespace
         out.items.push_back({mesh, {}, glm::scale(glm::translate(glm::mat4{1.0F}, centre), size), color, 0.0F, glow});
     }
 
+    // A room the player can step into: a thin glowing gold frame inside its edges, raised clear of the floor
+    // (a flat plate on the floor flickered against it, the user).
+    void Outline(umbra::core::DrawList &out, umbra::core::MeshHandle mesh, glm::vec3 centre, float size, float bar, float glow)
+    {
+        const float h = size * 0.5F - bar * 0.5F;
+        for (const glm::vec3 side : {glm::vec3{0, 0, h}, glm::vec3{0, 0, -h}})
+            Box(out, mesh, centre + side, {size, bar * 0.5F, bar}, Hex(0xD4AF37), glow);
+        for (const glm::vec3 side : {glm::vec3{h, 0, 0}, glm::vec3{-h, 0, 0}})
+            Box(out, mesh, centre + side, {bar, bar * 0.5F, size}, Hex(0xD4AF37), glow);
+    }
+
     // A room's marker floating over it (Table.md "Markers"), each its own shape and colour, glowing:
     // an item a gold tablet, an event a violet diamond, a trap a red spike, a bonus a green plus.
     void Marker(umbra::core::DrawList &out, umbra::core::MeshHandle mesh, glm::vec3 at, float size, RoomMark mark, float clock)
@@ -266,7 +277,7 @@ void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<i
         }
         Plaque(out, cell.room, at + glm::vec3{0.0F, 0.008F, tile * 0.36F}, tile * 0.72F, cell.lit ? 1.0F : 0.4F);
         if (cell.step >= 0)
-            Box(out, box_, at + glm::vec3{0, 0.01F, 0}, {tile * 0.6F, 0.02F, tile * 0.6F}, Hex(0xF2D58A));
+            Outline(out, box_, at + glm::vec3{0, 0.05F, 0}, tile * 0.8F, 0.07F, 0.5F + 0.3F * std::sin(clock_ * 3.0F));
         Marker(out, box_, at + glm::vec3{0.0F, 1.0F, 0.0F}, 0.35F, cell.mark, clock_);
         for (int d = 0; d < 4; ++d)
         {
@@ -306,8 +317,10 @@ void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<i
         }
         else
             Box(out, box_, at + glm::vec3{0, 0.45F, 0}, {0.5F, 0.9F, 0.5F}, color);
-        if (pawn.guest == acting_)
-            Arrow(out, box_, at + glm::vec3{0.0F, 1.2F, 0.0F}, 0.6F, clock_);
+        if (pawn.guest == acting_) // above the portrait label (Above), so the two never overlap
+            Arrow(out, box_, at + glm::vec3{0.0F, 2.2F, 0.0F}, 0.6F, clock_);
+        if (pawn.guest == bannerGuest_) // the turn opening: a ring grows and fades
+            Outline(out, box_, at + glm::vec3{0.0F, 0.06F, 0.0F}, 0.6F + 1.4F * bannerT_, 0.08F, 1.5F * (1.0F - bannerT_));
         int group = 0;
         for (const auto &[guest, number] : rings)
             group = guest == pawn.guest ? number : group;
@@ -497,7 +510,7 @@ void Table::DrawRooms(const NightDef &def, const BoardView &view, const std::vec
     // 3. The rooms one step away (a pale plate), and the walk being picked: gold per affordable step, red beyond.
     for (int c = 0; c < cells; ++c)
         if (const CellView &v = view.cells[static_cast<std::size_t>(c)]; v.step >= 0) // smaller over a room not yet opened
-            Box(out, box_, CellCenter(def, c) * roomScale + glm::vec3{0, 0.03F, 0}, glm::vec3{v.opened ? 2.6F : 1.2F, 0.03F, v.opened ? 2.6F : 1.2F}, Hex(0xF2D58A));
+            Outline(out, box_, CellCenter(def, c) * roomScale + glm::vec3{0, 0.12F, 0}, v.opened ? 6.4F : 3.0F, 0.18F, 0.5F + 0.3F * std::sin(clock_ * 3.0F));
     for (std::size_t i = 0; i < path.size(); ++i)
         Box(out, box_, CellCenter(def, path[i]) * roomScale + glm::vec3{0, 0.05F, 0}, {1.4F, 0.05F, 1.4F},
             static_cast<int>(i) < affordable ? Hex(0xF2D58A) : Hex(0xD62828));
@@ -634,7 +647,9 @@ void Table::StageFigure(const NightDef &def, int guest, bool taken, glm::vec3 at
     const Pawn *p = g < pawns_.size() ? &pawns_[g] : nullptr;
     const glm::vec4 color = glm::mix(Hex(def.guests[g].color), glm::vec4{1.0F}, 0.25F);
     if (guest == acting_)
-        Arrow(out, box_, at + glm::vec3{0.0F, 2.0F * figure.scale * stageScale, 0.0F}, 0.6F, clock_);
+        Arrow(out, box_, at + glm::vec3{0.0F, 2.9F * figure.scale * stageScale, 0.0F}, 0.6F, clock_);
+    if (guest == bannerGuest_)
+        Outline(out, box_, at + glm::vec3{0.0F, 0.1F, 0.0F}, 1.2F + 3.0F * bannerT_, 0.15F, 1.5F * (1.0F - bannerT_));
     if (!figure.mesh || p == nullptr || !p->animator)
     {
         Box(out, box_, at + glm::vec3{0, 0.85F, 0}, {0.6F, 1.7F, 0.6F}, color);
@@ -647,6 +662,20 @@ void Table::StageFigure(const NightDef &def, int guest, bool taken, glm::vec3 at
     out.items.back().jointOffset = static_cast<std::uint32_t>(out.joints.size());
     out.items.back().jointCount = static_cast<std::uint32_t>(palette.size());
     out.joints.insert(out.joints.end(), palette.begin(), palette.end());
+}
+
+void Table::Gesture(int guest, const std::string &clip)
+{
+    if (guest >= 0 && static_cast<std::size_t>(guest) < pawns_.size() && pawns_[static_cast<std::size_t>(guest)].animator)
+        pawns_[static_cast<std::size_t>(guest)].animator->Trigger(clip);
+}
+
+void Table::SetBanner(int guest, float t)
+{
+    // A new banner: the figure raises a hand (the talk clip); then the ring follows t.
+    if (guest >= 0 && guest != bannerGuest_ && static_cast<std::size_t>(guest) < pawns_.size() && pawns_[static_cast<std::size_t>(guest)].animator)
+        pawns_[static_cast<std::size_t>(guest)].animator->Trigger("talk");
+    bannerGuest_ = guest, bannerT_ = t;
 }
 
 void Table::React(const std::vector<LogEntry> &entries)

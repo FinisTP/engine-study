@@ -20,6 +20,7 @@ namespace umbra::night
         std::string caption;    // the decision; "" = nothing to say
         std::string result;     // what came of it, from the log
         bool seen = false;
+        bool dark = false; // seen leaving the light: the walk shows, not what the room did (T217)
     };
 
     // captions.json: key -> line with {guest}, {other}, {room}, {foe}, {power}, {item} ... filled in.
@@ -34,5 +35,5 @@ namespace umbra::night
     // `entries` are the log entries `action` wrote; `actor` the guest who took it.
     Beat Narrate(const NightDef &def, const NightState &before, const NightState &after,
                  const std::vector<LogEntry> &entries, const Action &action, int actor, int viewer,
-                 const Captions &captions);
+                 const Captions &captions, bool light = true); // light false: everything is seen
 }

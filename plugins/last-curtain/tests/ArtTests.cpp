@@ -2,6 +2,7 @@
 
 #include <Art.hpp>
 #include <Play.hpp>
+#include <Wav.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -128,4 +129,24 @@ TEST_CASE("Walls, figures and items glow more as the night darkens, so they stay
     CHECK(evening > 0.0F);
     CHECK(late > evening);
     CHECK(hunt >= late);
+}
+
+TEST_CASE("Every sound cue in sounds.csv names a WAV the engine plays (T227)", "[night][art][sound]")
+{
+    const std::filesystem::path assets = UMBRA_LASTCURTAIN_ASSETS;
+    std::ifstream in(assets / "sounds.csv");
+    REQUIRE(in);
+    std::string line;
+    std::getline(in, line);
+    int cues = 0;
+    while (std::getline(in, line))
+    {
+        const std::string file = line.substr(line.find(',') + 1, line.find(',', line.find(',') + 1) - line.find(',') - 1);
+        std::string error;
+        INFO(file);
+        CHECK(umbra::audio::LoadWav(assets / file, error).has_value());
+        CHECK(error.empty());
+        ++cues;
+    }
+    CHECK(cues == 9);
 }
