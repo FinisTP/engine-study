@@ -95,7 +95,7 @@ namespace
         if (!LoadNight(DataFolder(args), def, diagnostics))
             return umbra::tool::Report(diagnostics, 11, args.json);
         const auto start = std::chrono::steady_clock::now();
-        const SoakReport report = Soak(def, static_cast<std::uint64_t>(args.Long("seed", 1)), args.Int("nights", 1000), args.Int("strategy", 0));
+        const SoakReport report = Soak(def, static_cast<std::uint64_t>(args.Long("seed", 1)), args.Int("runs", 200), args.Int("strategy", 0));
         if (args.json)
             std::cout << Json(def, report).dump(2) << "\n";
         else
@@ -107,4 +107,4 @@ namespace
 
 UMBRA_TOOL_COMMAND(NightCheck, "night-check", "night-check [<data folder>] [--json]", NightCheck);
 UMBRA_TOOL_COMMAND(NightRun, "night-run", "night-run [--data <folder>] [--seed 1] [--player <guest id>] [--json]", NightRun);
-UMBRA_TOOL_COMMAND(NightSoak, "night-soak", "night-soak [--data <folder>] [--nights 1000] [--seed 1] [--strategy 0] [--json]", NightSoak);
+UMBRA_TOOL_COMMAND(NightSoak, "night-soak", "night-soak [--data <folder>] [--runs 200] [--seed 1] [--strategy 0] [--json]", NightSoak);

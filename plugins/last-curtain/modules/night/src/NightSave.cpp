@@ -27,7 +27,7 @@ namespace umbra::night
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Cell, room, doors, opened, resolved, event)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Guest, hp, maxHp, might, sanity, speed, cell, from, level, group, xp, items, bonusUsed, down, dead,
                                        downedBy, pending, asked, chatRound, movesLeft, origin, budget, steps, visited, goal, goalCount,
-                                       goalRoomSeen, knows)
+                                       goalRoomSeen, knows, ghost, returnRound)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FloorItem, cell, item)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LogEntry, tick, kind, who, other, a, b)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Monster, kind, cell, leavesRound, hp, might, sanity)
@@ -38,7 +38,7 @@ namespace umbra::night
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ChatState, active, asker, answerer, question)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(NightState, seed, random, cells, deck, deckSize, deckNext, placed, foyer, understage, guests, order, count,
                                        round, turn, player, over, floor, eventsUsed, itemsUsed, log, logCount, bonds, approvals, marked,
-                                       outcome, taken, flooded, sealed, chat, battle, monsters)
+                                       outcome, night, winner, taken, flooded, sealed, chat, battle, monsters)
 
     namespace
     {
@@ -67,7 +67,8 @@ namespace umbra::night
             for (int g = 0; g < s.count; ++g)
             {
                 const Guest &guest = s.guests[inner::U(g)];
-                if (!in(guest.cell, 0, maxCells) || !s.cells[inner::U(guest.cell)].opened || !in(s.order[inner::U(g)], 0, s.count) ||
+                const bool waiting = guest.ghost && guest.cell == -1; // a ghost between its returns
+                if ((!waiting && (!in(guest.cell, 0, maxCells) || !s.cells[inner::U(guest.cell)].opened)) || !in(s.order[inner::U(g)], 0, s.count) ||
                     !in(guest.downedBy, -1, s.count) || !in(guest.goal, -1, static_cast<int>(def.goals.size())) || !in(guest.origin, -1, maxCells) ||
                     !in(guest.group, -1, s.count + 1) || guest.goalCount < 0)
                     return "guest " + std::to_string(g) + " is out of range (cell " + std::to_string(guest.cell) + ", downedBy " +
@@ -110,7 +111,7 @@ namespace umbra::night
 
     nlohmann::json SaveNight(const NightDef &def, const NightState &state)
     {
-        return {{"format", "umbra.night"}, {"version", 5}, {"data", def.fingerprint}, {"state", state}};
+        return {{"format", "umbra.night"}, {"version", 6}, {"data", def.fingerprint}, {"state", state}};
     }
 
     bool LoadNightState(const NightDef &def, const nlohmann::json &saved, NightState &out, std::vector<core::Diagnostic> &diagnostics)
@@ -119,8 +120,8 @@ namespace umbra::night
             diagnostics.push_back({core::Severity::Error, "night.save", "", "", message});
             return false;
         };
-        if (!saved.is_object() || saved.value("format", "") != "umbra.night" || saved.value("version", 0) != 5)
-            return fail("not a night save of version 5");
+        if (!saved.is_object() || saved.value("format", "") != "umbra.night" || saved.value("version", 0) != 6)
+            return fail("not a night save of version 6");
         if (saved.value("data", std::uint64_t{0}) != def.fingerprint)
             return fail("the save was made with other data; start a new night");
         NightState state;

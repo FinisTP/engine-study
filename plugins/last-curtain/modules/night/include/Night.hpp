@@ -30,7 +30,9 @@ namespace umbra::night
         std::int16_t xp = 0;
         std::array<std::int8_t, maxCarry> items{-1, -1, -1, -1, -1, -1}; // items.csv rows, -1 = empty
         std::bitset<maxCells> bonusUsed; // cells whose bonus this guest has had
-        bool down = false, dead = false;
+        bool down = false, dead = false; // dead: no longer a living guest (a ghost of the house, or waiting to be one)
+        bool ghost = false;              // battle royale: the dead join the house (Night.md "Ghosts")
+        std::int8_t returnRound = 0;     // a ghost out of play (cell -1) comes back at the under-stage this round
         std::int8_t downedBy = -1; // the guest who brought them down; -1 = the house
         std::int8_t pending = 0;   // levels earned and not yet chosen
         std::uint8_t asked = 0;     // this guest's own questions already asked (bits of its pool)
@@ -74,11 +76,13 @@ namespace umbra::night
     {
         Opened, Check, Effect, Item, Down, Woke,
         Battle, Hit, Turned, Power, Died, Ended, Monster, Level, Persuade, Goal,
-        Cleared // a persistent event or trap is gone: who, a = events.csv row
+        Cleared, // a persistent event or trap is gone: who, a = events.csv row
+        Dawn,    // a new night: a = its number
+        Rose     // a ghost appears at the under-stage: who
     };
 
     // One thing that happened. Check: a = die, other = stat, b = target. Effect: a = Effect, b = amount.
-    // Item: a = item. Down/Died: other = by whom (-1 house). Woke: other = helper. Opened: a = cell.
+    // Item: a = item. Down/Died: other = by whom (-1 house); Died a = 1 a living guest, 0 a ghost. Woke: other = helper. Opened: a = cell.
     // Monster: a = monsters.csv row (minions after the monsters); other -1 = appeared (b = cell), other 1 = killed by `who`.
     // Battle: who/other = first guest of each side. Goal: who = guest, a = 1 done / 0 failed (at midnight).
     // Hit: who = striker (-1 monster), other = struck (-1 monster), a = damage, b = HP left. Ended: a = Outcome.
@@ -96,7 +100,8 @@ namespace umbra::night
         bool passed = false;
     };
 
-    enum class Outcome : std::uint8_t { Running, Company, Taken };
+    // Escaped: one guest is left alive (state.winner); House: no guest is left.
+    enum class Outcome : std::uint8_t { Running, Escaped, House };
 
     // A chat in progress: `asker` asked `answerer` question `question` (questions.csv row).
     struct ChatState
@@ -162,6 +167,7 @@ namespace umbra::night
         std::array<std::int8_t, maxGuests * maxGuests> approvals{}; // asker * maxGuests + answerer: passed answers
         std::int8_t marked = -1; // the guest who turns, set at midnight
         Outcome outcome = Outcome::Running;
+        std::int8_t night = 1, winner = -1; // nights until one guest is left (Night.md "Nights")
         Taken taken;
         std::array<Mark, 16> flooded{}, sealed{};
         ChatState chat;
@@ -192,6 +198,9 @@ namespace umbra::night
     int ChancePercent(int stat, int target);
 
     bool IsTaken(const NightState &state, int guest);
+    bool Living(const NightState &state, int guest); // a guest still alive (not a ghost)
+    bool InPlay(const NightState &state, int guest); // living, or a ghost on the board
+    int LivingCount(const NightState &state);
     // The name to show: the Taken form's once the curse has taken the guest, else the guest's.
     std::string ShownName(const NightDef &def, const NightState &state, int guest);
     // A guest leaves an item it carries (bag slot) on the floor where it stands, whoever's turn it is:
@@ -207,7 +216,7 @@ namespace umbra::night
 
     // d20 + the guest's stat against the target; no rule for 1 or 20.
     Check RollCheck(const NightDef &def, NightState &state, int guest, StatKind stat, int target);
-    // Damage from a guest (byGuest) or the house (-1). Before the Turn 0 HP is down, after it death.
+    // Damage from a guest (byGuest) or the house (-1). 0 HP is death: a living guest becomes a ghost.
     void Hurt(const NightDef &def, NightState &state, int guest, int amount, int byGuest);
     // Entries written since `since` (a logCount value), oldest first; at most the last 256.
     std::vector<LogEntry> NewLog(const NightState &state, std::size_t since);

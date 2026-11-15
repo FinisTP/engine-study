@@ -7,22 +7,12 @@ namespace umbra::night
 {
     using namespace inner;
 
-    namespace
-    {
-        bool Up(const Guest &g) { return !g.down && !g.dead; }
-
-        int GroupSize(const NightState &state, int group)
-        {
-            return static_cast<int>(std::count_if(state.guests.begin(), state.guests.begin() + state.count,
-                                                   [&](const Guest &g) { return g.group == group && !g.dead; }));
-        }
-    }
 
     int Bond(const NightState &state, int from, int to) { return state.bonds[U(from * maxGuests + to)]; }
 
     bool Controls(const NightState &state, int controller, int guest)
     {
-        return controller >= 0 && (guest == controller || (state.guests[U(controller)].group == 0 && state.guests[U(guest)].group == 0));
+        return controller >= 0 && guest == controller; // no allies in the battle royale (user)
     }
 
     Outcome Result(const NightState &state) { return state.outcome; }
@@ -36,16 +26,6 @@ namespace umbra::night
         return (answer == 0 ? q.physicalTarget : q.magicalTarget) + (bond > 0 ? -def.rules.persuade.bond : bond < 0 ? def.rules.persuade.bond : 0);
     }
 
-    namespace
-    {
-        // The group `g` recruits into: the player's is 0, a bot's is 1 + its index (-1: none yet).
-        int GroupOf(const NightState &state, int g)
-        {
-            const int group = state.guests[U(g)].group;
-            return group >= 0 ? group : g == state.player ? 0 : 1 + g;
-        }
-    }
-
     void inner::CompanyLegal(const NightDef &def, const NightState &state, int g, std::vector<Action> &legal)
     {
         const Guest &me = state.guests[U(g)];
@@ -53,12 +33,11 @@ namespace umbra::night
         for (int o = 0; o < state.count; ++o)
         {
             const Guest &other = state.guests[U(o)];
-            if (o == g || other.cell != me.cell || !Up(other))
+            if (o == g || other.cell != me.cell || !InPlay(state, o))
                 continue;
-            // 1. The only fight between guests is with the Taken, after midnight.
-            if (state.taken.present && (IsTaken(state, g) || IsTaken(state, o)))
-                legal.push_back({ActionKind::Attack, -1, I8(o)});
-            if (state.taken.present)
+            // 1. Any guest may attack another, or a ghost, in the same room (the battle royale).
+            legal.push_back({ActionKind::Attack, -1, I8(o)});
+            if (other.ghost)
                 continue;
             // 2. Any guest may talk with one not in its group, once a round, while its group has room
             //    and the other is not yet won over.
@@ -66,11 +45,10 @@ namespace umbra::night
                 continue;
             //    The player is never the asker (bots ask the player through OpenChat), and the
             //    player's allies are not won away.
-            if (o != player && other.group != 0 && other.group != GroupOf(state, g) && GroupSize(state, GroupOf(state, g)) < 3 &&
-                state.approvals[U(o * maxGuests + g)] < def.rules.persuade.approvals)
+            if (o != player && state.approvals[U(o * maxGuests + g)] < def.rules.persuade.approvals)
                 legal.push_back({ActionKind::Chat, I8(o)});
             // 3. A bot may ask the player a question, before it moves.
-            if (o == player && me.group != 0 && GroupSize(state, 0) < 3 && state.approvals[U(g * maxGuests + o)] < def.rules.persuade.approvals &&
+            if (o == player && state.approvals[U(g * maxGuests + o)] < def.rules.persuade.approvals &&
                 me.movesLeft == Stat(def, state, g, StatKind::Speed))
                 legal.push_back({ActionKind::OpenChat, I8(o)});
         }
@@ -111,10 +89,6 @@ namespace umbra::night
             if (asker != state.player && answerer != state.player)
                 a.knows = static_cast<std::uint8_t>(a.knows | (1u << answerer));
         }
-        // 2. Enough approvals: the asker joins the answerer's group.
-        const int group = GroupOf(state, answerer);
-        if (approvals >= def.rules.persuade.approvals && GroupSize(state, group) < 3)
-            state.guests[U(answerer)].group = state.guests[U(asker)].group = I8(group);
         Log(state, LogKind::Persuade, answerer, asker, check.passed ? 1 : 0, approvals);
         state.chat.active = false;
     }

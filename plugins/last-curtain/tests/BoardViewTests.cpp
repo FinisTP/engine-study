@@ -49,22 +49,6 @@ TEST_CASE("Only lit rooms show who is in them (T108)", "[night][board]")
     CHECK(view.cells[U(Left(def, 2))].opened); // its shape is known
 }
 
-TEST_CASE("Allies' light counts (T108)", "[night][board]")
-{
-    NightDef def = Data();
-    def.rules.light.steps = 1;
-    NightState state = Corridor(def);
-    state.guests[1].cell = I8(Left(def, 1));
-    state.guests[2].cell = I8(Left(def, 2));
-    state.guests[0].group = state.guests[1].group = 0;
-    const BoardView view = MakeView(def, state, 0);
-    CHECK(view.cells[U(Left(def, 2))].lit);
-    CHECK(Shows(view, 2));
-    const auto ally = std::find_if(view.pawns.begin(), view.pawns.end(), [](const PawnView &p) { return p.guest == 1; });
-    REQUIRE(ally != view.pawns.end());
-    CHECK(ally->ally);
-}
-
 TEST_CASE("Minions and the Taken show only in light (T108)", "[night][board]")
 {
     NightDef def = Data();
@@ -139,9 +123,6 @@ TEST_CASE("A door facing a wall is drawn as a wall on both sides (T123)", "[nigh
     CHECK((view.cells[U(b)].walls & (1u << 1)) != 0);
     CHECK((view.cells[U(a)].walls & (1u << 1)) == 0); // a <-> foyer is a passage
     CHECK((view.cells[U(state.foyer)].walls & (1u << 3)) == 0);
-    // A doorway (a door to a cell not yet opened) is no wall.
-    REQUIRE((view.cells[U(b)].doorways & (1u << 3)) != 0);
-    CHECK((view.cells[U(b)].walls & (1u << 3)) == 0);
     // A sealed passage is a wall from both sides.
     state.sealed[0] = {I8(state.foyer), 3, 99};
     view = MakeView(def, state, -1);
@@ -158,15 +139,6 @@ TEST_CASE("A path walks cardinal steps through passages (T124)", "[night][view]"
     CHECK(PathTo(def, state, 0, a) == std::vector<int>{a});
 }
 
-TEST_CASE("A path may end through a doorway (T124)", "[night][view]")
-{
-    const NightDef def = Data();
-    NightState state = Corridor(def);
-    const int a = Left(def, 1), b = Left(def, 2), beyond = Left(def, 3);
-    REQUIRE(Doorway(def, state, b, 3));
-    CHECK(PathTo(def, state, 0, beyond) == std::vector<int>{a, b, beyond});
-}
-
 TEST_CASE("No path to a dark, walled-off or own cell (T124)", "[night][view]")
 {
     const NightDef def = Data();
@@ -179,7 +151,7 @@ TEST_CASE("No path to a dark, walled-off or own cell (T124)", "[night][view]")
     // A room beyond the guest's light is not a lit square, even with a way there.
     for (std::uint64_t seed = 1;; ++seed)
     {
-        NightState chain = FoyerNight(def, seed);
+        NightState chain = BareFoyer(def, seed);
         const std::vector<int> cells = Chain(def, chain, chain.foyer, 7);
         if (cells.size() < 7)
             continue;

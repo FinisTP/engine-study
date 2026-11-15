@@ -31,6 +31,8 @@ namespace umbra::night::inner
 
     // Board.cpp: the deck, the foyer and one start room per guest (returned, in order of placing).
     std::vector<int> BuildBoard(const NightDef &def, NightState &state);
+    std::vector<int> Spawns(const NightDef &def, NightState &state); // start rooms, as far apart as the map allows
+    void Dawn(const NightDef &def, NightState &state);                // a new night for the living (Night.cpp)
     int OpenRoom(const NightDef &def, NightState &state, int from, int direction, bool forceUnderStage, bool allowUnderStage = true);
     void ForceUnderStage(const NightDef &def, NightState &state); // at the Turn, if nobody found it
 
@@ -48,7 +50,6 @@ namespace umbra::night::inner
     void EndNight(NightState &state, Outcome outcome);
     // Hunt.cpp
     void PlaceKeepsake(const NightDef &def, NightState &state, int cell); // a just-opened room's keepsake, if a drawn goal needs it
-    void TheTurn(const NightDef &def, NightState &state);
     bool ContactBattle(const NightDef &def, NightState &state, int mover, int cell); // the Taken meets the company
     bool CompanyAlive(const NightState &state);
     void PowerLegal(const NightDef &def, const NightState &state, std::vector<Action> &legal);

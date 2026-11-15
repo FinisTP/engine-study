@@ -59,11 +59,10 @@ TEST_CASE("Same data and seed, same night (T103)", "[night][save]")
     Chooser ca{1}, cb{1};
     Drive(def, a, ca, 5000);
     Drive(def, b, cb, 5000);
-    CHECK(Current(a) == -1);
     CHECK(Fingerprint(a) == Fingerprint(b));
     CHECK(Fingerprint(a) != Fingerprint(NewNight(def, 1)));
     // Golden: update when the data or the rules change (Night.md "Fingerprint").
-    CHECK(Fingerprint(a) == 0xd1fd4e7f6589f6f4ULL);
+    CHECK(Fingerprint(a) == 0x7fdfd2e99239e03dULL);
 }
 
 TEST_CASE("A save at any point continues to the same end (T103)", "[night][save]")
@@ -78,7 +77,7 @@ TEST_CASE("A save at any point continues to the same end (T103)", "[night][save]
             Chooser chooser{seed};
             Drive(def, state, chooser, cut + static_cast<int>(seed));
             midBattle = midBattle || state.battle.active;
-            afterTurn = afterTurn || state.taken.present;
+            afterTurn = afterTurn || std::any_of(state.guests.begin(), state.guests.end(), [](const Guest &g) { return g.ghost; });
             for (const Guest &g : state.guests)
                 pendingLevel = pendingLevel || g.pending > 0;
             NightState loaded = RoundTrip(def, state);
@@ -211,11 +210,11 @@ TEST_CASE("An older save is refused (T122, T146, T157)", "[night][save]")
 {
     const NightDef def = Data();
     nlohmann::json saved = SaveNight(def, FoyerNight(def, 3));
-    CHECK(saved["version"] == 5);
-    saved["version"] = 4;
+    CHECK(saved["version"] == 6);
+    saved["version"] = 5;
     std::vector<umbra::core::Diagnostic> diagnostics;
     NightState out;
     CHECK_FALSE(LoadNightState(def, saved, out, diagnostics));
     REQUIRE_FALSE(diagnostics.empty());
-    CHECK(diagnostics.front().message.find("version 5") != std::string::npos);
+    CHECK(diagnostics.front().message.find("version 6") != std::string::npos);
 }

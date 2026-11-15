@@ -15,17 +15,7 @@ namespace umbra::night
         state.random = (z ^ (z >> 31)) | 1u;
         state.player = I8(player);
         state.count = I8(def.guests.size());
-        // 1. Each guest draws one of its own goals, secretly: it knows only its own.
-        for (int g = 0; g < state.count; ++g)
-        {
-            std::vector<int> mine;
-            for (std::size_t i = 0; i < def.goals.size(); ++i)
-                if (def.goals[i].guest == g)
-                    mine.push_back(static_cast<int>(i));
-            Guest &guest = state.guests[U(g)];
-            guest.goal = mine.empty() ? I8(-1) : I8(mine[U(Below(state, static_cast<int>(mine.size())))]);
-            guest.knows = static_cast<std::uint8_t>(1u << g);
-        }
+        // 1. The whole map, and a start room for each guest, far apart.
         std::vector<int> starts = BuildBoard(def, state);
 
         // 2. Every guest in the foyer at full HP; a d20 each sets the order for the night.
@@ -51,5 +41,38 @@ namespace umbra::night
             state.bonds[U(b.from * maxGuests + b.to)] = I16(b.bond);
         StartTurn(def, state);
         return state;
+    }
+
+    void inner::Dawn(const NightDef &def, NightState &state)
+    {
+        // 1. Fewer than two alive: the night has already been decided (Hurt ends it).
+        if (LivingCount(state) < 2)
+            return EndNight(state, LivingCount(state) == 1 ? Outcome::Escaped : Outcome::House);
+        // 2. A new night on a new map: the board, its rooms, monsters, marks and floor start afresh.
+        ++state.night;
+        state.round = 1;
+        state.cells = {};
+        state.understage = state.foyer = -1;
+        state.floor.clear(), state.monsters.clear();
+        state.flooded = {}, state.sealed = {};
+        state.eventsUsed = state.itemsUsed = 0;
+        state.battle = {}, state.chat = {};
+        std::vector<int> starts = BuildBoard(def, state);
+        // 3. The living keep what they have and wake healed, far apart; the ghosts wait at the under-stage.
+        std::size_t next = 0;
+        for (int g = 0; g < state.count; ++g)
+        {
+            Guest &guest = state.guests[U(g)];
+            guest.bonusUsed.reset();
+            if (Living(state, g))
+            {
+                guest.cell = guest.from = I8(next < starts.size() ? starts[next++] : state.foyer);
+                guest.bonusUsed.set(U(guest.cell));
+                guest.hp = I16(Stat(def, state, g, StatKind::MaxHp));
+            }
+            else if (guest.cell >= 0 || guest.returnRound <= 1)
+                guest.cell = state.understage, guest.hp = I16(def.rules.ghost.hp), guest.returnRound = 0;
+        }
+        Log(state, LogKind::Dawn, -1, -1, state.night);
     }
 }

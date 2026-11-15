@@ -1,6 +1,8 @@
 {
-  "clock": { "startHour": 19, "rounds": 20, "turnAfterRound": 10 },
-  "board": { "width": 9, "height": 9, "rooms": 70 },
+  "clock": { "startHour": 20, "rounds": 12, "turnAfterRound": 6, "minutesPerRound": 45 },
+  "ghost": { "hp": 6, "might": 2, "sanity": 2, "speed": 3, "respawnRounds": 3 },
+  "spawn": { "minSteps": 4 },
+  "board": { "width": 9, "height": 9, "rooms": 45 },
   "checks": { "easy": 10, "normal": 13, "hard": 16 },
   "moves": { "stepsPerSpeed": 3 },
   "light": { "steps": 4 },
@@ -11,6 +13,5 @@
   "goals": { "failHp": 1, "earlyRooms": 35, "roomGoalRooms": 70 },
   "persuade": { "approvals": 3, "bond": 3 },
   "guests": { "downedReturnHp": 1, "attackBondLoss": 300 },
-  "balance": { "companyWinMin": 40, "companyWinMax": 60, "takenMin": 5, "takenMax": 30, "allFinishedMax": 10,
-               "roomsMin": 45, "roomsMax": 65, "botChatRoundsMin": 70, "goalMin": 45, "goalMax": 65 }
+  "balance": { "nightsMin": 2, "nightsMax": 4, "winnerMax": 35, "houseMax": 30, "deathsPerNightMin": 1 }
 }

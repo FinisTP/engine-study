@@ -61,7 +61,7 @@ TEST_CASE("The shipped data loads and is complete (T94)", "[night][data]")
     CHECK(diagnostics.empty());
     CHECK(def.guests.size() == 7);
     CHECK(def.powers.size() == 7);
-    CHECK(def.rules.clock.rounds == 20);
+    CHECK(def.rules.clock.rounds == 12);
     CHECK(def.rules.carry == 4);
     CHECK(def.guests[static_cast<std::size_t>(NightDef::Find(def.guests, "khang"))].might == 7);
     int rooms = 0;

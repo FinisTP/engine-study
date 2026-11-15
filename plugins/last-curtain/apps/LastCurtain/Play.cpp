@@ -100,7 +100,7 @@ namespace
     }
 }
 
-Play::Play(const NightDef &def, std::uint64_t seed, int player) : def_(def), state_(NewNight(def, seed, player)), decider_(Timed(def)), opening_(true) {}
+Play::Play(const NightDef &def, std::uint64_t seed, int player) : def_(def), state_(NewNight(def, seed, player)), decider_(Timed(def)) { opening_ = true; }
 
 Play::Play(const NightDef &def, const NightState &state) : def_(def), state_(state), decider_(Timed(def)) {}
 
@@ -1074,7 +1074,7 @@ void Play::Notice(std::uint32_t since)
         if (e.kind == LogKind::Turned)
             turn_ = true, AskTurn(), StartScene("midnight");
         else if (e.kind == LogKind::Ended) // after the fall (if any), the ending's scene
-            StartScene(static_cast<Outcome>(e.a) == Outcome::Taken ? "ending_taken" : "ending_company");
+            StartScene(static_cast<Outcome>(e.a) == Outcome::House ? "ending_house" : "ending_escaped");
         else if (e.kind == LogKind::Hit && e.other >= 0) // the damage over the struck guest, for a moment
             popups_.push_back({e.other, "-" + std::to_string(e.a), clock_ + 2.0F});
         else if (e.kind == LogKind::Monster && e.other == 1 && def_.monsters[U(e.a)].taken >= 0 && state_.taken.guest >= 0)
@@ -1239,10 +1239,12 @@ nlohmann::json Play::EndData() const
 {
     // 1. Who won.
     std::string outcome = "The night ends.";
-    if (state_.outcome == Outcome::Company)
-        outcome = "Dawn comes. The company survives the night.";
-    if (state_.outcome == Outcome::Taken)
-        outcome = "The Taken wins. The theatre keeps its guests.";
+    if (state_.outcome == Outcome::Escaped && state_.winner >= 0)
+        outcome = state_.winner == state_.player ? "You walk out of the Opera House alone. You escaped."
+                                                 : def_.guests[U(state_.winner)].name + " walks out alone. The house keeps the rest.";
+    if (state_.outcome == Outcome::House)
+        outcome = state_.player >= 0 && state_.guests[U(state_.player)].ghost ? "No guest is left. The house wins, and you with it."
+                                                                               : "No guest is left. The house wins.";
     // 2. A few lines from the night.
     int rooms = 0;
     for (const Cell &c : state_.cells)
@@ -1427,7 +1429,7 @@ bool Play::ClickGuest(int guest)
     if (!PlayerTurn() || Screen() != "menu" || guest < 0 || guest >= state_.count)
         return false;
     for (const Action &a : LegalActions(def_, state_))
-        if ((a.kind == ActionKind::Chat && a.a == guest) || (a.kind == ActionKind::Attack && a.a < 0 && a.b == guest))
+        if (a.kind == ActionKind::Chat && a.a == guest) // talk; attacking is the menu's (no fight by a stray click)
             return Do(a);
     return false;
 }

@@ -33,7 +33,7 @@ namespace umbra::night
             bool Has(const Action &a) const { return std::find(legal.begin(), legal.end(), a) != legal.end(); }
             int MaxHp() const { return Stat(def, state, g, StatKind::MaxHp); }
             bool Below(int percent) const { return me.hp * 100 < percent * MaxHp(); }
-            bool Up(int o) const { return !state.guests[U(o)].down && !state.guests[U(o)].dead; }
+            bool Up(int o) const { return Living(state, o); }
             bool Sees(int cell) const { return Lit(def, state, me.cell, cell, Stat(def, state, g, StatKind::Light)); }
             int StepsTo(int from, int cell) const { return Steps(def, state, from, cell); }
 
@@ -105,6 +105,32 @@ namespace umbra::night
                     if (me.items[U(s)] >= 0 && def.items[U(me.items[U(s)])].kind == kind && Has({ActionKind::UseItem, I8(s)}))
                         return s;
                 return -1;
+            }
+
+            // How a fight with guest `o` would go, roughly: what each deals over the battle's rounds against
+            // what the other has left. Positive: this bot would come out ahead.
+            int Edge(int o) const
+            {
+                const Fighter mine{I8(g)}, theirs{I8(o)};
+                const int rounds = def.rules.battle.rounds;
+                return (Damage(def, state, mine, theirs) * rounds - state.guests[U(o)].hp) - (Damage(def, state, theirs, mine) * rounds - me.hp);
+            }
+
+            // A ghost of the house: strike the living in its room, else go after the nearest.
+            Action Ghost() const
+            {
+                Action strike{}, toward{ActionKind::EndTurn};
+                int weakest = INT_MAX, nearest = INT_MAX;
+                for (const Action &a : legal)
+                    if (a.kind == ActionKind::Attack && state.guests[U(a.b)].hp < weakest)
+                        strike = a, weakest = state.guests[U(a.b)].hp;
+                if (strike.kind == ActionKind::Attack)
+                    return strike;
+                for (int o = 0; o < state.count; ++o)
+                    if (const int n = Up(o) ? StepsTo(me.cell, state.guests[U(o)].cell) : -1; n > 0 && n < nearest)
+                        if (const Action step = Toward(state.guests[U(o)].cell); step.kind == ActionKind::Move)
+                            toward = step, nearest = n;
+                return toward;
             }
 
             bool Beatable(int m) const
@@ -328,12 +354,15 @@ namespace umbra::night
                     {
                         if (!state.cells[U(c)].opened)
                             continue;
-                        for (int d = 0; d < 4; ++d)
-                            if (Doorway(def, state, c, d))
-                                goal(c, style.explore);
-                        if (def.rooms[U(state.cells[U(c)].room)].kind == RoomKind::Bonus && !me.bonusUsed[U(c)])
+                        const RoomKind kind = def.rooms[U(state.cells[U(c)].room)].kind;
+                        if (!state.cells[U(c)].resolved && (kind == RoomKind::Item || kind == RoomKind::Event)) // the map is whole: rooms still holding something
+                            goal(c, kind == RoomKind::Item ? style.loot : style.explore);
+                        if (kind == RoomKind::Bonus && !me.bonusUsed[U(c)])
                             goal(c, style.bonus);
                     }
+                    for (int o = 0; o < state.count; ++o) // prey it would beat, in its light
+                        if (o != g && Up(o) && Sees(state.guests[U(o)].cell) && Edge(o) > 0)
+                            goal(state.guests[U(o)].cell, style.fight);
                     for (const FloorItem &f : state.floor)
                         if (Sees(f.cell))
                             goal(f.cell, style.loot);
@@ -344,10 +373,10 @@ namespace umbra::night
                         if (o != g && Up(o) && Bond(state, g, o) >= 0 && me.chatRound != state.round && Sees(state.guests[U(o)].cell) &&
                             (me.group < 0 || state.guests[U(o)].group != me.group))
                             goal(state.guests[U(o)].cell, style.chatty + (me.goal < 0 || GoalDone(def, state, g) ? 5 : 0)); // idle: seek company
-                    for (int o = 0; o < state.count; ++o)
-                        if (o != g && Up(o) && Bond(state, g, o) < 0 && Sees(state.guests[U(o)].cell) &&
+                    for (int o = 0; o < state.count; ++o) // a guest who would beat it, or a ghost: keep away
+                        if (o != g && InPlay(state, o) && (state.guests[U(o)].ghost || Edge(o) < 0 || Bond(state, g, o) < 0) && Sees(state.guests[U(o)].cell) &&
                             fromNext[U(state.guests[U(o)].cell)] < fromHere[U(state.guests[U(o)].cell)])
-                            score -= style.avoidGuests * 10;
+                            score -= (style.avoidGuests + 2) * 10;
                     return score;
                 }
                 case ActionKind::UseItem:
@@ -355,6 +384,8 @@ namespace umbra::night
                 case ActionKind::PickUp:
                     return style.greed * style.loot - 1; // greed 0: never (needed items go by Purpose)
                 case ActionKind::Attack:
+                    if (a.b >= 0) // a guest (or a ghost) in the room: only a fight it would win
+                        return state.guests[U(a.b)].ghost ? (Edge(a.b) > 0 ? style.fight * 5 : -100) : Edge(a.b) > 0 ? style.fight * 10 + 5 : -100;
                     return a.a >= 0 && Beatable(a.a) ? style.fight * 10 : -100;
                 case ActionKind::EndTurn:
                 {
@@ -382,6 +413,8 @@ namespace umbra::night
                     const int magical = ChancePercent(Stat(def, state, g, StatKind::Sanity), AnswerTarget(def, state, 1));
                     return {ActionKind::Answer, I8(physical >= magical ? 0 : 1)};
                 }
+                if (me.ghost)
+                    return Ghost();
                 if (IsTaken(state, g))
                     return Taken();
                 // 2. Hurt: heal, else get away from monsters (and the Taken).
@@ -392,6 +425,9 @@ namespace umbra::night
                     std::vector<int> threats;
                     for (const Monster &m : state.monsters)
                         threats.push_back(m.cell);
+                    for (int o = 0; o < state.count; ++o) // guests who would beat it, and ghosts
+                        if (o != g && InPlay(state, o) && state.guests[U(o)].cell >= 0 && (state.guests[U(o)].ghost || Edge(o) < 0))
+                            threats.push_back(state.guests[U(o)].cell);
                     if (state.taken.present)
                         threats.push_back(state.guests[U(state.taken.guest)].cell);
                     if (!threats.empty())
@@ -434,7 +470,7 @@ namespace umbra::night
     int PlayNight(const NightDef &def, NightState &state)
     {
         int applies = 0;
-        while (Current(state) >= 0 && applies < 5000)
+        while (Current(state) >= 0 && applies < 40000) // a run of nights, until one guest is left
         {
             if (!Apply(def, state, ChooseAction(def, state, Current(state))))
                 break;

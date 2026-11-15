@@ -156,6 +156,11 @@ namespace umbra::night
             get("clock", "startHour", r.clock.startHour);
             get("clock", "rounds", r.clock.rounds);
             get("clock", "turnAfterRound", r.clock.turnAfterRound);
+            get("clock", "minutesPerRound", r.clock.minutesPerRound);
+            for (const auto &[key, value] : {std::pair<const char *, int *>{"hp", &r.ghost.hp}, {"might", &r.ghost.might}, {"sanity", &r.ghost.sanity},
+                                             {"speed", &r.ghost.speed}, {"respawnRounds", &r.ghost.respawnRounds}})
+                get("ghost", key, *value);
+            get("spawn", "minSteps", r.spawn.minSteps);
             get("board", "width", r.board.width);
             get("board", "height", r.board.height);
             get("board", "rooms", r.board.rooms);
@@ -184,16 +189,11 @@ namespace umbra::night
             get("persuade", "bond", r.persuade.bond);
             get("guests", "downedReturnHp", r.guests.downedReturnHp);
             get("guests", "attackBondLoss", r.guests.attackBondLoss);
-            get("balance", "companyWinMin", r.balance.companyWinMin);
-            get("balance", "companyWinMax", r.balance.companyWinMax);
-            get("balance", "takenMin", r.balance.takenMin);
-            get("balance", "takenMax", r.balance.takenMax);
-            get("balance", "allFinishedMax", r.balance.allFinishedMax);
-            get("balance", "roomsMin", r.balance.roomsMin);
-            get("balance", "roomsMax", r.balance.roomsMax);
-            get("balance", "botChatRoundsMin", r.balance.botChatRoundsMin);
-            get("balance", "goalMin", r.balance.goalMin);
-            get("balance", "goalMax", r.balance.goalMax);
+            get("balance", "nightsMin", r.balance.nightsMin);
+            get("balance", "nightsMax", r.balance.nightsMax);
+            get("balance", "winnerMax", r.balance.winnerMax);
+            get("balance", "houseMax", r.balance.houseMax);
+            get("balance", "deathsPerNightMin", r.balance.deathsPerNightMin);
 
             // Limits the code relies on.
             auto check = [&](bool good, const char *field, const char *message) {
@@ -204,15 +204,15 @@ namespace umbra::night
             check(r.board.width >= 1 && r.board.height >= 1 && r.board.width * r.board.height <= maxCells, "board", "the grid holds at most 81 cells");
             check(r.board.rooms >= 2 && r.board.rooms <= r.board.width * r.board.height, "board.rooms", "must fit the grid and hold the foyer and the under-stage");
             check(r.clock.rounds >= 1 && r.clock.rounds <= 100, "clock.rounds", "must be 1 to 100");
+            check(r.clock.minutesPerRound >= 1 && r.clock.minutesPerRound <= 120, "clock.minutesPerRound", "must be 1 to 120");
+            check(r.ghost.hp >= 1 && r.ghost.speed >= 1 && r.ghost.respawnRounds >= 1, "ghost", "hp, speed and respawnRounds must be 1 or more");
             check(r.clock.turnAfterRound >= 1 && r.clock.turnAfterRound < r.clock.rounds, "clock.turnAfterRound", "must come before the last round");
             check(r.battle.rounds >= 1 && r.battle.minDamage >= 0, "battle", "rounds must be 1 or more, minDamage 0 or more");
             check(r.battle.defenseDivisor >= 1 && r.battle.guardDivisor >= 1, "battle", "divisors must be 1 or more");
             check(r.moves.stepsPerSpeed >= 1, "moves.stepsPerSpeed", "must be 1 or more");
             check(r.light.steps >= 0 && r.monsters.max >= 0 && r.monsters.max <= 8, "monsters.max", "must be 0 to 8");
-            check(r.goals.failHp >= 1 && r.goals.earlyRooms >= 8 && r.goals.earlyRooms <= r.board.rooms && r.goals.roomGoalRooms >= 8 &&
-                      r.goals.roomGoalRooms <= r.board.rooms,
-                  "goals", "failHp 1 or more; earlyRooms and roomGoalRooms 8 to board.rooms");
-            check(r.balance.companyWinMin <= r.balance.companyWinMax, "balance", "companyWinMin must not exceed companyWinMax");
+            check(r.board.rooms >= 8 && r.board.rooms <= r.board.width * r.board.height, "board.rooms", "must be 8 to width x height");
+            check(r.balance.nightsMin <= r.balance.nightsMax, "balance", "nightsMin must not exceed nightsMax");
             for (std::size_t i = 1; i < r.levels.xp.size(); ++i)
                 check(r.levels.xp[i] > r.levels.xp[i - 1], "levels.xp", "the steps must rise");
         }

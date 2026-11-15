@@ -86,7 +86,6 @@ TEST_CASE("TryLines words a few bot nights and counts what the guard accepts (T1
     CHECK(text.find("template: ") != std::string::npos);
     CHECK(text.find("model:    Quietly, ") != std::string::npos);
     CHECK(text.find("accepted") != std::string::npos);
-    CHECK(text.find("[the Turn]") != std::string::npos);
 }
 
 TEST_CASE("A Taken line keeps to the form's name (final review)", "[night][mind]")

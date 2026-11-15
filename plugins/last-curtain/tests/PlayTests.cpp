@@ -58,11 +58,17 @@ namespace
 
     int StepCell(const NightDef &def, const Play &play)
     {
+        // A step into a room whose event or item still waits (start rooms are resolved), else any step.
         const BoardView view = MakeView(def, play.State(), play.State().player);
+        int any = -1;
         for (int c = 0; c < maxCells; ++c)
             if (view.cells[static_cast<std::size_t>(c)].step >= 0)
-                return c;
-        return -1;
+            {
+                if (!play.State().cells[static_cast<std::size_t>(c)].resolved)
+                    return c;
+                any = any < 0 ? c : any;
+            }
+        return any;
     }
 }
 
@@ -123,30 +129,6 @@ TEST_CASE("End turn works with moves left (T111)", "[night][play]")
     CHECK(play.State().turn != turn2);
 }
 
-TEST_CASE("An ally is the player's to move (T111)", "[night][play]")
-{
-    const NightDef def = Data();
-    NightState state = FoyerNight(def, 4, 0);
-    for (int g = 1; g < state.count; ++g)
-        state.guests[static_cast<std::size_t>(g)].group = g == 1 ? 0 : static_cast<std::int8_t>(g);
-    state.guests[0].group = 0;
-    Play play(def, state);
-    for (int i = 0; i < 400 && Current(play.State()) != 1; ++i)
-        if (Settle(play); play.PlayerTurn())
-            play.HandleUi("menu", "act", play.UiData()["actions"].back()["arg"]);
-        else
-            play.Update(10.0F);
-    REQUIRE(Current(play.State()) == 1);
-    CHECK(play.PlayerTurn());
-    play.Update(10.0F); // no bot plays an ally
-    CHECK(Current(play.State()) == 1);
-    CHECK(play.UiData()["me"]["name"] == def.guests[1].name);
-    const int step = StepCell(def, play);
-    REQUIRE(step >= 0);
-    GoTo(play, step);
-    CHECK(play.State().guests[1].cell == step);
-}
-
 TEST_CASE("UiData has the keys the screens bind (T111)", "[night][play]")
 {
     const NightDef def = Data();
@@ -170,21 +152,6 @@ TEST_CASE("UiData has the keys the screens bind (T111)", "[night][play]")
     CHECK_FALSE(play.HandleUi("bag", "use", "9")); // an empty or unknown slot
     CHECK_FALSE(play.HandleUi("menu", "act", "999"));
     CHECK_FALSE(play.HandleUi("menu", "act", "x"));
-}
-
-TEST_CASE("Only recruited guests are allies (T111)", "[night][play]")
-{
-    const NightDef def = Data();
-    Play play(def, FoyerNight(def, 4, 0));
-    CHECK(play.UiData()["allies"].empty());
-    NightState state = FoyerNight(def, 4, 0);
-    state.guests[0].group = state.guests[2].group = 0;
-    state.approvals[3 * maxGuests + 0] = 1;
-    const nlohmann::json data = Play(def, state).UiData();
-    REQUIRE(data["allies"].size() == 1);
-    CHECK(data["allies"][0]["name"] == def.guests[2].name);
-    REQUIRE(data["winning"].size() == 1);
-    CHECK(data["winning"][0]["name"] == def.guests[3].name);
 }
 
 namespace
@@ -348,7 +315,7 @@ TEST_CASE("No screen waits after the night ended (T113)", "[night][play]")
     NightState state = PlayerFirst(def);
     state.chat = {true, 1, 0, 5};
     state.over = true;
-    state.outcome = Outcome::Company;
+    state.outcome = Outcome::Escaped;
     Play play(def, state);
     CHECK(play.Screen() == "end"); // the end screen only, no chat
     CHECK_FALSE(play.UiData().contains("chat"));
@@ -522,99 +489,6 @@ TEST_CASE("Picking a guest shows their biography before the night starts (T212)"
     CHECK_FALSE(Play::StartData(def, false, 99).contains("bio")); // out of range: the list
 }
 
-TEST_CASE("The Turn screen names the form and its numbers (T115)", "[night][play]")
-{
-    const NightDef def = Data();
-    NightState state = FoyerNight(def, 11, 0);
-    state.marked = 3;
-    state.round = static_cast<std::int8_t>(def.rules.clock.turnAfterRound);
-    Play play(def, state);
-    for (int i = 0; i < 3000 && !play.State().taken.present; ++i)
-    {
-        Settle(play);
-        if (play.State().chat.active && play.PlayerTurn())
-            play.HandleUi("chat", "answer", "0");
-        else if (play.PlayerTurn())
-            play.Key(InputKey::Enter);
-        else
-            play.Update(10.0F);
-    }
-    REQUIRE(play.State().taken.present);
-    REQUIRE(play.Screen() == "turn");
-    const nlohmann::json turn = play.UiData()["turn"];
-    CHECK(turn["who"] == def.guests[3].name);
-    CHECK(turn["form"] == def.guests[3].taken);
-    CHECK(turn["hp"] == def.guests[3].takenHp);
-    CHECK(turn["story"] == def.guests[3].takenStory); // who it was, and what it has become (T168)
-    CHECK_FALSE(def.guests[3].takenStory.empty());
-    int minions = 0;
-    for (const MonsterDef &m : def.monsters)
-        minions += m.taken == 3 ? m.count : 0;
-    CHECK(turn["minions"] == minions);
-    CHECK_FALSE(turn["power"].get<std::string>().empty());
-    const int beats = play.Beats();
-    play.Update(10.0F); // the bots wait for the player to read it
-    CHECK(play.Beats() == beats);
-    CHECK(play.HandleUi("turn", "begin", ""));
-    CHECK(play.Screen() != "turn");
-}
-
-TEST_CASE("The player as the Taken plays on (T115)", "[night][play]")
-{
-    const NightDef def = Data();
-    NightState state = FoyerNight(def, 11, 0);
-    state.marked = 0;
-    state.round = static_cast<std::int8_t>(def.rules.clock.turnAfterRound);
-    Play play(def, state);
-    PlayUntil(play, [&] { return play.State().taken.present; });
-    REQUIRE(play.State().taken.present);
-    REQUIRE(play.State().taken.guest == 0);
-    CHECK(play.UiData()["turn"]["isYou"] == true);
-    play.HandleUi("turn", "begin", "");
-    for (int i = 0; i < 400 && Current(play.State()) != 0 && !play.State().over; ++i)
-        if (Settle(play); !play.PlayerTurn())
-            play.Update(10.0F);
-    REQUIRE(Current(play.State()) == 0);
-    CHECK(play.PlayerTurn());
-    const BoardView view = MakeView(def, play.State(), 0);
-    CHECK(view.cells[static_cast<std::size_t>(play.State().guests[0].cell)].lit);
-    CHECK(play.UiData()["me"]["name"] == def.guests[0].name);
-}
-
-TEST_CASE("Clicks and keys do nothing while a dialog shows (final review)", "[night][play]")
-{
-    // The Turn screen shows while the player, first of the company, could already move.
-    const NightDef def = Data();
-    bool tested = false;
-    for (std::uint64_t seed = 1; seed < 40 && !tested; ++seed)
-    {
-        NightState state = FoyerNight(def, seed, 0);
-        state.marked = 3;
-        state.round = static_cast<std::int8_t>(def.rules.clock.turnAfterRound);
-        Play play(def, state);
-        for (int i = 0; i < 3000 && !play.State().taken.present; ++i)
-        {
-            Settle(play);
-            if (play.State().chat.active && play.PlayerTurn())
-                play.HandleUi("chat", "answer", "0");
-            else if (play.PlayerTurn())
-                play.Key(InputKey::Enter);
-            else
-                play.Update(10.0F);
-        }
-        if (play.Screen() != "turn" || !play.PlayerTurn() || StepCell(def, play) < 0)
-            continue;
-        tested = true;
-        const int cell = play.State().guests[0].cell;
-        GoTo(play, StepCell(def, play));
-        for (const InputKey key : {InputKey::Up, InputKey::Right, InputKey::Down, InputKey::Left, InputKey::Enter, InputKey::I})
-            play.Key(key);
-        CHECK(play.State().guests[0].cell == cell);
-        CHECK(play.Screen() == "turn");
-    }
-    CHECK(tested);
-}
-
 TEST_CASE("A push-back event names the room it happened in (final review)", "[night][play]")
 {
     NightDef def = Data();
@@ -630,21 +504,6 @@ TEST_CASE("A push-back event names the room it happened in (final review)", "[ni
     REQUIRE(play.Screen() == "event");
     CHECK(play.State().guests[0].cell == play.State().foyer); // pushed back
     CHECK(play.UiData()["event"]["room"] == def.rooms[static_cast<std::size_t>(play.State().cells[static_cast<std::size_t>(step)].room)].name);
-}
-
-TEST_CASE("The HUD data carries the player's goal (T122)", "[night][play]")
-{
-    const NightDef def = Data();
-    NightState state = FoyerNight(def, 4, 0);
-    state.guests[0].knows = static_cast<std::uint8_t>(1u << 2); // the player has learnt guest 2's goal
-    Play play(def, state);
-    const nlohmann::json data = play.UiData();
-    REQUIRE(data.contains("goal"));
-    CHECK(data["goal"]["text"] == def.goals[static_cast<std::size_t>(state.guests[0].goal)].text);
-    CHECK(data["goal"]["done"] == false);
-    REQUIRE(data["knownGoals"].size() == 1);
-    CHECK(data["knownGoals"][0]["name"] == def.guests[2].name);
-    CHECK(data["knownGoals"][0]["text"] == def.goals[static_cast<std::size_t>(state.guests[2].goal)].text);
 }
 
 namespace
@@ -737,35 +596,6 @@ TEST_CASE("Illegal squares are ignored in the menu and in picking (T125)", "[nig
             CHECK(play.Sliding().guest < 0);
         }
     }
-}
-
-TEST_CASE("The walk stops at a new room's door with Stay/Back (T125)", "[night][play]")
-{
-    const NightDef def = Data();
-    Play play(def, PlayerCorridor(def, 2, 4));
-    const int door = West(def, 3);
-    REQUIRE_FALSE(play.State().cells[static_cast<std::size_t>(door)].opened);
-    play.Click(door);
-    Walk(play);
-    CHECK(play.Screen() == "confirm");
-    CHECK(play.State().guests[0].cell == West(def, 2));
-    REQUIRE(play.HandleUi("confirm", "back", ""));
-    CHECK(play.TurnMode() == Play::Mode::Picking);
-    CHECK_FALSE(play.State().cells[static_cast<std::size_t>(door)].opened);
-    CHECK(play.State().guests[0].movesLeft == 2);
-    play.Click(door);
-    Walk(play);
-    REQUIRE(play.Screen() == "confirm");
-    const std::uint32_t logBefore = play.State().logCount;
-    REQUIRE(play.HandleUi("confirm", "stay", ""));
-    CHECK(play.State().cells[static_cast<std::size_t>(door)].opened);
-    bool opened = false;
-    for (const LogEntry &e : NewLog(play.State(), logBefore))
-        opened = opened || e.kind == LogKind::Opened;
-    CHECK(opened);
-    for (int i = 0; i < 10 && play.Sliding().guest >= 0; ++i)
-        play.Update(Play::slideSeconds);
-    CHECK(play.TurnMode() == Play::Mode::Menu);
 }
 
 TEST_CASE("A dialog part-way along a walk drops the rest of the walk (T125)", "[night][play]")
@@ -888,27 +718,6 @@ TEST_CASE("Input: picking, Enter walks to the hovered square (T126)", "[night][p
     CHECK(play.State().guests[0].cell == West(def, 2));
 }
 
-TEST_CASE("Input: confirm, Enter is Stay and Esc is Back; arrows and clicks do nothing (T126)", "[night][play]")
-{
-    const NightDef def = Data();
-    Play play(def, PlayerCorridor(def, 1, 4));
-    play.Click(West(def, 2));
-    Walk(play);
-    REQUIRE(play.Screen() == "confirm");
-    play.Key(InputKey::Up);
-    play.Click(play.State().foyer);
-    play.Click(play.State().foyer, true);
-    CHECK(play.Screen() == "confirm");
-    play.Key(InputKey::Escape);
-    CHECK(play.TurnMode() == Play::Mode::Picking);
-    CHECK_FALSE(play.State().cells[static_cast<std::size_t>(West(def, 2))].opened);
-    play.Click(West(def, 2));
-    Walk(play);
-    REQUIRE(play.Screen() == "confirm");
-    play.Key(InputKey::Enter);
-    CHECK(play.State().cells[static_cast<std::size_t>(West(def, 2))].opened);
-}
-
 TEST_CASE("Input: a dialog ignores clicks on the board; Esc closes it where it can (T126)", "[night][play]")
 {
     const NightDef def = Data();
@@ -972,16 +781,6 @@ TEST_CASE("Inspect shows only what the player may know (T126)", "[night][play]")
     CHECK(bot["hp"] == state.guests[1].hp);
     CHECK(bot["bag"].size() == 1);
     CHECK(bot["goal"] == "");
-    play.HandleUi("inspect", "close", "");
-    NightState knows = state;
-    knows.guests[0].knows = 1u << 1;
-    Play learnt(def, knows);
-    learnt.Click(West(def, 1), true);
-    CHECK(learnt.UiData()["inspect"]["guests"][0]["goal"] == def.goals[static_cast<std::size_t>(state.guests[1].goal)].text);
-    // 4. The player's own goal always shows.
-    learnt.HandleUi("inspect", "close", "");
-    learnt.Click(state.foyer, true);
-    CHECK(learnt.UiData()["inspect"]["guests"][0]["goal"] == def.goals[static_cast<std::size_t>(state.guests[0].goal)].text);
 }
 
 namespace
@@ -1002,7 +801,7 @@ namespace
         Apply(def, state, {ActionKind::EndTurn});
         const int bot = Current(state);
         REQUIRE(bot != 0);
-        state.guests[static_cast<std::size_t>(bot)].cell = state.foyer; // in the player's light
+        state.guests[static_cast<std::size_t>(bot)].cell = static_cast<std::int8_t>(West(def, 1)); // in the player's light, not their room
         Play play(def, state);
         std::vector<umbra::core::Diagnostic> diagnostics;
         Captions captions;
@@ -1055,7 +854,18 @@ TEST_CASE("A bot the player cannot see does not think on screen (T127)", "[night
 TEST_CASE("A bot's step slides (T127)", "[night][play]")
 {
     const NightDef def = Data();
-    Play play = SeenBotFirst(def);
+    // A bot in the corridor west of the player, with a bandage lying one room further west to walk to.
+    NightState state = PlayerCorridor(def, 2, 4);
+    Apply(def, state, {ActionKind::EndTurn});
+    const int mover = Current(state);
+    REQUIRE(mover != 0);
+    state.guests[static_cast<std::size_t>(mover)].cell = state.guests[static_cast<std::size_t>(mover)].origin = static_cast<std::int8_t>(West(def, 1));
+    state.floor.push_back({static_cast<std::int8_t>(West(def, 2)), static_cast<std::int8_t>(NightDef::Find(def.items, "bandage"))});
+    Play play(def, state);
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    Captions captions;
+    REQUIRE(LoadCaptions(std::filesystem::path(UMBRA_NIGHT_DATA) / "captions.json", captions, diagnostics));
+    play.SetCaptions(captions); // a beat is seen only when it is narrated
     const int bot = Current(play.State());
     bool slid = false;
     for (int i = 0; i < 200 && !slid && Current(play.State()) == bot; ++i)
@@ -1282,37 +1092,6 @@ TEST_CASE("A chat question waits for its line and shows it; the answers stay (T1
     lower[0] = static_cast<char>(std::tolower(static_cast<unsigned char>(lower[0])));
     CHECK((chat["question"] == "Tell me truly, " + q.text || chat["question"] == "Tell me truly, " + lower));
     CHECK(chat["answers"][0]["label"] == q.physicalText);
-}
-
-TEST_CASE("The Turn screen shows the model's two sentences (T135)", "[night][play][words]")
-{
-    const NightDef def = Data();
-    auto mind = std::make_unique<StandIn>();
-    mind->answer = [&def](const umbra::town::MindRequest &request) {
-        return request.prompt.find("Midnight:") != std::string::npos
-                   ? def.guests[3].name + ", I am so cold. " + def.guests[3].taken + " comes to collect."
-                   : std::string{};
-    };
-    Words words(def, std::move(mind));
-    NightState state = FoyerNight(def, 11, 0);
-    state.marked = 3;
-    state.round = static_cast<std::int8_t>(def.rules.clock.turnAfterRound);
-    Play play(def, state);
-    play.SetWords(&words);
-    for (int i = 0; i < 3000 && !play.State().taken.present; ++i)
-    {
-        Settle(play);
-        if (play.State().chat.active && play.PlayerTurn() && play.Screen() == "chat")
-            play.HandleUi("chat", "answer", "0");
-        else if (play.PlayerTurn() && play.Screen() == "menu")
-            play.Key(InputKey::Enter);
-        else
-            play.Update(0.5F);
-    }
-    REQUIRE(play.State().taken.present);
-    Until(play, [&] { return play.Screen() == "turn"; });
-    REQUIRE(play.Screen() == "turn");
-    CHECK(play.UiData()["turn"]["words"] == def.guests[3].name + ", I am so cold. " + def.guests[3].taken + " comes to collect.");
 }
 
 TEST_CASE("Line seeds come from the night, so Continue words the same lines (T135)", "[night][play][words]")
@@ -1760,7 +1539,7 @@ TEST_CASE("A bot's roll in sight names the event it faced (T152)", "[night][play
     play.SetCaptions(captions);
     play.SetOptions(Designed());
     bool named = false;
-    for (int i = 0; i < 40 && !named; ++i)
+    for (int i = 0; i < 300 && !named; ++i)
     {
         const std::uint32_t before = play.State().logCount;
         if (!UntilTap(play, 3000))
@@ -1903,11 +1682,11 @@ TEST_CASE("A bot's deed in sight: it walks in first, then what it faces, its rol
     options.diceSeconds = 1.0F;
     play.SetOptions(options);
     int previews = 0;
-    for (int i = 0; i < 60 && previews == 0; ++i)
+    for (int i = 0; i < 300 && previews == 0; ++i)
     {
         if (!UntilTap(play, 3000))
             break;
-        if (play.UiData()["caption"]["preview"] == true)
+        if (play.UiData()["caption"]["preview"] == true && !play.UiData()["caption"]["event"].get<std::string>().empty() && play.UiData().contains("caption"))
         {
             // 1. The bot has walked in (no slide left); its caption names the event, no result yet.
             ++previews;
@@ -2077,23 +1856,6 @@ TEST_CASE("When the turn comes to the player the camera goes to them at once (T1
     }
 }
 
-TEST_CASE("A guest knocked down is told plainly, and the HUD says so (T164)", "[night][play][flow]")
-{
-    NightDef def = Data();
-    const int sandbag = NightDef::Find(def.events, "sandbag");
-    def.events[static_cast<std::size_t>(sandbag)].clear = ClearKind::None;
-    def.events[static_cast<std::size_t>(sandbag)].target = 99;
-    def.events[static_cast<std::size_t>(sandbag)].failAmount = -99;
-    Play play = IntoRoom(def, "loosestairs", sandbag);
-    REQUIRE(play.HandleUi("arrive", "onward", ""));
-    REQUIRE(play.HandleUi("event", "roll", ""));
-    for (int i = 0; i < 30 && play.UiData()["dice"]["told"] != true; ++i)
-        play.Update(0.2F);
-    const std::string result = play.UiData()["dice"]["result"].get<std::string>();
-    CHECK(result.find("down") != std::string::npos);
-    CHECK(play.UiData()["me"]["down"] == true);
-}
-
 TEST_CASE("Picking a walk has a Done button back to the menu (T165)", "[night][play]")
 {
     const NightDef def = Data();
@@ -2222,58 +1984,6 @@ namespace
 }
 
 
-TEST_CASE("The hunt: the Taken's HP shows; its fall is staged with who struck it and how (T222)", "[night][play][fall]")
-{
-    const NightDef def = Data();
-    bool fell = false;
-    for (std::uint64_t seed = 1; seed < 40 && !fell; ++seed)
-    {
-        // 1. After midnight, the Taken (guest 1) at 1 HP in the player's room; the player strong.
-        NightState state = FoyerNight(def, seed, 0);
-        while (Current(state) != 0)
-            REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
-        state.taken.present = true, state.taken.guest = 1;
-        state.guests[1].cell = state.guests[0].cell, state.guests[1].hp = 1, state.guests[1].group = -1;
-        state.guests[0].might = 8;
-        Play play(def, state);
-        play.SetCutscenes(Scenes());
-        const nlohmann::json taken = play.UiData()["taken"];
-        CHECK(taken["name"] == def.guests[1].taken);
-        CHECK(taken["hp"] == 1);
-        CHECK(taken["maxHp"].get<int>() >= 1);
-        // 2. The player attacks and strikes until it falls (or the battle ends).
-        if (!play.ClickGuest(1))
-            continue;
-        for (int i = 0; i < 60 && !play.State().over; ++i)
-        {
-            if (play.PlayerTurn())
-            {
-                const std::vector<Action> legal = LegalActions(def, play.State());
-                const auto strike = std::find_if(legal.begin(), legal.end(), [](const Action &a) { return a.kind == ActionKind::Strike; });
-                if (strike == legal.end())
-                    break;
-                play.HandleUi("battle", "act", std::to_string(strike - legal.begin()));
-            }
-            play.Update(0.5F);
-        }
-        if (!play.State().over || play.State().outcome != Outcome::Company)
-            continue;
-        fell = true;
-        // 3. Before the end screen: the fall, in its room, naming the striker and the blow.
-        REQUIRE(play.Screen() == "fall");
-        const nlohmann::json fall = play.UiData()["fall"];
-        CHECK(fall["title"].get<std::string>().find(def.guests[1].taken) != std::string::npos);
-        CHECK(fall["cause"].get<std::string>().find(def.guests[0].name) != std::string::npos);
-        CHECK(play.StageCell() == play.State().guests[1].cell);
-        REQUIRE(play.HandleUi("fall", "continue", ""));
-        // 4. Then the ending's scene (T225), then the end screen.
-        REQUIRE(play.Screen() == "cutscene");
-        CHECK(WatchScene(play).size() == Scenes()["ending_company"].size());
-        CHECK(play.Screen() == "end");
-    }
-    CHECK(fell);
-}
-
 TEST_CASE("A new night opens with its scene on the board; the bots wait; Skip ends it (T223)", "[night][play][scene]")
 {
     const NightDef def = Data();
@@ -2298,32 +2008,6 @@ TEST_CASE("A new night opens with its scene on the board; the bots wait; Skip en
     Play restored(def, play.State());
     restored.SetCutscenes(Scenes());
     CHECK(restored.Screen() != "cutscene");
-}
-
-TEST_CASE("Midnight plays its scene at the Taken before the Turn's screen (T224)", "[night][play][scene]")
-{
-    const NightDef def = Data();
-    NightState state = FoyerNight(def, 11, 0);
-    state.marked = 3;
-    state.round = static_cast<std::int8_t>(def.rules.clock.turnAfterRound);
-    Play play(def, state);
-    play.SetCutscenes(Scenes());
-    for (int i = 0; i < 3000 && !play.State().taken.present; ++i)
-    {
-        Settle(play);
-        if (play.State().chat.active && play.PlayerTurn())
-            play.HandleUi("chat", "answer", "0");
-        else if (play.PlayerTurn())
-            play.Key(InputKey::Enter);
-        else
-            play.Update(10.0F);
-    }
-    REQUIRE(play.State().taken.present);
-    REQUIRE(play.Screen() == "cutscene");
-    const std::vector<std::string> lines = WatchScene(play);
-    REQUIRE(lines.size() == Scenes()["midnight"].size());
-    CHECK(lines.back().find(def.guests[3].taken) != std::string::npos);
-    CHECK(play.Screen() == "turn");
 }
 
 TEST_CASE("Play names the sounds to play: steps, the die, a door, a blow (T226)", "[night][play][sound]")

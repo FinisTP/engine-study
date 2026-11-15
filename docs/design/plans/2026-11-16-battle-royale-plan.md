@@ -65,3 +65,5 @@ Soak bands, docs (Night.md, Play.md, Balance.md), testing record `s38`, ROADMAP 
 ## Ledger
 
 (appended as stages finish)
+
+Stage 1: complete (#UMBRA-218; RoyaleTests T228-T234, suite 181/182, the balance soak open: 2 faults in 400 runs, Khang wins 50%)

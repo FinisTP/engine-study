@@ -231,7 +231,7 @@ namespace umbra::night
         if (state.over || state.turn < 0 || state.turn >= state.count)
             return -1;
         const int g = state.order[U(state.turn)];
-        return state.guests[U(g)].down || state.guests[U(g)].dead ? -1 : g;
+        return InPlay(state, g) ? g : -1;
     }
 
     int inner::MonsterAt(const NightState &state, int cell)
@@ -298,21 +298,13 @@ namespace umbra::night
             {
                 state.turn = 0;
                 ++state.round;
-                if (state.round == def.rules.clock.turnAfterRound + 1 && !state.taken.present)
-                    TheTurn(def, state);
-                if (state.over)
-                    return; // every goal was done: the company won at midnight
                 if (state.round > def.rules.clock.rounds)
-                {
-                    if (state.outcome == Outcome::Running)
-                        EndNight(state, state.taken.present ? Outcome::Taken : Outcome::Running);
-                    state.over = true;
+                    Dawn(def, state); // two or more still alive: another night, a new map
+                if (state.over)
                     return;
-                }
                 RoundStart(def, state);
             }
-            const Guest &next = G(state, state.order[U(state.turn)]);
-            if (!next.down && !next.dead)
+            if (InPlay(state, state.order[U(state.turn)]))
                 break;
         }
         StartTurn(def, state);
@@ -328,7 +320,7 @@ namespace umbra::night
         if (state.chat.active)
             return state.chat.answerer;
         for (int g = 0; g < state.count; ++g)
-            if (state.guests[U(g)].pending > 0 && !state.guests[U(g)].dead)
+            if (state.guests[U(g)].pending > 0 && Living(state, g))
                 return g;
         return BoardGuest(state);
     }
@@ -358,16 +350,25 @@ namespace umbra::night
             return legal;
         }
 
-        // 1. Moving: through passages (a step costs only if it leads further from the origin), a doorway
-        //    (a new room: one more move), and between the transport pair; within the turn's step cap.
+        // 1. Moving: through passages (a step costs only if it leads further from the origin) and between
+        //    the transport pair, within the turn's step cap. The map is whole: no move opens a room.
         if (guest.steps < def.rules.moves.stepsPerSpeed * Stat(def, state, g, StatKind::Speed))
         {
             const auto within = [&](int to) { const int d = Distance(def, state, guest.origin, to); return d >= 0 && d <= guest.budget; };
             for (std::int8_t d = 0; d < 4; ++d)
-                if ((Passage(def, state, guest.cell, d) && within(Neighbour(def, guest.cell, d))) || (Doorway(def, state, guest.cell, d) && guest.movesLeft > 0))
+                if (Passage(def, state, guest.cell, d) && within(Neighbour(def, guest.cell, d)))
                     legal.push_back({ActionKind::Move, d});
             if (const int pair = Pair(def, state, guest.cell); pair >= 0 && within(pair))
                 legal.push_back({ActionKind::Move, transportMove});
+        }
+        // 1b. A ghost: it moves, attacks the living in its room, ends its turn; nothing else.
+        if (guest.ghost)
+        {
+            for (int o = 0; o < state.count; ++o)
+                if (Living(state, o) && state.guests[U(o)].cell == guest.cell)
+                    legal.push_back({ActionKind::Attack, -1, I8(o)});
+            legal.push_back({ActionKind::EndTurn});
+            return legal;
         }
 
         // 2. Items, all free: heal items used, any item dropped, a floor item picked up.
@@ -424,8 +425,8 @@ namespace umbra::night
             Log(state, LogKind::Level, g, -1, guest.level);
             break;
         case ActionKind::Attack:
-            if (action.b >= 0)
-                ContactBattle(def, state, g, guest.cell); // only with the Taken, after midnight
+            if (action.b >= 0) // a guest (or a ghost) against another, one on one
+                StartBattle(def, state, guest.cell, {Fighter{I8(g)}}, {Fighter{action.b}});
             else
                 StartBattle(def, state, guest.cell, Side(state, g), {Fighter{-1, action.a}});
             break;
@@ -449,32 +450,17 @@ namespace umbra::night
         }
         case ActionKind::Move:
         {
-            int to = action.a == transportMove ? Pair(def, state, guest.cell) : Neighbour(def, guest.cell, action.a);
-            const bool opened = action.a != transportMove && !Passage(def, state, guest.cell, action.a);
-            if (opened)
-            {
-                to = Open(def, state, guest.cell, action.a);
-                Log(state, LogKind::Opened, g, -1, to);
-                PlaceKeepsake(def, state, to);
-            }
+            const int to = action.a == transportMove ? Pair(def, state, guest.cell) : Neighbour(def, guest.cell, action.a);
             // 1. The step: a new room commits (moves count from it with what is left); otherwise what is
             //    left is the budget less the shortest way back to the origin (Night.md "Moves").
             guest.steps = I8(guest.steps + 1);
             guest.from = guest.cell;
             guest.cell = I8(to);
             guest.visited.set(U(to));
-            if (opened)
-                guest.budget = I8(guest.movesLeft - 1), guest.origin = I8(to);
             guest.movesLeft = I8(guest.budget - std::max(0, Distance(def, state, guest.origin, to)));
+            if (guest.ghost) // a ghost passes rooms and monsters by
+                break;
             Enter(def, state, g, to);
-            // After midnight: the Taken and the company meet; the Taken passes monsters and rooms by.
-            if (state.taken.present && ContactBattle(def, state, g, to))
-            {
-                Stop(guest);
-                break;
-            }
-            if (IsTaken(state, g))
-                break;
             // A monster in the room: a fight at once, the monster's side first.
             if (const int monster = MonsterAt(state, to); monster >= 0)
             {
@@ -522,31 +508,35 @@ namespace umbra::night
         return check;
     }
 
-    void Hurt(const NightDef &, NightState &state, int g, int amount, int byGuest)
+    void Hurt(const NightDef &def, NightState &state, int g, int amount, int byGuest)
     {
         Guest &guest = G(state, g);
-        if (guest.down || guest.dead || amount <= 0 || (IsTaken(state, g) && byGuest < 0))
+        if (!InPlay(state, g) || amount <= 0)
             return;
         guest.hp = I16(std::max(0, guest.hp - amount));
         if (guest.hp > 0)
             return;
-        if (state.taken.present)
+        Log(state, LogKind::Died, g, byGuest, guest.ghost ? 0 : 1); // a 1: a living guest died
+        // 1. A ghost struck down leaves the board and comes back later (Night.md "Ghosts").
+        if (guest.ghost)
         {
-            // After midnight 0 HP is death: items fall; the night may end.
-            guest.dead = true;
-            for (std::int8_t &item : guest.items)
-                if (item >= 0)
-                    state.floor.push_back({guest.cell, item}), item = -1;
-            Log(state, LogKind::Died, g, byGuest);
-            if (IsTaken(state, g))
-                EndNight(state, CompanyAlive(state) ? Outcome::Company : Outcome::Taken);
-            else if (!CompanyAlive(state))
-                EndNight(state, Outcome::Taken);
+            guest.cell = -1, guest.returnRound = I8(state.round + def.rules.ghost.respawnRounds);
             return;
         }
-        guest.down = true;
-        guest.downedBy = I8(byGuest);
-        Log(state, LogKind::Down, g, byGuest);
+        // 2. A living guest dies: its items fall where it stood; it rises as a ghost next round.
+        for (std::int8_t &item : guest.items)
+            if (item >= 0)
+                state.floor.push_back({guest.cell, item}), item = -1;
+        guest.dead = guest.ghost = true;
+        guest.cell = -1, guest.returnRound = I8(state.round + 1);
+        // 3. One left alive escapes; none left, the house wins.
+        if (const int living = LivingCount(state); living <= 1)
+        {
+            for (int o = 0; o < state.count; ++o)
+                if (Living(state, o))
+                    state.winner = I8(o);
+            EndNight(state, living == 1 ? Outcome::Escaped : Outcome::House);
+        }
     }
 
     std::vector<LogEntry> NewLog(const NightState &state, std::size_t since)
@@ -560,15 +550,21 @@ namespace umbra::night
 
     int Hour(const NightDef &def, const NightState &state)
     {
-        return (def.rules.clock.startHour + (state.round - 1) * 30 / 60) % 24;
+        return (def.rules.clock.startHour + (state.round - 1) * def.rules.clock.minutesPerRound / 60) % 24;
     }
 
-    int Minute(const NightDef &, const NightState &state) { return (state.round - 1) * 30 % 60; }
+    int Minute(const NightDef &def, const NightState &state) { return (state.round - 1) * def.rules.clock.minutesPerRound % 60; }
 
     int Stat(const NightDef &def, const NightState &state, int g, StatKind kind)
     {
         const Guest &guest = state.guests[U(g)];
         int value = BuffBonus(def, state, g, kind);
+        if (guest.ghost) // weak and bare: the ghost's own numbers (rules.json "ghost")
+        {
+            const auto &h = def.rules.ghost;
+            return value + (kind == StatKind::Might ? h.might : kind == StatKind::Sanity ? h.sanity : kind == StatKind::Speed ? h.speed
+                          : kind == StatKind::MaxHp ? h.hp : kind == StatKind::Light ? maxCells : 0);
+        }
         if (IsTaken(state, g))
         {
             // The Taken's strength is its form's, fixed.

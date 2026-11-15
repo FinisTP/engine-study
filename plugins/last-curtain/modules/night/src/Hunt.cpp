@@ -14,6 +14,21 @@ namespace umbra::night
         return IsTaken(state, guest) ? def.guests[U(guest)].taken : def.guests[U(guest)].name;
     }
 
+    bool Living(const NightState &state, int g) { return g >= 0 && g < state.count && !state.guests[U(g)].dead; }
+
+    bool InPlay(const NightState &state, int g)
+    {
+        return Living(state, g) || (g >= 0 && g < state.count && state.guests[U(g)].ghost && state.guests[U(g)].cell >= 0);
+    }
+
+    int LivingCount(const NightState &state)
+    {
+        int n = 0;
+        for (int g = 0; g < state.count; ++g)
+            n += Living(state, g) ? 1 : 0;
+        return n;
+    }
+
     bool inner::CompanyAlive(const NightState &state)
     {
         for (int g = 0; g < state.count; ++g)
@@ -21,73 +36,6 @@ namespace umbra::night
                 return true;
         return false;
     }
-
-    void inner::TheTurn(const NightDef &def, NightState &state)
-    {
-        // 1. Goals: each living guest's is done or failed. All done: the company wins now. Else chance picks
-        //    the Taken among the failed, and the other failed keep at most failHp (the downed are left as they are).
-        std::vector<int> failed;
-        for (int g = 0; g < state.count; ++g)
-            if (!state.guests[U(g)].dead)
-            {
-                const bool done = GoalDone(def, state, g);
-                Log(state, LogKind::Goal, g, -1, done ? 1 : 0);
-                if (!done)
-                    failed.push_back(g);
-            }
-        if (failed.empty() && state.marked < 0)
-            return EndNight(state, Outcome::Company);
-        if (state.marked < 0)
-            state.marked = I8(failed[U(Below(state, static_cast<int>(failed.size())))]);
-        for (const int g : failed)
-            if (g != state.marked && !state.guests[U(g)].down)
-                state.guests[U(g)].hp = I16(std::min<int>(state.guests[U(g)].hp, def.rules.goals.failHp));
-        // 2. The marked guest leaves every group and rises as the Taken in the under-stage, at full HP.
-        if (state.understage < 0)
-            ForceUnderStage(def, state);
-        const int t = state.marked;
-        Guest &taken = state.guests[U(t)];
-        state.taken = {true, I8(t), 0, false};
-        taken.group = -1;
-        taken.down = false;
-        taken.cell = taken.origin = state.understage;
-        taken.hp = I16(def.guests[U(t)].takenHp);
-        // 3. Everyone else gathers in the foyer; the downed stand.
-        for (int g = 0; g < state.count; ++g)
-        {
-            Guest &guest = state.guests[U(g)];
-            if (g == t || guest.dead)
-                continue;
-            guest.cell = guest.origin = state.foyer; // moves count from where they now stand
-            if (guest.down)
-                guest.down = false, guest.hp = I16(def.rules.guests.downedReturnHp);
-        }
-        // 4. The Taken acts last in every round.
-        auto at = std::find(state.order.begin(), state.order.begin() + state.count, I8(t));
-        std::rotate(at, at + 1, state.order.begin() + state.count);
-        Log(state, LogKind::Turned, t, -1, state.understage);
-
-        // 5. Ordinary monsters are gone; the Taken's minions wait in the rooms farthest from the foyer.
-        state.monsters.clear();
-        std::vector<int> rooms;
-        for (int c = 0; c < maxCells; ++c)
-            if (state.cells[U(c)].opened && c != state.foyer && c != state.understage)
-                rooms.push_back(c);
-        std::stable_sort(rooms.begin(), rooms.end(),
-                         [&](int a, int b) { return Steps(def, state, state.foyer, a) > Steps(def, state, state.foyer, b); });
-        std::size_t next = 0;
-        for (std::size_t kind = 0; kind < def.monsters.size(); ++kind)
-        {
-            const MonsterDef &m = def.monsters[kind];
-            for (int n = 0; m.taken == t && n < m.count; ++n)
-            {
-                const int cell = next < rooms.size() ? rooms[next++] : state.understage;
-                state.monsters.push_back({I8(kind), I8(cell), 127, I16(m.hp), I16(m.might), I16(m.sanity)});
-                Log(state, LogKind::Monster, -1, -1, static_cast<int>(kind), cell);
-            }
-        }
-    }
-
 
     bool inner::ContactBattle(const NightDef &def, NightState &state, int mover, int cell)
     {

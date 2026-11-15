@@ -15,8 +15,7 @@ namespace umbra::night
         {
             if (f.monster >= 0)
                 return state.monsters[U(f.monster)].hp > 0;
-            const Guest &g = state.guests[U(f.guest)];
-            return !g.down && !g.dead;
+            return InPlay(state, f.guest);
         }
 
         Weapon AttackType(const NightDef &def, const NightState &state, const Fighter &f)
@@ -229,15 +228,7 @@ namespace umbra::night
 
     std::vector<Fighter> inner::Side(const NightState &state, int guest)
     {
-        std::vector<Fighter> side{Fighter{I8(guest)}};
-        const Guest &me = state.guests[U(guest)];
-        for (int o = 0; o < state.count; ++o)
-        {
-            const Guest &ally = state.guests[U(o)];
-            if (o != guest && me.group >= 0 && ally.group == me.group && ally.cell == me.cell && !ally.down && !ally.dead)
-                side.push_back(Fighter{I8(o)});
-        }
-        return side;
+        return {Fighter{I8(guest)}}; // no allies in the battle royale
     }
 
     void inner::StartBattle(const NightDef &def, NightState &state, int cell, const std::vector<Fighter> &starters, const std::vector<Fighter> &others)
@@ -323,6 +314,13 @@ namespace umbra::night
         for (Mark &m : state.sealed)
             if (m.cell >= 0 && m.untilRound < state.round)
                 m = {};
+        // 0b. Ghosts whose time has come rise at the under-stage (Night.md "Ghosts").
+        for (int g = 0; g < state.count; ++g)
+            if (Guest &ghost = state.guests[U(g)]; ghost.ghost && ghost.cell < 0 && ghost.returnRound <= state.round && state.understage >= 0)
+            {
+                ghost.cell = ghost.origin = state.understage, ghost.hp = I16(def.rules.ghost.hp);
+                Log(state, LogKind::Rose, g, -1, state.understage);
+            }
         // 1. Monsters whose time is up leave.
         state.monsters.erase(std::remove_if(state.monsters.begin(), state.monsters.end(),
                                             [&](const Monster &m) { return m.leavesRound <= state.round || m.hp <= 0; }),
@@ -332,7 +330,7 @@ namespace umbra::night
         int ordinary = 0;
         for (const MonsterDef &m : def.monsters)
             ordinary += m.taken < 0 ? 1 : 0;
-        if (state.taken.present || state.round < rules.fromRound || static_cast<int>(state.monsters.size()) >= rules.max || ordinary == 0 ||
+        if (state.round < rules.fromRound || static_cast<int>(state.monsters.size()) >= rules.max || ordinary == 0 ||
             Below(state, 100) >= rules.chancePercent)
             return;
         std::vector<int> cells;

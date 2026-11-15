@@ -23,7 +23,9 @@ namespace umbra::night
 
     struct Rules
     {
-        struct { int startHour = 19, rounds = 20, turnAfterRound = 10; } clock;
+        struct { int startHour = 19, rounds = 20, turnAfterRound = 10, minutesPerRound = 30; } clock;
+        struct { int hp = 6, might = 2, sanity = 2, speed = 3, respawnRounds = 3; } ghost; // the dead of the house
+        struct { int minSteps = 4; } spawn; // guests start at least this far apart when the map allows
         struct { int width = 5, height = 5, rooms = 20; } board;
         struct { int easy = 10, normal = 13, hard = 16; } checks;
         struct { int steps = 4; } light;
@@ -37,12 +39,10 @@ namespace umbra::night
         struct { int downedReturnHp = 1, attackBondLoss = 300; } guests;
         struct
         {
-            int companyWinMin = 40, companyWinMax = 60; // per Taken form, % of hunts
-            int takenMin = 5, takenMax = 30;            // per guest, % of nights it is the Taken
-            int allFinishedMax = 10;                    // % of nights with no hunt
-            int roomsMin = 45, roomsMax = 65;           // rooms open by midnight, a night on average
-            int botChatRoundsMin = 70;                  // % of evening rounds with a chat between bots
-            int goalMin = 45, goalMax = 65;             // per goal, % of the nights it is drawn
+            int nightsMin = 2, nightsMax = 4;  // nights a run lasts, on average (Balance.md)
+            int winnerMax = 35;                // % of runs any one guest wins, at most
+            int houseMax = 30;                 // % of runs the house wins, at most
+            int deathsPerNightMin = 1;         // living guests who die in a night, on average, at least
         } balance;
     };
 

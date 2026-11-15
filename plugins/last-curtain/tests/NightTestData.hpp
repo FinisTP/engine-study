@@ -20,23 +20,30 @@ inline void Closet(const umbra::night::NightDef &def, umbra::night::NightState &
     state.cells[static_cast<std::size_t>(cell)] = {static_cast<std::int8_t>(room), 0, true};
 }
 
-// A night laid out as before plan 2b: only the foyer opened and every guest in it. For tests of
-// rules that do not depend on the start; the scattered start itself is tested in BoardTests (T118).
+// The whole map of a new night with every guest in the foyer (the battle royale lays the map at once).
+// For tests of rules that do not depend on the start; the spread-out start is tested in RoyaleTests (T229).
 inline umbra::night::NightState FoyerNight(const umbra::night::NightDef &def, std::uint64_t seed, int player = -1)
 {
     using namespace umbra::night;
     NightState state = NewNight(def, seed, player);
-    for (int c = 0; c < maxCells; ++c)
-        if (c != state.foyer)
-            state.cells[static_cast<std::size_t>(c)] = {};
-    state.placed = 1;
-    state.deckNext = 0; // the start rooms go back to the front of the deck
     for (int g = 0; g < state.count; ++g)
     {
         Guest &guest = state.guests[static_cast<std::size_t>(g)];
         guest.cell = guest.from = guest.origin = state.foyer;
         guest.bonusUsed.reset();
     }
+    return state;
+}
+
+// Only the foyer opened, every guest in it: for tests that build a board by opening rooms (Open).
+inline umbra::night::NightState BareFoyer(const umbra::night::NightDef &def, std::uint64_t seed, int player = -1)
+{
+    using namespace umbra::night;
+    NightState state = FoyerNight(def, seed, player);
+    for (int c = 0; c < maxCells; ++c)
+        if (c != state.foyer)
+            state.cells[static_cast<std::size_t>(c)] = {};
+    state.placed = 1, state.deckNext = 0, state.understage = -1;
     return state;
 }
 

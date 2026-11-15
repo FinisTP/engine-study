@@ -38,6 +38,17 @@ namespace
     }
 
     int Slot(const NightDef &def, const char *item) { return NightDef::Find(def.items, item); }
+
+    // A legal move from the current guest's room into a room whose event or item still waits.
+    Action FreshMove(const NightDef &def, const NightState &state)
+    {
+        const int at = state.guests[static_cast<std::size_t>(Current(state))].cell;
+        for (const Action &a : LegalActions(def, state))
+            if (a.kind == ActionKind::Move && a.a < transportMove && !state.cells[static_cast<std::size_t>(Neighbour(def, at, a.a))].resolved)
+                return a;
+        FAIL("no move into a fresh room");
+        return {};
+    }
 }
 
 TEST_CASE("Order is a d20 each, ties to Speed, fixed for the night (T96)", "[night][turn]")
@@ -72,8 +83,9 @@ TEST_CASE("A guest moves up to Speed and plain rooms do not stop it (T96)", "[ni
         REQUIRE(HasKind(legal, ActionKind::Move));
         REQUIRE(Apply(def, state, First(legal, ActionKind::Move)));
     }
-    CHECK_FALSE(HasKind(LegalActions(def, state), ActionKind::Move));
-    CHECK_FALSE(Apply(def, state, {ActionKind::Move, 0}));
+    // What is left is the budget less the shortest way back to where the turn began.
+    const Guest &guest = state.guests[static_cast<std::size_t>(first)];
+    CHECK(guest.movesLeft == 4 - Distance(def, state, guest.origin, guest.cell));
     REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
     CHECK(Current(state) == state.order[1]);
 }
@@ -83,7 +95,7 @@ TEST_CASE("A room with something in it stops movement (T96)", "[night][turn]")
     const NightDef def = AllRooms(RoomKind::Bonus);
     NightState state = FoyerNight(def, 3);
     const int g = Current(state);
-    REQUIRE(Apply(def, state, First(LegalActions(def, state), ActionKind::Move)));
+    REQUIRE(Apply(def, state, FreshMove(def, state)));
     CHECK(state.guests[static_cast<std::size_t>(g)].movesLeft == 0);
     CHECK_FALSE(HasKind(LegalActions(def, state), ActionKind::Move));
 }
@@ -94,7 +106,7 @@ TEST_CASE("A bonus room pays once per guest when the turn ends there (T96)", "[n
     NightState state = FoyerNight(def, 3);
     const int g = Current(state);
     const int might = state.guests[static_cast<std::size_t>(g)].might;
-    REQUIRE(Apply(def, state, First(LegalActions(def, state), ActionKind::Move)));
+    REQUIRE(Apply(def, state, FreshMove(def, state)));
     REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
     CHECK(state.guests[static_cast<std::size_t>(g)].might == might + 1);
     // Everyone else passes; the same guest ends a second turn there: nothing more.
@@ -153,30 +165,31 @@ TEST_CASE("Items: four carried, any number on a floor, all free (T96)", "[night]
     CHECK(Current(state) == g);
 }
 
-TEST_CASE("Twenty rounds run from 19:00 to 04:30 (T96)", "[night][turn]")
+TEST_CASE("Twelve rounds run from 20:00, 45 minutes each, then dawn brings a new night (T96, T234)", "[night][turn]")
 {
     const NightDef def = Data();
     NightState state = FoyerNight(def, 5);
-    CHECK(Hour(def, state) == 19);
+    CHECK(Hour(def, state) == 20);
     CHECK(Minute(def, state) == 0);
     for (int i = 0; i < 7; ++i)
         REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
     CHECK(state.round == 2);
-    CHECK(Hour(def, state) == 19);
-    CHECK(Minute(def, state) == 30);
+    CHECK(Hour(def, state) == 20);
+    CHECK(Minute(def, state) == 45);
     int applied = 7;
-    while (Current(state) >= 0 && applied < 1000)
+    while (state.night == 1 && applied < 1000)
     {
-        if (state.round == 20)
+        if (state.round == 12)
         {
             CHECK(Hour(def, state) == 4);
-            CHECK(Minute(def, state) == 30);
+            CHECK(Minute(def, state) == 15);
         }
         REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
         ++applied;
     }
-    CHECK(applied == 140);
-    CHECK(LegalActions(def, state).empty());
+    CHECK(applied == 84);
+    CHECK(state.round == 1);
+    CHECK_FALSE(state.over);
 }
 
 namespace
@@ -234,7 +247,7 @@ TEST_CASE("An event applies its pass or its fail effect, once (T97)", "[night][c
         NightState state = FoyerNight(def, seed);
         const int g = Current(state);
         const Guest before = state.guests[static_cast<std::size_t>(g)];
-        const Action move = First(LegalActions(def, state), ActionKind::Move);
+        const Action move = FreshMove(def, state);
         const std::size_t since = state.logCount;
         REQUIRE(Apply(def, state, move));
         const Guest &after = state.guests[static_cast<std::size_t>(g)];
@@ -264,25 +277,6 @@ TEST_CASE("An event applies its pass or its fail effect, once (T97)", "[night][c
     }
     CHECK(passes > 0);
     CHECK(fails > 0);
-}
-
-TEST_CASE("A trap can bring a guest down but not kill before midnight (T97)", "[night][check]")
-{
-    const NightDef def = OneEvent(RoomKind::Trap, StatKind::Speed, 99, Effect::None, 0, Effect::Hp, -99);
-    NightState state = FoyerNight(def, 2);
-    const int g = Current(state);
-    REQUIRE(Apply(def, state, First(LegalActions(def, state), ActionKind::Move)));
-    const Guest &guest = state.guests[static_cast<std::size_t>(g)];
-    CHECK(guest.down);
-    CHECK_FALSE(guest.dead);
-    CHECK(guest.hp == 0);
-    CHECK(guest.downedBy == -1);
-    // A down guest takes no turns.
-    for (int i = 0; i < 20; ++i)
-    {
-        CHECK(Current(state) != g);
-        REQUIRE(Apply(def, state, {ActionKind::EndTurn}));
-    }
 }
 
 TEST_CASE("A relic wakes a downed guest in the same room and is used up (T97)", "[night][check]")
@@ -316,21 +310,15 @@ TEST_CASE("An item room gives one item; a full guest finds it on the floor (T97)
     const NightDef def = AllRooms(RoomKind::Item);
     NightState state = FoyerNight(def, 4);
     int g = Current(state);
-    REQUIRE(Apply(def, state, First(LegalActions(def, state), ActionKind::Move)));
+    REQUIRE(Apply(def, state, FreshMove(def, state)));
     CHECK(Items(state.guests[static_cast<std::size_t>(g)]) == 1);
     CHECK(state.floor.empty());
 
     g = Current(state);
     Guest &full = state.guests[static_cast<std::size_t>(g)];
     full.items = {0, 0, 0, 0, -1, -1};
-    // A different doorway, into a new item room.
-    const auto legal = LegalActions(def, state);
-    Action fresh{};
-    for (const Action &a : legal)
-        if (a.kind == ActionKind::Move && Doorway(def, state, full.cell, a.a))
-            fresh = a;
-    REQUIRE(fresh.kind == ActionKind::Move);
-    REQUIRE(Apply(def, state, fresh));
+    // Another item room not yet searched.
+    REQUIRE(Apply(def, state, FreshMove(def, state)));
     CHECK(Items(full) == 4);
     CHECK(state.floor.size() == 1);
 }
@@ -343,7 +331,7 @@ TEST_CASE("An event can push a guest back to the room they came from (T106)", "[
                                     : OneEvent(RoomKind::Event, StatKind::Sanity, 1, Effect::Back, 0, Effect::None, 0);
         NightState state = FoyerNight(def, 5);
         const int g = Current(state);
-        REQUIRE(Apply(def, state, First(LegalActions(def, state), ActionKind::Move)));
+        REQUIRE(Apply(def, state, FreshMove(def, state)));
         INFO("target " << target);
         CHECK(state.guests[static_cast<std::size_t>(g)].cell == state.foyer);
         CHECK(Current(state) != g); // resolving the room ended the turn
@@ -352,18 +340,12 @@ TEST_CASE("An event can push a guest back to the room they came from (T106)", "[
 
 namespace
 {
-    // A guest's first move opens the room through the foyer's first doorway; returns that direction.
+    // A guest's first move into a room not yet resolved (the map is whole); returns that direction.
     std::int8_t OpenFirst(const NightDef &def, NightState &state)
     {
-        const int g = Current(state);
-        for (std::int8_t d = 0; d < 4; ++d)
-            if (Doorway(def, state, state.guests[static_cast<std::size_t>(g)].cell, d))
-            {
-                REQUIRE(Apply(def, state, {ActionKind::Move, d}));
-                return d;
-            }
-        FAIL("no doorway");
-        return -1;
+        const Action move = FreshMove(def, state);
+        REQUIRE(Apply(def, state, move));
+        return move.a;
     }
 
     bool CanMove(const NightDef &def, const NightState &state, std::int8_t d)
@@ -379,21 +361,16 @@ TEST_CASE("Moves count as the shortest way back to where the turn began: out and
     NightState state = FoyerNight(def, 3);
     Guest &guest = state.guests[static_cast<std::size_t>(Current(state))];
     const int speed = Stat(def, state, Current(state), StatKind::Speed);
-    // 1. Opening a door commits: the new room is where moves count from, with what was left.
+    // 1. A step away costs one; the origin stays where the turn began.
     const std::int8_t d = OpenFirst(def, state), back = static_cast<std::int8_t>((d + 2) % 4);
-    const int room = Neighbour(def, state.foyer, d);
-    CHECK(guest.origin == room);
-    CHECK(guest.budget == speed - 1);
+    CHECK(guest.origin == state.foyer);
     CHECK(guest.movesLeft == speed - 1);
-    // 2. Out to the foyer and back: one move, then none.
+    // 2. Back to the foyer: free again; out and back as often as wanted (no pacing ban).
     REQUIRE(Apply(def, state, {ActionKind::Move, back}));
-    CHECK(guest.movesLeft == speed - 2);
+    CHECK(guest.movesLeft == speed);
     REQUIRE(Apply(def, state, {ActionKind::Move, d}));
-    CHECK(guest.movesLeft == speed - 1);
-    // 3. Out and back again, as often as wanted (no pacing ban).
     REQUIRE(Apply(def, state, {ActionKind::Move, back}));
-    REQUIRE(Apply(def, state, {ActionKind::Move, d}));
-    CHECK(guest.movesLeft == speed - 1);
+    CHECK(guest.movesLeft == speed);
 }
 
 TEST_CASE("With no moves left a guest may still step back toward where moves count from (T157)", "[night][turn][moves]")
@@ -401,14 +378,14 @@ TEST_CASE("With no moves left a guest may still step back toward where moves cou
     const NightDef def = AllRooms(RoomKind::Plain);
     NightState state = FoyerNight(def, 3);
     Guest &guest = state.guests[static_cast<std::size_t>(Current(state))];
+    guest.budget = 1, guest.movesLeft = 1;
     const std::int8_t d = OpenFirst(def, state), back = static_cast<std::int8_t>((d + 2) % 4);
-    guest.budget = 1, guest.movesLeft = 1; // one move from the new room
-    REQUIRE(Apply(def, state, {ActionKind::Move, back})); // to the foyer: none left
     CHECK(guest.movesLeft == 0);
-    CHECK(CanMove(def, state, d)); // back toward the start costs nothing
+    CHECK(CanMove(def, state, back)); // back toward the start costs nothing
+    const int here = guest.cell;
     for (std::int8_t other = 0; other < 4; ++other)
-        if (other != d && Doorway(def, state, state.foyer, other))
-            CHECK_FALSE(CanMove(def, state, other)); // a new room would cost one more
+        if (other != back && Passage(def, state, here, other) && Distance(def, state, guest.origin, Neighbour(def, here, other)) > 1)
+            CHECK_FALSE(CanMove(def, state, other)); // farther would cost one more
 }
 
 TEST_CASE("A turn has a cap on steps, so no one paces forever (T157)", "[night][turn][moves]")
@@ -458,7 +435,7 @@ TEST_CASE("A persistent trap stays armed until a guest passes its roll, then is 
     NightDef def = OneEvent(RoomKind::Trap, StatKind::Speed, 99, Effect::None, 0, Effect::Hp, -1);
     def.events[0].persist = true;
     NightState state = FoyerNight(def, 3);
-    const Action move = First(LegalActions(def, state), ActionKind::Move);
+    const Action move = FreshMove(def, state);
     // 1. The first guest fails and the trap stays armed in the room.
     REQUIRE(Has(Enter(def, state, move), LogKind::Check));
     const int cell = state.guests[static_cast<std::size_t>(state.order[0])].cell;
@@ -494,7 +471,7 @@ TEST_CASE("Meeting a persistent event's condition clears it without a roll (T146
         Guest &first = state.guests[static_cast<std::size_t>(Current(state))];
         first.goal = static_cast<std::int8_t>(std::find_if(def.goals.begin(), def.goals.end(), [](const GoalDef &g) { return g.kind == GoalKind::Events; }) - def.goals.begin());
         const int count = first.goalCount;
-        const std::vector<LogEntry> log = Enter(def, state, First(LegalActions(def, state), ActionKind::Move));
+        const std::vector<LogEntry> log = Enter(def, state, FreshMove(def, state));
         CHECK(Has(log, LogKind::Cleared));
         CHECK_FALSE(Has(log, LogKind::Check));
         CHECK(first.goalCount == count + 1); // cleared by its condition counts as passed (events goal)
@@ -503,7 +480,7 @@ TEST_CASE("Meeting a persistent event's condition clears it without a roll (T146
     {
         def.events[0].clear = ClearKind::Carry, def.events[0].clearItem = Slot(def, "crucifix");
         NightState state = FoyerNight(def, 4);
-        const Action move = First(LegalActions(def, state), ActionKind::Move);
+        const Action move = FreshMove(def, state);
         // Without it: a roll, and it stays.
         CHECK(Has(Enter(def, state, move), LogKind::Check));
         // With it: cleared at the door.

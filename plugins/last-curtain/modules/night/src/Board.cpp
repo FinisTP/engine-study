@@ -37,7 +37,7 @@ namespace umbra::night
     std::vector<int> inner::BuildBoard(const NightDef &def, NightState &state)
     {
         // 1. The deck: every room but the foyer and the under-stage, `count` times, shuffled.
-        state.deckSize = 0;
+        state.deckSize = state.deckNext = state.placed = 0;
         int foyerRoom = 0;
         for (std::size_t r = 0; r < def.rooms.size(); ++r)
         {
@@ -51,47 +51,11 @@ namespace umbra::night
         for (int i = state.deckSize - 1; i > 0; --i)
             std::swap(state.deck[U(i)], state.deck[U(Below(state, i + 1))]);
 
-        // 2. The rooms tonight's goals need, each with the rooms it must come out within.
-        std::vector<std::pair<int, int>> needed;
-        for (int g = 0; g < state.count; ++g)
-            if (const int goal = state.guests[U(g)].goal; goal >= 0)
-            {
-                const GoalDef &d = def.goals[U(goal)];
-                if (d.kind == GoalKind::Room)
-                    needed.push_back({d.target, def.rules.goals.roomGoalRooms});
-                if (d.kind == GoalKind::Item)
-                    needed.push_back({def.items[U(d.target)].room, def.rules.goals.earlyRooms});
-            }
-        const auto isNeeded = [&](int room) {
-            return std::any_of(needed.begin(), needed.end(), [&](const auto &n) { return n.first == room; });
-        };
-
-        // 3. The first deck entries that are not needed become the start rooms, at the front.
-        int front = 0;
-        for (int i = 0; i < state.deckSize && front < state.count; ++i)
-            if (!isNeeded(state.deck[U(i)]))
-                std::rotate(state.deck.begin() + front, state.deck.begin() + i, state.deck.begin() + i + 1), ++front;
-
-        // 4. Each needed room's first entry moves to a random place after them, so it comes out within
-        //    its window (8 places spare: the foyer, the under-stage, skipped entries).
-        for (const auto &[room, within] : needed)
-            for (int i = front, last = std::max(front + 1, std::min<int>(state.deckSize, within - 8)); i < state.deckSize; ++i)
-                if (state.deck[U(i)] == room)
-                {
-                    const int to = front + Below(state, last - front);
-                    auto at = state.deck.begin();
-                    if (to < i)
-                        std::rotate(at + to, at + i, at + i + 1);
-                    else
-                        std::rotate(at + i, at + i + 1, at + to + 1);
-                    break;
-                }
-
-        // 5. The foyer, bottom centre, as drawn; the start rooms through random doorways around it.
+        // 2. The foyer, bottom centre; then the whole map at once through random doorways (the battle royale:
+        //    nothing is opened during the night). The under-stage comes out on the way (OpenRoom).
         state.foyer = I8(CellAt(def, def.rules.board.width / 2, def.rules.board.height - 1));
         Place(state, state.foyer, foyerRoom, def.rooms[U(foyerRoom)].doors);
-        std::vector<int> starts;
-        while (static_cast<int>(starts.size()) < state.count)
+        for (;;)
         {
             std::vector<std::pair<int, int>> doorways;
             for (int c = 0; c < maxCells; ++c)
@@ -101,11 +65,40 @@ namespace umbra::night
             if (doorways.empty())
                 break;
             const auto [cell, d] = doorways[U(Below(state, static_cast<int>(doorways.size())))];
-            const int opened = OpenRoom(def, state, cell, d, false, false);
-            state.cells[U(opened)].resolved = true;
-            starts.push_back(opened);
+            (void)OpenRoom(def, state, cell, d, false);
         }
-        return starts;
+        if (state.understage < 0)
+            ForceUnderStage(def, state);
+        return Spawns(def, state);
+    }
+
+    std::vector<int> inner::Spawns(const NightDef &def, NightState &state)
+    {
+        // Farthest-point picking: a random first room, then each next one the room whose nearest chosen
+        // room is farthest away (ties by chance). Never the under-stage (the ghosts' tile).
+        std::vector<int> rooms, chosen;
+        for (int c = 0; c < maxCells; ++c)
+            if (state.cells[U(c)].opened && c != state.understage && Steps(def, state, state.foyer, c) >= 0)
+                rooms.push_back(c);
+        if (rooms.empty())
+            return chosen;
+        chosen.push_back(rooms[U(Below(state, static_cast<int>(rooms.size())))]);
+        while (static_cast<int>(chosen.size()) < state.count)
+        {
+            int best = -1, bestNear = -1;
+            for (const int c : rooms)
+            {
+                int near = 1 << 20;
+                for (const int s : chosen)
+                    near = std::min(near, Steps(def, state, s, c));
+                if (near > bestNear || (near == bestNear && Below(state, 2) == 0))
+                    best = c, bestNear = near;
+            }
+            chosen.push_back(best);
+        }
+        for (const int c : chosen)
+            state.cells[U(c)].resolved = true; // a start room gives nothing on this entry
+        return chosen;
     }
 
     int CellAt(const NightDef &def, int x, int y)
