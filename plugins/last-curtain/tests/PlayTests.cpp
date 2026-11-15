@@ -520,6 +520,8 @@ TEST_CASE("The Turn screen names the form and its numbers (T115)", "[night][play
     CHECK(turn["who"] == def.guests[3].name);
     CHECK(turn["form"] == def.guests[3].taken);
     CHECK(turn["hp"] == def.guests[3].takenHp);
+    CHECK(turn["story"] == def.guests[3].takenStory); // who it was, and what it has become (T168)
+    CHECK_FALSE(def.guests[3].takenStory.empty());
     int minions = 0;
     for (const MonsterDef &m : def.monsters)
         minions += m.taken == 3 ? m.count : 0;

@@ -58,6 +58,7 @@ namespace umbra::night
         std::uint32_t color = 0; // 0xRRGGBB: the pawn's tint, also of its Taken form
         std::string voice;       // a few words of tone for the model's lines (plan 3)
         std::string takenVoice;  // the same, once Taken
+        std::string takenStory;  // who the guest was and what the Taken form is, for the Turn's screen
     };
 
     struct BondDef { int from = 0, to = 0, bond = 0; };

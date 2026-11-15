@@ -1016,7 +1016,7 @@ nlohmann::json Play::TurnData() const
     char clock[8];
     std::snprintf(clock, sizeof(clock), "%d:%02d", Hour(def_, state_), Minute(def_, state_));
     const PowerDef &power = def_.powers[U(g.power)];
-    return {{"who", g.name}, {"isYou", t == state_.player}, {"form", g.taken}, {"hp", state_.guests[U(t)].hp}, {"words", turnWords_},
+    return {{"who", g.name}, {"isYou", t == state_.player}, {"form", g.taken}, {"story", g.takenStory}, {"hp", state_.guests[U(t)].hp}, {"words", turnWords_},
             {"power", power.id + ": " + PowerText(power)}, {"minions", minions}, {"minionName", minionName},
             {"minionShare", share}, {"clock", clock}};
 }

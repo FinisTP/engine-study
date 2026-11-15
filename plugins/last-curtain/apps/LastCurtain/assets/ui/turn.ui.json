@@ -7,6 +7,7 @@
     { "type": "text", "style": "muted", "text": "{turn.clock}  |  THE CURSE TAKES A GUEST" },
     { "type": "text", "style": "title", "text": "{turn.who} rises as {turn.form}" },
     { "type": "text", "style": "heading", "text": "\"{turn.words}\"", "visible": "{turn.words}", "wrap": true, "size": [640, 0] },
+    { "type": "text", "style": "text", "text": "{turn.story}", "visible": "{turn.story}", "wrap": true, "size": [640, 0] },
     { "type": "text", "style": "bad", "text": "It is you. Hunt them down before dawn.", "visible": "{turn.isYou}" },
     { "type": "text", "style": "text", "text": "Time shifts: the whole house wakes at midnight. The company gathers in the foyer; the Taken waits under the stage.", "wrap": true, "size": [640, 0] },
     { "type": "text", "style": "strong", "text": "HP {turn.hp}   |   power: {turn.power}", "wrap": true, "size": [640, 0] },
