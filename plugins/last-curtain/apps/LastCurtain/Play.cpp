@@ -455,7 +455,7 @@ void Play::Update(float dt)
     if (captionTicket_ != 0)
         beat_.caption = words_->Take(captionTicket_, beat_.caption), captionTicket_ = 0;
     said_ = saidTicket_ != 0 ? words_->Take(saidTicket_, "") : "", saidTicket_ = 0;
-    const bool notable = beat_.seen && Notable(before, NewLog(state_, before.logCount), action, acting);
+    const bool notable = beat_.seen && Notable(NewLog(state_, before.logCount), action);
     hold_ = !beat_.seen || skipping_ ? options_.unseenBeatSeconds : fast_ ? options_.fastBeatSeconds : options_.beatSeconds;
     waitTap_ = notable && options_.tapToContinue && !skipping_ && !fast_;
     moment_ = notable && options_.moments && !skipping_;
@@ -1013,7 +1013,7 @@ bool Play::LookDoor(int side)
     return false;
 }
 
-bool Play::Notable(const NightState &before, const std::vector<LogEntry> &entries, const Action &action, int actor) const
+bool Play::Notable(const std::vector<LogEntry> &entries, const Action &action) const
 {
     // Something happened: an item, a roll, a fight, a fall, a chat, a clearing, a goal, the Turn.
     for (const LogEntry &e : entries)
@@ -1025,11 +1025,8 @@ bool Play::Notable(const NightState &before, const std::vector<LogEntry> &entrie
         default:
             break;
         }
-    if (action.kind == ActionKind::OpenChat)
-        return true;
-    // ... or a guest walked into a featured room.
-    const int to = state_.guests[U(actor)].cell;
-    return to != before.guests[U(actor)].cell && Featured(def_, state_, to);
+    // ... or a chat; a walk alone stays on the table (the user, 2026-11-15).
+    return action.kind == ActionKind::OpenChat;
 }
 
 nlohmann::json Play::HereData() const

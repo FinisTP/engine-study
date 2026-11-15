@@ -1545,3 +1545,36 @@ TEST_CASE("The room panel says where the player stands and what waits there (T14
     CHECK(text.find(def.events[static_cast<std::size_t>(sandbag)].name) != std::string::npos);
     CHECK(text.find("Speed 5") != std::string::npos);
 }
+
+TEST_CASE("A bot's walk stays on the table; only what it does opens the room and waits (T150)", "[night][play][pace]")
+{
+    const NightDef def = Data();
+    Play play(def, FoyerNight(def, 4, 0));
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    Captions captions;
+    REQUIRE(LoadCaptions(std::filesystem::path(UMBRA_NIGHT_DATA) / "captions.json", captions, diagnostics));
+    play.SetCaptions(captions);
+    play.SetOptions(Designed());
+    int waits = 0;
+    for (int i = 0; i < 4000 && !play.State().over; ++i)
+    {
+        Settle(play);
+        const std::uint32_t before = play.State().logCount;
+        if (play.State().chat.active && play.PlayerTurn() && play.Screen() == "chat")
+            play.HandleUi("chat", "answer", "0");
+        else if (play.PlayerTurn() && play.Screen() == "menu")
+            play.Key(InputKey::Enter);
+        else
+            play.Update(1.0F);
+        if (!play.WaitingForTap())
+            continue;
+        // Something was done: a logged deed or a chat, never a plain step.
+        bool deed = play.State().chat.active;
+        for (const LogEntry &e : NewLog(play.State(), before))
+            deed = deed || (e.kind != LogKind::Opened && e.kind != LogKind::Effect && e.kind != LogKind::Woke && e.kind != LogKind::Level);
+        CHECK(deed);
+        ++waits;
+        REQUIRE(play.HandleUi("caption", "next", ""));
+    }
+    CHECK(waits > 0);
+}

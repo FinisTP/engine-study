@@ -144,8 +144,7 @@ private:
     bool waitTap_ = false;  // a bot's beat where something happened waits for a tap (options)
     bool moment_ = false;   // ... and is shown at full size (options)
     bool skipping_ = false; // Skip: no taps, pauses or line waits until the player's turn
-    [[nodiscard]] bool Notable(const umbra::night::NightState &before, const std::vector<umbra::night::LogEntry> &entries,
-                               const umbra::night::Action &action, int actor) const;
+    [[nodiscard]] bool Notable(const std::vector<umbra::night::LogEntry> &entries, const umbra::night::Action &action) const;
     [[nodiscard]] nlohmann::json HereData() const;
     int inspect_ = -1;   // the cell being inspected; the night waits
     Slide slide_;

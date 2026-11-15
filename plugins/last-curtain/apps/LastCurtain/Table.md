@@ -49,7 +49,7 @@ drawn; that one room is, at full size:
    a chat plays `talk` on both; a guest down or dead lies down (`dead`) until woken. This works on
    the table too.
 5. **Moments** (options `moments`): when something happens in the player's sight (an item, a roll,
-   a fight, a fall, a chat, a clearing, a walk into a featured room) the stage shows that room, and
+   a fight, a fall, a chat, a clearing; a walk alone stays on the table) the stage shows that room, and
    with `tapToContinue` the bot waits for Continue (or Space). Skip runs the bots to the player's
    turn with no waits. A gold arrow bobs over whoever's turn it is, on the table and the stage.
 
