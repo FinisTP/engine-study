@@ -4,7 +4,7 @@
 
 - Date: 2026-11-15
 - Commits: `issue #UMBRA-183` (clicks), `#UMBRA-184` (bots' walks), `#UMBRA-185` (rest),
-  `#UMBRA-186` (the eight rooms around), `#UMBRA-187` (the room's flow).
+  `#UMBRA-186` (the eight rooms around), `#UMBRA-187` (the room's flow), `#UMBRA-190` (an ASan fix).
 - Tester: Claude (remote session), Linux cloud workspace; pictures with SwiftShader and `ui-preview`.
 - State: **implemented**; the Windows play check (§4) is open.
 - The user's feedback (16:31): bots' walks need no full room view, only their deeds; the player
@@ -33,6 +33,13 @@
 | T150: every bot beat that waits is a deed, never a plain step | pass (RED first) |
 | T151: after a room resolves, the rest menu; Look shows the room; End turn lets the bots go | pass (RED first) |
 | T152: a lasting trap plays arrival → card (it stays) → tumbling die (no verdict, no Continue) → plain result → rest; a met condition clears with no die; an item room shows the find; a bot's roll names its event | pass (RED first: dice came straight after the move) |
+
+## 1b. Full runs
+
+`/home/claude/verify.sh` (all CTests, Debug): GCC 55/55, Clang 55/55. ASan + UBSan found a real
+read before a vector in `Play::Do` (the find looked up the room of a cell that was unopened before
+the move); fixed in `#UMBRA-190`, after which the night suite passes under ASan (204 cases) and
+under GCC and Clang; the other 54 suites had passed under ASan in the same run.
 
 ## 2. Pictures
 
