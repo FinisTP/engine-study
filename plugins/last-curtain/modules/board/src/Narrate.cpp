@@ -15,7 +15,8 @@ namespace umbra::night
         constexpr const char *keys[] = {
             "move", "open", "fight", "chat", "answer", "endTurn", "power", "strike",
             "guard", "leave", "item", "pickup", "drop", "level", "check", "passed", "failed", "found", "down",
-            "died", "hit", "killed", "goalDone", "goalFailed", "joined", "told", "cleared",
+            "died", "hit", "killed", "goalDone", "goalFailed", "cleared",
+            "askSpare", "askItem", "askHunt", "asked", "answered", "grantSpare", "grantItem", "grantHunt", "refused",
             "passMight", "failMight", "passSanity", "failSanity", "passSpeed", "failSpeed", "replyYes", "replyNo"}; // Play's roll results and chat replies
 
         std::size_t U(int i) { return static_cast<std::size_t>(i); }
@@ -72,12 +73,20 @@ namespace umbra::night
                 v["foe"] = f.monster >= 0 ? MonsterName(def, before, f.monster) : GuestName(def, after, f.guest);
                 return Fill(captions, "strike", v);
             }
-            case ActionKind::Chat:
+            case ActionKind::Chat: // a request (Night.md "Persuading"): spare me, an item, go after someone
+                v["other"] = GuestName(def, after, action.a);
+                if (action.b >= 0)
+                    v["foe"] = GuestName(def, after, action.b);
+                return Fill(captions, action.b == -1 ? "askSpare" : action.b == -2 ? "askItem" : "askHunt", v);
             case ActionKind::OpenChat:
                 return v["other"] = GuestName(def, after, action.a), Fill(captions, "chat", v);
             case ActionKind::Power:
                 return v["power"] = def.powers[U(def.guests[U(actor)].power)].id, Fill(captions, "power", v);
-            case ActionKind::Answer: return Fill(captions, "answer", v);
+            case ActionKind::Answer: // the question put, word for word
+                if (before.chat.question < 0)
+                    return Fill(captions, "answer", v);
+                v["other"] = GuestName(def, after, before.chat.asker), v["question"] = def.questions[U(before.chat.question)].text;
+                return Fill(captions, "asked", v);
             case ActionKind::EndTurn: return Fill(captions, "endTurn", v);
             case ActionKind::Guard: return Fill(captions, "guard", v);
             case ActionKind::Leave: return Fill(captions, "leave", v);
@@ -91,6 +100,15 @@ namespace umbra::night
             case ActionKind::LevelUp: return Fill(captions, "level", v);
             }
             return {};
+        }
+
+        // What came of a request: granted (by its kind) or not.
+        std::string Told(const NightDef &def, const NightState &after, const LogEntry &e, const Captions &captions)
+        {
+            Vars v{{"who", GuestName(def, after, e.who)}, {"other", GuestName(def, after, e.other)}};
+            if (e.b >= 0)
+                v["foe"] = GuestName(def, after, e.b);
+            return Fill(captions, !e.a ? "refused" : e.b == -1 ? "grantSpare" : e.b == -2 ? "grantItem" : "grantHunt", v);
         }
 
         // The outcome lines from the log, joined with "; ".
@@ -113,13 +131,8 @@ namespace umbra::night
                     line = Fill(captions, "cleared", {{"who", GuestName(def, after, e.who)}, {"event", def.events[U(e.a)].name}});
                 else if (e.kind == LogKind::Goal)
                     line = Fill(captions, e.a ? "goalDone" : "goalFailed", {{"who", GuestName(def, after, e.who)}});
-                else if (e.kind == LogKind::Persuade && e.a)
-                {
-                    const Vars pair{{"who", GuestName(def, after, e.who)}, {"other", GuestName(def, after, e.other)}};
-                    line = Fill(captions, "told", pair);
-                    if (e.b >= def.rules.persuade.approvals)
-                        line += "; " + Fill(captions, "joined", pair);
-                }
+                else if (e.kind == LogKind::Persuade)
+                    line = Told(def, after, e, captions);
                 else if (e.kind == LogKind::Hit)
                 {
                     // Who struck whom (a monster: the battle's first one), the damage and what is left.
@@ -185,6 +198,14 @@ namespace umbra::night
         if (from != to)
             beat.path = {from, to};
         beat.caption = Decision(def, before, after, entries, action, actor, captions);
+        if (action.kind == ActionKind::Answer && before.chat.question >= 0) // the answer chosen, and what came of it
+        {
+            const QuestionDef &q = def.questions[U(before.chat.question)];
+            beat.answer = Fill(captions, "answered", {{"guest", GuestName(def, after, actor)}, {"answer", action.a == 0 ? q.physicalText : q.magicalText}});
+        }
+        for (const LogEntry &e : entries)
+            if (e.kind == LogKind::Persuade)
+                beat.told = Told(def, after, e, captions);
         // 4. Gone into the dark: what happened there stays there.
         beat.dark = to >= 0 && !now.cells[U(to)].lit;
         if (!beat.dark)

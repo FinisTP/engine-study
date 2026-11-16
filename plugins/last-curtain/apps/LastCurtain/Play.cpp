@@ -837,7 +837,7 @@ void Play::Update(float dt)
     // 6. A deed the player waits on with a roll (a room, a fight, a chat, a power) shows in two steps
     //    (Play.md "Bots"): what it faces (no result); after a tap its roll, then the result. No roll: once.
     const bool facing = action.kind == ActionKind::Move || action.kind == ActionKind::Attack || action.kind == ActionKind::Power ||
-                        action.kind == ActionKind::Chat || action.kind == ActionKind::OpenChat;
+                        action.kind == ActionKind::Chat || action.kind == ActionKind::OpenChat || action.kind == ActionKind::Answer;
     const auto log = NewLog(state_, before.logCount);
     const bool rolled = std::any_of(log.begin(), log.end(), [&](const LogEntry &e) { return e.kind == LogKind::Check && e.who == acting; });
     if (waitTap_ && facing && rolled)
@@ -848,7 +848,8 @@ void Play::Update(float dt)
             {
                 Dice d{e.a, e.other, e.b, "", "", e.a + e.other >= e.b, 0, "", "", 0, ""};
                 d.who = ShownName(def_, state_, acting), d.guest = acting, d.change = Changes(before, acting);
-                d.result = d.who + (d.passed ? " passes." : " fails.") + (d.change.empty() ? "" : " " + d.change + ".");
+                d.result = d.who + (d.passed ? " passes." : " fails.") + (d.change.empty() ? "" : " " + d.change + ".") +
+                           (beat_.told.empty() ? "" : " " + beat_.told); // a chat: what came of the request
                 if (beatEvent_ >= 0)
                     d.stat = StatName(def_.events[U(beatEvent_)].stat);
                 botDice_ = d;
@@ -931,7 +932,7 @@ nlohmann::json Play::UiData() const
         data["inspect"] = InspectData();
     if (beat_.seen && (hold_ > 0.0F || waitTap_))
         data["caption"] = {{"guest", ShownName(def_, state_, beat_.guest)}, {"line", beat_.caption}, {"result", beat_.result}, {"tap", waitTap_},
-                           {"preview", preview_}, {"event", beatEvent_ >= 0 ? def_.events[U(beatEvent_)].name : ""}, {"eventText", beatEvent_ >= 0 ? def_.events[U(beatEvent_)].text : ""},
+                           {"preview", preview_}, {"event", beatEvent_ >= 0 ? def_.events[U(beatEvent_)].name : ""}, {"eventText", beatEvent_ >= 0 ? def_.events[U(beatEvent_)].text : beat_.answer},
                            {"said", said_}, {"saidBy", saidGuest_ >= 0 ? ShownName(def_, state_, saidGuest_) : ""}};
     const int me = Me();
     if (me < 0)

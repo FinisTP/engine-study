@@ -19,6 +19,8 @@ namespace umbra::night
         std::vector<int> path;  // cells the pawn walks, seen part only
         std::string caption;    // the decision; "" = nothing to say
         std::string result;     // what came of it, from the log
+        std::string answer;     // a chat answer: "Le Thanh answers: ..." (Night.md "Persuading")
+        std::string told;       // ... and what came of the request: granted or not
         bool seen = false;
         bool dark = false; // seen leaving the light: the walk shows, not what the room did (T217)
     };

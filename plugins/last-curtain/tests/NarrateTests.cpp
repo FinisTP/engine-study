@@ -147,15 +147,18 @@ TEST_CASE("Every action kind has a caption line (T109)", "[night][narrate]")
     CHECK(diagnostics.front().code == "night.captions");
 }
 
-TEST_CASE("A passed answer tells the goal (T129)", "[night][narrate]")
+TEST_CASE("An answer tells what came of the request: granted by its kind, or not (T129, T262)", "[night][narrate]")
 {
     const NightDef def = Data();
     const NightState state = FoyerNight(def, 1);
     LogEntry passed{};
-    passed.kind = LogKind::Persuade, passed.who = 1, passed.other = 2, passed.a = 1, passed.b = 1;
-    const Beat beat = Narrate(def, state, state, {passed}, {ActionKind::Answer, 0}, 1, -1, Lines());
-    CHECK(beat.result.find(def.guests[2].name + " tells " + def.guests[1].name) != std::string::npos);
+    passed.kind = LogKind::Persuade, passed.who = 1, passed.other = 2, passed.a = 1, passed.b = 3; // go after guest 3
+    const Beat hunt = Narrate(def, state, state, {passed}, {ActionKind::Answer, 0}, 1, -1, Lines());
+    CHECK(hunt.told == def.guests[2].name + " agrees to go after " + def.guests[3].name + ".");
+    CHECK(hunt.result.find(hunt.told) != std::string::npos);
+    passed.b = -1; // spare me
+    CHECK(Narrate(def, state, state, {passed}, {ActionKind::Answer, 0}, 1, -1, Lines()).told.find("agrees to spare " + def.guests[1].name) != std::string::npos);
     LogEntry failed = passed;
     failed.a = 0;
-    CHECK(Narrate(def, state, state, {failed}, {ActionKind::Answer, 0}, 1, -1, Lines()).result.find("tells") == std::string::npos);
+    CHECK(Narrate(def, state, state, {failed}, {ActionKind::Answer, 0}, 1, -1, Lines()).told == def.guests[2].name + " is not convinced.");
 }

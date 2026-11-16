@@ -36,6 +36,10 @@ event's card, as for the player, naming the bot and its stat ("Watch the roll");
 the dice screen ("Le Thanh rolls"), which tells the verdict ("Le Thanh fails. -2 HP.") with a pass
 or fail sound; Continue puts the change over the bot ("-2 HP") and the deed is done: no result
 caption after it (user, 2026-11-17). Another roll (a fight, a chat): its caption, then the roll. A
+chat between bots (user, 2026-11-17): the request ("Le Thanh asks Dinh Quoc Bao to spare them.",
+told once); then the question word for word with the answer chosen ("Dinh Quoc Bao asks Le Thanh:
+"..."" / "Le Thanh answers: ..."); then the roll, whose verdict says what came of it ("Le Thanh
+fails. Dinh Quoc Bao is not convinced."). A
 deed with no roll (an item found, a chat) is told once, result and all: one tap moves on.
 A bot that only waits stays on the table. A
 blow in a fight says who hit whom, for how much and the HP left, and puts the damage over the

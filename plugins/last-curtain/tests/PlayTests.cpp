@@ -2375,3 +2375,44 @@ TEST_CASE("Every death is announced: who, how, and how many are still alive (T26
         play.Update(1.0F), play.HandleUi("fall", "continue", "");
     CHECK_FALSE(play.UiData().contains("obituary"));
 }
+
+TEST_CASE("A chat between bots is shown: the request, the question and answer, the roll and what came of it (T262)", "[night][play][royale]")
+{
+    // The user (2026-11-17): a bots' chat showed only "Khang rolled 2 - success".
+    const NightDef def = Data();
+    Play play(def, NewNight(def, 7, 0));
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    Captions captions;
+    REQUIRE(LoadCaptions(std::filesystem::path(UMBRA_NIGHT_DATA) / "captions.json", captions, diagnostics));
+    play.SetCaptions(captions);
+    umbra::night::GameOptions options = Designed();
+    options.light = false;
+    play.SetOptions(options);
+    bool request = false, question = false, outcome = false;
+    for (int i = 0; i < 40000 && !(request && question && outcome) && !play.State().over; ++i)
+    {
+        const nlohmann::json d = play.UiData();
+        const std::string screen = play.Screen();
+        if (!play.PlayerTurn() && d.contains("caption"))
+        {
+            const std::string line = d["caption"].value("line", std::string());
+            request = request || (line.find(" asks ") != std::string::npos && (line.find("to spare") != std::string::npos || line.find("for an item") != std::string::npos || line.find("to go after") != std::string::npos));
+            question = question || (line.find(" asks ") != std::string::npos && line.find(": \"") != std::string::npos && !d["caption"].value("eventText", std::string()).empty());
+        }
+        if (screen == "dice" && d["dice"].value("told", false))
+        {
+            const std::string result = d["dice"].value("result", std::string());
+            outcome = outcome || result.find("agrees") != std::string::npos || result.find("not convinced") != std::string::npos || result.find("hands") != std::string::npos;
+        }
+        if (screen == "fall") play.HandleUi("fall", "continue", "");
+        else if (screen == "dice") { if (!play.HandleUi("dice", "continue", "")) play.Update(0.2F); }
+        else if (play.PlayerTurn() && play.State().chat.active) play.HandleUi("chat", "answer", "0");
+        else if (play.PlayerTurn() && screen == "menu" && play.Sliding().guest < 0) play.Key(InputKey::Enter);
+        else if (screen == "rest") play.HandleUi("rest", "end", "");
+        else if (play.WaitingForTap() && play.Sliding().guest < 0) { Settle(play); play.HandleUi("caption", "next", ""); play.HandleUi("event", "roll", ""); }
+        else { Settle(play); play.Update(0.25F); }
+    }
+    CHECK(request);
+    CHECK(question);
+    CHECK(outcome);
+}
