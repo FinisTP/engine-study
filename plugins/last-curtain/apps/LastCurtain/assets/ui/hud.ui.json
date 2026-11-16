@@ -21,16 +21,8 @@
       { "type": "text", "style": "title", "text": "Your turn", "visible": "{banner.yours}" },
       { "type": "text", "style": "title", "text": "{banner.name}'s turn", "visible": "{banner.theirs}" }
     ] },
-    { "type": "button", "anchor": "top-left", "offset": [24, 76], "size": [300, 40], "text": "Quests  +", "action": "goals", "visible": "{goalFolded}" },
-    { "type": "stack", "anchor": "top-left", "offset": [24, 76], "style": "panel", "gap": 6, "size": [300, 0], "visible": "{goalOpen}", "children": [
-      { "type": "button", "size": [270, 34], "text": "Quests  -", "action": "goals" },
-      { "type": "text", "style": "muted", "text": "First to finish one wins its power.", "wrap": true, "size": [270, 0] },
-      { "type": "list", "items": "{openQuests}", "as": "q", "gap": 8, "entry": { "type": "stack", "gap": 2, "children": [
-        { "type": "text", "style": "strong", "text": "{q.name}" },
-        { "type": "text", "style": "small", "text": "{q.text}", "wrap": true, "size": [270, 0] },
-        { "type": "text", "style": "good", "text": "Reward: {q.reward}", "wrap": true, "size": [270, 0] }
-      ] } },
-      { "type": "list", "items": "{takenQuests}", "as": "q", "entry": { "type": "text", "style": "muted", "text": "{q.name}: taken by {q.by}" } },
+    { "type": "stack", "anchor": "top-left", "offset": [24, 76], "gap": 6, "children": [
+      { "type": "button", "size": [220, 40], "text": "{questButton}", "action": "book" },
       { "type": "text", "style": "heading", "text": "Your power: {power.name}", "visible": "{power}" },
       { "type": "text", "style": "small", "text": "Ready again in {power.cooldown} turns", "visible": "{power.cooldown}" }
     ] },

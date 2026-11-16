@@ -2038,10 +2038,30 @@ TEST_CASE("Talk, fight and power choices are named plainly (T251)", "[night][pla
     const NightDef def = Calm();
     Play play(def, PlayerFirst(def)); // everyone still in the foyer
     ToPlayer(play);
+    // Every label in the menu and its groups (T265), opened one level at a time.
     std::vector<std::string> labels;
-    const nlohmann::json data = play.UiData();
-    for (const nlohmann::json &a : data["actions"])
-        labels.push_back(a["label"].get<std::string>());
+    const auto read = [&] {
+        const nlohmann::json data = play.UiData();
+        std::vector<std::pair<std::string, std::string>> groups;
+        for (const nlohmann::json &a : data["actions"])
+        {
+            labels.push_back(a["label"].get<std::string>());
+            if (a["action"] == "group")
+                groups.push_back({a["action"], a["arg"]});
+        }
+        return groups;
+    };
+    for (const auto &[action, group] : read())
+    {
+        REQUIRE(play.HandleUi("menu", action, group));
+        for (const auto &[inner, sub] : read())
+        {
+            REQUIRE(play.HandleUi("menu", inner, sub));
+            read();
+            play.HandleUi("menu", "up", "");
+        }
+        play.HandleUi("menu", "up", "");
+    }
     const auto has = [&](const std::string &part) {
         return std::any_of(labels.begin(), labels.end(), [&](const std::string &l) { return l.find(part) != std::string::npos; });
     };
@@ -2473,4 +2493,85 @@ TEST_CASE("Striking another guest says who struck whom, for how much, and what i
     // It goes by itself after its seconds, too.
     play.Update(5.0F);
     CHECK(play.Screen() != "blow");
+}
+
+TEST_CASE("The turn menu is grouped: Ask, then whom, then what; Attack, then whom (T265)", "[night][play][menu]")
+{
+    // The user (2026-11-17): every request to every guest was its own button; the menu fell off the screen.
+    const NightDef def = Calm();
+    Play play(def, PlayerFirst(def)); // everyone in the foyer
+    const auto labels = [&] {
+        std::vector<std::string> out;
+        const nlohmann::json data = play.UiData();
+        for (const nlohmann::json &a : data["actions"])
+            out.push_back(a["label"]);
+        return out;
+    };
+    const auto has = [](const std::vector<std::string> &l, const std::string &text) {
+        return std::any_of(l.begin(), l.end(), [&](const std::string &s) { return s.find(text) != std::string::npos; });
+    };
+    const auto click = [&](const std::string &label) {
+        const nlohmann::json data = play.UiData();
+        for (const nlohmann::json &a : data["actions"])
+            if (a["label"] == label)
+                return play.HandleUi("menu", a["action"], a["arg"]);
+        return false;
+    };
+    // 1. The top: groups only, short.
+    const std::vector<std::string> top = labels();
+    CHECK(top.size() <= 8);
+    CHECK(has(top, "Ask..."));
+    CHECK(has(top, "Attack..."));
+    CHECK_FALSE(has(top, "to spare you"));
+    CHECK(top.back() == "End turn");
+    // 2. Ask: the guests here; then one guest's requests; Back climbs.
+    REQUIRE(click("Ask..."));
+    const std::vector<std::string> whom = labels();
+    const std::string other = def.guests[1].name;
+    CHECK(has(whom, "Ask " + other));
+    CHECK(has(whom, "Back"));
+    REQUIRE(click("Ask " + other + "..."));
+    const std::vector<std::string> what = labels();
+    CHECK(has(what, "to spare you"));
+    CHECK(has(what, "to go after"));
+    REQUIRE(click("Back"));
+    REQUIRE(click("Back"));
+    CHECK(labels() == top);
+    // 3. Attack: the targets.
+    REQUIRE(click("Attack..."));
+    CHECK(has(labels(), "Attack " + other));
+    // 4. A choice made: the menu is back at the top.
+    REQUIRE(click("Attack " + other));
+    CHECK(play.State().battle.active);
+}
+
+TEST_CASE("The quests are a book: a button opens it, one quest a page, prev and next, close (T266)", "[night][play][menu]")
+{
+    // The user (2026-11-17): the goal list overflowed the screen; make it a book to look through.
+    const NightDef def = Data();
+    Play play(def, NewNight(def, 7, 0));
+    ToPlayer(play);
+    nlohmann::json data = play.UiData();
+    int open = 0;
+    for (std::size_t q = 0; q < def.quests.size(); ++q)
+        open += play.State().questBy[q] == 0 ? 1 : 0; // a bot may have taken one already
+    CHECK(data["questCount"] == open);
+    CHECK(data["questButton"] == "Quests (" + std::to_string(open) + " open)");
+    CHECK(play.Screen() == "menu");
+    REQUIRE(play.HandleUi("hud", "book", ""));
+    CHECK(play.Screen() == "book");
+    data = play.UiData();
+    CHECK(data["book"]["page"] == 1);
+    CHECK(data["book"]["pages"] == static_cast<int>(def.quests.size()));
+    CHECK(data["book"]["name"] == def.quests[0].name);
+    REQUIRE(play.HandleUi("book", "bookNext", ""));
+    CHECK(play.UiData()["book"]["name"] == def.quests[1].name);
+    REQUIRE(play.HandleUi("book", "bookPrev", ""));
+    CHECK(play.UiData()["book"]["page"] == 1);
+    // The night waits while it is open.
+    const int beats = play.Beats();
+    play.Update(10.0F);
+    CHECK(play.Beats() == beats);
+    REQUIRE(play.HandleUi("book", "bookClose", ""));
+    CHECK(play.Screen() == "menu");
 }

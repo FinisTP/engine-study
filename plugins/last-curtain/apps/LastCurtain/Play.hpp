@@ -241,6 +241,10 @@ private:
         std::string text; // "Phan Thi Mai strikes you for 4 damage. You have 2 HP left."
         int cell = -1, guest = -1; // where, and who was struck (-1: a monster)
     };
+    int book_ = -1;         // the quest book's open page (-1: shut); the night waits (Play.md "The quest book")
+    std::string menuGroup_; // the turn menu's open group: "", "ask", "ask:<guest>", "attack", "power"
+    [[nodiscard]] std::string MenuGroup(const umbra::night::Action &action) const;
+    [[nodiscard]] nlohmann::json MenuData(const std::vector<umbra::night::Action> &legal, int used) const;
     std::deque<Blow> blows_; // each blow in sight, told one after another (Play.md "Blows")
     float blowClock_ = 0.0F;
     [[nodiscard]] std::string BlowText(const umbra::night::LogEntry &hit, int cell, const umbra::night::NightState &before) const;

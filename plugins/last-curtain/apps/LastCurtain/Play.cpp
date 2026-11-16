@@ -632,6 +632,13 @@ bool Play::Handle(const std::string &, const std::string &action, const std::str
     }
     if (action == "resume" && pause_)
         return !(pause_ = false);
+    const int pages = static_cast<int>(def_.quests.size());
+    if (action == "book" && pages > 0) // the quest book opens at its first page, or shuts
+        return book_ = book_ >= 0 ? -1 : 0, true;
+    if (book_ >= 0 && (action == "bookNext" || action == "bookPrev"))
+        return book_ = (book_ + (action == "bookNext" ? 1 : pages - 1)) % pages, true;
+    if (book_ >= 0 && action == "bookClose")
+        return book_ = -1, true;
     if (action == "close" && inspect_ >= 0)
         return (inspect_ = -1), true;
     if (action == "continue" && Screen() == "fall") // the fall seen: the night goes on
@@ -672,7 +679,11 @@ bool Play::Handle(const std::string &, const std::string &action, const std::str
     const int n = ParseInt(arg);
     const std::vector<Action> legal = LegalActions(def_, state_);
     if (action == "act")
-        return n >= 0 && n < static_cast<int>(legal.size()) && Do(legal[U(n)]);
+        return n >= 0 && n < static_cast<int>(legal.size()) && Do(legal[U(n)]) && (menuGroup_.clear(), true);
+    if (action == "group") // the turn menu: open a group ("ask", "ask:3", "attack", "power")
+        return menuGroup_ = arg, true;
+    if (action == "up") // ... and climb one level
+        return menuGroup_ = menuGroup_.rfind("ask:", 0) == 0 ? "ask" : "", true;
     // 2. The bag: use or drop a slot, pick up a floor item.
     const ActionKind kind = action == "use" ? ActionKind::UseItem : action == "drop" ? ActionKind::DropItem : ActionKind::PickUp;
     if (action != "use" && action != "drop" && action != "pickup")
@@ -697,6 +708,8 @@ std::string Play::Screen() const
         return "pause";
     if (inspect_ >= 0)
         return "inspect";
+    if (book_ >= 0)
+        return "book";
     if (slide_.guest >= 0 && PlayerTurn() && Controls(state_, state_.player, slide_.guest)) // the player's own slide; a dialog waits for it
         return "picking";
     if (arrive_.cell >= 0)
@@ -729,7 +742,7 @@ std::string Play::Screen() const
 void Play::Update(float dt)
 {
     // 1. Nothing moves without time; a slide plays out first; then the player's rolls wait.
-    if (dt <= 0.0F || pause_ || inspect_ >= 0)
+    if (dt <= 0.0F || pause_ || inspect_ >= 0 || book_ >= 0)
         return;
     clock_ += dt, tapClock_ += dt;
     diceClock_ += dt, flashClock_ = std::max(0.0F, flashClock_ - dt);
@@ -795,7 +808,7 @@ void Play::Update(float dt)
             WalkOn();
         return;
     }
-    walk_.clear(), walking_ = false, mode_ = Mode::Menu; // a bot's turn
+    walk_.clear(), walking_ = false, mode_ = Mode::Menu, menuGroup_.clear(); // a bot's turn
     // 3. A bot decides; before its first action of a turn, a bot in view thinks for
     //    max(thinkSeconds, the decision's own time) (user).
     bag_ = false;
@@ -990,6 +1003,17 @@ nlohmann::json Play::UiData() const
     if (guest.power >= 0)
         data["power"] = {{"name", def_.powers[U(guest.power)].id}, {"cooldown", guest.powerCooldown}};
     data["killerNear"] = KillerNear();
+    int open = 0;
+    for (std::size_t q = 0; q < def_.quests.size(); ++q)
+        open += state_.questBy[q] == 0 ? 1 : 0;
+    data["questCount"] = open;
+    data["questButton"] = "Quests (" + std::to_string(open) + " open)";
+    if (book_ >= 0)
+    {
+        nlohmann::json page = data["quests"][U(book_)];
+        page["page"] = book_ + 1, page["pages"] = static_cast<int>(def_.quests.size());
+        data["book"] = page;
+    }
     if (!blows_.empty())
         data["blow"] = {{"text", blows_.front().text}, {"more", static_cast<int>(blows_.size()) - 1}};
     if (!obituary_.text.empty() && clock_ < obituary_.until)
@@ -1019,31 +1043,12 @@ nlohmann::json Play::UiData() const
     }
     data["turnTitle"] = me == state_.player ? std::string{"Your turn"} : ShownName(def_, state_, me) + "'s turn";
 
-    // 2. The turn menu: Move first, then fights, chats and the rest, Use item, End turn last.
-    data["actions"] = nlohmann::json::array();
+    // 2. The turn menu (Play.md "The turn menu"), grouped so it fits.
     const std::vector<Action> legal = PlayerTurn() ? LegalActions(def_, state_) : std::vector<Action>{};
-    if (std::any_of(legal.begin(), legal.end(), [](const Action &a) { return a.kind == ActionKind::Move && a.a < transportMove; }))
-        data["actions"].push_back({{"label", "Move"}, {"action", "move"}, {"arg", ""}});
-    if (Screen() == "menu")
-        data["actions"].push_back({{"label", roomView_ ? "Board view" : "Room view"}, {"action", "look"}, {"arg", ""}});
-    int endTurn = -1;
-    for (std::size_t i = 0; i < legal.size(); ++i)
-    {
-        const Action &a = legal[i];
-        if ((a.kind == ActionKind::Move && a.a < transportMove) || a.kind == ActionKind::UseItem || a.kind == ActionKind::DropItem)
-            continue;
-        if (a.kind == ActionKind::EndTurn)
-            endTurn = static_cast<int>(i);
-        else
-            data["actions"].push_back({{"label", Label(a)}, {"action", "act"}, {"arg", std::to_string(i)}});
-    }
     int used = 0;
     for (int s = 0; s < def_.rules.carry; ++s)
         used += guest.items[U(s)] >= 0 ? 1 : 0;
-    if (PlayerTurn() && !state_.battle.active && !state_.chat.active)
-        data["actions"].push_back({{"label", "Use item (" + std::to_string(used) + " of " + std::to_string(def_.rules.carry) + ")"}, {"action", "bag"}, {"arg", ""}});
-    if (endTurn >= 0)
-        data["actions"].push_back({{"label", "End turn"}, {"action", "act"}, {"arg", std::to_string(endTurn)}});
+    data["actions"] = MenuData(legal, used);
 
     // 3. The company: allies, guests being won over; the round's order, the acting guest marked.
     data["allies"] = data["winning"] = data["turnOrder"] = nlohmann::json::array();
@@ -1265,6 +1270,74 @@ std::string Play::BlowText(const LogEntry &hit, int cell, const NightState &befo
     if (hit.b <= 0)
         return text + left + (you ? " fall." : " falls.");
     return text + left + (you ? " have " : " has ") + std::to_string(hit.b) + " HP left.";
+}
+
+std::string Play::MenuGroup(const Action &a) const
+{
+    // The group an action sits in: Ask (then whom), Attack, Power with a target; "" at the top.
+    if (a.kind == ActionKind::Chat)
+        return "ask:" + std::to_string(a.a);
+    if (a.kind == ActionKind::Attack)
+        return "attack";
+    if (a.kind == ActionKind::Power && a.a >= 0)
+        return "power";
+    return "";
+}
+
+nlohmann::json Play::MenuData(const std::vector<Action> &legal, int used) const
+{
+    // 1. Each legal action's group; a group whose actions are gone is the top again.
+    nlohmann::json out = nlohmann::json::array();
+    const auto add = [&](const std::string &label, const std::string &action, const std::string &arg) { out.push_back({{"label", label}, {"action", action}, {"arg", arg}}); };
+    const auto in = [&](const std::string &group) {
+        std::vector<int> found;
+        for (std::size_t i = 0; i < legal.size(); ++i)
+            if (const std::string g = MenuGroup(legal[i]); g == group || (group == "ask" && g.rfind("ask:", 0) == 0))
+                found.push_back(static_cast<int>(i));
+        return found;
+    };
+    const std::string group = !menuGroup_.empty() && !in(menuGroup_).empty() ? menuGroup_ : "";
+    // 2. Inside a group: its choices (Ask: whom first), then Back.
+    if (group == "ask")
+    {
+        std::vector<int> whom;
+        for (const int i : in("ask"))
+            if (std::find(whom.begin(), whom.end(), legal[U(i)].a) == whom.end())
+                whom.push_back(legal[U(i)].a);
+        for (const int g : whom)
+            add("Ask " + ShownName(def_, state_, g) + "...", "group", "ask:" + std::to_string(g));
+    }
+    else if (!group.empty())
+        for (const int i : in(group))
+            add(Label(legal[U(i)]), "act", std::to_string(i));
+    if (!group.empty())
+        return add("Back", "up", ""), out;
+    // 3. The top: Move, the groups (one choice shown as itself), the rest, Use item, Room view, End turn.
+    if (std::any_of(legal.begin(), legal.end(), [](const Action &a) { return a.kind == ActionKind::Move && a.a < transportMove; }))
+        add("Move", "move", "");
+    for (const auto &[key, name] : {std::pair<const char *, const char *>{"ask", "Ask..."}, {"attack", "Attack..."}, {"power", "Power..."}})
+        if (const std::vector<int> found = in(key); found.size() == 1)
+            add(Label(legal[U(found[0])]), "act", std::to_string(found[0]));
+        else if (!found.empty())
+            add(name, "group", key);
+    int endTurn = -1;
+    for (std::size_t i = 0; i < legal.size(); ++i)
+    {
+        const Action &a = legal[i];
+        if ((a.kind == ActionKind::Move && a.a < transportMove) || a.kind == ActionKind::UseItem || a.kind == ActionKind::DropItem || !MenuGroup(a).empty())
+            continue;
+        if (a.kind == ActionKind::EndTurn)
+            endTurn = static_cast<int>(i);
+        else
+            add(Label(a), "act", std::to_string(i));
+    }
+    if (PlayerTurn() && !state_.battle.active && !state_.chat.active)
+        add("Use item (" + std::to_string(used) + " of " + std::to_string(def_.rules.carry) + ")", "bag", "");
+    if (Screen() == "menu")
+        add(roomView_ ? "Board view" : "Room view", "look", "");
+    if (endTurn >= 0)
+        add("End turn", "act", std::to_string(endTurn));
+    return out;
 }
 
 bool Play::KillerNear() const

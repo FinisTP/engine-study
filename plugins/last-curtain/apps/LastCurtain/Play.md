@@ -90,6 +90,14 @@ the page's data under `bio` when a guest is chosen.
   player resting after a room, then the player's own turn (at once, not after the last bot's
   caption); a bot's caption still held; a bot thinking; the bot acting. A bot out of the player's
   light is named but not looked at. The rules' current guest is only the last fallback.
+- **The turn menu (2026-11-17):** grouped so it fits (the user): the top shows Move, `Ask...`,
+  `Attack...`, `Power...` (a group with one choice shows that choice itself), the other actions,
+  Use item, Room view, End turn. Ask lists whom ("Ask Phan Thi Mai..."), then what (spare you, an
+  item, go after someone); Attack and Power list their targets; Back climbs one level. The open
+  group (`menuGroup_`) closes after a choice and when a bot acts.
+- **The quest book (2026-11-17):** the HUD shows "Quests (N open)" and the player's power; the
+  button opens the book (screen `book`), one quest a page (what to do, the reward, open or taken by
+  whom), Prev, Next, Close. The night waits while it is open.
 - **Blows (2026-11-17):** each blow of a fight in sight (or one the player gives or takes) is told
   in words on the `blow` screen, one after another, before anything else moves: "Phan Thi Mai
   strikes you for 4 damage. You have 2 HP left." Each shows `blowSeconds` (options.csv); a click

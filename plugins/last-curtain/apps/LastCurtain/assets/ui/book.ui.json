@@ -1,0 +1,21 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [520, 0], "align": "stretch", "gap": 12, "children": [
+    { "type": "stack", "direction": "horizontal", "gap": 12, "align": "center", "children": [
+      { "type": "text", "style": "muted", "text": "THE QUEST BOOK" },
+      { "type": "text", "style": "small", "text": "page {book.page} of {book.pages}" }
+    ] },
+    { "type": "text", "style": "title", "text": "{book.name}" },
+    { "type": "text", "style": "text", "text": "{book.text}", "wrap": true, "size": [480, 0] },
+    { "type": "text", "style": "good", "text": "Reward: {book.reward}", "wrap": true, "size": [480, 0] },
+    { "type": "text", "style": "strong", "text": "Open: the first to finish it takes it for the night.", "visible": "{book.open}" },
+    { "type": "text", "style": "bad", "text": "Taken by {book.by}.", "visible": "{book.by}" },
+    { "type": "stack", "direction": "horizontal", "gap": 12, "children": [
+      { "type": "button", "size": [150, 44], "text": "< Prev", "action": "bookPrev" },
+      { "type": "button", "size": [150, 44], "text": "Next >", "action": "bookNext" },
+      { "type": "button", "size": [150, 44], "text": "Close", "action": "bookClose" }
+    ] }
+  ] }
+}
