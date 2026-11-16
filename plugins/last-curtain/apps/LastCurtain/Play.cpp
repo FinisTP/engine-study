@@ -970,6 +970,8 @@ nlohmann::json Play::UiData() const
     if (guest.power >= 0)
         data["power"] = {{"name", def_.powers[U(guest.power)].id}, {"cooldown", guest.powerCooldown}};
     data["killerNear"] = KillerNear();
+    if (!obituary_.text.empty() && clock_ < obituary_.until)
+        data["obituary"] = {{"text", obituary_.text + ". " + obituary_.cause}, {"title", obituary_.text}, {"cause", obituary_.cause}};
     // The top bar: whoever acts (a bot on its turn, marked as theirs), else the player; its portrait,
     // a list of one so it can be clicked, brings the camera back to them ("focus").
     const int top = Acting() >= 0 ? Acting() : me;
@@ -1201,8 +1203,14 @@ void Play::Notice(std::uint32_t since)
             const MonsterDef &m = def_.monsters[U(e.a)];
             popups_.push_back({state_.taken.guest, "-" + std::to_string(def_.guests[U(m.taken)].takenHp * m.hpShare / 100) + " (its " + m.name + ")", clock_ + 3.0F});
         }
-        else if (e.kind == LogKind::Died && e.a == 1 && state_.player >= 0 && (e.who == state_.player || e.other == state_.player || SawFall(e.b)))
-            fall_ = Fall(entries, e), fallSeen_ = false; // a death in sight is staged (Play.md "The fall")
+        else if (e.kind == LogKind::Died && e.a == 1)
+        {
+            // Every death is announced (the user, 2026-11-17); one in sight is also staged (Play.md "The fall").
+            const Falling fall = Fall(entries, e);
+            obituary_ = {def_.guests[U(e.who)].name + " is dead", fall.cause + " " + std::to_string(LivingCount(state_)) + " still alive.", clock_ + 6.0F};
+            if (state_.player >= 0 && (e.who == state_.player || e.other == state_.player || SawFall(e.b)))
+                fall_ = fall, fallSeen_ = false;
+        }
 }
 
 bool Play::KillerNear() const

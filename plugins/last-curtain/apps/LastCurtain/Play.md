@@ -86,6 +86,8 @@ the page's data under `bio` when a guest is chosen.
   player resting after a room, then the player's own turn (at once, not after the last bot's
   caption); a bot's caption still held; a bot thinking; the bot acting. A bot out of the player's
   light is named but not looked at. The rules' current guest is only the last fallback.
+- **Deaths announced (2026-11-17):** every living guest's death, seen or not, shows under the top
+  bar for 6 s: "<name> is dead", the cause, and how many are still alive (with the death sound).
 - **Falls (battle royale, 2026-11-16):** every living guest's death the player sees (in a lit room,
   or their own death or kill) is staged on the `fall` screen in the room it happened (the `Died`
   entry keeps the room in `b`): the striker facing the fallen, and the cause (a blow and its damage,

@@ -2348,3 +2348,30 @@ TEST_CASE("A bot's event: its card, its roll with a popup and a sound, then noth
     }
     CHECK(cards > 0);
 }
+
+TEST_CASE("Every death is announced: who, how, and how many are still alive (T261)", "[night][play][royale]")
+{
+    // The user (2026-11-17): a death out of sight passed with no word; players did not notice.
+    const NightDef def = Data();
+    Play play(def, NewNight(def, 7, 0));
+    int dead = -1;
+    PlayUntil(play, [&] {
+        for (int g = 0; g < play.State().count; ++g)
+            if (g != play.State().player && play.State().guests[static_cast<std::size_t>(g)].dead)
+                return (dead = g) >= 0;
+        if (play.Screen() == "fall")
+            play.HandleUi("fall", "continue", "");
+        return false;
+    });
+    REQUIRE(dead >= 0);
+    const nlohmann::json data = play.UiData();
+    REQUIRE(data.contains("obituary"));
+    CHECK(data["obituary"]["text"].get<std::string>().find(def.guests[static_cast<std::size_t>(dead)].name) != std::string::npos);
+    CHECK(data["obituary"]["text"].get<std::string>().find("still alive") != std::string::npos);
+    // It stays a few seconds, then goes.
+    play.Update(1.0F);
+    CHECK(play.UiData().contains("obituary"));
+    for (int i = 0; i < 20; ++i)
+        play.Update(1.0F), play.HandleUi("fall", "continue", "");
+    CHECK_FALSE(play.UiData().contains("obituary"));
+}

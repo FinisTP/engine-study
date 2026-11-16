@@ -35,6 +35,10 @@
       { "type": "text", "style": "small", "text": "Ready again in {power.cooldown} turns", "visible": "{power.cooldown}" }
     ] },
     { "type": "text", "anchor": "top", "offset": [0, 140], "style": "alarm", "text": "The killer is near. Run.", "visible": "{killerNear}" },
+    { "type": "stack", "anchor": "top", "offset": [0, 84], "style": "obituary", "gap": 4, "visible": "{obituary}", "align": "center", "children": [
+      { "type": "text", "style": "title", "text": "{obituary.title}" },
+      { "type": "text", "style": "small", "text": "{obituary.cause}", "wrap": true, "size": [560, 0] }
+    ] },
     { "type": "stack", "anchor": "top-right", "offset": [-24, 62], "direction": "horizontal", "gap": 6, "align": "center", "children": [
       { "type": "text", "style": "small", "text": "Turn order" },
       { "type": "list", "items": "{turnOrder}", "as": "t", "direction": "horizontal", "gap": 4,

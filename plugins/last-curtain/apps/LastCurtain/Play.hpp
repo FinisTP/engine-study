@@ -230,6 +230,12 @@ private:
         float until = 0.0F; // clock_ when it goes
     };
     std::vector<Popup> popups_; // damage over struck guests (Main draws them as labels)
+    struct Obituary
+    {
+        std::string text, cause;
+        float until = 0.0F; // clock_ when it goes
+    };
+    Obituary obituary_; // the last death, announced to everyone for a few seconds
     bool preview_ = false;          // the caption on show is a deed's first step: what the bot faces
     std::string heldResult_;        // ... its result, shown after the tap
     std::optional<Dice> botDice_;   // ... and the bot's roll, shown between
