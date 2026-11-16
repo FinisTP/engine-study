@@ -33,7 +33,8 @@ Skip runs the bots to the player's turn with no waits.
 A deed the player waits on (a walk into a room that does something, a fight, a chat, a power)
 shows in steps, once the bot has walked in (the caption waits for the slide): first what it faces
 (the room, its event and story, no result: a **preview**); after a tap, its roll on the dice screen
-("Le Thanh rolls"); then the result, waiting again. A bot that only waits stays on the table. A
+("Le Thanh rolls"); then the result, waiting again. A deed with no roll (an item found, a chat)
+is told once, result and all: one tap moves on (user, 2026-11-16). A bot that only waits stays on the table. A
 blow in a fight says who hit whom, for how much and the HP left, and puts the damage over the
 struck guest for 2 s; an item used is named.
 

@@ -758,14 +758,16 @@ void Play::Update(float dt)
     hold_ = !beat_.seen || skipping_ ? options_.unseenBeatSeconds : fast_ ? options_.fastBeatSeconds : notable ? options_.beatSeconds : options_.plainBeatSeconds;
     waitTap_ = notable && options_.tapToContinue && !skipping_ && !fast_;
     moment_ = notable && options_.moments && !skipping_;
-    // 6. A deed the player waits on (a room, a fight, a chat, a power) shows in two steps (Play.md "Bots"):
-    //    once the bot has walked in, what it faces (no result); after a tap its roll, then the result.
+    // 6. A deed the player waits on with a roll (a room, a fight, a chat, a power) shows in two steps
+    //    (Play.md "Bots"): what it faces (no result); after a tap its roll, then the result. No roll: once.
     const bool facing = action.kind == ActionKind::Move || action.kind == ActionKind::Attack || action.kind == ActionKind::Power ||
                         action.kind == ActionKind::Chat || action.kind == ActionKind::OpenChat;
-    if (waitTap_ && facing)
+    const auto log = NewLog(state_, before.logCount);
+    const bool rolled = std::any_of(log.begin(), log.end(), [&](const LogEntry &e) { return e.kind == LogKind::Check && e.who == acting; });
+    if (waitTap_ && facing && rolled)
     {
         preview_ = true, heldResult_ = beat_.result, beat_.result.clear(), botDice_.reset();
-        for (const LogEntry &e : NewLog(state_, before.logCount))
+        for (const LogEntry &e : log)
             if (e.kind == LogKind::Check && e.who == acting)
             {
                 Dice d{e.a, e.other, e.b, "", "", e.a + e.other >= e.b, 0, "", "", 0, ""};

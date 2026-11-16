@@ -2228,3 +2228,34 @@ TEST_CASE("While a bot's deed is on show, the top bar, turn order and camera sta
     }
     CHECK(checked > 0);
 }
+
+TEST_CASE("A bot's deed with no roll is told once: one tap moves on (T258)", "[night][play][pace]")
+{
+    // The bug (user, 2026-11-16): "Dinh Quoc Bao found the lighting box", Continue, and the same line again.
+    NightDef def = Calm();
+    for (RoomDef &room : def.rooms)
+        if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
+            room.kind = RoomKind::Item, room.doors = 15;
+    Play play(def, FoyerNight(def, 4, 0));
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    Captions captions;
+    REQUIRE(LoadCaptions(std::filesystem::path(UMBRA_NIGHT_DATA) / "captions.json", captions, diagnostics));
+    play.SetCaptions(captions);
+    play.SetOptions(Designed());
+    int found = 0;
+    for (int i = 0; i < 300 && found < 3; ++i)
+    {
+        if (!UntilTap(play, 3000))
+            break;
+        const nlohmann::json caption = play.UiData()["caption"];
+        const int beats = play.Beats();
+        REQUIRE(play.HandleUi("caption", "next", ""));
+        if (play.Screen() == "dice")
+            continue; // a roll comes between: that is the two-step deed (T159)
+        ++found;
+        // The tap ends this deed: no second wait on the same deed.
+        INFO(caption["guest"].get<std::string>() << " " << caption["line"].get<std::string>());
+        CHECK_FALSE((play.WaitingForTap() && play.Beats() == beats));
+    }
+    CHECK(found > 0);
+}
