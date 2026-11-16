@@ -185,6 +185,37 @@ may already stand there). So: hooks that are one rule each, found in small, very
 screens: it answers the balance worry (a known spot, not a lucky one) and points every guest at the
 same room. 5 and 6 are good second steps if playtests show a quiet middle of the night.
 
+## The user's seven concepts, weighed (2026-11-17, 03:00)
+
+The user offered seven concepts (mixes allowed). Each is weighed against its closest existing games.
+
+| # | Concept | Closest games and what happened | Fit with what exists | Verdict |
+|---|---|---|---|---|
+| 1 | Trapped performer; 3-5 performances a night; face a specter each time; the script's props earn extra applause | Monster Hunter: preparation and execution are two linked phases, the prep a calm contrast to the fights; Balatro shows the boss in advance, so it plays as a puzzle, not a surprise | Rooms, items, events and fights become the prep; the specter reuses the killer; needs the fight view (item 3), already wanted | **Strongest core**: it tells the player what to explore for and why |
+| 2 | A survival show: one guest eliminated each hour unless they meet a hard request; race for one item | Squid Game: Unleashed: fast and fun but critics found little long-term depth (Metacritic 51); Fall Guys fell to a fraction of its peak within months | Elimination fights the user's revive rule; a single scarce item is good tension | Use the **scarce-prop race** as a layer, not hourly cuts |
+| 3 | Always hunted; no playing safe | Dead by Daylight: the hunted have objectives, the hunter patrols them | The killer exists | Keep as the **pressure between performances** |
+| 4 | You are the traitor; kill without being caught | AI Werewolf games exist (one on Steam with frontier models, Wolfcha); research finds LLM agents weak at deduction against rule-based players | A different genre (hidden roles, accusations); a 4B local model is a risky judge | **Shelve**; a possible later mode |
+| 5 | Gather resources; after midnight all bots hunt you | 7 Days to Die's blood moon: a deadline that turns aimless looting into urgent preparation; prep, defence, recover | The midnight killer exists | Same rhythm as 1; **merge into 1** (each performance is the deadline) |
+| 6 | Applause for exploring and hunting | (the earlier direction A) | Exists in part | Fine as the score, but gives no direction alone |
+| 7 | The traitor-reveal board game formula | Its reviewers name the randomness that makes some scenarios unwinnable; we also avoid its text and art | We left it already | **Drop** |
+
+**Recommended mix: 1 + 5 + a light 2 + 3, scored by 6.**
+
+- *The programme.* A night has 3-5 performances (for example 21:00, 23:00, 01:00, 03:00, and a finale at
+  dawn). The next act's script is shown one act ahead (Balatro): which specter, and the props it calls
+  for ("Act II, the Duel: a blade and a mask").
+- *Between acts* (5, 3): explore for the props; props are scarce (one or two of each), so rivals race
+  and fight for them (2); the killer and monsters keep anyone from playing safe.
+- *At curtain* (1): each guest on stage faces the specter in a turn-based duel (the fight view, item
+  3): Applause for surviving and winning, more for each script prop used.
+- *Score* (6): Applause; the most at dawn wins. Killing a rival still takes half; death is a ghost
+  walk to the Dressing room (the user's rules).
+- *The model* (our built-in AI): the specter's taunts and a critic's review after each act (flavour);
+  later, act scripts proposed from authored pieces and checked by the rules; asking a rival for a prop
+  in plain words.
+
+Three concepts for the player: Applause, the script (what to bring), the performance (the duel).
+
 ## Sources
 
 - Mario Party series, Super Mario Wiki: https://www.mariowiki.com/Mario_Party_(series)
@@ -231,3 +262,13 @@ same room. 5 and 6 are good second steps if playtests show a quiet middle of the
 - Hex Hex XL (hot potato): https://therewillbe.games/articles-boardgame-reviews/2160-spooky-trash-o-ween-game-reviews-hex-hex-xl
 - Pac-Man's power pellet: https://dinogame.gg/blog/how-pacman-changed-arcade-design/
 - R.E.P.O. guide: https://bloxodes.com/wiki/repo
+- Why people love Monster Hunter, PC Gamer: https://www.pcgamer.com/why-people-love-monster-hunter-so-damn-much
+- Balatro boss blinds: https://saschb2b.github.io/game-mechanics/games/balatro/blinds-and-bosses
+- Balatro critical play: https://mechanicsofmagic.com/2025/05/23/critical-play-addiction-by-design
+- Fall Guys decline, eXputer: https://exputer.com/?p=61152
+- Squid Game: Unleashed, Metacritic: https://legacy.prod.metacritic.com/game/ios/squid-game-unleashed/critic-reviews
+- 7 Days to Die blood moon: https://xgamingserver.com/blog/?p=20035
+- Werewolf with AI models, Steam: https://store.steampowered.com/app/4586780
+- LLM agents in social deduction: https://aitopics.org/tag/evil player
+- Suck Up!: https://community.openai.com/t/vampire-game-where-you-convince-llm-to-let-you-in/604295
+- Traitor board game randomness: https://2d4chan.org/wiki/Betrayal
