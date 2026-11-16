@@ -72,6 +72,10 @@ the page's data under `bio` when a guest is chosen.
 - **Clicks:** only the right click inspects. A dialog's whole box takes a click (`action` on its
   root, `engine/ui/include/UI.md` 5). Taps that go on (next, onward, continue, roll, begin, take,
   leave) count once per `tapGap`, so spam clicks skip nothing.
+- **Who is acting on screen:** while a deed is still shown (a roll, a caption waiting for a tap, a
+  held beat, a step sliding, a room's screens), the top bar, turn order, the ring and the camera
+  stay on the guest who did it (`Play::Presenting`), even when that deed ended the turn in the
+  rules; the next guest takes over when it is done (user, 2026-11-16).
 - **Falls (battle royale, 2026-11-16):** every living guest's death the player sees (in a lit room,
   or their own death or kill) is staged on the `fall` screen in the room it happened (the `Died`
   entry keeps the room in `b`): the striker facing the fallen, and the cause (a blow and its damage,

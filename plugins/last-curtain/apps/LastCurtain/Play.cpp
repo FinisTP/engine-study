@@ -208,7 +208,22 @@ Play::Banner Play::TurnBanner() const
     return {Acting(), 1.0F - banner_ / options_.turnBannerSeconds};
 }
 
-int Play::Acting() const { return state_.over ? -1 : resting_ ? rester_ : Current(state_); }
+int Play::Acting() const
+{
+    // While a deed is still on screen, its guest stays the one acting, even if it ended the turn.
+    if (state_.over)
+        return -1;
+    if (resting_)
+        return rester_;
+    return Presenting() ? shown_ : Current(state_);
+}
+
+bool Play::Presenting() const
+{
+    // A roll, a waiting caption, a held beat, a step sliding or a room's screens of the last deed.
+    return shown_ >= 0 && (!dice_.empty() || botDice_ || waitTap_ || (beat_.seen && hold_ > 0.0F) || slide_.guest >= 0 ||
+                           arrive_.cell >= 0 || event_ >= 0 || found_ >= 0);
+}
 
 int Play::Me() const { return PlayerTurn() ? Current(state_) : state_.player; }
 
@@ -218,6 +233,7 @@ bool Play::Do(const Action &action)
     if (!PlayerTurn())
         return false;
     const NightState before = state_;
+    shown_ = Current(state_);
     if (!Apply(def_, state_, action))
         return false;
     Notice(before.logCount);
@@ -718,6 +734,7 @@ void Play::Update(float dt)
     pending_ = preview_ = false;
     const NightState before = state_;
     const Action action = pendingAction_;
+    shown_ = acting;
     if (!Apply(def_, state_, action))
         return;
     Follow();
@@ -1344,6 +1361,12 @@ int Play::CameraCell() const
     // A step sliding, a bot's beat or thought the player sees, else the acting guest on the player's turn.
     if (slide_.guest >= 0)
         return slide_.to;
+    if (Presenting() && shown_ != Current(state_)) // the last deed is still on show: stay with it
+    {
+        const int cell = beat_.seen && beat_.camera >= 0 ? beat_.camera : state_.guests[U(shown_)].cell;
+        if (cell >= 0)
+            return cell;
+    }
     if (PlayerTurn() && !waitTap_ && Current(state_) >= 0) // the player's turn: on them at once
         return state_.guests[U(Current(state_))].cell;
     if (beat_.seen && hold_ > 0.0F && beat_.camera >= 0)

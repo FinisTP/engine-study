@@ -222,7 +222,9 @@ private:
     std::string heldResult_;        // ... its result, shown after the tap
     std::optional<Dice> botDice_;   // ... and the bot's roll, shown between
     [[nodiscard]] float DiceSettle() const;
+    [[nodiscard]] bool Presenting() const; // the last deed is still on screen
     [[nodiscard]] std::string RollResult(const umbra::night::EventDef &ev, bool passed, int guest) const;
+    int shown_ = -1;              // the guest whose deed is on screen (Acting stays on them)
     std::deque<Dice> dice_;
     bool turn_ = false; // the Turn happened and its screen waits
     Mode mode_ = Mode::Menu;

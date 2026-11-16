@@ -2180,3 +2180,51 @@ TEST_CASE("A ghost's kill is staged with the ghost standing over the fallen (T25
     CHECK(std::any_of(actors.begin(), actors.end(), [](const Play::Actor &a) { return a.guest == 0; }));
     CHECK(std::any_of(actors.begin(), actors.end(), [&](const Play::Actor &a) { return a.guest == victim; }));
 }
+
+TEST_CASE("While a bot's deed is on show, the top bar, turn order and camera stay on that bot (T257)", "[night][play]")
+{
+    // The bug (user, 2026-11-16): a bot's roll ended its turn; the top bar, turn order and camera
+    // jumped to the next guest while the roll was still on screen.
+    const NightDef def = Data(); // the shipped night: rooms with rolls
+    Play play(def, NewNight(def, 7, 0));
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    Captions captions;
+    REQUIRE(LoadCaptions(std::filesystem::path(UMBRA_NIGHT_DATA) / "captions.json", captions, diagnostics));
+    play.SetCaptions(captions);
+    umbra::night::GameOptions options = Designed(); // bots' rolls wait for a tap, as shipped
+    options.light = false;                          // every deed in sight
+    play.SetOptions(options);
+    int checked = 0;
+    for (int i = 0; i < 4000 && !play.State().over && checked < 30; ++i)
+    {
+        const nlohmann::json data = play.UiData();
+        const int acting = play.Acting();
+        const std::string top = acting >= 0 ? def.guests[static_cast<std::size_t>(acting)].name : "";
+        if (play.Screen() == "dice" && data.contains("dice") && !play.PlayerTurn())
+        {
+            const std::string who = data["dice"]["who"];
+            if (!who.empty() && who != def.guests[0].name)
+            {
+                INFO("roll by " << who << ", top bar shows " << top);
+                CHECK(top == who);
+                const int camera = play.CameraCell();
+                CHECK((camera < 0 || camera == play.State().guests[static_cast<std::size_t>(acting)].cell || play.State().guests[static_cast<std::size_t>(acting)].cell < 0));
+                ++checked;
+            }
+            play.HandleUi("dice", "continue", "");
+        }
+        else if (play.Screen() == "fall")
+            play.HandleUi("fall", "continue", "");
+        else if (play.PlayerTurn())
+            play.Key(InputKey::Enter); // the player ends turns
+        else
+        {
+            play.HandleUi("arrive", "onward", "");
+            play.HandleUi("event", "roll", "");
+            play.HandleUi("found", "take", "");
+            play.HandleUi("caption", "next", ""); // a bot's facing beat gives way to its roll
+            play.Update(0.25F);
+        }
+    }
+    CHECK(checked > 0);
+}
