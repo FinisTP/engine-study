@@ -154,6 +154,37 @@ certain item (so an accidental death does not end the evening); at dawn the most
    the stage; a killer takes half of what you carry. Strong tension, more to explain: a candidate
    for after the first playtest.
 
+## One-rule hooks (2026-11-17, later still)
+
+The user: the hooks above add too many concepts, and a room-based audience request is unfair (a bot
+may already stand there). So: hooks that are one rule each, found in small, very successful games.
+
+1. **The hot seat (King of Tokyo).** One central spot: whoever holds it scores every turn and hits
+   everyone outside, but everyone outside hits only them, and they cannot heal there. You leave only
+   when struck (the striker may take your place). Reviewers single out this one idea as what makes the
+   game. For us: **the Stage**. Whoever stands on it earns Applause each round; everyone may strike
+   them; the house's spotlight is on them. It is a fixed, known place, so it is fair (spawns can be
+   equally far from it), and it gives every guest a standing reason to move and fight.
+2. **Steal on knockout (Tetris 99).** A knockout takes all of the victim's badges, which make your
+   attacks stronger; players hunt the badge leaders. The user's "killing takes half" is this rule.
+   Watch for the snowball: Tetris 99 needs its survival phase to keep it in check.
+3. **Simple rules, a competent opponent (Buckshot Roulette).** Shoot yourself or the dealer; a few
+   items shift the odds. Reviewers praise how competent the AI dealer feels, never using items just
+   because it has them; the developer credits simple rules that anyone can follow and that are fun
+   to watch. For us: fewer concepts, and bots whose choices look smart.
+4. **One deadly penalty, plain bluffing (Liar's Bar).** Viral because it is a simple idea and fun to
+   watch; critics found it thin after a while. Simplicity spreads; depth keeps players.
+5. **Hot potato.** A curse passed around until it goes off on whoever holds it. For us: a cursed prop
+   (a mask) that doubles your Applause but marks you for the killer; pass it by touching a guest.
+6. **Role reversal (Pac-Man's power pellet).** For a few moments the hunted hunts the hunters: fear,
+   power, fear. For us: a rare item that makes the killer flee you for two rounds.
+7. **Loot-and-escape with fragile loot (R.E.P.O.).** Valuables lose value when knocked about; the
+   haul is shown on the cart. One idea that makes every carry tense.
+
+**Recommendation:** Applause + killing takes half + **the Stage** (1). One place, one rule, no new
+screens: it answers the balance worry (a known spot, not a lucky one) and points every guest at the
+same room. 5 and 6 are good second steps if playtests show a quiet middle of the night.
+
 ## Sources
 
 - Mario Party series, Super Mario Wiki: https://www.mariowiki.com/Mario_Party_(series)
@@ -189,3 +220,14 @@ certain item (so an accidental death does not end the evening); at dawn the most
 - Should games have a catch-up mechanic?, League of Gamemakers: https://leagueofgamemakers.com/ask-the-league-should-games-have-a-catch-up-mechanic
 - Comeback mechanics, League of Legends: https://www.leagueoflegends.com/en-gb/news/dev/quick-gameplay-thoughts-2-25-comeback-mechanics/
 - Positional balance, Games Precipice: https://www.gamesprecipice.com/positional-balance
+- King of Tokyo review, Meeple Like Us: https://www.meeplelikeus.co.uk/king-of-tokyo-2011/
+- King of Tokyo review, GMS Magazine: https://www.gmsmagazine.com/hail-to-the-king-baby-a-review-of-king-of-tokyo
+- King of Tokyo, Dread Central: https://www.dreadcentral.com/news/52273/tabletop-terrors-slap-around-your-enemies-and-become-king-of-tokyo/
+- Tetris 99 tips (badges), GamesRadar: https://www.gamesradar.com/tetris-99-tips
+- Buckshot Roulette review, GamesHedge: https://www.gameshedge.com/?p=87567
+- Buckshot Roulette developer interview, 80.lv: https://origin.80.lv/articles/buckshot-roulette-developer-on-making-the-game-solo-feedback-success
+- Liar's Bar, PC Gamer: https://www.pcgamer.com/games/card-games/the-zootopia-russian-roulette-game-is-kind-of-a-bummer-to-play-but-its-fun-to-watch
+- Liar's Bar explained: https://www.edinburghnews.scotsman.com/news/people/liars-bar-video-game-explained-4842922
+- Hex Hex XL (hot potato): https://therewillbe.games/articles-boardgame-reviews/2160-spooky-trash-o-ween-game-reviews-hex-hex-xl
+- Pac-Man's power pellet: https://dinogame.gg/blog/how-pacman-changed-arcade-design/
+- R.E.P.O. guide: https://bloxodes.com/wiki/repo
