@@ -26,3 +26,9 @@ ear: listen and swap if one is wrong. Each was cut from just before its onset to
 
 Added 2026-11-16 for the battle royale: killer (same settings, 3.5 s takes; kept 101, which swells
 as it comes closer; 202 rose and fell twice), cut to 3.2 s with a 300 ms fade, -1 dB peak.
+
+Added 2026-11-17: pass ("a short bright rising chime of two clear bell notes, a small success,
+theatrical, no music, no voice"; kept seed 101, which rises into its second note; cut to 0.9 s)
+and fail ("a short low muted descending thud with a dull out-of-tune piano note, a small failure,
+no music, no voice"; kept seed 202, the lowest and longest; cut to 1.1 s), 1.6 s takes, 200 ms
+fade, -1 dB peak.

@@ -38,7 +38,9 @@ namespace
     // Dismisses the event and dice screens, which hold the bots.
     void Settle(Play &play)
     {
-        while (play.HandleUi("arrive", "onward", "") || play.HandleUi("event", "roll", "") || play.HandleUi("found", "take", "") ||
+        // The player's own screens; a bot's event card waits like its other beats (UntilTap).
+        const auto own = [&] { return play.Screen() != "event" || play.UiData()["event"].value("who", std::string()).empty(); };
+        while (play.HandleUi("arrive", "onward", "") || (own() && play.HandleUi("event", "roll", "")) || play.HandleUi("found", "take", "") ||
                play.HandleUi("dice", "continue", ""))
         {
         }
@@ -1297,7 +1299,7 @@ namespace
                 return true;
             if (play.State().chat.active && play.PlayerTurn() && play.Screen() == "chat")
                 play.HandleUi("chat", "answer", "0");
-            else if (play.PlayerTurn() && play.Screen() == "menu")
+            else if (play.PlayerTurn() && play.Screen() == "menu" && play.Sliding().guest < 0) // a bot's last step may still slide
                 play.Key(InputKey::Enter);
             else
                 play.Update(1.0F);
@@ -1566,8 +1568,9 @@ TEST_CASE("A bot's roll in sight names the event it faced (T152)", "[night][play
         if (!UntilTap(play, 3000))
             break;
         for (const LogEntry &e : NewLog(play.State(), before))
-            if (e.kind == LogKind::Check && e.who != play.State().player)
-                named = !play.UiData()["caption"]["event"].get<std::string>().empty();
+            if (e.kind == LogKind::Check && e.who != play.State().player) // on its card (T260), or in its caption
+                named = play.Screen() == "event" ? !play.UiData()["event"]["name"].get<std::string>().empty()
+                                                 : !play.UiData()["caption"]["event"].get<std::string>().empty();
         play.HandleUi("caption", "next", "");
     }
     CHECK(named);
@@ -1686,52 +1689,6 @@ TEST_CASE("A walk back toward where moves count from is always affordable (T157)
     GoTo(play, play.State().foyer);
     CHECK(play.State().guests[0].cell == play.State().foyer);
     CHECK(play.State().guests[0].movesLeft == 1);
-}
-
-TEST_CASE("A bot's deed in sight: it walks in first, then what it faces, its roll, then the result (T159, T166)", "[night][play][pace]")
-{
-    NightDef def = Calm();
-    for (RoomDef &room : def.rooms)
-        if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
-            room.kind = RoomKind::Event, room.doors = 15;
-    Play play(def, FoyerNight(def, 4, 0));
-    std::vector<umbra::core::Diagnostic> diagnostics;
-    Captions captions;
-    REQUIRE(LoadCaptions(std::filesystem::path(UMBRA_NIGHT_DATA) / "captions.json", captions, diagnostics));
-    play.SetCaptions(captions);
-    umbra::night::GameOptions options = Designed();
-    options.diceSeconds = 1.0F;
-    play.SetOptions(options);
-    int previews = 0;
-    for (int i = 0; i < 300 && previews == 0; ++i)
-    {
-        if (!UntilTap(play, 3000))
-            break;
-        if (play.UiData()["caption"]["preview"] == true && !play.UiData()["caption"]["event"].get<std::string>().empty() && play.UiData().contains("caption"))
-        {
-            // 1. The bot has walked in (no slide left); its caption names the event, no result yet.
-            ++previews;
-            CHECK(play.Sliding().guest < 0);
-            CHECK(play.UiData()["caption"]["result"] == "");
-            CHECK_FALSE(play.UiData()["caption"]["event"].get<std::string>().empty());
-            REQUIRE(play.HandleUi("caption", "next", ""));
-            // 2. Its roll tumbles, lands and holds, then tells.
-            REQUIRE(play.Screen() == "dice");
-            CHECK(play.UiData()["dice"]["who"] != "");
-            CHECK_FALSE(play.HandleUi("dice", "continue", ""));
-            for (int t = 0; t < 30 && play.UiData()["dice"]["told"] != true; ++t)
-                play.Update(0.1F);
-            REQUIRE(play.HandleUi("dice", "continue", ""));
-            // 3. Then the result, waiting again.
-            CHECK(play.Screen() == "caption");
-            CHECK(play.UiData()["caption"]["preview"] == false);
-            CHECK_FALSE(play.UiData()["caption"]["result"].get<std::string>().empty());
-            CHECK(play.WaitingForTap());
-        }
-        else
-            play.HandleUi("caption", "next", "");
-    }
-    CHECK(previews > 0);
 }
 
 TEST_CASE("A die slows to a stop, shows its number, then tells (T166)", "[night][play][flow]")
@@ -2335,4 +2292,59 @@ TEST_CASE("The camera looks where the screen says: the player on their turn and 
     CHECK(rests > 0);
     CHECK(turns > 0);
     CHECK(rolls > 0);
+}
+
+TEST_CASE("A bot's event: its card, its roll with a popup and a sound, then nothing more to tap (T260)", "[night][play][pace]")
+{
+    // Replaces T159 (caption, roll, result caption). The user (2026-11-17): step 1 should be the
+    // event card, as for the player; step 2 the roll,
+    // its outcome clear (a stat popup over the bot, a pass or fail sound); steps 3 and 4 (the same
+    // result again, with and without Continue) go.
+    NightDef def = Calm();
+    for (RoomDef &room : def.rooms)
+        if (room.kind != RoomKind::Foyer && room.kind != RoomKind::UnderStage)
+            room.kind = RoomKind::Event, room.doors = 15;
+    Play play(def, FoyerNight(def, 4, 0));
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    Captions captions;
+    REQUIRE(LoadCaptions(std::filesystem::path(UMBRA_NIGHT_DATA) / "captions.json", captions, diagnostics));
+    play.SetCaptions(captions);
+    umbra::night::GameOptions options = Designed();
+    options.diceSeconds = 1.0F;
+    play.SetOptions(options);
+    int cards = 0;
+    for (int i = 0; i < 300 && cards < 2; ++i)
+    {
+        if (!UntilTap(play, 3000))
+            break;
+        if (play.Screen() != "event")
+        {
+            play.HandleUi("caption", "next", "");
+            continue;
+        }
+        // 1. The card names the bot and its roll.
+        ++cards;
+        const nlohmann::json card = play.UiData()["event"];
+        CHECK_FALSE(card["name"].get<std::string>().empty());
+        CHECK(card["whose"].get<std::string>().find("'s") != std::string::npos);
+        const int roller = play.Acting();
+        REQUIRE(roller != play.State().player);
+        play.TakeCues();
+        REQUIRE(play.HandleUi("event", "roll", ""));
+        // 2. The roll, told, with a sound; Continue puts the change over the bot.
+        REQUIRE(play.Screen() == "dice");
+        for (int t = 0; t < 40 && play.UiData()["dice"]["told"] != true; ++t)
+            play.Update(0.1F);
+        const std::vector<std::string> cues = play.TakeCues();
+        CHECK((std::find(cues.begin(), cues.end(), "pass") != cues.end() || std::find(cues.begin(), cues.end(), "fail") != cues.end()));
+        const nlohmann::json dice = play.UiData()["dice"];
+        CHECK(dice["result"].get<std::string>().find(def.guests[static_cast<std::size_t>(roller)].name.substr(0, 3)) != std::string::npos);
+        REQUIRE(play.HandleUi("dice", "continue", ""));
+        // 3. Nothing more of this deed to tap or read.
+        CHECK_FALSE(play.WaitingForTap());
+        CHECK(play.Screen() != "caption");
+        play.Update(0.1F);
+        CHECK(play.Screen() != "caption");
+    }
+    CHECK(cards > 0);
 }

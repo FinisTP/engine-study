@@ -144,7 +144,13 @@ private:
         std::string reply, replyBy; // a chat answer: the asker's reply (the model's words when ready)
         int replyTicket = 0;
         std::string who; // a bot's roll: its name (empty: the player's)
+        int guest = -1;      // a bot's roll: who rolled
+        std::string change;  // ... and what it changed ("-2 HP"), shown over it after the roll
+        bool cued = false;   // the pass or fail sound has played
     };
+    [[nodiscard]] bool BotCard() const;
+    [[nodiscard]] std::string Changes(const umbra::night::NightState &before, int guest) const; // a bot's preview shows its event card (Play.md "Bots")
+    [[nodiscard]] nlohmann::json EventCard(int event, int cell, int guest, int statValue) const;
 
     bool Handle(const std::string &screen, const std::string &action, const std::string &arg); // HandleUi's work
     float tapClock_ = 1.0e9F; // seconds since the last tap went on

@@ -208,6 +208,44 @@ Play::Banner Play::TurnBanner() const
     return {Acting(), 1.0F - banner_ / options_.turnBannerSeconds};
 }
 
+std::string Play::Changes(const NightState &before, int g) const
+{
+    // What a deed changed in a guest's stats, in plain words: "-2 HP, +1 Might".
+    std::string text;
+    const auto add = [&](int was, int now, const char *name) {
+        if (now != was)
+            text += (text.empty() ? "" : ", ") + std::string(now > was ? "+" : "") + std::to_string(now - was) + " " + name;
+    };
+    add(before.guests[U(g)].hp, state_.guests[U(g)].hp, "HP");
+    add(Stat(def_, before, g, StatKind::MaxHp), Stat(def_, state_, g, StatKind::MaxHp), "max HP");
+    add(Stat(def_, before, g, StatKind::Might), Stat(def_, state_, g, StatKind::Might), "Might");
+    add(Stat(def_, before, g, StatKind::Sanity), Stat(def_, state_, g, StatKind::Sanity), "Sanity");
+    add(Stat(def_, before, g, StatKind::Speed), Stat(def_, state_, g, StatKind::Speed), "Speed");
+    return text;
+}
+
+bool Play::BotCard() const
+{
+    return waitTap_ && preview_ && botDice_ && beatEvent_ >= 0 && shown_ >= 0 && shown_ != state_.player;
+}
+
+nlohmann::json Play::EventCard(int event, int cell, int guest, int statValue) const
+{
+    // The event's card: what it is, the roll it asks and what passing or failing does; for the
+    // player's own room, or a bot's (named, its own stat; the button watches its roll).
+    const EventDef &ev = def_.events[U(event)];
+    const bool mine = guest == state_.player;
+    const bool rolls = !mine || cleared_.empty();
+    return {{"room", cell >= 0 ? def_.rooms[U(state_.cells[U(cell)].room)].name : ""}, {"name", ev.name}, {"text", ev.text},
+            {"picture", ArtPath("events", ev.id).generic_string()},
+            {"stat", StatName(ev.stat)}, {"statValue", statValue}, {"target", ev.target},
+            {"chance", ChancePercent(statValue, ev.target)}, {"whose", mine ? std::string("your") : ShownName(def_, state_, guest) + "'s"},
+            {"who", mine ? std::string() : ShownName(def_, state_, guest) + " faces it"},
+            {"pass", EffectText(ev.passEffect, ev.passAmount)}, {"fail", EffectText(ev.failEffect, ev.failAmount)},
+            {"kind", ev.trap ? "TRAP" : "EVENT"}, {"lasting", mine ? lasting_ : ""}, {"cleared", mine ? cleared_ : ""}, {"rolls", rolls},
+            {"button", !mine ? "Watch the roll" : cleared_.empty() ? "Roll" : "Continue"}};
+}
+
 Play::Spot Play::Spotlight() const
 {
     // The one answer to "whose moment is on screen, and where" (Play.md "The spotlight").
@@ -554,6 +592,8 @@ bool Play::Handle(const std::string &, const std::string &action, const std::str
         const int hp = dice_.front().hp;
         flash_ = hp == 0 ? "" : (hp > 0 ? "+" : "") + std::to_string(hp) + " HP";
         flashClock_ = hp == 0 ? 0.0F : 2.0F;
+        if (dice_.front().guest >= 0 && !dice_.front().change.empty()) // a bot's change, over it
+            popups_.push_back({dice_.front().guest, dice_.front().change, clock_ + 2.5F}), flash_.clear(), flashClock_ = 0.0F;
         dice_.pop_front(), diceClock_ = 0.0F;
         return true;
     }
@@ -564,15 +604,18 @@ bool Play::Handle(const std::string &, const std::string &action, const std::str
     }
     if (action == "focus")
         return following_ = true;
+    if (action == "roll" && BotCard()) // the bot's card: watch its roll
+        return Handle("caption", "next", "");
     // A tap on a waiting beat; Skip runs the bots to the player's turn.
     if (action == "next" && waitTap_)
     {
         // A preview gives way to the bot's roll (if any) and the result, which waits again.
         if (preview_)
         {
+            // The roll tells the result itself: no caption after it (the user, 2026-11-17).
             preview_ = false, beat_.result = heldResult_;
             if (botDice_)
-                dice_.push_back(*botDice_), diceClock_ = 0.0F, botDice_.reset(), cues_.push_back("dice");
+                dice_.push_back(*botDice_), diceClock_ = 0.0F, botDice_.reset(), cues_.push_back("dice"), waitTap_ = false, hold_ = 0.0F;
             return true;
         }
         return !(waitTap_ = false);
@@ -661,6 +704,8 @@ std::string Play::Screen() const
         return turnTicket_ != 0 ? "" : "turn"; // its line is still coming
     if (resting_)
         return "rest";
+    if (BotCard() && slide_.guest < 0)
+        return "event";
     if (waitTap_ && beat_.seen) // a bot's beat waits (once it has walked in), even one that handed the turn on
         return slide_.guest >= 0 ? "" : "caption";
     if (!PlayerTurn())
@@ -704,6 +749,8 @@ void Play::Update(float dt)
             return;
         slide_ = {};
     }
+    if (!dice_.empty() && !dice_.front().cued && diceClock_ >= options_.diceSeconds + DiceSettle()) // the verdict, heard
+        cues_.push_back(dice_.front().passed ? "pass" : "fail"), dice_.front().cued = true;
     if (arrive_.cell >= 0 || event_ >= 0 || found_ >= 0 || !dice_.empty() || turn_ || waitTap_ || resting_)
         return;
     hold_ -= dt;
@@ -800,9 +847,10 @@ void Play::Update(float dt)
             if (e.kind == LogKind::Check && e.who == acting)
             {
                 Dice d{e.a, e.other, e.b, "", "", e.a + e.other >= e.b, 0, "", "", 0, ""};
-                d.who = ShownName(def_, state_, acting);
+                d.who = ShownName(def_, state_, acting), d.guest = acting, d.change = Changes(before, acting);
+                d.result = d.who + (d.passed ? " passes." : " fails.") + (d.change.empty() ? "" : " " + d.change + ".");
                 if (beatEvent_ >= 0)
-                    d.stat = StatName(def_.events[U(beatEvent_)].stat), d.result = RollResult(def_.events[U(beatEvent_)], d.passed, acting);
+                    d.stat = StatName(def_.events[U(beatEvent_)].stat);
                 botDice_ = d;
             }
     }
@@ -992,16 +1040,9 @@ nlohmann::json Play::UiData() const
 
     // 4. Rolls, events and chats, each with its chance by the rules.
     if (!state_.over && event_ >= 0)
-    {
-        const EventDef &ev = def_.events[U(event_)];
-        data["event"] = {{"room", def_.rooms[U(state_.cells[U(eventCell_)].room)].name}, {"name", ev.name}, {"text", ev.text},
-                         {"picture", ArtPath("events", ev.id).generic_string()},
-                         {"stat", StatName(ev.stat)}, {"statValue", eventStat_}, {"target", ev.target},
-                         {"chance", ChancePercent(eventStat_, ev.target)},
-                         {"pass", EffectText(ev.passEffect, ev.passAmount)}, {"fail", EffectText(ev.failEffect, ev.failAmount)},
-                         {"kind", ev.trap ? "TRAP" : "EVENT"}, {"lasting", lasting_}, {"cleared", cleared_}, {"rolls", cleared_.empty()},
-                         {"button", cleared_.empty() ? "Roll" : "Continue"}};
-    }
+        data["event"] = EventCard(event_, eventCell_, state_.player, eventStat_);
+    else if (!state_.over && BotCard())
+        data["event"] = EventCard(beatEvent_, state_.guests[U(shown_)].cell, shown_, botDice_->statValue);
     if (!state_.over && arrive_.cell >= 0)
         data["arrive"] = {{"kind", arrive_.kind}, {"room", def_.rooms[U(state_.cells[U(arrive_.cell)].room)].name}, {"line", arrive_.line}};
     if (!state_.over && found_ >= 0)

@@ -31,10 +31,13 @@ size with `moments`; the caption names the event the bot faced. A walk alone sta
 Skip runs the bots to the player's turn with no waits.
 
 A deed the player waits on (a walk into a room that does something, a fight, a chat, a power)
-shows in steps, once the bot has walked in (the caption waits for the slide): first what it faces
-(the room, its event and story, no result: a **preview**); after a tap, its roll on the dice screen
-("Le Thanh rolls"); then the result, waiting again. A deed with no roll (an item found, a chat)
-is told once, result and all: one tap moves on (user, 2026-11-16). A bot that only waits stays on the table. A
+shows once the bot has walked in (the caption waits for the slide). With an event roll: first the
+event's card, as for the player, naming the bot and its stat ("Watch the roll"); then its roll on
+the dice screen ("Le Thanh rolls"), which tells the verdict ("Le Thanh fails. -2 HP.") with a pass
+or fail sound; Continue puts the change over the bot ("-2 HP") and the deed is done: no result
+caption after it (user, 2026-11-17). Another roll (a fight, a chat): its caption, then the roll. A
+deed with no roll (an item found, a chat) is told once, result and all: one tap moves on.
+A bot that only waits stays on the table. A
 blow in a fight says who hit whom, for how much and the HP left, and puts the damage over the
 struck guest for 2 s; an item used is named.
 
