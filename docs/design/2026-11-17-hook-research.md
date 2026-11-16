@@ -105,6 +105,55 @@ resource (7), the bots' next intent shown (6), and ghosts with their own goal (8
 existing system a job (quests can hand out keys, items and levels win key fights, chats can bargain
 for keys) instead of adding a second game on top.
 
+## Direction A chosen; the hook, researched further (2026-11-17, later)
+
+The user chose A, with their own rules: a score race; a killer takes half the victim's Applause; a
+killed guest becomes a ghost where they fell and comes back by reaching a certain room or using a
+certain item (so an accidental death does not end the evening); at dawn the most Applause wins.
+
+**More references**
+
+- *Spartacus: A Game of Blood and Treachery* (board game): gladiators who win in the arena gain
+  Favor and their house gains Influence, the score. The host of the games chooses who fights and
+  whether the loser lives: the crowd's attention is a resource to fight over.
+- *Darwin Project* and *Upsilon Circuit*: battle royales framed as game shows where the audience
+  drops items and helps decide who lives. In *The Hunger Games*, entertaining the audience earns
+  sponsor gifts.
+- *Fortnite* / *Apex Legends* respawns: an eliminated player drops a card; carrying it to a van
+  brings them back, and using the van sets off an alarm others hear. The revive spot is a place on
+  the map worth fighting over.
+- *Splatoon* Turf War: the score is not kills but ground covered; a novice still scores. The losing
+  side gets a "Danger" warning; comebacks are easy.
+- *Incan Gold*: push your luck. You bank treasure only by leaving; those caught by a hazard lose
+  what they carried. The game pulls you to stay and to leave at once.
+- Catch-up design: a "headwind" (slowing the leader) is more elegant than a hand-out to the loser;
+  League of Legends' designers say comebacks must be earned; Power Grid makes the leader act last.
+  Several strong routes to victory also curb a runaway leader.
+
+**Proposed hooks for A** (each is a lever; the first four are the core)
+
+1. **The programme (audience requests).** Each round (or two) the house announces one to three
+   acts the audience wants: "a death in the Orchestra pit", "someone walks out of the Wig room
+   alive", "a broken truce", "the leader brought down". The first guest to deliver earns a burst of
+   Applause. This is the game "pointing out how to earn": it pulls guests to the same rooms, so they
+   collide. Our nine quests become standing acts; events and rooms supply the rest.
+2. **Killing takes half** (the user's rule), and **the spotlight**: the leader is lit for everyone
+   (seen even in the dark) and carries a bounty. A headwind on the leader, earned by the hunters.
+3. **Applause is also currency** (Mario Party coins, Hunger Games sponsors): spend it on a reroll
+   (the user's item 5), a gift from the house (an item), or a faster revive. Every spend lowers the
+   score: a real choice between winning a fight now and winning the night.
+4. **The encore at dawn** (Mario Party bonus stars): three of six ovations, revealed only at the end
+   (most rooms opened, most chats won, the boldest roll passed, most kills, fewest deaths...), each
+   worth a lump of Applause. Gives a kind or careful guest a route to win.
+5. **The revive room** (the user's rule, done Fortnite-style): ghosts revive in the Dressing room
+   (or with a rare item); the revive is heard across the house, so the room becomes a place to
+   ambush and to defend.
+6. **The audience gets bored**: a guest who earns nothing for a few turns starts to lose a little.
+   Stops hiding in a corner.
+7. **(Later) Bank by bowing** (Incan Gold): Applause earned stays "on you" until you take a bow on
+   the stage; a killer takes half of what you carry. Strong tension, more to explain: a candidate
+   for after the first playtest.
+
 ## Sources
 
 - Mario Party series, Super Mario Wiki: https://www.mariowiki.com/Mario_Party_(series)
@@ -127,3 +176,16 @@ for keys) instead of adding a second game on top.
 - Dicey Dungeons review, Gamingtrend: https://gamingtrend.com/feature/reviews/of-dice-and-decks-dicey-dungeons-review
 - Kingmaker scenario, Wikipedia: https://en.wikipedia.org/wiki/Kingmaker_scenario
 - Is kingmaking cursed?, Skeleton Code Machine: https://www.skeletoncodemachine.com/p/is-kingmaking-cursed
+- Spartacus: A Game of Blood and Treachery, Dice Tower: https://www.dicetower.com/board-game/128671
+- Spartacus review, TechRaptor: https://techraptor.net/content/spartacus-board-game-review
+- Darwin Project, Kotaku: https://kotaku.com/darwin-project-is-like-the-hunger-games-for-streaming-1823753340
+- Upsilon Circuit: https://ambigamingcorner.com/2016/09/28/upsilon-circuit
+- Hunger Games sponsorship points: https://survival-docs.pages.dev/eng/sponsorship-points
+- Fortnite rebooting, Fortnite Wiki: https://fortnite.fandom.com/wiki/Rebooting
+- Fortnite reboot vans, Game Informer: https://www.gameinformer.com/2019/04/05/fortnite-adding-respawn-vans-in-next-update
+- Splatoon Turf War: https://splatoonwiki.org/wiki/Turf_War
+- Splatoon design, CheatCC: https://www.cheatcc.com/?p=211551
+- Incan Gold review, Critical Hits: https://critical-hits.com//2008/05/03/incan-gold-a-review
+- Should games have a catch-up mechanic?, League of Gamemakers: https://leagueofgamemakers.com/ask-the-league-should-games-have-a-catch-up-mechanic
+- Comeback mechanics, League of Legends: https://www.leagueoflegends.com/en-gb/news/dev/quick-gameplay-thoughts-2-25-comeback-mechanics/
+- Positional balance, Games Precipice: https://www.gamesprecipice.com/positional-balance
