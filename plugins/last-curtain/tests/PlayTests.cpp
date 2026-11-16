@@ -2259,3 +2259,80 @@ TEST_CASE("A bot's deed with no roll is told once: one tap moves on (T258)", "[n
     }
     CHECK(found > 0);
 }
+
+TEST_CASE("The camera looks where the screen says: the player on their turn and rest, the roller during a roll (T259)", "[night][play][camera]")
+{
+    // The bugs (user, 2026-11-16): the camera went to the next guest while the player could still
+    // look around; it lingered 3-5 s on the last bot when the player's turn began; it showed
+    // another guest during "Hoang Gia Huy rolls".
+    const NightDef def = Data();
+    Play play(def, NewNight(def, 7, 0));
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    Captions captions;
+    REQUIRE(LoadCaptions(std::filesystem::path(UMBRA_NIGHT_DATA) / "captions.json", captions, diagnostics));
+    play.SetCaptions(captions);
+    umbra::night::GameOptions options = Designed();
+    options.light = false;
+    play.SetOptions(options);
+    const auto cellOf = [&](int g) { return play.State().guests[static_cast<std::size_t>(g)].cell; };
+    const auto index = [&](const std::string &name) {
+        for (int g = 0; g < play.State().count; ++g)
+            if (def.guests[static_cast<std::size_t>(g)].name == name)
+                return g;
+        return -1;
+    };
+    int rests = 0, turns = 0, rolls = 0;
+    for (int i = 0; i < 6000 && !play.State().over && (rests < 3 || turns < 5 || rolls < 5); ++i)
+    {
+        const std::string screen = play.Screen();
+        const int me = play.State().player;
+        const bool sliding = play.Sliding().guest >= 0;
+        if (screen == "rest")
+        {
+            ++rests;
+            CHECK(play.CameraCell() == cellOf(me));
+            CHECK(play.Acting() == me);
+            play.HandleUi("rest", "end", "");
+        }
+        else if (play.PlayerTurn() && screen == "menu" && !sliding)
+        {
+            ++turns;
+            CHECK(play.CameraCell() == cellOf(me)); // at once, not after the last bot's caption
+            CHECK(play.Acting() == me);
+            // Walk one step when possible (rooms resolve, rests come), else end the turn.
+            const std::vector<Action> legal = LegalActions(def, play.State());
+            const auto move = std::find_if(legal.begin(), legal.end(), [](const Action &a) { return a.kind == ActionKind::Move; });
+            if (move != legal.end() && turns % 2 == 1)
+                play.HandleUi("menu", "act", std::to_string(move - legal.begin()));
+            else
+                play.Key(InputKey::Enter);
+        }
+        else if (screen == "dice" && !sliding)
+        {
+            const nlohmann::json data = play.UiData();
+            const int roller = index(data["dice"]["who"].get<std::string>());
+            if (roller >= 0 && cellOf(roller) >= 0)
+            {
+                ++rolls;
+                INFO("roll by " << def.guests[static_cast<std::size_t>(roller)].name);
+                CHECK(play.Acting() == roller);
+                // Main aims at the stage's room when there is one, else the camera's (Main.cpp "look").
+                const int look = play.StageCell() >= 0 ? play.StageCell() : play.CameraCell();
+                CHECK(look == cellOf(roller));
+            }
+            for (int t = 0; t < 40 && !play.HandleUi("dice", "continue", ""); ++t)
+                play.Update(0.1F);
+        }
+        else if (screen == "fall")
+            play.HandleUi("fall", "continue", "");
+        else
+        {
+            for (const char *s : {"arrive", "event", "found", "caption", "chat"})
+                play.HandleUi(s, s == std::string("arrive") ? "onward" : s == std::string("event") ? "roll" : s == std::string("found") ? "take" : s == std::string("chat") ? "answer" : "next", "0");
+            play.Update(0.1F);
+        }
+    }
+    CHECK(rests > 0);
+    CHECK(turns > 0);
+    CHECK(rolls > 0);
+}

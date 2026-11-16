@@ -208,22 +208,51 @@ Play::Banner Play::TurnBanner() const
     return {Acting(), 1.0F - banner_ / options_.turnBannerSeconds};
 }
 
-int Play::Acting() const
+Play::Spot Play::Spotlight() const
 {
-    // While a deed is still on screen, its guest stays the one acting, even if it ended the turn.
-    if (state_.over)
-        return -1;
+    // The one answer to "whose moment is on screen, and where" (Play.md "The spotlight").
+    // The top bar, the turn order, the ring, the camera and the full-size stage all read it; the
+    // rules' current guest is only the last fallback, as the screen may still show an earlier deed.
+    const auto at = [&](int g, bool staged = false) { return Spot{g, g >= 0 ? state_.guests[U(g)].cell : -1, staged}; };
+    if (state_.over && Screen() != "fall")
+        return {};
+    // 1. A death in sight, where it fell.
+    if (Screen() == "fall")
+        return {fall_.guest, fall_.cell, true};
+    // 2. A step sliding: that guest, where it goes.
+    if (slide_.guest >= 0)
+        return {slide_.guest, slide_.to};
+    // 3. A deed that waits on the player (a room's screens, a roll, a tap): whoever did it, in its room.
+    const bool room = arrive_.cell >= 0 || event_ >= 0 || found_ >= 0 || !dice_.empty();
+    if ((room || waitTap_) && shown_ >= 0)
+    {
+        Spot spot = at(shown_, room ? options_.moments : moment_);
+        if (arrive_.cell >= 0)
+            spot.cell = arrive_.cell;
+        else if (event_ >= 0 && eventCell_ >= 0)
+            spot.cell = eventCell_;
+        return spot;
+    }
+    const int acting = Current(state_);
+    // 4. A chat with the player, from the moment it opens; a battle in sight.
+    if (options_.moments && state_.chat.active && state_.player >= 0 && (state_.chat.asker == state_.player || state_.chat.answerer == state_.player))
+        return {acting, state_.guests[U(state_.chat.asker)].cell, true};
+    if (state_.battle.active && state_.battle.cell >= 0 && View().cells[U(state_.battle.cell)].lit)
+        return {acting, state_.battle.cell, true};
+    // 5. The player resting after a room (Look around, End turn), then the player's own turn: on them at once.
     if (resting_)
-        return rester_;
-    return Presenting() ? shown_ : Current(state_);
+        return at(rester_);
+    if (PlayerTurn())
+        return at(acting);
+    // 6. A bot's caption still held, a bot thinking, then the bot acting; a bot out of sight is not looked at.
+    const int bot = beat_.seen && hold_ > 0.0F && beat_.guest >= 0 ? beat_.guest : ThinkingGuest() >= 0 ? ThinkingGuest() : acting;
+    Spot spot = at(bot);
+    if (spot.cell >= 0 && state_.player >= 0 && !View().cells[U(spot.cell)].lit)
+        spot.cell = -1;
+    return spot;
 }
 
-bool Play::Presenting() const
-{
-    // A roll, a waiting caption, a held beat, a step sliding or a room's screens of the last deed.
-    return shown_ >= 0 && (!dice_.empty() || botDice_ || waitTap_ || (beat_.seen && hold_ > 0.0F) || slide_.guest >= 0 ||
-                           arrive_.cell >= 0 || event_ >= 0 || found_ >= 0);
-}
+int Play::Acting() const { return Spotlight().guest; }
 
 int Play::Me() const { return PlayerTurn() ? Current(state_) : state_.player; }
 
@@ -1358,30 +1387,7 @@ std::vector<std::pair<int, int>> Play::Rings() const
     return rings;
 }
 
-int Play::CameraCell() const
-{
-    // A step sliding, a bot's beat or thought the player sees, else the acting guest on the player's turn.
-    if (slide_.guest >= 0)
-        return slide_.to;
-    if (Presenting() && shown_ != Current(state_)) // the last deed is still on show: stay with it
-    {
-        const int cell = beat_.seen && beat_.camera >= 0 ? beat_.camera : state_.guests[U(shown_)].cell;
-        if (cell >= 0)
-            return cell;
-    }
-    if (PlayerTurn() && !waitTap_ && Current(state_) >= 0) // the player's turn: on them at once
-        return state_.guests[U(Current(state_))].cell;
-    if (beat_.seen && hold_ > 0.0F && beat_.camera >= 0)
-        return beat_.camera;
-    if (ThinkingGuest() >= 0)
-        return state_.guests[U(ThinkingGuest())].cell;
-    // Whoever acts: the player's guest always, a bot while the player can see it.
-    const int acting = Current(state_);
-    if (acting < 0 || state_.over)
-        return -1;
-    const int cell = state_.guests[U(acting)].cell;
-    return PlayerTurn() || state_.player < 0 || View().cells[U(cell)].lit ? cell : -1;
-}
+int Play::CameraCell() const { return Spotlight().cell; }
 
 void Play::Follow()
 {
@@ -1433,23 +1439,9 @@ nlohmann::json Play::InspectData() const
 
 int Play::StageCell() const
 {
-    // 0. A death in sight, where it fell.
-    if (Screen() == "fall")
-        return fall_.cell;
-    // 1. Something that happened in the player's sight (options "moments"): their event, a bot's beat.
-    if (options_.moments && arrive_.cell >= 0)
-        return arrive_.cell;
-    if (options_.moments && (event_ >= 0 || found_ >= 0 || !dice_.empty()) && state_.player >= 0)
-        return event_ >= 0 && eventCell_ >= 0 ? eventCell_ : state_.guests[U(state_.player)].cell;
-    if (moment_ && beat_.seen && beat_.camera >= 0 && (waitTap_ || hold_ > 0.0F))
-        return beat_.camera;
-    // A chat with the player, from the moment it opens.
-    if (options_.moments && state_.chat.active && state_.player >= 0 && (state_.chat.asker == state_.player || state_.chat.answerer == state_.player))
-        return state_.guests[U(state_.chat.asker)].cell;
-    // 3. A battle the player can see (their own, or bots' in their light).
-    if (state_.battle.active && state_.battle.cell >= 0 && View().cells[U(state_.battle.cell)].lit)
-        return state_.battle.cell;
-    return -1;
+    // The spotlight's room when it is a moment shown at full size (a fall, a room, a roll, a chat, a battle).
+    const Spot spot = Spotlight();
+    return spot.staged ? spot.cell : -1;
 }
 
 std::vector<Play::Actor> Play::StageActors() const

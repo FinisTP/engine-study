@@ -46,6 +46,12 @@ public:
 
     [[nodiscard]] bool PlayerTurn() const; // the acting guest is the player's or an ally's
     // Whose turn the screen shows: the player's while they rest after a room, else the rules' (-1: over).
+    struct Spot
+    {
+        int guest = -1, cell = -1; // whose moment is on screen, and the room to look at (-1: stay)
+        bool staged = false;       // a moment shown at full size
+    };
+    [[nodiscard]] Spot Spotlight() const; // the top bar, turn order, ring and camera all read this
     [[nodiscard]] int Acting() const;
     // The banner that opens a turn: whose, and how far it has played (0 to 1); guest -1: none.
     struct Banner
@@ -222,7 +228,6 @@ private:
     std::string heldResult_;        // ... its result, shown after the tap
     std::optional<Dice> botDice_;   // ... and the bot's roll, shown between
     [[nodiscard]] float DiceSettle() const;
-    [[nodiscard]] bool Presenting() const; // the last deed is still on screen
     [[nodiscard]] std::string RollResult(const umbra::night::EventDef &ev, bool passed, int guest) const;
     int shown_ = -1;              // the guest whose deed is on screen (Acting stays on them)
     std::deque<Dice> dice_;
