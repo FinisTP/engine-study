@@ -15,6 +15,7 @@ namespace umbra::night
         float thinkSeconds = 0.4F;       // the shortest "thinking..." of a bot in view
         float lineSeconds = 3.0F;        // the longest wait for the model's line
         float beatSeconds = 1.5F;        // a seen bot action stays on screen
+        float blowSeconds = 1.8F;        // a blow in a fight, told in words, before the next (a click goes on)
         float fastBeatSeconds = 0.3F;    // ... after Space
         float unseenBeatSeconds = 0.2F;  // an action out of sight
         float diceSeconds = 0.0F;        // a die tumbles this long before it lands

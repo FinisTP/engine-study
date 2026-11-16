@@ -1,0 +1,9 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "root": { "type": "stack", "action": "next", "anchor": "bottom", "offset": [0, -80], "style": "blow", "size": [760, 0], "align": "center", "gap": 8, "children": [
+    { "type": "text", "style": "heading", "text": "{blow.text}", "wrap": true, "size": [700, 0] },
+    { "type": "text", "style": "muted", "text": "Click to go on" }
+  ] }
+}

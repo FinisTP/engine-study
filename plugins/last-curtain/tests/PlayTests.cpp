@@ -36,6 +36,13 @@ namespace
 namespace
 {
     // Dismisses the event and dice screens, which hold the bots.
+    // Clicks through the blows told in words (T263).
+    void Blows(Play &play)
+    {
+        for (int i = 0; i < 20 && play.Screen() == "blow"; ++i)
+            play.HandleUi("blow", "next", "");
+    }
+
     void Settle(Play &play)
     {
         // The player's own screens; a bot's event card waits like its other beats (UntilTap).
@@ -416,7 +423,9 @@ TEST_CASE("The player's death mid-battle ends the screen and the watching begins
     CHECK_FALSE(play.PlayerTurn());
     CHECK(play.Screen() != "battle");
     CHECK_FALSE(play.UiData().contains("battle"));
-    CHECK(play.Screen() == "fall"); // the player's own death is staged first
+    CHECK(play.Screen() == "blow"); // the blows that killed are told first (T263)
+    Blows(play);
+    CHECK(play.Screen() == "fall"); // then the player's own death is staged
     CHECK(play.HandleUi("fall", "continue", ""));
     const int beats = play.Beats();
     play.Update(10.0F);
@@ -2131,6 +2140,7 @@ TEST_CASE("A ghost's kill is staged with the ghost standing over the fallen (T25
     {
         const nlohmann::json battle = staged.UiData()["battle"];
         staged.HandleUi("battle", "strike", std::to_string(battle["enemies"][0]["index"].get<int>()));
+        Blows(staged);
     }
     REQUIRE(staged.Screen() == "fall");
     const std::vector<Play::Actor> actors = staged.StageActors();
@@ -2415,4 +2425,52 @@ TEST_CASE("A chat between bots is shown: the request, the question and answer, t
     CHECK(request);
     CHECK(question);
     CHECK(outcome);
+}
+
+TEST_CASE("A monster that kills you as you walk in: its blow is shown, then your fall (T263)", "[night][play][fight]")
+{
+    // The user (2026-11-17): "I walk into a room with a monster and immediately die. It doesn't even show the fight."
+    const NightDef def = Calm();
+    NightState state = PlayerFirst(def);
+    Play probe(def, state);
+    const int step = StepCell(def, probe);
+    REQUIRE(step >= 0);
+    state.cells[static_cast<std::size_t>(step)].opened = true;
+    state.monsters.push_back({0, static_cast<std::int8_t>(step), 20, 99, 30, 1});
+    state.guests[0].hp = 1;
+    Play play(def, state);
+    GoTo(play, step);
+    for (int i = 0; i < 20 && play.Sliding().guest >= 0; ++i)
+        play.Update(0.1F);
+    REQUIRE(play.State().guests[0].dead);
+    // 1. The blow, in words, before anything else.
+    REQUIRE(play.Screen() == "blow");
+    const std::string text = play.UiData()["blow"]["text"];
+    CHECK(text.find(def.monsters[0].name) != std::string::npos);
+    CHECK(text.find("you") != std::string::npos);
+    CHECK(text.find("damage") != std::string::npos);
+    // 2. A click (or its time) moves on: then the fall.
+    REQUIRE(play.HandleUi("blow", "next", ""));
+    CHECK(play.Screen() == "fall");
+}
+
+TEST_CASE("Striking another guest says who struck whom, for how much, and what is left (T264)", "[night][play][fight]")
+{
+    const NightDef def = Calm();
+    Play play(def, PlayerFirst(def)); // everyone in the foyer
+    const std::vector<Action> legal = LegalActions(def, play.State());
+    const auto attack = std::find_if(legal.begin(), legal.end(), [](const Action &a) { return a.kind == ActionKind::Attack && a.b >= 0; });
+    REQUIRE(attack != legal.end());
+    const std::string foe = def.guests[static_cast<std::size_t>(attack->b)].name;
+    REQUIRE(play.HandleUi("menu", "act", std::to_string(attack - legal.begin())));
+    REQUIRE(play.State().battle.active);
+    const int enemy = play.UiData()["battle"]["enemies"][0]["index"];
+    REQUIRE(play.HandleUi("battle", "strike", std::to_string(enemy)));
+    REQUIRE(play.Screen() == "blow");
+    const std::string text = play.UiData()["blow"]["text"];
+    CHECK(text.rfind("You strike " + foe + " for ", 0) == 0);
+    CHECK(text.find("HP left") != std::string::npos);
+    // It goes by itself after its seconds, too.
+    play.Update(5.0F);
+    CHECK(play.Screen() != "blow");
 }

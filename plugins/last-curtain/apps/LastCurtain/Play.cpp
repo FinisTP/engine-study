@@ -254,6 +254,9 @@ Play::Spot Play::Spotlight() const
     const auto at = [&](int g, bool staged = false) { return Spot{g, g >= 0 ? state_.guests[U(g)].cell : -1, staged}; };
     if (state_.over && Screen() != "fall")
         return {};
+    // 0. A blow told in words: the struck, where the fight is.
+    if (!blows_.empty() && slide_.guest < 0)
+        return {blows_.front().guest, blows_.front().cell, true};
     // 1. A death in sight, where it fell.
     if (Screen() == "fall")
         return {fall_.guest, fall_.cell, true};
@@ -303,7 +306,7 @@ bool Play::Do(const Action &action)
     shown_ = Current(state_);
     if (!Apply(def_, state_, action))
         return false;
-    Notice(before.logCount);
+    Notice(before);
     Follow();
     // 1b. A room resolved on a move ends the turn in the rules; the player may still look around it.
     resting_ = action.kind == ActionKind::Move && !PlayerTurn() && !state_.over && !state_.battle.active;
@@ -604,6 +607,8 @@ bool Play::Handle(const std::string &, const std::string &action, const std::str
     }
     if (action == "focus")
         return following_ = true;
+    if (action == "next" && !blows_.empty()) // a click: the next blow
+        return blows_.pop_front(), blowClock_ = 0.0F, true;
     if (action == "roll" && BotCard()) // the bot's card: watch its roll
         return Handle("caption", "next", "");
     // A tap on a waiting beat; Skip runs the bots to the player's turn.
@@ -680,6 +685,8 @@ bool Play::Handle(const std::string &, const std::string &action, const std::str
 
 std::string Play::Screen() const
 {
+    if (!blows_.empty()) // the blows first (once the pawn is in), then the fall they led to
+        return slide_.guest >= 0 ? "" : "blow";
     if (fall_.cell >= 0 && !fallSeen_)
         return "fall";
     if (!scene_.empty())
@@ -727,6 +734,18 @@ void Play::Update(float dt)
     clock_ += dt, tapClock_ += dt;
     diceClock_ += dt, flashClock_ = std::max(0.0F, flashClock_ - dt);
     std::erase_if(popups_, [&](const Popup &p) { return p.until <= clock_; });
+    if (!blows_.empty() && slide_.guest >= 0) // the pawn walks in first, then its fight is told
+    {
+        if ((slide_.t += dt / options_.slideSeconds) >= 1.0F)
+            slide_ = {};
+        return;
+    }
+    if (!blows_.empty()) // a blow on show: each for its seconds
+    {
+        if ((blowClock_ += dt) >= options_.blowSeconds)
+            blows_.pop_front(), blowClock_ = 0.0F;
+        return;
+    }
     if (Screen() == "fall") // a death on show: the night waits for Continue
         return;
     // 0. A scene holds everything while its shots play, each for its seconds.
@@ -816,7 +835,7 @@ void Play::Update(float dt)
     Follow();
     if (action.kind == ActionKind::Move && before.guests[U(acting)].cell != state_.guests[U(acting)].cell)
         slide_ = {acting, before.guests[U(acting)].cell, state_.guests[U(acting)].cell, 0.0F};
-    Notice(before.logCount);
+    Notice(before);
     ++beats_;
     beat_ = captions_.lines.empty() ? Beat{} : Narrate(def_, before, state_, NewLog(state_, before.logCount), action, acting, state_.player, captions_, options_.light);
     if (captionTicket_ != 0)
@@ -971,6 +990,8 @@ nlohmann::json Play::UiData() const
     if (guest.power >= 0)
         data["power"] = {{"name", def_.powers[U(guest.power)].id}, {"cooldown", guest.powerCooldown}};
     data["killerNear"] = KillerNear();
+    if (!blows_.empty())
+        data["blow"] = {{"text", blows_.front().text}, {"more", static_cast<int>(blows_.size()) - 1}};
     if (!obituary_.text.empty() && clock_ < obituary_.until)
         data["obituary"] = {{"text", obituary_.text + ". " + obituary_.cause}, {"title", obituary_.text}, {"cause", obituary_.cause}};
     // The top bar: whoever acts (a bot on its turn, marked as theirs), else the player; its portrait,
@@ -1179,9 +1200,10 @@ nlohmann::json Play::BattleData() const
             {"company", company}, {"enemies", enemies}, {"canLeave", canLeave}, {"cannotLeave", !canLeave}, {"last", last}};
 }
 
-void Play::Notice(std::uint32_t since)
+void Play::Notice(const NightState &before)
 {
-    const std::vector<LogEntry> entries = NewLog(state_, since);
+    const std::vector<LogEntry> entries = NewLog(state_, before.logCount);
+    int battleCell = before.battle.active ? before.battle.cell : -1; // a fight may start and end in one action
     for (const LogEntry &e : entries) // the sounds of what happened (all of it heard: the house is loud)
         if (const char *cue = e.kind == LogKind::Hit ? "hit" : e.kind == LogKind::Died || e.kind == LogKind::Down ? "death" : e.kind == LogKind::Opened ? "door"
                             : e.kind == LogKind::Item ? "item" : e.kind == LogKind::Killer && e.b == 0 ? "bell" : nullptr)
@@ -1196,8 +1218,17 @@ void Play::Notice(std::uint32_t since)
             StartScene("dawn");
         else if (e.kind == LogKind::Ended) // after the fall (if any), the ending's scene
             StartScene(static_cast<Outcome>(e.a) == Outcome::House ? "ending_house" : "ending_escaped");
-        else if (e.kind == LogKind::Hit && e.other >= 0) // the damage over the struck guest, for a moment
-            popups_.push_back({e.other, "-" + std::to_string(e.a), clock_ + 2.0F});
+        else if (e.kind == LogKind::Battle)
+            battleCell = e.a;
+        else if (e.kind == LogKind::Hit)
+        {
+            // The damage over the struck guest; the blow told in words when the fight is in sight.
+            if (e.other >= 0)
+                popups_.push_back({e.other, "-" + std::to_string(e.a), clock_ + 2.0F});
+            const bool mine = state_.player >= 0 && (e.who == state_.player || e.other == state_.player);
+            if (battleCell >= 0 && (mine || View().cells[U(battleCell)].lit) && !skipping_)
+                blows_.push_back({BlowText(e, battleCell, before), battleCell, e.other});
+        }
         else if (e.kind == LogKind::Monster && e.other == 1 && def_.monsters[U(e.a)].taken >= 0 && state_.taken.guest >= 0)
         {
             // A minion bound to the Taken fell: its share of the Taken's life goes too, said over the Taken.
@@ -1212,6 +1243,28 @@ void Play::Notice(std::uint32_t since)
             if (state_.player >= 0 && (e.who == state_.player || e.other == state_.player || SawFall(e.b)))
                 fall_ = fall, fallSeen_ = false;
         }
+}
+
+std::string Play::BlowText(const LogEntry &hit, int cell, const NightState &before) const
+{
+    // "X strikes Y for N damage. Y has M HP left." The player is "you"; a monster is the one in the
+    // fight's room (looked up before the action too: a slain one is gone after it).
+    const auto name = [&](int g, bool start) {
+        if (g >= 0)
+            return g == state_.player ? std::string(start ? "You" : "you") : def_.guests[U(g)].name;
+        for (const NightState *s : {&before, &state_})
+            for (const Monster &m : s->monsters)
+                if (m.cell == cell)
+                    return std::string(start ? "The " : "the ") + def_.monsters[U(m.kind)].name;
+        return std::string(start ? "Something" : "something");
+    };
+    const std::string who = name(hit.who, true), whom = name(hit.other, false);
+    std::string text = who + (hit.who >= 0 && hit.who == state_.player ? " strike " : " strikes ") + whom + " for " + std::to_string(hit.a) + " damage. ";
+    const bool you = hit.other >= 0 && hit.other == state_.player;
+    const std::string left = you ? "You" : whom.substr(0, 1) == "t" ? "T" + whom.substr(1) : whom;
+    if (hit.b <= 0)
+        return text + left + (you ? " fall." : " falls.");
+    return text + left + (you ? " have " : " has ") + std::to_string(hit.b) + " HP left.";
 }
 
 bool Play::KillerNear() const

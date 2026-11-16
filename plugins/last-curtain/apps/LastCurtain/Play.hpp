@@ -175,7 +175,7 @@ private:
     [[nodiscard]] nlohmann::json TurnData() const;
     [[nodiscard]] nlohmann::json EndData() const;
     [[nodiscard]] nlohmann::json InspectData() const;
-    void Notice(std::uint32_t since); // the Turn in new log entries, popups, the Taken's fall
+    void Notice(const umbra::night::NightState &before); // what the new log entries show: sounds, scenes, blows, popups, falls
     // The Taken's fall: where, the screen's title and cause, who dealt it (-1 the house).
     struct Falling
     {
@@ -236,6 +236,14 @@ private:
         float until = 0.0F; // clock_ when it goes
     };
     Obituary obituary_; // the last death, announced to everyone for a few seconds
+    struct Blow
+    {
+        std::string text; // "Phan Thi Mai strikes you for 4 damage. You have 2 HP left."
+        int cell = -1, guest = -1; // where, and who was struck (-1: a monster)
+    };
+    std::deque<Blow> blows_; // each blow in sight, told one after another (Play.md "Blows")
+    float blowClock_ = 0.0F;
+    [[nodiscard]] std::string BlowText(const umbra::night::LogEntry &hit, int cell, const umbra::night::NightState &before) const;
     bool preview_ = false;          // the caption on show is a deed's first step: what the bot faces
     std::string heldResult_;        // ... its result, shown after the tap
     std::optional<Dice> botDice_;   // ... and the bot's roll, shown between

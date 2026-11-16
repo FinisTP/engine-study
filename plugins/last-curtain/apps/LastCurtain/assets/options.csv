@@ -3,6 +3,7 @@ slideSeconds,0.4,one step of a pawn on the table (seconds)
 thinkSeconds,0.7,"the shortest ""thinking..."" of a bot in view"
 lineSeconds,3,the longest wait for the model's line (user)
 beatSeconds,2.5,a seen bot action stays on screen when it does not wait for a tap
+blowSeconds,1.8,a blow in a fight is told in words this long before the next (a click goes on)
 fastBeatSeconds,0.4,the same after Space
 unseenBeatSeconds,0.2,an action out of the player's sight
 diceSeconds,1,a die tumbles this long before it lands

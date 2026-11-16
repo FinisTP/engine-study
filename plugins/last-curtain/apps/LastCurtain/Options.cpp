@@ -23,7 +23,8 @@ namespace umbra::night
             {"cameraDistance", &GameOptions::cameraDistance},       {"cameraMinDistance", &GameOptions::cameraMinDistance},
             {"cameraMaxDistance", &GameOptions::cameraMaxDistance}, {"cameraTilt", &GameOptions::cameraTilt},
             {"cameraEaseSeconds", &GameOptions::cameraEaseSeconds}, {"tapGap", &GameOptions::tapGap},
-            {"turnBannerSeconds", &GameOptions::turnBannerSeconds}, {"plainBeatSeconds", &GameOptions::plainBeatSeconds}};
+            {"turnBannerSeconds", &GameOptions::turnBannerSeconds}, {"plainBeatSeconds", &GameOptions::plainBeatSeconds},
+            {"blowSeconds", &GameOptions::blowSeconds}};
         const std::map<std::string, bool GameOptions::*> flags{{"tapToContinue", &GameOptions::tapToContinue}, {"moments", &GameOptions::moments}, {"light", &GameOptions::light}};
         // 2. Rows: key,value,note (the note may hold commas); the header is skipped.
         std::string line;
