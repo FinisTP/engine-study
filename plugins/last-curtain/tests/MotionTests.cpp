@@ -84,7 +84,7 @@ TEST_CASE("Every motion the game plays is in motions.json and loads (T270)", "[n
     REQUIRE(error.empty());
     for (const char *name : {"idle", "walk", "talk", "nod", "refuse", "scheme", "pickup", "drop", "use", "brace", "pass", "fail",
                              "attack", "hit", "guard", "dodge", "flee", "power", "levelup", "fear", "down", "die", "ghost", "revive",
-                             "bow", "booed", "loom", "twitch", "taunt"})
+                             "bow", "booed", "haunt", "loom", "twitch", "taunt", "lunge", "vanish"})
         CHECK(m.Has(name));
     for (const std::string &name : m.Names())
         for (float t = 0.0F; t < m.Seconds(name); t += 0.05F)

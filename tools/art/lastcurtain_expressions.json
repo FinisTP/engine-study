@@ -1,5 +1,5 @@
 {
-  "_note": "ExpressionEditor (ComfyUI-AdvancedLivePortrait) settings for the guests' faces, tested 2026-11-17 on khang and thanh (512 px portraits, crop_factor 1.7, src_ratio 1, sample_ratio 1; unset values are 0). 'soft' reads on a lightly painted face (thanh); 'strong' is needed on a heavily painted one (khang). Cut the result out with birefnet (LoadBackgroundRemovalModel, RemoveBackground, InvertMask, JoinImageWithAlpha). 'blindfolded' is for guests with the khan tang over their eyes (the template, art/sprites/huy).",
+  "_note": "ExpressionEditor (ComfyUI-AdvancedLivePortrait) settings for the guests' faces, tested 2026-11-17 on khang and thanh (512 px portraits, crop_factor 1.7, src_ratio 1, sample_ratio 1; unset values are 0). 'soft' reads on a lightly painted face (thanh); 'strong' is needed on a heavily painted one (khang). Cut the result out with birefnet (LoadBackgroundRemovalModel, RemoveBackground, InvertMask, JoinImageWithAlpha). 'blindfolded' is for guests with the khan tang over their eyes (the template, art/sprites/huy). 'specter' is for the specter's mask (art/sprites/specter), pushed hard on purpose.",
   "soft": {
     "angry": {
       "eyebrow": -10,
@@ -121,6 +121,43 @@
     },
     "talk": {
       "aaa": 50
+    }
+  },
+  "specter": {
+    "angry": {
+      "eyebrow": -10,
+      "eee": 15,
+      "woo": -10,
+      "aaa": 40,
+      "rotate_pitch": -6
+    },
+    "neardead": {
+      "aaa": 30,
+      "rotate_pitch": 12,
+      "rotate_roll": 12,
+      "blink": -15
+    },
+    "happy": {
+      "smile": 1.3,
+      "eee": 15,
+      "aaa": 25,
+      "rotate_roll": 8
+    },
+    "scheming": {
+      "smile": 0.9,
+      "rotate_roll": -15,
+      "rotate_yaw": -10,
+      "blink": -8
+    },
+    "afraid": {
+      "aaa": 120,
+      "woo": 10,
+      "eyebrow": 15,
+      "blink": 5,
+      "rotate_pitch": -10
+    },
+    "talk": {
+      "aaa": 60
     }
   }
 }

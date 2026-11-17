@@ -89,3 +89,24 @@ How Huy was made (ComfyUI on the user's PC, SDXL base, dpmpp_2m karras):
 A guest whose old portrait is only a head and shoulders can instead be extended downward (place
 the cut-out on an 832 x 1216 canvas, mark the lower part transparent, VAEEncodeForInpaint, denoise 1):
 that kept Le Thanh the same person in 2 of 3 tries.
+
+### The specter (2026-11-18)
+
+`sprites/specter/`: the user asked for an eldritch specter whose face is only a mask making eerie
+expressions, in the same oil pastel. Steps, as for Huy, with these differences:
+
+1. Body: text to image, seed 7601, "full length figure of a single tall gaunt eldritch specter of the
+   opera, its face is an expressionless white lacquered theatre mask ..., long black and faded gold
+   tattered theatre robe, unnaturally long thin arms and fingers ..." + the style + "eldritch horror,
+   dread". All four seeds drew a bird-skull beak (no mouth for LivePortrait).
+2. Mask: paint a rough bone-white oval with two black eye holes and a thin red mouth over the beak,
+   then img2img the whole picture at denoise 0.45 (seed 1) with "its face is a smooth white porcelain
+   doll face mask ... leaning on a thin black cane" and a negative of "beak, bird, bird skull, plague
+   doctor, skull, hood". Repainting only the face failed (melted or ignored).
+3. Faces: the `specter` values in `tools/art/lastcurtain_expressions.json`; the body scaled 2.5x; the
+   portrait is a 320 x 320 crop at (262, 20) scaled to 1024.
+4. The big head moves shift birefnet's outline, so each body frame keeps the calm body and takes only
+   a feathered region around the head from its changed frame.
+
+`stage/stage.jpg`: the duel's backdrop, seed 7121, "an empty old opera house stage seen from the
+stalls, heavy faded red velvet curtains ..., a single cold pool of light ..." + the style.

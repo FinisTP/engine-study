@@ -1,7 +1,7 @@
 # Renders every sprite motion in motions.json to one MP4, to judge them before the engine plays them.
-# Usage: python3 preview_motions.py motions.json sprite_dir stage.png specter.png out.mp4
-# sprite_dir holds body_<face>.png (facing right, alpha). The specter is one picture, mirrored to face left.
-import json, math, subprocess, sys
+# Usage: python3 preview_motions.py motions.json sprite_dir stage.png specter out.mp4
+# sprite_dir holds body_<face>.png (facing right, alpha). specter: its sprite folder, or one picture; mirrored to face left.
+import json, math, os, subprocess, sys
 import numpy as np
 from PIL import Image, ImageDraw
 
@@ -16,7 +16,9 @@ def fit(im):
 
 faces = {f: fit(Image.open(f'{sprite_dir}/body_{f}.png').convert('RGBA'))
          for f in ['calm', 'angry', 'neardead', 'happy', 'scheming', 'afraid', 'talk']}
-spec_im = fit(Image.open(specter_p).convert('RGBA'))
+FACES = ['calm', 'angry', 'neardead', 'happy', 'scheming', 'afraid', 'talk']
+spec_faces = ({f: fit(Image.open(f'{specter_p}/body_{f}.png').convert('RGBA')) for f in FACES} if os.path.isdir(specter_p)
+              else {'calm': fit(Image.open(specter_p).convert('RGBA'))})
 NOISE = np.random.default_rng(3).random((SPRITE_H * 2, SPRITE_H * 2))
 FIELDS = ['x', 'y', 'sx', 'sy', 'rot', 'skew', 'alpha', 'shake', 'dissolve']
 BASE = dict(x=0, y=0, sx=1, sy=1, rot=0, skew=0, alpha=1, shake=0, dissolve=0, tint=[1, 1, 1, 0])
@@ -84,41 +86,43 @@ def actor(frame, im, name, t, feet_x, facing):
     draw(frame, im(face), v, feet_x, facing, t)
 
 hero = lambda f: faces[f]
-spec = lambda f: spec_im
+spec = lambda f: spec_faces.get(f, spec_faces['calm'])
 HX, SX = 430, 900
 # (hero motion, specter motion, specter delay, caption): every game moment that has a motion.
 SCENES = [
-    ('idle', 'idle', 0, 'idle: any guest waiting'),
-    ('walk', 'idle', 0, 'walk: moving between rooms'),
-    ('pickup', 'idle', 0, 'pickup: takes an item from the floor'),
-    ('drop', 'idle', 0, 'drop: leaves an item'),
-    ('use', 'idle', 0, 'use: uses an item, or shows a prop in the duel'),
-    ('brace', 'idle', 0, 'brace: an event roll is coming'),
-    ('pass', 'idle', 0, 'pass: the roll succeeds'),
-    ('fail', 'idle', 0, 'fail: the roll fails'),
-    ('talk', 'idle', 0, 'talk: asks, answers, chats'),
-    ('nod', 'idle', 0, 'nod: grants a request'),
-    ('refuse', 'idle', 0, 'refuse: turns a request down'),
-    ('scheme', 'idle', 0, 'scheme: a bot plots (asks someone to hunt)'),
-    ('attack', 'hit', 0.42, 'attack: strikes a guest, a monster, or the specter (Strike)'),
-    ('guard', 'attack', -0.1, 'guard: Hold in the duel, guarding in a fight'),
-    ('hit', 'attack', -0.42, 'hit: takes a blow, a trap or a bad event'),
-    ('dodge', 'attack', -0.2, 'dodge: a blow that misses'),
-    ('flee', 'idle', 0, 'flee: Leave a fight; runs from the killer'),
-    ('power', 'idle', 0, 'power: a rare prop\'s power'),
-    ('levelup', 'idle', 0, 'levelup: a level gained'),
-    ('fear', 'idle', 0, 'fear: the killer is near'),
-    ('down', 'idle', 0, 'down: HP runs out on the board'),
-    ('die', 'idle', 0, 'die: killed; becomes a ghost'),
-    ('ghost', 'idle', 0, 'ghost: walks to the Dressing room'),
-    ('revive', 'idle', 0, 'revive: back to life at the Dressing room'),
-    ('bow', 'idle', 0, 'bow: the duel ends standing; Applause; the winner at dawn'),
-    ('booed', 'idle', 0, 'booed: HP runs out in the duel; booed off'),
-    ('idle', 'loom', 0, 'specter loom: shows a heavy blow is next'),
-    ('idle', 'twitch', 0, 'specter twitch: shows a light blow is next'),
-    ('idle', 'taunt', 0, 'specter taunt: shows a taunt is next'),
-    ('idle', 'die', 0, 'specter die: the specter is beaten (end of the finale)'),
+    ('idle', 'haunt', 0, 'idle: any guest waiting  /  specter haunt: it waits, swaying'),
+    ('walk', 'haunt', 0, 'walk: moving between rooms'),
+    ('pickup', 'haunt', 0, 'pickup: takes an item from the floor'),
+    ('drop', 'haunt', 0, 'drop: leaves an item'),
+    ('use', 'haunt', 0, 'use: uses an item, or shows a prop in the duel'),
+    ('brace', 'haunt', 0, 'brace: an event roll is coming'),
+    ('pass', 'haunt', 0, 'pass: the roll succeeds'),
+    ('fail', 'haunt', 0, 'fail: the roll fails'),
+    ('talk', 'haunt', 0, 'talk: asks, answers, chats'),
+    ('nod', 'haunt', 0, 'nod: grants a request; a turn opens'),
+    ('refuse', 'haunt', 0, 'refuse: turns a request down'),
+    ('scheme', 'haunt', 0, 'scheme: a bot plots (asks someone to hunt)'),
+    ('attack', 'hit', 0.42, 'attack: Strike; the target is hit'),
+    ('guard', 'lunge', -0.1, 'guard: Hold against the specter\'s lunge'),
+    ('hit', 'lunge', -0.38, 'hit: the specter lunges and lands'),
+    ('dodge', 'lunge', -0.2, 'dodge: a lunge that misses'),
+    ('flee', 'haunt', 0, 'flee: Leave a fight; runs from the killer'),
+    ('power', 'haunt', 0, 'power: a rare prop\'s power'),
+    ('levelup', 'haunt', 0, 'levelup: a level gained'),
+    ('fear', 'haunt', 0, 'fear: the killer is near'),
+    ('down', 'haunt', 0, 'down: HP runs out on the board'),
+    ('die', 'haunt', 0, 'die: killed; becomes a ghost'),
+    ('ghost', 'haunt', 0, 'ghost: walks to the Dressing room'),
+    ('revive', 'haunt', 0, 'revive: back to life at the Dressing room'),
+    ('bow', 'haunt', 0, 'bow: the duel ends standing; the winner at dawn'),
+    ('booed', 'haunt', 0, 'booed: HP runs out in the duel; booed off'),
+    ('afraid_wait', 'loom', 0, 'specter loom: a heavy blow is next (it snarls)'),
+    ('afraid_wait', 'twitch', 0, 'specter twitch: a light blow is next (its head cracks aside)'),
+    ('idle', 'taunt', 0, 'specter taunt: a taunt is next (the mask grins)'),
+    ('idle', 'talk', 0, 'specter talk: its line'),
+    ('pass', 'vanish', 0, 'specter vanish: beaten, it screams and burns away'),
 ]
+M['afraid_wait'] = M['fear']
 
 def scene_seconds(h, s, d):
     lh = 2.4 if M[h].get('loop') else M[h]['seconds'] + 0.6

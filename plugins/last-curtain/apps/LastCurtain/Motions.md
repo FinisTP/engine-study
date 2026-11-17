@@ -68,10 +68,16 @@ the same matrix places a quad; the tint, alpha and dissolve go to its shader.
 | Back to life at the Dressing room (Woke) | revive | |
 | A duel ended standing; the winner at dawn | bow | |
 | HP runs out in the duel | booed | |
-| The specter shows a heavy / light blow / taunt is next | | specter: loom / twitch / taunt |
-| The specter is beaten | | specter: die |
+| The specter waits | | specter: haunt |
+| The specter shows a heavy / light blow / taunt is next | | specter: loom (snarl) / twitch (head cracks aside) / taunt (grin) |
+| The specter strikes | the guest: hit, guard or dodge | specter: lunge |
+| The specter is struck | | specter: hit |
+| The specter speaks | | specter: talk |
+| The specter is beaten (the finale) | bow | specter: vanish |
 
-A specter has one picture, so its `faces` are ignored.
+The specter (`art/sprites/specter`) has the same seven face names, read for its mask: calm is the still
+mask, angry a snarl, happy a stretched grin, scheming a crooked tilt, afraid a scream, neardead its
+head sunk into its shoulders, talk its mouth open.
 
 ## The shader
 
