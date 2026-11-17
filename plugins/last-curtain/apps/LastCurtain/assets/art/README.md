@@ -93,20 +93,27 @@ that kept Le Thanh the same person in 2 of 3 tries.
 ### The specter (2026-11-18)
 
 `sprites/specter/`: the user asked for an eldritch specter whose face is only a mask making eerie
-expressions, in the same oil pastel. Steps, as for Huy, with these differences:
+expressions, in the same oil pastel, then for it to look scarier and more intimidating (option E of
+five, the user). How it was made:
 
-1. Body: text to image, seed 7601, "full length figure of a single tall gaunt eldritch specter of the
-   opera, its face is an expressionless white lacquered theatre mask ..., long black and faded gold
-   tattered theatre robe, unnaturally long thin arms and fingers ..." + the style + "eldritch horror,
-   dread". All four seeds drew a bird-skull beak (no mouth for LivePortrait).
-2. Mask: paint a rough bone-white oval with two black eye holes and a thin red mouth over the beak,
-   then img2img the whole picture at denoise 0.45 (seed 1) with "its face is a smooth white porcelain
-   doll face mask ... leaning on a thin black cane" and a negative of "beak, bird, bird skull, plague
-   doctor, skull, hood". Repainting only the face failed (melted or ignored).
-3. Faces: the `specter` values in `tools/art/lastcurtain_expressions.json`; the body scaled 2.5x; the
-   portrait is a 320 x 320 crop at (262, 20) scaled to 1024.
-4. The big head moves shift birefnet's outline, so each body frame keeps the calm body and takes only
-   a feathered region around the head from its changed frame.
+1. A first specter (text to image, seed 7601, a gaunt robed figure) got a painted mask and an img2img
+   at denoise 0.45 (seed 1). SDXL drew a bird-skull beak every time; the mask had to be painted on.
+2. Escalated: img2img of that picture at denoise 0.62 (seed 13) with "a towering gaunt eldritch
+   specter ... impossibly long spindly arms with too many long jointed fingers like spider legs, a
+   ragged black theatre robe ..., the robe hem dissolving into dripping black tendrils and smoke, black
+   tendrils rising from its shoulders" + the style + "eldritch horror, overwhelming dread": a faceless
+   mass of hair with spider legs rising from its back.
+3. Mask again: a rough bone-white oval, two black eye holes and a thin red mouth painted over its head
+   at (397-473, 172-290), then img2img at denoise 0.48 (seed 22) with "a cracked white porcelain theatre
+   mask with empty black eye holes and a thin red painted mouth hangs where its face should be, framed
+   by a mass of long dripping black hair and strands, long black spider legs and spindly jointed limbs
+   rising from its back". (A "ribcage" prompt turned every try into a skeleton.)
+4. Faces: the `specter` values in `tools/art/lastcurtain_expressions.json` (scheming gentler: roll -9,
+   yaw -4, or the tilt drags background paper in); the body scaled 2.5x; the portrait a 320 x 320 crop
+   at (270, 70) scaled to 1024.
+5. The head moves change birefnet's outline, so each body frame keeps the calm body and takes only a
+   feathered region around the head (850-1300, 320-890 at 2.5x) from its changed frame; the bottom
+   90 px (the paper's edge) are cut away.
 
 `stage/stage.jpg`: the duel's backdrop, seed 7121, "an empty old opera house stage seen from the
 stalls, heavy faded red velvet curtains ..., a single cold pool of light ..." + the style.

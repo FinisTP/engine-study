@@ -5,20 +5,22 @@ import json, math, os, subprocess, sys
 import numpy as np
 from PIL import Image, ImageDraw
 
-W, H, FPS, SPRITE_H, FLOOR = 1280, 720, 30, 500, 680
+W, H, FPS, SPRITE_H, FLOOR = 1280, 720, 30, 430, 680
+SPECTER_SCALE = 1.4  # the specter towers over a guest (Motions.md)
 motions_p, sprite_dir, stage_p, specter_p, out = sys.argv[1:6]
 M = {k: v for k, v in json.load(open(motions_p)).items() if not k.startswith('_')}
 stage = Image.open(stage_p).convert('RGBA').resize((W, H))
 
-def fit(im):
+def fit(im, h=SPRITE_H):
     im = im.crop(im.getchannel('A').getbbox())
-    return im.resize((round(im.width * SPRITE_H / im.height), SPRITE_H), Image.LANCZOS)
+    return im.resize((round(im.width * h / im.height), h), Image.LANCZOS)
 
 faces = {f: fit(Image.open(f'{sprite_dir}/body_{f}.png').convert('RGBA'))
          for f in ['calm', 'angry', 'neardead', 'happy', 'scheming', 'afraid', 'talk']}
 FACES = ['calm', 'angry', 'neardead', 'happy', 'scheming', 'afraid', 'talk']
-spec_faces = ({f: fit(Image.open(f'{specter_p}/body_{f}.png').convert('RGBA')) for f in FACES} if os.path.isdir(specter_p)
-              else {'calm': fit(Image.open(specter_p).convert('RGBA'))})
+SH = round(SPRITE_H * SPECTER_SCALE)
+spec_faces = ({f: fit(Image.open(f'{specter_p}/body_{f}.png').convert('RGBA'), SH) for f in FACES} if os.path.isdir(specter_p)
+              else {'calm': fit(Image.open(specter_p).convert('RGBA'), SH)})
 NOISE = np.random.default_rng(3).random((SPRITE_H * 2, SPRITE_H * 2))
 FIELDS = ['x', 'y', 'sx', 'sy', 'rot', 'skew', 'alpha', 'shake', 'dissolve']
 BASE = dict(x=0, y=0, sx=1, sy=1, rot=0, skew=0, alpha=1, shake=0, dissolve=0, tint=[1, 1, 1, 0])
@@ -66,9 +68,9 @@ def draw(frame, im, v, feet_x, facing, t):
     scale = np.diag([v['sx'], v['sy'], 1])
     skew = np.array([[1, v['skew'], 0], [0, 1, 0], [0, 0, 1]])
     lean = np.array([[math.cos(r), math.sin(r), 0], [-math.sin(r), math.cos(r), 0], [0, 0, 1]])
-    shake = v['shake'] * SPRITE_H * math.sin(t * 70)
-    to_screen = np.array([[facing, 0, feet_x + facing * v['x'] * SPRITE_H + shake],
-                          [0, -1, FLOOR - v['y'] * SPRITE_H], [0, 0, 1]])
+    shake = v['shake'] * h * math.sin(t * 70)
+    to_screen = np.array([[facing, 0, feet_x + facing * v['x'] * h + shake],
+                          [0, -1, FLOOR - v['y'] * h], [0, 0, 1]])
     fwd = to_screen @ lean @ skew @ scale @ to_local
     inv = np.linalg.inv(fwd)
     layer = src.transform((W, H), Image.AFFINE, tuple(inv[:2].flatten()), Image.BILINEAR)

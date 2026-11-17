@@ -145,8 +145,8 @@
     },
     "scheming": {
       "smile": 0.9,
-      "rotate_roll": -15,
-      "rotate_yaw": -10,
+      "rotate_roll": -9,
+      "rotate_yaw": -4,
       "blink": -8
     },
     "afraid": {

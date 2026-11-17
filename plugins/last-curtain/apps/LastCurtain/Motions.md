@@ -77,7 +77,8 @@ the same matrix places a quad; the tint, alpha and dissolve go to its shader.
 
 The specter (`art/sprites/specter`) has the same seven face names, read for its mask: calm is the still
 mask, angry a snarl, happy a stretched grin, scheming a crooked tilt, afraid a scream, neardead its
-head sunk into its shoulders, talk its mouth open.
+head sunk into its shoulders, talk its mouth open. On the stage it is drawn about 1.4 times a guest's
+height, so it towers over them; its haunt leans toward its prey and its loom rears up taller.
 
 ## The shader
 
