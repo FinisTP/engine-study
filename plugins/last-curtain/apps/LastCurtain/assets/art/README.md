@@ -46,3 +46,31 @@ green poster sky.
 51/52/53 ("game item icon: a long rolled bundle of faded red velvet cloth tied with rope at both ends,
 lying horizontally ... plain flat cream background", short dread style; negative adds gore, bodies
 and scenery). Seeds 41 and 42 with the item prompt drew whole curtained rooms.
+
+## Sprites (plan D, 2026-11-18)
+
+`sprites/<guest>/` holds a guest's 2D sprite: `body_<face>.png` (full body, 768 px tall) and
+`face_<face>.png` (head and shoulders, 512 px wide) for the faces calm, angry, neardead, happy,
+scheming, afraid and talk, all with alpha. Huy is the template; the other guests use his sprite
+(tinted) until the motion is proven in the game.
+
+How Huy was made (ComfyUI on the user's PC, SDXL base, dpmpp_2m karras, cfg 6.5):
+
+1. Body: text to image, 832 x 1216, 28 steps, seed 8101 of 8101/8201/8301/8401: "full body
+   illustration of a single young Vietnamese man, a university student about 20 years old, short
+   black hair, a small headlamp strapped on his forehead, olive green hooded field jacket with the
+   hood down, dark trousers, worn canvas sneakers, an old film camera on a strap across his chest,
+   wary determined face, standing, three-quarter view, arms at his sides, whole figure from head to
+   feet, centred, plain empty flat cream background" + the style. Negative: the usual plus
+   "multiple figures, character sheet, scenery, cropped, close-up, hood up". (8201 had a poster
+   title, 8301 the hood up, 8401 a side view; the headlamp and camera did not appear in any.)
+2. Portrait: crop 300 x 300 at (241, 50) from the body, scale to 1024, img2img denoise 0.35.
+3. Faces: ExpressionEditor (ComfyUI-AdvancedLivePortrait) with `tools/art/lastcurtain_expressions.json`
+   values; the body is scaled 2x first so the face is large enough.
+4. Cut-out: birefnet run on each changed picture (not the original, or a tilted head leaves a fringe).
+5. `python3 tools/art/pack_sprites.py <comfy output dir> huy <this folder>`.
+
+A portrait that is only a head and shoulders can instead be extended downward (place the cut-out
+on a 832 x 1216 cream canvas, mark the lower part transparent, VAEEncodeForInpaint, denoise 1):
+that kept Le Thanh the same person in 2 of 3 tries. Huy's old portrait could not be cut out (black
+background into a black hood), so he was drawn again.

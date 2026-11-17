@@ -125,6 +125,8 @@ performance (the duel).
 | Bots | Natures, truces, killer fear | Score props for the next act highest; perform duels by simple rules | Quest goals |
 | AI model | Lines for chats | Specter taunts and the critic's review, with written fallbacks | |
 | Saves | | Version 7: Applause, act, prop flags | |
+| Cast | The 7 guests, their stats and natures | A roster of 10 (3 new); guests per night in `rules.json` | |
+| Pawns | The 3D board, the Taken model | Guests drawn as 2D sprites (Huy's for all until proven) | `guest.glb` for guests |
 
 ## Art and motion (plan D, the user, 2026-11-17)
 
@@ -146,7 +148,18 @@ models and no new animation clips**. Characters become 2D sprites:
 - The act's opening shot reuses the camera cutscenes (`cutscenes.json`) and the existing Taken
   model; bot duels are one result line each, shown together on the review screen.
 
-New art in total: 7 cut-outs × 7 faces, 4 specter pictures, 1 stage backdrop, 3 move icons.
+**The template (the user, 2026-11-18).** Hoang Gia Huy's sprite (`art/sprites/huy`, made as in
+`art/README.md` "Sprites") stands in for every guest, tinted by guest colour, through the whole
+implementation stage. The other guests are drawn only once the motion works in the game.
+
+**The cast becomes a roster of 10** (the user, 2026-11-18), one per life stage and gender, and the
+number of guests in a night is a setting in `rules.json` (default 7, as now). The 7 current guests
+keep their slots: Nhi (girl), Thanh (young woman), Lan (woman), Mai (old woman), Huy (young man),
+Khang (man), Bao (old man). New: a boy, a teen boy, a teen girl. **[call]**: the user did not rule on
+this mapping or on Huy's name (kept as in `guests.csv`).
+
+New art in total: 10 bodies and portraits × 7 faces, 4 specter pictures, 1 stage backdrop, 3 move
+icons.
 Rejected: SDXL repainting the face (a different person each time, expressions weak); Qwen-Image-Edit
 and Wan video (too big for the user's 4 GB graphics card); a Meshy model per guest (credits).
 
