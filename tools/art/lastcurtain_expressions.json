@@ -1,0 +1,19 @@
+{
+  "_note": "ExpressionEditor (ComfyUI-AdvancedLivePortrait) settings for the guests' faces, tested 2026-11-17 on khang and thanh (512 px portraits, crop_factor 1.7, src_ratio 1, sample_ratio 1; unset values are 0). 'soft' reads on a lightly painted face (thanh); 'strong' is needed on a heavily painted one (khang). Cut the result out with birefnet (LoadBackgroundRemovalModel, RemoveBackground, InvertMask, JoinImageWithAlpha).",
+  "soft": {
+    "angry": {"eyebrow": -10, "eee": 10, "smile": -0.3, "rotate_pitch": -4, "blink": -2},
+    "neardead": {"blink": -11, "eyebrow": 6, "aaa": 18, "rotate_pitch": 8, "rotate_roll": 7, "pupil_y": -6, "smile": -0.2},
+    "happy": {"smile": 1.2, "eee": 8, "aaa": 12, "eyebrow": 4},
+    "scheming": {"smile": 0.55, "blink": -7, "eyebrow": -5, "pupil_x": 10, "rotate_roll": -5, "rotate_yaw": -6},
+    "afraid": {"eyebrow": 13, "blink": 5, "aaa": 45, "woo": 6, "rotate_pitch": -3},
+    "talk": {"aaa": 35, "eyebrow": 2}
+  },
+  "strong": {
+    "angry": {"eyebrow": -10, "eee": 15, "woo": -10, "aaa": 15, "smile": -0.3, "rotate_pitch": -5},
+    "neardead": {"blink": -11, "eyebrow": 6, "aaa": 18, "rotate_pitch": 8, "rotate_roll": 7, "pupil_y": -6, "smile": -0.2},
+    "happy": {"smile": 1.3, "eee": 14, "aaa": 30, "eyebrow": 6},
+    "scheming": {"smile": 0.8, "blink": -9, "eyebrow": -8, "pupil_x": 14, "rotate_roll": -8, "rotate_yaw": -10},
+    "afraid": {"eyebrow": 15, "blink": 5, "aaa": 90, "woo": 8},
+    "talk": {"aaa": 70, "eyebrow": 3}
+  }
+}

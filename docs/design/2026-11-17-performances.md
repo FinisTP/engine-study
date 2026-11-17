@@ -61,8 +61,8 @@ performance (the duel).
 
 - A prop is an item with a `prop` flag in `items.csv` (a blade, a mask, a lantern, a shawl, the
   crown...). Most props also keep an ordinary use (a blade still adds Might in a fight).
-- When the map is built, each prop the night's scripts call for is laid in one or two rooms
-  (`copies` in `items.csv`). Props are carried like items (the carry limit holds), dropped on death,
+- When an act is announced, each prop its script calls for is laid in one or two rooms (`copies` in
+  `items.csv`), so nobody picks up a later act's props by chance in round 1. Props are carried like items (the carry limit holds), dropped on death,
   can be asked for ("Ask X for an item"), and taken from the floor.
 - The programme panel shows the next act's props and whether you hold them.
 
@@ -71,9 +71,12 @@ performance (the duel).
 - At curtain the board pauses. Every living guest (not ghosts) performs in turn order, alone against
   the act's specter, on the **duel view** (the user's item 3): only the stage, both sides' HP and
   stats, each side acting in turn.
-- **[call]** A duel lasts three exchanges. Each exchange the guest picks one: **Strike**
-  (Might roll against the specter), **Hold** (Sanity roll to halve its next blow), or **Use a prop**
-  (counts for the script, and does what the prop does). The specter strikes back after each.
+- **[call]** A duel lasts three exchanges. Before each, the specter **shows its next move** as an
+  icon: a heavy blow, a light blow, or a taunt (the evaluation, 2026-11-17). The guest then picks
+  one: **Strike** (Might roll; best against a light blow), **Hold** (Sanity roll to halve the blow;
+  best against a heavy one), or **Use a prop** (counts for the script, does what the prop does, and
+  earns a bonus when used on the move its script names, such as the mask on the taunt). The
+  specter then acts.
 - Applause: a base for finishing the duel standing, plus the damage dealt, plus a bonus for each
   script prop used. All values per script, in `scripts.csv`.
 - **[call]** A duel is not lethal: a guest whose HP runs out is **booed off** (no further Applause
@@ -122,6 +125,30 @@ performance (the duel).
 | Bots | Natures, truces, killer fear | Score props for the next act highest; perform duels by simple rules | Quest goals |
 | AI model | Lines for chats | Specter taunts and the critic's review, with written fallbacks | |
 | Saves | | Version 7: Applause, act, prop flags | |
+
+## Art and motion (plan D, the user, 2026-11-17)
+
+There is no budget for a 3D model and animations per character, so the performances use **no new
+models and no new animation clips**. Characters become 2D sprites:
+
+- **One painted picture per guest**, cut out of its poster (birefnet in ComfyUI). The portraits
+  are head-and-shoulders now; full-body pictures are a later choice.
+- **Expressions by LivePortrait** (ComfyUI-AdvancedLivePortrait, on the user's PC): it moves the
+  painted face instead of repainting it, so the guest stays the same person. Per guest: calm,
+  angry, near-dead, happy, scheming, afraid, and a talking (mouth open) frame. Settings in
+  `tools/art/lastcurtain_expressions.json`. Tested on Khang and Thanh: all read; a heavily painted
+  face (Khang) needs the stronger settings.
+- **Actions by engine motion** on the flat sprite, no frames: fight = lean in and slam, squash on
+  the hit; dodge = skew and side hop; flee = flip and dart off; walk = bob; talk = swap the mouth
+  frame; death = dissolve. Pallor and anger flush are tints, not new pictures.
+- **Specters** are pictures too (one each), shown with the same motion. The duel view is a 2D
+  screen: stage backdrop, both sprites, HP, stats, the specter's move icon.
+- The act's opening shot reuses the camera cutscenes (`cutscenes.json`) and the existing Taken
+  model; bot duels are one result line each, shown together on the review screen.
+
+New art in total: 7 cut-outs × 7 faces, 4 specter pictures, 1 stage backdrop, 3 move icons.
+Rejected: SDXL repainting the face (a different person each time, expressions weak); Qwen-Image-Edit
+and Wan video (too big for the user's 4 GB graphics card); a Meshy model per guest (credits).
 
 ## Data (all tunable without code)
 
