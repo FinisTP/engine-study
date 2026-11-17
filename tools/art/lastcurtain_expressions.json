@@ -1,5 +1,5 @@
 {
-  "_note": "ExpressionEditor (ComfyUI-AdvancedLivePortrait) settings for the guests' faces, tested 2026-11-17 on khang and thanh (512 px portraits, crop_factor 1.7, src_ratio 1, sample_ratio 1; unset values are 0). 'soft' reads on a lightly painted face (thanh); 'strong' is needed on a heavily painted one (khang). Cut the result out with birefnet (LoadBackgroundRemovalModel, RemoveBackground, InvertMask, JoinImageWithAlpha). 'huy' is what the template sprite (art/sprites/huy) uses.",
+  "_note": "ExpressionEditor (ComfyUI-AdvancedLivePortrait) settings for the guests' faces, tested 2026-11-17 on khang and thanh (512 px portraits, crop_factor 1.7, src_ratio 1, sample_ratio 1; unset values are 0). 'soft' reads on a lightly painted face (thanh); 'strong' is needed on a heavily painted one (khang). Cut the result out with birefnet (LoadBackgroundRemovalModel, RemoveBackground, InvertMask, JoinImageWithAlpha). 'blindfolded' is for guests with the khan tang over their eyes (the template, art/sprites/huy).",
   "soft": {
     "angry": {
       "eyebrow": -10,
@@ -86,48 +86,41 @@
       "eyebrow": 3
     }
   },
-  "huy": {
+  "blindfolded": {
     "angry": {
       "eyebrow": -10,
-      "eee": 12,
-      "woo": -6,
-      "aaa": 12,
+      "eee": 14,
+      "woo": -8,
+      "aaa": 14,
       "smile": -0.3,
-      "rotate_pitch": -4
+      "rotate_pitch": -5
     },
     "neardead": {
-      "blink": -11,
-      "eyebrow": 6,
-      "aaa": 18,
-      "rotate_pitch": 6,
-      "rotate_roll": 4,
-      "pupil_y": -6,
-      "smile": -0.2
+      "aaa": 22,
+      "rotate_pitch": 9,
+      "rotate_roll": 5,
+      "smile": -0.3
     },
     "happy": {
       "smile": 1.2,
       "eee": 10,
       "aaa": 16,
-      "eyebrow": 4
+      "rotate_pitch": -2
     },
     "scheming": {
-      "smile": 0.6,
-      "blink": -7,
-      "eyebrow": -6,
-      "pupil_x": 10,
-      "rotate_roll": -5,
-      "rotate_yaw": -6
+      "smile": 0.7,
+      "rotate_roll": -6,
+      "rotate_yaw": -6,
+      "rotate_pitch": 3
     },
     "afraid": {
       "eyebrow": 14,
-      "blink": 5,
       "aaa": 70,
       "woo": 6,
-      "rotate_pitch": -3
+      "rotate_pitch": -5
     },
     "talk": {
-      "aaa": 50,
-      "eyebrow": 2
+      "aaa": 50
     }
   }
 }

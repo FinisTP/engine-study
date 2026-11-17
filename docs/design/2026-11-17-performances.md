@@ -148,6 +148,12 @@ models and no new animation clips**. Characters become 2D sprites:
 - The act's opening shot reuses the camera cutscenes (`cutscenes.json`) and the existing Taken
   model; bot duels are one result line each, shown together on the review screen.
 
+**The look (the user, 2026-11-18).** Characters are drawn in **Vietnamese oil pastel**, silent,
+morbid and uncanny, **facing right** (the game mirrors them for left), with no hoods, and wear a
+**white khan tang tied over the eyes** with dark hollow shadows where the eyes are; the mouth,
+brows and head carry the expression. This replaces the 1960s poster style for characters only;
+rooms, events and items keep theirs for now **[call]**.
+
 **The template (the user, 2026-11-18).** Hoang Gia Huy's sprite (`art/sprites/huy`, made as in
 `art/README.md` "Sprites") stands in for every guest, tinted by guest colour, through the whole
 implementation stage. The other guests are drawn only once the motion works in the game.

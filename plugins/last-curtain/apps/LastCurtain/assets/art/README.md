@@ -54,23 +54,38 @@ and scenery). Seeds 41 and 42 with the item prompt drew whole curtained rooms.
 scheming, afraid and talk, all with alpha. Huy is the template; the other guests use his sprite
 (tinted) until the motion is proven in the game.
 
-How Huy was made (ComfyUI on the user's PC, SDXL base, dpmpp_2m karras, cfg 6.5):
+The look (the user, 2026-11-18): **Vietnamese oil pastel**, silent, morbid and uncanny; every guest
+**faces right** (the game mirrors for left) and wears a **white khan tang tied over the eyes**, with
+dark hollow shadows soaked through where the eyes are; the rest of the face carries the feeling.
+No hoods. This replaces the 1960s poster style for characters only.
 
-1. Body: text to image, 832 x 1216, 28 steps, seed 8101 of 8101/8201/8301/8401: "full body
-   illustration of a single young Vietnamese man, a university student about 20 years old, short
-   black hair, a small headlamp strapped on his forehead, olive green hooded field jacket with the
-   hood down, dark trousers, worn canvas sneakers, an old film camera on a strap across his chest,
-   wary determined face, standing, three-quarter view, arms at his sides, whole figure from head to
-   feet, centred, plain empty flat cream background" + the style. Negative: the usual plus
-   "multiple figures, character sheet, scenery, cropped, close-up, hood up". (8201 had a poster
-   title, 8301 the hood up, 8401 a side view; the headlamp and camera did not appear in any.)
-2. Portrait: crop 300 x 300 at (241, 50) from the body, scale to 1024, img2img denoise 0.35.
-3. Faces: ExpressionEditor (ComfyUI-AdvancedLivePortrait) with `tools/art/lastcurtain_expressions.json`
-   values; the body is scaled 2x first so the face is large enough.
-4. Cut-out: birefnet run on each changed picture (not the original, or a tilted head leaves a fringe).
-5. `python3 tools/art/pack_sprites.py <comfy output dir> huy <this folder>`.
+Style words: "Vietnamese oil pastel drawing on toned paper, thick waxy smudged strokes, visible
+paper grain, muted desaturated earth colours, raw umber, ash grey, faded olive, dull blood red
+accents, dim light, silent, morbid, uncanny, eerie stillness, unsettling, melancholic".
 
-A portrait that is only a head and shoulders can instead be extended downward (place the cut-out
-on a 832 x 1216 cream canvas, mark the lower part transparent, VAEEncodeForInpaint, denoise 1):
-that kept Le Thanh the same person in 2 of 3 tries. Huy's old portrait could not be cut out (black
-background into a black hood), so he was drawn again.
+How Huy was made (ComfyUI on the user's PC, SDXL base, dpmpp_2m karras):
+
+1. Body: text to image, 832 x 1216, 30 steps, cfg 6.5, seed 9601 of 9501-9801: "full length
+   standing figure of a single young Vietnamese man, feet and shoes visible, small in the frame with
+   empty space around, he faces right in side profile, short black hair, bare head, olive green
+   field jacket with the hood down hanging behind his neck, dark trousers, worn canvas sneakers,
+   arms hanging at his sides, pale ashen skin, plain dim greyish paper background" + the style.
+   Negative: "hood up, hooded head, close-up, portrait crop, cropped legs, cropped feet, photo, 3d
+   render, anime, cartoon, bright saturated colours, text, watermark, frame, border, multiple
+   figures, scenery, gore, blood, deformed". 9601 had no hood at all; it looked left, so it was mirrored.
+2. Blindfold: SDXL will not draw one from the main prompt. Paint a rough off-white band and two
+   dark blurred smudges over the eyes, then repaint only that area (SetLatentNoiseMask, denoise
+   0.55, seed 2: "a white cotton mourning cloth, khan tang, tied tightly as a blindfold over his
+   eyes ... two dark hollow sunken shadows seep through the white cloth where his eyes are"). The
+   repaint washes the smudges out, so paint them again (dark, blurred, with grain) and blend with a
+   second repaint of the band at denoise 0.32.
+3. Portrait: crop 300 x 300 at (310, 105), scale to 1024, img2img denoise 0.25.
+4. Faces: ExpressionEditor with the `blindfolded` values in `tools/art/lastcurtain_expressions.json`
+   (no blink, pupil or wink; mouth, brows and head only). Scale the body 2x first. LivePortrait still
+   finds the face behind the cloth.
+5. Cut-out: birefnet on each changed picture (not the original, or a moved head leaves a fringe).
+6. `python3 tools/art/pack_sprites.py <comfy output dir> huy <this folder>`.
+
+A guest whose old portrait is only a head and shoulders can instead be extended downward (place
+the cut-out on an 832 x 1216 canvas, mark the lower part transparent, VAEEncodeForInpaint, denoise 1):
+that kept Le Thanh the same person in 2 of 3 tries.
