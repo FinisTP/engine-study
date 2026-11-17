@@ -82,8 +82,8 @@ performance (the duel).
 - **[call]** A duel is not lethal: a guest whose HP runs out is **booed off** (no further Applause
   that act, HP left at 1). Deaths stay on the board, from rivals, the killer and traps, so the acts
   remain a stage, not a meat grinder.
-- Bots perform too; the player watches their duels as quick beats (skippable), or only the result,
-  like other bot beats.
+- Bots perform too, by simple rules; each bot duel is one result line, shown together on the review
+  (no waiting through bot duels: the evaluation's top gap).
 - After each act, the **review**: everyone's Applause for the act, ranked, in a short screen. Words by
   the built-in model when present (a critic's lines), written lines otherwise.
 
