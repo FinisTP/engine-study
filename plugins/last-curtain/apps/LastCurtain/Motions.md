@@ -72,3 +72,23 @@ the same matrix places a quad; the tint, alpha and dissolve go to its shader.
 | The specter is beaten | | specter: die |
 
 A specter has one picture, so its `faces` are ignored.
+
+## The shader
+
+`plugins/last-curtain/assets/shaders/sprite.surface.hlsl` draws a sprite's quad. A draw item has only a
+colour and an emissive to give it, so `Table::Sprite` packs them:
+
+- colour rgb = the tint colour, colour a = the opacity;
+- emissive = `floor(dissolve * 99) + amount * 0.99`: the shader reads `burn = floor(e) / 99` and
+  `amount = frac(e) / 0.99`.
+
+The shader cuts out pixels below half alpha, drops a fixed scatter of pixels for opacity below 1 (no
+sorting needed), burns away pixels whose noise is below `burn` with an ember edge, mixes the picture
+toward the tint, and lights it as a card facing the camera.
+
+A sprite facing left uses a mirrored quad (u = 1 - u). Mirroring the matrix instead would reverse the
+winding, and the culled back face would vanish; `SpriteModel` mirrors the motion on both sides
+instead, so its determinant stays positive.
+
+With no tint of its own a sprite takes 18% of its guest's colour, so the guests can be told apart
+while they all share the template picture.

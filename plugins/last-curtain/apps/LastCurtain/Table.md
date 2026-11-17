@@ -96,3 +96,13 @@ just over the head. A turn's banner grows a ring under the figure (`SetBanner`).
 distance d, tilt t and yaw y.
 
 `--look` switches to the room view on the player's first menu (for pictures).
+
+## Sprites (plan D, the user, 2026-11-18)
+
+Guests are flat pictures, not rigged figures: `art/sprites/huy/body_<face>.png` (the template, for
+every guest until each is drawn) on an upright quad that turns to face the camera, its feet where the
+pawn stands, 1.1 m tall on the table and 1.7 m in the room view. Each guest has a `SpriteState`: a
+base loop (ghost, walk, fear when the killer shares its room, else idle) and one-shots from the log
+(`MotionsFor`), cutscene clips and the turn's opening (nod). A walker faces its step on screen; a
+battle side faces the other. The Taken and the killer keep the 3D figure. Without the sprite pictures
+the guests fall back to the 3D figure. Motions.md has the motions, the transform and the shader.

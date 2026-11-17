@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Motion.hpp"
 #include "TableCamera.hpp"
 
 #include <BoardView.hpp>
@@ -12,14 +13,16 @@
 
 #include <glm/vec2.hpp>
 
+#include <map>
 #include <memory>
+#include <string>
 #include <array>
 #include <optional>
 #include <utility>
 #include <vector>
 
 // The board drawn as a table top (Table.md): placeholder boxes for floors, walls and monsters,
-// tinted animated figures for the pawns, one warm light, and a tilted camera that eases to where the action is.
+// guests as flat sprites moved by motions (Motions.md), the Taken as an animated figure, one warm light, and a tilted camera that eases to where the action is.
 class Table final
 {
 public:
@@ -104,6 +107,7 @@ private:
     struct Pawn
     {
         std::optional<umbra::core::Animator> animator;
+        umbra::night::SpriteState sprite; // a guest's picture and its motion (Motions.md)
         bool taken = false;
         float yaw = 3.14159265F; // facing the camera (+Z)
     };
@@ -114,6 +118,14 @@ private:
     umbra::render::Renderer &renderer_;
     umbra::core::MeshHandle box_;  // a 1 m cube centred on the origin
     umbra::core::MeshHandle quad_; // a 1 m square facing +Z, the picture upright
+    umbra::core::MeshHandle mirrorQuad_; // the same with u = 1 - u: a sprite facing left
+    umbra::night::Motions motions_;      // assets/motions.json
+    std::map<std::string, umbra::core::TextureHandle> spriteArt_; // by face: the template guest (art/sprites/huy)
+    float spriteAspect_ = 0.35F;        // the sprite picture's width per height
+    // A guest's sprite with its motion, feet at `feet`, `height` m tall; `toward`: the way it faces in
+    // the world (zero: as it last faced). Table.md "Sprites".
+    void Sprite(const umbra::night::NightDef &def, int guest, glm::vec3 feet, float height, glm::vec3 toward, umbra::core::DrawList &out) const;
+    [[nodiscard]] glm::vec3 CameraRight() const; // the camera's right, level with the table
     Figure guest_, taken_;        // one guest model for all seven, one Taken; tinted by guests.csv's color
     std::vector<Pawn> pawns_;     // by guest
     Pawn killer_;                 // the wandering killer, in the Taken's figure (Night.md "The killer")

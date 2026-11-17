@@ -68,12 +68,12 @@ namespace
     }
 
     // The turn arrow: a glowing gold diamond pointing down at `top`, bobbing with the clock.
-    // A 1 m square facing +Z: u across, v down the picture.
-    umbra::core::MeshData Quad()
+    // A 1 m square facing +Z: u across, v down the picture; mirrored: u runs the other way.
+    umbra::core::MeshData Quad(bool mirrored = false)
     {
         umbra::core::MeshData mesh;
         for (const glm::vec2 c : {glm::vec2{-0.5F, -0.5F}, glm::vec2{0.5F, -0.5F}, glm::vec2{0.5F, 0.5F}, glm::vec2{-0.5F, 0.5F}})
-            mesh.vertices.push_back({{c.x, c.y, 0.0F}, {0.0F, 0.0F, 1.0F}, {c.x + 0.5F, 0.5F - c.y}});
+            mesh.vertices.push_back({{c.x, c.y, 0.0F}, {0.0F, 0.0F, 1.0F}, {mirrored ? 0.5F - c.x : c.x + 0.5F, 0.5F - c.y}});
         mesh.indices = {0, 1, 2, 0, 2, 3};
         return mesh;
     }
@@ -126,7 +126,7 @@ namespace
 }
 
 Table::Table(umbra::render::Renderer &renderer, const umbra::assets::AssetFolders &assets)
-    : renderer_(renderer), box_(renderer.CreateMesh(Cube())), quad_(renderer.CreateMesh(Quad())), guest_(Load(assets / "models/guest.glb", assets / "animations/guest.anim.json", 0.55F)),
+    : renderer_(renderer), box_(renderer.CreateMesh(Cube())), quad_(renderer.CreateMesh(Quad())), mirrorQuad_(renderer.CreateMesh(Quad(true))), guest_(Load(assets / "models/guest.glb", assets / "animations/guest.anim.json", 0.55F)),
       taken_(Load(assets / "models/taken.glb", assets / "animations/taken.anim.json", 0.65F))
 {
 }
@@ -147,7 +147,10 @@ Table::~Table()
         if (figure->texture)
             renderer_.DestroyTexture(figure->texture);
     }
-    for (const umbra::core::MeshHandle mesh : {box_, quad_})
+    for (const auto &[face, texture] : spriteArt_)
+        if (texture)
+            renderer_.DestroyTexture(texture);
+    for (const umbra::core::MeshHandle mesh : {box_, quad_, mirrorQuad_})
         if (mesh)
             renderer_.DestroyMesh(mesh);
 }
@@ -193,6 +196,22 @@ void Table::LoadArt(const NightDef &def, const umbra::assets::AssetFolders &asse
         cardArt_.push_back(load("cards", monster.id));
     for (const ItemDef &item : def.items)
         itemArt_.push_back(load("items", item.id));
+    // The guests' sprite (the template, Huy, for every guest until each has its own) and its motions.
+    std::string error;
+    motions_ = Motions::Load(assets / "motions.json", error);
+    if (!error.empty())
+        umbra::diagnostics::Error(error + "; the sprites stand still");
+    for (const char *face : {"calm", "angry", "neardead", "happy", "scheming", "afraid", "talk"})
+    {
+        umbra::core::TextureData data;
+        if (umbra::assets::LoadImageFile(assets / ("art/sprites/huy/body_" + std::string(face) + ".png"), data, error))
+        {
+            spriteAspect_ = static_cast<float>(data.width) / static_cast<float>(std::max(1U, data.height));
+            spriteArt_[face] = renderer_.CreateTexture(data);
+        }
+        else
+            ++missing;
+    }
     if (missing > 0)
         umbra::diagnostics::Error(std::to_string(missing) + " table pictures are missing; those are boxes (Art.md)");
 }
@@ -232,6 +251,15 @@ void Table::Animate(const NightDef &def, const BoardView &view, const Slide &sli
         }
         p.animator->SetNumber("speed", walking ? 1.0F : 0.0F);
         p.animator->Update(dt);
+        // 3. The sprite: a ghost floats, a walker walks (facing its step on screen), near the killer it
+        //    trembles, otherwise it stands idle (Motions.md).
+        if (walking)
+        {
+            const float side = glm::dot(CellCenter(def, slide.to) - CellCenter(def, slide.from), CameraRight());
+            p.sprite.facing = std::abs(side) > 0.01F ? (side > 0.0F ? 1.0F : -1.0F) : p.sprite.facing;
+        }
+        p.sprite.Base(pawn.ghost ? "ghost" : walking ? "walk" : view.killer >= 0 && view.killer == pawn.cell ? "fear" : "idle");
+        p.sprite.Update(dt, motions_);
     }
     // The killer stands in the Taken's figure, idle.
     if (view.killer >= 0 && taken_.mesh)
@@ -313,7 +341,9 @@ void Table::Draw(const NightDef &def, const BoardView &view, const std::vector<i
                                            : Hex(def.guests[static_cast<std::size_t>(pawn.guest)].color);
         const Figure &figure = pawn.taken ? taken_ : guest_;
         const Pawn *p = static_cast<std::size_t>(pawn.guest) < pawns_.size() ? &pawns_[static_cast<std::size_t>(pawn.guest)] : nullptr;
-        if (figure.mesh && p != nullptr && p->animator && p->taken == pawn.taken)
+        if (!pawn.taken && !spriteArt_.empty() && p != nullptr)
+            Sprite(def, pawn.guest, at, 1.1F, glm::vec3{0.0F}, out);
+        else if (figure.mesh && p != nullptr && p->animator && p->taken == pawn.taken)
         {
             // The figure stands on the table: turned by yaw, scaled, feet (y = -1 in the packed model) at y = 0.
             const glm::mat4 model = glm::scale(glm::rotate(glm::translate(glm::mat4{1.0F}, at), p->yaw, {0, 1, 0}), glm::vec3{figure.scale}) *
@@ -674,6 +704,8 @@ void Table::StageFigure(const NightDef &def, int guest, bool taken, glm::vec3 at
         Arrow(out, box_, at + glm::vec3{0.0F, 2.9F * figure.scale * stageScale, 0.0F}, 0.6F, clock_);
     if (guest == bannerGuest_)
         Outline(out, box_, at + glm::vec3{0.0F, 0.1F, 0.0F}, 1.2F + 3.0F * bannerT_, 0.15F, 1.5F * (1.0F - bannerT_));
+    if (!taken && !spriteArt_.empty() && p != nullptr)
+        return Sprite(def, guest, at, 1.1F * stageScale, glm::vec3{-std::sin(yaw), 0.0F, -std::cos(yaw)}, out); // the model faces -Z
     if (!figure.mesh || p == nullptr || !p->animator)
     {
         Box(out, box_, at + glm::vec3{0, 0.85F, 0}, {0.6F, 1.7F, 0.6F}, color);
@@ -688,8 +720,47 @@ void Table::StageFigure(const NightDef &def, int guest, bool taken, glm::vec3 at
     out.joints.insert(out.joints.end(), palette.begin(), palette.end());
 }
 
+glm::vec3 Table::CameraRight() const
+{
+    const umbra::core::Camera camera = view_.Camera();
+    glm::vec3 forward = camera.target - camera.position;
+    forward.y = 0.0F;
+    return glm::length(forward) > 1e-4F ? glm::normalize(glm::cross(forward, glm::vec3{0.0F, 1.0F, 0.0F})) : glm::vec3{1.0F, 0.0F, 0.0F};
+}
+
+void Table::Sprite(const NightDef &def, int guest, glm::vec3 feet, float height, glm::vec3 toward, umbra::core::DrawList &out) const
+{
+    const Pawn &p = pawns_[static_cast<std::size_t>(guest)];
+    // 1. Which way it faces on screen: its world direction against the camera's right, else as it last faced.
+    const glm::vec3 right = CameraRight();
+    const float side = glm::dot(toward, right);
+    float facing = std::abs(side) > 0.2F ? (side > 0.0F ? 1.0F : -1.0F) : p.sprite.facing;
+    const MotionPose pose = p.sprite.Pose(motions_);
+    facing = pose.flip ? -facing : facing;
+    // 2. Its colour packs the tint and opacity, its emissive the burn and tint amount (sprite.surface.hlsl);
+    //    with no tint of its own the template takes a little of the guest's colour, so guests tell apart.
+    const glm::vec4 guestColor = Hex(def.guests[static_cast<std::size_t>(guest)].color);
+    const bool tinted = pose.tint.a > 0.001F;
+    const glm::vec3 tint = tinted ? glm::vec3(pose.tint) : glm::vec3(guestColor);
+    const float amount = tinted ? pose.tint.a : 0.18F;
+    const auto draw = [&](const MotionPose &q, float alpha) {
+        const auto art = spriteArt_.find(q.face);
+        const umbra::core::TextureHandle texture = art != spriteArt_.end() ? art->second : spriteArt_.begin()->second;
+        out.items.push_back({facing < 0.0F ? mirrorQuad_ : quad_, texture, SpriteModel(q, feet, right, height, spriteAspect_, facing, clock_),
+                             glm::vec4(tint, alpha), 0.0F, std::floor(q.dissolve * 99.0F) + std::clamp(amount, 0.0F, 1.0F) * 0.99F});
+        out.items.back().surface = out.SurfaceIndex("sprite");
+    };
+    // 3. A trail: three faded copies a little behind in time.
+    if (pose.trail)
+        for (int g = 3; g >= 1; --g)
+            draw(p.sprite.Pose(motions_, 0.05F * static_cast<float>(g)), pose.alpha * 0.12F * static_cast<float>(4 - g));
+    draw(pose, pose.alpha);
+}
+
 void Table::Gesture(int guest, const std::string &clip)
 {
+    if (guest >= 0 && static_cast<std::size_t>(guest) < pawns_.size())
+        pawns_[static_cast<std::size_t>(guest)].sprite.Play(clip); // talk, attack, power, hit: motions too
     if (guest >= 0 && static_cast<std::size_t>(guest) < pawns_.size() && pawns_[static_cast<std::size_t>(guest)].animator)
         pawns_[static_cast<std::size_t>(guest)].animator->Trigger(clip);
 }
@@ -697,13 +768,30 @@ void Table::Gesture(int guest, const std::string &clip)
 void Table::SetBanner(int guest, float t)
 {
     // A new banner: the figure raises a hand (the talk clip); then the ring follows t.
-    if (guest >= 0 && guest != bannerGuest_ && static_cast<std::size_t>(guest) < pawns_.size() && pawns_[static_cast<std::size_t>(guest)].animator)
-        pawns_[static_cast<std::size_t>(guest)].animator->Trigger("talk");
+    if (guest >= 0 && guest != bannerGuest_ && static_cast<std::size_t>(guest) < pawns_.size())
+    {
+        pawns_[static_cast<std::size_t>(guest)].sprite.Play("nod");
+        if (pawns_[static_cast<std::size_t>(guest)].animator)
+            pawns_[static_cast<std::size_t>(guest)].animator->Trigger("talk");
+    }
     bannerGuest_ = guest, bannerT_ = t;
 }
 
 void Table::React(const std::vector<LogEntry> &entries)
 {
+    // 1. The sprites (Motions.md "Which moment plays which motion"): down is held until woken.
+    for (const LogEntry &e : entries)
+        for (const auto &[guest, motion] : MotionsFor(e))
+        {
+            if (guest < 0 || static_cast<std::size_t>(guest) >= pawns_.size())
+                continue;
+            SpriteState &s = pawns_[static_cast<std::size_t>(guest)].sprite;
+            if (motion == "down")
+                s.Hold("down");
+            else
+                s.Release(), s.Play(motion);
+        }
+    // 2. The Taken's figure plays its clips.
     const auto play = [&](int guest, const char *trigger) {
         if (guest >= 0 && static_cast<std::size_t>(guest) < pawns_.size() && pawns_[static_cast<std::size_t>(guest)].animator)
             pawns_[static_cast<std::size_t>(guest)].animator->Trigger(trigger);

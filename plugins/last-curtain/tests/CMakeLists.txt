@@ -2,7 +2,7 @@ find_package(Catch2 3 CONFIG REQUIRED)
 
 # The night of The Last Curtain, headless.
 add_executable(UmbraNightTests)
-target_sources(UmbraNightTests PRIVATE NightDataTests.cpp BoardTests.cpp TurnTests.cpp BattleTests.cpp CompanyTests.cpp SaveTests.cpp BotTests.cpp BoardViewTests.cpp NarrateTests.cpp TableTests.cpp PlayTests.cpp PawnModelTests.cpp NightMindTests.cpp WordsTests.cpp ArtTests.cpp OptionsTests.cpp TableCameraTests.cpp RoyaleTests.cpp)
+target_sources(UmbraNightTests PRIVATE NightDataTests.cpp BoardTests.cpp TurnTests.cpp BattleTests.cpp CompanyTests.cpp SaveTests.cpp BotTests.cpp BoardViewTests.cpp NarrateTests.cpp TableTests.cpp PlayTests.cpp PawnModelTests.cpp NightMindTests.cpp WordsTests.cpp ArtTests.cpp OptionsTests.cpp TableCameraTests.cpp RoyaleTests.cpp MotionTests.cpp)
 target_compile_definitions(UmbraNightTests PRIVATE UMBRA_NIGHT_DATA="${CMAKE_CURRENT_SOURCE_DIR}/../assets/night"
                                                    UMBRA_LASTCURTAIN_ASSETS="${CMAKE_CURRENT_SOURCE_DIR}/../apps/LastCurtain/assets")
 target_compile_features(UmbraNightTests PRIVATE cxx_std_20)
