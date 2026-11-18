@@ -36,8 +36,8 @@ UmbraTool match-soak --runs 200
 | Toolchain | Result |
 |---|---|
 | GCC 13, Debug | 56/57; the one failure is `Umbra.Match.Balance` (below) |
-| Clang, Debug (balance excluded) | see §3 |
-| GCC ASan+UBSan (balance excluded) | see §3 |
+| Clang, Debug (balance excluded) | 56/56 |
+| GCC ASan+UBSan (balance excluded) | 56/56 |
 
 ## 2. Balance (400 matches, medium against medium)
 
@@ -47,9 +47,11 @@ Side 0 wins 52.0% (band 45-55); the side moving first wins 46.2% (at most 55); e
 variants did not fix it (`Bots.md` "First reading"). Decision for the user: the band, winnable
 guardians, or bots that wear a guardian down.
 
-## 3. Results not yet filled in
+## 3. Art (overnight, ComfyUI on the user's PC)
 
-Filled in at the end of the session (Clang and ASan runs).
+Bao, Khang (12), Mai and Lan (26) drawn in Huy's style and packed as `art/sprites/<id>/`
+(seven faces, body and portrait); `characters.csv` now names each one's own sprite, untinted. The
+recipe and its weak points are in `art/README.md`. Nothing shows them in the game yet (Plan 2).
 
 ## 4. Open: the Windows checks
 

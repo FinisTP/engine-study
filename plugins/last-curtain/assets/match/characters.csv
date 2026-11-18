@@ -1,6 +1,6 @@
 id,name,role,hp,attack,defence,speed,move,sprite,tint
-bao,Dinh Quoc Bao,attacker,20,6,2,4,3,huy,B07050
-khang,Vo Minh Khang,defender,30,3,5,2,3,huy,6A7FA0
-mai,Phan Thi Mai,supporter,20,2,3,3,3,huy,7FA06A
-lan,Tran Ngoc Lan,speedster,18,4,2,6,5,huy,C46A7A
+bao,Dinh Quoc Bao,attacker,20,6,2,4,3,bao,FFFFFF
+khang,Vo Minh Khang,defender,30,3,5,2,3,khang,FFFFFF
+mai,Phan Thi Mai,supporter,20,2,3,3,3,mai,FFFFFF
+lan,Tran Ngoc Lan,speedster,18,4,2,6,5,lan,FFFFFF
 huy,Hoang Gia Huy,allrounder,24,4,3,4,4,huy,FFFFFF

@@ -51,8 +51,7 @@ and scenery). Seeds 41 and 42 with the item prompt drew whole curtained rooms.
 
 `sprites/<guest>/` holds a guest's 2D sprite: `body_<face>.png` (full body, 768 px tall) and
 `face_<face>.png` (head and shoulders, 512 px wide) for the faces calm, angry, neardead, happy,
-scheming, afraid and talk, all with alpha. Huy is the template; the other guests use his sprite
-(tinted) until the motion is proven in the game.
+scheming, afraid and talk, all with alpha. Huy is the template; Bao, Khang, Mai and Lan have their own since 2026-11-19 (below); the other guests use Huy's (tinted) until drawn.
 
 The look (the user, 2026-11-18): **Vietnamese oil pastel**, silent, morbid and uncanny; every guest
 **faces right** (the game mirrors for left) and wears a **white khan tang tied over the eyes**, with
@@ -89,6 +88,27 @@ How Huy was made (ComfyUI on the user's PC, SDXL base, dpmpp_2m karras):
 A guest whose old portrait is only a head and shoulders can instead be extended downward (place
 the cut-out on an 832 x 1216 canvas, mark the lower part transparent, VAEEncodeForInpaint, denoise 1):
 that kept Le Thanh the same person in 2 of 3 tries.
+
+### The faction match's cast: Bao, Khang, Mai, Lan (2026-11-19, overnight)
+
+The user asked for the other starting characters drawn so none needs Huy's tinted sprite; Khang is
+now a boy of 12 and Lan a woman of 26 (`docs/design/cast.md`). How they were made:
+
+1. Pose: plain text to image gave front views. Instead img2img from Huy's calm body on a grey
+   832 x 1216 page (denoise 0.72 / 0.8 / 0.86, seeds 11-13), the character in the prompt plus "in side
+   profile facing right, seen from the side", negative "facing the viewer, front view". Picks: Bao
+   0.8 (faced left: mirrored), Khang 0.8, Mai 0.72, Lan 0.72. Same scale and stance as Huy.
+2. Blindfold: measure the eye on a 4x zoom (a coarse grid misled twice). Paint the band and smudge,
+   mask the band + 10 px, SetLatentNoiseMask. Bao kept a wrapped cloth at 0.55 (seed 3); Khang kept
+   it at 0.4 (seed 2); for Mai and Lan SDXL dropped it even at 0.4, so a shaded band (light middle,
+   darker edges, fold strokes) was painted and only blended at 0.28 (seed 3). Then the eye smudge
+   painted again and blended at 0.32 (Bao seed 6, Khang seed 5).
+3. Portrait: crop (eye x - 170, eye y - 100) to (eye x + 90, eye y + 160), scale to 1024, img2img 0.25 (seed 21).
+4. Faces: `blindfolded` values on the portrait and on the body scaled 2x; calm is the plain picture.
+   Cut out with birefnet; packed with `pack_sprites.py`.
+
+Known weak points: Khang and Lan are in strict profile, so LivePortrait moves their mouths only a
+little; Mai's, Khang's and Lan's bands are flatter than Huy's and Bao's wrapped cloth.
 
 ### The specter: a giant spider (2026-11-18)
 

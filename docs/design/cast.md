@@ -109,6 +109,10 @@ Stats: Might and Sanity run 1-8, Speed is tiles per turn, HP is plain points.
 
 ## 4. Vo Minh Khang (proposal)
 
+> 2026-11-19 (the user): Khang is now a **boy of 12** (male child in the roster of ten), the faction
+> match's Defender. His sprite (a thin boy in a worn shirt, blindfolded) was drawn on 2026-11-19; the
+> adult details below are kept until his page is rewritten.
+
 - **Age / height / weight:** 34, 1.82 m, 88 kg
 - **Clothing:** leather jacket, rolled sleeves, a gold chain, taped knuckles
 - **Background:** collects debts for people who do not write things down; the patron owes his employer, and he came to be paid
@@ -165,6 +169,10 @@ Stats: Might and Sanity run 1-8, Speed is tiles per turn, HP is plain points.
 - **Traitor power:** the Shadow curse swaps his place with any player in an opened room, then he may act
 
 ## 7. Tran Ngoc Lan (proposal)
+
+> 2026-11-19 (the user): Lan is now a **young woman of 26** (female young adult in the roster of ten),
+> the faction match's Speedster. Her sprite (dark silk, hair in a bun, blindfolded) was drawn on
+> 2026-11-19; the older details below are kept until her page is rewritten.
 
 - **Age / height / weight:** 41, 1.63 m, 54 kg
 - **Clothing:** dark silk blouse, white gloves, a jeweller's loupe on a chain
