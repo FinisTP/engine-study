@@ -1,5 +1,7 @@
 # The Last Curtain: the performances — design
 
+> Superseded on 2026-11-19 by `2026-11-19-factions.md` (the user dropped the performances).
+
 2026-11-17. Replaces the battle royale's goal (`2026-11-16-battle-royale.md`) on branch
 `battle-royale`; the co-op game stays on `main`. The research behind it:
 `2026-11-17-hook-research.md`. Calls I made that the user has not ruled on are marked **[call]**.

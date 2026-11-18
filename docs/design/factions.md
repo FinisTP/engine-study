@@ -1,0 +1,208 @@
+# The Last Curtain: faction matches — design
+
+Date: 2026-11-19. Replaces the performances design (`2026-11-17-performances.md`, dropped by the user
+on 2026-11-18). Builds on the battle royale as built (`2026-11-16-battle-royale.md`, `Night.md`).
+Decisions marked **[call]** are mine, not the user's; the user may overturn any of them.
+
+## Intent
+
+A turn-based take on Pokémon Unite in the Saigon Opera House. Two factions of equal size fight one
+night. Characters hunt monsters for **essence**, carry it to the **stage** and **Perform** to turn it
+into score. Rivals kill carriers to steal what they carry. Each side's **hub** heals its own and is
+held by a **guardian** that never returns once it falls. The most score when the night ends wins.
+
+Why (the user, 2026-11-18): the old board gave no reason to go anywhere, fights felt like dice, and
+Sanity and Might were strange stats. Unite answers all three: monsters to hunt, carried points
+that make every fight matter, and power the player can read.
+
+**Three things a new player learns:** kill monsters for essence; bring it to the stage and Perform;
+kill whoever carries essence. Everything else (abilities, items, guardians) supports those three.
+
+## Goals, non-goals, anti-goals
+
+- **Goals:** every turn has an obvious place to go; every fight is about essence, a guardian or the
+  stage; each job plays differently; both sides start equal; a match can turn in its last rounds.
+- **Non-goals now:** the battle royale mode (set aside by the user, not cut), the shop (after
+  balancing), fog of war **[call]**, persuading, the midnight killer, online play.
+- **Anti-goals:** anything the player must memorise (type matchups, hidden stat maths); a fight
+  whose result the player could not see coming; one side born with a better board; a knocked-out
+  player waiting more than one turn.
+
+## Approaches considered
+
+| Approach | Trade | Outcome |
+|---|---|---|
+| The performances (acts, duels against specters, Applause) | A stage show, but the duel came down to matching moves and rolls | Dropped by the user |
+| Unite's own scoring: dunk into the enemy side's goals | Faithful, but needs goals per side and breakable goals | Not taken |
+| **A central stage, one character at a time, Perform to score** | One shared throne all fights converge on | **Chosen by the user** |
+| Faction phases (a whole side moves, then the other) | Less waiting, but a whole side strikes at once | Not taken |
+| **Interleaved turns by Speed** | Fair per character; speed matters | **Chosen by the user** |
+
+## The rules
+
+### The match
+
+- Two factions, the same number of characters each: 1v1 up to 5v5, set per match in
+  `options.csv`. Default 3v3 (the user). The player controls a whole faction; the
+  bots control the other.
+- The match length is set by balancing: start with **30 rounds at most** (the user), in
+  `options.csv`. There is no clock: the screen counts down ("30 turns left", the user). The most
+  score when the count runs out wins. A tie goes to the side with its guardian
+  standing, then more kills, then a draw **[call]**.
+- **Turn order** is set once at the start by Speed, highest first; ties are random (the seed).
+  Speed does nothing else.
+- **A turn is move, then action, then End turn** (the user). Move up to the character's move range;
+  a move can be undone until an action is taken. Then one action: a board ability, an item, start a
+  battle, Perform, or pick up. No moving after the action. End turn is pressed by hand by default;
+  an option ends the turn automatically.
+- Rare items and high-level abilities bend the order: push an enemy to last this round, or skip an
+  enemy's next turn. No limit on either (the user). Double moves are not part of the game.
+
+### Score
+
+- **Essence.** Killing a monster gives its essence to the killer, carried and not yet score.
+  Carry has no cap **[call]**; the risk of carrying is the cap.
+- **Perform** is an action taken on the stage: all carried essence becomes faction score. Moving
+  onto the stage does not convert it; performing takes the next action.
+- **A carrier killed by a rival character** gives all its essence to the killer, still carried:
+  the killer must reach the stage and Perform it (the user). Killed on the stage before performing,
+  the same. There is no other kill score: a kill is worth what the victim carried.
+- **A carrier killed by a monster** drops its essence on that square; anyone may pick it up.
+- No bounty for now (the user). The more a character carries, the more it is worth killing.
+- **A guardian** carries a large amount of essence (data), taken by the enemy who kills it like
+  any other monster's **[call]**.
+
+### The stage
+
+- One square in one of the central rooms, room for one character (the user). Standing there scores
+  nothing; it only blocks the other side from performing. Healers and tanks may hold it; that is
+  allowed play (the user).
+- Every stage room is entered from four sides with no hallway: a throne, never a bottleneck.
+- The stage appears in a central room at the start of the match, so everyone heads for it. It
+  announces the round it will close; one round before it closes, the next stage room is announced
+  (the user). Stage rooms are picked at random from central rooms the same distance from both hubs
+  **[call]**; how long a stage stays open is data (`stage.openRounds`). If several stages prove
+  distracting in balancing, the user may go back to one fixed stage.
+
+### Hubs and guardians
+
+- Each faction's hub is at its end of the board. Reaching your own hub restores full HP (the
+  user). The shop will live here later.
+- A powerful guardian monster of that faction stands at the hub's door. It fights anyone of the
+  other side who comes near; its own side cannot attack it (the user). Killed, it never returns: the hub is open, and the enemy may stand in
+  it and wait for respawns. Leaving the base empty is a risk you choose (the user).
+- A knocked-out character returns at its own hub after one turn, with full HP.
+
+### Characters, stats and fights
+
+- Five stats per character (the user): **HP** (life, and what abilities cost), **Attack**,
+  **Defence**, **Speed** (turn order only) and **Move** (the squares it may move a turn). Abilities
+  and items may raise any of them. Sanity, Might and MP are removed.
+- Damage = the ability's power + Attack − Defence, at least 1. An ability or item may roll dice
+  instead of a fixed power (the user); its range is shown.
+- **A forecast before every action**: "you deal 7, you take 0" or "2-12 damage". Nothing hidden.
+- **A fight is a three-round battle**, as now (the user). Starting one is the turn's action. In each
+  round the two fighters take turns, each picking a **battle ability** on its own turn (the user).
+  The attacker goes first; a passive ability can let its owner always strike first (the user). A
+  battle is between two fighters **[call]**. Battle abilities work only inside a battle.
+- **Board abilities** work only on the board, as the turn's action, and are reusable, costing HP
+  each time (the user): a dash, a heal, an area hit, a skip. The old once-a-match powers become a
+  rare kind of board ability.
+- **Jobs** give characters their differences through their ability sets (the user), following
+  Pokémon Unite's roles for now: Attacker, Defender, Supporter, Speedster, All-Rounder. A job lists,
+  per level, the ability gained, or two to choose between. The choice is made the moment the
+  character levels up (the user).
+- Abilities cost HP (the user). Healing others costs the healer's own HP. Range, area and target
+  are on the ability. Which abilities exist needs more planning (the user); the first set is left
+  to the plan, enough for one match.
+- XP comes from monsters and character kills; levels follow `levels.xp` as now.
+
+### Monsters
+
+- **Weak** monsters in rooms between the hubs and the centre; **strong** ones too, farther out
+  (distances in data). Placement is mirrored. Weak monsters return a few rounds after dying.
+- A monster names a **behaviour** and a **faction** in data. Behaviours in C++ for now: stay in its
+  room; flee from the nearest character (the great monster); go for the stage and hold it (a boss);
+  guard a hub (the guardians). Faction: neutral, or one side's; a monster cannot be attacked by its own side.
+- Some room events may spawn monsters; events are mirrored, so both sides get the same chances.
+- The great monster wakes late (data).
+
+### Room events and items
+
+- Room events stay, with the user's shape: a name, a text, and choices, each with a probability, a
+  success and a failure. No stat checks. Traps are events.
+- Exploring grants items: rooms hold items placed mirrored at the start; events give more.
+- Items carry a `class` (HealItem, Poison, AbilityTrigger, ExpGrant, InvincibleGrant, the turn
+  items...) with that class's own columns.
+
+### The board
+
+- **Mirrored like a chessboard**: the generator builds one half and reflects it, so rooms,
+  hallways, monsters, events and items match square for square. It then checks every mirrored
+  distance and rejects the seed if any differ.
+- **Lanes**: two or three hallway lanes from each hub to the centre. Lanes are narrow, good for
+  ambushes. The centre is open rooms joined on four sides, holding the stage candidates.
+- Distances in steps from a hub (data, tuned by the soak): weak monsters 2-4, strong 5-7, stage
+  rooms equal from both hubs, events at least two rooms apart.
+
+### Bots
+
+- The bot faction gives each character a role per round: carry (hunt, then perform), defend (hold
+  around the stage, kill carriers), or guard (stay near the hub when it is threatened). Simple rules,
+  reading the same forecast the player sees; tuned by the soak.
+
+## Keep, change, remove
+
+| Part | Keep | Change | Remove |
+|---|---|---|---|
+| Goal | | Most score at dawn, two factions | Last alive wins; house win; dawn rollover |
+| Stats | HP, Speed | Attack, Defence; abilities cost HP | Sanity, Might |
+| Fights | Three-round battles | Battle and board abilities, a forecast | Persuading |
+| Board | Rooms, doors, steps | Mirrored lane generator | The room deck that grows from the foyer |
+| Threats | Monsters | Behaviours, factions, essence, guardians | The midnight killer; ghosts |
+| Content | Events, items | Events with choices; item classes; jobs; powers become board abilities | Quests and goals |
+| Art | Sprites and motions on the board | Huy and the specter, recoloured, for all | Duel view, Applause, props, scripts |
+| Saves | | New version | Old saves are refused, as now on a version change |
+
+## Data (all tunable without code)
+
+- `options.csv` (the user): match options as id, value: rounds (30 to start), side size, auto end
+  turn.
+- `rules.json`: `stage` (openRounds), `respawn`, `board` (lanes, distances), `battle`, `levels`.
+- `characters.csv`: id, name, job, hp, attack, defence, speed, move, sprite, tint (renamed from
+  `guests.csv`).
+- `jobs.csv`: job, level, ability, choice (a second ability at that level, or none).
+- `abilities.csv`: id, name, use (battle or board), class (PhysicalAttack, Shield, Heal, Skip...),
+  hpCost, power or dice, range, area, target, animation, then class columns.
+- `monsters.csv`: id, name, tier, hp, attack, defence, speed, essence, xp, behaviour, faction,
+  abilities, respawnRounds.
+- `items.csv`: id, name, text, sprite, class, then class columns.
+- `events.csv`: id, name, text, then per choice: label, probability, success, failure.
+
+## Balance targets (the soak, bots on both sides)
+
+- Over many seeds, each side wins 45-55% (proof the mirror is fair), and going first in turn order
+  is worth no more than 5 points of win rate.
+- No score source (essence, kills, guardians) brings more than 60% of the winners' score.
+- In at least a quarter of matches, the side behind after round 9 still wins.
+- A guardian falls in some matches but not most.
+- No character waits more than one turn after being knocked out.
+- The round count: the soak reports how many rounds matches need to be decided, to set the 30
+  down (or up).
+
+## What it builds on
+
+The night module (`Board.cpp`, `Turn.cpp`, `Battle.cpp`, `Hunt.cpp`, `NightData.cpp`, saves),
+the bots and soak (`nightbots`), the sprites and motions on the board (`Motion.hpp`, `Table.cpp`),
+and the art pipeline (`art/README.md`). The performances work in progress (Plan 1 Task 1, committed
+in the cloud only and never shipped, and Task 2, uncommitted) is set aside, not merged.
+
+## Left to the builder
+
+- All numbers, through the soak.
+- How the mirrored generator lays rooms, doors and lanes, within the distance rules.
+- The bot roles' exact rules.
+- The first set of jobs, abilities, items, monsters and events, enough for a 3v3 match.
+- Art for now (the user): every character uses Huy's sprite and every monster the spider specter,
+  each recoloured (`tint`) to be told apart, faction colours included.
+- The screens: the forecast, the turn order with skips shown, the score bar, the stage glow.
