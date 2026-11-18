@@ -25,7 +25,7 @@ whole code).
 - All gameplay data in JSON/CSV under `plugins/last-curtain/assets/night/` (the user).
 - Short code, `// 1.` step comments, ASCII C++ literals; a markdown file for anything a comment cannot hold (CLAUDE.md).
 - The rules never read display code; display never changes the rules (the user).
-- Commits: `issue #UMBRA-<n> <summary>` with the session's Co-Authored-By and Claude-Session lines; from #UMBRA-247.
+- Commits: `issue #UMBRA-<n> <summary>` with the session's Co-Authored-By and Claude-Session lines; from #UMBRA-248.
 - Tests continue at T274; a changed rule or data file updates the golden fingerprint (`SaveTests.cpp`, `PlayTests.cpp`).
 - Keep the concept count low: Applause, the script, the performance (spec "Three things").
 - The Saigon Opera House keeps its name; no *Betrayal at House on the Hill* text.
@@ -155,7 +155,7 @@ fan:heavy, ledger:taunt, crown:heavy, watch:light. `rules.json`: `"acts": { "rou
 Run: as Step 2. Expected: T274, T275 PASS; the fingerprint tests fail with the new value; update
 both golden values and rerun the whole suite. Expected: all pass.
 
-- [ ] **Step 5: Commit** — `issue #UMBRA-247 The programme's data: acts, scripts, specters, props`
+- [ ] **Step 5: Commit** — `issue #UMBRA-248 The programme's data: acts, scripts, specters, props`
 
 ---
 
@@ -187,7 +187,7 @@ Each sets up `NewNight` with the test data, sets fields directly, and drives `Ap
 - [ ] **Step 2: Run them to see them fail** — `UmbraNightTests "[acts]"`; Expected: compile FAIL.
 - [ ] **Step 3: Implement** — `Guest::applause` (`std::int16_t`), `Guest::seen` (`std::bitset<maxCells>`); `Hurt` no longer ends the night; `Dawn` calls `EndNight(state, Outcome::Finale)` with `state.winner = Winner(state)`.
 - [ ] **Step 4: Run the whole suite** — Expected: all pass (retired Royale cases noted in the ledger).
-- [ ] **Step 5: Commit** — `issue #UMBRA-248 Applause on the board, the kill share, the winner at dawn`
+- [ ] **Step 5: Commit** — `issue #UMBRA-249 Applause on the board, the kill share, the winner at dawn`
 
 ---
 
@@ -215,7 +215,7 @@ TEST_CASE("A relic revives a ghost: picked up by the ghost, or used on it by the
 - [ ] **Step 2: Run them to see them fail** — Expected: FAIL (ghosts vanish to cell -1 today).
 - [ ] **Step 3: Implement** — `Hurt` keeps `cell`; ghosts' legal actions: Move, PickUp (relic only), UseItem (relic on self), EndTurn; entering `dressing` revives; a living guest's relic targets a ghost in its room.
 - [ ] **Step 4: Run the whole suite** — Expected: all pass.
-- [ ] **Step 5: Commit** — `issue #UMBRA-249 Ghosts stay where they fell and revive at the Dressing room or by a relic`
+- [ ] **Step 5: Commit** — `issue #UMBRA-250 Ghosts stay where they fell and revive at the Dressing room or by a relic`
 
 ---
 
@@ -242,7 +242,7 @@ TEST_CASE("A prop already carried is not laid again for its act (T286)", "[night
 - [ ] **Step 2: Run them to see them fail.**
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run the whole suite.**
-- [ ] **Step 5: Commit** — `issue #UMBRA-250 Each act's props are laid when it is announced`
+- [ ] **Step 5: Commit** — `issue #UMBRA-251 Each act's props are laid when it is announced`
 
 ---
 
@@ -272,7 +272,7 @@ TEST_CASE("Every guest a ghost at curtain: the act passes and the night goes on 
 - [ ] **Step 2: Run them to see them fail.**
 - [ ] **Step 3: Implement** — the move is drawn (state RNG, uniform over `moves`) at each exchange's start and stored, so a save between exchanges keeps it.
 - [ ] **Step 4: Run the whole suite.**
-- [ ] **Step 5: Commit** — `issue #UMBRA-251 The act: each living guest duels the specter alone`
+- [ ] **Step 5: Commit** — `issue #UMBRA-252 The act: each living guest duels the specter alone`
 
 ---
 
@@ -285,7 +285,7 @@ TEST_CASE("Every guest a ghost at curtain: the act passes and the night goes on 
 
 - [ ] **Step 1: Remove; build.** Run the build. Expected: compiles with no `Quest` reference left (`grep -rn "Quest" plugins/last-curtain --include=*.cpp --include=*.hpp` shows none).
 - [ ] **Step 2: Run the whole suite; update the fingerprint.** Expected: all pass.
-- [ ] **Step 3: Commit** — `issue #UMBRA-252 Quests are removed: the acts' scripts replace them`
+- [ ] **Step 3: Commit** — `issue #UMBRA-253 Quests are removed: the acts' scripts replace them`
 
 ---
 
@@ -310,7 +310,7 @@ TEST_CASE("100 bot nights end at dawn with a winner by Applause (T294)", "[night
 - [ ] **Step 2: Run them to see them fail.**
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run the suite and a soak** — `UmbraTool night-soak --runs 500` (or the existing soak command); record the report in `docs/testing/s40-performances.md` (new, from the ROADMAP section 14 template). Expected: no faults; the balance bands may fail and are reported, not tuned (tuning is plan 2's).
-- [ ] **Step 5: Commit** — `issue #UMBRA-253 Bots perform duels; the soak reports Applause`
+- [ ] **Step 5: Commit** — `issue #UMBRA-254 Bots perform duels; the soak reports Applause`
 
 ---
 
@@ -330,7 +330,7 @@ TEST_CASE("A version 6 save is refused with a reason (T296)", "[night][save]")
 - [ ] **Step 2: Run them to see them fail.**
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run the whole suite.**
-- [ ] **Step 5: Commit** — `issue #UMBRA-254 Saves keep Applause, the act and the duel (version 7)`
+- [ ] **Step 5: Commit** — `issue #UMBRA-255 Saves keep Applause, the act and the duel (version 7)`
 
 ---
 
@@ -351,4 +351,4 @@ TEST_CASE("Curtain, exchange, performance and the finale are told (T298)", "[nig
 - [ ] **Step 2: Run them to see them fail.**
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run the whole suite, `verify.sh`, and a capture** — `bash /home/claude/verify.sh`; Expected: GCC, Clang and ASan all pass. A SwiftShader capture of a duel menu (`LastCurtain --seed 5 --watch`), looked at.
-- [ ] **Step 5: Commit** — `issue #UMBRA-255 Duels can be played from the menu; the finale names the winner`
+- [ ] **Step 5: Commit** — `issue #UMBRA-256 Duels can be played from the menu; the finale names the winner`
