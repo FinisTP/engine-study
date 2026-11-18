@@ -36,3 +36,14 @@ namespace umbra::match::inner
     void NextTurn(const MatchDef &def, MatchState &s);
     bool OnTurn(const MatchState &s); // a character's own board turn (no battle, no level choice)
 }
+
+namespace umbra::match::inner
+{
+    // Battle.cpp
+    Why CheckAttack(const MatchDef &def, const MatchState &s, int me, int target);
+    Why CheckBattleAbility(const MatchDef &def, const MatchState &s, int me, int slot);
+    void StartBattle(const MatchDef &def, MatchState &s, int me, int target);
+    void Pick(const MatchDef &def, MatchState &s, int me, int slot);
+    void Down(const MatchDef &def, MatchState &s, int victim, int killer);
+    bool Adjacent(const Board &b, int a, int c); // one step apart through a door
+}

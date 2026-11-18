@@ -44,8 +44,17 @@ namespace umbra::match
             return !s.over && !s.battle.on && std::ranges::none_of(s.units, [](const Unit &u) { return u.pending >= 0; });
         }
 
+        // Standing on your own hub when the move is committed restores full HP.
+        void Commit(MatchState &s)
+        {
+            Unit &u = s.units[U(s.order[U(s.turn)])];
+            if (u.cell >= 0 && u.cell == u.home)
+                u.hp = u.maxHp;
+        }
+
         void Acted(const MatchDef &def, MatchState &s)
         {
+            Commit(s);
             s.now.acted = true;
             if (def.options.autoEndTurn && !s.battle.on && !s.over)
                 NextTurn(def, s);
@@ -126,6 +135,7 @@ namespace umbra::match
         void NextTurn(const MatchDef &def, MatchState &s)
         {
             // 1. The next character in order; after the last, the monsters act and a new round begins.
+            Commit(s);
             for (std::size_t guard = 0; guard <= s.order.size() * 4; ++guard)
             {
                 if (++s.turn >= static_cast<int>(s.order.size()))
@@ -167,10 +177,14 @@ namespace umbra::match
             return Why::Over;
         const int me = Current(s);
         const Unit &u = s.units[U(me)];
-        if (!OnTurn(s))
-            return Why::MustChoose; // a level choice or a battle pick comes first (Tasks 5, 6)
+        // 1. A level choice, then a battle pick, come before anything else.
+        if (std::ranges::any_of(s.units, [](const Unit &x) { return x.pending >= 0; }))
+            return Why::MustChoose; // the choice itself: Task 6
+        if (s.battle.on)
+            return a.kind == ActionKind::BattleAbility ? CheckBattleAbility(def, s, me, a.a) : Why::MustChoose;
         switch (a.kind)
         {
+        case ActionKind::Attack: return CheckAttack(def, s, me, a.a);
         case ActionKind::Move: return CheckMove(def, s, u, a.a);
         case ActionKind::Undo: return s.now.acted ? Why::AlreadyActed : u.cell == s.now.origin ? Why::NothingHere : Why::Ok;
         case ActionKind::PickUp: return CheckPickUp(def, s, u, a.a);
@@ -242,6 +256,8 @@ namespace umbra::match
             Acted(def, s);
             break;
         }
+        case ActionKind::Attack: StartBattle(def, s, me, a.a); break;
+        case ActionKind::BattleAbility: Pick(def, s, me, a.a); break;
         case ActionKind::EndTurn: NextTurn(def, s); break;
         default: return false;
         }

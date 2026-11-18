@@ -137,6 +137,17 @@ namespace umbra::match
     std::vector<Action> Legal(const MatchDef &def, const MatchState &s);
     bool Apply(const MatchDef &def, MatchState &s, const Action &a); // false and no change unless Check is Ok
 
+    // ---- Battles (Battle.cpp) ----
+
+    // What an action would do, shown before it is taken (dice give a range).
+    struct Forecast
+    {
+        int dealtMin = 0, dealtMax = 0, healed = 0, cost = 0;
+    };
+    Forecast Preview(const MatchDef &def, const MatchState &s, const Action &a);
+    // power (or the roll, for dice) + Attack - (Defence + battle shield), at least battle.minDamage.
+    int Damage(const MatchDef &def, const MatchState &s, int ability, int from, int to, int roll);
+
     // Monsters act once a round, after the last character (Monsters.cpp).
     void RunMonsters(const MatchDef &def, MatchState &s);
 }

@@ -28,3 +28,34 @@ key drawn from the seed; it never changes. Each side's guardian stands on its `d
 that side's faction; each den gets a monster of its tier, the same kind on both halves; each item
 room an item. The stage opens in a random stage room and closes at round `1 + stage.openRounds`.
 `units` holds side 0's characters, then side 1's, then the monsters.
+
+## A turn (`Turn.cpp`)
+
+`Current` is the unit to act: one with a level choice waiting, else the fighter to pick in a
+battle, else `order[turn]`. A turn is move (one step per point of `move`, through a door, onto a
+free square; an enemy hub is shut while its guardian stands), `Undo` back to where the turn began
+(until the action), one action, then `EndTurn` (or automatically, with `autoEndTurn`). Standing on
+your own hub when the move is committed (the action or the end of the turn) restores full HP, so
+stepping in and undoing heals nothing. After the last character in `order`, `RunMonsters`, then a
+new round; after round `rounds` the match ends: most score, then the side whose guardian alone
+stands, then more kills, else a draw (`winner` -1). `Check` gives the reason (`Why`) an action
+cannot be taken, for the app's tooltips.
+
+## Battles (`Battle.cpp`)
+
+`Attack` a unit exactly one step away, not of your faction. A battle is `battle.rounds` rounds; in
+each the attacker picks a battle ability, then the defender, unless only the defender has a
+FirstStrike passive. Monsters pick their first affordable Strike at once.
+
+```
+damage = power (or the dice roll) + Attack - (Defence + the defender's shield this battle)
+         at least battle.minDamage
+```
+
+An ability is usable only while HP is above its cost. Shield adds its power to the side's shield;
+Heal adds power HP. At 0 HP a unit is down and the battle ends. A character downed by a character
+gives it all its essence (and `levels.killXp` XP, a kill); by a monster, drops it on the floor.
+A monster downed by a character gives its essence and XP; weak ones return to their den after
+`respawnRounds`. A downed character leaves the board for `respawn.turns` of its turns, then stands
+on its hub (or the nearest free square) with full HP. `Preview` is the forecast: damage range,
+healing and cost.
