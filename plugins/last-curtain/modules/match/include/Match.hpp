@@ -111,4 +111,32 @@ namespace umbra::match
     // No role twice; Defender, Supporter, All-Rounder and Attacker first, then the rest.
     std::vector<int> RiggedPick(const MatchDef &def, std::uint64_t seed, int count);
     int TurnsLeft(const MatchDef &def, const MatchState &s);
+
+    // ---- Actions (Turn.cpp) ----
+
+    enum class ActionKind : std::uint8_t { Move, Undo, Attack, BattleAbility, BoardAbility, UseItem, PickUp, Perform, Answer, LevelUp, EndTurn };
+
+    // Move: a = direction 0-3. Attack: a = unit. BattleAbility: a = ability slot. BoardAbility: a = slot,
+    // b = target unit. UseItem: a = item slot. PickUp: a = floor index. Answer: a = choice. LevelUp: a = 0 or 1.
+    struct Action
+    {
+        ActionKind kind = ActionKind::EndTurn;
+        std::int8_t a = -1, b = -1;
+        bool operator==(const Action &) const = default;
+    };
+
+    // Why an action cannot be taken; the app shows it as a tooltip (the user's design rule).
+    enum class Why : std::uint8_t
+    {
+        Ok, NotYourTurn, NoMovesLeft, Blocked, AlreadyActed, OutOfRange, OwnSide, TooCostly,
+        NotOnStage, NothingToPerform, NothingHere, BagFull, MustChoose, Over
+    };
+
+    int Current(const MatchState &s); // the unit that acts next, -1 when the match is over
+    Why Check(const MatchDef &def, const MatchState &s, const Action &a);
+    std::vector<Action> Legal(const MatchDef &def, const MatchState &s);
+    bool Apply(const MatchDef &def, MatchState &s, const Action &a); // false and no change unless Check is Ok
+
+    // Monsters act once a round, after the last character (Monsters.cpp).
+    void RunMonsters(const MatchDef &def, MatchState &s);
 }

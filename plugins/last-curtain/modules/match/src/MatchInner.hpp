@@ -22,3 +22,17 @@ namespace umbra::match::inner
         int Below(int n) { return n <= 0 ? 0 : static_cast<int>(Next() % static_cast<std::uint64_t>(n)); }
     };
 }
+
+#include <Match.hpp>
+
+namespace umbra::match::inner
+{
+    // Turn.cpp
+    int UnitAt(const MatchState &s, int cell); // a unit on the square, or -1
+    bool GuardianStands(const MatchDef &def, const MatchState &s, int faction);
+    void Log(MatchState &s, LogKind kind, int a = -1, int b = -1, int c = 0);
+    int Roll(MatchState &s, int n); // 0 .. n-1 from the match's random numbers
+    void Acted(const MatchDef &def, MatchState &s); // the turn's action is taken
+    void NextTurn(const MatchDef &def, MatchState &s);
+    bool OnTurn(const MatchState &s); // a character's own board turn (no battle, no level choice)
+}

@@ -78,8 +78,15 @@ namespace umbra::match
                     Join(b, At(b, x, H - 2), 3);
             }
             Join(b, At(b, mid, H - 1), 0);
+            // 2. A hall each side of the hub, so the guardian on the door square never walls its own side in.
+            for (int x : {mid - 1, mid + 1})
+            {
+                Set(b, x, H - 1, CellKind::Hall);
+                Join(b, At(b, x, H - 1), 0);
+                Join(b, At(b, mid, H - 1), x < mid ? 3 : 1);
+            }
 
-            // 2. The lanes, from the cross hall up to the centre.
+            // 3. The lanes, from the cross hall up to the centre.
             for (int x : lanes)
                 for (int y = H - 3; y >= ym + 2; --y)
                 {
@@ -89,7 +96,7 @@ namespace umbra::match
                         Join(b, At(b, x, y), 0);
                 }
 
-            // 3. The centre: open rooms joined on every side.
+            // 4. The centre: open rooms joined on every side.
             for (int y = ym - 1; y <= ym + 1; ++y)
                 for (int x = 1; x <= W - 2; ++x)
                 {
@@ -100,7 +107,7 @@ namespace umbra::match
                         Join(b, At(b, x, y), 0);
                 }
 
-            // 4. Now and then a cross link between two neighbouring lanes, for other routes.
+            // 5. Now and then a cross link between two neighbouring lanes, for other routes.
             for (std::size_t l = 0; l + 1 < lanes.size(); ++l)
                 if (ym + 3 <= H - 4 && rng.Below(2) == 0)
                 {
@@ -112,7 +119,7 @@ namespace umbra::match
                     }
                 }
 
-            // 5. Rooms hung off the halls, each with one door, about seven in ten of the places.
+            // 6. Rooms hung off the halls, each with one door, about seven in ten of the places.
             std::vector<int> rooms;
             for (int y = ym + 2; y < H; ++y)
                 for (int x = 0; x < W; ++x)
@@ -131,7 +138,7 @@ namespace umbra::match
                     rooms.push_back(c);
                 }
 
-            // 6. Dens, events and items by their steps from the hub.
+            // 7. Dens, events and items by their steps from the hub.
             b.hub[0] = static_cast<std::int16_t>(At(b, mid, H - 1));
             b.door[0] = static_cast<std::int16_t>(At(b, mid, H - 2));
             const std::vector<int> d = Distances(b, b.hub[0]);
@@ -154,7 +161,7 @@ namespace umbra::match
             if (static_cast<int>(b.itemRooms.size()) < r.itemsPerHalf)
                 return false;
 
-            // 7. Mirror the bottom onto the top, north and south doors swapped.
+            // 8. Mirror the bottom onto the top, north and south doors swapped.
             for (int c = 0; c < W * ym; ++c)
             {
                 if (c / W == ym)
@@ -169,7 +176,7 @@ namespace umbra::match
             b.hub[1] = static_cast<std::int16_t>(Mirror(b, b.hub[0]));
             b.door[1] = static_cast<std::int16_t>(Mirror(b, b.door[0]));
 
-            // 8. Stage rooms: the middle row's open rooms, as far from one hub as from the other.
+            // 9. Stage rooms: the middle row's open rooms, as far from one hub as from the other.
             for (int x = 0; x < W; ++x)
                 if (const int c = At(b, x, ym); b.cells[U(c)].kind == CellKind::Centre && b.cells[U(c)].doors == 0xF)
                     b.stageRooms.push_back(static_cast<std::int16_t>(c));

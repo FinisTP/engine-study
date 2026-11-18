@@ -51,7 +51,7 @@ namespace umbra::match
             return u;
         }
 
-        // Squares nearest the hub, the hub first, never the guardian's square.
+        // Squares nearest the hub, never the hub (it stays free to step through) nor the guardian's square.
         std::vector<int> StartSquares(const Board &b, int count)
         {
             std::vector<int> out, seen(b.cells.size(), 0);
@@ -61,7 +61,7 @@ namespace umbra::match
             {
                 const int c = open.front();
                 open.pop_front();
-                if (c != b.door[0])
+                if (c != b.door[0] && c != b.hub[0])
                     out.push_back(c);
                 for (int dir = 0; dir < 4; ++dir)
                     if (const int n = Neighbour(b, c, dir); n >= 0 && !seen[U(n)] && b.cells[U(n)].kind != CellKind::Room)

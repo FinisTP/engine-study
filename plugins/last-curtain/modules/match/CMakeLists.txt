@@ -7,6 +7,8 @@ target_sources(
         src/MatchData.cpp
         src/Board.cpp
         src/Match.cpp
+        src/Turn.cpp
+        src/Monsters.cpp
         src/MatchInner.hpp
     PUBLIC
         FILE_SET HEADERS

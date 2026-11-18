@@ -22,8 +22,8 @@ The loader refuses a role without a free (0 HP) level-1 Strike, so a fighter at 
 
 `NewMatch(def, seed, picks)`: the board from the seed; side 0's characters as picked, side 1's
 from `RiggedPick` (no role twice, Defender, Supporter, All-Rounder and Attacker before the
-Speedster; a character may be on both sides). Characters start on the hub and the halls nearest
-it, side 1 on the mirror squares. `order` is every character by Speed, highest first, ties by a
+Speedster; a character may be on both sides). Characters start on the halls nearest the hub
+(not the hub itself, which stays free), side 1 on the mirror squares. `order` is every character by Speed, highest first, ties by a
 key drawn from the seed; it never changes. Each side's guardian stands on its `door` square with
 that side's faction; each den gets a monster of its tier, the same kind on both halves; each item
 room an item. The stage opens in a random stage room and closes at round `1 + stage.openRounds`.

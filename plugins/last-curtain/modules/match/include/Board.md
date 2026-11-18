@@ -9,26 +9,26 @@ Seed 3, drawn by kind (`-` hall, `r` room, `w` weak den, `S` strong den, `e` eve
 `+` centre, `*` stage room, `D` guardian's square, `H` hub; `=` an east door):
 
 ```
-  r w   H r w
-r=-=-=-=D=-=-=-=r
-  -   i=-   i=-=e
-e=-=r   -=w r=-
+  r w=-=H=-   e
+S=-=-=-=D=-=-=-=e
+  -   w=-   r=-=i
+i=-=r   -=w r=-
   -=-=-=-=-=-=-
-  - S   -=r   -
+  - r   -=r   -
   +=+=+=+=+=+=+
   +=*=*=*=*=*=+
   +=+=+=+=+=+=+
-  - S   -=r   -
+  - r   -=r   -
   -=-=-=-=-=-=-
-e=-=r   -=w r=-
-  -   i=-   i=-=e
-r=-=-=-=D=-=-=-=r
-  r w   H r w
+i=-=r   -=w r=-
+  -   w=-   r=-=i
+S=-=-=-=D=-=-=-=e
+  r w=-=H=-   e
 ```
 
 ## How it is built
 
-1. Hub in the middle of the bottom row; above it the guardian's square on a cross hall joining
+1. Hub in the middle of the bottom row, a hall on each side of it; above it the guardian's square on a cross hall joining
    the lanes (one, two or three: the middle column and/or columns 1 and `width - 2`).
 2. Lanes run up to the centre: three rows of open squares, each joined to all its neighbours.
 3. Sometimes a cross link between two neighbouring lanes (a second route).
