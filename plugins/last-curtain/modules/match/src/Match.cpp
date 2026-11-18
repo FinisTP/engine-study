@@ -148,7 +148,15 @@ namespace umbra::match
                     s.units.push_back(FromMonster(def, kinds[i % half], -1, (*dens)[i]));
         }
 
-        // 4. Items on the floor of their rooms, the same on both halves.
+        // 4. The great monster waits off the board until its round (Monsters.cpp).
+        if (const int g = OfTier(def, rng, Tier::Great); g >= 0)
+        {
+            Unit u = FromMonster(def, g, -1, -1);
+            u.home = -1;
+            s.units.push_back(u);
+        }
+
+        // 5. Items on the floor of their rooms, the same on both halves.
         const std::size_t half = b.itemRooms.size() / 2;
         std::vector<int> items;
         for (std::size_t i = 0; i < half; ++i)
@@ -156,7 +164,7 @@ namespace umbra::match
         for (std::size_t i = 0; i < b.itemRooms.size(); ++i)
             s.floor.push_back({b.itemRooms[i], static_cast<std::int8_t>(items[i % half]), 0});
 
-        // 5. The stage opens in a random stage room; the first turn begins.
+        // 6. The stage opens in a random stage room; the first turn begins.
         s.stage = b.stageRooms[U(rng.Below(static_cast<int>(b.stageRooms.size())))];
         s.stageCloses = 1 + def.rules.stage.openRounds;
         s.log.push_back({LogKind::StageOpen, s.stage});

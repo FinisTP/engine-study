@@ -79,3 +79,14 @@ Standing there scores nothing. `Perform`, the turn's action on the stage with es
 adds it all to the side's score. At the start of round `stageCloses - 1` the next stage room is
 announced (`StageNext`, never the current one); at round `stageCloses` the stage moves there
 (`StageOpen`) and closes again `stage.openRounds` later. A unit on the old stage stays put.
+
+## Monsters (`Monsters.cpp`)
+
+After the last character in a round, in unit order, every monster on the board acts by its
+behaviour: Stay does nothing; Flee takes up to `speed` steps away from the nearest character;
+Stage takes up to `speed` steps toward the stage and stands on it when it is free; Guard deals its
+first ability's damage to every enemy character next to it, without a battle (guardians never
+start battles), which can down them. Monsters fight back only when attacked. A unit cannot attack
+a monster of its own faction. A downed weak monster returns to its den, whole, at `respawnRound`
+if the den is free; guardians and the great monster never return. The great monster waits off the
+board and wakes at `great.wakeRound` in a free stage room that is not the stage.
