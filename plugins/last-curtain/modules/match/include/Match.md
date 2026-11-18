@@ -71,3 +71,11 @@ steps; it costs `hpCost` and needs HP above it. `UseItem`: heal items heal, XP i
 `Answer` on a square with an unresolved event rolls the choice's chance (percent) and applies its
 success or failure; the event is then spent. An event that takes the last HP downs the character,
 and its essence drops where it stood.
+
+## The stage (`Stage.cpp`)
+
+The stage is one of the board's stage rooms and holds one unit, whatever `squareCapacity` says.
+Standing there scores nothing. `Perform`, the turn's action on the stage with essence carried,
+adds it all to the side's score. At the start of round `stageCloses - 1` the next stage room is
+announced (`StageNext`, never the current one); at round `stageCloses` the stage moves there
+(`StageOpen`) and closes again `stage.openRounds` later. A unit on the old stage stays put.

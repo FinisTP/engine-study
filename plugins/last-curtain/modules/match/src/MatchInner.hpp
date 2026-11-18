@@ -61,3 +61,11 @@ namespace umbra::match::inner
     void UseItem(const MatchDef &def, MatchState &s, int me, int slot);
     void Answer(const MatchDef &def, MatchState &s, int me, int choice);
 }
+
+namespace umbra::match::inner
+{
+    // Stage.cpp
+    Why CheckPerform(const MatchDef &def, const MatchState &s, int me);
+    void Perform(const MatchDef &def, MatchState &s, int me);
+    void StageRound(const MatchDef &def, MatchState &s); // at the start of each round
+}

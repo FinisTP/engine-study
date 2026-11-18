@@ -108,8 +108,8 @@ namespace umbra::match
                 return Why::Blocked;
             // 2. One unit per square; an enemy hub is shut while its guardian stands.
             const int there = static_cast<int>(std::count_if(s.units.begin(), s.units.end(), [&](const Unit &o) { return o.cell == n && o.hp > 0; }));
-            if (there >= def.rules.board.squareCapacity)
-                return Why::Blocked;
+            if (there >= def.rules.board.squareCapacity || (n == s.stage && there > 0))
+                return Why::Blocked; // the stage always holds one
             const int enemy = 1 - u.faction;
             if (n == s.board.hub[U(enemy)] && GuardianStands(def, s, enemy))
                 return Why::Blocked;
@@ -144,6 +144,7 @@ namespace umbra::match
                     RunMonsters(def, s);
                     if (++s.round > def.options.rounds)
                         return EndMatch(def, s);
+                    StageRound(def, s);
                 }
                 // 2. A downed character misses this turn; when its count runs out it is back home, whole.
                 Unit &u = s.units[U(s.order[U(s.turn)])];
@@ -188,6 +189,7 @@ namespace umbra::match
         case ActionKind::BoardAbility: return CheckBoardAbility(def, s, me, a.a, a.b);
         case ActionKind::UseItem: return CheckUseItem(def, s, me, a.a);
         case ActionKind::Answer: return CheckAnswer(def, s, me, a.a);
+        case ActionKind::Perform: return CheckPerform(def, s, me);
         case ActionKind::Move: return CheckMove(def, s, u, a.a);
         case ActionKind::Undo: return s.now.acted ? Why::AlreadyActed : u.cell == s.now.origin ? Why::NothingHere : Why::Ok;
         case ActionKind::PickUp: return CheckPickUp(def, s, u, a.a);
@@ -265,6 +267,7 @@ namespace umbra::match
         case ActionKind::UseItem: UseItem(def, s, me, a.a); break;
         case ActionKind::Answer: Answer(def, s, me, a.a); break;
         case ActionKind::LevelUp: LevelUp(def, s, me, a.a); break;
+        case ActionKind::Perform: Perform(def, s, me); break;
         case ActionKind::EndTurn: NextTurn(def, s); break;
         default: return false;
         }
