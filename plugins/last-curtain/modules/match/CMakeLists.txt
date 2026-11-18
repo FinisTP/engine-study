@@ -9,6 +9,7 @@ target_sources(
         src/Match.cpp
         src/Turn.cpp
         src/Battle.cpp
+        src/Abilities.cpp
         src/Monsters.cpp
         src/MatchInner.hpp
     PUBLIC

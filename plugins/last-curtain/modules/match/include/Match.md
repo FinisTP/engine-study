@@ -59,3 +59,15 @@ A monster downed by a character gives its essence and XP; weak ones return to th
 `respawnRounds`. A downed character leaves the board for `respawn.turns` of its turns, then stands
 on its hub (or the nearest free square) with full HP. `Preview` is the forecast: damage range,
 healing and cost.
+
+## Levels, abilities, items, events (`Abilities.cpp`)
+
+XP comes from monsters (their `xp`) and character kills (`levels.killXp`), items and events. Each
+`levels.xp` step passed raises the level and max HP (`levels.hp`) and teaches the job's row for
+that level; a row with a `choice` waits (`pending`) for `LevelUp` 0 (the ability) or 1 (the
+choice), which comes before any other action, even for a downed character. A board ability is the
+turn's action: Hit an enemy unit, or Heal a character of your side (yourself too), within `range`
+steps; it costs `hpCost` and needs HP above it. `UseItem`: heal items heal, XP items give XP.
+`Answer` on a square with an unresolved event rolls the choice's chance (percent) and applies its
+success or failure; the event is then spent. An event that takes the last HP downs the character,
+and its essence drops where it stood.

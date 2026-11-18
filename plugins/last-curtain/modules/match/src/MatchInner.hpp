@@ -47,3 +47,17 @@ namespace umbra::match::inner
     void Down(const MatchDef &def, MatchState &s, int victim, int killer);
     bool Adjacent(const Board &b, int a, int c); // one step apart through a door
 }
+
+namespace umbra::match::inner
+{
+    // Abilities.cpp
+    void GainXp(const MatchDef &def, MatchState &s, int unit, int amount);
+    Why CheckLevelUp(const MatchDef &def, const MatchState &s, int me, int choice);
+    Why CheckBoardAbility(const MatchDef &def, const MatchState &s, int me, int slot, int target);
+    Why CheckUseItem(const MatchDef &def, const MatchState &s, int me, int slot);
+    Why CheckAnswer(const MatchDef &def, const MatchState &s, int me, int choice);
+    void LevelUp(const MatchDef &def, MatchState &s, int me, int choice);
+    void BoardAbility(const MatchDef &def, MatchState &s, int me, int slot, int target);
+    void UseItem(const MatchDef &def, MatchState &s, int me, int slot);
+    void Answer(const MatchDef &def, MatchState &s, int me, int choice);
+}

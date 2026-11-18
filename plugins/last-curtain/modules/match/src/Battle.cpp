@@ -147,13 +147,13 @@ namespace umbra::match
                 v.essence = 0;
                 v.back = static_cast<std::int8_t>(def.rules.respawn.turns);
                 if (byCharacter)
-                    ++k->kills, k->xp = static_cast<std::int16_t>(k->xp + def.rules.levels.killXp);
+                    ++k->kills, GainXp(def, s, killer, def.rules.levels.killXp);
             }
             else
             {
                 const MonsterDef &m = def.monsters[U(v.def)];
                 if (byCharacter)
-                    k->xp = static_cast<std::int16_t>(k->xp + m.xp);
+                    GainXp(def, s, killer, m.xp);
                 v.essence = 0;
                 if (m.tier == Tier::Weak && m.respawnRounds > 0)
                     v.respawnRound = static_cast<std::int16_t>(s.round + m.respawnRounds);

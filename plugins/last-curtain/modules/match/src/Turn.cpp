@@ -178,13 +178,16 @@ namespace umbra::match
         const int me = Current(s);
         const Unit &u = s.units[U(me)];
         // 1. A level choice, then a battle pick, come before anything else.
-        if (std::ranges::any_of(s.units, [](const Unit &x) { return x.pending >= 0; }))
-            return Why::MustChoose; // the choice itself: Task 6
+        if (u.pending >= 0)
+            return a.kind == ActionKind::LevelUp ? CheckLevelUp(def, s, me, a.a) : Why::MustChoose;
         if (s.battle.on)
             return a.kind == ActionKind::BattleAbility ? CheckBattleAbility(def, s, me, a.a) : Why::MustChoose;
         switch (a.kind)
         {
         case ActionKind::Attack: return CheckAttack(def, s, me, a.a);
+        case ActionKind::BoardAbility: return CheckBoardAbility(def, s, me, a.a, a.b);
+        case ActionKind::UseItem: return CheckUseItem(def, s, me, a.a);
+        case ActionKind::Answer: return CheckAnswer(def, s, me, a.a);
         case ActionKind::Move: return CheckMove(def, s, u, a.a);
         case ActionKind::Undo: return s.now.acted ? Why::AlreadyActed : u.cell == s.now.origin ? Why::NothingHere : Why::Ok;
         case ActionKind::PickUp: return CheckPickUp(def, s, u, a.a);
@@ -258,6 +261,10 @@ namespace umbra::match
         }
         case ActionKind::Attack: StartBattle(def, s, me, a.a); break;
         case ActionKind::BattleAbility: Pick(def, s, me, a.a); break;
+        case ActionKind::BoardAbility: BoardAbility(def, s, me, a.a, a.b); break;
+        case ActionKind::UseItem: UseItem(def, s, me, a.a); break;
+        case ActionKind::Answer: Answer(def, s, me, a.a); break;
+        case ActionKind::LevelUp: LevelUp(def, s, me, a.a); break;
         case ActionKind::EndTurn: NextTurn(def, s); break;
         default: return false;
         }
