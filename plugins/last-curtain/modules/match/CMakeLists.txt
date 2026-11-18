@@ -5,11 +5,15 @@ target_sources(
     UmbraMatch
     PRIVATE
         src/MatchData.cpp
+        src/Board.cpp
+        src/MatchInner.hpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
         FILES
             include/MatchDef.hpp
+            include/Match.hpp
+            include/Board.md
             include/Match.md
 )
 
