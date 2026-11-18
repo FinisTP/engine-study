@@ -81,3 +81,26 @@ TEST_CASE("A bot that cannot afford anything still acts (T305)", "[match][bots]"
         REQUIRE(Apply(def, s, a));
     }
 }
+
+#include <MatchSoak.hpp>
+
+TEST_CASE("The soak counts sources and comebacks (T306)", "[match][bots]")
+{
+    const MatchDef def = Data();
+    const MatchReport r = SoakMatches(def, 1, 20, BotLevel::Medium, BotLevel::Medium);
+    CHECK(r.runs == 20);
+    CHECK(r.faults == 0);
+    CHECK(r.wins[0] + r.wins[1] + r.draws == 20);
+    CHECK(r.fromMonsters > 0);
+    CHECK(r.decidedRound >= 1);
+    CHECK(r.decidedRound <= def.options.rounds);
+    CHECK_FALSE(Text(def, r).empty());
+}
+
+TEST_CASE("The faction match is in balance (T307)", "[match-balance]")
+{
+    const MatchDef def = Data();
+    const MatchReport r = SoakMatches(def, 1, 400, BotLevel::Medium, BotLevel::Medium);
+    INFO(Text(def, r));
+    CHECK(r.Holds(def));
+}

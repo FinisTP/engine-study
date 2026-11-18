@@ -39,3 +39,34 @@ the unit and the square), so a bot does not change its mind between steps.
 `performPerEssence` 10, `stealPerEssence` 4, `killCharacter` 12, `killMonsterPerEssence` 3,
 `stagePull` 2.5, `huntPull` 1.2, `homePull` 3, `guardPull` 2, `defendPull` 2. They are bot
 taste, not game rules, so they live in the code; the soak tunes the game's data, not these.
+
+## The soak (`MatchSoak.cpp`, `UmbraTool match-soak`)
+
+`SoakMatches` plays matches on seeds `firstSeed ...`, both sides picked by `RiggedPick` and played by
+bots at the given levels, and counts: wins and draws, wins of the side that moves first, essence
+gained by source (from the log of downs: monsters, kills of characters, guardians), essence
+performed, comebacks (the side behind when two thirds of the rounds have passed wins anyway, out of
+the matches that had a leader then), guardians fallen, and the last round the lead changed hands.
+`Holds` checks `rules.json` `balance`: no faults; side 0 wins `sideMin`-`sideMax` percent of decided
+matches; the first mover wins at most `firstMoverMax` points over half; no source above `sourceMax`
+percent; comebacks at least `comebackMin` percent.
+
+`UmbraTool match-soak [--data <folder>] [--runs 200] [--seed 1] [--levels medium,medium]`;
+`UmbraTool match-check` loads and checks the data. The CTest `Umbra.Match.Balance` runs 400 matches.
+
+### First reading (2026-11-19, the shipped data, 200 matches, medium vs medium; 400 in brackets where they differ)
+
+| Band | Result |
+|---|---|
+| side 0 wins (45-55%) | 48.7% |
+| first mover (at most 55%) | 51.8% |
+| monsters / kills / guardians (none over 60%) | 65.0% / 35.0% / 0% — **fails** |
+| comebacks (at least 25%) | 25.4% (23.4% on the CTest's 400 matches — **fails** there) |
+| guardians fallen | 0 |
+| lead last changed | round 14.7 of 30 |
+
+Four data changes did not bring monsters under 60% (guardian 30 HP and Defence 4; moths 1
+essence; characters with 80% HP; Attack +1): stolen essence first came from monsters, so monsters
+lead unless guardians fall, and these bots never attack a guardian they cannot beat in one battle
+(45 HP, 7 Attack, 5 Defence). Open for the user: change the band, make guardians winnable in one
+battle, or teach the bots to wear a guardian down over several battles.

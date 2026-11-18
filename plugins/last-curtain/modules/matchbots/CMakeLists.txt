@@ -5,11 +5,13 @@ target_sources(
     UmbraMatchBots
     PRIVATE
         src/MatchBots.cpp
+        src/MatchSoak.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
         FILES
             include/MatchBots.hpp
+            include/MatchSoak.hpp
             include/Bots.md
 )
 

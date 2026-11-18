@@ -15,6 +15,17 @@
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
 
+## Update 2026-11-19 (The Last Curtain: faction matches, plan 1, `#UMBRA-248`-`#UMBRA-260`, branch `factions`)
+
+- The user dropped the performances (Applause, acts, duels) for a turn-based take on Pokemon Unite: two
+  factions, essence from monsters carried to a moving stage and Performed, kills take what a carrier holds,
+  guardians at the hubs (`docs/design/2026-11-19-factions.md`, its evaluation `-eval.md`).
+- Plan 1 built the rules headless beside the old night: `plugins/last-curtain/modules/match` (`Match.md`,
+  `Board.md`) and `modules/matchbots` (`Bots.md`), data in `assets/match/`, `UmbraTool match-soak`.
+  GCC 56/57 CTests; the balance CTest fails two bands (monsters 65% of essence, comebacks 23%), left for
+  the user (`testing/s40-faction-match-core.md`). No screen yet: Plan 2.
+- Art: Bao, Khang (now 12), Mai and Lan (now 26) drawn in Huy's style overnight (`art/README.md`).
+
 ## Update 2026-11-10 (direction: the living town, ADR 0011, `#UMBRA-85`)
 
 - The user chose the game's direction: an open-ended storytelling simulation RPG. A main plot that always wins, inside a simulated town of about seven residents that is the core gameplay; a required built-in local model that proposes and words (the simulation validates); outcomes that differ per playthrough and are managed by the developer through an outcome plan; theme open (need not be fantasy).
