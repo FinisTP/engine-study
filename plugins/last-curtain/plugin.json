@@ -12,12 +12,14 @@
     "night",
     "nightbots",
     "board",
-    "nightmind"
+    "nightmind",
+    "match"
   ],
   "links": [
     "Umbra::Night",
     "Umbra::NightBots",
     "Umbra::NightBoard",
-    "Umbra::NightMind"
+    "Umbra::NightMind",
+    "Umbra::Match"
   ]
 }

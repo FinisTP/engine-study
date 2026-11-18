@@ -1,0 +1,3 @@
+id,name,text,label1,chance1,success1,failure1,label2,chance2,success2,failure2
+applause,Applause from an empty hall,"Someone is clapping in the dark stalls, slow and steady, as if the show has just ended.",Take a bow,60,essence:2,hp:-3,Walk on,100,none,none
+mirror,The dressing-room mirror,"Your reflection moves a breath after you do, and it is smiling.",Touch the glass,50,xp:3,hp:-4,Look away,100,item:bandage,none

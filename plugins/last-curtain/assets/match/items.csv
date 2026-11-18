@@ -1,0 +1,3 @@
+id,name,text,sprite,class,amount
+bandage,Bandage,Heals 6 HP.,bandage,heal,6
+programme,Old programme,Reading it gives 3 XP.,programme,xp,3

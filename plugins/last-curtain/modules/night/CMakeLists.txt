@@ -22,6 +22,7 @@ target_sources(
             include/NightDef.hpp
             include/Night.hpp
             include/NightSave.hpp
+            include/Csv.hpp
             include/Night.md
 )
 
