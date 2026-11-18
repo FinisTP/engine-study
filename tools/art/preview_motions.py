@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 W, H, FPS, SPRITE_H, FLOOR = 1280, 720, 30, 430, 680
-SPECTER_SCALE = 1.4  # the specter towers over a guest (Motions.md)
+SPECTER_SCALE = 1.3  # the giant spider towers over a guest (Motions.md)
 motions_p, sprite_dir, stage_p, specter_p, out = sys.argv[1:6]
 M = {k: v for k, v in json.load(open(motions_p)).items() if not k.startswith('_')}
 stage = Image.open(stage_p).convert('RGBA').resize((W, H))
@@ -89,7 +89,7 @@ def actor(frame, im, name, t, feet_x, facing):
 
 hero = lambda f: faces[f]
 spec = lambda f: spec_faces.get(f, spec_faces['calm'])
-HX, SX = 430, 900
+HX, SX = 330, 900
 # (hero motion, specter motion, specter delay, caption): every game moment that has a motion.
 SCENES = [
     ('idle', 'haunt', 0, 'idle: any guest waiting  /  specter haunt: it waits, swaying'),

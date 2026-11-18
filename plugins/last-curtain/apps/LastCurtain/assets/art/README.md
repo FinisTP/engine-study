@@ -90,30 +90,27 @@ A guest whose old portrait is only a head and shoulders can instead be extended 
 the cut-out on an 832 x 1216 canvas, mark the lower part transparent, VAEEncodeForInpaint, denoise 1):
 that kept Le Thanh the same person in 2 of 3 tries.
 
-### The specter (2026-11-18)
+### The specter: a giant spider (2026-11-18)
 
 `sprites/specter/`: the user asked for an eldritch specter whose face is only a mask making eerie
-expressions, in the same oil pastel, then for it to look scarier and more intimidating (option E of
-five, the user). How it was made:
+expressions, then for something scarier, then for it to be like a giant spider. How it was made:
 
-1. A first specter (text to image, seed 7601, a gaunt robed figure) got a painted mask and an img2img
-   at denoise 0.45 (seed 1). SDXL drew a bird-skull beak every time; the mask had to be painted on.
-2. Escalated: img2img of that picture at denoise 0.62 (seed 13) with "a towering gaunt eldritch
-   specter ... impossibly long spindly arms with too many long jointed fingers like spider legs, a
-   ragged black theatre robe ..., the robe hem dissolving into dripping black tendrils and smoke, black
-   tendrils rising from its shoulders" + the style + "eldritch horror, overwhelming dread": a faceless
-   mass of hair with spider legs rising from its back.
-3. Mask again: a rough bone-white oval, two black eye holes and a thin red mouth painted over its head
-   at (397-473, 172-290), then img2img at denoise 0.48 (seed 22) with "a cracked white porcelain theatre
-   mask with empty black eye holes and a thin red painted mouth hangs where its face should be, framed
-   by a mass of long dripping black hair and strands, long black spider legs and spindly jointed limbs
-   rising from its back". (A "ribcage" prompt turned every try into a skeleton.)
-4. Faces: the `specter` values in `tools/art/lastcurtain_expressions.json` (scheming gentler: roll -9,
-   yaw -4, or the tilt drags background paper in); the body scaled 2.5x; the portrait a 320 x 320 crop
-   at (270, 70) scaled to 1024.
-5. The head moves change birefnet's outline, so each body frame keeps the calm body and takes only a
-   feathered region around the head (850-1300, 320-890 at 2.5x) from its changed frame; the bottom
-   90 px (the paper's edge) are cut away.
+1. Body: text to image, 1216 x 832, cfg 7, seed 5201 of 5101-5401: "a single enormous eldritch spider
+   seen from the side facing right, eight impossibly long thin jointed black legs arching high above
+   its body, its head is a cracked white porcelain theatre mask ..., its swollen body covered in long
+   dripping black hair like strands" + the style + "eldritch horror, overwhelming dread". SDXL drew
+   spider eyes, never the mask, and a front view (fine for a boss that faces the audience).
+2. Mask: a bone-white oval at (548-668, 272-412), two black eye holes and a red mouth painted on, then
+   img2img at denoise 0.5 (seed 32) with "an enormous eldritch spider whose head is a cracked white
+   porcelain theatre mask ..." and a negative of "spider eyes, eyeballs, skull, teeth, beak".
+3. Legs: the legs ran off the bottom, so ImagePadForOutpaint added 256 px below (feathering 40) and
+   VAEEncodeForInpaint, denoise 1, seed 41, painted the leg tips resting on a floor.
+4. Faces: portrait (a 360 x 360 crop at (429, 167), scaled to 1024) with the `specter` values in
+   `tools/art/lastcurtain_expressions.json`. Body (scaled 2x) with only the mouth and eye values (no
+   head turns: on the full body they drag the body and paper along; the motions turn the sprite).
+5. The mask is the paper's colour, so birefnet erases it in changed frames: every body frame takes the
+   calm frame's outline plus a solid oval over the mask (1090-1346, 540-830 at 2x), and its colour from
+   the changed frame only around the head.
 
 `stage/stage.jpg`: the duel's backdrop, seed 7121, "an empty old opera house stage seen from the
 stalls, heavy faded red velvet curtains ..., a single cold pool of light ..." + the style.

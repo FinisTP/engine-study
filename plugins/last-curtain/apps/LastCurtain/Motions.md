@@ -75,10 +75,12 @@ the same matrix places a quad; the tint, alpha and dissolve go to its shader.
 | The specter speaks | | specter: talk |
 | The specter is beaten (the finale) | bow | specter: vanish |
 
-The specter (`art/sprites/specter`) has the same seven face names, read for its mask: calm is the still
+The specter (`art/sprites/specter`) is a giant spider whose face is a white mask. It has the same seven
+face names, read for its mask: calm is the still
 mask, angry a snarl, happy a stretched grin, scheming a crooked tilt, afraid a scream, neardead its
-head sunk into its shoulders, talk its mouth open. On the stage it is drawn about 1.4 times a guest's
-height, so it towers over them; its haunt leans toward its prey and its loom rears up taller.
+head sunk into its shoulders, talk its mouth open. On the stage it is drawn about 1.3 times a guest's
+height, its legs spanning the stage; its haunt is a crouched breathing sway and its loom rears up taller.
+On the full body only its mouth and eye holes change; the duel's close portrait has the head turns too.
 
 ## The shader
 
