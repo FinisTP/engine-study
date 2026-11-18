@@ -6,6 +6,7 @@ target_sources(
     PRIVATE
         src/MatchData.cpp
         src/Board.cpp
+        src/Match.cpp
         src/MatchInner.hpp
     PUBLIC
         FILE_SET HEADERS

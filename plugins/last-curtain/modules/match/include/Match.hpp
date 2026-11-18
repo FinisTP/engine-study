@@ -37,4 +37,78 @@ namespace umbra::match
     int Neighbour(const Board &b, int cell, int dir); // through a door, or -1
     int Steps(const Board &b, int from, int to);     // -1 if unreachable
     bool Fair(const Board &b);
+
+    // ---- The match (Match.cpp, Turn.cpp, Battle.cpp, ...) ----
+
+    // A character or a monster. faction -1 = neutral. cell -1 = off the board (down, or not woken).
+    struct Unit
+    {
+        std::int8_t kind = 0; // 0 character (characters.csv row), 1 monster (monsters.csv row)
+        std::int8_t def = -1, faction = -1;
+        std::int16_t cell = -1, home = -1; // home: the hub, or a monster's den
+        std::int16_t hp = 0, maxHp = 0, attack = 0, defence = 0, speed = 0, move = 0, xp = 0;
+        std::int8_t level = 1;
+        std::int8_t back = 0;    // turns until a downed character returns
+        std::int8_t pending = -1; // a jobs.csv row waiting for its choice
+        std::int16_t respawnRound = 0; // a downed weak monster returns at this round
+        int essence = 0, kills = 0;
+        std::array<std::int8_t, maxAbilities> abilities{-1, -1, -1, -1, -1, -1, -1, -1};
+        std::array<std::int8_t, maxItems> items{-1, -1, -1, -1};
+    };
+
+    struct Floor
+    {
+        std::int16_t cell = -1;
+        std::int8_t item = -1; // items.csv row, -1 = essence only
+        int essence = 0;
+    };
+
+    // A three-round battle between two units (Battle.cpp).
+    struct Battle
+    {
+        bool on = false;
+        std::int8_t attacker = -1, defender = -1;
+        std::int8_t round = 0, next = 0; // next to pick: 0 attacker, 1 defender
+        std::int8_t first = 0;           // who picks first each round
+        std::array<std::int16_t, 2> shield{};
+    };
+
+    // The current character's turn: where it began, steps left, whether it has acted.
+    struct TurnState
+    {
+        std::int16_t origin = -1;
+        std::int8_t movesLeft = 0;
+        bool acted = false;
+    };
+
+    enum class LogKind : std::uint8_t { Moved, Battle, Blow, Down, Essence, Performed, Level, Back, StageOpen, StageNext, Event, Item, Over };
+    struct LogEntry
+    {
+        LogKind kind = LogKind::Moved;
+        std::int16_t a = -1, b = -1, c = 0;
+    };
+
+    struct MatchState
+    {
+        Board board;
+        std::vector<Unit> units; // side 0's characters, side 1's, then monsters
+        std::vector<std::int8_t> order; // characters by Speed, set once
+        int turn = 0, round = 1;
+        std::array<int, 2> score{};
+        std::int16_t stage = -1, nextStage = -1;
+        int stageCloses = 0;
+        std::vector<Floor> floor;
+        Battle battle;
+        TurnState now;
+        std::vector<LogEntry> log;
+        std::uint64_t rng = 0;
+        bool over = false;
+        int winner = -1; // -1 a draw
+    };
+
+    // picks: side 0's characters.csv rows (options.side of them, no repeats). Side 1 is RiggedPick.
+    MatchState NewMatch(const MatchDef &def, std::uint64_t seed, const std::vector<int> &picks);
+    // No role twice; Defender, Supporter, All-Rounder and Attacker first, then the rest.
+    std::vector<int> RiggedPick(const MatchDef &def, std::uint64_t seed, int count);
+    int TurnsLeft(const MatchDef &def, const MatchState &s);
 }
