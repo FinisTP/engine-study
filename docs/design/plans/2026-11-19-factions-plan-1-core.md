@@ -84,7 +84,7 @@ retiring the old night module.
 **Data (the first, basic set):**
 - `options.csv` (`id,value`): `rounds,30` `side,3` `autoEndTurn,0` `bots,medium`.
 - `rules.json`: board 9 wide, 15 high, 3 lanes, weak 2-4, strong 5-7, 3 weak and 1 strong per half, 2 events per half at least 2 apart, 2 items per half; stage openRounds 6; respawn turns 1; battle rounds 3, minDamage 1; levels xp `[3, 7, 12, 18]`, hp 2 per level, killXp 3; great wakeRound 20; carry 4; bots noise `[60, 25, 0]`; balance 45/55/5/60/25.
-- `characters.csv`: five, one per role, reusing cast names: `bao` Attacker, `khang` Defender, `mai` Supporter, `lan` Speedster, `huy` All-Rounder; all `sprite` = `huy`, distinct `tint`.
+- `characters.csv`: five, one per role, reusing cast names: `bao` Attacker, `khang` Defender, `mai` Supporter, `lan` Speedster, `huy` All-Rounder; `sprite` = their own id (drawn overnight; `huy` with a tint until then).
 - `abilities.csv`: per role a free Strike (hpCost 0), one costed battle ability, one board ability (Hit for Attacker, Speedster and All-Rounder; Heal for Supporter; Shield is battle-only for Defender); `Duel` FirstStrike passive for the Speedster at level 3; one dice Strike (`2d6`).
 - `jobs.csv`: per role, level 1 the free Strike and the board ability, level 2 a choice of two battle abilities, level 4 one more.
 - `monsters.csv`: `moths` Weak Stay, `stagehand` Strong Stay, `spider` Great Flee, `usher` Guardian Guard, `prompter` Strong Stage; all `sprite` = `specter`, distinct tints.
@@ -183,11 +183,11 @@ TEST_CASE("Every board has at least two open stage rooms (T279)", "[match][board
   - `struct Unit { std::int8_t kind = 0 /*0 character, 1 monster*/, def = -1, faction = -1 /*-1 neutral*/; std::int16_t cell = -1, home = -1, hp = 0, maxHp = 0, attack = 0, defence = 0, speed = 0, move = 0, xp = 0; std::int8_t level = 1, back = 0 /*turns until it returns*/, pending = -1 /*jobs row awaiting a choice*/, respawnRound = 0; int essence = 0, kills = 0; std::array<std::int8_t, 8> abilities; std::array<std::int8_t, 4> items; };` (abilities and items filled with -1)
   - `struct Floor { std::int16_t cell = -1; std::int8_t item = -1; int essence = 0; };`
   - `struct MatchState { Board board; std::vector<Unit> units; std::vector<std::int8_t> order; int turn = 0, round = 1; std::array<int, 2> score{}; std::int16_t stage = -1, nextStage = -1; int stageCloses = 0; std::vector<Floor> floor; Battle battle; TurnState now; std::vector<LogEntry> log; std::uint64_t rng = 0; bool over = false; int winner = -1; };` (`Battle`, `TurnState`, `LogEntry` are declared here and filled in by Tasks 4 and 5)
-  - `MatchState NewMatch(const MatchDef &def, std::uint64_t seed, std::span<const int> picks);` (`picks`: side 0's characters.csv rows, `options.side` of them, no repeats; side 1 is drawn by `RiggedPick`)
+  - `MatchState NewMatch(const MatchDef &def, std::uint64_t seed, std::span<const int> picks);` (`picks`: side 0's characters.csv rows, `options.side` of them, no repeats; side 1 is drawn by `RiggedPick` and may share characters with side 0)
   - `std::vector<int> RiggedPick(const MatchDef &def, std::uint64_t seed, int count);` (no role twice; Defender, Supporter, All-Rounder and Attacker first, then the rest)
   - `int TurnsLeft(const MatchDef &def, const MatchState &state);` (`options.rounds - round + 1`)
 
-**Rules:** characters stand on their hub; each side's guardian on the hub's door cell (the cell
+**Rules:** characters start on their hub and the squares next to it (one per square); each side's guardian on the hub's door cell (the cell
 between the hub and its lanes), faction = that side; weak and strong monsters on their dens,
 neutral; items on the floor of their rooms; `order` = character units by Speed, highest first, ties
 shuffled from the seed; the stage opens in a random stage room with `stageCloses = 1 + openRounds`.
@@ -233,8 +233,10 @@ TEST_CASE("Turn order follows Speed, ties by the seed (T282)", "[match][setup]")
   - `int Current(const MatchState &s);` (a unit with a pending level choice first; then the battle's fighter to pick; then `order[turn]`; -1 when over)
   - `std::vector<Action> Legal(const MatchDef &def, const MatchState &s);`
   - `bool Apply(const MatchDef &def, MatchState &s, const Action &a);` (false and no change when not legal)
+  - `enum class Why : std::uint8_t { Ok, NotYourTurn, NoMovesLeft, Blocked, AlreadyActed, OutOfRange, OwnSide, TooCostly, NotOnStage, NothingToPerform, NothingHere, BagFull, MustChoose };`
+    `Why Check(const MatchDef &def, const MatchState &s, const Action &a);` (`Legal` and `Apply` use it; the app's tooltip shows its reason: the user's design rule)
 
-**Rules (spec, The match):** a step costs 1 of `move`; the stage cell cannot be entered while
+**Rules (spec, The match):** one unit per square (`rules.json` `board.squareCapacity` 1); a step costs 1 of `move`; the stage cell cannot be entered while
 another unit stands on it, nor an enemy hub while its guardian stands; `Undo` returns to `origin` with the full
 budget, only before acting; after an action no `Move`; `EndTurn` is always legal for the current
 character; with `options.autoEndTurn` the turn ends by itself after the action. When the last in
@@ -280,7 +282,7 @@ TEST_CASE("The match ends after its rounds, with the tie rule (T286)", "[match][
   - `Forecast Preview(const MatchDef &def, const MatchState &s, const Action &a);` (BattleAbility, BoardAbility, UseItem; zeros for others)
   - `int Damage(const MatchDef &def, const MatchState &s, int ability, int from, int to, int roll);` (roll used for dice abilities)
 
-**Rules (spec, Characters, stats and fights):** `Attack` targets a unit within 1 step that is not
+**Rules (spec, Characters, stats and fights):** `Attack` targets a unit exactly 1 step away that is not
 of the attacker's faction; it starts a battle and is the turn's action. `battle.rounds` rounds;
 in each, the attacker picks first, unless the defender has a FirstStrike passive and the attacker
 does not. Strike deals `Damage`; Shield adds its power to that side's shield for the battle; Heal
@@ -342,7 +344,7 @@ TEST_CASE("Levelling learns the job's ability, or asks for a choice (T292)", "[m
     // Legal is exactly {LevelUp 0, LevelUp 1}; LevelUp 1 puts the choice ability in a free slot.
 }
 TEST_CASE("Board abilities: Hit at range, Heal an ally at the healer's cost (T293)", "[match][abilities]") {
-    // Hit out of range is illegal; in range it deals Damage; Heal on an ally +power, healer -hpCost.
+    // Hit out of range: Check == Why::OutOfRange; cost above HP: Why::TooCostly; in range it deals Damage; Heal on an ally +power, healer -hpCost.
 }
 TEST_CASE("Items heal and grant XP (T294)", "[match][items]") {}
 TEST_CASE("An event's choice rolls its chance and resolves the room (T295)", "[match][events]") {
