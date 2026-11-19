@@ -86,6 +86,8 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
         return 1;
     Screens screens(renderer, assets);
     MatchTable table(renderer, assets, def);
+    if (std::ifstream in(assets / "match-look.json"); in)
+        table.SetLook(nlohmann::json::parse(in, nullptr, false));
     table.SetCamera(pace.matchCameraDistance, pace.matchCameraDistance * 0.5F, pace.matchCameraDistance * 1.8F, pace.matchCameraTilt);
     umbra::core::DrawList drawList;
 

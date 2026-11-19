@@ -35,6 +35,7 @@ public:
     void Pan(glm::vec2 pixels) { view_.Pan(pixels); }
     void Zoom(float steps) { view_.Zoom(steps); }
     void Update(float dt) { clock_ += dt, view_.Update(dt); }
+    void SetLook(nlohmann::json look) { look_ = std::move(look); } // assets/match-look.json
 
 private:
     [[nodiscard]] glm::vec3 Centre(const umbra::match::Board &b, int cell) const;          // a square's middle on the table
@@ -47,6 +48,10 @@ private:
     umbra::core::MeshHandle box_, quad_, mirrorQuad_;
     std::map<std::string, umbra::core::TextureHandle> sprites_; // by sprite folder: body_calm.png
     std::map<std::string, float> aspects_;                      // ... its width per height
+    [[nodiscard]] float Look(const char *group, const char *key, float t, float fallback) const; // start..end at t
+    void Shadow(glm::vec3 feet, float width, umbra::core::DrawList &out) const;
+    umbra::core::MeshHandle disc_; // a flat round disc for shadows
+    nlohmann::json look_;
     TableCamera view_;
     float clock_ = 0.0F;
 };

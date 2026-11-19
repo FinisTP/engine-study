@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <tuple>
 
 using namespace umbra::match;
 
@@ -86,6 +87,17 @@ MatchTable::MatchTable(umbra::render::Renderer &renderer, const umbra::assets::A
     };
     for (const CharacterDef &c : def.characters)
         load(c.sprite);
+    // 2. The shadow: a flat disc (24 sides), drawn twice, a dark core in a softer rim.
+    umbra::core::MeshData disc;
+    disc.vertices.push_back({{0, 0, 0}, {0, 1, 0}, {0.5F, 0.5F}});
+    for (int k = 0; k <= 24; ++k)
+    {
+        const float a = static_cast<float>(k) / 24.0F * 6.2831853F;
+        disc.vertices.push_back({{0.5F * std::cos(a), 0, 0.5F * std::sin(a)}, {0, 1, 0}, {0.5F, 0.5F}});
+        if (k > 0)
+            disc.indices.insert(disc.indices.end(), {0u, static_cast<std::uint32_t>(k + 1), static_cast<std::uint32_t>(k)});
+    }
+    disc_ = renderer.CreateMesh(disc);
     for (const MonsterDef &m : def.monsters)
         load(m.sprite);
 }
@@ -135,6 +147,31 @@ void MatchTable::Sprite(const Unit &u, glm::vec3 feet, umbra::core::DrawList &ou
     out.items.back().surface = out.SurfaceIndex("sprite");
 }
 
+float MatchTable::Look(const char *group, const char *key, float t, float fallback) const
+{
+    // A value from the look: start and end mixed by t, or one number for both.
+    const auto g = look_.find(group);
+    if (g == look_.end())
+        return fallback;
+    if (g->contains(key))
+        return (*g)[key].get<float>();
+    const float a = g->contains("start") ? (*g)["start"].value(key, fallback) : fallback;
+    const float b = g->contains("end") ? (*g)["end"].value(key, a) : a;
+    return a + (b - a) * t;
+}
+
+void MatchTable::Shadow(glm::vec3 feet, float width, umbra::core::DrawList &out) const
+{
+    // A wide rim and a smaller dark core, flat on the floor, a little wider than deep.
+    const float dark = Look("shadow", "opacity", 0.0F, 0.6F);
+    for (const auto [scale, shade, lift] : {std::tuple{1.0F, 0.45F, 0.025F}, std::tuple{0.6F, 0.75F, 0.03F}})
+    {
+        const float v = 0.2F * (1.0F - dark * shade);
+        out.items.push_back({disc_, {}, glm::scale(glm::translate(glm::mat4{1.0F}, {feet.x, lift, feet.z}), {width * scale, 1.0F, width * scale * 0.6F}),
+                             glm::vec4(v, v * 0.8F, v * 0.7F, 1.0F)});
+    }
+}
+
 void MatchTable::Draw(const MatchState &s, const nlohmann::json &ui, int hover, umbra::core::DrawList &out) const
 {
     const Board &b = s.board;
@@ -142,7 +179,15 @@ void MatchTable::Draw(const MatchState &s, const nlohmann::json &ui, int hover, 
     umbra::core::EnvironmentSettings settings;
     settings.indoor = true, settings.ambient = 1.3F, settings.fog = 0.0F, settings.shadows = false;
     out.environment = umbra::core::EvaluateEnvironment(settings, 20.0F);
-    out.lights.push_back({{0.0F, 9.0F, 4.0F}, {1.0F, 0.88F, 0.72F}, 140.0F, 70.0F, 0.0F});
+    // The look: the grade mixed by how far the match has run; the lamp stutters a little more toward the end.
+    const float t = std::clamp(static_cast<float>(s.round - 1) / static_cast<float>(std::max(1, def_.options.rounds - 1)), 0.0F, 1.0F);
+    for (auto [key, field] : {std::pair{"exposure", &umbra::core::PostSettings::exposure}, {"contrast", &umbra::core::PostSettings::contrast},
+                              {"saturation", &umbra::core::PostSettings::saturation}, {"temperature", &umbra::core::PostSettings::temperature},
+                              {"vignette", &umbra::core::PostSettings::vignette}, {"bloom", &umbra::core::PostSettings::bloom}})
+        out.post.*field = Look("grade", key, t, out.post.*field);
+    const float stutter = std::max(0.0F, std::sin(clock_ * 7.3F) * std::sin(clock_ * 2.1F + 1.0F));
+    const float lamp = 1.0F - Look("flicker", "x", t, 0.0F) * stutter;
+    out.lights.push_back({{0.0F, 9.0F, 4.0F}, {1.0F, 0.88F, 0.72F}, 140.0F * lamp, 70.0F, 0.0F});
     out.camera = view_.Camera();
 
     // 2. Squares by kind; the stage glows gold; walls stay dark under the table.
@@ -158,10 +203,13 @@ void MatchTable::Draw(const MatchState &s, const nlohmann::json &ui, int hover, 
         if (c == s.stage)
             color = Hex(0x8a6a24), glow = 0.35F + 0.1F * std::sin(clock_ * 2.0F);
         Box(out, box_, Centre(b, c) + glm::vec3{0, -0.05F, 0}, {tile * 0.96F, 0.1F, tile * 0.96F}, color, glow);
-        if (b.cells[U(c)].event >= 0 && !b.cells[U(c)].resolved) // an event room: a violet diamond
-            out.items.push_back({box_, {}, glm::scale(glm::rotate(glm::translate(glm::mat4{1.0F}, Centre(b, c) + glm::vec3{0, 0.5F, 0}), clock_, {0, 1, 0}), {0.25F, 0.25F, 0.08F}),
-                                 Hex(0xB28DFF), 0.0F, 0.8F});
+        if (b.cells[U(c)].event >= 0 && !b.cells[U(c)].resolved) // an event room: a small violet mark in its corner (optional goals stay quiet)
+            Box(out, box_, Centre(b, c) + glm::vec3{-tile * 0.3F, 0.02F, -tile * 0.3F}, {0.22F, 0.03F, 0.22F}, Hex(0x8a6cc8), 0.25F);
     }
+    // 2b. An item on the floor: a small gold mark in the opposite corner.
+    for (const Floor &f : s.floor)
+        if (f.cell >= 0)
+            Box(out, box_, Centre(b, f.cell) + glm::vec3{tile * 0.3F, 0.02F, tile * 0.3F}, {0.22F, 0.03F, 0.22F}, Hex(0xC9A54A), 0.25F);
     // 3. Announced spawns: an orange marker pulsing on the square.
     for (const Spawn &w : s.spawns)
         if (w.round - def_.rules.spawn.warn <= s.round)
@@ -182,6 +230,7 @@ void MatchTable::Draw(const MatchState &s, const nlohmann::json &ui, int hover, 
         if (u.cell < 0 || u.hp <= 0)
             continue;
         const glm::vec3 feet = Feet(b, u);
+        Shadow(feet + glm::vec3{0.0F, 0.0F, 0.15F}, tile * Look("shadow", "width", 0.0F, 0.75F) * static_cast<float>(u.size), out);
         if (u.faction >= 0)
             Outline(out, box_, feet - glm::vec3{0, 0.1F, 0}, tile * 0.7F * static_cast<float>(u.size), u.faction == 0 ? Hex(0x5b9bd5) : Hex(0xe08a3c), 0.5F);
         Sprite(u, feet, out);
