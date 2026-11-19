@@ -18,7 +18,9 @@ namespace umbra::match
     // Strike, Shield: battle. Heal: battle or board. Hit: board. FirstStrike: passive.
     enum class AbilityClass : std::uint8_t { Strike, Shield, Heal, Hit, FirstStrike };
     enum class Tier : std::uint8_t { Weak, Strong, Great, Guardian };
-    enum class Behaviour : std::uint8_t { Stay, Flee, Stage, Guard };
+    enum class Behaviour : std::uint8_t { Stay, Flee, Stage, Guard, Hunt };
+    // Who a board ability may aim at: the target symbol beside it on screen.
+    enum class Target : std::uint8_t { Enemy, Ally, Self, Monster, Room, Any };
     enum class ItemClass : std::uint8_t { HealItem, ExpGrant };
     enum class Effect : std::uint8_t { None, Hp, Essence, Xp, Item };
     enum class BotLevel : std::uint8_t { Easy, Medium, Hard };
@@ -33,6 +35,7 @@ namespace umbra::match
         std::string id, name, animation;
         Use use = Use::Battle;
         AbilityClass kind = AbilityClass::Strike;
+        Target target = Target::Enemy;
         int hpCost = 0, power = 0, range = 0;
         Dice dice;
     };
@@ -58,6 +61,7 @@ namespace umbra::match
         Tier tier = Tier::Weak;
         Behaviour behaviour = Behaviour::Stay;
         int hp = 0, attack = 0, defence = 0, speed = 0, essence = 0, xp = 0, respawnRounds = 0;
+        int level = 1, size = 1, sight = 0; // size: squares per side (1-3); sight: steps a hunter sees
         std::vector<int> abilities;
         std::uint32_t tint = 0xFFFFFF;
     };
@@ -88,6 +92,13 @@ namespace umbra::match
         std::vector<Choice> choices;
     };
 
+    // One spawns.csv row: from round `from`, `monster` appears in `zone` (0 weak, 1 strong, 2 centre)
+    // `every` rounds after its square empties.
+    struct SpawnRow
+    {
+        int zone = 0, from = 1, monster = -1, every = 1;
+    };
+
     struct Options
     {
         int rounds = 30, side = 3;
@@ -108,6 +119,7 @@ namespace umbra::match
         struct { int rounds = 0, minDamage = 0; } battle;
         struct { std::vector<int> xp; int hp = 0, killXp = 0; } levels;
         struct { int wakeRound = 0; } great;
+        struct { int warn = 1; } spawn; // rounds a spawn square is marked before the monster appears
         int carry = 0;
         struct { std::array<int, 3> noise{}; } bots; // percent of a choice's value, per BotLevel
         struct { int sideMin = 0, sideMax = 0, firstMoverMax = 0, sourceMax = 0, comebackMin = 0; } balance;
@@ -123,6 +135,7 @@ namespace umbra::match
         std::vector<JobLevel> jobs;
         std::vector<AbilityDef> abilities;
         std::vector<MonsterDef> monsters;
+        std::vector<SpawnRow> spawns; // sorted by zone, then from
         std::vector<ItemDef> items;
         std::vector<EventDef> events;
 

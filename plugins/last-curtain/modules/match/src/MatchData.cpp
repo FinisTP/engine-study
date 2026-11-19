@@ -157,6 +157,7 @@ namespace umbra::match
             num("levels", "hp", r.levels.hp);
             num("levels", "killXp", r.levels.killXp);
             num("great", "wakeRound", r.great.wakeRound);
+            num("spawn", "warn", r.spawn.warn);
             num("", "carry", r.carry);
             auto &bal = r.balance;
             for (auto [k, v] : {std::pair{"sideMin", &bal.sideMin}, {"sideMax", &bal.sideMax}, {"firstMoverMax", &bal.firstMoverMax},
@@ -214,7 +215,7 @@ namespace umbra::match
 
         void LoadAbilities(const std::filesystem::path &folder, MatchDef &def, Diagnostics &out)
         {
-            Sheet s(out, folder, "abilities.csv", {"id", "name", "use", "class", "hpCost", "power", "dice", "range", "animation"});
+            Sheet s(out, folder, "abilities.csv", {"id", "name", "use", "class", "target", "hpCost", "power", "dice", "range", "animation"});
             for (int r = 0; r < s.Rows(); ++r)
             {
                 AbilityDef a;
@@ -223,6 +224,7 @@ namespace umbra::match
                 a.animation = s.Text(r, "animation");
                 a.use = static_cast<Use>(s.Pick(r, "use", {"battle", "board", "passive"}));
                 a.kind = static_cast<AbilityClass>(s.Pick(r, "class", {"strike", "shield", "heal", "hit", "firststrike"}));
+                a.target = static_cast<Target>(s.Pick(r, "target", {"enemy", "ally", "self", "monster", "room", "any"}));
                 a.hpCost = s.Int(r, "hpCost", 0, 99);
                 a.power = s.Int(r, "power", 0, 99);
                 a.range = s.Int(r, "range", 0, 20);
@@ -234,6 +236,14 @@ namespace umbra::match
                                                                       : a.use == Use::Battle;
                 if (!fits)
                     s.Bad(s.Where(r, "use"), "this class cannot be used there");
+                // 2. And its targets: strikes an enemy, shields yourself, board heals your side, hits anyone not on it.
+                const Target t = a.target;
+                const bool aims = a.kind == AbilityClass::Hit ? t == Target::Enemy || t == Target::Monster || t == Target::Any
+                                : a.kind == AbilityClass::Heal && a.use == Use::Board ? t == Target::Ally || t == Target::Self
+                                : a.kind == AbilityClass::Strike ? t == Target::Enemy
+                                                                 : t == Target::Self;
+                if (s.ok && !aims)
+                    s.Bad(s.Where(r, "target"), "this class cannot aim there");
                 def.abilities.push_back(a);
             }
         }
@@ -278,7 +288,7 @@ namespace umbra::match
         void LoadMonsters(const std::filesystem::path &folder, MatchDef &def, Diagnostics &out)
         {
             Sheet s(out, folder, "monsters.csv", {"id", "name", "tier", "behaviour", "hp", "attack", "defence", "speed", "essence", "xp",
-                                                  "respawnRounds", "abilities", "sprite", "tint"});
+                                                  "respawnRounds", "level", "size", "sight", "abilities", "sprite", "tint"});
             for (int r = 0; r < s.Rows(); ++r)
             {
                 MonsterDef m;
@@ -286,7 +296,7 @@ namespace umbra::match
                 m.name = s.Text(r, "name");
                 m.sprite = s.Text(r, "sprite");
                 m.tier = static_cast<Tier>(s.Pick(r, "tier", {"weak", "strong", "great", "guardian"}));
-                m.behaviour = static_cast<Behaviour>(s.Pick(r, "behaviour", {"stay", "flee", "stage", "guard"}));
+                m.behaviour = static_cast<Behaviour>(s.Pick(r, "behaviour", {"stay", "flee", "stage", "guard", "hunt"}));
                 m.hp = s.Int(r, "hp", 1, 999);
                 m.attack = s.Int(r, "attack", 0, 99);
                 m.defence = s.Int(r, "defence", 0, 99);
@@ -294,6 +304,11 @@ namespace umbra::match
                 m.essence = s.Int(r, "essence", 0, 999);
                 m.xp = s.Int(r, "xp", 0, 999);
                 m.respawnRounds = s.Int(r, "respawnRounds", 0, 99);
+                m.level = s.Int(r, "level", 1, 20);
+                m.size = s.Int(r, "size", 1, 3);
+                m.sight = s.Int(r, "sight", 0, 20);
+                if (s.ok && m.behaviour == Behaviour::Hunt && m.sight < 1)
+                    s.Bad(s.Where(r, "sight"), "a hunter needs a sight of 1 or more");
                 m.tint = s.Color(r, "tint");
                 // 1. Its battle abilities, separated by ';'; the first is what it strikes with.
                 std::string list = s.Text(r, "abilities");
@@ -305,6 +320,21 @@ namespace umbra::match
                 }
                 def.monsters.push_back(m);
             }
+        }
+
+        void LoadSpawns(const std::filesystem::path &folder, MatchDef &def, Diagnostics &out)
+        {
+            Sheet s(out, folder, "spawns.csv", {"zone", "from", "monster", "every"});
+            for (int r = 0; r < s.Rows(); ++r)
+            {
+                SpawnRow w{s.Pick(r, "zone", {"weak", "strong", "centre"}), s.Int(r, "from", 1, 999), s.Ref(r, "monster", def.monsters),
+                           s.Int(r, "every", 1, 999)};
+                // 1. Guardians belong to a hub and never spawn.
+                if (w.monster >= 0 && def.monsters[static_cast<std::size_t>(w.monster)].tier == Tier::Guardian)
+                    s.Bad(s.Where(r, "monster"), "a guardian cannot spawn");
+                def.spawns.push_back(w);
+            }
+            std::ranges::stable_sort(def.spawns, {}, [](const SpawnRow &w) { return std::pair{w.zone, w.from}; });
         }
 
         void LoadItems(const std::filesystem::path &folder, MatchDef &def, Diagnostics &out)
@@ -346,6 +376,7 @@ namespace umbra::match
         LoadJobs(folder, def, diagnostics);
         LoadCharacters(folder, def, diagnostics);
         LoadMonsters(folder, def, diagnostics);
+        LoadSpawns(folder, def, diagnostics);
         LoadItems(folder, def, diagnostics);
         LoadEvents(folder, def, diagnostics);
         if (diagnostics.size() != before)

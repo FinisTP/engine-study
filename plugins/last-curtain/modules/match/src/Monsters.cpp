@@ -46,7 +46,8 @@ namespace umbra::match
             const MonsterDef &d = def.monsters[U(m.def)];
             switch (d.behaviour)
             {
-            case Behaviour::Stay: break;
+            case Behaviour::Stay:
+            case Behaviour::Hunt: break; // hunters act in the monster phase (MonsterMind.cpp)
             case Behaviour::Flee: // 1. up to `speed` steps away from the nearest character
                 for (int k = 0; k < m.speed && StepBy(def, s, m, [&](int c) { return NearestCharacter(s, c); }); ++k) {}
                 break;

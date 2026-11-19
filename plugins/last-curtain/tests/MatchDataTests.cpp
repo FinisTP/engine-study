@@ -81,3 +81,51 @@ TEST_CASE("Every role starts with a free battle ability (T276)", "[match][data]"
     CHECK_FALSE(FirstError(dir, &code).empty());
     CHECK(code == "match.jobs");
 }
+
+TEST_CASE("The new columns load (T310)", "[match][data]")
+{
+    const MatchDef def = Data();
+    auto ability = [&](const char *id) { return def.abilities[static_cast<std::size_t>(MatchDef::Find(def.abilities, id))]; };
+    CHECK(ability("jab").target == Target::Enemy);
+    CHECK(ability("brace").target == Target::Self);
+    CHECK(ability("tend").target == Target::Ally);
+    CHECK(ability("snipe").target == Target::Enemy);
+
+    auto monster = [&](const char *id) { return def.monsters[static_cast<std::size_t>(MatchDef::Find(def.monsters, id))]; };
+    CHECK(monster("usherette").behaviour == Behaviour::Hunt);
+    CHECK(monster("usherette").level == 2);
+    CHECK(monster("usherette").size == 1);
+    CHECK(monster("usherette").sight == 3);
+    CHECK(monster("ghost-chorus").size == 2);
+    CHECK(monster("the-spider").size == 3);
+    CHECK(monster("the-spider").essence > monster("ghost-chorus").essence);
+    CHECK(def.rules.spawn.warn == 1);
+
+    // 1. Spawn rows come sorted by zone, then by first round.
+    REQUIRE(def.spawns.size() >= 3);
+    CHECK(std::ranges::is_sorted(def.spawns, {}, [](const SpawnRow &s) { return std::pair{s.zone, s.from}; }));
+    const auto centre = std::ranges::find(def.spawns, 2, &SpawnRow::zone);
+    REQUIRE(centre != def.spawns.end());
+    CHECK(def.monsters[static_cast<std::size_t>(centre->monster)].id == "usherette");
+    CHECK(centre->from == 1);
+    CHECK(centre->every >= 1);
+}
+
+TEST_CASE("Bad spawn or size data is refused (T311)", "[match][data]")
+{
+    const auto d1 = DataCopy("umbra-match-t311a");
+    SetCell(d1 / "monsters.csv", RowOf(d1 / "monsters.csv", "id", "the-spider"), "size", "4");
+    CHECK(FirstError(d1) == "monsters.csv:" + std::to_string(RowOf(d1 / "monsters.csv", "id", "the-spider") + 1) + ":size");
+
+    const auto d2 = DataCopy("umbra-match-t311b");
+    SetCell(d2 / "spawns.csv", 0, "zone", "attic");
+    CHECK(FirstError(d2) == "spawns.csv:1:zone");
+
+    const auto d3 = DataCopy("umbra-match-t311c");
+    SetCell(d3 / "spawns.csv", 0, "monster", "usher");
+    CHECK(FirstError(d3) == "spawns.csv:1:monster");
+
+    const auto d4 = DataCopy("umbra-match-t311d");
+    SetCell(d4 / "spawns.csv", 0, "every", "0");
+    CHECK(FirstError(d4) == "spawns.csv:1:every");
+}

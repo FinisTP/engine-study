@@ -70,12 +70,12 @@ namespace umbra::match
             return out;
         }
 
-        // A monster of the tier, picked from the seed.
+        // A monster of the tier, picked from the seed (hunters only come from spawns.csv).
         int OfTier(const MatchDef &def, Rng &rng, Tier tier)
         {
             std::vector<int> pool;
             for (int m = 0; m < static_cast<int>(def.monsters.size()); ++m)
-                if (def.monsters[U(m)].tier == tier)
+                if (def.monsters[U(m)].tier == tier && def.monsters[U(m)].behaviour != Behaviour::Hunt)
                     pool.push_back(m);
             return pool.empty() ? -1 : pool[U(rng.Below(static_cast<int>(pool.size())))];
         }
