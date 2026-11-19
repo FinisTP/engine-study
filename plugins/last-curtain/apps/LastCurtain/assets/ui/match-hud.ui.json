@@ -12,7 +12,8 @@
     { "type": "list", "anchor": "top", "offset": [0, 10], "style": "float", "items": "{order}", "as": "o", "direction": "horizontal", "gap": 6,
       "entry": { "type": "stack", "style": "face", "gap": 1, "align": "center", "selected": "{o.current}", "disabled": "{o.down}", "children": [
         { "type": "image", "image": "{o.portrait}", "fit": "top", "size": [44, 44], "visible": "{o.portrait}" },
-        { "type": "text", "style": "small", "text": "{o.short}", "visible": "{o.portrait}" },
+        { "type": "text", "style": "small", "text": "{o.short}", "visible": "{o.mine}" },
+        { "type": "text", "style": "warning", "text": "{o.short}", "visible": "{o.theirs}" },
         { "type": "text", "style": "warning", "text": "next turn", "visible": "{o.marker}" }
       ] } },
     { "type": "stack", "anchor": "bottom-left", "offset": [20, -20], "style": "float", "direction": "horizontal", "gap": 12, "children": [

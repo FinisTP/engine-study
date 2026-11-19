@@ -60,7 +60,12 @@ std::string MatchPlay::Name(int unit) const
     if (unit < 0 || unit >= static_cast<int>(s_.units.size()))
         return Word("misc", "nobody");
     const Unit &u = s_.units[U(unit)];
-    return u.kind == 0 ? def_.characters[U(u.def)].name : def_.monsters[U(u.def)].name;
+    if (u.kind != 0)
+        return def_.monsters[U(u.def)].name;
+    // The same character on both sides: theirs is tagged.
+    const std::string &name = def_.characters[U(u.def)].name;
+    const bool twin = std::ranges::any_of(s_.units, [&](const Unit &o) { return o.kind == 0 && o.def == u.def && o.faction != u.faction; });
+    return twin && u.faction == 1 ? Fill(Word("misc", "theirs"), {{"name", name}}) : name;
 }
 
 std::string MatchPlay::WhyText(Why why) const { return Word("why", WhyName(why)); }
@@ -106,6 +111,7 @@ bool MatchPlay::Reveal()
     lastMover_ = e.kind == LogKind::Moved ? e.a : -1;
     for (const auto &m : Moves(e))
         moves_.push_back(m);
+    Speak(e, shown_ - 1);
     if (const std::string cue = Sound(e); !cue.empty())
         sounds_.push_back(cue);
     if (e.kind == LogKind::Blow)
@@ -114,6 +120,22 @@ bool MatchPlay::Reveal()
         lastBlow_.clear();
     wait_ = e.kind == LogKind::Moved ? options_.plainBeatSeconds : options_.beatSeconds;
     return true;
+}
+
+void MatchPlay::Speak(const LogEntry &e, std::size_t index)
+{
+    // 1. Who speaks: the striker, the fallen, the performer, whoever levels; characters only.
+    const int who = e.kind == LogKind::Blow || e.kind == LogKind::Down || e.kind == LogKind::Performed || e.kind == LogKind::Level ? e.a : -1;
+    if (who < 0 || s_.units[U(who)].kind != 0)
+        return;
+    const auto lines = words_.find("lines");
+    if (lines == words_.end() || !lines->contains(LogName(e.kind)) || (*lines)[LogName(e.kind)].empty())
+        return;
+    // 2. A line picked from the round, the speaker and the moment, so a replay says the same; one bubble per speaker.
+    const nlohmann::json &list = (*lines)[LogName(e.kind)];
+    const std::string text = list[(static_cast<std::size_t>(s_.round) * 7 + static_cast<std::size_t>(who) * 3 + index) % list.size()];
+    std::erase_if(bubbles_, [&](const Bubble &b) { return b.unit == who; });
+    bubbles_.push_back({who, text, options_.beatSeconds * 2.0F});
 }
 
 void MatchPlay::RevealAll()
@@ -140,6 +162,9 @@ void MatchPlay::Update(float dt)
 {
     if (dt <= 0.0F)
         return;
+    for (Bubble &b : bubbles_)
+        b.left -= dt;
+    std::erase_if(bubbles_, [](const Bubble &b) { return b.left <= 0.0F; });
     // 1. A new round's banner, once everything before it has been told.
     if (BannerDue())
     {
@@ -262,8 +287,8 @@ nlohmann::json MatchPlay::UiData() const
         const int u = s_.order[U(i)];
         const Unit &unit = s_.units[U(u)];
         order.push_back({{"unit", u}, {"name", Name(u)}, {"side", unit.faction}, {"sprite", def_.characters[U(unit.def)].sprite},
-                         {"portrait", Portrait(def_.characters[U(unit.def)].sprite)}, {"mine", unit.faction == 0},
-                         {"short", Name(u).substr(Name(u).rfind(' ') + 1)},
+                         {"portrait", Portrait(def_.characters[U(unit.def)].sprite)}, {"mine", unit.faction == 0}, {"theirs", unit.faction == 1},
+                         {"short", def_.characters[U(unit.def)].name.substr(def_.characters[U(unit.def)].name.rfind(' ') + 1)},
                          {"current", !acted && i == turn}, {"acted", acted}, {"down", unit.cell < 0}});
     };
     for (int i = turn; i < n; ++i)
@@ -347,6 +372,10 @@ nlohmann::json MatchPlay::UiData() const
     }
     if (s_.over)
         j["end"] = EndData();
+    nlohmann::json bubbles = nlohmann::json::array();
+    for (const Bubble &b : bubbles_)
+        bubbles.push_back({{"unit", b.unit}, {"text", b.text}});
+    j["bubbles"] = bubbles;
     j["log"] = log_;
     j["logTail"] = std::vector<std::string>(log_.end() - std::min<std::ptrdiff_t>(6, static_cast<std::ptrdiff_t>(log_.size())), log_.end());
     j["logOpen"] = logOpen_;

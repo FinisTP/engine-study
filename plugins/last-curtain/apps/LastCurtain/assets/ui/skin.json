@@ -281,6 +281,15 @@
     "theirsBig": {
       "base": "title",
       "color": "#e08a3c"
+    },
+    "bubble": {
+      "base": "small",
+      "color": "#1b1410",
+      "background": "#efe4cce8",
+      "padding": [
+        8,
+        5
+      ]
     }
   }
 }

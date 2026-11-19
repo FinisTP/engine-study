@@ -11,7 +11,8 @@
     "failed": "it went badly",
     "side0": "your side wins",
     "side1": "their side wins",
-    "draw": "a draw"
+    "draw": "a draw",
+    "theirs": "{name} (theirs)"
   },
   "roles": {
     "attacker": "Attacker",
@@ -83,5 +84,33 @@
     "kills": "Kills",
     "performed": "Essence performed",
     "monsters": "Monsters downed"
+  },
+  "lines": {
+    "Blow": [
+      "Out of my way!",
+      "Stay down.",
+      "For the curtain call!",
+      "You picked the wrong stage.",
+      "Feel that?",
+      "Again!"
+    ],
+    "Down": [
+      "Not... like this...",
+      "The lights... going out...",
+      "I'll be back for you.",
+      "Tell them I tried."
+    ],
+    "Performed": [
+      "Take a bow, everyone.",
+      "Encore!",
+      "Applause, please.",
+      "The house is ours tonight."
+    ],
+    "Level": [
+      "I can feel it now.",
+      "Stronger.",
+      "The stage remembers me.",
+      "One more step."
+    ]
   }
 }

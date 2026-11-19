@@ -205,7 +205,14 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
             if (!play)
                 data["pick"] = MatchPlay::PickData(def, picks, canContinue, level);
             else
+            {
+                // Spoken lines ride on their speaker's card as a bubble.
                 data["labels"] = table.Labels(play->State(), pixels);
+                for (auto &l : data["labels"])
+                    for (const auto &b : ui["bubbles"])
+                        if (b["unit"] == l["unit"])
+                            l["say"] = b["text"];
+            }
             data["tip"] = screens.Ui().Tip();
             for (const umbra::ui::UiAction &a : screens.Ui().Update(data, pixels, uiInput, drawList.ui))
             {

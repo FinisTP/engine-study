@@ -84,6 +84,14 @@ private:
     std::string armed_; // "attack" or "ability:<slot>"
     std::string lastBlow_, eventResult_; // the battle's last blow; the event's outcome
     int eventCell_ = -1;
+    struct Bubble
+    {
+        int unit = -1;
+        std::string text;
+        float left = 0.0F; // seconds still shown
+    };
+    std::vector<Bubble> bubbles_;
+    void Speak(const umbra::match::LogEntry &e, std::size_t index); // a written line beside its speaker
     std::vector<std::pair<int, std::string>> moves_;
     std::vector<std::string> sounds_;                 // the room whose event card is open, -1 none
 };

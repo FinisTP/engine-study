@@ -4,6 +4,7 @@
   "root": { "type": "panel", "anchor": "fill", "style": "layer", "children": [
     { "type": "list", "items": "{labels}", "as": "l",
       "entry": { "type": "stack", "style": "plain", "gap": 0, "align": "center", "at": "{l.at}", "children": [
+        { "type": "text", "style": "bubble", "text": "{l.say}", "visible": "{l.say}", "wrap": true, "size": [170, 0] },
         { "type": "text", "style": "warning", "text": "v", "visible": "{l.acting}" },
         { "type": "stack", "style": "card", "direction": "horizontal", "gap": 3, "align": "center", "children": [
           { "type": "stack", "style": "plain", "gap": 1, "children": [

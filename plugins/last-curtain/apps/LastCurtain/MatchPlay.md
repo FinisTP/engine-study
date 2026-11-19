@@ -83,3 +83,11 @@ Each told line brings its motions (`Moves`: a step walks, a blow is an attack an
 and its sound (`Sound`: step, hit, death, pass, door, fail, item, bell; `turn` when a banner opens).
 The window takes them once (`TakeMoves`, `TakeSounds`): the table plays the motion on that unit's
 sprite (`motions.json`, the night's), `Sounds` plays the cue (`sounds.csv`).
+
+## Spoken lines
+
+A blow, a fall, a performance or a level puts a short line (`match-words.json` `lines`, by log
+kind) in a bubble on its speaker's card, characters only, one bubble per speaker, for two beats. The
+line is picked from the round, the speaker and the moment, so a replay says the same. The built-in
+model can write them later. The same character on both sides is told apart: theirs is
+"Name (theirs)" (`misc.theirs`); the order strip shows short names in the side's colour.

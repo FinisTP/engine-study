@@ -341,7 +341,7 @@ nlohmann::json MatchTable::Labels(const MatchState &s, glm::vec2 pixels) const
         const bool character = u.kind == 0;
         const std::string sprite = character ? def_.characters[U(u.def)].sprite : def_.monsters[U(u.def)].sprite;
         const std::string &name = character ? def_.characters[U(u.def)].name : def_.monsters[U(u.def)].name;
-        labels.push_back({{"at", {at->x, at->y}}, {"name", name.substr(name.rfind(' ') + 1)}, {"level", character ? u.level : def_.monsters[U(u.def)].level},
+        labels.push_back({{"unit", i}, {"at", {at->x, at->y}}, {"name", name.substr(name.rfind(' ') + 1)}, {"level", character ? u.level : def_.monsters[U(u.def)].level},
                           {"hp", u.hp}, {"maxHp", u.maxHp}, {"portrait", "art/sprites/" + sprite + "/face_calm.png"}, {"acting", i == acting},
                           {"essence", character && u.essence > 0 ? std::to_string(u.essence) : ""}, {"side", u.faction}});
     }

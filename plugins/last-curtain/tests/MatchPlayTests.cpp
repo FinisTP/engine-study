@@ -57,7 +57,8 @@ TEST_CASE("Every log kind and every Why has words (T322)", "[match][play]")
         p.Update(0.25F);
     }
     REQUIRE(p.State().over);
-    for (const auto &line : p.UiData()["log"])
+    const nlohmann::json log = p.UiData()["log"];
+    for (const auto &line : log)
         CHECK(line.get<std::string>().find('{') == std::string::npos);
 }
 
@@ -503,4 +504,44 @@ TEST_CASE("Each told line brings its motions and its sound (T342)", "[match][pla
         p.Update(0.5F);
     }
     CHECK(p.TakeMoves().empty()); // taken once
+}
+
+TEST_CASE("A blow or a fall puts a short line in a bubble by its speaker; the same character on both sides is told apart (T343)", "[match][play]")
+{
+    const MatchDef def = Data();
+    int enemy = -1;
+    MatchPlay p = AtPlayer(def, [&](MatchState &s) {
+        const int me = Current(s);
+        // The enemy is the same character as mine: its name is tagged.
+        for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
+            if (s.units[static_cast<std::size_t>(i)].kind == 0 && s.units[static_cast<std::size_t>(i)].faction == 1)
+                enemy = i;
+        s.units[static_cast<std::size_t>(enemy)].def = s.units[static_cast<std::size_t>(me)].def;
+        s.units[static_cast<std::size_t>(enemy)].cell = static_cast<std::int16_t>(FreeBeside(s, s.units[static_cast<std::size_t>(me)].cell));
+        s.units[static_cast<std::size_t>(me)].hp = s.units[static_cast<std::size_t>(enemy)].hp = 90;
+    });
+    const int me = Current(p.State());
+    p.Click(p.State().units[static_cast<std::size_t>(me)].cell);
+    REQUIRE(p.HandleUi("", "act", "attack"));
+    p.Click(p.State().units[static_cast<std::size_t>(enemy)].cell);
+    REQUIRE(p.HandleUi("battle", "pick", "0"));
+    // 1. Once the blow is told, its speaker has a bubble with one of the written lines.
+    for (int i = 0; i < 10 && p.UiData()["bubbles"].empty(); ++i)
+        p.Update(0.1F);
+    const nlohmann::json bubbles = p.UiData()["bubbles"];
+    REQUIRE_FALSE(bubbles.empty());
+    CHECK(bubbles[0]["unit"] == me);
+    const nlohmann::json lines = Words()["lines"]["Blow"];
+    CHECK(std::ranges::find(lines, bubbles[0]["text"]) != lines.end());
+    // 2. The log tells the two apart.
+    const std::string theirs = Words()["misc"]["theirs"].get<std::string>();
+    bool tagged = false;
+    const nlohmann::json log = p.UiData()["log"];
+    for (const auto &line : log)
+        tagged = tagged || line.get<std::string>().find(theirs.substr(theirs.find('('))) != std::string::npos;
+    CHECK(tagged);
+    // 3. Bubbles fade after a while.
+    for (int i = 0; i < 20 && !p.UiData()["bubbles"].empty(); ++i)
+        p.Update(1.0F);
+    CHECK(p.UiData()["bubbles"].empty());
 }
