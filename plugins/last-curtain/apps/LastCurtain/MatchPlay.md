@@ -60,3 +60,18 @@ and "M turns left" (`match-words.json` `banner`) for `turnBannerSeconds`; nothin
 
 `assets/match-words.json`: `log` has a line per `LogKind` (`{who}`, `{whom}`, `{n}`, `{monster}`,
 `{item}`, `{result}`, `{side}`), `why` a reason per `Why` (the tooltips), `banner`, `roles`, `misc`.
+
+## The other screens
+
+`Screen()` gives, in this order: `end` (the match is over and told), `banner`, `event` (the player
+looked into a room: its card is open), `level` (the acting character has a level choice), `battle`
+(a battle is on and told), else `""`.
+
+- `battle`: both fighters (numbers, level, the side's shield, sprite), `Round r of n`, the last
+  blow's line, and on the player's pick each battle ability with its `Preview` (damage, healing,
+  cost) or why not (`pick` with the slot). A bot's or monster's pick is one beat.
+- `level`: the job row's two abilities (`pick` 0 or 1).
+- `event`: the card's name, text and two choices with their chance (`choose` 0 or 1), then the
+  result line; `close` returns to the board.
+- `end`: the winner, the scores, kills per side (the units' counts), essence performed and monsters
+  downed per side (from the log).

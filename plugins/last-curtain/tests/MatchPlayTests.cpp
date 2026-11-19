@@ -278,3 +278,134 @@ TEST_CASE("The forecast covers targets, the stage, spawns and units (T327)", "[m
     p.Hover(s.board.door[0]);
     CHECK(p.UiData()["forecast"]["kind"] == "unit");
 }
+
+TEST_CASE("The battle screen follows the rules' battle, a hunter's included (T328)", "[match][play]")
+{
+    const MatchDef def = Data();
+    int enemy = -1;
+    MatchPlay p = AtPlayer(def, [&](MatchState &s) {
+        const int me = Current(s);
+        for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
+            if (s.units[static_cast<std::size_t>(i)].kind == 0 && s.units[static_cast<std::size_t>(i)].faction == 1)
+                enemy = i;
+        s.units[static_cast<std::size_t>(enemy)].cell = static_cast<std::int16_t>(FreeBeside(s, s.units[static_cast<std::size_t>(me)].cell));
+        s.units[static_cast<std::size_t>(me)].hp = s.units[static_cast<std::size_t>(enemy)].hp = 90; // no one falls
+        s.units[static_cast<std::size_t>(me)].maxHp = s.units[static_cast<std::size_t>(enemy)].maxHp = 90;
+    });
+    const int me = Current(p.State());
+    p.Click(p.State().units[static_cast<std::size_t>(me)].cell);
+    REQUIRE(p.HandleUi("", "act", "attack"));
+    p.Click(p.State().units[static_cast<std::size_t>(enemy)].cell);
+    // 1. The player picks first: both fighters, the round, the picks with damage.
+    REQUIRE(p.Screen() == "battle");
+    nlohmann::json b = p.UiData()["battle"];
+    CHECK(b["fighters"][0]["unit"] == me);
+    CHECK(b["fighters"][1]["unit"] == enemy);
+    CHECK(b["round"] == 1);
+    REQUIRE_FALSE(b["picks"].empty());
+    CHECK(b["picks"][0]["dealtMin"].get<int>() >= 1);
+    REQUIRE(p.HandleUi("battle", "pick", "0"));
+    // 2. The bot answers on a beat; the blow's line shows.
+    CHECK_FALSE(p.PlayerTurn());
+    for (int i = 0; i < 20 && !p.PlayerTurn(); ++i)
+        p.Update(0.5F);
+    REQUIRE(p.PlayerTurn());
+    b = p.UiData()["battle"];
+    CHECK(b["round"] == 2);
+    CHECK_FALSE(b["line"].get<std::string>().empty());
+    while (p.Screen() == "battle" && p.PlayerTurn())
+    {
+        REQUIRE(p.HandleUi("battle", "pick", "0"));
+        for (int i = 0; i < 20 && !p.PlayerTurn() && p.State().battle.on; ++i)
+            p.Update(0.5F);
+    }
+    CHECK_FALSE(p.State().battle.on);
+
+    // 3. A hunter attacking the player's character: the hunter is the first fighter, the player picks.
+    MatchPlay h = AtPlayer(def, [&](MatchState &s) {
+        const int mine = Current(s);
+        int hunter = -1;
+        for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
+            if (s.units[static_cast<std::size_t>(i)].kind == 1 && def.monsters[static_cast<std::size_t>(s.units[static_cast<std::size_t>(i)].def)].behaviour == Behaviour::Hunt)
+                hunter = i;
+        s.battle = {true, static_cast<std::int8_t>(hunter), static_cast<std::int8_t>(mine), 1, 1, 0, {}};
+    });
+    REQUIRE(h.Screen() == "battle");
+    CHECK(def.monsters[static_cast<std::size_t>(h.State().units[static_cast<std::size_t>(h.UiData()["battle"]["fighters"][0]["unit"].get<int>())].def)].behaviour == Behaviour::Hunt);
+    CHECK_FALSE(h.UiData()["battle"]["picks"].empty());
+}
+
+TEST_CASE("Level choices and events are their own screens (T329)", "[match][play]")
+{
+    const MatchDef def = Data();
+    // 1. A level choice: the two abilities; picking one learns it.
+    int row = -1;
+    MatchPlay p = AtPlayer(def, [&](MatchState &s) {
+        const Unit &u = s.units[static_cast<std::size_t>(Current(s))];
+        for (int j = 0; j < static_cast<int>(def.jobs.size()); ++j)
+            if (def.jobs[static_cast<std::size_t>(j)].role == def.characters[static_cast<std::size_t>(u.def)].role && def.jobs[static_cast<std::size_t>(j)].choice >= 0)
+                row = j;
+        s.units[static_cast<std::size_t>(Current(s))].pending = static_cast<std::int8_t>(row);
+    });
+    REQUIRE(p.Screen() == "level");
+    const nlohmann::json level = p.UiData()["level"];
+    REQUIRE(level["choices"].size() == 2);
+    CHECK(level["choices"][1]["name"] == def.abilities[static_cast<std::size_t>(def.jobs[static_cast<std::size_t>(row)].choice)].name);
+    REQUIRE(p.HandleUi("level", "pick", "1"));
+    CHECK(p.Screen() == "");
+    const auto &abilities = p.State().units[static_cast<std::size_t>(Current(p.State()))].abilities;
+    CHECK(std::ranges::find(abilities, def.jobs[static_cast<std::size_t>(row)].choice) != abilities.end());
+
+    // 2. An event: its card, a choice, the result, then back to the board.
+    MatchPlay q = AtPlayer(def, [&](MatchState &s) {
+        for (int c = 0; c < static_cast<int>(s.board.cells.size()); ++c)
+            if (s.board.cells[static_cast<std::size_t>(c)].event >= 0 && std::ranges::none_of(s.units, [&](const Unit &u) { return u.cell == c; }))
+            {
+                s.units[static_cast<std::size_t>(Current(s))].cell = s.now.origin = static_cast<std::int16_t>(c);
+                break;
+            }
+    });
+    q.Click(q.State().units[static_cast<std::size_t>(Current(q.State()))].cell);
+    REQUIRE(q.HandleUi("", "act", "answer"));
+    REQUIRE(q.Screen() == "event");
+    nlohmann::json e = q.UiData()["event"];
+    CHECK_FALSE(e["name"].get<std::string>().empty());
+    REQUIRE(e["choices"].size() == 2);
+    CHECK(e["choices"][0].contains("chance"));
+    REQUIRE(q.HandleUi("event", "choose", "0"));
+    e = q.UiData()["event"];
+    CHECK_FALSE(e["result"].get<std::string>().empty());
+    REQUIRE(q.HandleUi("event", "close", ""));
+    CHECK(q.Screen() == "");
+}
+
+TEST_CASE("The end screen's numbers come from the state (T330)", "[match][play]")
+{
+    const MatchDef def = Data();
+    MatchPlay p = Make(def, 5);
+    for (int i = 0; i < 400 && !p.State().over; ++i)
+    {
+        if (p.PlayerTurn())
+            REQUIRE(p.Do(ChooseAction(def, p.State(), BotLevel::Medium)));
+        p.HandleUi("", "skip", "");
+        p.Update(5.0F);
+    }
+    REQUIRE(p.State().over);
+    REQUIRE(p.Screen() == "end");
+    const nlohmann::json end = p.UiData()["end"];
+    const MatchState &s = p.State();
+    CHECK(end["winner"] == s.winner);
+    CHECK(end["score"] == nlohmann::json(s.score));
+    int kills[2] = {}, performed[2] = {};
+    for (const Unit &u : s.units)
+        if (u.kind == 0)
+            kills[u.faction] += u.kills;
+    for (const LogEntry &e : s.log)
+        if (e.kind == LogKind::Performed)
+            performed[s.units[static_cast<std::size_t>(e.a)].faction] += e.b;
+    CHECK(end["kills"][0] == kills[0]);
+    CHECK(end["kills"][1] == kills[1]);
+    CHECK(end["performed"][0] == performed[0]);
+    CHECK(end["performed"][1] == performed[1]);
+    CHECK(end.contains("monsters"));
+}

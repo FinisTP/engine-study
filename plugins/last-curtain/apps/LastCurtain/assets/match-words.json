@@ -70,5 +70,8 @@
     "room": "A room.",
     "centre": "The centre, held by monsters.",
     "hub": "A hub: rest here to heal."
+  },
+  "battle": {
+    "title": "Round {r} of {n}"
   }
 }

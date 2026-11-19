@@ -50,6 +50,9 @@ private:
     [[nodiscard]] std::vector<umbra::match::Action> ArmedActions() const; // the armed action on each valid target
     [[nodiscard]] nlohmann::json Forecast() const;
     [[nodiscard]] nlohmann::json UnitNumbers(int unit) const;
+    [[nodiscard]] nlohmann::json Fighter(int unit, int side) const;
+    [[nodiscard]] nlohmann::json BattleData() const;
+    [[nodiscard]] nlohmann::json EndData() const;
     void Queue();       // the log entries the rules added since the last call
     bool Reveal();      // shows the next queued entry; false if none
     void RevealAll();
@@ -67,4 +70,6 @@ private:
     bool bannerOn_ = false, logOpen_ = true;
     int hover_ = -1, chosen_ = -1, armedKey_ = -1;
     std::string armed_; // "attack" or "ability:<slot>"
+    std::string lastBlow_, eventResult_; // the battle's last blow; the event's outcome
+    int eventCell_ = -1;                 // the room whose event card is open, -1 none
 };
