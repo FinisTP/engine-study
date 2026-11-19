@@ -1,4 +1,5 @@
 #include "Art.hpp"
+#include "MatchApp.hpp"
 #include "Play.hpp"
 #include "Screens.hpp"
 #include "Sounds.hpp"
@@ -47,6 +48,7 @@ namespace
         bool look = false;             // open Look on the player's first menu (pictures of the stage)
         std::filesystem::path capture; // save the last frame here and quit
         int frames = 0;                // frames to run (0 = until closed; 3 with --capture)
+        bool night = false;            // the old night (--night); else the faction match
     };
 
     // The program's assets: assets/ next to it (a package), else the source tree above the build:
@@ -133,6 +135,12 @@ namespace
         {
             // 1. The night's data and the narrator's lines.
             const umbra::assets::AssetFolders assets = FindAssets();
+            if (!options.night)
+            {
+                result = RunMatch(assets, options.seed, options.watch, options.capture, options.frames);
+                platform.Shutdown();
+                return result;
+            }
             NightDef def;
             Captions captions;
             std::vector<umbra::core::Diagnostic> diagnostics;
@@ -476,7 +484,7 @@ namespace
 
 int main(int argc, char **argv)
 {
-    // --seed N, --player <guest id>, --watch, --look, --capture <png>, --frames N.
+    // --night (the old night; else the faction match), --seed N, --player <guest id>, --watch, --look, --capture <png>, --frames N.
     Options options;
     for (int i = 1; i < argc; ++i)
     {
@@ -494,6 +502,8 @@ int main(int argc, char **argv)
             options.capture = argv[++i];
         else if (arg == "--frames" && more)
             options.frames = std::atoi(argv[++i]);
+        else if (arg == "--night")
+            options.night = true;
     }
     umbra::diagnostics::Initialize();
     umbra::diagnostics::InstallCrashHandlers();

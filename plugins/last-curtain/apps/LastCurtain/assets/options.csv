@@ -18,3 +18,5 @@ tapGap,0.25,taps (clicks on a dialog) closer than this are ignored so spam click
 light,0,"1: guests see only what is in their light; 0: everyone sees everything (the user's test, 2026-11-16)"
 turnBannerSeconds,1.2,each turn opens with a banner naming whose turn it is (seconds; a bot waits for it)
 plainBeatSeconds,0.6,a seen bot step where nothing happens (a plain room)
+matchCameraDistance,19,the faction match: metres from the table
+matchCameraTilt,57,the faction match: degrees above the table

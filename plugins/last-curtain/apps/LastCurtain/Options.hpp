@@ -30,6 +30,8 @@ namespace umbra::night
         float plainBeatSeconds = 1.5F;   // a seen bot step where nothing happens (a plain room)
         float tapGap = 0.0F;             // taps closer than this are ignored (spam clicks)
         bool light = true;               // false: everyone sees everything (the user's test switch)
+        float matchCameraDistance = 26.0F; // the faction match's table: the seat's distance
+        float matchCameraTilt = 58.0F;     // ... and its degrees above the table
     };
 
     // Reads key,value,note rows; an unknown key or a bad value is refused with its row.

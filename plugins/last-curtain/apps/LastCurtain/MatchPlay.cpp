@@ -84,7 +84,7 @@ std::string MatchPlay::Caption(const LogEntry &e) const
     return Fill(Word("log", LogName(e.kind)), v);
 }
 
-bool MatchPlay::Mine(int unit) const { return unit >= 0 && s_.units[U(unit)].kind == 0 && s_.units[U(unit)].faction == 0; }
+bool MatchPlay::Mine(int unit) const { return !watch_ && unit >= 0 && s_.units[U(unit)].kind == 0 && s_.units[U(unit)].faction == 0; }
 
 bool MatchPlay::BannerDue() const { return !s_.over && shown_ == s_.log.size() && shownRound_ != s_.round; }
 
@@ -259,6 +259,7 @@ nlohmann::json MatchPlay::UiData() const
         const Unit &unit = s_.units[U(u)];
         order.push_back({{"unit", u}, {"name", Name(u)}, {"side", unit.faction}, {"sprite", def_.characters[U(unit.def)].sprite},
                          {"portrait", Portrait(def_.characters[U(unit.def)].sprite)}, {"mine", unit.faction == 0},
+                         {"short", Name(u).substr(Name(u).rfind(' ') + 1)},
                          {"current", !acted && i == turn}, {"acted", acted}, {"down", unit.cell < 0}});
     };
     for (int i = turn; i < n; ++i)
@@ -343,6 +344,7 @@ nlohmann::json MatchPlay::UiData() const
     if (s_.over)
         j["end"] = EndData();
     j["log"] = log_;
+    j["logTail"] = std::vector<std::string>(log_.end() - std::min<std::ptrdiff_t>(6, static_cast<std::ptrdiff_t>(log_.size())), log_.end());
     j["logOpen"] = logOpen_;
     j["logClosed"] = !logOpen_;
     j["banner"] = {{"title", Fill(Word("banner", "title"), {{"n", std::to_string(s_.round)}})},

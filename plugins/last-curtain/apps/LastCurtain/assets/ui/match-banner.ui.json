@@ -2,7 +2,7 @@
   "format": "umbra.ui",
   "version": 1,
   "dim": true,
-  "root": { "type": "stack", "anchor": "center", "style": "panel", "gap": 8, "align": "center", "size": [520, 0], "children": [
+  "root": { "type": "stack", "anchor": "center", "style": "float", "gap": 8, "align": "center", "size": [520, 0], "children": [
     { "type": "text", "style": "title", "text": "{banner.title}" },
     { "type": "text", "style": "heading", "text": "{banner.text}" }
   ] }

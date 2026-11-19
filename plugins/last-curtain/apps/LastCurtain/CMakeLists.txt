@@ -22,6 +22,10 @@ target_sources(
     LastCurtain
     PRIVATE
         Main.cpp
+        MatchApp.cpp
+        MatchApp.hpp
+        MatchTable.cpp
+        MatchTable.hpp
         Screens.cpp
         Screens.hpp
         Sounds.cpp
@@ -49,6 +53,7 @@ target_link_libraries(
         Umbra::NightBots
         Umbra::NightBoard
         Umbra::NightPlay
+        Umbra::MatchPlay
         $<TARGET_NAME_IF_EXISTS:Umbra::TownLlama>
         Umbra::Warnings
         Umbra::Sanitizers

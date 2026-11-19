@@ -1,0 +1,17 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "root": { "type": "panel", "anchor": "fill", "style": "layer", "children": [
+    { "type": "list", "items": "{labels}", "as": "l",
+      "entry": { "type": "stack", "style": "plain", "gap": 0, "align": "center", "at": "{l.at}", "children": [
+        { "type": "text", "style": "warning", "text": "v", "visible": "{l.acting}" },
+        { "type": "stack", "style": "card", "direction": "horizontal", "gap": 3, "align": "center", "children": [
+          { "type": "stack", "style": "plain", "gap": 1, "children": [
+            { "type": "text", "style": "small", "text": "{l.name} {l.level}" },
+            { "type": "bar", "style": "hp", "size": [46, 4], "value": "{l.hp}", "max": "{l.maxHp}" }
+          ] },
+          { "type": "text", "style": "essence", "text": "{l.essence}", "visible": "{l.essence}" }
+        ] }
+      ] } }
+  ] }
+}

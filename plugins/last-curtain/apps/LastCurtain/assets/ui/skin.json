@@ -2,52 +2,285 @@
   "format": "umbra.ui-skin",
   "version": 1,
   "fonts": {
-    "body": { "file": "ui/fonts/Poppins-Regular.ttf", "size": 18 },
-    "small": { "file": "ui/fonts/Poppins-Regular.ttf", "size": 15 },
-    "strong": { "file": "ui/fonts/Poppins-Medium.ttf", "size": 18 },
-    "title": { "file": "ui/fonts/AbrilFatface-Regular.ttf", "size": 32 },
-    "heading": { "file": "ui/fonts/Lora.ttf", "size": 22 }
+    "body": {
+      "file": "ui/fonts/Poppins-Regular.ttf",
+      "size": 18
+    },
+    "small": {
+      "file": "ui/fonts/Poppins-Regular.ttf",
+      "size": 15
+    },
+    "strong": {
+      "file": "ui/fonts/Poppins-Medium.ttf",
+      "size": 18
+    },
+    "title": {
+      "file": "ui/fonts/AbrilFatface-Regular.ttf",
+      "size": 32
+    },
+    "heading": {
+      "file": "ui/fonts/Lora.ttf",
+      "size": 22
+    }
   },
-  "dim": [0.02, 0.02, 0.05, 0.6],
+  "dim": [
+    0.02,
+    0.02,
+    0.05,
+    0.6
+  ],
   "styles": {
-    "text": { "font": "body", "color": "#ece6d6" },
-    "small": { "base": "text", "font": "small", "color": "#c9c1ad" },
-    "muted": { "base": "small", "color": "#8f8a7c" },
-    "strong": { "base": "text", "font": "strong" },
-    "title": { "base": "text", "font": "title", "color": "#f2d58a" },
-    "heading": { "base": "text", "font": "heading", "color": "#f2d58a" },
-    "good": { "base": "small", "color": "#8fd48a" },
-    "bad": { "base": "small", "color": "#f08a7a" },
-    "warning": { "base": "small", "color": "#ffcf66" },
-    "blow": { "base": "panel", "background": "#2a0f0fe6", "padding": [28, 16] },
-    "obituary": { "base": "panel", "background": "#3a0d0de6", "padding": [24, 12] },
-    "alarm": { "base": "title", "color": "#f08a7a", "background": "#1a0a0ad0", "padding": [18, 8] },
+    "text": {
+      "font": "body",
+      "color": "#ece6d6"
+    },
+    "small": {
+      "base": "text",
+      "font": "small",
+      "color": "#c9c1ad"
+    },
+    "muted": {
+      "base": "small",
+      "color": "#8f8a7c"
+    },
+    "strong": {
+      "base": "text",
+      "font": "strong"
+    },
+    "title": {
+      "base": "text",
+      "font": "title",
+      "color": "#f2d58a"
+    },
+    "heading": {
+      "base": "text",
+      "font": "heading",
+      "color": "#f2d58a"
+    },
+    "good": {
+      "base": "small",
+      "color": "#8fd48a"
+    },
+    "bad": {
+      "base": "small",
+      "color": "#f08a7a"
+    },
+    "warning": {
+      "base": "small",
+      "color": "#ffcf66"
+    },
+    "blow": {
+      "base": "panel",
+      "background": "#2a0f0fe6",
+      "padding": [
+        28,
+        16
+      ]
+    },
+    "obituary": {
+      "base": "panel",
+      "background": "#3a0d0de6",
+      "padding": [
+        24,
+        12
+      ]
+    },
+    "alarm": {
+      "base": "title",
+      "color": "#f08a7a",
+      "background": "#1a0a0ad0",
+      "padding": [
+        18,
+        8
+      ]
+    },
     "layer": {},
-    "target": { "padding": 2 },
-    "target-name": { "base": "small", "color": "#00000000", "hover": { "color": "#fff4d0" } },
-    "target-arrow": { "tint": "#8f8a7c80", "hover": { "tint": "#f2d58a" } },
-    "panel": { "background": "#15151ce6", "border": "#a8874a", "borderWidth": 2, "padding": 18 },
-    "hud": { "background": "#0d0d12b0", "padding": [12, 10] },
-    "prompt": { "base": "strong", "background": "#0d0d12c8", "border": "#a8874a", "borderWidth": 1, "padding": [16, 8] },
+    "target": {
+      "padding": 2
+    },
+    "target-name": {
+      "base": "small",
+      "color": "#00000000",
+      "hover": {
+        "color": "#fff4d0"
+      }
+    },
+    "target-arrow": {
+      "tint": "#8f8a7c80",
+      "hover": {
+        "tint": "#f2d58a"
+      }
+    },
+    "panel": {
+      "background": "#15151ce6",
+      "border": "#a8874a",
+      "borderWidth": 2,
+      "padding": 18
+    },
+    "hud": {
+      "background": "#0d0d12b0",
+      "padding": [
+        12,
+        10
+      ]
+    },
+    "prompt": {
+      "base": "strong",
+      "background": "#0d0d12c8",
+      "border": "#a8874a",
+      "borderWidth": 1,
+      "padding": [
+        16,
+        8
+      ]
+    },
     "button": {
-      "base": "text", "background": "#25252f", "border": "#4a4636", "borderWidth": 1, "padding": [16, 8],
-      "hover": { "background": "#3a3428", "border": "#f2d58a", "color": "#fff4d0" },
-      "disabled": { "color": "#6c6860", "background": "#1c1c22" }
+      "base": "text",
+      "background": "#25252f",
+      "border": "#4a4636",
+      "borderWidth": 1,
+      "padding": [
+        16,
+        8
+      ],
+      "hover": {
+        "background": "#3a3428",
+        "border": "#f2d58a",
+        "color": "#fff4d0"
+      },
+      "disabled": {
+        "color": "#6c6860",
+        "background": "#1c1c22"
+      }
     },
     "entry": {
-      "base": "text", "padding": [12, 6], "background": "#00000000",
-      "hover": { "background": "#3a3428", "color": "#fff4d0" },
-      "selected": { "background": "#2a2a35", "color": "#f2d58a" },
-      "disabled": { "color": "#6c6860" }
+      "base": "text",
+      "padding": [
+        12,
+        6
+      ],
+      "background": "#00000000",
+      "hover": {
+        "background": "#3a3428",
+        "color": "#fff4d0"
+      },
+      "selected": {
+        "background": "#2a2a35",
+        "color": "#f2d58a"
+      },
+      "disabled": {
+        "color": "#6c6860"
+      }
     },
     "slot": {
-      "base": "small", "background": "#1d1d25", "border": "#3d3a30", "borderWidth": 1, "padding": 8,
-      "hover": { "border": "#f2d58a", "background": "#2c2a22" },
-      "selected": { "border": "#8fd48a" }
+      "base": "small",
+      "background": "#1d1d25",
+      "border": "#3d3a30",
+      "borderWidth": 1,
+      "padding": 8,
+      "hover": {
+        "border": "#f2d58a",
+        "background": "#2c2a22"
+      },
+      "selected": {
+        "border": "#8fd48a"
+      }
     },
-    "bar": { "font": "small", "color": "#ffffff", "background": "#2a1414", "border": "#000000a0", "borderWidth": 1, "padding": 1, "fill": "#c0392b" },
-    "energy": { "base": "bar", "background": "#121a2a", "fill": "#3a7bd5" },
-    "xp": { "base": "bar", "background": "#1f1d10", "fill": "#d4b13a" },
-    "enemy": { "base": "bar", "background": "#241010", "fill": "#a83232" }
+    "bar": {
+      "font": "small",
+      "color": "#ffffff",
+      "background": "#2a1414",
+      "border": "#000000a0",
+      "borderWidth": 1,
+      "padding": 1,
+      "fill": "#c0392b"
+    },
+    "energy": {
+      "base": "bar",
+      "background": "#121a2a",
+      "fill": "#3a7bd5"
+    },
+    "xp": {
+      "base": "bar",
+      "background": "#1f1d10",
+      "fill": "#d4b13a"
+    },
+    "enemy": {
+      "base": "bar",
+      "background": "#241010",
+      "fill": "#a83232"
+    },
+    "float": {
+      "background": "#070504c8",
+      "padding": 12
+    },
+    "plain": {},
+    "face": {
+      "base": "small",
+      "padding": 2,
+      "border": "#00000000",
+      "borderWidth": 2,
+      "selected": {
+        "border": "#d8b25a",
+        "color": "#f3d98a"
+      },
+      "disabled": {
+        "color": "#5a554c"
+      }
+    },
+    "card": {
+      "base": "small",
+      "background": "#06040390",
+      "padding": [
+        4,
+        2
+      ]
+    },
+    "hp": {
+      "font": "small",
+      "color": "#ffffff",
+      "background": "#1c1714",
+      "padding": 0,
+      "fill": "#7fbf6a"
+    },
+    "essence": {
+      "base": "title",
+      "color": "#f3d98a"
+    },
+    "act": {
+      "base": "text",
+      "background": "#0b0807d0",
+      "border": "#00000000",
+      "borderWidth": 1,
+      "padding": [
+        14,
+        8
+      ],
+      "hover": {
+        "background": "#2e2519",
+        "border": "#d8b25a",
+        "color": "#fff4d0"
+      },
+      "disabled": {
+        "color": "#6c6860",
+        "background": "#15110fd0"
+      }
+    },
+    "mine": {
+      "base": "heading",
+      "color": "#5b9bd5"
+    },
+    "theirs": {
+      "base": "heading",
+      "color": "#e08a3c"
+    },
+    "mineBig": {
+      "base": "title",
+      "color": "#5b9bd5"
+    },
+    "theirsBig": {
+      "base": "title",
+      "color": "#e08a3c"
+    }
   }
 }

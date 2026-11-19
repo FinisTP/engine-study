@@ -19,6 +19,7 @@ public:
 
     void SetWords(nlohmann::json words) { words_ = std::move(words); }      // assets/match-words.json
     void SetOptions(const umbra::night::GameOptions &o) { options_ = o; } // the pace (assets/options.csv)
+    void SetWatch(bool watch) { watch_ = watch; }                          // both sides are bots (--watch)
 
     bool Do(const umbra::match::Action &action); // the player's action; false unless it is theirs and legal
     void Update(float dt);
@@ -72,6 +73,7 @@ private:
     float banner_ = 0.0F, clock_ = 0.0F, wait_ = 0.0F;
     bool bannerOn_ = false, logOpen_ = true;
     int hover_ = -1, chosen_ = -1, armedKey_ = -1;
+    bool watch_ = false;
     std::string armed_; // "attack" or "ability:<slot>"
     std::string lastBlow_, eventResult_; // the battle's last blow; the event's outcome
     int eventCell_ = -1;                 // the room whose event card is open, -1 none
