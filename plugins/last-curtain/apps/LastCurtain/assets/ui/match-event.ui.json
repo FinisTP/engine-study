@@ -1,0 +1,17 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "dim": true,
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "gap": 12, "size": [620, 0], "children": [
+    { "type": "text", "style": "title", "text": "{event.name}" },
+    { "type": "text", "style": "body", "text": "{event.text}", "wrap": true, "size": [580, 0] },
+    { "type": "list", "items": "{event.choices}", "as": "c", "gap": 8, "action": "choose", "arg": "{index}", "visible": "{event.choosing}",
+      "entry": { "type": "stack", "style": "slot", "direction": "horizontal", "gap": 12, "size": [580, 0], "children": [
+        { "type": "text", "style": "strong", "text": "{c.label}" },
+        { "type": "text", "style": "muted", "text": "{c.chance}%" }
+      ] } },
+    { "type": "text", "style": "heading", "text": "{event.result}", "visible": "{event.result}", "wrap": true, "size": [580, 0] },
+    { "type": "button", "size": [200, 44], "text": "Continue", "action": "close", "visible": "{event.result}" }
+  ] }
+}

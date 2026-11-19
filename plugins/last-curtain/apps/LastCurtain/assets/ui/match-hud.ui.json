@@ -1,0 +1,55 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "root": { "type": "panel", "anchor": "fill", "style": "layer", "children": [
+    { "type": "stack", "anchor": "top-left", "offset": [20, 16], "style": "panel", "direction": "horizontal", "gap": 14, "align": "center", "children": [
+      { "type": "text", "style": "heading", "text": "Your side" },
+      { "type": "text", "style": "title", "text": "{scores.mine}" },
+      { "type": "text", "style": "muted", "text": "|" },
+      { "type": "text", "style": "title", "text": "{scores.theirs}" },
+      { "type": "text", "style": "heading", "text": "Their side" }
+    ] },
+    { "type": "list", "anchor": "top", "offset": [0, 12], "style": "panel", "items": "{order}", "as": "o", "direction": "horizontal", "gap": 8,
+      "entry": { "type": "stack", "style": "slot", "gap": 2, "align": "center", "selected": "{o.current}", "disabled": "{o.down}", "children": [
+        { "type": "image", "image": "{o.portrait}", "size": [48, 48], "visible": "{o.portrait}" },
+        { "type": "text", "style": "small", "text": "{o.name}", "visible": "{o.portrait}" },
+        { "type": "text", "style": "warning", "text": "| {o.text}", "visible": "{o.marker}" }
+      ] } },
+    { "type": "stack", "anchor": "bottom-left", "offset": [20, -20], "style": "panel", "direction": "horizontal", "gap": 12, "size": [360, 0], "children": [
+      { "type": "image", "image": "{unit.portrait}", "size": [92, 92] },
+      { "type": "stack", "gap": 4, "children": [
+        { "type": "text", "style": "heading", "text": "{unit.name}" },
+        { "type": "text", "style": "muted", "text": "{unit.role}   Lv {unit.level}" },
+        { "type": "bar", "size": [220, 14], "value": "{unit.hp}", "max": "{unit.maxHp}", "text": "HP {unit.hp}/{unit.maxHp}" },
+        { "type": "text", "style": "strong", "text": "Essence {unit.essence}" },
+        { "type": "text", "style": "small", "text": "ATK {unit.attack}   DEF {unit.defence}", "visible": "{armed}" }
+      ] }
+    ] },
+    { "type": "stack", "anchor": "top-left", "offset": [20, 150], "style": "panel", "gap": 6, "size": [260, 0], "visible": "{actions}", "children": [
+      { "type": "text", "style": "muted", "text": "Action" },
+      { "type": "list", "items": "{actions}", "as": "a", "gap": 6,
+        "entry": { "type": "button", "size": [240, 40], "text": "{a.label}   {a.note}", "action": "act", "arg": "{a.id}", "disabled": "{a.off}", "tip": "{a.why}" } }
+    ] },
+    { "type": "stack", "anchor": "top-right", "offset": [-20, 110], "style": "panel", "gap": 6, "size": [300, 0], "visible": "{forecast}", "children": [
+      { "type": "text", "style": "muted", "text": "Forecast" },
+      { "type": "text", "style": "heading", "text": "{forecast.name}  Lv {forecast.level}", "visible": "{forecast.name}" },
+      { "type": "bar", "size": [260, 12], "value": "{forecast.hp}", "max": "{forecast.maxHp}", "text": "HP {forecast.hp}/{forecast.maxHp}", "visible": "{forecast.maxHp}" },
+      { "type": "text", "style": "small", "text": "ATK {forecast.attack}   DEF {forecast.defence}   Essence {forecast.essence}", "visible": "{forecast.maxHp}" },
+      { "type": "text", "style": "bad", "text": "Deals {forecast.dealtMin}-{forecast.dealtMax}", "visible": "{forecast.dealtMax}" },
+      { "type": "text", "style": "good", "text": "Heals {forecast.healed}", "visible": "{forecast.healed}" },
+      { "type": "text", "style": "warning", "text": "Appears on round {forecast.round}", "visible": "{forecast.round}" },
+      { "type": "text", "style": "small", "text": "{forecast.text}", "wrap": true, "size": [270, 0], "visible": "{forecast.text}" }
+    ] },
+    { "type": "stack", "anchor": "bottom-right", "offset": [-20, -20], "style": "panel", "gap": 4, "size": [320, 0], "visible": "{logOpen}", "children": [
+      { "type": "stack", "direction": "horizontal", "gap": 8, "children": [
+        { "type": "text", "style": "muted", "text": "Log" },
+        { "type": "button", "size": [60, 28], "text": "Fold", "action": "log" }
+      ] },
+      { "type": "list", "items": "{log}", "as": "l", "gap": 2, "entry": { "type": "text", "style": "small", "text": "{l}", "wrap": true, "size": [300, 0] } }
+    ] },
+    { "type": "button", "anchor": "bottom-right", "offset": [-20, -20], "size": [120, 40], "text": "Log", "action": "log", "visible": "{logClosed}" },
+    { "type": "button", "anchor": "bottom-right", "offset": [-360, -20], "size": [120, 40], "text": "Skip", "action": "skip", "visible": "{canSkip}" },
+    { "type": "text", "anchor": "bottom", "offset": [0, -76], "style": "warning", "text": "{tip}", "visible": "{tip}" },
+    { "type": "text", "anchor": "bottom", "offset": [0, -24], "style": "prompt", "text": "{hint}", "visible": "{hint}" }
+  ] }
+}

@@ -3,6 +3,7 @@
 #include <MatchSave.hpp>
 
 #include <algorithm>
+#include <tuple>
 
 // The faction match on screen (MatchPlay.md).
 using namespace umbra::match;
@@ -10,6 +11,8 @@ using namespace umbra::match;
 namespace
 {
     std::size_t U(int i) { return static_cast<std::size_t>(i); }
+
+    std::string Portrait(const std::string &sprite) { return "art/sprites/" + sprite + "/face_calm.png"; }
 
     // Every "{key}" in text replaced by its value.
     std::string Fill(std::string text, const std::vector<std::pair<std::string, std::string>> &values)
@@ -246,6 +249,8 @@ nlohmann::json MatchPlay::UiData() const
 {
     nlohmann::json j;
     j["score"] = s_.score;
+    j["scores"] = {{"mine", s_.score[0]}, {"theirs", s_.score[1]}};
+    j["canSkip"] = !s_.over && !PlayerTurn() && !BannerDue();
     // 1. The order strip: the acting one to the round's end, the marker, then those who have acted.
     nlohmann::json order = nlohmann::json::array();
     const int n = static_cast<int>(s_.order.size()), turn = s_.monsterTurn >= 0 ? n : s_.turn;
@@ -253,6 +258,7 @@ nlohmann::json MatchPlay::UiData() const
         const int u = s_.order[U(i)];
         const Unit &unit = s_.units[U(u)];
         order.push_back({{"unit", u}, {"name", Name(u)}, {"side", unit.faction}, {"sprite", def_.characters[U(unit.def)].sprite},
+                         {"portrait", Portrait(def_.characters[U(unit.def)].sprite)}, {"mine", unit.faction == 0},
                          {"current", !acted && i == turn}, {"acted", acted}, {"down", unit.cell < 0}});
     };
     for (int i = turn; i < n; ++i)
@@ -268,7 +274,7 @@ nlohmann::json MatchPlay::UiData() const
     const Unit &u = s_.units[U(shown)];
     const CharacterDef &c = def_.characters[U(u.def)];
     static const char *roles[] = {"attacker", "defender", "supporter", "speedster", "allrounder"};
-    j["unit"] = {{"unit", shown}, {"name", c.name}, {"sprite", c.sprite}, {"side", u.faction}, {"role", Word("roles", roles[static_cast<int>(c.role)])},
+    j["unit"] = {{"unit", shown}, {"name", c.name}, {"sprite", c.sprite}, {"portrait", Portrait(c.sprite)}, {"side", u.faction}, {"role", Word("roles", roles[static_cast<int>(c.role)])},
                  {"level", u.level}, {"hp", u.hp}, {"maxHp", u.maxHp}, {"essence", u.essence}};
     // 3. The player's turn: the move range (or an armed ability's range), the actions, the targets.
     if (PlayerTurn() && !s_.battle.on)
@@ -289,6 +295,7 @@ nlohmann::json MatchPlay::UiData() const
             }
             j["reach"] = reach;
             j["path"] = path;
+            j["hint"] = Word("hints", "move");
         }
         else
             j["actions"] = Actions();
@@ -306,6 +313,7 @@ nlohmann::json MatchPlay::UiData() const
             j["targets"] = targets;
             j["reach"] = range;
             j["armed"] = armed_;
+            j["hint"] = Word("hints", "target");
             j["unit"]["attack"] = s_.units[U(me)].attack;
             j["unit"]["defence"] = s_.units[U(me)].defence;
         }
@@ -330,12 +338,13 @@ nlohmann::json MatchPlay::UiData() const
         nlohmann::json choices = nlohmann::json::array();
         for (const Choice &c : e.choices)
             choices.push_back({{"label", c.label}, {"chance", c.chance}});
-        j["event"] = {{"name", e.name}, {"text", e.text}, {"choices", choices}, {"result", eventResult_}};
+        j["event"] = {{"name", e.name}, {"text", e.text}, {"choices", choices}, {"result", eventResult_}, {"choosing", eventResult_.empty()}};
     }
     if (s_.over)
         j["end"] = EndData();
     j["log"] = log_;
     j["logOpen"] = logOpen_;
+    j["logClosed"] = !logOpen_;
     j["banner"] = {{"title", Fill(Word("banner", "title"), {{"n", std::to_string(s_.round)}})},
                    {"text", Fill(Word("banner", "text"), {{"n", std::to_string(TurnsLeft(def_, s_))}})}};
     return j;
@@ -447,7 +456,7 @@ nlohmann::json MatchPlay::Actions() const
     const Unit &u = s_.units[U(me)];
     nlohmann::json list = nlohmann::json::array();
     auto add = [&](const std::string &id, const std::string &label, const std::string &note, Why why) {
-        list.push_back({{"id", id}, {"label", label}, {"note", note}, {"enabled", why == Why::Ok}, {"why", why == Why::Ok ? "" : WhyText(why)}});
+        list.push_back({{"id", id}, {"label", label}, {"note", note}, {"enabled", why == Why::Ok}, {"off", why != Why::Ok}, {"why", why == Why::Ok ? "" : WhyText(why)}});
     };
     auto any = [&](auto make) {
         Why first = Why::NothingHere;
@@ -460,9 +469,10 @@ nlohmann::json MatchPlay::Actions() const
     };
     auto hp = [&](int n) { return Fill(Word("actions", "hpNote"), {{"n", std::to_string(n)}}); };
     const bool moved = u.cell != s_.now.origin;
-    list.push_back({{"id", "undo"}, {"label", Word("actions", moved ? "undo" : "back")}, {"note", ""}, {"enabled", !s_.now.acted}, {"why", s_.now.acted ? WhyText(Why::AlreadyActed) : ""}});
+    list.push_back({{"id", "undo"}, {"label", Word("actions", moved ? "undo" : "back")}, {"note", ""}, {"enabled", !s_.now.acted}, {"off", s_.now.acted},
+                    {"why", s_.now.acted ? WhyText(Why::AlreadyActed) : ""}});
     const Why attack = any([](int t) { return Action{ActionKind::Attack, static_cast<std::int8_t>(t)}; });
-    list.push_back({{"id", "attack"}, {"label", Word("actions", "attack")}, {"note", ""}, {"enabled", attack == Why::Ok},
+    list.push_back({{"id", "attack"}, {"label", Word("actions", "attack")}, {"note", ""}, {"enabled", attack == Why::Ok}, {"off", attack != Why::Ok},
                     {"why", attack == Why::Ok ? "" : attack == Why::AlreadyActed ? WhyText(attack) : Word("why", "NoTarget")}});
     for (int slot = 0; slot < maxAbilities; ++slot)
         if (const int id = u.abilities[U(slot)]; id >= 0 && def_.abilities[U(id)].use == Use::Board)
@@ -472,7 +482,7 @@ nlohmann::json MatchPlay::Actions() const
             if (w != Why::Ok && !s_.now.acted && u.hp <= a.hpCost)
                 w = Why::TooCostly;
             list.push_back({{"id", "ability:" + std::to_string(slot)}, {"label", a.name}, {"note", hp(a.hpCost)}, {"target", static_cast<int>(a.target)},
-                            {"enabled", w == Why::Ok}, {"why", w == Why::Ok ? "" : w == Why::NothingHere ? Word("why", "NoTarget") : WhyText(w)}});
+                            {"enabled", w == Why::Ok}, {"off", w != Why::Ok}, {"why", w == Why::Ok ? "" : w == Why::NothingHere ? Word("why", "NoTarget") : WhyText(w)}});
         }
     for (int slot = 0; slot < maxItems; ++slot)
         if (u.items[U(slot)] >= 0)
@@ -492,7 +502,8 @@ nlohmann::json MatchPlay::UnitNumbers(int unit) const
 {
     const Unit &u = s_.units[U(unit)];
     const int level = u.kind == 0 ? u.level : def_.monsters[U(u.def)].level;
-    return {{"unit", unit}, {"name", Name(unit)}, {"side", u.faction}, {"level", level}, {"hp", u.hp}, {"maxHp", u.maxHp},
+    const std::string sprite = u.kind == 0 ? def_.characters[U(u.def)].sprite : def_.monsters[U(u.def)].sprite;
+    return {{"unit", unit}, {"name", Name(unit)}, {"side", u.faction}, {"level", level}, {"portrait", Portrait(sprite)}, {"hp", u.hp}, {"maxHp", u.maxHp},
             {"attack", u.attack}, {"defence", u.defence}, {"essence", u.essence}};
 }
 
@@ -568,7 +579,7 @@ nlohmann::json MatchPlay::BattleData() const
                 const Why w = Check(def_, s_, a);
                 const umbra::match::Forecast f = Preview(def_, s_, a);
                 picks.push_back({{"slot", slot}, {"label", def_.abilities[U(id)].name}, {"dealtMin", f.dealtMin}, {"dealtMax", f.dealtMax},
-                                 {"healed", f.healed}, {"cost", f.cost}, {"enabled", w == Why::Ok}, {"why", w == Why::Ok ? "" : WhyText(w)}});
+                                 {"healed", f.healed}, {"cost", f.cost}, {"enabled", w == Why::Ok}, {"off", w != Why::Ok}, {"why", w == Why::Ok ? "" : WhyText(w)}});
             }
     }
     j["picks"] = picks;
@@ -587,8 +598,40 @@ nlohmann::json MatchPlay::EndData() const
             performed[U(s_.units[U(e.a)].faction)] += e.b;
         else if (e.kind == LogKind::Down && e.b >= 0 && s_.units[U(e.b)].kind == 0 && s_.units[U(e.a)].kind == 1)
             ++monsters[U(s_.units[U(e.b)].faction)];
+    nlohmann::json rows = nlohmann::json::array();
+    for (auto [key, a, b] : {std::tuple{"score", s_.score[0], s_.score[1]}, {"kills", kills[0], kills[1]}, {"performed", performed[0], performed[1]},
+                             {"monsters", monsters[0], monsters[1]}})
+        rows.push_back({{"label", Word("end", key)}, {"mine", a}, {"theirs", b}});
     return {{"winner", s_.winner}, {"title", Word("misc", s_.winner == 0 ? "side0" : s_.winner == 1 ? "side1" : "draw")}, {"score", s_.score},
-            {"kills", {kills[0], kills[1]}}, {"performed", {performed[0], performed[1]}}, {"monsters", {monsters[0], monsters[1]}}};
+            {"kills", {kills[0], kills[1]}}, {"performed", {performed[0], performed[1]}}, {"monsters", {monsters[0], monsters[1]}}, {"rows", rows}};
+}
+
+nlohmann::json MatchPlay::PickData(const MatchDef &def, const std::vector<int> &picks, bool canContinue, BotLevel level)
+{
+    static const char *roles[] = {"attacker", "defender", "supporter", "speedster", "allrounder"};
+    static const char *levels[] = {"easy", "medium", "hard"};
+    nlohmann::json cards = nlohmann::json::array();
+    for (int c = 0; c < static_cast<int>(def.characters.size()); ++c)
+    {
+        const CharacterDef &d = def.characters[U(c)];
+        cards.push_back({{"id", c}, {"name", d.name}, {"role", roles[static_cast<int>(d.role)]}, {"portrait", Portrait(d.sprite)},
+                         {"hp", d.hp}, {"attack", d.attack}, {"defence", d.defence}, {"speed", d.speed}, {"move", d.move},
+                         {"picked", std::ranges::find(picks, c) != picks.end()}});
+    }
+    return {{"characters", cards}, {"count", picks.size()}, {"side", def.options.side},
+            {"canStart", static_cast<int>(picks.size()) == def.options.side}, {"cannotStart", static_cast<int>(picks.size()) != def.options.side}, {"canContinue", canContinue}, {"level", levels[static_cast<int>(level)]}};
+}
+
+bool MatchPlay::TogglePick(const MatchDef &def, std::vector<int> &picks, int character)
+{
+    if (character < 0 || character >= static_cast<int>(def.characters.size()))
+        return false;
+    if (const auto it = std::ranges::find(picks, character); it != picks.end())
+        return picks.erase(it), true;
+    if (static_cast<int>(picks.size()) >= def.options.side)
+        return false;
+    picks.push_back(character);
+    return true;
 }
 
 nlohmann::json MatchPlay::Save() const { return SaveMatch(s_); }

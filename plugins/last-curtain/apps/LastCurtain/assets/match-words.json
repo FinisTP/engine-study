@@ -73,5 +73,15 @@
   },
   "battle": {
     "title": "Round {r} of {n}"
+  },
+  "hints": {
+    "move": "Click a lit square to walk there, or click yourself to stay.",
+    "target": "Click a red square to choose the target, or Back."
+  },
+  "end": {
+    "score": "Score",
+    "kills": "Kills",
+    "performed": "Essence performed",
+    "monsters": "Monsters downed"
   }
 }

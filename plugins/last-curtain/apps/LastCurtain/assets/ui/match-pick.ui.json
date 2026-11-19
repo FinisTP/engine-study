@@ -1,0 +1,30 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "dim": true,
+  "root": { "type": "stack", "anchor": "center", "style": "panel", "size": [1120, 0], "align": "stretch", "gap": 14, "children": [
+    { "type": "text", "style": "title", "text": "The Last Curtain" },
+    { "type": "text", "style": "small", "text": "Pick {pick.side} for your side ({pick.count} chosen). The house picks the other side.", "wrap": true, "size": [1080, 0] },
+    { "type": "list", "items": "{pick.characters}", "as": "c", "columns": 5, "gap": 10, "action": "pick", "arg": "{c.id}",
+      "entry": { "type": "stack", "style": "slot", "size": [206, 0], "gap": 4, "align": "center", "selected": "{c.picked}", "children": [
+        { "type": "image", "image": "{c.portrait}", "size": [110, 110] },
+        { "type": "text", "style": "strong", "text": "{c.name}", "wrap": true, "size": [190, 0] },
+        { "type": "text", "style": "muted", "text": "{c.role}" },
+        { "type": "text", "style": "small", "text": "HP {c.hp}  ATK {c.attack}  DEF {c.defence}" },
+        { "type": "text", "style": "small", "text": "Speed {c.speed}  Move {c.move}" }
+      ] } },
+    { "type": "stack", "direction": "horizontal", "gap": 12, "align": "center", "children": [
+      { "type": "text", "style": "small", "text": "Bots: {pick.level}" },
+      { "type": "button", "size": [110, 40], "text": "Easy", "action": "level", "arg": "easy" },
+      { "type": "button", "size": [110, 40], "text": "Medium", "action": "level", "arg": "medium" },
+      { "type": "button", "size": [110, 40], "text": "Hard", "action": "level", "arg": "hard" }
+    ] },
+    { "type": "stack", "direction": "horizontal", "gap": 12, "children": [
+      { "type": "button", "size": [200, 44], "text": "Start", "action": "start", "visible": "{pick.canStart}" },
+      { "type": "button", "size": [200, 44], "text": "Start", "action": "start", "disabled": "{pick.cannotStart}", "visible": "{pick.cannotStart}", "tip": "Pick {pick.side} for your side first." },
+      { "type": "button", "size": [200, 44], "text": "Continue", "action": "continue", "visible": "{pick.canContinue}" },
+      { "type": "button", "size": [200, 44], "text": "Quit", "action": "quit" }
+    ] }
+  ] }
+}

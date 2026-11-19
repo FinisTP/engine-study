@@ -23,6 +23,8 @@ namespace umbra::ui
         std::vector<int> indices;    // their positions, for "{index}"
         std::optional<State> entryState; // the state of the next list entry's root widget
         State inherited = State::Normal; // a focused or disabled entry's state, seen by the widgets inside it
+        glm::vec2 mouse{-1.0F};          // for tips
+        std::string tip;                 // the last tipped widget placed under the mouse
 
         // "hero.health" -> the value: list entry names first, then the data; nullptr if missing.
         const json *Lookup(const std::string &path) const
@@ -315,6 +317,9 @@ namespace umbra::ui
             c.boxes.push_back({rect, c.Text(node.action), c.Text(node.arg)});
         if (disabled)
             state = State::Disabled;
+        if (!node.tip.empty() && rect.Contains(c.mouse))
+            if (std::string t = c.Text(node.tip); !t.empty())
+                c.tip = std::move(t); // placed later = drawn on top
         const Style style = skin_.Get(DefaultStyle(node), state);
         const State outer = std::exchange(c.inherited, state);
         struct Restore { Context &c; State state; ~Restore() { c.inherited = state; } } restore{c, outer};
@@ -492,16 +497,19 @@ namespace umbra::ui
 
         // 3. Every open screen, bottom to top: dim, lay out, draw, remember its choices.
         Painter painter(out, fonts_, atlasTexture_);
+        tip_.clear();
         const Rect view{0.0F, 0.0F, viewport.x, viewport.y};
         for (const std::string &name : std::vector<std::string>(stack_))
         {
             const Screen &screen = screens_.at(name);
             if (screen.dim)
                 painter.Fill(view, skin_.Dim());
-            Context c{data, painter, name == target, focus_[name], {}, {}, {}, {}, State::Normal};
+            Context c{data, painter, name == target, focus_[name], {}, {}, {}, {}, State::Normal, State::Normal, input.mouse, {}};
             Place(screen.root, AnchorRect(view, Measure(screen.root, c, view.w), screen.root.anchor, screen.root.offset), c);
             choices_[name] = std::move(c.choices);
             boxes_[name] = std::move(c.boxes);
+            if (!c.tip.empty())
+                tip_ = std::move(c.tip);
         }
         return actions;
     }

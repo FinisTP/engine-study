@@ -65,6 +65,8 @@ namespace umbra::ui
         [[nodiscard]] const std::map<std::string, Screen> &Screens() const { return screens_; }
         void SetScreen(Screen screen) { screens_[screen.name] = std::move(screen); } // e.g. edited in the editor
         [[nodiscard]] const Skin &GetSkin() const { return skin_; }
+        // The `tip` of the topmost widget under the mouse in the last Update ("" none), disabled ones too.
+        [[nodiscard]] const std::string &Tip() const { return tip_; }
 
     private:
         struct Choice final // something the player can choose on the input screen
@@ -86,5 +88,6 @@ namespace umbra::ui
         std::map<std::string, std::vector<Choice>> boxes_;   // ... and its clickable boxes
         core::TextureHandle atlasTexture_;
         std::function<ImageRef(const std::string &)> images_;
+        std::string tip_;
     };
 }

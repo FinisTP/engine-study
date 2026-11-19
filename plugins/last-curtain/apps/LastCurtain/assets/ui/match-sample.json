@@ -1,0 +1,366 @@
+{
+ "actions": [
+  {
+   "enabled": true,
+   "id": "undo",
+   "label": "Back",
+   "note": "",
+   "off": false,
+   "why": ""
+  },
+  {
+   "enabled": true,
+   "id": "attack",
+   "label": "Attack",
+   "note": "",
+   "off": false,
+   "why": ""
+  },
+  {
+   "enabled": true,
+   "id": "ability:1",
+   "label": "Snipe",
+   "note": "3 HP",
+   "off": false,
+   "target": 0,
+   "why": ""
+  },
+  {
+   "enabled": true,
+   "id": "end",
+   "label": "End turn",
+   "note": "",
+   "off": false,
+   "why": ""
+  }
+ ],
+ "armed": "attack",
+ "banner": {
+  "text": "27 turns left",
+  "title": "Turn 4"
+ },
+ "battle": {
+  "fighters": [
+   {
+    "attack": 6,
+    "defence": 2,
+    "essence": 6,
+    "hp": 20,
+    "level": 1,
+    "maxHp": 20,
+    "name": "Dinh Quoc Bao",
+    "portrait": "art/sprites/bao/face_calm.png",
+    "shield": 0,
+    "side": 0,
+    "sprite": "bao",
+    "unit": 0
+   },
+   {
+    "attack": 3,
+    "defence": 5,
+    "essence": 0,
+    "hp": 30,
+    "level": 1,
+    "maxHp": 30,
+    "name": "Vo Minh Khang",
+    "portrait": "art/sprites/khang/face_calm.png",
+    "shield": 0,
+    "side": 1,
+    "sprite": "khang",
+    "unit": 5
+   }
+  ],
+  "line": "",
+  "picks": [
+   {
+    "cost": 0,
+    "dealtMax": 4,
+    "dealtMin": 4,
+    "enabled": true,
+    "healed": 0,
+    "label": "Jab",
+    "off": false,
+    "slot": 0,
+    "why": ""
+   }
+  ],
+  "round": 1,
+  "rounds": 3,
+  "title": "Round 1 of 3"
+ },
+ "canSkip": false,
+ "end": {
+  "kills": [
+   1,
+   0
+  ],
+  "monsters": [
+   3,
+   4
+  ],
+  "performed": [
+   16,
+   15
+  ],
+  "rows": [
+   {
+    "label": "Score",
+    "mine": 16,
+    "theirs": 15
+   },
+   {
+    "label": "Kills",
+    "mine": 1,
+    "theirs": 0
+   },
+   {
+    "label": "Essence performed",
+    "mine": 16,
+    "theirs": 15
+   },
+   {
+    "label": "Monsters downed",
+    "mine": 3,
+    "theirs": 4
+   }
+  ],
+  "score": [
+   16,
+   15
+  ],
+  "title": "your side wins",
+  "winner": 0
+ },
+ "event": {
+  "choices": [
+   {
+    "chance": 60,
+    "label": "Take a bow"
+   },
+   {
+    "chance": 100,
+    "label": "Walk on"
+   }
+  ],
+  "choosing": true,
+  "name": "Applause from an empty hall",
+  "result": "",
+  "text": "Someone is clapping in the dark stalls, slow and steady, as if the show has just ended."
+ },
+ "forecast": {
+  "attack": 3,
+  "cost": 0,
+  "dealtMax": 4,
+  "dealtMin": 4,
+  "defence": 5,
+  "essence": 0,
+  "healed": 0,
+  "hp": 30,
+  "kind": "target",
+  "level": 1,
+  "maxHp": 30,
+  "name": "Vo Minh Khang",
+  "portrait": "art/sprites/khang/face_calm.png",
+  "side": 1,
+  "unit": 5
+ },
+ "hint": "Click a red square to choose the target, or Back.",
+ "level": {
+  "choices": [
+   {
+    "cost": 3,
+    "index": 0,
+    "name": "Cleave",
+    "power": 7
+   },
+   {
+    "cost": 2,
+    "index": 1,
+    "name": "Gamble",
+    "power": 0
+   }
+  ],
+  "level": 2,
+  "name": "Dinh Quoc Bao"
+ },
+ "log": [
+  "Hoang Gia Huy walks.",
+  "Tran Ngoc Lan attacks the Moth swarm.",
+  "Tran Ngoc Lan hits the Moth swarm for 5."
+ ],
+ "logClosed": false,
+ "logOpen": true,
+ "order": [
+  {
+   "acted": false,
+   "current": true,
+   "down": false,
+   "mine": true,
+   "name": "Dinh Quoc Bao",
+   "portrait": "art/sprites/bao/face_calm.png",
+   "side": 0,
+   "sprite": "bao",
+   "unit": 0
+  },
+  {
+   "acted": false,
+   "current": false,
+   "down": false,
+   "mine": false,
+   "name": "Hoang Gia Huy",
+   "portrait": "art/sprites/huy/face_calm.png",
+   "side": 1,
+   "sprite": "huy",
+   "unit": 3
+  },
+  {
+   "acted": false,
+   "current": false,
+   "down": false,
+   "mine": false,
+   "name": "Phan Thi Mai",
+   "portrait": "art/sprites/mai/face_calm.png",
+   "side": 1,
+   "sprite": "mai",
+   "unit": 4
+  },
+  {
+   "acted": false,
+   "current": false,
+   "down": false,
+   "mine": true,
+   "name": "Phan Thi Mai",
+   "portrait": "art/sprites/mai/face_calm.png",
+   "side": 0,
+   "sprite": "mai",
+   "unit": 2
+  },
+  {
+   "acted": false,
+   "current": false,
+   "down": false,
+   "mine": true,
+   "name": "Vo Minh Khang",
+   "portrait": "art/sprites/khang/face_calm.png",
+   "side": 0,
+   "sprite": "khang",
+   "unit": 1
+  },
+  {
+   "acted": false,
+   "current": false,
+   "down": false,
+   "mine": false,
+   "name": "Vo Minh Khang",
+   "portrait": "art/sprites/khang/face_calm.png",
+   "side": 1,
+   "sprite": "khang",
+   "unit": 5
+  },
+  {
+   "marker": true,
+   "text": "next turn"
+  }
+ ],
+ "pick": {
+  "canContinue": true,
+  "canStart": false,
+  "cannotStart": true,
+  "characters": [
+   {
+    "attack": 6,
+    "defence": 2,
+    "hp": 20,
+    "id": 0,
+    "move": 3,
+    "name": "Dinh Quoc Bao",
+    "picked": true,
+    "portrait": "art/sprites/bao/face_calm.png",
+    "role": "attacker",
+    "speed": 4
+   },
+   {
+    "attack": 3,
+    "defence": 5,
+    "hp": 30,
+    "id": 1,
+    "move": 3,
+    "name": "Vo Minh Khang",
+    "picked": true,
+    "portrait": "art/sprites/khang/face_calm.png",
+    "role": "defender",
+    "speed": 2
+   },
+   {
+    "attack": 2,
+    "defence": 3,
+    "hp": 20,
+    "id": 2,
+    "move": 3,
+    "name": "Phan Thi Mai",
+    "picked": false,
+    "portrait": "art/sprites/mai/face_calm.png",
+    "role": "supporter",
+    "speed": 3
+   },
+   {
+    "attack": 4,
+    "defence": 2,
+    "hp": 18,
+    "id": 3,
+    "move": 5,
+    "name": "Tran Ngoc Lan",
+    "picked": false,
+    "portrait": "art/sprites/lan/face_calm.png",
+    "role": "speedster",
+    "speed": 6
+   },
+   {
+    "attack": 4,
+    "defence": 3,
+    "hp": 24,
+    "id": 4,
+    "move": 4,
+    "name": "Hoang Gia Huy",
+    "picked": false,
+    "portrait": "art/sprites/huy/face_calm.png",
+    "role": "allrounder",
+    "speed": 4
+   }
+  ],
+  "count": 2,
+  "level": "medium",
+  "side": 3
+ },
+ "reach": [
+  122,
+  130,
+  132
+ ],
+ "score": [
+  0,
+  0
+ ],
+ "scores": {
+  "mine": 0,
+  "theirs": 0
+ },
+ "targets": [
+  122
+ ],
+ "tip": "No one in reach to aim at.",
+ "unit": {
+  "attack": 6,
+  "defence": 2,
+  "essence": 6,
+  "hp": 20,
+  "level": 1,
+  "maxHp": 20,
+  "name": "Dinh Quoc Bao",
+  "portrait": "art/sprites/bao/face_calm.png",
+  "role": "Attacker",
+  "side": 0,
+  "sprite": "bao",
+  "unit": 0
+ }
+}

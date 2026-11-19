@@ -31,6 +31,9 @@ public:
     [[nodiscard]] const umbra::match::MatchState &State() const { return s_; }
     [[nodiscard]] nlohmann::json Save() const;
 
+    // The pick screen (match-pick.ui.json): every character as a card, Start only with a full side.
+    static nlohmann::json PickData(const umbra::match::MatchDef &def, const std::vector<int> &picks, bool canContinue, umbra::match::BotLevel level);
+    static bool TogglePick(const umbra::match::MatchDef &def, std::vector<int> &picks, int character); // false: unknown or the side is full
     static const char *LogName(umbra::match::LogKind kind);
     static const char *WhyName(umbra::match::Why why);
     [[nodiscard]] std::string Caption(const umbra::match::LogEntry &e) const;

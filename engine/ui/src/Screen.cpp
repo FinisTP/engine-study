@@ -9,7 +9,7 @@ namespace umbra::ui
         const std::set<std::string> types{"panel", "stack", "text", "bar", "image", "button", "list", "spacer"};
         const std::set<std::string> anchors{"top-left", "top", "top-right", "left", "center", "right", "bottom-left", "bottom", "bottom-right", "fill"};
         const std::set<std::string> known{"type", "id", "anchor", "offset", "size", "style", "direction", "align", "gap", "columns", "text", "textAlign", "wrap",
-                                          "visible", "disabled", "selected", "value", "max", "image", "action", "arg", "items", "as", "entry", "children", "at"};
+                                          "visible", "disabled", "selected", "tip", "value", "max", "image", "action", "arg", "items", "as", "entry", "children", "at"};
 
         struct Reader final
         {
@@ -79,6 +79,7 @@ namespace umbra::ui
                 node.wrap = j.value("wrap", false);
                 node.visible = Text(j, "visible", where);
                 node.disabled = Text(j, "disabled", where);
+                node.tip = Text(j, "tip", where);
                 node.selected = Text(j, "selected", where);
                 node.value = Text(j, "value", where);
                 node.max = Text(j, "max", where, "1");

@@ -334,3 +334,28 @@ TEST_CASE("A panel or stack with an action is clicked anywhere in it; its own bu
     confirm.confirm = true;
     CHECK(send(confirm) == std::vector<std::string>{"skip"});
 }
+
+TEST_CASE("A widget's tip is told when the mouse is over it, disabled or not (UI.md Tips)")
+{
+    const json screen{{"format", "umbra.ui"}, {"version", 1},
+                      {"root", {{"type", "stack"}, {"anchor", "top-left"}, {"children", {
+                          {{"type", "button"}, {"size", {200, 50}}, {"text", "Attack"}, {"action", "attack"}, {"disabled", "{off}"}, {"tip", "{why}"}},
+                          {{"type", "button"}, {"size", {200, 50}}, {"text", "End"}, {"action", "end"}}}}}}};
+    ui::UiSystem uiSystem;
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(uiSystem.Load(TestProject("tip", {{"hud", screen}}), diagnostics));
+    REQUIRE(uiSystem.Open("hud"));
+    const json data{{"off", true}, {"why", "No one in reach."}};
+    core::UiDrawList draw;
+    const auto hover = [&](glm::vec2 at) {
+        ui::UiInput in;
+        in.mouse = at;
+        in.mouseMoved = true;
+        draw.Clear();
+        uiSystem.Update(data, {1280, 720}, in, draw);
+        return uiSystem.Tip();
+    };
+    CHECK(hover({100, 25}) == "No one in reach.");
+    CHECK(hover({100, 75}).empty()); // no tip on the other button
+    CHECK(hover({900, 600}).empty());
+}

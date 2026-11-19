@@ -409,3 +409,73 @@ TEST_CASE("The end screen's numbers come from the state (T330)", "[match][play]"
     CHECK(end["performed"][1] == performed[1]);
     CHECK(end.contains("monsters"));
 }
+
+TEST_CASE("The pick screen starts only with a full side (T331)", "[match][play]")
+{
+    const MatchDef def = Data();
+    std::vector<int> picks;
+    nlohmann::json pick = MatchPlay::PickData(def, picks, false, BotLevel::Medium);
+    REQUIRE(pick["characters"].size() == def.characters.size());
+    CHECK(pick["canStart"] == false);
+    CHECK(pick["canContinue"] == false);
+    // 1. Picking toggles; a full side refuses one more; Start lights only when full.
+    CHECK(MatchPlay::TogglePick(def, picks, 0));
+    CHECK(MatchPlay::TogglePick(def, picks, 1));
+    CHECK(MatchPlay::PickData(def, picks, true, BotLevel::Medium)["canStart"] == false);
+    CHECK(MatchPlay::TogglePick(def, picks, 2));
+    pick = MatchPlay::PickData(def, picks, true, BotLevel::Hard);
+    CHECK(pick["canStart"] == true);
+    CHECK(pick["canContinue"] == true);
+    CHECK(pick["characters"][2]["picked"] == true);
+    CHECK(pick["level"] == "hard");
+    CHECK_FALSE(MatchPlay::TogglePick(def, picks, 3));
+    CHECK(picks.size() == static_cast<std::size_t>(def.options.side));
+    CHECK(MatchPlay::TogglePick(def, picks, 1)); // un-picks
+    CHECK(MatchPlay::PickData(def, picks, false, BotLevel::Easy)["canStart"] == false);
+    CHECK_FALSE(MatchPlay::TogglePick(def, picks, 99));
+}
+
+// Not a check: writes assets/ui/match-sample.json, the data `UmbraTool ui-preview --data` shows (MatchPlay.md).
+TEST_CASE("Write the match screens' sample data", "[.sample]")
+{
+    const MatchDef def = Data();
+    nlohmann::json sample;
+    std::vector<int> picks{0, 1};
+    sample["pick"] = MatchPlay::PickData(def, picks, true, BotLevel::Medium);
+    // 1. A turn: armed, a target under the mouse, the log with a few lines.
+    int enemy = -1;
+    MatchPlay p = AtPlayer(def, [&](MatchState &s) {
+        const int me = Current(s);
+        for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
+            if (s.units[static_cast<std::size_t>(i)].kind == 0 && s.units[static_cast<std::size_t>(i)].faction == 1)
+                enemy = i;
+        s.units[static_cast<std::size_t>(enemy)].cell = static_cast<std::int16_t>(FreeBeside(s, s.units[static_cast<std::size_t>(me)].cell));
+        s.units[static_cast<std::size_t>(me)].essence = 6;
+    });
+    p.Click(p.State().units[static_cast<std::size_t>(Current(p.State()))].cell);
+    p.HandleUi("", "act", "attack");
+    p.Hover(p.State().units[static_cast<std::size_t>(enemy)].cell);
+    const nlohmann::json turn = p.UiData();
+    for (const auto &[k, v] : turn.items())
+        sample[k] = v;
+    sample["log"] = {"Hoang Gia Huy walks.", "Tran Ngoc Lan attacks the Moth swarm.", "Tran Ngoc Lan hits the Moth swarm for 5."};
+    sample["tip"] = "No one in reach to aim at.";
+    // 2. The battle, the level choice, the event and the end, from their own moments.
+    p.Click(p.State().units[static_cast<std::size_t>(enemy)].cell);
+    sample["battle"] = p.UiData()["battle"];
+    sample["level"] = {{"name", "Dinh Quoc Bao"}, {"level", 2}, {"choices", {{{"index", 0}, {"name", "Cleave"}, {"power", 7}, {"cost", 3}}, {{"index", 1}, {"name", "Gamble"}, {"power", 0}, {"cost", 2}}}}};
+    const EventDef &e = def.events[0];
+    sample["event"] = {{"name", e.name}, {"text", e.text}, {"choosing", true}, {"result", ""},
+                       {"choices", {{{"label", e.choices[0].label}, {"chance", e.choices[0].chance}}, {{"label", e.choices[1].label}, {"chance", e.choices[1].chance}}}}};
+    MatchPlay q = Make(def, 5);
+    for (int i = 0; i < 400 && !q.State().over; ++i)
+    {
+        if (q.PlayerTurn())
+            REQUIRE(q.Do(ChooseAction(def, q.State(), BotLevel::Medium)));
+        q.HandleUi("", "skip", "");
+        q.Update(5.0F);
+    }
+    sample["end"] = q.UiData()["end"];
+    sample["banner"] = {{"title", "Turn 4"}, {"text", "27 turns left"}};
+    std::ofstream(std::filesystem::path(UMBRA_LASTCURTAIN_ASSETS) / "ui/match-sample.json") << sample.dump(1) << "\n";
+}

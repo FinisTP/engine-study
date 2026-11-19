@@ -53,7 +53,7 @@ All under a project's or plugin's `assets/ui/` (project files win, see `AssetFol
 | `spacer` | nothing, takes room | `size` |
 
 Every widget also has `id`, `anchor`, `offset`, `size` (0 = from the content), `style` (default:
-the style named like the type), `visible`, `disabled`, `selected`.
+the style named like the type), `visible`, `disabled`, `selected`, `tip`.
 
 ### Anchors
 
@@ -67,6 +67,12 @@ y = parent.y + (parent.h - h) * ay + offset.y      ay = 0 top,  0.5 middle, 1 bo
 
 `fill` takes the whole area; `offset` is then a margin on each side. Inside a `stack`, children
 are placed in order instead, and `align` lines them up across (start, center, end, stretch).
+
+### Tips
+
+`tip` is text (with bindings) told while the mouse is over the widget, disabled or not:
+`UiSystem::Tip()` after `Update` gives the topmost one under the mouse, or `""`. The game shows it
+where it likes (a disabled action's reason, the user's design rule).
 
 ### Bindings
 

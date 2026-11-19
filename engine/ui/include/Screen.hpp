@@ -28,6 +28,7 @@ namespace umbra::ui
         std::string text, textAlign = "left";
         bool wrap = false;
         std::string visible, disabled, selected; // bindings; empty = always visible, never disabled/selected
+        std::string tip;                         // text told while the mouse is over it (UiSystem::Tip)
         std::string value, max;           // bar
         std::string image;                // asset path (may contain bindings)
         std::string action, arg;          // button or list entry: what the game gets when it is chosen
