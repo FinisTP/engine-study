@@ -13,6 +13,7 @@ target_sources(
         src/Stage.cpp
         src/MatchSave.cpp
         src/Monsters.cpp
+        src/MonsterMind.cpp
         src/MatchInner.hpp
     PUBLIC
         FILE_SET HEADERS

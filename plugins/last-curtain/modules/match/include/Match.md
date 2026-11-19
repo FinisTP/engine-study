@@ -82,13 +82,23 @@ turn's action on the stage with essence carried, adds it all to the side's score
 
 ## Monsters (`Monsters.cpp`)
 
-After the last character in a round, in unit order, every monster on the board acts by its
-behaviour: Stay does nothing; Flee takes up to `speed` steps away from the nearest character;
-Stage takes up to `speed` steps toward the stage and stops beside it; Hunt waits for the monster
-phase (Task 5); Guard deals its
+After the last character in a round comes the monsters' phase: in unit order (`monsterTurn`, -1
+outside the phase), every monster on the board acts by its behaviour: Stay does nothing; Flee takes up to `speed` steps away from the nearest character;
+Stage takes up to `speed` steps toward the stage and stops beside it; Hunt finds the nearest
+character within `sight` steps (to any of its squares), walks up to `speed` steps toward it on
+centre squares only, and when beside it starts a battle as the attacker; Guard deals its
 first ability's damage to every enemy character next to it, without a battle (guardians never
 start battles), which can down them. Monsters fight back only when attacked. A unit cannot attack
 a monster of its own faction. A downed monster never returns.
+
+A hunter's battle pauses the phase: `Current` is the character whose side must pick, and nothing
+else can be done. When that battle ends (`Apply`, a battle pick), the phase goes on from the next
+monster; after the last, a new round begins. Every monster's battle pick is `MonsterPick`
+(`MonsterMind.cpp`): each usable ability gets a value, the highest wins, ties to the first slot. A
+strike is worth its damage (dice at their average), or 1000 if it downs the foe; a shield is worth
+`50 + power` only when the foe's hardest next blow would down the monster; a heal `50 + HP healed`
+only when the monster is below half HP or would be downed. Guardians' blows outside battle are not
+picks.
 
 ## Large monsters (`Board.cpp` `Squares`, `Covers`)
 

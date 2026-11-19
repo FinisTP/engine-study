@@ -26,18 +26,11 @@ namespace umbra::match
         int Side(const MatchState &s, int unit) { return unit == s.battle.attacker ? 0 : 1; }
         int Foe(const MatchState &s, int unit) { return unit == s.battle.attacker ? s.battle.defender : s.battle.attacker; }
 
-        // A monster picks its first affordable Strike, or its first ability.
-        int MonsterSlot(const MatchDef &def, const Unit &u)
-        {
-            for (int slot = 0; slot < maxAbilities; ++slot)
-                if (const AbilityDef *a = Slot(def, u, slot); a && a->kind == AbilityClass::Strike && u.hp > a->hpCost)
-                    return slot;
-            return 0;
-        }
-
         void EndBattle(const MatchDef &def, MatchState &s)
         {
             s.battle.on = false;
+            if (s.monsterTurn >= 0)
+                return; // a hunter's battle: the monsters' phase goes on (Apply, Monsters.cpp)
             // 1. The turn belongs to whoever holds it in order: passed on if it went down, else its action is spent.
             if (s.units[U(s.order[U(s.turn)])].cell < 0)
                 NextTurn(def, s);
@@ -53,7 +46,7 @@ namespace umbra::match
                 const int next = s.battle.next == 0 ? s.battle.attacker : s.battle.defender;
                 if (s.units[U(next)].kind != 1)
                     return;
-                Pick(def, s, next, MonsterSlot(def, s.units[U(next)]));
+                Pick(def, s, next, MonsterPick(def, s, next));
             }
         }
     }

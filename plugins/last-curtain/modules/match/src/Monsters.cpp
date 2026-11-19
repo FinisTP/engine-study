@@ -41,14 +41,46 @@ namespace umbra::match
             return true;
         }
 
+        bool AllCentre(const Board &b, int size, int anchor)
+        {
+            const int x0 = anchor % b.width, y0 = anchor / b.width;
+            for (int y = y0; y < y0 + size; ++y)
+                for (int x = x0; x < x0 + size; ++x)
+                    if (x >= b.width || y >= b.height || b.cells[U(y * b.width + x)].kind != CellKind::Centre)
+                        return false;
+            return true;
+        }
+
+        // The nearest character within sight: walk toward it inside the centre, then battle it when beside.
+        void Hunt(const MatchDef &def, MatchState &s, int i)
+        {
+            Unit &m = s.units[U(i)];
+            int target = -1, best = def.monsters[U(m.def)].sight + 1;
+            for (int v = 0; v < static_cast<int>(s.units.size()); ++v)
+                if (const Unit &c = s.units[U(v)]; c.kind == 0 && c.cell >= 0 && c.hp > 0)
+                    if (const int d = StepsTo(s.board, c.cell, m); d >= 0 && d < best)
+                        target = v, best = d;
+            if (target < 0)
+                return;
+            const int goal = s.units[U(target)].cell;
+            auto score = [&](int anchor) {
+                Unit probe = m;
+                probe.cell = static_cast<std::int16_t>(anchor);
+                return AllCentre(s.board, m.size, anchor) ? -StepsTo(s.board, goal, probe) : -1000;
+            };
+            for (int k = 0; k < m.speed && !Beside(s.board, m, s.units[U(target)]) && StepBy(def, s, m, score); ++k) {}
+            if (Beside(s.board, m, s.units[U(target)]))
+                StartBattle(def, s, i, target);
+        }
+
         void Act(const MatchDef &def, MatchState &s, int i)
         {
             Unit &m = s.units[U(i)];
             const MonsterDef &d = def.monsters[U(m.def)];
             switch (d.behaviour)
             {
-            case Behaviour::Stay:
-            case Behaviour::Hunt: break; // hunters act in the monster phase (MonsterMind.cpp)
+            case Behaviour::Stay: break;
+            case Behaviour::Hunt: Hunt(def, s, i); break;
             case Behaviour::Flee: // 1. up to `speed` steps away from the nearest character
                 for (int k = 0; k < m.speed && StepBy(def, s, m, [&](int c) { return NearestCharacter(s, c); }); ++k) {}
                 break;
@@ -75,18 +107,27 @@ namespace umbra::match
 
     void RunMonsters(const MatchDef &def, MatchState &s)
     {
-        for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
-        {
-            Unit &m = s.units[U(i)];
-            if (m.kind != 1)
-                continue;
-            if (m.cell >= 0 && m.hp > 0)
-                Act(def, s, i);
-        }
+        s.monsterTurn = 0;
+        MonsterPhase(def, s);
     }
 
     namespace inner
     {
+        bool MonsterPhase(const MatchDef &def, MatchState &s)
+        {
+            // 1. Every monster on the board, in unit order; stop while a battle waits on a character.
+            for (; s.monsterTurn < static_cast<int>(s.units.size()); ++s.monsterTurn)
+            {
+                const Unit &m = s.units[U(s.monsterTurn)];
+                if (m.kind == 1 && m.cell >= 0 && m.hp > 0)
+                    Act(def, s, s.monsterTurn);
+                if (s.battle.on)
+                    return false;
+            }
+            s.monsterTurn = -1;
+            return true;
+        }
+
         bool Fits(const MatchState &s, int size, int anchor, int self)
         {
             const Board &b = s.board;

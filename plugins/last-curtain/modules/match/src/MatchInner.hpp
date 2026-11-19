@@ -34,6 +34,8 @@ namespace umbra::match::inner
     int Roll(MatchState &s, int n); // 0 .. n-1 from the match's random numbers
     void Acted(const MatchDef &def, MatchState &s); // the turn's action is taken
     void NextTurn(const MatchDef &def, MatchState &s);
+    void NewRound(const MatchDef &def, MatchState &s);       // after the monsters' phase
+    void ResumeMonsters(const MatchDef &def, MatchState &s); // after a hunter's battle
     bool OnTurn(const MatchState &s); // a character's own board turn (no battle, no level choice)
 }
 
@@ -80,6 +82,7 @@ namespace umbra::match::inner
     int SpawnKind(const MatchDef &def, int zone, int round);     // the zone's latest row by that round, or -1
     void ScheduleSpawn(const MatchDef &def, MatchState &s, int cell); // its monster was downed
     void RunSpawns(const MatchDef &def, MatchState &s, bool roundStart);
+    bool MonsterPhase(const MatchDef &def, MatchState &s); // from monsterTurn on; false while a battle waits
     // Every square of a size x size unit at `anchor` is on the board, open, not the stage, free of others.
     bool Fits(const MatchState &s, int size, int anchor, int self = -1);
 }

@@ -12,7 +12,7 @@ namespace umbra::match
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(TurnState, origin, movesLeft, acted)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LogEntry, kind, a, b, c)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Spawn, cell, monster, round)
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MatchState, board, units, order, turn, round, score, stage, spawns, floor, battle,
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MatchState, board, units, order, turn, round, score, stage, monsterTurn, spawns, floor, battle,
                                        now, log, rng, over, winner)
 
     namespace

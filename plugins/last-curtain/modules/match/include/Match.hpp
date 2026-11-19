@@ -104,6 +104,7 @@ namespace umbra::match
         int turn = 0, round = 1;
         std::array<int, 2> score{};
         std::int16_t stage = -1; // the centre of the middle row, fixed
+        int monsterTurn = -1;    // the monster acting in the monsters' phase, -1 outside it
         std::vector<Spawn> spawns; // shown once round - spawn.warn has come
         std::vector<Floor> floor;
         Battle battle;
@@ -160,6 +161,8 @@ namespace umbra::match
     // power (or the roll, for dice) + Attack - (Defence + battle shield), at least battle.minDamage.
     int Damage(const MatchDef &def, const MatchState &s, int ability, int from, int to, int roll);
 
-    // Monsters act once a round, after the last character (Monsters.cpp).
+    // Monsters act once a round, after the last character, one by one (Monsters.cpp).
     void RunMonsters(const MatchDef &def, MatchState &s);
+    // The battle ability slot a monster picks now (MonsterMind.cpp).
+    int MonsterPick(const MatchDef &def, const MatchState &s, int unit);
 }

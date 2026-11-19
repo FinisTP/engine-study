@@ -47,6 +47,8 @@ namespace umbra::match
         // Standing on your own hub when the move is committed restores full HP.
         void Commit(MatchState &s)
         {
+            if (s.turn < 0)
+                return;
             Unit &u = s.units[U(s.order[U(s.turn)])];
             if (u.cell >= 0 && u.cell == u.home)
                 u.hp = u.maxHp;
@@ -132,6 +134,23 @@ namespace umbra::match
 
     namespace inner
     {
+        void NewRound(const MatchDef &def, MatchState &s)
+        {
+            s.monsterTurn = -1;
+            if (++s.round > def.options.rounds)
+                return EndMatch(def, s);
+            RunSpawns(def, s, true);
+            s.turn = -1;
+            NextTurn(def, s);
+        }
+
+        void ResumeMonsters(const MatchDef &def, MatchState &s)
+        {
+            ++s.monsterTurn;
+            if (MonsterPhase(def, s))
+                NewRound(def, s);
+        }
+
         void NextTurn(const MatchDef &def, MatchState &s)
         {
             // 1. The next character in order; after the last, the monsters act and a new round begins.
@@ -140,14 +159,14 @@ namespace umbra::match
             {
                 if (++s.turn >= static_cast<int>(s.order.size()))
                 {
-                    s.turn = 0;
-                    RunMonsters(def, s);
-                    if (++s.round > def.options.rounds)
-                        return EndMatch(def, s);
-                    RunSpawns(def, s, true);
+                    // 1a. The monsters' phase; a hunter's battle pauses it until the character has picked.
+                    s.turn = static_cast<int>(s.order.size()) - 1;
+                    s.monsterTurn = 0;
+                    if (MonsterPhase(def, s))
+                        NewRound(def, s);
+                    return;
                 }
-                else
-                    RunSpawns(def, s, false);
+                RunSpawns(def, s, false);
                 // 2. A downed character misses this turn; when its count runs out it is back home, whole.
                 Unit &u = s.units[U(s.order[U(s.turn)])];
                 if (u.cell >= 0)
@@ -264,7 +283,11 @@ namespace umbra::match
             break;
         }
         case ActionKind::Attack: StartBattle(def, s, me, a.a); break;
-        case ActionKind::BattleAbility: Pick(def, s, me, a.a); break;
+        case ActionKind::BattleAbility:
+            Pick(def, s, me, a.a);
+            if (!s.battle.on && s.monsterTurn >= 0)
+                ResumeMonsters(def, s);
+            break;
         case ActionKind::BoardAbility: BoardAbility(def, s, me, a.a, a.b); break;
         case ActionKind::UseItem: UseItem(def, s, me, a.a); break;
         case ActionKind::Answer: Answer(def, s, me, a.a); break;
