@@ -134,3 +134,14 @@ expressions, then for something scarier, then for it to be like a giant spider. 
 
 `stage/stage.jpg`: the duel's backdrop, seed 7121, "an empty old opera house stage seen from the
 stalls, heavy faded red velvet curtains ..., a single cold pool of light ..." + the style.
+
+## UI art for the faction match (2026-11-20, `art/ui/match/`)
+
+Made in the user's ComfyUI (SDXL base 1.0, dpmpp_2m karras, 30 steps, cfg 7) from prompts asking
+for "game UI asset ... art deco ... tarnished brass ... straight front view, symmetrical, isolated on
+plain black background", two seeds each (11, 23); the outputs are in ComfyUI's `output/lc_ui/`.
+Kept: `backdrop.jpg` (the empty opera house, seed 23, the pick screen), `banner.png` (seed 23, the
+turn banner, 9-sliced), `card.png` (seed 11, the battle's fighter cards, 9-sliced). Turned down:
+the panels (too heavy for the HUD, the user wants it light), the bubbles (not clean), the first
+banner (it drew letters), the first icons (each sat in a busy framed medallion). Icons are being
+redone as plain white silhouettes on black, to cut out by brightness and tint in the skin.

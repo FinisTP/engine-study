@@ -290,6 +290,33 @@
         8,
         5
       ]
+    },
+    "bannerArt": {
+      "image": "art/ui/match/banner.png",
+      "slice": [
+        150,
+        110,
+        150,
+        110
+      ],
+      "padding": [
+        70,
+        46
+      ]
+    },
+    "cardArt": {
+      "base": "small",
+      "image": "art/ui/match/card.png",
+      "slice": [
+        70,
+        70,
+        70,
+        70
+      ],
+      "padding": [
+        34,
+        30
+      ]
     }
   }
 }

@@ -3,7 +3,9 @@
   "version": 1,
   "modal": true,
   "dim": true,
-  "root": { "type": "stack", "anchor": "center", "style": "float", "size": [1120, 0], "align": "stretch", "gap": 14, "children": [
+  "root": { "type": "panel", "anchor": "fill", "style": "layer", "children": [
+    { "type": "image", "anchor": "fill", "image": "art/ui/match/backdrop.jpg", "fit": "cover" },
+    { "type": "stack", "anchor": "center", "style": "float", "size": [1120, 0], "align": "stretch", "gap": 14, "children": [
     { "type": "text", "style": "title", "text": "The Last Curtain" },
     { "type": "text", "style": "small", "text": "Pick {pick.side} for your side ({pick.count} chosen). The house picks the other side.", "wrap": true, "size": [1080, 0] },
     { "type": "list", "items": "{pick.characters}", "as": "c", "columns": 5, "gap": 10, "action": "pick", "arg": "{c.id}",
@@ -26,5 +28,6 @@
       { "type": "button", "style": "act", "size": [200, 44], "text": "Continue", "action": "continue", "visible": "{pick.canContinue}" },
       { "type": "button", "style": "act", "size": [200, 44], "text": "Quit", "action": "quit" }
     ] }
+  ] }
   ] }
 }
