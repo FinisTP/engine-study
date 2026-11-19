@@ -193,7 +193,7 @@ namespace umbra::night
         return shot_.empty() ? motions.Sample(base_, baseT_ - back) : motions.Sample(shot_, std::max(shotT_ - back, 0.0F));
     }
 
-    glm::mat4 SpriteModel(const MotionPose &pose, glm::vec3 feet, glm::vec3 right, float height, float aspect, float facing, float time)
+    glm::mat4 SpriteModel(const MotionPose &pose, glm::vec3 feet, glm::vec3 right, float height, float aspect, float facing, float time, glm::vec3 up)
     {
         // 1. Quad (-0.5..0.5) -> feet-local metres, y up: the picture's bottom middle at the origin.
         const glm::mat3 toLocal{glm::vec3{aspect * height, 0, 0}, glm::vec3{0, height, 0}, glm::vec3{0, 0.5F * height, 1}};
@@ -209,7 +209,6 @@ namespace umbra::night
         const glm::mat3 mirror{glm::vec3{facing < 0.0F ? -1.0F : 1.0F, 0, 0}, glm::vec3{0, 1, 0}, glm::vec3{0, 0, 1}};
         const glm::mat3 a = mirror * move * lean * skew * scale * mirror * toLocal;
         // 5. The sprite's plane in the world: right and up, its normal toward the camera.
-        const glm::vec3 up{0.0F, 1.0F, 0.0F};
         const glm::vec3 normal = glm::cross(right, up);
         glm::mat4 m{1.0F};
         m[0] = glm::vec4(right * a[0][0] + up * a[0][1], 0.0F);

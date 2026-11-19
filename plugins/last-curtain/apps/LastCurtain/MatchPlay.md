@@ -75,3 +75,11 @@ looked into a room: its card is open), `level` (the acting character has a level
   result line; `close` returns to the board.
 - `end`: the winner, the scores, kills per side (the units' counts), essence performed and monsters
   downed per side (from the log).
+
+## Motions and sounds
+
+Each told line brings its motions (`Moves`: a step walks, a blow is an attack and a hit, a fall holds
+`down` until `revive` at the hub, a level `levelup`, a spawn `loom`, an event pass or fail, a pick-up)
+and its sound (`Sound`: step, hit, death, pass, door, fail, item, bell; `turn` when a banner opens).
+The window takes them once (`TakeMoves`, `TakeSounds`): the table plays the motion on that unit's
+sprite (`motions.json`, the night's), `Sounds` plays the cue (`sounds.csv`).

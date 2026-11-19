@@ -77,7 +77,9 @@ namespace umbra::night
 
     // The model matrix of the 1 m quad (centred, facing +Z, v down) for a sprite whose feet stand at
     // `feet`, upright, its picture `height` metres tall and `aspect` wide per tall (Motions.md "The transform").
-    [[nodiscard]] glm::mat4 SpriteModel(const MotionPose &pose, glm::vec3 feet, glm::vec3 right, float height, float aspect, float facing, float time);
+    // `up`: the picture's up (the world's by default; the match's figures use the camera's, Motions.md).
+    [[nodiscard]] glm::mat4 SpriteModel(const MotionPose &pose, glm::vec3 feet, glm::vec3 right, float height, float aspect, float facing, float time,
+                                        glm::vec3 up = {0.0F, 1.0F, 0.0F});
 
     // Who moves how when this happens (Motions.md "Which moment plays which motion").
     [[nodiscard]] std::vector<std::pair<int, std::string>> MotionsFor(const LogEntry &entry);

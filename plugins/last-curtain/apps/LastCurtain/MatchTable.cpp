@@ -78,12 +78,18 @@ namespace
 MatchTable::MatchTable(umbra::render::Renderer &renderer, const umbra::assets::AssetFolders &assets, const MatchDef &def)
     : def_(def), box_(renderer.CreateMesh(Cube())), quad_(renderer.CreateMesh(Quad(false))), mirrorQuad_(renderer.CreateMesh(Quad(true)))
 {
-    // 1. Each sprite folder's standing picture, once; a missing one draws a box.
+    // 1. Each sprite folder's pictures, one per face the motions use; a missing calm one draws a box.
+    std::string motionError;
+    motions_ = umbra::night::Motions::Load(assets / "motions.json", motionError);
     auto load = [&](const std::string &sprite) {
-        umbra::core::TextureData data;
-        std::string error;
-        if (!sprites_.contains(sprite) && umbra::assets::LoadImageFile(assets / ("art/sprites/" + sprite + "/body_calm.png"), data, error))
-            sprites_[sprite] = renderer.CreateTexture(data), aspects_[sprite] = static_cast<float>(data.width) / static_cast<float>(std::max(1u, data.height));
+        for (const char *face : {"calm", "afraid", "angry", "happy", "neardead", "scheming", "talk"})
+        {
+            umbra::core::TextureData data;
+            std::string error;
+            const std::string key = sprite + "/" + face;
+            if (!sprites_.contains(key) && umbra::assets::LoadImageFile(assets / ("art/sprites/" + key.substr(0, key.find('/')) + "/body_" + face + ".png"), data, error))
+                sprites_[key] = renderer.CreateTexture(data), aspects_[sprite] = static_cast<float>(data.width) / static_cast<float>(std::max(1u, data.height));
+        }
     };
     for (const CharacterDef &c : def.characters)
         load(c.sprite);
@@ -124,26 +130,57 @@ float MatchTable::Height(const Unit &u) const
     return byTier[static_cast<int>(def_.monsters[U(u.def)].tier)] * static_cast<float>(u.size);
 }
 
-void MatchTable::Sprite(const Unit &u, glm::vec3 feet, umbra::core::DrawList &out) const
+void MatchTable::Play(int unit, const std::string &motion)
 {
-    // 1. Facing the camera square on, upright on screen (a 2D board's figures); side 1's characters face left.
+    if (unit < 0)
+        return;
+    if (static_cast<std::size_t>(unit) >= states_.size())
+        states_.resize(U(unit) + 1);
+    umbra::night::SpriteState &st = states_[U(unit)];
+    if (motion == "down")
+        st.Hold("down");
+    else if (motion == "revive")
+        st.Release(), st.Play("revive");
+    else if (motion == "walk")
+        st.Play("walk");
+    else
+        st.Play(motion);
+}
+
+void MatchTable::Animate(const MatchState &s, float dt)
+{
+    states_.resize(s.units.size());
+    for (std::size_t i = 0; i < states_.size(); ++i)
+    {
+        states_[i].facing = s.units[i].kind == 0 && s.units[i].faction == 1 ? -1.0F : 1.0F;
+        states_[i].Update(dt, motions_);
+    }
+}
+
+void MatchTable::Sprite(int index, const Unit &u, glm::vec3 feet, umbra::core::DrawList &out) const
+{
+    // 1. Facing the camera square on, upright on screen (a 2D board's figures), moved by its motion.
     const umbra::core::Camera camera = view_.Camera();
     const glm::vec3 forward = glm::normalize(camera.target - camera.position);
     const glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3{0, 1, 0})), up = glm::cross(right, forward);
-    const std::string &name = u.kind == 0 ? def_.characters[U(u.def)].sprite : def_.monsters[U(u.def)].sprite;
-    const float h = Height(u), w = h * (aspects_.contains(name) ? aspects_.at(name) : 0.3F);
-    glm::mat4 model{1.0F};
-    model[0] = glm::vec4(right * w, 0.0F);
-    model[1] = glm::vec4(up * h, 0.0F);
-    model[2] = glm::vec4(-forward, 0.0F);
-    model[3] = glm::vec4(feet + up * (h * 0.5F), 1.0F);
     const std::string &sprite = u.kind == 0 ? def_.characters[U(u.def)].sprite : def_.monsters[U(u.def)].sprite;
-    const auto art = sprites_.find(sprite);
+    const float h = Height(u), aspect = aspects_.contains(sprite) ? aspects_.at(sprite) : 0.3F;
+    const umbra::night::SpriteState idle;
+    const umbra::night::SpriteState &st = U(index) < states_.size() ? states_[U(index)] : idle;
+    const umbra::night::MotionPose pose = st.Pose(motions_);
+    auto art = sprites_.find(sprite + "/" + pose.face);
     if (art == sprites_.end())
-        return Box(out, box_, feet + glm::vec3{0, h * 0.5F, 0}, {w, h, w}, Hex(0x8a8178));
-    // 2. The sprite surface: colour = tint and opacity, emissive = how much tint (a monster's colour).
-    const std::uint32_t tint = u.kind == 0 ? 0xFFFFFF : def_.monsters[U(u.def)].tint;
-    out.items.push_back({u.kind == 0 && u.faction == 1 ? mirrorQuad_ : quad_, art->second, model, Hex(tint), 0.0F, u.kind == 0 ? 0.0F : 0.45F});
+        art = sprites_.find(sprite + "/calm");
+    if (art == sprites_.end())
+        return Box(out, box_, feet + glm::vec3{0, h * 0.5F, 0}, {h * aspect, h, h * aspect}, Hex(0x8a8178));
+    // 2. The sprite surface: colour = tint and opacity, emissive = how much tint (a monster's colour, or the motion's).
+    const float facing = pose.flip ? -st.facing : st.facing;
+    const std::uint32_t own = u.kind == 0 ? 0xFFFFFF : def_.monsters[U(u.def)].tint;
+    const bool tinted = pose.tint.a > 0.001F;
+    const glm::vec3 tint = tinted ? glm::vec3(pose.tint) : glm::vec3(Hex(own));
+    const float amount = tinted ? pose.tint.a : (u.kind == 0 ? 0.0F : 0.45F);
+    out.items.push_back({facing < 0.0F ? mirrorQuad_ : quad_, art->second, umbra::night::SpriteModel(pose, feet, right, h, aspect, facing, clock_, up),
+                         glm::vec4(tint, pose.alpha), 0.0F, std::floor(pose.dissolve * 99.0F) + std::clamp(amount, 0.0F, 1.0F) * 0.99F});
     out.items.back().surface = out.SurfaceIndex("sprite");
 }
 
@@ -225,15 +262,16 @@ void MatchTable::Draw(const MatchState &s, const nlohmann::json &ui, int hover, 
     if (hover >= 0 && hover < static_cast<int>(b.cells.size()) && b.cells[U(hover)].kind != CellKind::Wall)
         Outline(out, box_, Centre(b, hover), tile, Hex(0xEFE6D6), 0.6F);
     // 5. Figures, a ring in the side's colour under each character, the acting one's arrow drawn as a card (Labels).
-    for (const Unit &u : s.units)
+    for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
     {
+        const Unit &u = s.units[U(i)];
         if (u.cell < 0 || u.hp <= 0)
             continue;
         const glm::vec3 feet = Feet(b, u);
         Shadow(feet + glm::vec3{0.0F, 0.0F, 0.15F}, tile * Look("shadow", "width", 0.0F, 0.75F) * static_cast<float>(u.size), out);
         if (u.faction >= 0)
             Outline(out, box_, feet - glm::vec3{0, 0.1F, 0}, tile * 0.7F * static_cast<float>(u.size), u.faction == 0 ? Hex(0x5b9bd5) : Hex(0xe08a3c), 0.5F);
-        Sprite(u, feet, out);
+        Sprite(i, u, feet, out);
     }
 }
 

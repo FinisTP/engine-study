@@ -104,6 +104,10 @@ bool MatchPlay::Reveal()
     else
         log_.push_back(line);
     lastMover_ = e.kind == LogKind::Moved ? e.a : -1;
+    for (const auto &m : Moves(e))
+        moves_.push_back(m);
+    if (const std::string cue = Sound(e); !cue.empty())
+        sounds_.push_back(cue);
     if (e.kind == LogKind::Blow)
         lastBlow_ = line;
     else if (e.kind == LogKind::Battle)
@@ -140,7 +144,7 @@ void MatchPlay::Update(float dt)
     if (BannerDue())
     {
         if (!bannerOn_)
-            bannerOn_ = true, banner_ = options_.turnBannerSeconds;
+            bannerOn_ = true, banner_ = options_.turnBannerSeconds, sounds_.push_back("turn");
         if ((banner_ -= dt) > 0.0F)
             return;
         bannerOn_ = false, shownRound_ = s_.round, clock_ = 0.0F, wait_ = 0.0F;
@@ -634,6 +638,41 @@ bool MatchPlay::TogglePick(const MatchDef &def, std::vector<int> &picks, int cha
         return false;
     picks.push_back(character);
     return true;
+}
+
+std::vector<std::pair<int, std::string>> MatchPlay::Moves(const LogEntry &e)
+{
+    switch (e.kind)
+    {
+    case LogKind::Moved: return {{e.a, "walk"}};
+    case LogKind::Blow: return {{e.a, "attack"}, {e.b, "hit"}};
+    case LogKind::Down: return {{e.a, "down"}};
+    case LogKind::Back: return {{e.a, "revive"}};
+    case LogKind::Performed: return {{e.a, "bow"}};
+    case LogKind::Level: return {{e.a, "levelup"}};
+    case LogKind::Spawned: return {{e.b, "loom"}};
+    case LogKind::Event: return {{e.a, e.c ? "pass" : "fail"}};
+    case LogKind::Item: return {{e.a, "pickup"}};
+    default: return {};
+    }
+}
+
+std::string MatchPlay::Sound(const LogEntry &e)
+{
+    switch (e.kind)
+    {
+    case LogKind::Moved: return "step";
+    case LogKind::Blow: return "hit";
+    case LogKind::Down: return "death";
+    case LogKind::Performed:
+    case LogKind::Level: return "pass";
+    case LogKind::SpawnSoon:
+    case LogKind::Spawned: return "door";
+    case LogKind::Event: return e.c ? "pass" : "fail";
+    case LogKind::Item: return "item";
+    case LogKind::Over: return "bell";
+    default: return "";
+    }
 }
 
 nlohmann::json MatchPlay::Save() const { return SaveMatch(s_); }

@@ -479,3 +479,28 @@ TEST_CASE("Write the match screens' sample data", "[.sample]")
     sample["banner"] = {{"title", "Turn 4"}, {"text", "27 turns left"}};
     std::ofstream(std::filesystem::path(UMBRA_LASTCURTAIN_ASSETS) / "ui/match-sample.json") << sample.dump(1) << "\n";
 }
+
+TEST_CASE("Each told line brings its motions and its sound (T342)", "[match][play]")
+{
+    using P = std::vector<std::pair<int, std::string>>;
+    CHECK(MatchPlay::Moves({LogKind::Blow, 2, 7, 5}) == P{{2, "attack"}, {7, "hit"}});
+    CHECK(MatchPlay::Moves({LogKind::Down, 7, 2, 0}) == P{{7, "down"}});
+    CHECK(MatchPlay::Moves({LogKind::Back, 7, 30, 0}) == P{{7, "revive"}});
+    CHECK(MatchPlay::Moves({LogKind::Level, 2, 3, 0}) == P{{2, "levelup"}});
+    CHECK(MatchPlay::Sound({LogKind::Blow, 2, 7, 5}) == "hit");
+    CHECK(MatchPlay::Sound({LogKind::Moved, 2, 30, 0}) == "step");
+    CHECK(MatchPlay::Sound({LogKind::Over, 0, -1, 0}) == "bell");
+    // 1. Playing on beats queues them for the window to take; the banner opens with its sound.
+    const MatchDef def = Data();
+    MatchPlay p = Make(def);
+    p.Update(0.1F);
+    std::vector<std::string> sounds = p.TakeSounds();
+    CHECK(std::ranges::find(sounds, "turn") != sounds.end());
+    for (int i = 0; i < 200 && p.TakeMoves().empty(); ++i)
+    {
+        if (p.PlayerTurn())
+            REQUIRE(p.Do({ActionKind::EndTurn}));
+        p.Update(0.5F);
+    }
+    CHECK(p.TakeMoves().empty()); // taken once
+}

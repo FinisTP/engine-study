@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 
 #include <string>
+#include <utility>
 #include <vector>
 
 // One faction match as the person plays it, without a window (tested; MatchPlay.md): the player's
@@ -35,6 +36,12 @@ public:
     // The pick screen (match-pick.ui.json): every character as a card, Start only with a full side.
     static nlohmann::json PickData(const umbra::match::MatchDef &def, const std::vector<int> &picks, bool canContinue, umbra::match::BotLevel level);
     static bool TogglePick(const umbra::match::MatchDef &def, std::vector<int> &picks, int character); // false: unknown or the side is full
+    // What a told line looks and sounds like (MatchPlay.md "Motions and sounds"): units and their
+    // motions (motions.json), and a sounds.csv cue ("" none). Taken by the window once each.
+    static std::vector<std::pair<int, std::string>> Moves(const umbra::match::LogEntry &e);
+    static std::string Sound(const umbra::match::LogEntry &e);
+    std::vector<std::pair<int, std::string>> TakeMoves() { return std::exchange(moves_, {}); }
+    std::vector<std::string> TakeSounds() { return std::exchange(sounds_, {}); }
     static const char *LogName(umbra::match::LogKind kind);
     static const char *WhyName(umbra::match::Why why);
     [[nodiscard]] std::string Caption(const umbra::match::LogEntry &e) const;
@@ -76,5 +83,7 @@ private:
     bool watch_ = false;
     std::string armed_; // "attack" or "ability:<slot>"
     std::string lastBlow_, eventResult_; // the battle's last blow; the event's outcome
-    int eventCell_ = -1;                 // the room whose event card is open, -1 none
+    int eventCell_ = -1;
+    std::vector<std::pair<int, std::string>> moves_;
+    std::vector<std::string> sounds_;                 // the room whose event card is open, -1 none
 };

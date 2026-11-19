@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Motion.hpp"
 #include "TableCamera.hpp"
 
 #include <Match.hpp>
@@ -36,17 +37,22 @@ public:
     void Zoom(float steps) { view_.Zoom(steps); }
     void Update(float dt) { clock_ += dt, view_.Update(dt); }
     void SetLook(nlohmann::json look) { look_ = std::move(look); } // assets/match-look.json
+    // Motions (motions.json): a unit plays one (down holds until revive), then rests in idle.
+    void Play(int unit, const std::string &motion);
+    void Animate(const umbra::match::MatchState &s, float dt);
 
 private:
     [[nodiscard]] glm::vec3 Centre(const umbra::match::Board &b, int cell) const;          // a square's middle on the table
     [[nodiscard]] glm::vec3 Feet(const umbra::match::Board &b, const umbra::match::Unit &u) const; // the middle of its footprint
     [[nodiscard]] float Height(const umbra::match::Unit &u) const;
     [[nodiscard]] std::optional<glm::vec2> ScreenPoint(glm::vec3 world, glm::vec2 pixels) const;
-    void Sprite(const umbra::match::Unit &u, glm::vec3 feet, umbra::core::DrawList &out) const;
+    void Sprite(int index, const umbra::match::Unit &u, glm::vec3 feet, umbra::core::DrawList &out) const;
 
     const umbra::match::MatchDef &def_;
     umbra::core::MeshHandle box_, quad_, mirrorQuad_;
-    std::map<std::string, umbra::core::TextureHandle> sprites_; // by sprite folder: body_calm.png
+    std::map<std::string, umbra::core::TextureHandle> sprites_; // by "folder/face": body_<face>.png
+    umbra::night::Motions motions_;
+    std::vector<umbra::night::SpriteState> states_; // by unit
     std::map<std::string, float> aspects_;                      // ... its width per height
     [[nodiscard]] float Look(const char *group, const char *key, float t, float fallback) const; // start..end at t
     void Shadow(glm::vec3 feet, float width, umbra::core::DrawList &out) const;

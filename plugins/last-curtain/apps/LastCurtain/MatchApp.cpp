@@ -3,6 +3,7 @@
 #include "MatchPlay.hpp"
 #include "MatchTable.hpp"
 #include "Screens.hpp"
+#include "Sounds.hpp"
 
 #include <MatchSave.hpp>
 
@@ -85,6 +86,7 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
     if (!renderer.Initialize(window))
         return 1;
     Screens screens(renderer, assets);
+    Sounds sounds(assets); // sounds.csv; silent without a sound card or a file
     MatchTable table(renderer, assets, def);
     if (std::ifstream in(assets / "match-look.json"); in)
         table.SetLook(nlohmann::json::parse(in, nullptr, false));
@@ -164,6 +166,12 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
         {
             if (!paused)
                 play->Update(dt);
+            // What was just told: figures move, sounds play.
+            for (const auto &[unit, motion] : play->TakeMoves())
+                table.Play(unit, motion);
+            for (const std::string &cue : play->TakeSounds())
+                sounds.Play(cue);
+            table.Animate(play->State(), dt);
             hover = table.Pick(play->State().board, uiInput.mouse, pixels);
             play->Hover(hover);
             const bool held = input.IsMouseButtonHeld(0);
@@ -197,6 +205,7 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
             for (const umbra::ui::UiAction &a : screens.Ui().Update(data, pixels, uiInput, drawList.ui))
             {
                 uiTook = true;
+                sounds.Play("click");
                 if (a.action == "quit")
                     quit = true;
                 else if (a.screen == "match-pick" && a.action == "pick")
