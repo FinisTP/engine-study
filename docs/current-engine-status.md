@@ -15,6 +15,13 @@
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
 
+## Update 2026-11-20 (The Last Curtain: faction matches, plans 2 and 3, `#UMBRA-264`-`#UMBRA-289`, branch `factions`)
+
+- **Rules.** A fixed stage; monsters spawn by `spawns.csv` (the centre's Usherette hunts and spawns once; den monsters belong to their half's side, so players push into the other half); monsters of 2x2 and 3x3; treasure as 2-5 face-down cards; claimed rooms come back in the same half after 16 rounds; level-ups offer three cards (learn, a stat, an upgrade); events show 2d6 over the same chance. Saves version 2.
+- **The match on screen.** `LastCurtain` now runs the match (`--night` keeps the night): pick screen, HUD after the approved prototype, battle, level, treasure, event dice, end; motions, sounds, follow camera, turn ring, scenes, bubbles, shadows, a cold grade, painted rooms with a seamless zoom. Engine UI gained `tip` and `fit`. ComfyUI art: backdrop, banner, fighter cards, 12 icons.
+- **Verified (Linux).** GCC, Clang and ASan suites pass; the soak holds (comebacks 27.4%). Pictures under SwiftShader only.
+- **Open.** The Windows play check, `testing/s41-faction-match-screens.md` section 4.
+
 ## Update 2026-11-19 (The Last Curtain: faction matches, plan 1, `#UMBRA-248`-`#UMBRA-260`, branch `factions`)
 
 - The user dropped the performances (Applause, acts, duels) for a turn-based take on Pokemon Unite: two
