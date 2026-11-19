@@ -49,5 +49,58 @@
     "distance": 11,
     "turn": 12,
     "tilt": 40
+  },
+  "rooms": {
+    "note": "Painted floors by square kind (art/rooms/<name>.jpg); a square and its mirror get the same one. Walls rise as the camera comes within roomDistance.",
+    "hall": [
+      "corridor",
+      "hallway",
+      "passage",
+      "sidecorridor",
+      "landing",
+      "stairwell"
+    ],
+    "room": [
+      "archive",
+      "armoury",
+      "balletroom",
+      "bar",
+      "boxes",
+      "cloakroom",
+      "composer",
+      "costumes",
+      "dressing",
+      "green",
+      "infirmary",
+      "lostfound",
+      "maskcabinet",
+      "mirrors",
+      "office",
+      "paintshop",
+      "pantry",
+      "props",
+      "rehearsal",
+      "sewing",
+      "storeroom",
+      "vault",
+      "waitingroom",
+      "wigroom"
+    ],
+    "centre": [
+      "auditorium",
+      "pit",
+      "orchestraroom",
+      "royalbox"
+    ],
+    "hub": [
+      "foyer",
+      "ticketlobby"
+    ],
+    "stage": [
+      "understage"
+    ],
+    "boardDistance": 19,
+    "roomDistance": 7,
+    "wallHeight": 1.1
   }
 }

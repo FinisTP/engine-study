@@ -36,3 +36,12 @@ figure nods. The camera eases toward whoever acts (a battle: the middle of the t
 `follow.pull` of the way from the board's middle so the board stays in view; a drag stops it until
 the next turn. Scenes (`match-look.json`): `open` sweeps down from high and far onto the board when a
 match begins; `end` circles the winner's hub when it is over.
+
+## Painted floors and the room view
+
+Every square is painted with one of the night's room pictures (`art/rooms/<name>.jpg`), chosen from
+`match-look.json` `rooms` by its kind (hall, room, centre, hub, stage); a square and its mirror share
+one. The kind's colour tints it lightly, so the centre still reads warmer. There is no separate
+room view to switch to: as the wheel brings the camera from `boardDistance` to `roomDistance`, walls
+rise (up to `wallHeight`) on every side of a square without a door, so the board becomes rooms in
+one seamless zoom. `--zoom N` starts a capture that many wheel steps in.

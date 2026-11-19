@@ -57,7 +57,7 @@ namespace
     }
 }
 
-int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool watch, const std::filesystem::path &capture, int frames)
+int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool watch, const std::filesystem::path &capture, int frames, float zoom)
 {
     // 1. The match's data, its words and the pace.
     MatchDef def;
@@ -90,7 +90,7 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
     MatchTable table(renderer, assets, def);
     if (std::ifstream in(assets / "match-look.json"); in)
         table.SetLook(nlohmann::json::parse(in, nullptr, false));
-    table.SetCamera(pace.matchCameraDistance, pace.matchCameraDistance * 0.5F, pace.matchCameraDistance * 1.8F, pace.matchCameraTilt);
+    table.SetCamera(pace.matchCameraDistance, pace.matchCameraDistance * 0.3F, pace.matchCameraDistance * 1.6F, pace.matchCameraTilt); // the wheel zooms down into the rooms
     umbra::core::DrawList drawList;
 
     // 3. A match starts (or continues); the pick screen shows when none is running.
@@ -186,7 +186,7 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
                 table.Pan(uiInput.mouse - lastMouse), table.StopFollow();
             if (play->State().over && !ended)
                 ended = true, table.StartScene("end", play->State().board.hub[static_cast<std::size_t>(std::max(0, play->State().winner))]);
-            table.Zoom(input.Wheel());
+            table.Zoom(input.Wheel() + std::exchange(zoom, 0.0F));
             if (!play->State().over && play->State().round != savedRound && !watch)
                 WriteSave(*play), savedRound = play->State().round;
         }

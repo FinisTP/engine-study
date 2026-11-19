@@ -49,6 +49,7 @@ namespace
         std::filesystem::path capture; // save the last frame here and quit
         int frames = 0;                // frames to run (0 = until closed; 3 with --capture)
         bool night = false;            // the old night (--night); else the faction match
+        float zoom = 0.0F;             // the match: wheel steps at the start (--zoom N)
     };
 
     // The program's assets: assets/ next to it (a package), else the source tree above the build:
@@ -137,7 +138,7 @@ namespace
             const umbra::assets::AssetFolders assets = FindAssets();
             if (!options.night)
             {
-                result = RunMatch(assets, options.seed, options.watch, options.capture, options.frames);
+                result = RunMatch(assets, options.seed, options.watch, options.capture, options.frames, options.zoom);
                 platform.Shutdown();
                 return result;
             }
@@ -504,6 +505,8 @@ int main(int argc, char **argv)
             options.frames = std::atoi(argv[++i]);
         else if (arg == "--night")
             options.night = true;
+        else if (arg == "--zoom" && more)
+            options.zoom = static_cast<float>(std::atof(argv[++i]));
     }
     umbra::diagnostics::Initialize();
     umbra::diagnostics::InstallCrashHandlers();

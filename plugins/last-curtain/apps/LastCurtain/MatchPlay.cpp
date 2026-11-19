@@ -269,7 +269,7 @@ std::string MatchPlay::Screen() const
     if (eventCell_ >= 0)
         return "event";
     const int now = Current(s_);
-    if (shown_ == s_.log.size() && now >= 0 && s_.units[U(now)].pending >= 0)
+    if (shown_ == s_.log.size() && now >= 0 && s_.units[U(now)].pending >= 0 && Mine(now))
         return "level";
     return s_.battle.on && shown_ == s_.log.size() ? "battle" : "";
 }

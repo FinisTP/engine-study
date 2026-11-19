@@ -545,3 +545,25 @@ TEST_CASE("A blow or a fall puts a short line in a bubble by its speaker; the sa
         p.Update(1.0F);
     CHECK(p.UiData()["bubbles"].empty());
 }
+
+TEST_CASE("A bot's level choice never opens the player's level screen (T344)", "[match][play]")
+{
+    const MatchDef def = Data();
+    MatchState s = NewMatch(def, 7, {MatchDef::Find(def.characters, "bao"), MatchDef::Find(def.characters, "khang"), MatchDef::Find(def.characters, "mai")});
+    int bot = -1;
+    for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
+        if (s.units[static_cast<std::size_t>(i)].kind == 0 && s.units[static_cast<std::size_t>(i)].faction == 1)
+            bot = i;
+    for (int j = 0; j < static_cast<int>(def.jobs.size()); ++j)
+        if (def.jobs[static_cast<std::size_t>(j)].choice >= 0 && def.jobs[static_cast<std::size_t>(j)].role == def.characters[static_cast<std::size_t>(s.units[static_cast<std::size_t>(bot)].def)].role)
+            s.units[static_cast<std::size_t>(bot)].pending = static_cast<std::int8_t>(j);
+    REQUIRE(s.units[static_cast<std::size_t>(bot)].pending >= 0);
+    MatchPlay p(def, s, BotLevel::Medium);
+    p.SetWords(Words());
+    p.SetOptions(Pace());
+    p.Update(2.0F);
+    CHECK(Current(p.State()) == bot);
+    CHECK(p.Screen() != "level");
+    p.Update(1.0F); // the bot chooses on its beat
+    CHECK(p.State().units[static_cast<std::size_t>(bot)].pending == -1);
+}

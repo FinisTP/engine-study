@@ -76,7 +76,7 @@ namespace
 }
 
 MatchTable::MatchTable(umbra::render::Renderer &renderer, const umbra::assets::AssetFolders &assets, const MatchDef &def)
-    : def_(def), box_(renderer.CreateMesh(Cube())), quad_(renderer.CreateMesh(Quad(false))), mirrorQuad_(renderer.CreateMesh(Quad(true)))
+    : def_(def), renderer_(renderer), assets_(assets), box_(renderer.CreateMesh(Cube())), quad_(renderer.CreateMesh(Quad(false))), mirrorQuad_(renderer.CreateMesh(Quad(true)))
 {
     // 1. Each sprite folder's pictures, one per face the motions use; a missing calm one draws a box.
     std::string motionError;
@@ -220,6 +220,41 @@ void MatchTable::Sprite(int index, const Unit &u, glm::vec3 feet, umbra::core::D
     out.items.back().surface = out.SurfaceIndex("sprite");
 }
 
+void MatchTable::SetLook(nlohmann::json look)
+{
+    look_ = std::move(look);
+    // 1. The painted floors each square kind may take; a missing picture is skipped.
+    floors_.clear();
+    if (!look_.contains("rooms"))
+        return;
+    for (const char *kind : {"hall", "room", "centre", "hub", "stage"})
+        for (const auto &name : look_["rooms"].value(kind, nlohmann::json::array()))
+        {
+            umbra::core::TextureData data;
+            std::string error;
+            if (umbra::assets::LoadImageFile(assets_ / ("art/rooms/" + name.get<std::string>() + ".jpg"), data, error))
+                floors_[kind].push_back(renderer_.CreateTexture(data));
+        }
+}
+
+umbra::core::TextureHandle MatchTable::FloorArt(const Board &b, int cell, bool stage) const
+{
+    // A square and its mirror share a picture, picked by the nearer of the two's index.
+    static const char *kinds[] = {"", "hall", "room", "centre", "hub"};
+    const auto it = floors_.find(stage ? "stage" : kinds[static_cast<int>(b.cells[U(cell)].kind)]);
+    if (it == floors_.end() || it->second.empty())
+        return {};
+    const int key = std::min(cell, Mirror(b, cell));
+    return it->second[U((key * 7 + 3) % static_cast<int>(it->second.size()))];
+}
+
+float MatchTable::RoomT() const
+{
+    const umbra::core::Camera c = view_.Camera();
+    const float distance = glm::length(c.position - c.target), far = Look("rooms", "boardDistance", 0.0F, 19.0F), near = Look("rooms", "roomDistance", 0.0F, 7.0F);
+    return std::clamp((far - distance) / std::max(0.1F, far - near), 0.0F, 1.0F);
+}
+
 float MatchTable::Look(const char *group, const char *key, float t, float fallback) const
 {
     // A value from the look: start and end mixed by t, or one number for both.
@@ -237,7 +272,7 @@ void MatchTable::Shadow(glm::vec3 feet, float width, umbra::core::DrawList &out)
 {
     // A wide rim and a smaller dark core, flat on the floor, a little wider than deep.
     const float dark = Look("shadow", "opacity", 0.0F, 0.6F);
-    for (const auto [scale, shade, lift] : {std::tuple{1.0F, 0.45F, 0.025F}, std::tuple{0.6F, 0.75F, 0.03F}})
+    for (const auto &[scale, shade, lift] : {std::tuple{1.0F, 0.45F, 0.025F}, std::tuple{0.6F, 0.75F, 0.03F}})
     {
         const float v = 0.2F * (1.0F - dark * shade);
         out.items.push_back({disc_, {}, glm::scale(glm::translate(glm::mat4{1.0F}, {feet.x, lift, feet.z}), {width * scale, 1.0F, width * scale * 0.6F}),
@@ -275,7 +310,20 @@ void MatchTable::Draw(const MatchState &s, const nlohmann::json &ui, int hover, 
         float glow = 0.0F;
         if (c == s.stage)
             color = Hex(0x8a6a24), glow = 0.35F + 0.1F * std::sin(clock_ * 2.0F);
-        Box(out, box_, Centre(b, c) + glm::vec3{0, -0.05F, 0}, {tile * 0.96F, 0.1F, tile * 0.96F}, color, glow);
+        // A painted floor, tinted by its kind (the colour shows where no picture is).
+        const umbra::core::TextureHandle art = FloorArt(b, c, c == s.stage);
+        const glm::vec4 tint = art ? glm::mix(glm::vec4{1.0F}, color, 0.45F) * 0.9F : color;
+        out.items.push_back({box_, art, glm::scale(glm::translate(glm::mat4{1.0F}, Centre(b, c) + glm::vec3{0, -0.05F, 0}), {tile * 0.96F, 0.1F, tile * 0.96F}),
+                             glm::vec4(glm::vec3(tint), 1.0F), 0.0F, glow});
+        // Walls rise on the sides with no door as the camera comes close (the room view); board N is +x, E is +z.
+        if (const float t = RoomT(); t > 0.02F)
+        {
+            const float h = Look("rooms", "wallHeight", 0.0F, 1.1F) * t, half = tile * 0.5F;
+            const glm::vec3 side[] = {{half, 0, 0}, {0, 0, half}, {-half, 0, 0}, {0, 0, -half}};
+            for (int dir = 0; dir < 4; ++dir)
+                if (!(b.cells[U(c)].doors & (1 << dir)))
+                    Box(out, box_, Centre(b, c) + side[dir] + glm::vec3{0, h * 0.5F, 0}, dir % 2 == 0 ? glm::vec3{0.08F, h, tile} : glm::vec3{tile, h, 0.08F}, Hex(0x2a1d16));
+        }
         if (b.cells[U(c)].event >= 0 && !b.cells[U(c)].resolved) // an event room: a small violet mark in its corner (optional goals stay quiet)
             Box(out, box_, Centre(b, c) + glm::vec3{-tile * 0.3F, 0.02F, -tile * 0.3F}, {0.22F, 0.03F, 0.22F}, Hex(0x8a6cc8), 0.25F);
     }
