@@ -155,6 +155,9 @@ namespace umbra::match
             num("battle", "minDamage", r.battle.minDamage);
             num("levels", "hp", r.levels.hp);
             num("levels", "killXp", r.levels.killXp);
+            num("levels", "cards", r.levels.cards);
+            num("levels", "upgradePower", r.levels.upgradePower);
+            num("levels", "upgradeCost", r.levels.upgradeCost);
             num("spawn", "warn", r.spawn.warn);
             num("spawn", "centre", r.spawn.centre);
             num("treasure", "min", r.treasure.min);
@@ -370,6 +373,26 @@ namespace umbra::match
                 s.Bad("treasure.csv", "at least one card is needed");
         }
 
+        void LoadLevelCards(const std::filesystem::path &folder, MatchDef &def, Diagnostics &out)
+        {
+            Sheet s(out, folder, "levelcards.csv", {"id", "kind", "what", "amount", "weight"});
+            for (int r = 0; r < s.Rows(); ++r)
+            {
+                LevelCardDef c{s.Text(r, "id")};
+                c.kind = static_cast<CardKind>(s.Pick(r, "kind", {"learn", "stat", "upgrade"}));
+                c.what = static_cast<Stat>(s.Pick(r, "what", {"hp", "attack", "defence", "speed", "move", "power", "cost"}));
+                c.amount = s.Int(r, "amount", 0, 99);
+                c.weight = s.Int(r, "weight", 1, 999);
+                // 1. Stat cards raise a stat; upgrades raise power or cut cost; learn names "power" by convention and ignores it.
+                const bool upgrade = c.what == Stat::Power || c.what == Stat::Cost;
+                if (s.ok && ((c.kind == CardKind::Stat && upgrade) || (c.kind == CardKind::Upgrade && !upgrade)))
+                    s.Bad(s.Where(r, "what"), "a stat card raises hp, attack, defence, speed or move; an upgrade, power or cost");
+                def.levelCards.push_back(c);
+            }
+            if (s.ok && def.levelCards.empty())
+                s.Bad("levelcards.csv", "at least one card is needed");
+        }
+
         void LoadEvents(const std::filesystem::path &folder, MatchDef &def, Diagnostics &out)
         {
             Sheet s(out, folder, "events.csv", {"id", "name", "text", "label1", "chance1", "success1", "failure1", "label2", "chance2", "success2", "failure2"});
@@ -401,6 +424,7 @@ namespace umbra::match
         LoadItems(folder, def, diagnostics);
         LoadEvents(folder, def, diagnostics);
         LoadTreasure(folder, def, diagnostics);
+        LoadLevelCards(folder, def, diagnostics);
         if (diagnostics.size() != before)
             return false;
         out = std::move(def);

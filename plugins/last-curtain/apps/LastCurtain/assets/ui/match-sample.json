@@ -62,7 +62,7 @@
     "hp": 30,
     "level": 1,
     "maxHp": 30,
-    "name": "Vo Minh Khang",
+    "name": "Vo Minh Khang (theirs)",
     "portrait": "art/sprites/khang/face_calm.png",
     "shield": 0,
     "side": 1,
@@ -88,48 +88,49 @@
   "rounds": 3,
   "title": "Round 1 of 3"
  },
+ "bubbles": [],
  "canSkip": false,
  "end": {
   "kills": [
-   1,
-   0
+   5,
+   6
   ],
   "monsters": [
    3,
-   4
+   8
   ],
   "performed": [
-   16,
-   15
+   34,
+   51
   ],
   "rows": [
    {
     "label": "Score",
-    "mine": 16,
-    "theirs": 15
+    "mine": 34,
+    "theirs": 51
    },
    {
     "label": "Kills",
-    "mine": 1,
-    "theirs": 0
+    "mine": 5,
+    "theirs": 6
    },
    {
     "label": "Essence performed",
-    "mine": 16,
-    "theirs": 15
+    "mine": 34,
+    "theirs": 51
    },
    {
     "label": "Monsters downed",
     "mine": 3,
-    "theirs": 4
+    "theirs": 8
    }
   ],
   "score": [
-   16,
-   15
+   34,
+   51
   ],
-  "title": "your side wins",
-  "winner": 0
+  "title": "their side wins",
+  "winner": 1
  },
  "event": {
   "choices": [
@@ -159,7 +160,7 @@
   "kind": "target",
   "level": 1,
   "maxHp": 30,
-  "name": "Vo Minh Khang",
+  "name": "Vo Minh Khang (theirs)",
   "portrait": "art/sprites/khang/face_calm.png",
   "side": 1,
   "unit": 5
@@ -168,20 +169,30 @@
  "level": {
   "choices": [
    {
-    "cost": 3,
+    "icon": "art/ui/match/icons/level.png",
     "index": 0,
-    "name": "Cleave",
-    "power": 7
+    "kind": "learn",
+    "name": "Learn Cleave",
+    "text": "A new ability for your role."
    },
    {
-    "cost": 2,
+    "icon": "art/ui/match/icons/attack.png",
     "index": 1,
-    "name": "Gamble",
-    "power": 0
+    "kind": "stat",
+    "name": "+1 Attack",
+    "text": "Every blow lands harder."
+   },
+   {
+    "icon": "art/ui/match/icons/attack.png",
+    "index": 2,
+    "kind": "upgrade",
+    "name": "Jab +2",
+    "text": "Upgrade: Jab gains 2 power."
    }
   ],
-  "level": 2,
-  "name": "Dinh Quoc Bao"
+  "level": 1,
+  "name": "Dinh Quoc Bao",
+  "unit": 0
  },
  "log": [
   "Hoang Gia Huy walks.",
@@ -190,6 +201,7 @@
  ],
  "logClosed": false,
  "logOpen": true,
+ "logTail": [],
  "order": [
   {
    "acted": false,
@@ -198,8 +210,10 @@
    "mine": true,
    "name": "Dinh Quoc Bao",
    "portrait": "art/sprites/bao/face_calm.png",
+   "short": "Bao",
    "side": 0,
    "sprite": "bao",
+   "theirs": false,
    "unit": 0
   },
   {
@@ -209,8 +223,10 @@
    "mine": false,
    "name": "Hoang Gia Huy",
    "portrait": "art/sprites/huy/face_calm.png",
+   "short": "Huy",
    "side": 1,
    "sprite": "huy",
+   "theirs": true,
    "unit": 3
   },
   {
@@ -218,10 +234,12 @@
    "current": false,
    "down": false,
    "mine": false,
-   "name": "Phan Thi Mai",
+   "name": "Phan Thi Mai (theirs)",
    "portrait": "art/sprites/mai/face_calm.png",
+   "short": "Mai",
    "side": 1,
    "sprite": "mai",
+   "theirs": true,
    "unit": 4
   },
   {
@@ -231,8 +249,10 @@
    "mine": true,
    "name": "Phan Thi Mai",
    "portrait": "art/sprites/mai/face_calm.png",
+   "short": "Mai",
    "side": 0,
    "sprite": "mai",
+   "theirs": false,
    "unit": 2
   },
   {
@@ -242,8 +262,10 @@
    "mine": true,
    "name": "Vo Minh Khang",
    "portrait": "art/sprites/khang/face_calm.png",
+   "short": "Khang",
    "side": 0,
    "sprite": "khang",
+   "theirs": false,
    "unit": 1
   },
   {
@@ -251,10 +273,12 @@
    "current": false,
    "down": false,
    "mine": false,
-   "name": "Vo Minh Khang",
+   "name": "Vo Minh Khang (theirs)",
    "portrait": "art/sprites/khang/face_calm.png",
+   "short": "Khang",
    "side": 1,
    "sprite": "khang",
+   "theirs": true,
    "unit": 5
   },
   {

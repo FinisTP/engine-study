@@ -50,10 +50,11 @@ namespace umbra::match
         std::int16_t hp = 0, maxHp = 0, attack = 0, defence = 0, speed = 0, move = 0, xp = 0;
         std::int8_t level = 1, size = 1; // size: squares a side; cell is the top-left one
         std::int8_t back = 0;    // turns until a downed character returns
-        std::int8_t pending = -1; // a jobs.csv row waiting for its choice
+        std::int8_t pending = -1; // 0: a level's cards wait for this unit's choice (MatchState::offer)
         int essence = 0, kills = 0;
         std::array<std::int8_t, maxAbilities> abilities{-1, -1, -1, -1, -1, -1, -1, -1};
         std::array<std::int8_t, maxItems> items{-1, -1, -1, -1};
+        std::array<std::int8_t, maxAbilities> boost{}, cut{}; // level-card upgrades: +power, -HP cost, by slot
     };
 
     struct Floor
@@ -97,6 +98,14 @@ namespace umbra::match
         int round = 0;
     };
 
+    // A card a level offers (Match.md "Level cards"). Learn: a = ability. Stat: a = Stat, b = amount.
+    // Upgrade: a = the ability's slot, b = 0 power, 1 cost.
+    struct LevelCard
+    {
+        std::int8_t kind = 0, a = -1, b = 0;
+        bool operator==(const LevelCard &) const = default;
+    };
+
     // A claimed room coming back (Match.md "Rooms come back"): kind 0 an event, 1 a treasure.
     struct RoomSpawn
     {
@@ -117,7 +126,8 @@ namespace umbra::match
         std::vector<Spawn> spawns; // shown once round - spawn.warn has come
         std::vector<Floor> floor;
         std::vector<RoomSpawn> roomSpawns;
-        std::vector<std::int8_t> cards; // treasure.csv rows dealt face down; the acting character must pick one
+        std::vector<std::int8_t> cards;
+        std::vector<LevelCard> offer; // the level cards the pending unit chooses from // treasure.csv rows dealt face down; the acting character must pick one
         Battle battle;
         TurnState now;
         std::vector<LogEntry> log;

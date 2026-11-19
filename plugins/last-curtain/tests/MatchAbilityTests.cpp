@@ -49,7 +49,7 @@ namespace
     }
 }
 
-TEST_CASE("Levelling learns the job's ability, or asks for a choice (T292)", "[match][levels]")
+TEST_CASE("Levelling deals three cards to choose from, before anything else (T292)", "[match][levels]")
 {
     const MatchDef def = Data();
     MatchState s = Start(def);
@@ -62,23 +62,82 @@ TEST_CASE("Levelling learns the job's ability, or asks for a choice (T292)", "[m
     CHECK(u.level == 2);
     CHECK(u.maxHp == maxHp + def.rules.levels.hp);
     CHECK(Current(s) == me);
-    const auto legal = Legal(def, s);
-    CHECK(legal == std::vector<Action>{{ActionKind::LevelUp, 0}, {ActionKind::LevelUp, 1}});
+    REQUIRE(s.offer.size() == 3);
+    CHECK(Legal(def, s) == std::vector<Action>{{ActionKind::LevelUp, 0}, {ActionKind::LevelUp, 1}, {ActionKind::LevelUp, 2}});
     CHECK(Check(def, s, {ActionKind::EndTurn}) == Why::MustChoose);
+    CHECK(Check(def, s, {ActionKind::LevelUp, 3}) == Why::NothingHere);
     REQUIRE(Apply(def, s, {ActionKind::LevelUp, 1}));
-    CHECK(SlotOf(def, u, "gamble") >= 0); // attacker level 2: cleave or gamble
-    CHECK(SlotOf(def, u, "cleave") < 0);
     CHECK(u.pending == -1);
+    CHECK(s.offer.empty());
 
     // A downed character's waiting choice is still asked first.
     MatchState t = Start(def);
     const int other = UnitOf(def, t, "khang", 0);
     t.units[U(other)].cell = -1;
     t.units[U(other)].back = 1;
-    t.units[U(other)].pending = I8(static_cast<int>(std::ranges::find_if(def.jobs, [](const JobLevel &j) { return j.role == Role::Defender && j.choice >= 0; }) - def.jobs.begin()));
+    t.units[U(other)].pending = 0;
+    t.offer = {{1, 1, 1}, {1, 2, 1}, {1, 0, 4}};
     CHECK(Current(t) == other);
     REQUIRE(Apply(def, t, {ActionKind::LevelUp, 0}));
     CHECK(Current(t) == t.order[0]);
+}
+
+TEST_CASE("Level cards: learn a role's ability, raise a stat, or upgrade a known ability (T348)", "[match][levels]")
+{
+    const MatchDef def = Data();
+    REQUIRE_FALSE(def.levelCards.empty());
+    MatchState base = Start(def);
+    const int me = UnitOf(def, base, "bao", 0);
+    TurnOf(base, me);
+    const int jab = SlotOf(def, base.units[U(me)], "jab"), snipe = SlotOf(def, base.units[U(me)], "snipe");
+    auto offered = [&](LevelCard card) {
+        MatchState s = base;
+        s.units[U(me)].pending = 0;
+        s.offer = {card};
+        REQUIRE(Apply(def, s, {ActionKind::LevelUp, 0}));
+        return s;
+    };
+    // 1. Learn: the ability goes in a free slot.
+    const int cleave = MatchDef::Find(def.abilities, "cleave");
+    MatchState l = offered({0, I8(cleave), 0});
+    CHECK(SlotOf(def, l.units[U(me)], "cleave") >= 0);
+    // 2. A stat: attack +1 (HP raises both HP and its maximum).
+    MatchState a = offered({1, 1, 1});
+    CHECK(a.units[U(me)].attack == base.units[U(me)].attack + 1);
+    MatchState h = offered({1, 0, 4});
+    CHECK(h.units[U(me)].maxHp == base.units[U(me)].maxHp + 4);
+    CHECK(h.units[U(me)].hp == base.units[U(me)].hp + 4);
+    // 3. Upgrade power: the ability hits harder for this unit only.
+    const int foe = 3;
+    MatchState p = offered({2, I8(jab), 0});
+    CHECK(Damage(def, p, p.units[U(me)].abilities[U(jab)], me, foe, 0) == Damage(def, base, base.units[U(me)].abilities[U(jab)], me, foe, 0) + def.rules.levels.upgradePower);
+    // 4. Upgrade cost: the board ability costs less HP (and the forecast says so).
+    MatchState c = offered({2, I8(snipe), 1});
+    c.units[U(foe)].cell = static_cast<std::int16_t>(SquareAt(c, c.units[U(me)].cell, 2));
+    CHECK(Preview(def, c, {ActionKind::BoardAbility, I8(snipe), I8(foe)}).cost == def.abilities[U(c.units[U(me)].abilities[U(snipe)])].hpCost - def.rules.levels.upgradeCost);
+    const int before = c.units[U(me)].hp;
+    REQUIRE(Apply(def, c, {ActionKind::BoardAbility, I8(snipe), I8(foe)}));
+    CHECK(c.units[U(me)].hp == before - (def.abilities[U(c.units[U(me)].abilities[U(snipe)])].hpCost - def.rules.levels.upgradeCost));
+    // 5. Offers over many seeds hold all three kinds, three distinct cards each.
+    bool kinds[3] = {};
+    for (std::uint64_t seed = 1; seed <= 40; ++seed)
+    {
+        MatchState s = NewMatch(def, seed, {MatchDef::Find(def.characters, "bao"), MatchDef::Find(def.characters, "khang"), MatchDef::Find(def.characters, "mai")});
+        const int m = Current(s);
+        s.units[U(m)].items[0] = I8(MatchDef::Find(def.items, "programme"));
+        s.units[U(m)].xp = static_cast<std::int16_t>(def.rules.levels.xp[0] - 3);
+        REQUIRE(Apply(def, s, {ActionKind::UseItem, 0}));
+        REQUIRE(s.offer.size() == 3);
+        for (std::size_t i = 0; i < 3; ++i)
+        {
+            kinds[s.offer[i].kind] = true;
+            for (std::size_t k = 0; k < i; ++k)
+                CHECK_FALSE((s.offer[i].kind == s.offer[k].kind && s.offer[i].a == s.offer[k].a && s.offer[i].b == s.offer[k].b));
+        }
+    }
+    CHECK(kinds[0]);
+    CHECK(kinds[1]);
+    CHECK(kinds[2]);
 }
 
 TEST_CASE("Board abilities: Hit at range, Heal an ally at the healer's cost (T293)", "[match][abilities]")

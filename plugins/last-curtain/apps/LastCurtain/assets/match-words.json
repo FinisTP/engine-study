@@ -119,5 +119,31 @@
     "essence": "{n} essence",
     "xp": "{n} XP",
     "heal": "{n} HP back"
+  },
+  "levelcards": {
+    "learnTitle": "Learn {ability}",
+    "learn": "A new ability for your role.",
+    "learnIcon": "art/ui/match/icons/level.png",
+    "hpTitle": "+{n} HP",
+    "hp": "More health, now and from here on.",
+    "hpIcon": "art/ui/match/icons/hp.png",
+    "attackTitle": "+{n} Attack",
+    "attack": "Every blow lands harder.",
+    "attackIcon": "art/ui/match/icons/attack.png",
+    "defenceTitle": "+{n} Defence",
+    "defence": "Every blow you take is softer.",
+    "defenceIcon": "art/ui/match/icons/defence.png",
+    "speedTitle": "+{n} Speed",
+    "speed": "Act earlier in later rounds' order.",
+    "speedIcon": "art/ui/match/icons/speed.png",
+    "moveTitle": "+{n} Move",
+    "move": "One more step each turn.",
+    "moveIcon": "art/ui/match/icons/move.png",
+    "powerTitle": "{ability} +{n}",
+    "power": "Upgrade: {ability} gains {n} power.",
+    "powerIcon": "art/ui/match/icons/attack.png",
+    "costTitle": "{ability} -{n} HP",
+    "cost": "Upgrade: {ability} costs {n} HP less.",
+    "costIcon": "art/ui/match/icons/essence.png"
   }
 }

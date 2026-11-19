@@ -249,10 +249,9 @@ namespace umbra::match
         for (ActionKind k : {ActionKind::Perform, ActionKind::EndTurn})
             all.push_back({k});
         for (int c = 0; c < 2; ++c)
-        {
             all.push_back({ActionKind::Answer, i8(c)});
+        for (int c = 0; c < static_cast<int>(s.offer.size()); ++c)
             all.push_back({ActionKind::LevelUp, i8(c)});
-        }
         std::vector<Action> out;
         for (const Action &a : all)
             if (Check(def, s, a) == Why::Ok)

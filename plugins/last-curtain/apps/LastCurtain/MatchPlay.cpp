@@ -379,13 +379,21 @@ nlohmann::json MatchPlay::UiData() const
         j["battle"] = BattleData();
     if (const int now = Current(s_); now >= 0 && s_.units[U(now)].pending >= 0)
     {
-        // 4. The level choice: the job row's ability and its alternative.
-        const JobLevel &row = def_.jobs[U(s_.units[U(now)].pending)];
+        // 4. The level's cards (Vampire Survivors style): learn, a stat, an upgrade; each with its words.
+        const Unit &u = s_.units[U(now)];
+        static const char *stats[] = {"hp", "attack", "defence", "speed", "move"};
         nlohmann::json choices = nlohmann::json::array();
-        for (int id : {row.ability, row.choice})
-            if (id >= 0)
-                choices.push_back({{"index", choices.size()}, {"name", def_.abilities[U(id)].name}, {"power", def_.abilities[U(id)].power},
-                                   {"cost", def_.abilities[U(id)].hpCost}});
+        for (const LevelCard &c : s_.offer)
+        {
+            const int ability = c.kind == 0 ? c.a : c.kind == 2 ? u.abilities[U(c.a)] : -1;
+            const std::string name = ability >= 0 ? def_.abilities[U(ability)].name : "";
+            const std::string key = c.kind == 0 ? "learn" : c.kind == 1 ? stats[U(c.a)] : c.b == 0 ? "power" : "cost";
+            const int amount = c.kind == 1 ? c.b : c.kind == 2 ? (c.b == 0 ? def_.rules.levels.upgradePower : def_.rules.levels.upgradeCost) : 0;
+            choices.push_back({{"index", choices.size()}, {"kind", c.kind == 0 ? "learn" : c.kind == 1 ? "stat" : "upgrade"},
+                               {"name", Fill(Word("levelcards", key + "Title"), {{"ability", name}, {"n", std::to_string(amount)}})},
+                               {"text", Fill(Word("levelcards", key), {{"ability", name}, {"n", std::to_string(amount)}})},
+                               {"icon", Word("levelcards", key + "Icon")}});
+        }
         j["level"] = {{"unit", now}, {"name", Name(now)}, {"level", s_.units[U(now)].level}, {"choices", choices}};
     }
     if (eventCell_ >= 0)

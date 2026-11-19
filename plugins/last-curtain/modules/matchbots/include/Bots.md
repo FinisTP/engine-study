@@ -103,3 +103,9 @@ are more of them).** Three weak and two strong dens a half; strong dens every 10
 rats 8, prompter 14, the Usher 20 essence. On the CTest's 400 matches: side 0 wins 46.2%, the first
 mover 44.5%, monsters 38.9% / kills 44.0% / guardians 17.1%, comebacks 27.8% of 381 led matches,
 guardians fell 341 times, the lead last changed on round 14.2. **The data holds.**
+
+**Plan 3 (2026-11-20: treasure, rooms coming back, level cards).** The balance moved (comebacks
+about 24%). Restored by data: the Prompter (strong dens from round 12) every 6 rounds and worth 22,
+rats (weak dens from round 10) every 6 and worth 12, rooms come back after 16 rounds, treasure purses
+2 and hoards 4. On the CTest's 400 matches: side 0 48.0%, the first mover 50.5%, monsters 43.8% /
+kills 43.3% / guardians 12.9%, comebacks 27.4%. **The data holds.**

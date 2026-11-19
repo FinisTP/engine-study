@@ -98,7 +98,7 @@ namespace umbra::match
             const AbilityDef *a = Slot(def, s.units[U(me)], slot);
             if (!a || a->use != Use::Battle)
                 return Why::NothingHere;
-            if (s.units[U(me)].hp <= a->hpCost)
+            if (s.units[U(me)].hp <= CostOf(def, s.units[U(me)], slot))
                 return Why::TooCostly;
             return Why::Ok;
         }
@@ -116,7 +116,7 @@ namespace umbra::match
             const AbilityDef &a = *Slot(def, s.units[U(me)], slot);
             Unit &u = s.units[U(me)];
             const int foe = Foe(s, me);
-            u.hp = static_cast<std::int16_t>(u.hp - a.hpCost);
+            u.hp = static_cast<std::int16_t>(u.hp - CostOf(def, u, slot));
             // 1. The ability: a blow, a shield for the rest of the battle, or healing.
             if (a.kind == AbilityClass::Strike)
             {
@@ -128,9 +128,9 @@ namespace umbra::match
                     return Down(def, s, foe, me);
             }
             else if (a.kind == AbilityClass::Shield)
-                s.battle.shield[U(Side(s, me))] = static_cast<std::int16_t>(s.battle.shield[U(Side(s, me))] + a.power);
+                s.battle.shield[U(Side(s, me))] = static_cast<std::int16_t>(s.battle.shield[U(Side(s, me))] + PowerOf(def, u, slot));
             else if (a.kind == AbilityClass::Heal)
-                u.hp = static_cast<std::int16_t>(std::min<int>(u.maxHp, u.hp + a.power));
+                u.hp = static_cast<std::int16_t>(std::min<int>(u.maxHp, u.hp + PowerOf(def, u, slot)));
             // 2. The other side picks next; after both, the next round; after the last round, the end.
             if (s.battle.next == s.battle.first)
                 s.battle.next = static_cast<std::int8_t>(1 - s.battle.first);
@@ -179,7 +179,11 @@ namespace umbra::match
     {
         const AbilityDef &a = def.abilities[U(ability)];
         const int shield = s.battle.on && (to == s.battle.attacker || to == s.battle.defender) ? s.battle.shield[U(Side(s, to))] : 0;
-        const int power = a.dice.count > 0 ? roll : a.power;
+        // An upgraded ability adds the unit's boost for the slot that holds it.
+        const Unit &f = s.units[U(from)];
+        const auto slot = std::ranges::find(f.abilities, ability);
+        const int boost = slot != f.abilities.end() ? f.boost[U(static_cast<int>(slot - f.abilities.begin()))] : 0;
+        const int power = (a.dice.count > 0 ? roll : a.power) + boost;
         return std::max(def.rules.battle.minDamage, power + s.units[U(from)].attack - (s.units[U(to)].defence + shield));
     }
 
@@ -201,10 +205,10 @@ namespace umbra::match
         const AbilityDef *a = Slot(def, u, act.a);
         if (!a)
             return f;
-        f.cost = a->hpCost;
+        f.cost = CostOf(def, u, act.a);
         const int target = act.kind == ActionKind::BattleAbility ? (s.battle.on ? Foe(s, me) : -1) : act.b;
         if (a->kind == AbilityClass::Heal)
-            f.healed = a->power;
+            f.healed = PowerOf(def, u, act.a);
         else if ((a->kind == AbilityClass::Strike || a->kind == AbilityClass::Hit) && target >= 0)
         {
             const int ability = u.abilities[U(act.a)];

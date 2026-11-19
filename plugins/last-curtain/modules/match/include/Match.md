@@ -15,6 +15,7 @@ one copyable value, and only `Apply` changes it. Bots and the app send the same 
 | `monsters.csv` | id, name, tier (weak, strong, great, guardian), behaviour (stay, flee, stage, guard, hunt), stats, essence, xp, level (shown to the player), size (1-3 squares a side), sight (steps a hunter sees; 1+ for hunt), abilities (`a;b`, the first is its strike), sprite, tint |
 | `spawns.csv` | zone (weak, strong, centre), from (first round), monster (never a guardian), every (rounds after its square empties; 0 = once); loaded sorted by zone, then from |
 | `treasure.csv` | id, kind (item, essence, xp, heal), item (or none), amount, weight: what an item room's face-down cards may hold |
+| `levelcards.csv` | id, kind (learn, stat, upgrade), what (hp, attack, defence, speed, move; power or cost for an upgrade), amount (a stat's), weight |
 | `items.csv` | id, name, text, sprite, class (heal, xp), amount |
 | `events.csv` | id, name, text, two choices: label, chance (percent), success, failure (`none`, `hp:-3`, `essence:2`, `xp:2`, `item:<id>`) |
 
@@ -149,3 +150,16 @@ in a random free room of the same half: a room square (never the centre or the s
 no event or treasure there and none already coming. At the start of its round it opens: a new event
 drawn from `events.csv`, or a fresh treasure. The table marks a coming room a round ahead. No traps
 (the user).
+
+## Level cards (`Abilities.cpp`)
+
+Each XP step passed is one level: more HP (`levels.hp`), then `levels.cards` cards drawn by weight
+from `levelcards.csv`, never the same card twice (`MatchState::offer`; the unit is `pending`):
+- **learn** an ability of the role (a `jobs.csv` row of level 2 up to the unit's level, its ability
+  or its choice) that the unit does not know yet;
+- a **stat** (+amount HP, attack, defence, speed or move; HP raises the maximum and the current);
+- an **upgrade** of one known, non-passive ability: +`levels.upgradePower` power or
+  -`levels.upgradeCost` HP cost, kept per unit and slot (`Unit::boost`, `Unit::cut`). Every rule
+  reads power and cost through `PowerOf` and `CostOf`; `Damage` adds the attacker's boost.
+`LevelUp` (a = the card) applies it; a further level waiting is dealt next. Level-1 rows of
+`jobs.csv` are still the starting abilities. Bots favour a new ability, attack and power.

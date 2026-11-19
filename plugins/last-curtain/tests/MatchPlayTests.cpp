@@ -340,22 +340,20 @@ TEST_CASE("Level choices and events are their own screens (T329)", "[match][play
 {
     const MatchDef def = Data();
     // 1. A level choice: the two abilities; picking one learns it.
-    int row = -1;
+    const int cleave = MatchDef::Find(def.abilities, "cleave");
     MatchPlay p = AtPlayer(def, [&](MatchState &s) {
-        const Unit &u = s.units[static_cast<std::size_t>(Current(s))];
-        for (int j = 0; j < static_cast<int>(def.jobs.size()); ++j)
-            if (def.jobs[static_cast<std::size_t>(j)].role == def.characters[static_cast<std::size_t>(u.def)].role && def.jobs[static_cast<std::size_t>(j)].choice >= 0)
-                row = j;
-        s.units[static_cast<std::size_t>(Current(s))].pending = static_cast<std::int8_t>(row);
+        s.units[static_cast<std::size_t>(Current(s))].pending = 0;
+        s.offer = {{1, 1, 1}, {0, static_cast<std::int8_t>(cleave), 0}, {1, 0, 4}};
     });
     REQUIRE(p.Screen() == "level");
     const nlohmann::json level = p.UiData()["level"];
-    REQUIRE(level["choices"].size() == 2);
-    CHECK(level["choices"][1]["name"] == def.abilities[static_cast<std::size_t>(def.jobs[static_cast<std::size_t>(row)].choice)].name);
+    REQUIRE(level["choices"].size() == 3);
+    CHECK(level["choices"][1]["name"].get<std::string>().find(def.abilities[static_cast<std::size_t>(cleave)].name) != std::string::npos);
+    CHECK(level["choices"][0]["kind"] == "stat");
     REQUIRE(p.HandleUi("level", "pick", "1"));
     CHECK(p.Screen() == "");
     const auto &abilities = p.State().units[static_cast<std::size_t>(Current(p.State()))].abilities;
-    CHECK(std::ranges::find(abilities, def.jobs[static_cast<std::size_t>(row)].choice) != abilities.end());
+    CHECK(std::ranges::find(abilities, cleave) != abilities.end());
 
     // 2. An event: its card, a choice, the result, then back to the board.
     MatchPlay q = AtPlayer(def, [&](MatchState &s) {
@@ -464,7 +462,13 @@ TEST_CASE("Write the match screens' sample data", "[.sample]")
     // 2. The battle, the level choice, the event and the end, from their own moments.
     p.Click(p.State().units[static_cast<std::size_t>(enemy)].cell);
     sample["battle"] = p.UiData()["battle"];
-    sample["level"] = {{"name", "Dinh Quoc Bao"}, {"level", 2}, {"choices", {{{"index", 0}, {"name", "Cleave"}, {"power", 7}, {"cost", 3}}, {{"index", 1}, {"name", "Gamble"}, {"power", 0}, {"cost", 2}}}}};
+    {
+        MatchPlay lv = AtPlayer(def, [&](MatchState &st) {
+            st.units[static_cast<std::size_t>(Current(st))].pending = 0;
+            st.offer = {{0, static_cast<std::int8_t>(MatchDef::Find(def.abilities, "cleave")), 0}, {1, 1, 1}, {2, 0, 0}};
+        });
+        sample["level"] = lv.UiData()["level"];
+    }
     const EventDef &e = def.events[0];
     sample["event"] = {{"name", e.name}, {"text", e.text}, {"choosing", true}, {"result", ""},
                        {"choices", {{{"label", e.choices[0].label}, {"chance", e.choices[0].chance}}, {{"label", e.choices[1].label}, {"chance", e.choices[1].chance}}}}};
@@ -554,9 +558,8 @@ TEST_CASE("A bot's level choice never opens the player's level screen (T344)", "
     for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
         if (s.units[static_cast<std::size_t>(i)].kind == 0 && s.units[static_cast<std::size_t>(i)].faction == 1)
             bot = i;
-    for (int j = 0; j < static_cast<int>(def.jobs.size()); ++j)
-        if (def.jobs[static_cast<std::size_t>(j)].choice >= 0 && def.jobs[static_cast<std::size_t>(j)].role == def.characters[static_cast<std::size_t>(s.units[static_cast<std::size_t>(bot)].def)].role)
-            s.units[static_cast<std::size_t>(bot)].pending = static_cast<std::int8_t>(j);
+    s.units[static_cast<std::size_t>(bot)].pending = 0;
+    s.offer = {{1, 1, 1}, {1, 2, 1}, {1, 0, 4}};
     REQUIRE(s.units[static_cast<std::size_t>(bot)].pending >= 0);
     MatchPlay p(def, s, BotLevel::Medium);
     p.SetWords(Words());

@@ -44,43 +44,98 @@ namespace umbra::match
 
     namespace inner
     {
+        int PowerOf(const MatchDef &def, const Unit &u, int slot) { return def.abilities[U(u.abilities[U(slot)])].power + u.boost[U(slot)]; }
+        int CostOf(const MatchDef &def, const Unit &u, int slot) { return std::max(0, def.abilities[U(u.abilities[U(slot)])].hpCost - u.cut[U(slot)]); }
+
+        void Deal(const MatchDef &def, MatchState &s, int unit)
+        {
+            // 1. What may be offered: the role's abilities of levels 2..now not yet known, slots that can be upgraded.
+            const Unit &u = s.units[U(unit)];
+            const Role role = def.characters[U(u.def)].role;
+            std::vector<int> learn, slots;
+            for (const JobLevel &j : def.jobs)
+                if (j.role == role && j.level >= 2 && j.level <= u.level)
+                    for (const int a : {j.ability, j.choice})
+                        if (a >= 0 && std::ranges::find(u.abilities, a) == u.abilities.end() && std::ranges::find(learn, a) == learn.end())
+                            learn.push_back(a);
+            for (int slot = 0; slot < maxAbilities; ++slot)
+                if (u.abilities[U(slot)] >= 0 && def.abilities[U(u.abilities[U(slot)])].use != Use::Passive)
+                    slots.push_back(slot);
+            // 2. Cards drawn by weight until there are enough, never the same card twice.
+            int total = 0;
+            for (const LevelCardDef &c : def.levelCards)
+                total += c.weight;
+            s.offer.clear();
+            for (int tries = 0; tries < 64 && static_cast<int>(s.offer.size()) < def.rules.levels.cards; ++tries)
+            {
+                int r = Roll(s, total), row = 0;
+                while (r >= def.levelCards[U(row)].weight)
+                    r -= def.levelCards[U(row++)].weight;
+                const LevelCardDef &c = def.levelCards[U(row)];
+                LevelCard card;
+                if (c.kind == CardKind::Learn && !learn.empty())
+                    card = {0, static_cast<std::int8_t>(learn[U(Roll(s, static_cast<int>(learn.size())))]), 0};
+                else if (c.kind == CardKind::Stat)
+                    card = {1, static_cast<std::int8_t>(c.what), static_cast<std::int8_t>(c.amount)};
+                else if (c.kind == CardKind::Upgrade && !slots.empty())
+                {
+                    const int slot = slots[U(Roll(s, static_cast<int>(slots.size())))];
+                    if (c.what == Stat::Cost && CostOf(def, u, slot) == 0)
+                        continue;
+                    card = {2, static_cast<std::int8_t>(slot), static_cast<std::int8_t>(c.what == Stat::Cost ? 1 : 0)};
+                }
+                else
+                    continue;
+                if (std::ranges::find(s.offer, card) == s.offer.end())
+                    s.offer.push_back(card);
+            }
+        }
+
         void GainXp(const MatchDef &def, MatchState &s, int unit, int amount)
         {
             Unit &u = s.units[U(unit)];
             if (u.kind != 0)
                 return;
             u.xp = static_cast<std::int16_t>(u.xp + amount);
-            // 1. Each XP step passed: a level, more HP, and the job's ability for that level (or a choice).
+            // 1. The next XP step passed: a level, more HP, and its cards (one level at a time; LevelUp asks again).
             const auto &steps = def.rules.levels.xp;
-            while (u.pending < 0 && u.level - 1 < static_cast<int>(steps.size()) && u.xp >= steps[U(u.level - 1)])
+            if (u.pending < 0 && s.offer.empty() && u.level - 1 < static_cast<int>(steps.size()) && u.xp >= steps[U(u.level - 1)])
             {
                 ++u.level;
                 u.maxHp = static_cast<std::int16_t>(u.maxHp + def.rules.levels.hp);
                 u.hp = static_cast<std::int16_t>(u.hp + def.rules.levels.hp);
                 Log(s, LogKind::Level, unit, u.level);
-                const Role role = def.characters[U(u.def)].role;
-                for (int j = 0; j < static_cast<int>(def.jobs.size()); ++j)
-                    if (def.jobs[U(j)].role == role && def.jobs[U(j)].level == u.level)
-                    {
-                        if (def.jobs[U(j)].choice >= 0 && u.pending < 0)
-                            u.pending = static_cast<std::int8_t>(j);
-                        else
-                            Learn(u, def.jobs[U(j)].ability);
-                    }
+                Deal(def, s, unit);
+                if (!s.offer.empty())
+                    u.pending = 0;
             }
         }
 
         Why CheckLevelUp(const MatchDef &, const MatchState &s, int me, int choice)
         {
-            return s.units[U(me)].pending >= 0 && (choice == 0 || choice == 1) ? Why::Ok : Why::NothingHere;
+            return s.units[U(me)].pending >= 0 && choice >= 0 && choice < static_cast<int>(s.offer.size()) ? Why::Ok : Why::NothingHere;
         }
 
         void LevelUp(const MatchDef &def, MatchState &s, int me, int choice)
         {
+            // 1. The card: learn, a stat, or an upgrade of one ability.
             Unit &u = s.units[U(me)];
-            const JobLevel &j = def.jobs[U(u.pending)];
-            Learn(u, choice == 0 ? j.ability : j.choice);
+            const LevelCard c = s.offer[U(choice)];
+            if (c.kind == 0)
+                Learn(u, c.a);
+            else if (c.kind == 1)
+            {
+                std::int16_t *stat[] = {&u.maxHp, &u.attack, &u.defence, &u.speed, &u.move};
+                *stat[U(c.a)] = static_cast<std::int16_t>(*stat[U(c.a)] + c.b);
+                if (c.a == static_cast<int>(Stat::Hp))
+                    u.hp = static_cast<std::int16_t>(u.hp + c.b);
+            }
+            else if (c.b == 0)
+                u.boost[U(c.a)] = static_cast<std::int8_t>(u.boost[U(c.a)] + def.rules.levels.upgradePower);
+            else
+                u.cut[U(c.a)] = static_cast<std::int8_t>(u.cut[U(c.a)] + def.rules.levels.upgradeCost);
             u.pending = -1;
+            s.offer.clear();
             GainXp(def, s, me, 0); // a later level may be waiting too
         }
 
@@ -103,7 +158,7 @@ namespace umbra::match
             const int d = StepsTo(s.board, u.cell, t);
             if (d < 0 || d > a.range)
                 return Why::OutOfRange;
-            if (u.hp <= a.hpCost)
+            if (u.hp <= CostOf(def, u, slot))
                 return Why::TooCostly;
             return Why::Ok;
         }
@@ -113,10 +168,10 @@ namespace umbra::match
             Unit &u = s.units[U(me)];
             const int ability = u.abilities[U(slot)];
             const AbilityDef &a = def.abilities[U(ability)];
-            u.hp = static_cast<std::int16_t>(u.hp - a.hpCost);
+            u.hp = static_cast<std::int16_t>(u.hp - CostOf(def, u, slot));
             Unit &t = s.units[U(target)];
             if (a.kind == AbilityClass::Heal)
-                t.hp = static_cast<std::int16_t>(std::min<int>(t.maxHp, t.hp + a.power));
+                t.hp = static_cast<std::int16_t>(std::min<int>(t.maxHp, t.hp + PowerOf(def, u, slot)));
             else
             {
                 int roll = 0;

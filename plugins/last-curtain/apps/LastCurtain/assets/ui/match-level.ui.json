@@ -3,13 +3,14 @@
   "version": 1,
   "modal": true,
   "dim": true,
-  "root": { "type": "stack", "anchor": "center", "style": "float", "gap": 12, "align": "center", "size": [560, 0], "children": [
+  "root": { "type": "stack", "anchor": "center", "style": "float", "gap": 14, "align": "center", "size": [980, 0], "children": [
     { "type": "text", "style": "title", "text": "{level.name} reaches level {level.level}" },
-    { "type": "text", "style": "small", "text": "Choose what to learn." },
-    { "type": "list", "items": "{level.choices}", "as": "c", "gap": 8, "action": "pick", "arg": "{c.index}",
-      "entry": { "type": "stack", "style": "slot", "size": [480, 0], "gap": 2, "children": [
-        { "type": "text", "style": "heading", "text": "{c.name}" },
-        { "type": "text", "style": "small", "text": "Power {c.power}   Cost {c.cost} HP" }
+    { "type": "text", "style": "small", "text": "Choose one." },
+    { "type": "list", "items": "{level.choices}", "as": "c", "direction": "horizontal", "gap": 16, "action": "pick", "arg": "{c.index}",
+      "entry": { "type": "stack", "style": "cardArt", "size": [290, 330], "gap": 8, "align": "center", "children": [
+        { "type": "image", "style": "iconGold", "image": "{c.icon}", "size": [64, 64], "fit": "contain" },
+        { "type": "text", "style": "heading", "text": "{c.name}", "wrap": true, "size": [220, 0] },
+        { "type": "text", "style": "small", "text": "{c.text}", "wrap": true, "size": [220, 0] }
       ] } }
   ] }
 }

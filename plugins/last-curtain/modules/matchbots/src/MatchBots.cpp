@@ -255,7 +255,20 @@ namespace umbra::match
             return {ActionKind::EndTurn};
         const Unit &u = s.units[U(me)];
         if (u.pending >= 0)
-            return {ActionKind::LevelUp, I8(Noise(s, me, 77) > 0.6 ? 1 : 0)};
+        {
+            // A level's cards: a new ability, attack or an upgrade first; HP, defence; then speed and move.
+            static const double byStat[] = {2.0, 2.6, 2.0, 1.0, 1.4};
+            int best = 0;
+            double bestValue = -1e9;
+            for (int c = 0; c < static_cast<int>(s.offer.size()); ++c)
+            {
+                const LevelCard &card = s.offer[U(c)];
+                const double v = card.kind == 0 ? 3.0 : card.kind == 1 ? byStat[U(card.a)] : (card.b == 0 ? 2.6 : 1.6);
+                if (const double n = Noisy(def, s, level, me, 600 + c, v); n > bestValue)
+                    best = c, bestValue = n;
+            }
+            return {ActionKind::LevelUp, I8(best)};
+        }
         if (s.battle.on)
             return BattlePick(def, s, me, level);
         if (!s.cards.empty()) // face down: any card is as good as another

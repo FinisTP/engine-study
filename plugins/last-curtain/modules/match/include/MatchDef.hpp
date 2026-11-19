@@ -23,6 +23,8 @@ namespace umbra::match
     enum class Target : std::uint8_t { Enemy, Ally, Self, Monster, Room, Any };
     enum class ItemClass : std::uint8_t { HealItem, ExpGrant };
     enum class TreasureKind : std::uint8_t { Item, Essence, Xp, Heal };
+    enum class CardKind : std::uint8_t { Learn, Stat, Upgrade };
+    enum class Stat : std::uint8_t { Hp, Attack, Defence, Speed, Move, Power, Cost }; // Power, Cost: what an upgrade raises or cuts
     enum class Effect : std::uint8_t { None, Hp, Essence, Xp, Item };
     enum class BotLevel : std::uint8_t { Easy, Medium, Hard };
 
@@ -82,6 +84,15 @@ namespace umbra::match
         int item = -1, amount = 0, weight = 1;
     };
 
+    // One levelcards.csv row: a kind of card a level may offer, how often (weight), and for a stat card how much.
+    struct LevelCardDef
+    {
+        std::string id;
+        CardKind kind = CardKind::Stat;
+        Stat what = Stat::Attack;
+        int amount = 0, weight = 1;
+    };
+
     struct Outcome
     {
         Effect effect = Effect::None;
@@ -125,7 +136,7 @@ namespace umbra::match
         } board;
         struct { int turns = 0; } respawn;
         struct { int rounds = 0, minDamage = 0; } battle;
-        struct { std::vector<int> xp; int hp = 0, killXp = 0; } levels;
+        struct { std::vector<int> xp; int hp = 0, killXp = 0, cards = 3, upgradePower = 2, upgradeCost = 1; } levels;
         struct { int min = 2, max = 5, fullEssence = 2; } treasure;
         struct { int respawn = 8; } rooms; // a claimed item or event room comes back this many rounds later // cards per item room; an item card with a full bag gives essence
         struct { int warn = 1, centre = 2; } spawn; // warn: rounds marked before; centre: steps from the stage
@@ -146,6 +157,7 @@ namespace umbra::match
         std::vector<MonsterDef> monsters;
         std::vector<SpawnRow> spawns; // sorted by zone, then from
         std::vector<TreasureDef> treasure;
+        std::vector<LevelCardDef> levelCards;
         std::vector<ItemDef> items;
         std::vector<EventDef> events;
 
