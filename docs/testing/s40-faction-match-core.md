@@ -35,11 +35,15 @@ UmbraTool match-soak --runs 200
 
 | Toolchain | Result |
 |---|---|
-| GCC 13, Debug | 56/57; the one failure is `Umbra.Match.Balance` (below) |
+| GCC 13, Debug | 56/57 at `#UMBRA-260` (the balance); `Umbra.Match.Balance` passes from `#UMBRA-262` |
 | Clang, Debug (balance excluded) | 56/56 |
 | GCC ASan+UBSan (balance excluded) | 56/56 |
 
 ## 2. Balance (400 matches, medium against medium)
+
+**Holds since `#UMBRA-262`** (the user allowed a guardian to fall in one battle; the Usher is now 20 HP,
+6 Attack, 2 Defence, 30 essence): side 0 49.7%, first mover 46.0%, monsters 58.1%, kills 36.5%,
+guardians 5.4%, comebacks 25.7%, 93 guardians fell. The first reading, kept for the record:
 
 Side 0 wins 52.0% (band 45-55); the side moving first wins 46.2% (at most 55); essence from monsters
 65.4%, kills 34.6%, guardians 0% (none over 60% — **fails**); comebacks 23.4% of 384 led matches

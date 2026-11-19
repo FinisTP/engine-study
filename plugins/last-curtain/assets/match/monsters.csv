@@ -3,4 +3,4 @@ moths,Moth swarm,weak,stay,8,2,1,2,2,2,4,claw,specter,9A9A80
 stagehand,Hanged stagehand,strong,stay,18,4,3,2,6,5,0,bite,specter,806050
 prompter,The Prompter,strong,stage,20,4,3,3,8,6,0,bite,specter,507080
 spider,The Spider,great,flee,40,6,4,4,25,12,0,crush,specter,FFFFFF
-usher,The Usher,guardian,guard,45,7,5,1,20,10,0,crush,specter,A04040
+usher,The Usher,guardian,guard,20,6,2,1,30,10,0,crush,specter,A04040

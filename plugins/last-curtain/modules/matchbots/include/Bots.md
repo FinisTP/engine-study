@@ -65,7 +65,13 @@ percent; comebacks at least `comebackMin` percent.
 | guardians fallen | 0 |
 | lead last changed | round 14.7 of 30 |
 
-Four data changes did not bring monsters under 60% (guardian 30 HP and Defence 4; moths 1
+**Resolved 2026-11-19 (the user: a guardian may fall in one battle).** The Usher became 20 HP, 6
+Attack, 2 Defence, worth 30 essence. On the CTest's 400 matches: side 0 wins 49.7%, the first mover
+46.0%, monsters 58.1% / kills 36.5% / guardians 5.4%, comebacks 25.7% of 382 led matches,
+guardians fell 93 times, the lead last changed on round 15.2. Every band holds (comebacks by a small
+margin).
+
+Before that, four data changes did not bring monsters under 60% (guardian 30 HP and Defence 4; moths 1
 essence; characters with 80% HP; Attack +1): stolen essence first came from monsters, so monsters
 lead unless guardians fall, and these bots never attack a guardian they cannot beat in one battle
 (45 HP, 7 Attack, 5 Defence). Open for the user: change the band, make guardians winnable in one

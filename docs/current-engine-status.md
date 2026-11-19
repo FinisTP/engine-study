@@ -22,8 +22,8 @@
   guardians at the hubs (`docs/design/2026-11-19-factions.md`, its evaluation `-eval.md`).
 - Plan 1 built the rules headless beside the old night: `plugins/last-curtain/modules/match` (`Match.md`,
   `Board.md`) and `modules/matchbots` (`Bots.md`), data in `assets/match/`, `UmbraTool match-soak`.
-  GCC 56/57 CTests; the balance CTest fails two bands (monsters 65% of essence, comebacks 23%), left for
-  the user (`testing/s40-faction-match-core.md`). No screen yet: Plan 2.
+  GCC 56/57 CTests at first; the balance holds since `#UMBRA-262` (guardians beatable in one battle,
+  the user's call; `testing/s40-faction-match-core.md`). No screen yet: Plan 2.
 - Art: Bao, Khang (now 12), Mai and Lan (now 26) drawn in Huy's style overnight (`art/README.md`).
 
 ## Update 2026-11-10 (direction: the living town, ADR 0011, `#UMBRA-85`)
