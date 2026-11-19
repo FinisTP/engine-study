@@ -143,10 +143,17 @@
     "label": "Walk on"
    }
   ],
-  "choosing": true,
+  "choosing": false,
   "name": "Applause from an empty hall",
-  "result": "",
-  "text": "Someone is clapping in the dark stalls, slow and steady, as if the show has just ended."
+  "result": "Hoang Gia Huy faces the room: it went well.",
+  "text": "Someone is clapping in the dark stalls, slow and steady, as if the show has just ended.",
+  "dice": {
+   "a": 3,
+   "b": 5,
+   "total": 8,
+   "target": 7,
+   "passed": true
+  }
  },
  "forecast": {
   "attack": 3,

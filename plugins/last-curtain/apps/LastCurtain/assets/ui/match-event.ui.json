@@ -11,6 +11,11 @@
         { "type": "text", "style": "strong", "text": "{c.label}" },
         { "type": "text", "style": "muted", "text": "{c.chance}%" }
       ] } },
+    { "type": "stack", "direction": "horizontal", "gap": 14, "align": "center", "visible": "{event.dice}", "children": [
+      { "type": "text", "style": "die", "text": "{event.dice.a}", "size": [56, 56], "textAlign": "center" },
+      { "type": "text", "style": "die", "text": "{event.dice.b}", "size": [56, 56], "textAlign": "center" },
+      { "type": "text", "style": "small", "text": "need {event.dice.target} or more" }
+    ] },
     { "type": "text", "style": "heading", "text": "{event.result}", "visible": "{event.result}", "wrap": true, "size": [580, 0] },
     { "type": "button", "style": "act", "size": [200, 44], "text": "Continue", "action": "close", "visible": "{event.result}" }
   ] }

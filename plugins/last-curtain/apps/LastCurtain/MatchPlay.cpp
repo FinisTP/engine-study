@@ -171,6 +171,7 @@ void MatchPlay::Update(float dt)
 {
     if (dt <= 0.0F)
         return;
+    diceLeft_ = std::max(0.0F, diceLeft_ - dt);
     for (Bubble &b : bubbles_)
         b.left -= dt;
     std::erase_if(bubbles_, [](const Bubble &b) { return b.left <= 0.0F; });
@@ -222,8 +223,8 @@ bool MatchPlay::HandleUi(const std::string &screen, const std::string &action, c
     }
     if (screen == "event" && eventCell_ >= 0)
     {
-        if (action == "close" && !eventResult_.empty())
-            return eventCell_ = -1, true;
+        if (action == "close" && !eventResult_.empty() && diceLeft_ <= 0.0F)
+            return eventCell_ = -1, eventDice_ = nullptr, true;
         if (action != "choose" || !eventResult_.empty() || arg.empty())
             return false;
         const std::size_t before = s_.log.size();
@@ -231,7 +232,17 @@ bool MatchPlay::HandleUi(const std::string &screen, const std::string &action, c
             return false;
         for (std::size_t i = before; i < s_.log.size(); ++i)
             if (s_.log[i].kind == LogKind::Event)
+            {
                 eventResult_ = Caption(s_.log[i]);
+                // 1. Two dice landing on a total that agrees with what the rules decided, against the chance's target.
+                const bool passed = s_.log[i].c != 0;
+                const int chance = def_.events[U(s_.board.cells[U(eventCell_)].event)].choices[U(std::stoi(arg))].chance;
+                const int target = std::clamp(DiceTarget(chance), passed ? 2 : 3, passed ? 12 : 13);
+                const int total = passed ? (target + 13) / 2 : (target + 1) / 2;
+                const int a = std::clamp((total + 1) / 2, std::max(1, total - 6), 6);
+                eventDice_ = {{"a", a}, {"b", total - a}, {"total", total}, {"target", target}, {"passed", passed}};
+                diceLeft_ = options_.diceSeconds;
+            }
         return true;
     }
     if (screen.empty() && action == "act" && PlayerTurn() && Chose())
@@ -402,7 +413,15 @@ nlohmann::json MatchPlay::UiData() const
         nlohmann::json choices = nlohmann::json::array();
         for (const Choice &c : e.choices)
             choices.push_back({{"label", c.label}, {"chance", c.chance}});
-        j["event"] = {{"name", e.name}, {"text", e.text}, {"choices", choices}, {"result", eventResult_}, {"choosing", eventResult_.empty()}};
+        j["event"] = {{"name", e.name}, {"text", e.text}, {"choices", choices}, {"result", diceLeft_ > 0.0F ? "" : eventResult_}, {"choosing", eventResult_.empty()}};
+        if (!eventDice_.is_null() && !eventResult_.empty())
+        {
+            // While they tumble the faces flicker; then they land.
+            nlohmann::json d = eventDice_;
+            if (diceLeft_ > 0.0F)
+                d["a"] = 1 + static_cast<int>(diceLeft_ * 37.0F) % 6, d["b"] = 1 + static_cast<int>(diceLeft_ * 23.0F) % 6, d["rolling"] = true;
+            j["event"]["dice"] = d;
+        }
     }
     if (!s_.cards.empty() || !treasureResult_.empty())
     {
@@ -745,6 +764,23 @@ std::string MatchPlay::Sound(const LogEntry &e)
     case LogKind::Over: return "bell";
     default: return "";
     }
+}
+
+int MatchPlay::DiceTarget(int chance)
+{
+    // 1. Ways two dice reach each total or more, of 36; the target whose odds are nearest the chance (ties: the lower).
+    int best = 13, bestGap = 1 << 20;
+    for (int t = 2; t <= 13; ++t)
+    {
+        int ways = 0;
+        for (int a = 1; a <= 6; ++a)
+            for (int b = 1; b <= 6; ++b)
+                ways += a + b >= t;
+        const int gap = std::abs(ways * 100 - chance * 36);
+        if (gap < bestGap)
+            best = t, bestGap = gap;
+    }
+    return best;
 }
 
 nlohmann::json MatchPlay::Save() const { return SaveMatch(s_); }

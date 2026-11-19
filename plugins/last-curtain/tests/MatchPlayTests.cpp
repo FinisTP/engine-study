@@ -595,3 +595,36 @@ TEST_CASE("Treasure is its own screen: face-down cards, a pick, the reveal (T346
     REQUIRE(p.HandleUi("treasure", "close", ""));
     CHECK(p.Screen() != "treasure"); // a card of XP may open the level choice next
 }
+
+TEST_CASE("An event's roll shows two dice against a target that matches its chance, landing as the rules decided (T349)", "[match][play]")
+{
+    CHECK(MatchPlay::DiceTarget(100) == 2);
+    CHECK(MatchPlay::DiceTarget(58) == 7);
+    CHECK(MatchPlay::DiceTarget(50) == 7);
+    CHECK(MatchPlay::DiceTarget(17) == 10);
+    CHECK(MatchPlay::DiceTarget(0) == 13);
+    const MatchDef def = Data();
+    for (std::uint64_t seed = 1; seed <= 12; ++seed)
+    {
+        MatchPlay q = AtPlayer(def, [&](MatchState &s) {
+            s.rng ^= seed * 0x9E3779B97F4A7C15ULL;
+            for (int c = 0; c < static_cast<int>(s.board.cells.size()); ++c)
+                if (s.board.cells[static_cast<std::size_t>(c)].event >= 0 && std::ranges::none_of(s.units, [&](const Unit &u) { return u.cell == c; }))
+                {
+                    s.units[static_cast<std::size_t>(Current(s))].cell = s.now.origin = static_cast<std::int16_t>(c);
+                    break;
+                }
+        });
+        q.Click(q.State().units[static_cast<std::size_t>(Current(q.State()))].cell);
+        REQUIRE(q.HandleUi("", "act", "answer"));
+        const int chance = q.UiData()["event"]["choices"][0]["chance"];
+        REQUIRE(q.HandleUi("event", "choose", "0"));
+        const nlohmann::json d = q.UiData()["event"]["dice"];
+        CHECK(d["target"] == MatchPlay::DiceTarget(chance));
+        const int a = d["a"], b = d["b"];
+        CHECK(a >= 1); CHECK(a <= 6); CHECK(b >= 1); CHECK(b <= 6);
+        const bool passed = std::ranges::any_of(q.State().log, [](const LogEntry &e) { return e.kind == LogKind::Event && e.c; });
+        CHECK((a + b >= d["target"].get<int>()) == passed);
+        CHECK(d["passed"] == passed);
+    }
+}

@@ -42,6 +42,8 @@ public:
     static std::string Sound(const umbra::match::LogEntry &e);
     std::vector<std::pair<int, std::string>> TakeMoves() { return std::exchange(moves_, {}); }
     std::vector<std::string> TakeSounds() { return std::exchange(sounds_, {}); }
+    // The 2d6 total to reach whose odds are nearest an event's percent chance (13: never, 2: always).
+    static int DiceTarget(int chance);
     static const char *LogName(umbra::match::LogKind kind);
     static const char *WhyName(umbra::match::Why why);
     [[nodiscard]] std::string Caption(const umbra::match::LogEntry &e) const;
@@ -84,6 +86,8 @@ private:
     std::string armed_; // "attack" or "ability:<slot>"
     std::string lastBlow_, eventResult_, treasureResult_; // the battle's last blow; the event's outcome; the card turned
     int eventCell_ = -1;
+    nlohmann::json eventDice_;  // the event's two dice, as shown (display only: the rules' roll decides)
+    float diceLeft_ = 0.0F;     // seconds the dice still tumble
     struct Bubble
     {
         int unit = -1;

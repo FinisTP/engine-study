@@ -326,6 +326,17 @@
     },
     "iconPale": {
       "tint": "#c9c1ad"
+    },
+    "die": {
+      "base": "title",
+      "color": "#1b1410",
+      "background": "#efe4cc",
+      "border": "#8a6a24",
+      "borderWidth": 2,
+      "padding": [
+        0,
+        6
+      ]
     }
   }
 }

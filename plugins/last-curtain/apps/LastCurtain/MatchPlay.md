@@ -96,3 +96,10 @@ model can write them later. The same character on both sides is told apart: thei
 
 While the player's character holds dealt cards, `treasure` is the screen: the face-down cards
 (`pick` by index), then the card turned (`result`, its log line), then `close`.
+
+## The event's dice
+
+The rules roll an event's percent chance. The screen shows two dice against the 2d6 total whose odds
+(the ways of 36 to reach it or more) are nearest that chance (`DiceTarget`; ties go to the lower
+total), tumbling for `diceSeconds` and landing on a total that agrees with what the rules decided:
+the middle of the totals that pass, or that fail. Display only; nothing reads them.
