@@ -149,6 +149,42 @@ void MatchTable::Play(int unit, const std::string &motion)
 
 void MatchTable::Animate(const MatchState &s, float dt)
 {
+    // 1. A new turn: the ring grows under the one whose turn it is, it nods, and the camera eases halfway to it.
+    const int now = s.battle.on ? s.battle.attacker : Current(s);
+    if (now >= 0 && now != acting_)
+    {
+        acting_ = now, follow_ = true;
+        if (s.units[U(now)].kind == 0 && !s.battle.on)
+            ringUnit_ = now, ringT_ = 0.0F, Play(now, "nod");
+    }
+    ringT_ = std::min(1.0F, ringT_ + dt / Look("ring", "seconds", 0.0F, 1.0F));
+    if (follow_ && now >= 0 && s.units[U(now)].cell >= 0 && scene_.empty())
+    {
+        glm::vec3 at = Feet(s.board, s.units[U(now)]);
+        if (s.battle.on && s.units[U(s.battle.defender)].cell >= 0)
+            at = (at + Feet(s.board, s.units[U(s.battle.defender)])) * 0.5F;
+        const glm::vec3 target{at.x * Look("follow", "pull", 0.0F, 0.2F), 0.0F, at.z * Look("follow", "pull", 0.0F, 0.2F)};
+        if (glm::length(target - view_.Target()) > 0.05F)
+            view_.Aim(target, Look("follow", "seconds", 0.0F, 0.6F));
+    }
+    // 2. A scene: its shot moves with its clock, then hands the camera back.
+    if (!scene_.empty())
+    {
+        sceneT_ += dt;
+        const float seconds = Look(scene_.c_str(), "seconds", 0.0F, 3.0F), t = std::min(1.0F, sceneT_ / seconds);
+        const float e = t * t * (3.0F - 2.0F * t); // smoothstep
+        if (scene_ == "open")
+            view_.SetShot(true, Look("open", "fromDistance", 0.0F, 40.0F) * (1.0F - e) + Look("open", "toDistance", 0.0F, 19.0F) * e,
+                          Look("open", "yaw", 0.0F, -40.0F) * (1.0F - e), Look("open", "fromTilt", 0.0F, 80.0F) * (1.0F - e) + Look("open", "toTilt", 0.0F, 57.0F) * e);
+        else
+        {
+            if (sceneCell_ >= 0)
+                view_.Aim(Centre(s.board, sceneCell_), 0.8F);
+            view_.SetShot(true, Look("end", "distance", 0.0F, 11.0F), sceneT_ * Look("end", "turn", 0.0F, 12.0F), Look("end", "tilt", 0.0F, 40.0F));
+        }
+        if (t >= 1.0F && scene_ == "open")
+            scene_.clear(), view_.SetShot(false, 0, 0, 50);
+    }
     states_.resize(s.units.size());
     for (std::size_t i = 0; i < states_.size(); ++i)
     {
@@ -268,6 +304,8 @@ void MatchTable::Draw(const MatchState &s, const nlohmann::json &ui, int hover, 
         if (u.cell < 0 || u.hp <= 0)
             continue;
         const glm::vec3 feet = Feet(b, u);
+        if (i == ringUnit_ && ringT_ < 1.0F) // the turn's ring: grows and fades
+            Outline(out, box_, feet - glm::vec3{0, 0.08F, 0}, tile * (0.6F + 0.9F * ringT_), Hex(0xD8B25A), 1.2F * (1.0F - ringT_));
         Shadow(feet + glm::vec3{0.0F, 0.0F, 0.15F}, tile * Look("shadow", "width", 0.0F, 0.75F) * static_cast<float>(u.size), out);
         if (u.faction >= 0)
             Outline(out, box_, feet - glm::vec3{0, 0.1F, 0}, tile * 0.7F * static_cast<float>(u.size), u.faction == 0 ? Hex(0x5b9bd5) : Hex(0xe08a3c), 0.5F);

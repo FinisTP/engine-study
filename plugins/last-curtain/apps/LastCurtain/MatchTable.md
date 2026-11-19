@@ -28,3 +28,11 @@ at round 1 to `grade.end` at the last round: colder, greyer and darker toward th
 user). The lamp stutters by `flicker` (two sine waves beating; only their peaks dim it). Each figure
 stands on a shadow: two flat discs, a lighter rim and a darker core, `shadow.width` of a square per
 footprint square. They are opaque on purpose: the sprite surface dithers faint alpha into noise.
+
+## Following, the turn ring and scenes
+
+A new turn: a gold ring grows under the one whose turn it is and fades over `ring.seconds`, and the
+figure nods. The camera eases toward whoever acts (a battle: the middle of the two), only
+`follow.pull` of the way from the board's middle so the board stays in view; a drag stops it until
+the next turn. Scenes (`match-look.json`): `open` sweeps down from high and far onto the board when a
+match begins; `end` circles the winner's hub when it is over.

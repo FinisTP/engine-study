@@ -39,7 +39,12 @@ public:
     void SetLook(nlohmann::json look) { look_ = std::move(look); } // assets/match-look.json
     // Motions (motions.json): a unit plays one (down holds until revive), then rests in idle.
     void Play(int unit, const std::string &motion);
+    // Also follows the action (the acting unit, a battle's middle) and opens each turn with a ring.
     void Animate(const umbra::match::MatchState &s, float dt);
+    // A scene (MatchTable.md "Scenes"): "open" sweeps down onto the board, "end" circles the winner's hub.
+    void StartScene(const std::string &name, int cell) { scene_ = name, sceneT_ = 0.0F, sceneCell_ = cell; }
+    [[nodiscard]] bool InScene() const { return !scene_.empty(); }
+    void StopFollow() { follow_ = false; } // a drag frees the camera until the next turn
 
 private:
     [[nodiscard]] glm::vec3 Centre(const umbra::match::Board &b, int cell) const;          // a square's middle on the table
@@ -60,4 +65,9 @@ private:
     nlohmann::json look_;
     TableCamera view_;
     float clock_ = 0.0F;
+    int acting_ = -1, ringUnit_ = -1;
+    float ringT_ = 1.0F, sceneT_ = 0.0F;
+    bool follow_ = true;
+    std::string scene_;
+    int sceneCell_ = -1;
 };

@@ -103,6 +103,7 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
     std::uint64_t matches = 0;
     std::string shown;
     int savedRound = -1;
+    bool ended = false; // the end scene has started
     const auto show = [&](const std::string &want) {
         if (!screens.Ready() || want == shown)
             return;
@@ -122,7 +123,9 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
         play->SetWatch(watch);
         if (screens.Ready())
             screens.Ui().Open("match-labels"), screens.Ui().Open("match-hud");
-        savedRound = -1;
+        savedRound = -1, ended = false;
+        if (!restored)
+            table.StartScene("open", -1);
     };
     const auto backToPick = [&] {
         play.reset();
@@ -180,7 +183,9 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
             if (held && !dragging && glm::length(uiInput.mouse - pressAt) > 4.0F)
                 dragging = true;
             if (held && dragging)
-                table.Pan(uiInput.mouse - lastMouse);
+                table.Pan(uiInput.mouse - lastMouse), table.StopFollow();
+            if (play->State().over && !ended)
+                ended = true, table.StartScene("end", play->State().board.hub[static_cast<std::size_t>(std::max(0, play->State().winner))]);
             table.Zoom(input.Wheel());
             if (!play->State().over && play->State().round != savedRound && !watch)
                 WriteSave(*play), savedRound = play->State().round;

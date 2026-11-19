@@ -29,5 +29,25 @@
   "shadow": {
     "opacity": 0.85,
     "width": 0.75
+  },
+  "ring": {
+    "seconds": 1.0
+  },
+  "follow": {
+    "seconds": 0.6,
+    "pull": 0.2
+  },
+  "open": {
+    "seconds": 3.0,
+    "fromDistance": 40,
+    "toDistance": 19,
+    "yaw": -40,
+    "fromTilt": 80,
+    "toTilt": 57
+  },
+  "end": {
+    "distance": 11,
+    "turn": 12,
+    "tilt": 40
   }
 }
