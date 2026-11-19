@@ -317,6 +317,15 @@
         34,
         30
       ]
+    },
+    "iconGold": {
+      "tint": "#d8b25a"
+    },
+    "iconRed": {
+      "tint": "#d0645a"
+    },
+    "iconPale": {
+      "tint": "#c9c1ad"
     }
   }
 }

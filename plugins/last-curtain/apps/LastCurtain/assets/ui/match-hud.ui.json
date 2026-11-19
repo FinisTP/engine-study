@@ -22,12 +22,20 @@
         { "type": "text", "style": "heading", "text": "{unit.name}" },
         { "type": "text", "style": "muted", "text": "{unit.role}   Lv {unit.level}" },
         { "type": "bar", "style": "hp", "size": [200, 10], "value": "{unit.hp}", "max": "{unit.maxHp}" },
-        { "type": "text", "style": "small", "text": "HP {unit.hp}/{unit.maxHp}" },
-        { "type": "stack", "direction": "horizontal", "gap": 8, "align": "center", "children": [
-          { "type": "text", "style": "muted", "text": "Essence" },
+        { "type": "stack", "direction": "horizontal", "gap": 5, "align": "center", "children": [
+          { "type": "image", "style": "iconRed", "image": "art/ui/match/icons/hp.png", "size": [16, 16], "fit": "contain" },
+          { "type": "text", "style": "small", "text": "{unit.hp}/{unit.maxHp}" },
+          { "type": "spacer", "size": [10, 0] },
+          { "type": "image", "style": "iconGold", "image": "art/ui/match/icons/essence.png", "size": [16, 16], "fit": "contain" },
           { "type": "text", "style": "essence", "text": "{unit.essence}" }
         ] },
-        { "type": "text", "style": "small", "text": "ATK {unit.attack}   DEF {unit.defence}", "visible": "{armed}" }
+        { "type": "stack", "direction": "horizontal", "gap": 5, "align": "center", "visible": "{armed}", "children": [
+          { "type": "image", "style": "iconPale", "image": "art/ui/match/icons/attack.png", "size": [16, 16], "fit": "contain" },
+          { "type": "text", "style": "small", "text": "{unit.attack}" },
+          { "type": "spacer", "size": [10, 0] },
+          { "type": "image", "style": "iconPale", "image": "art/ui/match/icons/defence.png", "size": [16, 16], "fit": "contain" },
+          { "type": "text", "style": "small", "text": "{unit.defence}" }
+        ] }
       ] }
     ] },
     { "type": "stack", "anchor": "left", "offset": [20, -30], "gap": 6, "visible": "{actions}", "children": [
@@ -38,7 +46,16 @@
       { "type": "text", "style": "muted", "text": "Forecast" },
       { "type": "text", "style": "heading", "text": "{forecast.name}  Lv {forecast.level}", "visible": "{forecast.name}" },
       { "type": "bar", "style": "hp", "size": [250, 8], "value": "{forecast.hp}", "max": "{forecast.maxHp}", "visible": "{forecast.maxHp}" },
-      { "type": "text", "style": "small", "text": "HP {forecast.hp}/{forecast.maxHp}   ATK {forecast.attack}   DEF {forecast.defence}", "visible": "{forecast.maxHp}" },
+      { "type": "stack", "direction": "horizontal", "gap": 5, "align": "center", "visible": "{forecast.maxHp}", "children": [
+        { "type": "image", "style": "iconRed", "image": "art/ui/match/icons/hp.png", "size": [14, 14], "fit": "contain" },
+        { "type": "text", "style": "small", "text": "{forecast.hp}/{forecast.maxHp}" },
+        { "type": "spacer", "size": [8, 0] },
+        { "type": "image", "style": "iconPale", "image": "art/ui/match/icons/attack.png", "size": [14, 14], "fit": "contain" },
+        { "type": "text", "style": "small", "text": "{forecast.attack}" },
+        { "type": "spacer", "size": [8, 0] },
+        { "type": "image", "style": "iconPale", "image": "art/ui/match/icons/defence.png", "size": [14, 14], "fit": "contain" },
+        { "type": "text", "style": "small", "text": "{forecast.defence}" }
+      ] },
       { "type": "text", "style": "small", "text": "Carries {forecast.essence} essence", "visible": "{forecast.essence}" },
       { "type": "text", "style": "bad", "text": "Your blow: {forecast.dealtMin}-{forecast.dealtMax}", "visible": "{forecast.dealtMax}" },
       { "type": "text", "style": "good", "text": "Heals {forecast.healed}", "visible": "{forecast.healed}" },

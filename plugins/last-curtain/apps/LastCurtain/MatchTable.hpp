@@ -64,6 +64,8 @@ private:
     [[nodiscard]] float Look(const char *group, const char *key, float t, float fallback) const; // start..end at t
     void Shadow(glm::vec3 feet, float width, umbra::core::DrawList &out) const;
     umbra::core::MeshHandle disc_; // a flat round disc for shadows
+    umbra::core::TextureHandle eventIcon_, chestIcon_; // the optional rooms' marks (art/ui/match/icons)
+    void Mark(glm::vec3 at, umbra::core::TextureHandle icon, glm::vec3 color, float strength, umbra::core::DrawList &out) const;
     std::map<std::string, std::vector<umbra::core::TextureHandle>> floors_; // by square kind
     [[nodiscard]] umbra::core::TextureHandle FloorArt(const umbra::match::Board &b, int cell, bool stage) const;
     [[nodiscard]] float RoomT() const; // 0 the board, 1 close enough for walls

@@ -104,6 +104,14 @@ MatchTable::MatchTable(umbra::render::Renderer &renderer, const umbra::assets::A
             disc.indices.insert(disc.indices.end(), {0u, static_cast<std::uint32_t>(k + 1), static_cast<std::uint32_t>(k)});
     }
     disc_ = renderer.CreateMesh(disc);
+    // 3. The marks of optional rooms: white glyphs, tinted when drawn.
+    for (auto [file, handle] : {std::pair{"event", &eventIcon_}, {"item", &chestIcon_}})
+    {
+        umbra::core::TextureData data;
+        std::string error;
+        if (umbra::assets::LoadImageFile(assets / (std::string("art/ui/match/icons/") + file + ".png"), data, error))
+            *handle = renderer.CreateTexture(data);
+    }
     for (const MonsterDef &m : def.monsters)
         load(m.sprite);
 }
@@ -268,6 +276,24 @@ float MatchTable::Look(const char *group, const char *key, float t, float fallba
     return a + (b - a) * t;
 }
 
+void MatchTable::Mark(glm::vec3 at, umbra::core::TextureHandle icon, glm::vec3 color, float strength, umbra::core::DrawList &out) const
+{
+    // A small glyph standing in the room's corner, facing the camera; all tint (the glyph is white).
+    if (!icon)
+        return;
+    const umbra::core::Camera camera = view_.Camera();
+    const glm::vec3 forward = glm::normalize(camera.target - camera.position);
+    const glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3{0, 1, 0})), up = glm::cross(right, forward);
+    const float size = tile * 0.38F;
+    glm::mat4 model{1.0F};
+    model[0] = glm::vec4(right * size, 0.0F);
+    model[1] = glm::vec4(up * size, 0.0F);
+    model[2] = glm::vec4(-forward, 0.0F);
+    model[3] = glm::vec4(at + glm::vec3{0.0F, 0.05F, 0.0F} + up * (size * 0.5F), 1.0F);
+    out.items.push_back({quad_, icon, model, glm::vec4(color * strength, 1.0F), 0.0F, 0.99F});
+    out.items.back().surface = out.SurfaceIndex("sprite");
+}
+
 void MatchTable::Shadow(glm::vec3 feet, float width, umbra::core::DrawList &out) const
 {
     // A wide rim and a smaller dark core, flat on the floor, a little wider than deep.
@@ -324,13 +350,20 @@ void MatchTable::Draw(const MatchState &s, const nlohmann::json &ui, int hover, 
                 if (!(b.cells[U(c)].doors & (1 << dir)))
                     Box(out, box_, Centre(b, c) + side[dir] + glm::vec3{0, h * 0.5F, 0}, dir % 2 == 0 ? glm::vec3{0.08F, h, tile} : glm::vec3{tile, h, 0.08F}, Hex(0x2a1d16));
         }
-        if (b.cells[U(c)].event >= 0 && !b.cells[U(c)].resolved) // an event room: a small violet mark in its corner (optional goals stay quiet)
-            Box(out, box_, Centre(b, c) + glm::vec3{-tile * 0.3F, 0.02F, -tile * 0.3F}, {0.22F, 0.03F, 0.22F}, Hex(0x8a6cc8), 0.25F);
+        if (b.cells[U(c)].event >= 0 && !b.cells[U(c)].resolved) // an event room: a "?" in its corner (optional goals stay quiet)
+            Mark(Centre(b, c) + glm::vec3{tile * 0.22F, 0.0F, -tile * 0.22F}, eventIcon_, glm::vec3(Hex(0xB9A2E8)), 1.0F, out);
     }
     // 2b. An item on the floor: a small gold mark in the opposite corner.
     for (const Floor &f : s.floor)
-        if (f.cell >= 0)
-            Box(out, box_, Centre(b, f.cell) + glm::vec3{tile * 0.3F, 0.02F, tile * 0.3F}, {0.22F, 0.03F, 0.22F}, Hex(0xC9A54A), 0.25F);
+        if (f.cell >= 0 && f.treasure) // a treasure: a chest
+            Mark(Centre(b, f.cell) + glm::vec3{tile * 0.22F, 0.0F, tile * 0.22F}, chestIcon_, glm::vec3(Hex(0xE2C068)), 1.0F, out);
+        else if (f.cell >= 0) // dropped essence or an item
+            Box(out, box_, Centre(b, f.cell) + glm::vec3{tile * 0.3F, 0.02F, tile * 0.3F}, {0.18F, 0.03F, 0.18F}, Hex(0xC9A54A), 0.25F);
+    // 2c. A room coming back: its mark, faint, from the round before.
+    for (const RoomSpawn &r : s.roomSpawns)
+        if (r.round - 1 <= s.round)
+            Mark(Centre(b, r.cell) + glm::vec3{tile * 0.22F, 0.0F, r.kind == 0 ? -tile * 0.22F : tile * 0.22F}, r.kind == 0 ? eventIcon_ : chestIcon_,
+                 glm::vec3(Hex(0x8a8178)), 0.6F, out);
     // 3. Announced spawns: an orange marker pulsing on the square.
     for (const Spawn &w : s.spawns)
         if (w.round - def_.rules.spawn.warn <= s.round)

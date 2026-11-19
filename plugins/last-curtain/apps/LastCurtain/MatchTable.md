@@ -7,7 +7,8 @@ mouse's ray to the table top (y = 0) and turns that point back into a square.
 
 - Squares by kind: halls dark wood, rooms faded carpet, the centre opera red, hubs in their side's
   colour; the stage glows gold. Optional goals are only marked (the user): an unresolved event room
-  a small violet square in one corner, an item on the floor a small gold square in the other.
+  a small "?" glyph standing in one corner, a treasure a chest glyph in the other; a room coming back
+  shows its glyph faint from the round before. Dropped essence is a small gold square.
 - Announced spawns: an orange outline pulsing on the square.
 - The player's turn (from `MatchPlay::UiData`): the reach in blue (an armed ability's range in
   orange), the path as small dots, targets outlined red, the hovered square outlined white.

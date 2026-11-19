@@ -145,3 +145,9 @@ turn banner, 9-sliced), `card.png` (seed 11, the battle's fighter cards, 9-slice
 the panels (too heavy for the HUD, the user wants it light), the bubbles (not clean), the first
 banner (it drew letters), the first icons (each sat in a busy framed medallion). Icons are being
 redone as plain white silhouettes on black, to cut out by brightness and tint in the skin.
+
+Icons (`art/ui/match/icons/`): asked for "minimal flat game icon, solid pure white silhouette ... plain
+pure black background" (seed 5); each cropped to one glyph (three came as 2x2 grids), inverted where
+the model drew dark on light, cut out by brightness into a white glyph with alpha, 128x128. The skin
+tints them (`iconGold`, `iconRed`, `iconPale`); the table stands the "?" and the chest in optional
+rooms' corners.
