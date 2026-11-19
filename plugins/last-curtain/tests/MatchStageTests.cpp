@@ -38,13 +38,6 @@ namespace
             }
         return -1;
     }
-
-    void EndRound(const MatchDef &def, MatchState &s)
-    {
-        const int round = s.round;
-        while (s.round == round)
-            REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
-    }
 }
 
 TEST_CASE("Only Perform turns essence into score (T296)", "[match][stage]")
@@ -80,31 +73,4 @@ TEST_CASE("The stage holds one (T297)", "[match][stage]")
     const int other = me == 3 ? 4 : 3;
     s.units[U(other)].cell = s.stage;
     CHECK(Check(def, s, {ActionKind::Move, I8(dir)}) == Why::Blocked);
-}
-
-TEST_CASE("The stage announces its next room, then moves (T298)", "[match][stage]")
-{
-    const MatchDef def = Data();
-    MatchState s = Start(def);
-    const int first = s.stage;
-    const int closes = s.stageCloses;
-    while (s.round < closes - 1)
-        EndRound(def, s);
-    REQUIRE(s.nextStage >= 0);
-    CHECK(s.nextStage != first);
-    CHECK(std::ranges::find(s.board.stageRooms, s.nextStage) != s.board.stageRooms.end());
-    CHECK(std::ranges::any_of(s.log, [&](const LogEntry &e) { return e.kind == LogKind::StageNext && e.a == s.nextStage; }));
-    const int next = s.nextStage;
-    // Someone left standing on the old stage keeps their square; a monster on the new one blocks it.
-    const int me = s.order[0];
-    s.units[U(me)].cell = static_cast<std::int16_t>(first);
-    const int monster = static_cast<int>(s.units.size()) - 1;
-    s.units[U(monster)].cell = static_cast<std::int16_t>(next);
-    EndRound(def, s);
-    CHECK(s.round == closes);
-    CHECK(s.stage == next);
-    CHECK(s.nextStage == -1);
-    CHECK(s.stageCloses == closes + def.rules.stage.openRounds);
-    CHECK(s.units[U(me)].cell == first);
-    CHECK(std::ranges::any_of(s.log, [&](const LogEntry &e) { return e.kind == LogKind::StageOpen && e.a == next; }));
 }

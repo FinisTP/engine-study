@@ -180,6 +180,10 @@ namespace umbra::match
             for (int x = 0; x < W; ++x)
                 if (const int c = At(b, x, ym); b.cells[U(c)].kind == CellKind::Centre && b.cells[U(c)].doors == 0xF)
                     b.stageRooms.push_back(static_cast<std::int16_t>(c));
+            // 10. Centre spawn squares: on the middle row, spawn.centre steps either side of the stage.
+            for (int x : {mid - def.rules.spawn.centre, mid + def.rules.spawn.centre})
+                if (const int c = At(b, x, ym); x != mid && c >= 0 && b.cells[U(c)].kind == CellKind::Centre)
+                    b.centreSpawns.push_back(static_cast<std::int16_t>(c));
             return b.stageRooms.size() >= 2;
         }
     }
@@ -214,7 +218,7 @@ namespace umbra::match
                 return false; // every square can be reached
         }
         // 2. Every den and item room has its mirror in the same list.
-        for (const auto *list : {&b.weakDens, &b.strongDens, &b.itemRooms})
+        for (const auto *list : {&b.weakDens, &b.strongDens, &b.itemRooms, &b.centreSpawns})
             for (int c : *list)
                 if (std::find(list->begin(), list->end(), Mirror(b, c)) == list->end())
                     return false;

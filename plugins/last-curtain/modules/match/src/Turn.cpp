@@ -144,8 +144,10 @@ namespace umbra::match
                     RunMonsters(def, s);
                     if (++s.round > def.options.rounds)
                         return EndMatch(def, s);
-                    StageRound(def, s);
+                    RunSpawns(def, s, true);
                 }
+                else
+                    RunSpawns(def, s, false);
                 // 2. A downed character misses this turn; when its count runs out it is back home, whole.
                 Unit &u = s.units[U(s.order[U(s.turn)])];
                 if (u.cell >= 0)

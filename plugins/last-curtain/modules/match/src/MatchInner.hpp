@@ -67,5 +67,15 @@ namespace umbra::match::inner
     // Stage.cpp
     Why CheckPerform(const MatchDef &def, const MatchState &s, int me);
     void Perform(const MatchDef &def, MatchState &s, int me);
-    void StageRound(const MatchDef &def, MatchState &s); // at the start of each round
+}
+
+namespace umbra::match::inner
+{
+    // Match.cpp
+    Unit FromMonster(const MatchDef &def, int m, int faction, int cell);
+    // Monsters.cpp (Match.md "Spawns")
+    int ZoneOf(const Board &b, int cell);                         // 0 weak den, 1 strong den, 2 centre, -1 none
+    int SpawnKind(const MatchDef &def, int zone, int round);     // the zone's latest row by that round, or -1
+    void ScheduleSpawn(const MatchDef &def, MatchState &s, int cell); // its monster was downed
+    void RunSpawns(const MatchDef &def, MatchState &s, bool roundStart);
 }

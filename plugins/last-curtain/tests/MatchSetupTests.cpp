@@ -47,8 +47,7 @@ TEST_CASE("A match starts with both sides at home (T280)", "[match][setup]")
     for (const auto *dens : {&s.board.weakDens, &s.board.strongDens})
         for (int d : *dens)
             CHECK(std::ranges::any_of(s.units, [&](const Unit &u) { return u.cell == d && u.kind == 1; }));
-    CHECK(std::ranges::find(s.board.stageRooms, s.stage) != s.board.stageRooms.end());
-    CHECK(s.stageCloses == 1 + def.rules.stage.openRounds);
+    CHECK(s.stage == (s.board.height / 2) * s.board.width + s.board.width / 2);
     CHECK(TurnsLeft(def, s) == 30);
     CHECK(s.floor.size() == s.board.itemRooms.size());
     // Side 0 is what was picked, in order.

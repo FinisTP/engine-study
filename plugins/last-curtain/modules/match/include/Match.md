@@ -8,11 +8,11 @@ one copyable value, and only `Apply` changes it. Bots and the app send the same 
 | File | Holds |
 |---|---|
 | `options.csv` | `id,value`: rounds (the countdown), side (characters per side), autoEndTurn (0/1), bots (easy, medium, hard) |
-| `rules.json` | board (size, lanes, one unit per square, den and event distances, counts per half), stage (rounds open), respawn (turns away), battle (rounds, minimum damage), levels (XP steps, HP per level, XP for a kill), great monster (wake round), spawn (`warn`: rounds a spawn square is marked first), carry, bot noise per level, the soak's balance bands |
+| `rules.json` | board (size, lanes, one unit per square, den and event distances, counts per half), respawn (turns away), battle (rounds, minimum damage), levels (XP steps, HP per level, XP for a kill), spawn (`warn`: rounds a spawn square is marked first; `centre`: steps from the stage to each centre spawn square), carry, bot noise per level, the soak's balance bands |
 | `characters.csv` | id, name, role, the five stats (hp, attack, defence, speed, move), sprite, tint |
 | `abilities.csv` | id, name, use (battle, board, passive), class (strike, shield, heal, hit, firststrike), target (enemy, ally, self, monster, room, any: a strike aims at an enemy, a shield or battle heal at yourself, a board heal at your side, a hit at enemy, monster or any), hpCost, power, dice (`2d6` or none), range, animation (a `motions.json` name) |
 | `jobs.csv` | role, level, ability, choice (a second ability to pick between, or none); level 1 = starting abilities |
-| `monsters.csv` | id, name, tier (weak, strong, great, guardian), behaviour (stay, flee, stage, guard, hunt), stats, essence, xp, respawnRounds, level (shown to the player), size (1-3 squares a side), sight (steps a hunter sees; 1+ for hunt), abilities (`a;b`, the first is its strike), sprite, tint |
+| `monsters.csv` | id, name, tier (weak, strong, great, guardian), behaviour (stay, flee, stage, guard, hunt), stats, essence, xp, level (shown to the player), size (1-3 squares a side), sight (steps a hunter sees; 1+ for hunt), abilities (`a;b`, the first is its strike), sprite, tint |
 | `spawns.csv` | zone (weak, strong, centre), from (first round), monster (never a guardian), every (rounds after its square empties); loaded sorted by zone, then from |
 | `items.csv` | id, name, text, sprite, class (heal, xp), amount |
 | `events.csv` | id, name, text, two choices: label, chance (percent), success, failure (`none`, `hp:-3`, `essence:2`, `xp:2`, `item:<id>`) |
@@ -26,8 +26,9 @@ from `RiggedPick` (no role twice, Defender, Supporter, All-Rounder and Attacker 
 Speedster; a character may be on both sides). Characters start on the halls nearest the hub
 (not the hub itself, which stays free), side 1 on the mirror squares. `order` is every character by Speed, highest first, ties by a
 key drawn from the seed; it never changes. Each side's guardian stands on its `door` square with
-that side's faction; each den gets a monster of its tier, the same kind on both halves; each item
-room an item. The stage opens in a random stage room and closes at round `1 + stage.openRounds`.
+that side's faction; every spawn square (the dens and `centreSpawns`) gets its zone's
+kind for round 1 (see Spawns); each item room an item. The stage is the centre of the middle row
+and never moves.
 `units` holds side 0's characters, then side 1's, then the monsters.
 
 ## A turn (`Turn.cpp`)
@@ -56,8 +57,8 @@ damage = power (or the dice roll) + Attack - (Defence + the defender's shield th
 An ability is usable only while HP is above its cost. Shield adds its power to the side's shield;
 Heal adds power HP. At 0 HP a unit is down and the battle ends. A character downed by a character
 gives it all its essence (and `levels.killXp` XP, a kill); by a monster, drops it on the floor.
-A monster downed by a character gives its essence and XP; weak ones return to their den after
-`respawnRounds`. A downed character leaves the board for `respawn.turns` of its turns, then stands
+A monster downed by a character gives its essence and XP and never returns; its square spawns a
+new one (Spawns). A downed character leaves the board for `respawn.turns` of its turns, then stands
 on its hub (or the nearest free square) with full HP. `Preview` is the forecast: damage range,
 healing and cost.
 
@@ -75,27 +76,36 @@ and its essence drops where it stood.
 
 ## The stage (`Stage.cpp`)
 
-The stage is one of the board's stage rooms and holds one unit, whatever `squareCapacity` says.
-Standing there scores nothing. `Perform`, the turn's action on the stage with essence carried,
-adds it all to the side's score. At the start of round `stageCloses - 1` the next stage room is
-announced (`StageNext`, never the current one); at round `stageCloses` the stage moves there
-(`StageOpen`) and closes again `stage.openRounds` later. A unit on the old stage stays put.
+The stage is the centre of the middle row, fixed for the match, and holds one unit, whatever
+`squareCapacity` says; monsters never stand on it. Standing there scores nothing. `Perform`, the
+turn's action on the stage with essence carried, adds it all to the side's score.
 
 ## Monsters (`Monsters.cpp`)
 
 After the last character in a round, in unit order, every monster on the board acts by its
 behaviour: Stay does nothing; Flee takes up to `speed` steps away from the nearest character;
-Stage takes up to `speed` steps toward the stage and stands on it when it is free; Guard deals its
+Stage takes up to `speed` steps toward the stage and stops beside it; Hunt waits for the monster
+phase (Task 5); Guard deals its
 first ability's damage to every enemy character next to it, without a battle (guardians never
 start battles), which can down them. Monsters fight back only when attacked. A unit cannot attack
-a monster of its own faction. A downed weak monster returns to its den, whole, at `respawnRound`
-if the den is free; guardians and the great monster never return. The great monster waits off the
-board and wakes at `great.wakeRound` in a free stage room that is not the stage.
+a monster of its own faction. A downed monster never returns.
+
+## Spawns (`Monsters.cpp`)
+
+Spawn squares are the weak dens (zone 0), the strong dens (zone 1) and `centreSpawns` (zone 2:
+the middle row, `spawn.centre` steps either side of the stage, each its own mirror). A zone's kind
+at round `r` is its latest `spawns.csv` row with `from <= r`. Each square owns one monster slot in
+`units`. When its monster is downed, the square schedules a `Spawn` for round `now + every` (the
+row in force now) of the kind for that round; if its mirror is already due, it takes the same
+round, so mirrored squares spawn together. `spawn.warn` rounds before, it is announced
+(`SpawnSoon`: square, kind, round). At the start of its round, or after any later turn once no
+living unit stands there, the new monster replaces the slot, whole (`Spawned`). A zone whose first
+row starts after round 1 leaves its squares empty until then.
 
 ## Saves (`MatchSave.cpp`)
 
 `SaveMatch` writes every field of `MatchState` by name, the board and the log included, with
-`"format": "umbra.match", "version": 1`. `LoadMatch` refuses another format or version and any
+`"format": "umbra.match", "version": 2` (2: spawns, the fixed stage). `LoadMatch` refuses another format or version and any
 missing or mistyped field, with a reason, and leaves the state it was given untouched. A save taken
 in the middle of a battle or a level choice loads to the same moment. `Fingerprint` hashes
 everything but the log, for tests. A new field means a new version.

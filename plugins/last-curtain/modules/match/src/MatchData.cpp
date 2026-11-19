@@ -150,14 +150,13 @@ namespace umbra::match
                                 {"weakPerHalf", &b.weakPerHalf}, {"strongPerHalf", &b.strongPerHalf}, {"eventsPerHalf", &b.eventsPerHalf},
                                 {"eventGap", &b.eventGap}, {"itemsPerHalf", &b.itemsPerHalf}})
                 num("board", k, *v);
-            num("stage", "openRounds", r.stage.openRounds);
             num("respawn", "turns", r.respawn.turns);
             num("battle", "rounds", r.battle.rounds);
             num("battle", "minDamage", r.battle.minDamage);
             num("levels", "hp", r.levels.hp);
             num("levels", "killXp", r.levels.killXp);
-            num("great", "wakeRound", r.great.wakeRound);
             num("spawn", "warn", r.spawn.warn);
+            num("spawn", "centre", r.spawn.centre);
             num("", "carry", r.carry);
             auto &bal = r.balance;
             for (auto [k, v] : {std::pair{"sideMin", &bal.sideMin}, {"sideMax", &bal.sideMax}, {"firstMoverMax", &bal.firstMoverMax},
@@ -287,8 +286,7 @@ namespace umbra::match
 
         void LoadMonsters(const std::filesystem::path &folder, MatchDef &def, Diagnostics &out)
         {
-            Sheet s(out, folder, "monsters.csv", {"id", "name", "tier", "behaviour", "hp", "attack", "defence", "speed", "essence", "xp",
-                                                  "respawnRounds", "level", "size", "sight", "abilities", "sprite", "tint"});
+            Sheet s(out, folder, "monsters.csv", {"id", "name", "tier", "behaviour", "hp", "attack", "defence", "speed", "essence", "xp", "level", "size", "sight", "abilities", "sprite", "tint"});
             for (int r = 0; r < s.Rows(); ++r)
             {
                 MonsterDef m;
@@ -303,7 +301,6 @@ namespace umbra::match
                 m.speed = s.Int(r, "speed", 0, 99);
                 m.essence = s.Int(r, "essence", 0, 999);
                 m.xp = s.Int(r, "xp", 0, 999);
-                m.respawnRounds = s.Int(r, "respawnRounds", 0, 99);
                 m.level = s.Int(r, "level", 1, 20);
                 m.size = s.Int(r, "size", 1, 3);
                 m.sight = s.Int(r, "sight", 0, 20);

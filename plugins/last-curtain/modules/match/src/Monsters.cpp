@@ -14,7 +14,7 @@ namespace umbra::match
         bool Free(const MatchDef &def, const MatchState &s, int cell)
         {
             const int there = static_cast<int>(std::ranges::count_if(s.units, [&](const Unit &u) { return u.cell == cell && u.hp > 0; }));
-            return there < (cell == s.stage ? 1 : def.rules.board.squareCapacity);
+            return cell != s.stage && there < def.rules.board.squareCapacity; // monsters never take the stage
         }
 
         int NearestCharacter(const MatchState &s, int cell)
@@ -74,32 +74,82 @@ namespace umbra::match
 
     void RunMonsters(const MatchDef &def, MatchState &s)
     {
-        const int next = s.round + 1; // the round about to begin
         for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
         {
             Unit &m = s.units[U(i)];
             if (m.kind != 1)
                 continue;
-            const MonsterDef &d = def.monsters[U(m.def)];
-            // 1. The great monster wakes in a stage room that is not the stage; a weak one returns to its free den.
-            if (m.cell < 0 && d.tier == Tier::Great && next == def.rules.great.wakeRound)
-            {
-                std::vector<int> rooms;
-                for (int r : s.board.stageRooms)
-                    if (r != s.stage && Free(def, s, r))
-                        rooms.push_back(r);
-                if (!rooms.empty())
-                    m.cell = m.home = static_cast<std::int16_t>(rooms[U(Roll(s, static_cast<int>(rooms.size())))]);
-            }
-            else if (m.cell < 0 && m.respawnRound > 0 && next >= m.respawnRound && Free(def, s, m.home))
-            {
-                m.cell = m.home;
-                m.hp = m.maxHp;
-                m.essence = d.essence;
-                m.respawnRound = 0;
-            }
-            else if (m.cell >= 0 && m.hp > 0)
+            if (m.cell >= 0 && m.hp > 0)
                 Act(def, s, i);
+        }
+    }
+
+    namespace inner
+    {
+        int ZoneOf(const Board &b, int cell)
+        {
+            int zone = 0;
+            for (const auto *list : {&b.weakDens, &b.strongDens, &b.centreSpawns})
+            {
+                if (std::ranges::find(*list, static_cast<std::int16_t>(cell)) != list->end())
+                    return zone;
+                ++zone;
+            }
+            return -1;
+        }
+
+        int SpawnKind(const MatchDef &def, int zone, int round)
+        {
+            int kind = -1;
+            for (const SpawnRow &w : def.spawns)
+                if (w.zone == zone && w.from <= round)
+                    kind = w.monster;
+            return kind;
+        }
+
+        void ScheduleSpawn(const MatchDef &def, MatchState &s, int cell)
+        {
+            // 1. Due `every` rounds on (the row in force now), or with its mirror if that one is already due.
+            const int zone = ZoneOf(s.board, cell);
+            const SpawnRow *now = nullptr;
+            for (const SpawnRow &w : def.spawns)
+                if (w.zone == zone && w.from <= s.round)
+                    now = &w;
+            if (!now)
+                return;
+            const int mirror = Mirror(s.board, cell);
+            const auto partner = std::ranges::find(s.spawns, static_cast<std::int16_t>(mirror), &Spawn::cell);
+            const int round = partner != s.spawns.end() ? partner->round : s.round + now->every;
+            s.spawns.push_back({static_cast<std::int16_t>(cell), static_cast<std::int8_t>(SpawnKind(def, zone, round)), round});
+            // 2. Announced at once when the warning time has already come.
+            if (round - def.rules.spawn.warn <= s.round)
+                Log(s, LogKind::SpawnSoon, cell, s.spawns.back().monster, round);
+        }
+
+        void RunSpawns(const MatchDef &def, MatchState &s, bool roundStart)
+        {
+            for (std::size_t i = 0; i < s.spawns.size();)
+            {
+                const Spawn w = s.spawns[i];
+                // 1. At a round's start: announce what is due spawn.warn rounds from now.
+                if (roundStart && w.round - def.rules.spawn.warn == s.round && w.round > s.round)
+                    Log(s, LogKind::SpawnSoon, w.cell, w.monster, w.round);
+                // 2. Due and free: a new monster replaces the downed one in the square's slot.
+                const bool taken = std::ranges::any_of(s.units, [&](const Unit &u) { return u.cell == w.cell && u.hp > 0; });
+                if (w.round > s.round || taken)
+                {
+                    ++i;
+                    continue;
+                }
+                for (int slot = 0; slot < static_cast<int>(s.units.size()); ++slot)
+                    if (s.units[U(slot)].kind == 1 && s.units[U(slot)].home == w.cell)
+                    {
+                        s.units[U(slot)] = FromMonster(def, w.monster, -1, w.cell);
+                        Log(s, LogKind::Spawned, w.cell, slot);
+                        break;
+                    }
+                s.spawns.erase(s.spawns.begin() + static_cast<std::ptrdiff_t>(i));
+            }
         }
     }
 }

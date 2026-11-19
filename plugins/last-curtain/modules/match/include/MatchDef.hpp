@@ -60,7 +60,7 @@ namespace umbra::match
         std::string id, name, sprite;
         Tier tier = Tier::Weak;
         Behaviour behaviour = Behaviour::Stay;
-        int hp = 0, attack = 0, defence = 0, speed = 0, essence = 0, xp = 0, respawnRounds = 0;
+        int hp = 0, attack = 0, defence = 0, speed = 0, essence = 0, xp = 0;
         int level = 1, size = 1, sight = 0; // size: squares per side (1-3); sight: steps a hunter sees
         std::vector<int> abilities;
         std::uint32_t tint = 0xFFFFFF;
@@ -114,12 +114,10 @@ namespace umbra::match
             int weakMin = 0, weakMax = 0, strongMin = 0, strongMax = 0, weakPerHalf = 0, strongPerHalf = 0;
             int eventsPerHalf = 0, eventGap = 0, itemsPerHalf = 0;
         } board;
-        struct { int openRounds = 0; } stage;
         struct { int turns = 0; } respawn;
         struct { int rounds = 0, minDamage = 0; } battle;
         struct { std::vector<int> xp; int hp = 0, killXp = 0; } levels;
-        struct { int wakeRound = 0; } great;
-        struct { int warn = 1; } spawn; // rounds a spawn square is marked before the monster appears
+        struct { int warn = 1, centre = 2; } spawn; // warn: rounds marked before; centre: steps from the stage
         int carry = 0;
         struct { std::array<int, 3> noise{}; } bots; // percent of a choice's value, per BotLevel
         struct { int sideMin = 0, sideMax = 0, firstMoverMax = 0, sourceMax = 0, comebackMin = 0; } balance;

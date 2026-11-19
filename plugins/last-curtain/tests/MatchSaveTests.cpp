@@ -51,7 +51,7 @@ TEST_CASE("A save of another version or a broken file is refused (T309)", "[matc
     const std::uint64_t before = Fingerprint(out);
     std::string error;
     nlohmann::json j = SaveMatch(s);
-    j["version"] = 2;
+    j["version"] = 1;
     CHECK_FALSE(LoadMatch(j, out, error));
     CHECK(error.find("version") != std::string::npos);
     nlohmann::json cut = SaveMatch(s);

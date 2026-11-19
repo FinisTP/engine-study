@@ -155,8 +155,8 @@ namespace umbra::match
                 if (byCharacter)
                     GainXp(def, s, killer, m.xp);
                 v.essence = 0;
-                if (m.tier == Tier::Weak && m.respawnRounds > 0)
-                    v.respawnRound = static_cast<std::int16_t>(s.round + m.respawnRounds);
+                if (ZoneOf(s.board, v.home) >= 0)
+                    ScheduleSpawn(def, s, v.home);
             }
             v.cell = -1;
             if (s.battle.on && (victim == s.battle.attacker || victim == s.battle.defender))

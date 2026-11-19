@@ -33,24 +33,6 @@ namespace umbra::match
             return u;
         }
 
-        Unit FromMonster(const MatchDef &def, int m, int faction, int cell)
-        {
-            const MonsterDef &d = def.monsters[U(m)];
-            Unit u;
-            u.kind = 1;
-            u.def = static_cast<std::int8_t>(m);
-            u.faction = static_cast<std::int8_t>(faction);
-            u.cell = u.home = static_cast<std::int16_t>(cell);
-            u.hp = u.maxHp = static_cast<std::int16_t>(d.hp);
-            u.attack = static_cast<std::int16_t>(d.attack);
-            u.defence = static_cast<std::int16_t>(d.defence);
-            u.speed = static_cast<std::int16_t>(d.speed);
-            u.essence = d.essence;
-            for (std::size_t i = 0; i < d.abilities.size() && i < u.abilities.size(); ++i)
-                u.abilities[i] = static_cast<std::int8_t>(d.abilities[i]);
-            return u;
-        }
-
         // Squares nearest the hub, never the hub (it stays free to step through) nor the guardian's square.
         std::vector<int> StartSquares(const Board &b, int count)
         {
@@ -70,14 +52,35 @@ namespace umbra::match
             return out;
         }
 
-        // A monster of the tier, picked from the seed (hunters only come from spawns.csv).
+        // A monster of the tier, picked from the seed.
         int OfTier(const MatchDef &def, Rng &rng, Tier tier)
         {
             std::vector<int> pool;
             for (int m = 0; m < static_cast<int>(def.monsters.size()); ++m)
-                if (def.monsters[U(m)].tier == tier && def.monsters[U(m)].behaviour != Behaviour::Hunt)
+                if (def.monsters[U(m)].tier == tier)
                     pool.push_back(m);
             return pool.empty() ? -1 : pool[U(rng.Below(static_cast<int>(pool.size())))];
+        }
+    }
+
+    namespace inner
+    {
+        Unit FromMonster(const MatchDef &def, int m, int faction, int cell)
+        {
+            const MonsterDef &d = def.monsters[U(m)];
+            Unit u;
+            u.kind = 1;
+            u.def = static_cast<std::int8_t>(m);
+            u.faction = static_cast<std::int8_t>(faction);
+            u.cell = u.home = static_cast<std::int16_t>(cell);
+            u.hp = u.maxHp = static_cast<std::int16_t>(d.hp);
+            u.attack = static_cast<std::int16_t>(d.attack);
+            u.defence = static_cast<std::int16_t>(d.defence);
+            u.speed = static_cast<std::int16_t>(d.speed);
+            u.essence = d.essence;
+            for (std::size_t i = 0; i < d.abilities.size() && i < u.abilities.size(); ++i)
+                u.abilities[i] = static_cast<std::int8_t>(d.abilities[i]);
+            return u;
         }
     }
 
@@ -133,28 +136,26 @@ namespace umbra::match
             return s.units[U(a)].speed != s.units[U(c)].speed ? s.units[U(a)].speed > s.units[U(c)].speed : key[U(a)] < key[U(c)];
         });
 
-        // 3. Guardians on their squares, then the dens: the first half of each list is the bottom, the second its mirror.
+        // 3. Guardians on their squares.
         for (int f = 0; f < 2; ++f)
             if (const int g = OfTier(def, rng, Tier::Guardian); g >= 0)
                 s.units.push_back(FromMonster(def, g, f, b.door[U(f)]));
-        for (auto [dens, tier] : {std::pair{&b.weakDens, Tier::Weak}, {&b.strongDens, Tier::Strong}})
-        {
-            const std::size_t half = dens->size() / 2;
-            std::vector<int> kinds;
-            for (std::size_t i = 0; i < half; ++i)
-                kinds.push_back(OfTier(def, rng, tier));
-            for (std::size_t i = 0; i < dens->size(); ++i)
-                if (kinds[i % half] >= 0)
-                    s.units.push_back(FromMonster(def, kinds[i % half], -1, (*dens)[i]));
-        }
-
-        // 4. The great monster waits off the board until its round (Monsters.cpp).
-        if (const int g = OfTier(def, rng, Tier::Great); g >= 0)
-        {
-            Unit u = FromMonster(def, g, -1, -1);
-            u.home = -1;
-            s.units.push_back(u);
-        }
+        // 4. Every spawn square gets its zone's kind for round 1 (or waits for the zone's first row).
+        for (const auto *list : {&b.weakDens, &b.strongDens, &b.centreSpawns})
+            for (int c : *list)
+            {
+                const int zone = ZoneOf(b, c), kind = SpawnKind(def, zone, 1);
+                const auto first = std::ranges::find(def.spawns, zone, &SpawnRow::zone);
+                if (kind >= 0)
+                    s.units.push_back(FromMonster(def, kind, -1, c));
+                else if (first != def.spawns.end())
+                {
+                    Unit u = FromMonster(def, first->monster, -1, c);
+                    u.hp = 0, u.cell = -1;
+                    s.units.push_back(u);
+                    s.spawns.push_back({static_cast<std::int16_t>(c), static_cast<std::int8_t>(first->monster), first->from});
+                }
+            }
 
         // 5. Items on the floor of their rooms, the same on both halves.
         const std::size_t half = b.itemRooms.size() / 2;
@@ -164,10 +165,8 @@ namespace umbra::match
         for (std::size_t i = 0; i < b.itemRooms.size(); ++i)
             s.floor.push_back({b.itemRooms[i], static_cast<std::int8_t>(items[i % half]), 0});
 
-        // 6. The stage opens in a random stage room; the first turn begins.
-        s.stage = b.stageRooms[U(rng.Below(static_cast<int>(b.stageRooms.size())))];
-        s.stageCloses = 1 + def.rules.stage.openRounds;
-        s.log.push_back({LogKind::StageOpen, s.stage});
+        // 6. The stage is the centre of the middle row; the first turn begins.
+        s.stage = static_cast<std::int16_t>((b.height / 2) * b.width + b.width / 2);
         s.rng = rng.Next();
         const Unit &first = s.units[U(s.order[0])];
         s.now = {first.cell, static_cast<std::int8_t>(first.move), false};

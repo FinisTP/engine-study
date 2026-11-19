@@ -63,20 +63,21 @@ namespace
 
 TEST_CASE("Monsters act after each round by their behaviour (T299)", "[match][monsters]")
 {
-    const MatchDef def = Data();
+    MatchDef def = Data();
+    def.monsters[U(MatchDef::Find(def.monsters, "stagehand"))].behaviour = Behaviour::Flee;
     MatchState s = Start(def);
     const int me = s.order[0];
     const int near = SquareAt(s, s.units[U(me)].cell, 2);
-    const int spider = Add(def, s, "spider", near);
+    const int spider = Add(def, s, "stagehand", near);
     const int before = Nearest(s, near);
     RunMonsters(def, s);
     CHECK(Nearest(s, s.units[U(spider)].cell) > before);
 
     MatchState t = Start(def);
     const int start = SquareAt(t, t.stage, 2);
-    const int prompter = Add(def, t, "prompter", start); // speed 3, goes for the stage
+    const int prompter = Add(def, t, "prompter", start); // speed 3, goes for the stage but never onto it
     RunMonsters(def, t);
-    CHECK(t.units[U(prompter)].cell == t.stage);
+    CHECK(Steps(t.board, t.units[U(prompter)].cell, t.stage) == 1);
 }
 
 TEST_CASE("A guardian strikes enemies next to it, and its own side cannot attack it (T300)", "[match][monsters]")
@@ -106,53 +107,4 @@ TEST_CASE("A guardian strikes enemies next to it, and its own side cannot attack
         if (const int n = Neighbour(t.board, t.units[U(g)].cell, d); n >= 0 && !Taken(t, n))
             t.units[U(mine)].cell = static_cast<std::int16_t>(n);
     CHECK(Check(def, t, {ActionKind::Attack, I8(g)}) == Why::OwnSide);
-}
-
-TEST_CASE("Weak monsters come back to their dens (T301)", "[match][monsters]")
-{
-    const MatchDef def = Data();
-    MatchState s = Start(def);
-    const int me = Current(s);
-    // A weak monster whose den has a free square beside it.
-    int moth = -1, beside = -1;
-    for (int i = 0; i < static_cast<int>(s.units.size()) && beside < 0; ++i)
-        if (s.units[U(i)].kind == 1 && def.monsters[U(s.units[U(i)].def)].tier == Tier::Weak)
-            for (int d = 0; d < 4; ++d)
-                if (const int n = Neighbour(s.board, s.units[U(i)].home, d); n >= 0 && !Taken(s, n))
-                    moth = i, beside = n;
-    REQUIRE(beside >= 0);
-    const int den = s.units[U(moth)].home;
-    s.units[U(me)].cell = static_cast<std::int16_t>(beside);
-    s.now.origin = static_cast<std::int16_t>(beside);
-    s.units[U(me)].attack = 50;
-    REQUIRE(Apply(def, s, {ActionKind::Attack, I8(moth)}));
-    REQUIRE(Apply(def, s, {ActionKind::BattleAbility, 0}));
-    REQUIRE(s.units[U(moth)].cell == -1);
-    const int back = s.units[U(moth)].respawnRound;
-    CHECK(back == 1 + def.monsters[U(s.units[U(moth)].def)].respawnRounds);
-    s.units[U(me)].cell = s.units[U(me)].home; // out of the den's way
-    while (s.round < back)
-        REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
-    CHECK(s.units[U(moth)].cell == den);
-    CHECK(s.units[U(moth)].hp == s.units[U(moth)].maxHp);
-}
-
-TEST_CASE("The great monster wakes at its round (T302)", "[match][monsters]")
-{
-    MatchDef def = Data();
-    def.rules.great.wakeRound = 3;
-    MatchState s = Start(def);
-    const auto great = [&] {
-        for (const Unit &u : s.units)
-            if (u.kind == 1 && def.monsters[U(u.def)].tier == Tier::Great)
-                return u;
-        return Unit{};
-    };
-    REQUIRE(great().def >= 0);
-    CHECK(great().cell == -1);
-    while (s.round < 3)
-        REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
-    const Unit g = great();
-    CHECK(std::ranges::find(s.board.stageRooms, g.cell) != s.board.stageRooms.end());
-    CHECK(g.cell != s.stage);
 }

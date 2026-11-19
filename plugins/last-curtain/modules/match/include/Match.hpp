@@ -30,6 +30,7 @@ namespace umbra::match
         std::vector<Cell> cells;
         std::array<std::int16_t, 2> hub{}, door{};
         std::vector<std::int16_t> stageRooms, weakDens, strongDens, itemRooms; // both halves
+        std::vector<std::int16_t> centreSpawns; // middle-row squares either side of the stage
     };
 
     Board BuildBoard(const MatchDef &def, std::uint64_t seed);
@@ -50,7 +51,6 @@ namespace umbra::match
         std::int8_t level = 1;
         std::int8_t back = 0;    // turns until a downed character returns
         std::int8_t pending = -1; // a jobs.csv row waiting for its choice
-        std::int16_t respawnRound = 0; // a downed weak monster returns at this round
         int essence = 0, kills = 0;
         std::array<std::int8_t, maxAbilities> abilities{-1, -1, -1, -1, -1, -1, -1, -1};
         std::array<std::int8_t, maxItems> items{-1, -1, -1, -1};
@@ -81,11 +81,19 @@ namespace umbra::match
         bool acted = false;
     };
 
-    enum class LogKind : std::uint8_t { Moved, Battle, Blow, Down, Essence, Performed, Level, Back, StageOpen, StageNext, Event, Item, Over };
+    enum class LogKind : std::uint8_t { Moved, Battle, Blow, Down, Essence, Performed, Level, Back, SpawnSoon, Spawned, Event, Item, Over };
     struct LogEntry
     {
         LogKind kind = LogKind::Moved;
         std::int16_t a = -1, b = -1, c = 0;
+    };
+
+    // A monster due on a spawn square (dens and centreSpawns) at the start of `round`, or once the square is free.
+    struct Spawn
+    {
+        std::int16_t cell = -1;
+        std::int8_t monster = -1;
+        int round = 0;
     };
 
     struct MatchState
@@ -95,8 +103,8 @@ namespace umbra::match
         std::vector<std::int8_t> order; // characters by Speed, set once
         int turn = 0, round = 1;
         std::array<int, 2> score{};
-        std::int16_t stage = -1, nextStage = -1;
-        int stageCloses = 0;
+        std::int16_t stage = -1; // the centre of the middle row, fixed
+        std::vector<Spawn> spawns; // shown once round - spawn.warn has come
         std::vector<Floor> floor;
         Battle battle;
         TurnState now;

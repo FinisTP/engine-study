@@ -1,5 +1,6 @@
 zone,from,monster,every
 weak,1,moths,4
+weak,10,rats,5
 strong,1,stagehand,6
 strong,12,prompter,6
 centre,1,usherette,5

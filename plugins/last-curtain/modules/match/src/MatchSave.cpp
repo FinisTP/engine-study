@@ -4,20 +4,21 @@
 namespace umbra::match
 {
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Cell, kind, doors, event, resolved)
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Board, width, height, cells, hub, door, stageRooms, weakDens, strongDens, itemRooms)
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Board, width, height, cells, hub, door, stageRooms, weakDens, strongDens, itemRooms, centreSpawns)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Unit, kind, def, faction, cell, home, hp, maxHp, attack, defence, speed, move, xp, level, back,
-                                       pending, respawnRound, essence, kills, abilities, items)
+                                       pending, essence, kills, abilities, items)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Floor, cell, item, essence)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Battle, on, attacker, defender, round, next, first, shield)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(TurnState, origin, movesLeft, acted)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LogEntry, kind, a, b, c)
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MatchState, board, units, order, turn, round, score, stage, nextStage, stageCloses, floor, battle,
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Spawn, cell, monster, round)
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MatchState, board, units, order, turn, round, score, stage, spawns, floor, battle,
                                        now, log, rng, over, winner)
 
     namespace
     {
         constexpr const char *format = "umbra.match";
-        constexpr int version = 1;
+        constexpr int version = 2; // 2: spawns, a fixed stage
     }
 
     nlohmann::json SaveMatch(const MatchState &s)
