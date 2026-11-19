@@ -142,8 +142,8 @@ namespace umbra::match
         {
             Unit &u = s.units[U(me)];
             const ItemDef &item = def.items[U(u.items[U(slot)])];
+            Log(s, LogKind::Item, me, u.items[U(slot)]); // b: the items.csv row, as when picked up
             u.items[U(slot)] = -1;
-            Log(s, LogKind::Item, me, slot);
             if (item.kind == ItemClass::HealItem)
                 u.hp = static_cast<std::int16_t>(std::min<int>(u.maxHp, u.hp + item.amount));
             else

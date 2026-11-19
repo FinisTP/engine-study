@@ -1,0 +1,51 @@
+{
+  "banner": { "title": "Turn {n}", "text": "{n} turns left" },
+  "misc": {
+    "nextTurn": "next turn",
+    "nobody": "the house",
+    "essence": "essence",
+    "passed": "it went well",
+    "failed": "it went badly",
+    "side0": "your side wins",
+    "side1": "their side wins",
+    "draw": "a draw"
+  },
+  "roles": {
+    "attacker": "Attacker",
+    "defender": "Defender",
+    "supporter": "Supporter",
+    "speedster": "Speedster",
+    "allrounder": "All-Rounder"
+  },
+  "log": {
+    "Moved": "{who} walks.",
+    "Battle": "{who} attacks {whom}.",
+    "Blow": "{who} hits {whom} for {n}.",
+    "Down": "{who} falls to {whom}, carrying {n} essence.",
+    "Essence": "{who} gains {n} essence.",
+    "Performed": "{who} performs {n} essence.",
+    "Level": "{who} reaches level {n}.",
+    "Back": "{who} is back at the hub.",
+    "SpawnSoon": "{monster} will appear on round {n}.",
+    "Spawned": "{who} appears.",
+    "Event": "{who} faces the room: {result}.",
+    "Item": "{who} takes {item}.",
+    "Over": "The curtain falls: {side}."
+  },
+  "why": {
+    "Ok": "Ready.",
+    "NotYourTurn": "It is not your turn.",
+    "NoMovesLeft": "No steps left this turn.",
+    "Blocked": "Something blocks the way.",
+    "AlreadyActed": "You have already acted this turn.",
+    "OutOfRange": "No target within reach.",
+    "OwnSide": "That one is on your side.",
+    "TooCostly": "It costs more HP than you have.",
+    "NotOnStage": "Perform only on the stage.",
+    "NothingToPerform": "You carry no essence to perform.",
+    "NothingHere": "There is nothing here for that.",
+    "BagFull": "Your bag is full.",
+    "MustChoose": "Choose first.",
+    "Over": "The match is over."
+  }
+}
