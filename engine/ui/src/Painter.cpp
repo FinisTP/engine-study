@@ -49,6 +49,23 @@ namespace umbra::ui
         Fill({r.x + r.w - width, r.y + width, width, r.h - 2 * width}, color);
     }
 
+    Fitted FitPicture(Rect box, glm::vec2 size, const std::string &fit)
+    {
+        if (fit.empty() || size.x <= 0.0F || size.y <= 0.0F || box.w <= 0.0F || box.h <= 0.0F)
+            return {box};
+        // 1. Contain: the smaller scale, the picture centred in the box.
+        const float sx = box.w / size.x, sy = box.h / size.y;
+        if (fit == "contain")
+        {
+            const float s = std::min(sx, sy), w = size.x * s, h = size.y * s;
+            return {{box.x + (box.w - w) * 0.5F, box.y + (box.h - h) * 0.5F, w, h}};
+        }
+        // 2. Cover: the larger scale; the part of the picture that fits, its middle (or its top).
+        const float s = std::max(sx, sy), u = box.w / (size.x * s), v = box.h / (size.y * s);
+        const float u0 = (1.0F - u) * 0.5F, v0 = fit == "top" ? 0.0F : (1.0F - v) * 0.5F;
+        return {box, {u0, v0}, {u0 + u, v0 + v}};
+    }
+
     void Painter::Image(Rect r, core::TextureHandle texture, glm::vec4 color, glm::vec2 uv0, glm::vec2 uv1)
     {
         Quad(texture, {r.x, r.y}, {r.x + r.w, r.y + r.h}, uv0, uv1, PackColor(color));

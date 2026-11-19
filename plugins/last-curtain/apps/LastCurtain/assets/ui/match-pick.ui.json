@@ -8,7 +8,7 @@
     { "type": "text", "style": "small", "text": "Pick {pick.side} for your side ({pick.count} chosen). The house picks the other side.", "wrap": true, "size": [1080, 0] },
     { "type": "list", "items": "{pick.characters}", "as": "c", "columns": 5, "gap": 10, "action": "pick", "arg": "{c.id}",
       "entry": { "type": "stack", "style": "slot", "size": [206, 0], "gap": 4, "align": "center", "selected": "{c.picked}", "children": [
-        { "type": "image", "image": "{c.portrait}", "size": [110, 110] },
+        { "type": "image", "image": "{c.portrait}", "fit": "top", "size": [110, 110] },
         { "type": "text", "style": "strong", "text": "{c.name}", "wrap": true, "size": [190, 0] },
         { "type": "text", "style": "muted", "text": "{c.role}" },
         { "type": "text", "style": "small", "text": "HP {c.hp}  ATK {c.attack}  DEF {c.defence}" },

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include <DrawList.hpp>
 #include <Font.hpp>
 
@@ -22,6 +24,15 @@ namespace umbra::ui
     // Writes UI triangles into a core::UiDrawList: rectangles, frames, images, 9-slice panels and
     // text, clipped to the current clip rectangle. Consecutive shapes with the same texture and
     // clip share a batch.
+    // Where a picture goes in a box and which part of it shows (UI.md "Pictures"). fit: "" stretch,
+    // "contain" all of it inside the box, "cover" the box filled and the middle shown, "top" the same from the top.
+    struct Fitted final
+    {
+        Rect rect;
+        glm::vec2 uv0{0.0F}, uv1{1.0F};
+    };
+    Fitted FitPicture(Rect box, glm::vec2 size, const std::string &fit);
+
     class Painter final
     {
     public:

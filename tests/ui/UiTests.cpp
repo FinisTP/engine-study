@@ -359,3 +359,29 @@ TEST_CASE("A widget's tip is told when the mouse is over it, disabled or not (UI
     CHECK(hover({100, 75}).empty()); // no tip on the other button
     CHECK(hover({900, 600}).empty());
 }
+
+TEST_CASE("A picture keeps its shape: contain, cover, or cover from the top (UI.md Pictures)")
+{
+    const ui::Rect box{10.0F, 20.0F, 100.0F, 100.0F};
+    const glm::vec2 tall{100.0F, 200.0F}; // twice as tall as wide
+    // 1. Stretch (the default): the whole picture fills the box.
+    ui::Fitted f = ui::FitPicture(box, tall, "");
+    CHECK(f.rect.w == 100.0F);
+    CHECK(f.uv1 == glm::vec2{1.0F, 1.0F});
+    // 2. Contain: all of it, half as wide, centred.
+    f = ui::FitPicture(box, tall, "contain");
+    CHECK(f.rect.w == 50.0F);
+    CHECK(f.rect.h == 100.0F);
+    CHECK(f.rect.x == 35.0F);
+    CHECK(f.uv0 == glm::vec2{0.0F, 0.0F});
+    CHECK(f.uv1 == glm::vec2{1.0F, 1.0F});
+    // 3. Cover: the box filled, the middle half of the picture's height shown.
+    f = ui::FitPicture(box, tall, "cover");
+    CHECK(f.rect.w == 100.0F);
+    CHECK(f.uv0.y == 0.25F);
+    CHECK(f.uv1.y == 0.75F);
+    // 4. Top: as cover, from the top (a portrait's face).
+    f = ui::FitPicture(box, tall, "top");
+    CHECK(f.uv0.y == 0.0F);
+    CHECK(f.uv1.y == 0.5F);
+}

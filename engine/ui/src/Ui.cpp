@@ -355,7 +355,10 @@ namespace umbra::ui
         else if (node.type == "image" && images_)
         {
             if (const ImageRef image = images_(c.Text(node.image)); image.texture)
-                c.painter.Image(inner, image.texture, style.tint);
+            {
+                const Fitted f = FitPicture(inner, image.size, node.fit);
+                c.painter.Image(f.rect, image.texture, style.tint, f.uv0, f.uv1);
+            }
         }
         else if (node.type == "panel")
         {

@@ -7,7 +7,7 @@
     { "type": "text", "style": "title", "text": "{battle.title}" },
     { "type": "list", "items": "{battle.fighters}", "as": "f", "direction": "horizontal", "gap": 60,
       "entry": { "type": "stack", "style": "plain", "gap": 4, "align": "center", "size": [300, 0], "children": [
-        { "type": "image", "image": "{f.portrait}", "size": [120, 120] },
+        { "type": "image", "image": "{f.portrait}", "fit": "top", "size": [120, 120] },
         { "type": "text", "style": "heading", "text": "{f.name}   Lv {f.level}" },
         { "type": "bar", "style": "hp", "size": [240, 10], "value": "{f.hp}", "max": "{f.maxHp}" },
         { "type": "text", "style": "small", "text": "HP {f.hp}/{f.maxHp}" },

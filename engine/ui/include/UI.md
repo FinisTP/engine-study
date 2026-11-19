@@ -53,7 +53,7 @@ All under a project's or plugin's `assets/ui/` (project files win, see `AssetFol
 | `spacer` | nothing, takes room | `size` |
 
 Every widget also has `id`, `anchor`, `offset`, `size` (0 = from the content), `style` (default:
-the style named like the type), `visible`, `disabled`, `selected`, `tip`.
+the style named like the type), `visible`, `disabled`, `selected`, `tip`, `fit`.
 
 ### Anchors
 
@@ -67,6 +67,14 @@ y = parent.y + (parent.h - h) * ay + offset.y      ay = 0 top,  0.5 middle, 1 bo
 
 `fill` takes the whole area; `offset` is then a margin on each side. Inside a `stack`, children
 are placed in order instead, and `align` lines them up across (start, center, end, stretch).
+
+### Pictures
+
+An `image` fills its box by default, stretched. `fit` keeps its shape: `contain` shows all of it,
+centred, with room left over; `cover` fills the box and crops the picture's middle; `top` crops from
+the top (a portrait keeps its face). `FitPicture` in `Painter.hpp` does the arithmetic:
+`contain` scales by `min(boxW / w, boxH / h)`, `cover` by the `max`, and the shown part of the
+picture is `box / (size * scale)` of it in uv.
 
 ### Tips
 
