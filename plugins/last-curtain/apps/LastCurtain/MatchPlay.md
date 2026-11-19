@@ -21,6 +21,25 @@ the monsters' phase), it plays out in beats like a bot's.
 `Skip` (the `skip` action on the main screen) tells everything at once and runs the bots to the
 player's next turn.
 
+## The player's turn (the prototype's flow)
+
+1. **Move.** `reach` lists every square the acting character can walk to (breadth first, `Check`
+   asked for each step as if it stood there); `path` is the walk to the hovered square. A click on a
+   lit square walks there one legal step at a time; a click on the character stays.
+2. **Act.** `actions`: Undo move (Back before moving, which shows the range again), Attack, each
+   board ability (its HP cost, its target symbol), each item, Pick up, Look into the room, Perform
+   (on the stage only), End turn. Each is `{id, label, note, enabled, why}`: enabled only when
+   `Check` says Ok for some target; `why` is the reason in words (`match-words.json` `why`;
+   `NoTarget` when nothing valid is in reach).
+3. **Target.** Attack or an ability arms it: `targets` lists the squares of every valid target,
+   `reach` the ability's range (one step for Attack), and the panel adds the character's Attack and
+   Defence. A click on a target acts; anywhere else disarms.
+
+`forecast` follows the hovered square: an armed target (its numbers and the first blow, or the
+ability's `Preview`), the stage, an announced spawn (what, its level, its round), any unit's numbers,
+else the square's kind (`tiles`). The attack's figure is the display's own estimate of the first
+blow with the free strike; the battle itself is picked blow by blow.
+
 ## The banner
 
 When everything is told and the round has changed since the last banner, the banner shows "Turn N"

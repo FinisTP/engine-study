@@ -26,6 +26,8 @@ public:
     [[nodiscard]] std::string Screen() const; // "", "banner", "battle", "level", "event" or "end"
     [[nodiscard]] nlohmann::json UiData() const;
     bool HandleUi(const std::string &screen, const std::string &action, const std::string &arg);
+    void Hover(int cell) { hover_ = cell; }
+    void Click(int cell); // a lit square walks there, oneself stays, an armed target is attacked
     [[nodiscard]] const umbra::match::MatchState &State() const { return s_; }
     [[nodiscard]] nlohmann::json Save() const;
 
@@ -39,6 +41,15 @@ private:
     [[nodiscard]] bool BannerDue() const;      // a new round not yet announced
     [[nodiscard]] std::string Name(int unit) const;
     [[nodiscard]] std::string Word(const std::string &group, const std::string &key) const;
+    [[nodiscard]] int Key() const { return s_.round * 64 + s_.turn; } // one character's turn
+    [[nodiscard]] bool Chose() const { return chosen_ == Key(); }      // walked or stayed: the actions show
+    [[nodiscard]] bool Armed() const { return !armed_.empty() && armedKey_ == Key(); }
+    // Squares the acting unit can walk to, each with the square it is reached from (rules' Check on each step).
+    [[nodiscard]] std::vector<std::pair<int, int>> Reach() const;
+    [[nodiscard]] nlohmann::json Actions() const;
+    [[nodiscard]] std::vector<umbra::match::Action> ArmedActions() const; // the armed action on each valid target
+    [[nodiscard]] nlohmann::json Forecast() const;
+    [[nodiscard]] nlohmann::json UnitNumbers(int unit) const;
     void Queue();       // the log entries the rules added since the last call
     bool Reveal();      // shows the next queued entry; false if none
     void RevealAll();
@@ -54,4 +65,6 @@ private:
     int shownRound_ = 0;             // the round whose banner has played
     float banner_ = 0.0F, clock_ = 0.0F, wait_ = 0.0F;
     bool bannerOn_ = false, logOpen_ = true;
+    int hover_ = -1, chosen_ = -1, armedKey_ = -1;
+    std::string armed_; // "attack" or "ability:<slot>"
 };

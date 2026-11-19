@@ -1,5 +1,8 @@
 {
-  "banner": { "title": "Turn {n}", "text": "{n} turns left" },
+  "banner": {
+    "title": "Turn {n}",
+    "text": "{n} turns left"
+  },
   "misc": {
     "nextTurn": "next turn",
     "nobody": "the house",
@@ -46,6 +49,26 @@
     "NothingHere": "There is nothing here for that.",
     "BagFull": "Your bag is full.",
     "MustChoose": "Choose first.",
-    "Over": "The match is over."
+    "Over": "The match is over.",
+    "NoTarget": "No one in reach to aim at."
+  },
+  "actions": {
+    "undo": "Undo move",
+    "back": "Back",
+    "attack": "Attack",
+    "pickup": "Pick up",
+    "answer": "Look into the room",
+    "perform": "Perform",
+    "end": "End turn",
+    "hpNote": "{n} HP",
+    "essenceNote": "{n} essence"
+  },
+  "tiles": {
+    "stage": "The stage: one at a time. Perform here to score what you carry.",
+    "wall": "Wall.",
+    "hall": "A hall.",
+    "room": "A room.",
+    "centre": "The centre, held by monsters.",
+    "hub": "A hub: rest here to heal."
   }
 }
