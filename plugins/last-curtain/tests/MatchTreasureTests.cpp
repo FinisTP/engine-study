@@ -65,3 +65,45 @@ TEST_CASE("An item room deals 2-5 face-down cards; the opener must pick one and 
     REQUIRE(Apply(def, b, ChooseAction(def, b, BotLevel::Medium)));
     CHECK(b.cards.empty());
 }
+
+TEST_CASE("A claimed item or event room comes back later in a free room of the same half, never the centre (T347)", "[match][treasure]")
+{
+    const MatchDef def = Data();
+    REQUIRE(def.rules.rooms.respawn >= 1);
+    MatchState s;
+    const int f = OnTreasure(def, s);
+    const int cell = s.floor[U(f)].cell, half = cell / s.board.width > s.board.height / 2 ? 0 : 1;
+    REQUIRE(Apply(def, s, {ActionKind::PickUp, static_cast<std::int8_t>(f)}));
+    REQUIRE(Apply(def, s, {ActionKind::Card, 0}));
+    // 1. Scheduled now: due respawn rounds on, in a room of the same half.
+    REQUIRE(s.roomSpawns.size() == 1);
+    const RoomSpawn r = s.roomSpawns[0];
+    CHECK(r.kind == 1);
+    CHECK(r.round == s.round + def.rules.rooms.respawn);
+    CHECK(s.board.cells[U(r.cell)].kind == CellKind::Room);
+    CHECK((r.cell / s.board.width > s.board.height / 2 ? 0 : 1) == half);
+    CHECK(std::ranges::find(s.board.weakDens, r.cell) == s.board.weakDens.end());
+    CHECK(std::ranges::find(s.board.strongDens, r.cell) == s.board.strongDens.end());
+    // 2. It appears at the start of its round.
+    while (s.round < r.round && !s.over)
+        REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
+    CHECK(std::ranges::any_of(s.floor, [&](const Floor &x) { return x.cell == r.cell && x.treasure; }));
+    CHECK(s.roomSpawns.empty());
+
+    // 3. An answered event comes back as a new unresolved event in its half.
+    MatchState e = NewMatch(def, 7, {MatchDef::Find(def.characters, "bao"), MatchDef::Find(def.characters, "khang"), MatchDef::Find(def.characters, "mai")});
+    int ev = -1;
+    for (int c = 0; c < static_cast<int>(e.board.cells.size()) && ev < 0; ++c)
+        if (e.board.cells[U(c)].event >= 0)
+            ev = c;
+    REQUIRE(ev >= 0);
+    e.units[U(Current(e))].cell = e.now.origin = static_cast<std::int16_t>(ev);
+    REQUIRE(Apply(def, e, {ActionKind::Answer, 0}));
+    REQUIRE(e.roomSpawns.size() == 1);
+    CHECK(e.roomSpawns[0].kind == 0);
+    const int back = e.roomSpawns[0].cell;
+    while (e.round < e.roomSpawns[0].round && !e.over)
+        REQUIRE(Apply(def, e, {ActionKind::EndTurn}));
+    CHECK(e.board.cells[U(back)].event >= 0);
+    CHECK_FALSE(e.board.cells[U(back)].resolved);
+}

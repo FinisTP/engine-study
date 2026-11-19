@@ -141,3 +141,11 @@ opener must then pick one (`Card`, a = its index; anything else is `MustChoose`)
 bag (or gives `treasure.fullEssence` if the bag is full), essence is carried, XP is gained, HP is
 healed. The cards are then gone (`Treasure` log: who, the row, the amount) and the action is spent.
 Bots pick blind.
+
+## Rooms come back (`Treasure.cpp`)
+
+A claimed treasure (picked up) or event (answered) schedules a `RoomSpawn` `rooms.respawn` rounds on,
+in a random free room of the same half: a room square (never the centre or the stage), not a den, with
+no event or treasure there and none already coming. At the start of its round it opens: a new event
+drawn from `events.csv`, or a fresh treasure. The table marks a coming room a round ahead. No traps
+(the user).

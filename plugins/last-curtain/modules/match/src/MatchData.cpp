@@ -160,6 +160,7 @@ namespace umbra::match
             num("treasure", "min", r.treasure.min);
             num("treasure", "max", r.treasure.max);
             num("treasure", "fullEssence", r.treasure.fullEssence);
+            num("rooms", "respawn", r.rooms.respawn);
             if (r.treasure.min < 1 || r.treasure.max < r.treasure.min)
                 Fail(out, "rules.json", "rules.json:treasure", "1 <= min <= max is required");
             num("", "carry", r.carry);

@@ -164,6 +164,7 @@ namespace umbra::match
             Cell &c = s.board.cells[U(s.units[U(me)].cell)];
             const Choice &ch = def.events[U(c.event)].choices[U(choice)];
             c.resolved = true;
+            RoomBack(def, s, s.units[U(me)].cell, 0);
             // 1. Roll the chance (0-99 under it succeeds), then the outcome.
             const bool passed = Roll(s, 100) < ch.chance;
             Log(s, LogKind::Event, me, choice, passed);

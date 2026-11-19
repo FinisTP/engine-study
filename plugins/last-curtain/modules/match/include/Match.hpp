@@ -97,6 +97,14 @@ namespace umbra::match
         int round = 0;
     };
 
+    // A claimed room coming back (Match.md "Rooms come back"): kind 0 an event, 1 a treasure.
+    struct RoomSpawn
+    {
+        std::int16_t cell = -1;
+        std::int8_t kind = 0;
+        int round = 0;
+    };
+
     struct MatchState
     {
         Board board;
@@ -108,6 +116,7 @@ namespace umbra::match
         int monsterTurn = -1;    // the monster acting in the monsters' phase, -1 outside it
         std::vector<Spawn> spawns; // shown once round - spawn.warn has come
         std::vector<Floor> floor;
+        std::vector<RoomSpawn> roomSpawns;
         std::vector<std::int8_t> cards; // treasure.csv rows dealt face down; the acting character must pick one
         Battle battle;
         TurnState now;

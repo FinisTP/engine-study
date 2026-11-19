@@ -48,4 +48,43 @@ namespace umbra::match::inner
         }
         Acted(def, s);
     }
+
+    void RoomBack(const MatchDef &def, MatchState &s, int claimed, int kind)
+    {
+        // 1. A free room in the claimed one's half: a room square, no den, no event or treasure, none already coming.
+        const Board &b = s.board;
+        const bool bottom = claimed / b.width > b.height / 2;
+        std::vector<int> free;
+        for (int c = 0; c < static_cast<int>(b.cells.size()); ++c)
+        {
+            const Cell &cell = b.cells[U(c)];
+            const bool taken = std::ranges::find(b.weakDens, c) != b.weakDens.end() || std::ranges::find(b.strongDens, c) != b.strongDens.end() ||
+                               (cell.event >= 0 && !cell.resolved) || std::ranges::any_of(s.floor, [&](const Floor &f) { return f.cell == c && f.treasure; }) ||
+                               std::ranges::any_of(s.roomSpawns, [&](const RoomSpawn &r) { return r.cell == c; });
+            if (cell.kind == CellKind::Room && (c / b.width > b.height / 2) == bottom && !taken && c != claimed)
+                free.push_back(c);
+        }
+        if (free.empty())
+            return;
+        s.roomSpawns.push_back({static_cast<std::int16_t>(free[U(Roll(s, static_cast<int>(free.size())))]), static_cast<std::int8_t>(kind), s.round + def.rules.rooms.respawn});
+    }
+
+    void RunRoomSpawns(const MatchDef &def, MatchState &s)
+    {
+        // 1. Due rooms open: an event drawn anew, or a treasure on the floor.
+        for (std::size_t i = 0; i < s.roomSpawns.size();)
+        {
+            const RoomSpawn r = s.roomSpawns[i];
+            if (r.round > s.round)
+            {
+                ++i;
+                continue;
+            }
+            if (r.kind == 0 && !def.events.empty())
+                s.board.cells[U(r.cell)].event = static_cast<std::int8_t>(Roll(s, static_cast<int>(def.events.size()))), s.board.cells[U(r.cell)].resolved = false;
+            else if (r.kind == 1)
+                s.floor.push_back({r.cell, -1, 0, true});
+            s.roomSpawns.erase(s.roomSpawns.begin() + static_cast<std::ptrdiff_t>(i));
+        }
+    }
 }

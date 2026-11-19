@@ -71,6 +71,8 @@ namespace umbra::match::inner
     // Treasure.cpp (Match.md "Treasure")
     void DealCards(const MatchDef &def, MatchState &s);
     void TakeCard(const MatchDef &def, MatchState &s, int me, int card);
+    void RoomBack(const MatchDef &def, MatchState &s, int claimed, int kind); // a claimed room comes back later
+    void RunRoomSpawns(const MatchDef &def, MatchState &s);                 // at the start of each round
 }
 
 namespace umbra::match::inner

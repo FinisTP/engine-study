@@ -1,9 +1,9 @@
 id,name,tier,behaviour,hp,attack,defence,speed,essence,xp,level,size,sight,abilities,sprite,tint
 moths,Moth swarm,weak,stay,8,2,1,2,1,2,1,1,0,claw,specter,9A9A80
 stagehand,Hanged stagehand,strong,stay,18,4,3,2,6,5,3,1,0,bite,specter,806050
-prompter,The Prompter,strong,stage,20,4,3,3,14,6,3,1,0,bite,specter,507080
+prompter,The Prompter,strong,stage,20,4,3,3,18,6,3,1,0,bite,specter,507080
 usher,The Usher,guardian,guard,20,6,2,1,20,10,5,1,0,crush,specter,A04040
 usherette,The Usherette,strong,hunt,16,5,2,3,7,5,2,1,3,claw;brace,specter,C08090
 ghost-chorus,Ghost chorus,strong,hunt,30,6,3,2,18,8,4,2,3,bite;mend,specter,8090C0
 the-spider,The Great Spider,great,hunt,50,8,4,3,40,14,6,3,4,crush;brace;mend,specter,C0C0C0
-rats,Rat pack,weak,stay,12,3,1,3,8,3,3,1,0,bite,specter,706858
+rats,Rat pack,weak,stay,12,3,1,3,10,3,3,1,0,bite,specter,706858

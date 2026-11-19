@@ -590,5 +590,5 @@ TEST_CASE("Treasure is its own screen: face-down cards, a pick, the reveal (T346
     CHECK_FALSE(t["result"].get<std::string>().empty());
     CHECK(p.Screen() == "treasure");
     REQUIRE(p.HandleUi("treasure", "close", ""));
-    CHECK(p.Screen() == "");
+    CHECK(p.Screen() != "treasure"); // a card of XP may open the level choice next
 }

@@ -140,6 +140,7 @@ namespace umbra::match
             if (++s.round > def.options.rounds)
                 return EndMatch(def, s);
             RunSpawns(def, s, true);
+            RunRoomSpawns(def, s);
             s.turn = -1;
             NextTurn(def, s);
         }
@@ -283,6 +284,7 @@ namespace umbra::match
             s.floor.erase(s.floor.begin() + a.a);
             if (f.treasure)
             {
+                RoomBack(def, s, f.cell, 1);
                 DealCards(def, s);
                 break;
             }
