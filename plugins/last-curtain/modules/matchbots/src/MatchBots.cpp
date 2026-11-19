@@ -13,7 +13,7 @@ namespace umbra::match
 
         // Weights (Bots.md "Weights").
         constexpr double performPerEssence = 10, stealPerEssence = 4, killCharacter = 12, killMonsterPerEssence = 3,
-                         stagePull = 2.5, huntPull = 1.2, homePull = 3, guardPull = 2, defendPull = 2;
+                         stagePull = 2.5, huntPull = 1.2, homePull = 3, guardPull = 2, defendPull = 2, huntDanger = 30, fallRisk = 20;
 
         // A number from the state, the unit and a key: the same for every call in one turn.
         double Noise(const MatchState &s, int unit, int key)
@@ -106,14 +106,36 @@ namespace umbra::match
             else
                 v = wins ? f.essence * killMonsterPerEssence + def.monsters[U(f.def)].xp : -3;
             if (loses)
-                v -= 10 + u.essence * stealPerEssence;
+                v -= fallRisk + u.essence * stealPerEssence;
             return v;
         }
 
-        // How good it is to stand on `cell` for this role, before any action.
-        double Place(const MatchState &s, int me, int cell, BotRole role)
+        // What a hunter that sees `cell` and would beat me threatens: falling and losing what I carry.
+        double Danger(const MatchDef &def, const MatchState &s, int me, int cell)
         {
             const Unit &u = s.units[U(me)];
+            double danger = 0;
+            for (int h = 0; h < static_cast<int>(s.units.size()); ++h)
+            {
+                const Unit &m = s.units[U(h)];
+                if (m.kind != 1 || m.cell < 0 || m.hp <= 0 || def.monsters[U(m.def)].behaviour != Behaviour::Hunt)
+                    continue;
+                int d = 99;
+                for (int c : Squares(s.board, m))
+                    d = std::min(d, Dist(s, cell, c));
+                if (d <= def.monsters[U(m.def)].sight && BestStrike(def, s, h, me) * def.rules.battle.rounds >= u.hp)
+                    danger += huntDanger + u.essence * stealPerEssence;
+            }
+            return danger;
+        }
+
+        // How good it is to stand on `cell` for this role, before any action.
+        double Place(const MatchDef &def, const MatchState &s, int me, int cell, BotRole role)
+        {
+            const Unit &u = s.units[U(me)];
+            const double danger = Danger(def, s, me, cell);
+            if (danger > 0)
+                return -danger - homePull * Dist(s, cell, u.home);
             if (u.hp * 3 < u.maxHp)
                 return -homePull * Dist(s, cell, u.home);
             if (u.essence > 0 && role == BotRole::Carry)
@@ -250,7 +272,7 @@ namespace umbra::match
         {
             work.units[U(me)].cell = static_cast<std::int16_t>(reach.cells[i]);
             const auto [action, value] = BestHere(def, work, me);
-            const double v = Noisy(def, s, level, me, reach.cells[i], Place(work, me, reach.cells[i], role) + value);
+            const double v = Noisy(def, s, level, me, reach.cells[i], Place(def, work, me, reach.cells[i], role) + value);
             if (v > bestValue)
                 bestValue = v, bestCell = reach.cells[i], bestAction = action;
         }
