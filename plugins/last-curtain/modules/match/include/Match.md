@@ -90,3 +90,11 @@ start battles), which can down them. Monsters fight back only when attacked. A u
 a monster of its own faction. A downed weak monster returns to its den, whole, at `respawnRound`
 if the den is free; guardians and the great monster never return. The great monster waits off the
 board and wakes at `great.wakeRound` in a free stage room that is not the stage.
+
+## Saves (`MatchSave.cpp`)
+
+`SaveMatch` writes every field of `MatchState` by name, the board and the log included, with
+`"format": "umbra.match", "version": 1`. `LoadMatch` refuses another format or version and any
+missing or mistyped field, with a reason, and leaves the state it was given untouched. A save taken
+in the middle of a battle or a level choice loads to the same moment. `Fingerprint` hashes
+everything but the log, for tests. A new field means a new version.

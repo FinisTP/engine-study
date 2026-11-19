@@ -11,6 +11,7 @@ target_sources(
         src/Battle.cpp
         src/Abilities.cpp
         src/Stage.cpp
+        src/MatchSave.cpp
         src/Monsters.cpp
         src/MatchInner.hpp
     PUBLIC
@@ -19,6 +20,7 @@ target_sources(
         FILES
             include/MatchDef.hpp
             include/Match.hpp
+            include/MatchSave.hpp
             include/Board.md
             include/Match.md
 )
