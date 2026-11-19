@@ -146,7 +146,7 @@ namespace umbra::match
             for (const Unit &t : s.units)
             {
                 const bool prey = role == BotRole::Defend ? t.kind == 0 && t.faction != u.faction && t.essence > 0
-                                                          : t.kind == 1 && t.faction != u.faction && t.faction < 0;
+                                                          : t.kind == 1 && t.faction != u.faction && def.monsters[U(t.def)].tier != Tier::Guardian;
                 if (prey && t.cell >= 0 && t.hp > 0)
                     best = std::min(best, Dist(s, cell, t.cell));
             }

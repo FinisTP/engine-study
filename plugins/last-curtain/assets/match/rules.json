@@ -1,6 +1,6 @@
 {
   "board": { "width": 9, "height": 15, "lanes": 3, "squareCapacity": 1,
-             "weakMin": 2, "weakMax": 4, "strongMin": 5, "strongMax": 7, "weakPerHalf": 2, "strongPerHalf": 1,
+             "weakMin": 2, "weakMax": 4, "strongMin": 5, "strongMax": 7, "weakPerHalf": 3, "strongPerHalf": 2,
              "eventsPerHalf": 2, "eventGap": 2, "itemsPerHalf": 2 },
   "respawn": { "turns": 1 },
   "battle": { "rounds": 3, "minDamage": 1 },

@@ -108,7 +108,7 @@ TEST_CASE("The new columns load (T310)", "[match][data]")
     REQUIRE(centre != def.spawns.end());
     CHECK(def.monsters[static_cast<std::size_t>(centre->monster)].id == "usherette");
     CHECK(centre->from == 1);
-    CHECK(centre->every >= 1);
+    CHECK(centre->every == 0); // the centre spawns once
 }
 
 TEST_CASE("Bad spawn or size data is refused (T311)", "[match][data]")
@@ -126,6 +126,6 @@ TEST_CASE("Bad spawn or size data is refused (T311)", "[match][data]")
     CHECK(FirstError(d3) == "spawns.csv:1:monster");
 
     const auto d4 = DataCopy("umbra-match-t311d");
-    SetCell(d4 / "spawns.csv", 0, "every", "0");
+    SetCell(d4 / "spawns.csv", 0, "every", "-1");
     CHECK(FirstError(d4) == "spawns.csv:1:every");
 }

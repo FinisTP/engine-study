@@ -325,7 +325,7 @@ namespace umbra::match
             for (int r = 0; r < s.Rows(); ++r)
             {
                 SpawnRow w{s.Pick(r, "zone", {"weak", "strong", "centre"}), s.Int(r, "from", 1, 999), s.Ref(r, "monster", def.monsters),
-                           s.Int(r, "every", 1, 999)};
+                           s.Int(r, "every", 0, 999)}; // 0: once, never again
                 // 1. Guardians belong to a hub and never spawn.
                 if (w.monster >= 0 && def.monsters[static_cast<std::size_t>(w.monster)].tier == Tier::Guardian)
                     s.Bad(s.Where(r, "monster"), "a guardian cannot spawn");

@@ -13,7 +13,7 @@ one copyable value, and only `Apply` changes it. Bots and the app send the same 
 | `abilities.csv` | id, name, use (battle, board, passive), class (strike, shield, heal, hit, firststrike), target (enemy, ally, self, monster, room, any: a strike aims at an enemy, a shield or battle heal at yourself, a board heal at your side, a hit at enemy, monster or any), hpCost, power, dice (`2d6` or none), range, animation (a `motions.json` name) |
 | `jobs.csv` | role, level, ability, choice (a second ability to pick between, or none); level 1 = starting abilities |
 | `monsters.csv` | id, name, tier (weak, strong, great, guardian), behaviour (stay, flee, stage, guard, hunt), stats, essence, xp, level (shown to the player), size (1-3 squares a side), sight (steps a hunter sees; 1+ for hunt), abilities (`a;b`, the first is its strike), sprite, tint |
-| `spawns.csv` | zone (weak, strong, centre), from (first round), monster (never a guardian), every (rounds after its square empties); loaded sorted by zone, then from |
+| `spawns.csv` | zone (weak, strong, centre), from (first round), monster (never a guardian), every (rounds after its square empties; 0 = once); loaded sorted by zone, then from |
 | `items.csv` | id, name, text, sprite, class (heal, xp), amount |
 | `events.csv` | id, name, text, two choices: label, chance (percent), success, failure (`none`, `hp:-3`, `essence:2`, `xp:2`, `item:<id>`) |
 
@@ -116,7 +116,9 @@ rows of the centre and a 2x2 takes the square and those right of and below it.
 Spawn squares are the weak dens (zone 0), the strong dens (zone 1) and `centreSpawns` (zone 2:
 the middle row, `spawn.centre` steps either side of the stage, each its own mirror). A zone's kind
 at round `r` is its latest `spawns.csv` row with `from <= r`. Each square owns one monster slot in
-`units`. When its monster is downed, the square schedules a `Spawn` for round `now + every` (the
+`units`. A den's monster belongs to the side whose half the den is in (side 0's half is the bottom),
+so only the other side can fight it; the centre's belong to no one. A row with `every` 0 spawns once
+and never again (the centre's). When its monster is downed, the square schedules a `Spawn` for round `now + every` (the
 row in force now) of the kind for that round; if its mirror is already due, it takes the same
 round, so mirrored squares spawn together. `spawn.warn` rounds before, it is announced
 (`SpawnSoon`: square, kind, round). At the start of its round, or after any later turn once it fits, the new monster replaces the slot, whole (`Spawned`). A zone whose first

@@ -37,8 +37,8 @@ TEST_CASE("A match starts with both sides at home (T280)", "[match][setup]")
             ++guards[u.faction];
             CHECK(u.cell == s.board.door[U(u.faction)]);
         }
-        else
-            CHECK(u.faction == -1);
+        else // a den's monster is its half's side's (side 0: the bottom); the centre's is no one's
+            CHECK(u.faction == (u.home / s.board.width == s.board.height / 2 ? -1 : u.home / s.board.width > s.board.height / 2 ? 0 : 1));
     }
     CHECK(chars[0] == 3);
     CHECK(chars[1] == 3);

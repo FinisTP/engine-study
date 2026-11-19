@@ -136,6 +136,7 @@ TEST_CASE("A carrier downed by a rival gives up its essence; by a monster, drops
     MatchState t = Start(def);
     const int me = Current(t);
     const int m = MonsterNext(t, def, Tier::Strong);
+    t.units[U(m)].faction = -1; // whichever side the den is, it is fought here
     REQUIRE(m >= 0);
     const int where = t.units[U(me)].cell;
     t.units[U(me)].essence = 9;
@@ -154,6 +155,7 @@ TEST_CASE("A downed fighter misses one turn and returns home whole (T290)", "[ma
     MatchState s = Start(def);
     const int me = Current(s);
     const int m = MonsterNext(s, def, Tier::Strong);
+    s.units[U(m)].faction = -1;
     s.units[U(me)].hp = 1;
     s.units[U(m)].attack = 50;
     s.units[U(m)].hp = 99;

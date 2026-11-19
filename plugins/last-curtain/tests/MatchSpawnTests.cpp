@@ -39,6 +39,7 @@ namespace
         REQUIRE(beside >= 0);
         s.units[U(me)].cell = s.now.origin = static_cast<std::int16_t>(beside);
         s.units[U(me)].attack = 99;
+        s.units[U(m)].faction = static_cast<std::int8_t>(1 - s.units[U(me)].faction); // a den on my own half: fought as an enemy here
         REQUIRE(Apply(def, s, {ActionKind::Attack, I8(m)}));
         REQUIRE(Apply(def, s, {ActionKind::BattleAbility, 0}));
         REQUIRE(s.units[U(m)].cell == -1);
@@ -175,4 +176,48 @@ TEST_CASE("Spawns survive a save (T314)", "[match][spawn][save]")
     CHECK(loaded.spawns[0].round == s.spawns[0].round);
     j["version"] = 1;
     CHECK_FALSE(LoadMatch(j, loaded, error));
+}
+
+TEST_CASE("Centre monsters spawn once, at the start (T340)", "[match][spawn]")
+{
+    const MatchDef def = Data();
+    MatchState s = Start(def);
+    const int home = s.board.centreSpawns[0];
+    REQUIRE(MonsterOn(s, home) >= 0);
+    Kill(def, s, home);
+    CHECK_FALSE(Pending(s, home));
+    for (int r = 0; r < 12; ++r)
+        EndRound(def, s);
+    CHECK(s.units[U(MonsterOn(s, home))].cell == -1);
+}
+
+TEST_CASE("Den monsters belong to the half they stand in (T341)", "[match][spawn]")
+{
+    const MatchDef def = Data();
+    MatchState s = Start(def);
+    const int mid = s.board.height / 2;
+    for (const auto *dens : {&s.board.weakDens, &s.board.strongDens})
+        for (int den : *dens)
+        {
+            const Unit &m = s.units[U(MonsterOn(s, den))];
+            CHECK(m.faction == (den / s.board.width > mid ? 0 : 1)); // side 0's hub is the bottom row
+        }
+    for (int c : s.board.centreSpawns)
+        CHECK(s.units[U(MonsterOn(s, c))].faction == -1);
+    // 1. A side cannot attack its own den's monster; the other side can.
+    const int den = s.board.weakDens[0], m = MonsterOn(s, den);
+    int beside = -1;
+    for (int d = 0; d < 4; ++d)
+        if (const int n = Neighbour(s.board, den, d); n >= 0 && !Taken(s, n))
+            beside = n;
+    REQUIRE(beside >= 0);
+    const int me = Current(s);
+    s.units[U(me)].cell = s.now.origin = static_cast<std::int16_t>(beside);
+    CHECK(Check(def, s, {ActionKind::Attack, I8(m)}) == (s.units[U(me)].faction == s.units[U(m)].faction ? Why::OwnSide : Why::Ok));
+    // 2. A respawn keeps the half's side.
+    s.units[U(me)].cell = s.units[U(me)].home;
+    Kill(def, s, den);
+    while (Pending(s, den))
+        EndRound(def, s);
+    CHECK(s.units[U(MonsterOn(s, den))].faction == (den / s.board.width > mid ? 0 : 1));
 }

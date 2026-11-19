@@ -97,7 +97,7 @@ TEST_CASE("The soak counts sources and comebacks (T306)", "[match][bots]")
     CHECK_FALSE(Text(def, r).empty());
 }
 
-TEST_CASE("Late centre monsters are worth more essence than early ones (T321)", "[match][bots]")
+TEST_CASE("Late monsters are worth more essence than early ones (T321)", "[match][bots]")
 {
     const MatchDef def = Data();
     double early = 0, late = 0;
@@ -109,12 +109,13 @@ TEST_CASE("Late centre monsters are worth more essence than early ones (T321)", 
         for (int applies = 0; Current(s) >= 0 && applies < 20000; ++applies)
         {
             REQUIRE(Apply(def, s, ChooseAction(def, s, BotLevel::Medium)));
-            // 1. Every monster from a centre square downed since the last action, by the round it fell.
+            // 1. Every den monster downed since the last action, by the round it fell (the centre spawns once).
             for (; seen < s.log.size(); ++seen)
             {
                 const LogEntry &e = s.log[seen];
-                if (e.kind != LogKind::Down || s.units[U(e.a)].kind != 1 ||
-                    std::ranges::find(s.board.centreSpawns, s.units[U(e.a)].home) == s.board.centreSpawns.end())
+                const Unit &v = s.units[U(e.a)];
+                if (e.kind != LogKind::Down || v.kind != 1 || def.monsters[U(v.def)].tier == Tier::Guardian ||
+                    std::ranges::find(s.board.centreSpawns, v.home) != s.board.centreSpawns.end())
                     continue;
                 if (s.round < 10)
                     early += e.c, ++earlyCount;

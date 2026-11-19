@@ -176,8 +176,8 @@ namespace umbra::match
             for (const SpawnRow &w : def.spawns)
                 if (w.zone == zone && w.from <= s.round)
                     now = &w;
-            if (!now)
-                return;
+            if (!now || now->every == 0)
+                return; // a zone that spawns once
             const int mirror = Mirror(s.board, cell);
             const auto partner = std::ranges::find(s.spawns, static_cast<std::int16_t>(mirror), &Spawn::cell);
             const int round = partner != s.spawns.end() ? partner->round : s.round + now->every;
@@ -205,7 +205,9 @@ namespace umbra::match
                 for (int slot = 0; slot < static_cast<int>(s.units.size()); ++slot)
                     if (s.units[U(slot)].kind == 1 && s.units[U(slot)].home == w.cell)
                     {
-                        s.units[U(slot)] = FromMonster(def, w.monster, -1, anchor);
+                        // 3. A den's monster belongs to the side whose half it is in (side 0: the bottom); the centre's to none.
+                        const int zone = ZoneOf(s.board, w.cell), half = w.cell / s.board.width > s.board.height / 2 ? 0 : 1;
+                        s.units[U(slot)] = FromMonster(def, w.monster, zone == 2 ? -1 : half, anchor);
                         s.units[U(slot)].home = w.cell;
                         Log(s, LogKind::Spawned, w.cell, slot);
                         break;

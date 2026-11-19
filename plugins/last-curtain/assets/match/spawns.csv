@@ -1,8 +1,6 @@
 zone,from,monster,every
 weak,1,moths,6
 weak,10,rats,8
-strong,1,stagehand,12
-strong,12,prompter,12
-centre,1,usherette,8
-centre,12,ghost-chorus,8
-centre,20,the-spider,10
+strong,1,stagehand,10
+strong,12,prompter,10
+centre,1,usherette,0

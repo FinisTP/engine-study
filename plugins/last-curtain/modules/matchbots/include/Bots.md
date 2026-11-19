@@ -23,7 +23,7 @@ Bots send the same `Action`s as the player, one per call to `ChooseAction`, for 
      could down the bot in a battle costs 30 plus its essence x 4, and the bot heads home; else
      below a third of max HP, home; carrying, the stage (closer is better, more so the more
      it carries); guard, its guardian's square; defend, the nearest enemy carrier or the stage;
-     carry, the nearest neutral monster.
+     carry, the nearest monster of no side or the other side (never a guardian).
    - Actions: Perform (essence x 10); Attack (if it can win in `battle.rounds` rounds: 12 for a
      character plus its essence x 4, or a monster's essence x 3 plus its XP; minus 20 plus its own
      essence x 4 if it could lose); a board Hit that downs (as an attack) or chips (half the
@@ -97,3 +97,9 @@ a half (75%, 11%); bots valuing kills double (74%, 11%). The kills share follows
 essence stolen before it is performed, which data barely moves: the centre now holds monsters that
 are fought more than the other side is. The shipped data is the slower-spawn set with two weak dens a
 half and richer late monsters (the usherette keeps sight 3). The bands, or the centre's design, are the user's call.
+
+**Resolved 2026-11-20 (the user: the centre spawns once; dens belong to their half's side, and there
+are more of them).** Three weak and two strong dens a half; strong dens every 10 rounds; moths 1,
+rats 8, prompter 14, the Usher 20 essence. On the CTest's 400 matches: side 0 wins 46.2%, the first
+mover 44.5%, monsters 38.9% / kills 44.0% / guardians 17.1%, comebacks 27.8% of 381 led matches,
+guardians fell 341 times, the lead last changed on round 14.2. **The data holds.**
