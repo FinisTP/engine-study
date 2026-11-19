@@ -68,6 +68,24 @@ namespace umbra::match
             return false;
         }
 
+        bool Beside(const Board &b, const Unit &a, const Unit &c)
+        {
+            for (int x : Squares(b, a))
+                for (int y : Squares(b, c))
+                    if (Adjacent(b, x, y))
+                        return true;
+            return false;
+        }
+
+        int StepsTo(const Board &b, int from, const Unit &t)
+        {
+            int best = -1;
+            for (int c : Squares(b, t))
+                if (const int d = Steps(b, from, c); d >= 0 && (best < 0 || d < best))
+                    best = d;
+            return best;
+        }
+
         Why CheckAttack(const MatchDef &, const MatchState &s, int me, int target)
         {
             if (s.now.acted)
@@ -75,7 +93,7 @@ namespace umbra::match
             if (target < 0 || target >= static_cast<int>(s.units.size()) || s.units[U(target)].hp <= 0)
                 return Why::NothingHere;
             const Unit &u = s.units[U(me)], &t = s.units[U(target)];
-            if (!Adjacent(s.board, u.cell, t.cell))
+            if (!Beside(s.board, u, t))
                 return Why::OutOfRange;
             if (t.faction == u.faction)
                 return Why::OwnSide;

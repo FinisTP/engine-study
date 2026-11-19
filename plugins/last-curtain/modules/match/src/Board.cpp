@@ -188,6 +188,26 @@ namespace umbra::match
         }
     }
 
+    std::vector<int> Squares(const Board &b, const Unit &u)
+    {
+        std::vector<int> out;
+        if (u.cell < 0 || u.hp <= 0)
+            return out;
+        const int x0 = u.cell % b.width, y0 = u.cell / b.width;
+        for (int y = y0; y < y0 + u.size && y < b.height; ++y)
+            for (int x = x0; x < x0 + u.size && x < b.width; ++x)
+                out.push_back(y * b.width + x);
+        return out;
+    }
+
+    bool Covers(const Board &b, const Unit &u, int cell)
+    {
+        if (u.cell < 0 || u.hp <= 0 || cell < 0)
+            return false;
+        const int dx = cell % b.width - u.cell % b.width, dy = cell / b.width - u.cell / b.width;
+        return dx >= 0 && dy >= 0 && dx < u.size && dy < u.size;
+    }
+
     int Mirror(const Board &b, int cell) { return (b.height - 1 - cell / b.width) * b.width + cell % b.width; }
 
     int Neighbour(const Board &b, int cell, int dir)

@@ -77,6 +77,7 @@ namespace umbra::match
             u.attack = static_cast<std::int16_t>(d.attack);
             u.defence = static_cast<std::int16_t>(d.defence);
             u.speed = static_cast<std::int16_t>(d.speed);
+            u.size = static_cast<std::int8_t>(d.size);
             u.essence = d.essence;
             for (std::size_t i = 0; i < d.abilities.size() && i < u.abilities.size(); ++i)
                 u.abilities[i] = static_cast<std::int8_t>(d.abilities[i]);
@@ -140,21 +141,18 @@ namespace umbra::match
         for (int f = 0; f < 2; ++f)
             if (const int g = OfTier(def, rng, Tier::Guardian); g >= 0)
                 s.units.push_back(FromMonster(def, g, f, b.door[U(f)]));
-        // 4. Every spawn square gets its zone's kind for round 1 (or waits for the zone's first row).
+        // 4. Every spawn square owns a slot and is due its zone's first row (round 1 fills at once, if it fits).
         for (const auto *list : {&b.weakDens, &b.strongDens, &b.centreSpawns})
             for (int c : *list)
             {
                 const int zone = ZoneOf(b, c), kind = SpawnKind(def, zone, 1);
                 const auto first = std::ranges::find(def.spawns, zone, &SpawnRow::zone);
-                if (kind >= 0)
-                    s.units.push_back(FromMonster(def, kind, -1, c));
-                else if (first != def.spawns.end())
-                {
-                    Unit u = FromMonster(def, first->monster, -1, c);
-                    u.hp = 0, u.cell = -1;
-                    s.units.push_back(u);
-                    s.spawns.push_back({static_cast<std::int16_t>(c), static_cast<std::int8_t>(first->monster), first->from});
-                }
+                if (first == def.spawns.end())
+                    continue;
+                Unit u = FromMonster(def, kind >= 0 ? kind : first->monster, -1, c);
+                u.hp = 0, u.cell = -1;
+                s.units.push_back(u);
+                s.spawns.push_back({static_cast<std::int16_t>(c), static_cast<std::int8_t>(kind >= 0 ? kind : first->monster), kind >= 0 ? 1 : first->from});
             }
 
         // 5. Items on the floor of their rooms, the same on both halves.
@@ -167,6 +165,7 @@ namespace umbra::match
 
         // 6. The stage is the centre of the middle row; the first turn begins.
         s.stage = static_cast<std::int16_t>((b.height / 2) * b.width + b.width / 2);
+        RunSpawns(def, s, false);
         s.rng = rng.Next();
         const Unit &first = s.units[U(s.order[0])];
         s.now = {first.cell, static_cast<std::int8_t>(first.move), false};

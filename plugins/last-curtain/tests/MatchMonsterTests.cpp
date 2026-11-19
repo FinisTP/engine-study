@@ -108,3 +108,95 @@ TEST_CASE("A guardian strikes enemies next to it, and its own side cannot attack
             t.units[U(mine)].cell = static_cast<std::int16_t>(n);
     CHECK(Check(def, t, {ActionKind::Attack, I8(g)}) == Why::OwnSide);
 }
+
+namespace
+{
+    // The shipped data with every centre square spawning `id` from round 1.
+    MatchDef CentreOf(const char *id)
+    {
+        MatchDef def = Data();
+        for (SpawnRow &w : def.spawns)
+            if (w.zone == 2)
+                w.monster = MatchDef::Find(def.monsters, id);
+        return def;
+    }
+
+    int SpawnedOn(const MatchState &s, int home)
+    {
+        for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
+            if (s.units[U(i)].kind == 1 && s.units[U(i)].home == home)
+                return i;
+        return -1;
+    }
+}
+
+TEST_CASE("A 3x3 monster covers nine squares, never a wall, the stage or another unit (T315)", "[match][monsters]")
+{
+    const MatchDef def = CentreOf("the-spider");
+    MatchState s = Start(def);
+    for (int home : s.board.centreSpawns)
+    {
+        const int m = SpawnedOn(s, home);
+        REQUIRE(m >= 0);
+        const Unit &spider = s.units[U(m)];
+        REQUIRE(spider.cell >= 0);
+        const std::vector<int> squares = Squares(s.board, spider);
+        REQUIRE(squares.size() == 9);
+        CHECK(std::ranges::find(squares, home) != squares.end());
+        for (int c : squares)
+        {
+            CHECK(s.board.cells[U(c)].kind != CellKind::Wall);
+            CHECK(c != s.stage);
+            CHECK(Covers(s.board, spider, c));
+            for (int o = 0; o < static_cast<int>(s.units.size()); ++o)
+                if (o != m && s.units[U(o)].hp > 0)
+                    CHECK_FALSE(Covers(s.board, s.units[U(o)], c));
+        }
+        // 1. A character cannot step onto any of its squares.
+        for (int c : squares)
+            for (int d = 0; d < 4; ++d)
+                if (const int n = Neighbour(s.board, c, d); n >= 0 && std::ranges::find(squares, n) == squares.end() && !Taken(s, n))
+                {
+                    const int me = Current(s);
+                    s.units[U(me)].cell = s.now.origin = static_cast<std::int16_t>(n);
+                    CHECK(Check(def, s, {ActionKind::Move, I8((d + 2) % 4)}) == Why::Blocked);
+                }
+    }
+
+    // 2. In a lane den (a room among walls) it never fits, so it never appears.
+    MatchDef lanes = Data();
+    for (SpawnRow &w : lanes.spawns)
+        if (w.zone == 0)
+            w.monster = MatchDef::Find(lanes.monsters, "the-spider");
+    const MatchState t = Start(lanes);
+    for (int den : t.board.weakDens)
+        CHECK(t.units[U(SpawnedOn(t, den))].cell == -1);
+}
+
+TEST_CASE("Anyone next to any of its squares can attack it, and its blows reach from any (T316)", "[match][monsters]")
+{
+    MatchDef def = CentreOf("the-spider");
+    MatchState s = Start(def);
+    const int m = SpawnedOn(s, s.board.centreSpawns[1]);
+    const std::vector<int> squares = Squares(s.board, s.units[U(m)]);
+    // 1. The square below its bottom-right corner touches only that corner.
+    const int corner = squares.back(), below = Neighbour(s.board, corner, 2);
+    REQUIRE(below >= 0);
+    const int me = Current(s);
+    s.units[U(me)].cell = s.now.origin = static_cast<std::int16_t>(below);
+    CHECK(Check(def, s, {ActionKind::Attack, I8(m)}) == Why::Ok);
+    const int away = Neighbour(s.board, below, 2);
+    REQUIRE(away >= 0);
+    s.units[U(me)].cell = s.now.origin = static_cast<std::int16_t>(away);
+    CHECK(Check(def, s, {ActionKind::Attack, I8(m)}) == Why::OutOfRange);
+
+    // 2. As a guard it strikes whoever stands beside any of its squares.
+    def.monsters[U(MatchDef::Find(def.monsters, "the-spider"))].behaviour = Behaviour::Guard;
+    MatchState t = Start(def);
+    const int g = SpawnedOn(t, t.board.centreSpawns[1]);
+    const int victim = Current(t);
+    t.units[U(victim)].cell = static_cast<std::int16_t>(Neighbour(t.board, Squares(t.board, t.units[U(g)]).back(), 2));
+    t.units[U(victim)].hp = 90;
+    RunMonsters(def, t);
+    CHECK(t.units[U(victim)].hp < 90);
+}

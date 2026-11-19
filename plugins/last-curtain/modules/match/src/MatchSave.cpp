@@ -5,7 +5,7 @@ namespace umbra::match
 {
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Cell, kind, doors, event, resolved)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Board, width, height, cells, hub, door, stageRooms, weakDens, strongDens, itemRooms, centreSpawns)
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Unit, kind, def, faction, cell, home, hp, maxHp, attack, defence, speed, move, xp, level, back,
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Unit, kind, def, faction, cell, home, hp, maxHp, attack, defence, speed, move, xp, level, size, back,
                                        pending, essence, kills, abilities, items)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Floor, cell, item, essence)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Battle, on, attacker, defender, round, next, first, shield)

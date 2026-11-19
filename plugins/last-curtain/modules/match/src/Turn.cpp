@@ -14,7 +14,7 @@ namespace umbra::match
         int UnitAt(const MatchState &s, int cell)
         {
             for (std::size_t i = 0; i < s.units.size(); ++i)
-                if (s.units[i].cell == cell && s.units[i].hp > 0)
+                if (Covers(s.board, s.units[i], cell))
                     return static_cast<int>(i);
             return -1;
         }
@@ -107,7 +107,7 @@ namespace umbra::match
             if (n < 0)
                 return Why::Blocked;
             // 2. One unit per square; an enemy hub is shut while its guardian stands.
-            const int there = static_cast<int>(std::count_if(s.units.begin(), s.units.end(), [&](const Unit &o) { return o.cell == n && o.hp > 0; }));
+            const int there = static_cast<int>(std::count_if(s.units.begin(), s.units.end(), [&](const Unit &o) { return Covers(s.board, o, n); }));
             if (there >= def.rules.board.squareCapacity || (n == s.stage && there > 0))
                 return Why::Blocked; // the stage always holds one
             const int enemy = 1 - u.faction;

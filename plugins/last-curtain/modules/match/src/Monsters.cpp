@@ -13,7 +13,7 @@ namespace umbra::match
     {
         bool Free(const MatchDef &def, const MatchState &s, int cell)
         {
-            const int there = static_cast<int>(std::ranges::count_if(s.units, [&](const Unit &u) { return u.cell == cell && u.hp > 0; }));
+            const int there = static_cast<int>(std::ranges::count_if(s.units, [&](const Unit &u) { return Covers(s.board, u, cell); }));
             return cell != s.stage && there < def.rules.board.squareCapacity; // monsters never take the stage
         }
 
@@ -32,7 +32,8 @@ namespace umbra::match
         {
             int best = -1, bestScore = score(m.cell);
             for (int d = 0; d < 4; ++d)
-                if (const int n = Neighbour(s.board, m.cell, d); n >= 0 && Free(def, s, n) && score(n) > bestScore)
+                if (const int n = Neighbour(s.board, m.cell, d); n >= 0 && score(n) > bestScore &&
+                    (m.size > 1 ? Fits(s, m.size, n, static_cast<int>(&m - s.units.data())) : Free(def, s, n)))
                     best = n, bestScore = score(n);
             if (best < 0)
                 return false;
@@ -58,7 +59,7 @@ namespace umbra::match
                 for (int v = 0; v < static_cast<int>(s.units.size()); ++v)
                 {
                     Unit &t = s.units[U(v)];
-                    if (t.kind == 0 && t.cell >= 0 && t.faction != m.faction && Adjacent(s.board, m.cell, t.cell) && m.abilities[0] >= 0)
+                    if (t.kind == 0 && t.cell >= 0 && t.faction != m.faction && Beside(s.board, m, t) && m.abilities[0] >= 0)
                     {
                         const int dmg = Damage(def, s, m.abilities[0], i, v, 0);
                         t.hp = static_cast<std::int16_t>(std::max(0, t.hp - dmg));
@@ -86,6 +87,25 @@ namespace umbra::match
 
     namespace inner
     {
+        bool Fits(const MatchState &s, int size, int anchor, int self)
+        {
+            const Board &b = s.board;
+            const int x0 = anchor % b.width, y0 = anchor / b.width;
+            if (anchor < 0 || x0 + size > b.width || y0 + size > b.height)
+                return false;
+            for (int y = y0; y < y0 + size; ++y)
+                for (int x = x0; x < x0 + size; ++x)
+                {
+                    const int c = y * b.width + x;
+                    if (b.cells[U(c)].kind == CellKind::Wall || c == s.stage)
+                        return false;
+                    for (int o = 0; o < static_cast<int>(s.units.size()); ++o)
+                        if (o != self && Covers(b, s.units[U(o)], c))
+                            return false;
+                }
+            return true;
+        }
+
         int ZoneOf(const Board &b, int cell)
         {
             int zone = 0;
@@ -134,9 +154,9 @@ namespace umbra::match
                 // 1. At a round's start: announce what is due spawn.warn rounds from now.
                 if (roundStart && w.round - def.rules.spawn.warn == s.round && w.round > s.round)
                     Log(s, LogKind::SpawnSoon, w.cell, w.monster, w.round);
-                // 2. Due and free: a new monster replaces the downed one in the square's slot.
-                const bool taken = std::ranges::any_of(s.units, [&](const Unit &u) { return u.cell == w.cell && u.hp > 0; });
-                if (w.round > s.round || taken)
+                // 2. Due and room for it (centred on the square): a new monster replaces the downed one in the slot.
+                const int size = def.monsters[U(w.monster)].size, anchor = w.cell - (size - 1) / 2 * (s.board.width + 1);
+                if (w.round > s.round || w.cell % s.board.width < (size - 1) / 2 || !Fits(s, size, anchor))
                 {
                     ++i;
                     continue;
@@ -144,7 +164,8 @@ namespace umbra::match
                 for (int slot = 0; slot < static_cast<int>(s.units.size()); ++slot)
                     if (s.units[U(slot)].kind == 1 && s.units[U(slot)].home == w.cell)
                     {
-                        s.units[U(slot)] = FromMonster(def, w.monster, -1, w.cell);
+                        s.units[U(slot)] = FromMonster(def, w.monster, -1, anchor);
+                        s.units[U(slot)].home = w.cell;
                         Log(s, LogKind::Spawned, w.cell, slot);
                         break;
                     }

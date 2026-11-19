@@ -48,7 +48,7 @@ namespace umbra::match
         std::int8_t def = -1, faction = -1;
         std::int16_t cell = -1, home = -1; // home: the hub, or a monster's den
         std::int16_t hp = 0, maxHp = 0, attack = 0, defence = 0, speed = 0, move = 0, xp = 0;
-        std::int8_t level = 1;
+        std::int8_t level = 1, size = 1; // size: squares a side; cell is the top-left one
         std::int8_t back = 0;    // turns until a downed character returns
         std::int8_t pending = -1; // a jobs.csv row waiting for its choice
         int essence = 0, kills = 0;
@@ -113,6 +113,10 @@ namespace umbra::match
         bool over = false;
         int winner = -1; // -1 a draw
     };
+
+    // A unit's squares: size x size from its cell, the top-left (Match.md "Large monsters").
+    std::vector<int> Squares(const Board &b, const Unit &u);
+    bool Covers(const Board &b, const Unit &u, int cell);
 
     // picks: side 0's characters.csv rows (options.side of them, no repeats). Side 1 is RiggedPick.
     MatchState NewMatch(const MatchDef &def, std::uint64_t seed, const std::vector<int> &picks);

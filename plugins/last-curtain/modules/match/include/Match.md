@@ -90,6 +90,17 @@ first ability's damage to every enemy character next to it, without a battle (gu
 start battles), which can down them. Monsters fight back only when attacked. A unit cannot attack
 a monster of its own faction. A downed monster never returns.
 
+## Large monsters (`Board.cpp` `Squares`, `Covers`)
+
+A unit of `size` s (from `monsters.csv`) stands on its `cell`, the top-left square, and covers the
+s x s squares from there; characters are size 1. A covered square counts as occupied: nobody steps
+onto it. A monster is placed, spawned or moved only where every covered square is on the board,
+open (not a wall), not the stage and covered by nobody else (`Fits`). "Next to" (attack, a guard's
+blow) means any square of one beside any square of the other (`Beside`); a board ability's range
+counts steps to the target's nearest square (`StepsTo`). A spawn is centred on its square: the
+anchor is `(size - 1) / 2` squares up and left of it, so a 3x3 on a centre spawn square fills three
+rows of the centre and a 2x2 takes the square and those right of and below it.
+
 ## Spawns (`Monsters.cpp`)
 
 Spawn squares are the weak dens (zone 0), the strong dens (zone 1) and `centreSpawns` (zone 2:
@@ -98,8 +109,7 @@ at round `r` is its latest `spawns.csv` row with `from <= r`. Each square owns o
 `units`. When its monster is downed, the square schedules a `Spawn` for round `now + every` (the
 row in force now) of the kind for that round; if its mirror is already due, it takes the same
 round, so mirrored squares spawn together. `spawn.warn` rounds before, it is announced
-(`SpawnSoon`: square, kind, round). At the start of its round, or after any later turn once no
-living unit stands there, the new monster replaces the slot, whole (`Spawned`). A zone whose first
+(`SpawnSoon`: square, kind, round). At the start of its round, or after any later turn once it fits, the new monster replaces the slot, whole (`Spawned`). A zone whose first
 row starts after round 1 leaves its squares empty until then.
 
 ## Saves (`MatchSave.cpp`)

@@ -46,6 +46,8 @@ namespace umbra::match::inner
     void Pick(const MatchDef &def, MatchState &s, int me, int slot);
     void Down(const MatchDef &def, MatchState &s, int victim, int killer);
     bool Adjacent(const Board &b, int a, int c); // one step apart through a door
+    bool Beside(const Board &b, const Unit &a, const Unit &c); // any square of one next to any of the other
+    int StepsTo(const Board &b, int from, const Unit &t); // to its nearest square, -1 if unreachable
 }
 
 namespace umbra::match::inner
@@ -78,4 +80,6 @@ namespace umbra::match::inner
     int SpawnKind(const MatchDef &def, int zone, int round);     // the zone's latest row by that round, or -1
     void ScheduleSpawn(const MatchDef &def, MatchState &s, int cell); // its monster was downed
     void RunSpawns(const MatchDef &def, MatchState &s, bool roundStart);
+    // Every square of a size x size unit at `anchor` is on the board, open, not the stage, free of others.
+    bool Fits(const MatchState &s, int size, int anchor, int self = -1);
 }

@@ -100,7 +100,7 @@ namespace umbra::match
             // 1. Hit an enemy, heal your own side (yourself included), within range.
             if ((a.kind == AbilityClass::Hit) == (t.faction == u.faction) || (a.kind == AbilityClass::Heal && t.kind != 0))
                 return Why::OwnSide;
-            const int d = Steps(s.board, u.cell, t.cell);
+            const int d = StepsTo(s.board, u.cell, t);
             if (d < 0 || d > a.range)
                 return Why::OutOfRange;
             if (u.hp <= a.hpCost)
