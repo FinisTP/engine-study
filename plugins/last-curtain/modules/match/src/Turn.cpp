@@ -126,7 +126,7 @@ namespace umbra::match
                 return Why::NothingHere;
             const Floor &f = s.floor[U(index)];
             const int carried = static_cast<int>(std::count_if(u.items.begin(), u.items.end(), [](std::int8_t i) { return i >= 0; }));
-            if (f.item >= 0 && carried >= def.rules.carry)
+            if (!f.treasure && f.item >= 0 && carried >= def.rules.carry)
                 return Why::BagFull;
             return Why::Ok;
         }
@@ -204,6 +204,10 @@ namespace umbra::match
             return a.kind == ActionKind::LevelUp ? CheckLevelUp(def, s, me, a.a) : Why::MustChoose;
         if (s.battle.on)
             return a.kind == ActionKind::BattleAbility ? CheckBattleAbility(def, s, me, a.a) : Why::MustChoose;
+        if (!s.cards.empty()) // 1b. dealt treasure: pick a card first
+            return a.kind != ActionKind::Card ? Why::MustChoose : a.a >= 0 && a.a < static_cast<int>(s.cards.size()) ? Why::Ok : Why::NothingHere;
+        if (a.kind == ActionKind::Card)
+            return Why::NothingHere;
         switch (a.kind)
         {
         case ActionKind::Attack: return CheckAttack(def, s, me, a.a);
@@ -239,6 +243,8 @@ namespace umbra::match
             all.push_back({ActionKind::UseItem, i8(slot)});
         for (int f = 0; f < static_cast<int>(s.floor.size()); ++f)
             all.push_back({ActionKind::PickUp, i8(f)});
+        for (int c = 0; c < static_cast<int>(s.cards.size()); ++c)
+            all.push_back({ActionKind::Card, i8(c)});
         for (ActionKind k : {ActionKind::Perform, ActionKind::EndTurn})
             all.push_back({k});
         for (int c = 0; c < 2; ++c)
@@ -275,6 +281,11 @@ namespace umbra::match
         {
             const Floor f = s.floor[U(a.a)];
             s.floor.erase(s.floor.begin() + a.a);
+            if (f.treasure)
+            {
+                DealCards(def, s);
+                break;
+            }
             u.essence += f.essence;
             if (f.item >= 0)
                 *std::find(u.items.begin(), u.items.end(), std::int8_t(-1)) = f.item;
@@ -294,6 +305,7 @@ namespace umbra::match
         case ActionKind::LevelUp: LevelUp(def, s, me, a.a); break;
         case ActionKind::Perform: Perform(def, s, me); break;
         case ActionKind::EndTurn: NextTurn(def, s); break;
+        case ActionKind::Card: TakeCard(def, s, me, a.a); break;
         default: return false;
         }
         return true;

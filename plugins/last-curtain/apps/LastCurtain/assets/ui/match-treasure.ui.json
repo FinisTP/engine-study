@@ -1,0 +1,16 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "dim": true,
+  "root": { "type": "stack", "anchor": "center", "style": "float", "gap": 14, "align": "center", "size": [900, 0], "children": [
+    { "type": "text", "style": "title", "text": "Treasure" },
+    { "type": "text", "style": "small", "text": "Choose a card.", "visible": "{treasure.choosing}" },
+    { "type": "list", "items": "{treasure.cards}", "as": "c", "direction": "horizontal", "gap": 14, "action": "pick", "arg": "{c.index}", "visible": "{treasure.choosing}",
+      "entry": { "type": "stack", "style": "cardArt", "size": [150, 200], "align": "center", "children": [
+        { "type": "text", "style": "title", "text": "?" }
+      ] } },
+    { "type": "text", "style": "heading", "text": "{treasure.result}", "visible": "{treasure.result}", "wrap": true, "size": [600, 0] },
+    { "type": "button", "style": "act", "text": "Continue", "action": "close", "visible": "{treasure.result}" }
+  ] }
+}

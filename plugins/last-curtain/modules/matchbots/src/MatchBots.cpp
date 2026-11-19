@@ -183,7 +183,7 @@ namespace umbra::match
                                                                  ? (u.hp * 2 < u.maxHp ? def.items[U(u.items[U(slot)])].amount * 0.7 : 0)
                                                                  : 2);
             for (int f = 0; f < static_cast<int>(s.floor.size()); ++f)
-                consider({ActionKind::PickUp, I8(f)}, s.floor[U(f)].essence * 2 + (s.floor[U(f)].item >= 0 ? 3 : 0));
+                consider({ActionKind::PickUp, I8(f)}, s.floor[U(f)].essence * 2 + (s.floor[U(f)].item >= 0 ? 3 : 0) + (s.floor[U(f)].treasure ? 6 : 0));
             consider({ActionKind::Answer, 0}, 1.5);
             return best;
         }
@@ -258,6 +258,8 @@ namespace umbra::match
             return {ActionKind::LevelUp, I8(Noise(s, me, 77) > 0.6 ? 1 : 0)};
         if (s.battle.on)
             return BattlePick(def, s, me, level);
+        if (!s.cards.empty()) // face down: any card is as good as another
+            return {ActionKind::Card, I8(static_cast<int>(Noise(s, me, 31) > 0.0 ? 0 : s.cards.size() - 1))};
         if (s.now.acted)
             return {ActionKind::EndTurn};
         // 1. Every reachable square: its place value plus the best action there; go to the best.

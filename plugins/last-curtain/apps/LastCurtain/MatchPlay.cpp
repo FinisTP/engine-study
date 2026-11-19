@@ -38,7 +38,7 @@ MatchPlay::MatchPlay(const MatchDef &def, MatchState saved, BotLevel level) : de
 const char *MatchPlay::LogName(LogKind kind)
 {
     static const char *names[] = {"Moved", "Battle", "Blow", "Down", "Essence", "Performed", "Level", "Back",
-                                  "SpawnSoon", "Spawned", "Event", "Item", "Over"};
+                                  "SpawnSoon", "Spawned", "Event", "Item", "Treasure", "Over"};
     return names[static_cast<int>(kind)];
 }
 
@@ -83,6 +83,15 @@ std::string MatchPlay::Caption(const LogEntry &e) const
     case LogKind::Spawned: v = {{"who", Name(e.b)}}; break;
     case LogKind::Event: v = {{"who", Name(e.a)}, {"result", Word("misc", e.c ? "passed" : "failed")}}; break;
     case LogKind::Item: v = {{"who", Name(e.a)}, {"item", e.b >= 0 ? def_.items[U(e.b)].name : Word("misc", "essence")}, {"n", n}}; break;
+    case LogKind::Treasure:
+    {
+        // What the chosen card held, in words (match-words.json "cards").
+        const TreasureDef &t = def_.treasure[U(e.b)];
+        static const char *kinds[] = {"item", "essence", "xp", "heal"};
+        const std::string card = Fill(Word("cards", kinds[static_cast<int>(t.kind)]), {{"item", t.item >= 0 ? def_.items[U(t.item)].name : ""}, {"n", std::to_string(t.amount)}});
+        v = {{"who", Name(e.a)}, {"card", card}};
+        break;
+    }
     case LogKind::Over: v = {{"side", Word("misc", e.a == 0 ? "side0" : e.a == 1 ? "side1" : "draw")}}; break;
     default: break;
     }
@@ -196,6 +205,21 @@ bool MatchPlay::HandleUi(const std::string &screen, const std::string &action, c
     // 1. The battle's pick, the level choice, the event's choice and its close.
     if ((screen == "battle" || screen == "level") && action == "pick" && !arg.empty())
         return Do({screen == "battle" ? ActionKind::BattleAbility : ActionKind::LevelUp, static_cast<std::int8_t>(std::stoi(arg))});
+    // 1b. Treasure: pick a face-down card, see what it was, close.
+    if (screen == "treasure")
+    {
+        if (action == "close" && !treasureResult_.empty())
+            return treasureResult_.clear(), true;
+        if (action != "pick" || arg.empty())
+            return false;
+        const std::size_t before = s_.log.size();
+        if (!Do({ActionKind::Card, static_cast<std::int8_t>(std::stoi(arg))}))
+            return false;
+        for (std::size_t i = before; i < s_.log.size(); ++i)
+            if (s_.log[i].kind == LogKind::Treasure)
+                treasureResult_ = Caption(s_.log[i]);
+        return true;
+    }
     if (screen == "event" && eventCell_ >= 0)
     {
         if (action == "close" && !eventResult_.empty())
@@ -268,6 +292,8 @@ std::string MatchPlay::Screen() const
         return "banner";
     if (eventCell_ >= 0)
         return "event";
+    if (!treasureResult_.empty() || (shown_ == s_.log.size() && !s_.cards.empty() && Mine(Current(s_))))
+        return "treasure";
     const int now = Current(s_);
     if (shown_ == s_.log.size() && now >= 0 && s_.units[U(now)].pending >= 0 && Mine(now))
         return "level";
@@ -369,6 +395,13 @@ nlohmann::json MatchPlay::UiData() const
         for (const Choice &c : e.choices)
             choices.push_back({{"label", c.label}, {"chance", c.chance}});
         j["event"] = {{"name", e.name}, {"text", e.text}, {"choices", choices}, {"result", eventResult_}, {"choosing", eventResult_.empty()}};
+    }
+    if (!s_.cards.empty() || !treasureResult_.empty())
+    {
+        nlohmann::json cards = nlohmann::json::array();
+        for (std::size_t c = 0; c < s_.cards.size(); ++c)
+            cards.push_back({{"index", c}});
+        j["treasure"] = {{"cards", cards}, {"result", treasureResult_}, {"choosing", treasureResult_.empty()}};
     }
     if (s_.over)
         j["end"] = EndData();
@@ -681,7 +714,8 @@ std::vector<std::pair<int, std::string>> MatchPlay::Moves(const LogEntry &e)
     case LogKind::Level: return {{e.a, "levelup"}};
     case LogKind::Spawned: return {{e.b, "loom"}};
     case LogKind::Event: return {{e.a, e.c ? "pass" : "fail"}};
-    case LogKind::Item: return {{e.a, "pickup"}};
+    case LogKind::Item:
+    case LogKind::Treasure: return {{e.a, "pickup"}};
     default: return {};
     }
 }
@@ -698,7 +732,8 @@ std::string MatchPlay::Sound(const LogEntry &e)
     case LogKind::SpawnSoon:
     case LogKind::Spawned: return "door";
     case LogKind::Event: return e.c ? "pass" : "fail";
-    case LogKind::Item: return "item";
+    case LogKind::Item:
+    case LogKind::Treasure: return "item";
     case LogKind::Over: return "bell";
     default: return "";
     }

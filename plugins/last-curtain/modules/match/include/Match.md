@@ -14,6 +14,7 @@ one copyable value, and only `Apply` changes it. Bots and the app send the same 
 | `jobs.csv` | role, level, ability, choice (a second ability to pick between, or none); level 1 = starting abilities |
 | `monsters.csv` | id, name, tier (weak, strong, great, guardian), behaviour (stay, flee, stage, guard, hunt), stats, essence, xp, level (shown to the player), size (1-3 squares a side), sight (steps a hunter sees; 1+ for hunt), abilities (`a;b`, the first is its strike), sprite, tint |
 | `spawns.csv` | zone (weak, strong, centre), from (first round), monster (never a guardian), every (rounds after its square empties; 0 = once); loaded sorted by zone, then from |
+| `treasure.csv` | id, kind (item, essence, xp, heal), item (or none), amount, weight: what an item room's face-down cards may hold |
 | `items.csv` | id, name, text, sprite, class (heal, xp), amount |
 | `events.csv` | id, name, text, two choices: label, chance (percent), success, failure (`none`, `hp:-3`, `essence:2`, `xp:2`, `item:<id>`) |
 
@@ -131,3 +132,12 @@ row starts after round 1 leaves its squares empty until then.
 missing or mistyped field, with a reason, and leaves the state it was given untouched. A save taken
 in the middle of a battle or a level choice loads to the same moment. `Fingerprint` hashes
 everything but the log, for tests. A new field means a new version.
+
+## Treasure (`Treasure.cpp`)
+
+Every item room holds a treasure (`Floor::treasure`). Picking it up deals `treasure.min` to
+`treasure.max` face-down cards (`MatchState::cards`), each a `treasure.csv` row drawn by weight. The
+opener must then pick one (`Card`, a = its index; anything else is `MustChoose`): an item goes in the
+bag (or gives `treasure.fullEssence` if the bag is full), essence is carried, XP is gained, HP is
+healed. The cards are then gone (`Treasure` log: who, the row, the amount) and the action is spent.
+Bots pick blind.

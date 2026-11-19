@@ -34,7 +34,8 @@
     "Spawned": "{who} appears.",
     "Event": "{who} faces the room: {result}.",
     "Item": "{who} takes {item}.",
-    "Over": "The curtain falls: {side}."
+    "Over": "The curtain falls: {side}.",
+    "Treasure": "{who} turns a card: {card}."
   },
   "why": {
     "Ok": "Ready.",
@@ -112,5 +113,11 @@
       "The stage remembers me.",
       "One more step."
     ]
+  },
+  "cards": {
+    "item": "{item}",
+    "essence": "{n} essence",
+    "xp": "{n} XP",
+    "heal": "{n} HP back"
   }
 }

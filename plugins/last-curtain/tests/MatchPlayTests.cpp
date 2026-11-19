@@ -567,3 +567,28 @@ TEST_CASE("A bot's level choice never opens the player's level screen (T344)", "
     p.Update(1.0F); // the bot chooses on its beat
     CHECK(p.State().units[static_cast<std::size_t>(bot)].pending == -1);
 }
+
+TEST_CASE("Treasure is its own screen: face-down cards, a pick, the reveal (T346)", "[match][play]")
+{
+    const MatchDef def = Data();
+    MatchPlay p = AtPlayer(def, [&](MatchState &s) {
+        for (const Floor &f : s.floor)
+            if (f.treasure)
+            {
+                s.units[static_cast<std::size_t>(Current(s))].cell = s.now.origin = f.cell;
+                break;
+            }
+    });
+    p.Click(p.State().units[static_cast<std::size_t>(Current(p.State()))].cell);
+    REQUIRE(p.HandleUi("", "act", "pickup"));
+    REQUIRE(p.Screen() == "treasure");
+    nlohmann::json t = p.UiData()["treasure"];
+    REQUIRE(t["cards"].size() == p.State().cards.size());
+    CHECK(t["result"] == "");
+    REQUIRE(p.HandleUi("treasure", "pick", "1"));
+    t = p.UiData()["treasure"];
+    CHECK_FALSE(t["result"].get<std::string>().empty());
+    CHECK(p.Screen() == "treasure");
+    REQUIRE(p.HandleUi("treasure", "close", ""));
+    CHECK(p.Screen() == "");
+}

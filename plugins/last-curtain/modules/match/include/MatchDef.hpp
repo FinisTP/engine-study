@@ -22,6 +22,7 @@ namespace umbra::match
     // Who a board ability may aim at: the target symbol beside it on screen.
     enum class Target : std::uint8_t { Enemy, Ally, Self, Monster, Room, Any };
     enum class ItemClass : std::uint8_t { HealItem, ExpGrant };
+    enum class TreasureKind : std::uint8_t { Item, Essence, Xp, Heal };
     enum class Effect : std::uint8_t { None, Hp, Essence, Xp, Item };
     enum class BotLevel : std::uint8_t { Easy, Medium, Hard };
 
@@ -73,6 +74,14 @@ namespace umbra::match
         int amount = 0;
     };
 
+    // One treasure.csv row: what a face-down card in an item room may hold, and how often (weight).
+    struct TreasureDef
+    {
+        std::string id;
+        TreasureKind kind = TreasureKind::Essence;
+        int item = -1, amount = 0, weight = 1;
+    };
+
     struct Outcome
     {
         Effect effect = Effect::None;
@@ -117,6 +126,7 @@ namespace umbra::match
         struct { int turns = 0; } respawn;
         struct { int rounds = 0, minDamage = 0; } battle;
         struct { std::vector<int> xp; int hp = 0, killXp = 0; } levels;
+        struct { int min = 2, max = 5, fullEssence = 2; } treasure; // cards per item room; an item card with a full bag gives essence
         struct { int warn = 1, centre = 2; } spawn; // warn: rounds marked before; centre: steps from the stage
         int carry = 0;
         struct { std::array<int, 3> noise{}; } bots; // percent of a choice's value, per BotLevel
@@ -134,6 +144,7 @@ namespace umbra::match
         std::vector<AbilityDef> abilities;
         std::vector<MonsterDef> monsters;
         std::vector<SpawnRow> spawns; // sorted by zone, then from
+        std::vector<TreasureDef> treasure;
         std::vector<ItemDef> items;
         std::vector<EventDef> events;
 

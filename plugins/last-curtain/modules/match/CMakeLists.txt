@@ -14,6 +14,7 @@ target_sources(
         src/MatchSave.cpp
         src/Monsters.cpp
         src/MonsterMind.cpp
+        src/Treasure.cpp
         src/MatchInner.hpp
     PUBLIC
         FILE_SET HEADERS

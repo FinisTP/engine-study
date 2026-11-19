@@ -91,3 +91,8 @@ kind) in a bubble on its speaker's card, characters only, one bubble per speaker
 line is picked from the round, the speaker and the moment, so a replay says the same. The built-in
 model can write them later. The same character on both sides is told apart: theirs is
 "Name (theirs)" (`misc.theirs`); the order strip shows short names in the side's colour.
+
+## Treasure
+
+While the player's character holds dealt cards, `treasure` is the screen: the face-down cards
+(`pick` by index), then the card turned (`result`, its log line), then `close`.

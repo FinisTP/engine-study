@@ -155,13 +155,9 @@ namespace umbra::match
                 s.spawns.push_back({static_cast<std::int16_t>(c), static_cast<std::int8_t>(kind >= 0 ? kind : first->monster), kind >= 0 ? 1 : first->from});
             }
 
-        // 5. Items on the floor of their rooms, the same on both halves.
-        const std::size_t half = b.itemRooms.size() / 2;
-        std::vector<int> items;
-        for (std::size_t i = 0; i < half; ++i)
-            items.push_back(def.items.empty() ? -1 : rng.Below(static_cast<int>(def.items.size())));
-        for (std::size_t i = 0; i < b.itemRooms.size(); ++i)
-            s.floor.push_back({b.itemRooms[i], static_cast<std::int8_t>(items[i % half]), 0});
+        // 5. A treasure in every item room (Plan 3: face-down cards when opened).
+        for (const std::int16_t cell : b.itemRooms)
+            s.floor.push_back({cell, -1, 0, true});
 
         // 6. The stage is the centre of the middle row; the first turn begins.
         s.stage = static_cast<std::int16_t>((b.height / 2) * b.width + b.width / 2);

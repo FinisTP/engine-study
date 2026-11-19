@@ -68,6 +68,13 @@ namespace umbra::match::inner
 
 namespace umbra::match::inner
 {
+    // Treasure.cpp (Match.md "Treasure")
+    void DealCards(const MatchDef &def, MatchState &s);
+    void TakeCard(const MatchDef &def, MatchState &s, int me, int card);
+}
+
+namespace umbra::match::inner
+{
     // Stage.cpp
     Why CheckPerform(const MatchDef &def, const MatchState &s, int me);
     void Perform(const MatchDef &def, MatchState &s, int me);

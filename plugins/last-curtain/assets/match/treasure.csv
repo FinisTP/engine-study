@@ -1,0 +1,7 @@
+id,kind,item,amount,weight
+bandage,item,bandage,0,3
+programme,item,programme,0,2
+purse,essence,none,3,3
+hoard,essence,none,6,1
+lesson,xp,none,3,2
+rest,heal,none,6,2

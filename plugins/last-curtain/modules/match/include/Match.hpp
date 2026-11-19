@@ -61,6 +61,7 @@ namespace umbra::match
         std::int16_t cell = -1;
         std::int8_t item = -1; // items.csv row, -1 = essence only
         int essence = 0;
+        bool treasure = false; // an item room's treasure: picking it up deals face-down cards
     };
 
     // A three-round battle between two units (Battle.cpp).
@@ -81,7 +82,7 @@ namespace umbra::match
         bool acted = false;
     };
 
-    enum class LogKind : std::uint8_t { Moved, Battle, Blow, Down, Essence, Performed, Level, Back, SpawnSoon, Spawned, Event, Item, Over };
+    enum class LogKind : std::uint8_t { Moved, Battle, Blow, Down, Essence, Performed, Level, Back, SpawnSoon, Spawned, Event, Item, Treasure, Over };
     struct LogEntry
     {
         LogKind kind = LogKind::Moved;
@@ -107,6 +108,7 @@ namespace umbra::match
         int monsterTurn = -1;    // the monster acting in the monsters' phase, -1 outside it
         std::vector<Spawn> spawns; // shown once round - spawn.warn has come
         std::vector<Floor> floor;
+        std::vector<std::int8_t> cards; // treasure.csv rows dealt face down; the acting character must pick one
         Battle battle;
         TurnState now;
         std::vector<LogEntry> log;
@@ -127,10 +129,11 @@ namespace umbra::match
 
     // ---- Actions (Turn.cpp) ----
 
-    enum class ActionKind : std::uint8_t { Move, Undo, Attack, BattleAbility, BoardAbility, UseItem, PickUp, Perform, Answer, LevelUp, EndTurn };
+    enum class ActionKind : std::uint8_t { Move, Undo, Attack, BattleAbility, BoardAbility, UseItem, PickUp, Perform, Answer, LevelUp, EndTurn, Card };
 
     // Move: a = direction 0-3. Attack: a = unit. BattleAbility: a = ability slot. BoardAbility: a = slot,
     // b = target unit. UseItem: a = item slot. PickUp: a = floor index. Answer: a = choice. LevelUp: a = 0 or 1.
+    // Card: a = the dealt card.
     struct Action
     {
         ActionKind kind = ActionKind::EndTurn;

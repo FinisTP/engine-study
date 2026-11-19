@@ -82,7 +82,7 @@ private:
     int hover_ = -1, chosen_ = -1, armedKey_ = -1;
     bool watch_ = false;
     std::string armed_; // "attack" or "ability:<slot>"
-    std::string lastBlow_, eventResult_; // the battle's last blow; the event's outcome
+    std::string lastBlow_, eventResult_, treasureResult_; // the battle's last blow; the event's outcome; the card turned
     int eventCell_ = -1;
     struct Bubble
     {

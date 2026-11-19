@@ -157,6 +157,11 @@ namespace umbra::match
             num("levels", "killXp", r.levels.killXp);
             num("spawn", "warn", r.spawn.warn);
             num("spawn", "centre", r.spawn.centre);
+            num("treasure", "min", r.treasure.min);
+            num("treasure", "max", r.treasure.max);
+            num("treasure", "fullEssence", r.treasure.fullEssence);
+            if (r.treasure.min < 1 || r.treasure.max < r.treasure.min)
+                Fail(out, "rules.json", "rules.json:treasure", "1 <= min <= max is required");
             num("", "carry", r.carry);
             auto &bal = r.balance;
             for (auto [k, v] : {std::pair{"sideMin", &bal.sideMin}, {"sideMax", &bal.sideMax}, {"firstMoverMax", &bal.firstMoverMax},
@@ -346,6 +351,24 @@ namespace umbra::match
             }
         }
 
+        void LoadTreasure(const std::filesystem::path &folder, MatchDef &def, Diagnostics &out)
+        {
+            Sheet s(out, folder, "treasure.csv", {"id", "kind", "item", "amount", "weight"});
+            for (int r = 0; r < s.Rows(); ++r)
+            {
+                TreasureDef t{s.Text(r, "id")};
+                t.kind = static_cast<TreasureKind>(s.Pick(r, "kind", {"item", "essence", "xp", "heal"}));
+                t.item = s.Ref(r, "item", def.items, true);
+                t.amount = s.Int(r, "amount", 0, 999);
+                t.weight = s.Int(r, "weight", 1, 999);
+                if (s.ok && t.kind == TreasureKind::Item && t.item < 0)
+                    s.Bad(s.Where(r, "item"), "an item card names an item");
+                def.treasure.push_back(t);
+            }
+            if (s.ok && def.treasure.empty())
+                s.Bad("treasure.csv", "at least one card is needed");
+        }
+
         void LoadEvents(const std::filesystem::path &folder, MatchDef &def, Diagnostics &out)
         {
             Sheet s(out, folder, "events.csv", {"id", "name", "text", "label1", "chance1", "success1", "failure1", "label2", "chance2", "success2", "failure2"});
@@ -376,6 +399,7 @@ namespace umbra::match
         LoadSpawns(folder, def, diagnostics);
         LoadItems(folder, def, diagnostics);
         LoadEvents(folder, def, diagnostics);
+        LoadTreasure(folder, def, diagnostics);
         if (diagnostics.size() != before)
             return false;
         out = std::move(def);
