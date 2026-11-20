@@ -172,3 +172,14 @@ An ability's `range` is counted by its `reach` column: `walk` (steps through doo
 the target covers). The shipped data makes the ranged hits (Snipe, Dart, Throw) straight and the
 rest walk. A heal on someone already at full HP is refused (`FullHp`), so bots and players never
 waste one.
+
+## Group battles
+
+An attack takes in each side's group: the one and whoever of its side shares its tile (up to
+two a group; `battle.fighters` by place, 0-1 the attacker's, 2-3 the defender's). Each round
+every standing fighter picks once, in order: first strike first, then speed, the attackers first
+on a tie (`battle.order`, `battle.next`). A strike names a standing fighter of the other group
+(`BattleAbility` slot, target; no target: the first one standing); a shield is the picker's own
+place's. A fighter downed drops out; when a whole group is down, or after `battle.rounds` rounds,
+the battle ends (the round counter stops at the last). Monsters pick their ability as before and
+strike the foe they can down, else the one with least HP (`MonsterTarget`).

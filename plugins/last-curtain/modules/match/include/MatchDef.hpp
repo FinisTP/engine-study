@@ -133,7 +133,7 @@ namespace umbra::match
     {
         struct
         {
-            int width = 0, height = 0, lanes = 0, squareCapacity = 1;
+            int width = 0, height = 0, lanes = 0, squareCapacity = 1, stride = 1; // stride: tiles a monster walks per point of speed
             int weakMin = 0, weakMax = 0, strongMin = 0, strongMax = 0, weakPerHalf = 0, strongPerHalf = 0;
             int eventsPerHalf = 0, eventGap = 0, itemsPerHalf = 0;
         } board;

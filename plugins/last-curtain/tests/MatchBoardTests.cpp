@@ -24,7 +24,7 @@ TEST_CASE("Boards are mirrored and fair on every seed (T277)", "[match][board]")
         CHECK(b.cells[U(b.hub[1])].kind == CellKind::Hub);
         CHECK(Mirror(b, b.hub[0]) == b.hub[1]);
         CHECK(Mirror(b, b.door[0]) == b.door[1]);
-        CHECK(Steps(b, b.hub[0], b.door[0]) == 1);
+        CHECK(Steps(b, b.hub[0], b.door[0]) == 2); // a square step is two tiles: the doorway, then the square
         CHECK(Steps(b, b.hub[0], b.hub[1]) > 0);
     }
     // Different seeds give different boards.
@@ -44,15 +44,15 @@ TEST_CASE("Dens sit in their step bands from their own hub (T278)", "[match][boa
             if (Bottom(b, d))
             {
                 ++weak;
-                CHECK(Steps(b, b.hub[0], d) >= r.weakMin);
-                CHECK(Steps(b, b.hub[0], d) <= r.weakMax);
+                CHECK(Steps(b, b.hub[0], d) >= 2 * r.weakMin); // bands are planned in squares, two tiles each
+                CHECK(Steps(b, b.hub[0], d) <= 2 * r.weakMax);
             }
         for (int d : b.strongDens)
             if (Bottom(b, d))
             {
                 ++strong;
-                CHECK(Steps(b, b.hub[0], d) >= r.strongMin);
-                CHECK(Steps(b, b.hub[0], d) <= r.strongMax);
+                CHECK(Steps(b, b.hub[0], d) >= 2 * r.strongMin);
+                CHECK(Steps(b, b.hub[0], d) <= 2 * r.strongMax);
             }
         CHECK(weak == r.weakPerHalf);
         CHECK(strong == r.strongPerHalf);
@@ -67,7 +67,7 @@ TEST_CASE("Dens sit in their step bands from their own hub (T278)", "[match][boa
             CHECK_FALSE(Has(b.weakDens, events[i]));
             CHECK_FALSE(Has(b.strongDens, events[i]));
             for (std::size_t j = i + 1; j < events.size(); ++j)
-                CHECK(Steps(b, events[i], events[j]) >= r.eventGap);
+                CHECK(Steps(b, events[i], events[j]) >= 2 * r.eventGap);
         }
         CHECK(static_cast<int>(b.itemRooms.size()) == 2 * r.itemsPerHalf);
     }

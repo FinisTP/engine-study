@@ -51,3 +51,25 @@ therefore maps step by step onto a path from hub 1 = `M(hub 0)` to `M(c)`, and b
 A square in the middle row is its own mirror, so its steps to both hubs are equal: that is why
 the stage and the centre spawn squares come from that row. `Fair` checks all of it square by square rather than trusting the
 proof; `BuildBoard` tries up to 64 seeds derived from the given one until a board passes.
+
+## Tiles (2026-11-20, the user's notes)
+
+The plan above is drawn in squares, then `Expand` turns it into tiles, so walls are tiles of
+their own and can be seen: square (x, y) becomes tile (2x, 2y); between two squares a tile that
+is open (a doorway, of their kind when both share it, else a hall) where a door joins them, a
+wall where none does; the corner tile between four squares is open only when the four are joined
+all round and of one kind (so the centre and the cross halls stay open floors). Every two open
+tiles side by side are then joined. The board grows from `width x height` squares to
+`(2 width - 1) x (2 height - 1)` tiles.
+
+The mirror still holds: tile (2x, 2y) mirrors to (2x, 2(height - 1 - y)) = (X, H - 1 - Y) for the
+tile board's height H, and a doorway or corner lies between squares that mirror together, so
+`Fair` checks the tile board exactly as before. Every step between squares is now two tiles, so
+the plan's bands (`weakMin` ...) and `eventGap` are in squares and the gameplay numbers in the
+data are in tiles: characters' `move`, monsters' `sight`, board abilities' `range` (all doubled),
+and a hunter walks `speed * board.stride` tiles (`stride` 2).
+
+## Sharing a tile
+
+`squareCapacity` (2) of one side may stand on a tile, never with a foe (wild monsters are their
+own side); the stage holds one (`Room`).

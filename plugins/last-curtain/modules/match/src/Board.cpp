@@ -186,6 +186,54 @@ namespace umbra::match
                     b.centreSpawns.push_back(static_cast<std::int16_t>(c));
             return b.stageRooms.size() >= 2;
         }
+
+        // The plan's squares become tiles: square (x, y) is tile (2x, 2y); between two squares a tile that is open
+        // when a door joins them, a wall otherwise; a corner tile is open only inside a block of four joined squares.
+        Board Expand(const Board &plan)
+        {
+            Board b;
+            b.width = plan.width * 2 - 1;
+            b.height = plan.height * 2 - 1;
+            b.cells.assign(U(b.width * b.height), Cell{});
+            const auto tile = [&](int c) { return static_cast<std::int16_t>((c / plan.width) * 2 * b.width + (c % plan.width) * 2); };
+            const auto open = [&](int c, int dir) { return Neighbour(plan, c, dir) >= 0; };
+            for (int c = 0; c < static_cast<int>(plan.cells.size()); ++c)
+            {
+                const Cell &p = plan.cells[U(c)];
+                const int t = tile(c), x = c % plan.width, y = c / plan.width;
+                b.cells[U(t)].kind = p.kind;
+                b.cells[U(t)].event = p.event;
+                // 1. East and south of each square: a doorway of the shared kind (a hall between two kinds), or a wall.
+                for (int dir : {1, 2})
+                    if (open(c, dir))
+                    {
+                        const CellKind other = plan.cells[U(Neighbour(plan, c, dir))].kind;
+                        b.cells[U(t + (dir == 1 ? 1 : b.width))].kind = other == p.kind ? p.kind : CellKind::Hall;
+                    }
+                // 2. The corner to the south-east: open when the four squares around it are joined all round.
+                if (x + 1 < plan.width && y + 1 < plan.height && open(c, 1) && open(c, 2))
+                {
+                    const int e = c + 1, s = c + plan.width;
+                    if (open(e, 2) && open(s, 1) && plan.cells[U(e)].kind == p.kind && plan.cells[U(s)].kind == p.kind &&
+                        plan.cells[U(s + 1)].kind == p.kind)
+                        b.cells[U(t + b.width + 1)].kind = p.kind;
+                }
+            }
+            // 3. Every two open tiles side by side are joined: the walls are tiles now, not missing doors.
+            for (int t = 0; t < static_cast<int>(b.cells.size()); ++t)
+                for (int dir : {1, 2})
+                    if (const int n = At(b, t % b.width + dx[dir], t / b.width + dy[dir]);
+                        n >= 0 && b.cells[U(t)].kind != CellKind::Wall && b.cells[U(n)].kind != CellKind::Wall)
+                        Join(b, t, dir);
+            // 4. The plan's places, as tiles.
+            for (int side : {0, 1})
+                b.hub[side] = tile(plan.hub[side]), b.door[side] = tile(plan.door[side]);
+            for (auto [from, to] : {std::pair{&plan.weakDens, &b.weakDens}, {&plan.strongDens, &b.strongDens}, {&plan.itemRooms, &b.itemRooms},
+                                    {&plan.stageRooms, &b.stageRooms}, {&plan.centreSpawns, &b.centreSpawns}})
+                for (int c : *from)
+                    to->push_back(tile(c));
+            return b;
+        }
     }
 
     std::vector<int> Squares(const Board &b, const Unit &u)
@@ -248,9 +296,9 @@ namespace umbra::match
     Board BuildBoard(const MatchDef &def, std::uint64_t seed)
     {
         // 1. Up to 64 tries from the seed; the last one is returned even if unfair (Fair says so).
-        Board b;
+        Board plan, b;
         for (std::uint64_t t = 0; t < 64; ++t)
-            if (Try(def, seed * 0x100000001B3ULL + t, b) && Fair(b))
+            if (Try(def, seed * 0x100000001B3ULL + t, plan) && Fair(b = Expand(plan)))
                 return b;
         return b;
     }

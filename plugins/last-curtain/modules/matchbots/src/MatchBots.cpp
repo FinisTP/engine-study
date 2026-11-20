@@ -191,14 +191,17 @@ namespace umbra::match
         Action BattlePick(const MatchDef &def, const MatchState &s, int me, BotLevel level)
         {
             // 1. The affordable battle ability with the best value: damage, a shield when hurt, a heal when low.
+            // At each foe standing in the other group (a group battle has up to two).
             const Unit &u = s.units[U(me)];
-            const int foe = me == s.battle.attacker ? s.battle.defender : s.battle.attacker;
             Action best{ActionKind::BattleAbility, 0};
             double bestValue = -1e9;
+            const auto mine = std::ranges::find(s.battle.fighters, me) - s.battle.fighters.begin();
+            for (int place = mine < 2 ? 2 : 0, end = place + 2; place < end; ++place)
             for (int slot = 0; slot < maxAbilities; ++slot)
             {
-                const Action a{ActionKind::BattleAbility, I8(slot)};
-                if (Check(def, s, a) != Why::Ok)
+                const int foe = s.battle.fighters[U(place)];
+                const Action a{ActionKind::BattleAbility, I8(slot), I8(foe)};
+                if (foe < 0 || s.units[U(foe)].hp <= 0 || s.units[U(foe)].cell < 0 || Check(def, s, a) != Why::Ok)
                     continue;
                 const AbilityDef &ab = def.abilities[U(u.abilities[U(slot)])];
                 const Forecast f = Preview(def, s, a);

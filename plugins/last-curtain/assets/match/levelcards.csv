@@ -4,6 +4,6 @@ attack,stat,attack,1,3
 defence,stat,defence,1,3
 hp,stat,hp,4,3
 speed,stat,speed,1,1
-move,stat,move,1,1
+move,stat,move,2,1
 sharpen,upgrade,power,0,3
 ease,upgrade,cost,0,2

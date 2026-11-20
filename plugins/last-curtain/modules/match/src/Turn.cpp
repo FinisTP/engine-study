@@ -108,10 +108,9 @@ namespace umbra::match
             const int n = dir >= 0 && dir < 4 ? Neighbour(s.board, u.cell, dir) : -1;
             if (n < 0)
                 return Why::Blocked;
-            // 2. One unit per square; an enemy hub is shut while its guardian stands.
-            const int there = static_cast<int>(std::count_if(s.units.begin(), s.units.end(), [&](const Unit &o) { return Covers(s.board, o, n); }));
-            if (there >= def.rules.board.squareCapacity || (n == s.stage && there > 0))
-                return Why::Blocked; // the stage always holds one
+            // 2. Room for one more of my side; an enemy hub is shut while its guardian stands.
+            if (!Room(def, s, n, u.faction))
+                return Why::Blocked;
             const int enemy = 1 - u.faction;
             if (n == s.board.hub[U(enemy)] && GuardianStands(def, s, enemy))
                 return Why::Blocked;
@@ -190,7 +189,7 @@ namespace umbra::match
             if (s.units[i].pending >= 0)
                 return static_cast<int>(i);
         if (s.battle.on)
-            return s.battle.next == 0 ? s.battle.attacker : s.battle.defender;
+            return Picker(s);
         return s.order[U(s.turn)];
     }
 
@@ -204,7 +203,7 @@ namespace umbra::match
         if (u.pending >= 0)
             return a.kind == ActionKind::LevelUp ? CheckLevelUp(def, s, me, a.a) : Why::MustChoose;
         if (s.battle.on)
-            return a.kind == ActionKind::BattleAbility ? CheckBattleAbility(def, s, me, a.a) : Why::MustChoose;
+            return a.kind == ActionKind::BattleAbility ? CheckBattleAbility(def, s, me, a.a, a.b) : Why::MustChoose;
         if (!s.cards.empty()) // 1b. dealt treasure: pick a card first
             return a.kind != ActionKind::Card ? Why::MustChoose : a.a >= 0 && a.a < static_cast<int>(s.cards.size()) ? Why::Ok : Why::NothingHere;
         if (a.kind == ActionKind::Card)
@@ -237,6 +236,9 @@ namespace umbra::match
         for (int slot = 0; slot < maxAbilities; ++slot)
         {
             all.push_back({ActionKind::BattleAbility, i8(slot)});
+            for (std::int8_t f : s.battle.fighters) // a battle pick at each fighter (Check keeps the foes)
+                if (s.battle.on && f >= 0)
+                    all.push_back({ActionKind::BattleAbility, i8(slot), f});
             for (int u = 0; u < static_cast<int>(s.units.size()); ++u)
                 all.push_back({ActionKind::BoardAbility, i8(slot), i8(u)});
         }
@@ -296,7 +298,7 @@ namespace umbra::match
         }
         case ActionKind::Attack: StartBattle(def, s, me, a.a); break;
         case ActionKind::BattleAbility:
-            Pick(def, s, me, a.a);
+            Pick(def, s, me, a.a, a.b);
             if (!s.battle.on && s.monsterTurn >= 0)
                 ResumeMonsters(def, s);
             break;

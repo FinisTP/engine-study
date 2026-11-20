@@ -43,13 +43,19 @@ namespace umbra::match::inner
 {
     // Battle.cpp
     Why CheckAttack(const MatchDef &def, const MatchState &s, int me, int target);
-    Why CheckBattleAbility(const MatchDef &def, const MatchState &s, int me, int slot);
+    Why CheckBattleAbility(const MatchDef &def, const MatchState &s, int me, int slot, int target);
+    int Place(const MatchState &s, int unit);     // its place among the battle's fighters, -1 none (0-1 attackers, 2-3 defenders)
+    bool Standing(const MatchState &s, int place); // that place's fighter is still in the fight
+    int Picker(const MatchState &s);              // whose pick it is
+    int FirstFoe(const MatchState &s, int me);     // the first standing fighter of the other group
     void StartBattle(const MatchDef &def, MatchState &s, int me, int target);
-    void Pick(const MatchDef &def, MatchState &s, int me, int slot);
+    void Pick(const MatchDef &def, MatchState &s, int me, int slot, int target); // target -1: the first foe standing
     void Down(const MatchDef &def, MatchState &s, int victim, int killer);
     bool Adjacent(const Board &b, int a, int c); // one step apart through a door
     bool Beside(const Board &b, const Unit &a, const Unit &c); // any square of one next to any of the other
     int StepsTo(const Board &b, int from, const Unit &t); // to its nearest square, -1 if unreachable
+    // Room on a square for one more of `faction`: under squareCapacity, no foe there, the stage only ever one.
+    bool Room(const MatchDef &def, const MatchState &s, int cell, int faction);
     int StraightTo(const Board &b, int from, const Unit &t); // the same counted straight, walls ignored
 }
 

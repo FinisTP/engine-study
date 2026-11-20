@@ -78,9 +78,9 @@ TEST_CASE("Damage is power plus Attack minus Defence, at least 1 (T287)", "[matc
     CHECK(Damage(def, s, bite, a, d, 0) == 1);
     s.units[U(d)].defence = 3;
     REQUIRE(Apply(def, s, {ActionKind::Attack, I8(d)}));
-    s.battle.shield[1] = 2;
+    s.battle.shield[2] = 2; // by place: the defender leads the second group
     CHECK(Damage(def, s, bite, a, d, 0) == 4);
-    s.battle.shield[1] = 0;
+    s.battle.shield[2] = 0;
     s.units[U(a)].abilities[1] = I8(Ability(def, "gamble")); // 2d6, costs 2
     const Forecast f = Preview(def, s, {ActionKind::BattleAbility, 1});
     CHECK(f.dealtMin == 2 + 5 - 3);
@@ -193,4 +193,42 @@ TEST_CASE("Stepping onto your own hub restores full HP (T291)", "[match][battle]
     REQUIRE(Apply(def, s, {ActionKind::Move, I8(dir)}));
     REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
     CHECK(s.units[U(me)].hp == s.units[U(me)].maxHp);
+}
+
+TEST_CASE("Two on a tile fight two: everyone picks once a round in speed order, at a foe of their choosing (T356)", "[match][battle]")
+{
+    const MatchDef def = Data();
+    MatchState s = Start(def);
+    auto [a, d] = Face(s);
+    // 1. A friend on my tile, a friend on the foe's.
+    int a2 = -1, d2 = -1;
+    for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
+        if (s.units[U(i)].kind == 0 && i != a && i != d)
+            (s.units[U(i)].faction == s.units[U(a)].faction ? a2 : d2) = i;
+    REQUIRE(a2 >= 0);
+    REQUIRE(d2 >= 0);
+    s.units[U(a2)].cell = s.units[U(a)].cell;
+    s.units[U(d2)].cell = s.units[U(d)].cell;
+    for (int u : {a, a2, d, d2})
+        s.units[U(u)].hp = s.units[U(u)].maxHp = 60;
+    s.units[U(a)].speed = 4, s.units[U(a2)].speed = 9, s.units[U(d)].speed = 6, s.units[U(d2)].speed = 1;
+    REQUIRE(Apply(def, s, {ActionKind::Attack, I8(d)}));
+    REQUIRE(s.battle.on);
+    CHECK(std::ranges::count_if(s.battle.fighters, [](int f) { return f >= 0; }) == 4);
+    // 2. Round one in speed order: a2 (9), d (6), a (4), d2 (1); a2 strikes d2, the one it chose.
+    const int jab = 0;
+    CHECK(Current(s) == a2);
+    REQUIRE(Apply(def, s, {ActionKind::BattleAbility, I8(jab), I8(d2)}));
+    CHECK(s.units[U(d2)].hp < 60);
+    CHECK(s.units[U(d)].hp == 60);
+    CHECK(Current(s) == d);
+    CHECK(Check(def, s, {ActionKind::BattleAbility, I8(jab), I8(d2)}) != Why::Ok); // not at its own side
+    REQUIRE(Apply(def, s, {ActionKind::BattleAbility, I8(jab), I8(a)}));
+    CHECK(Current(s) == a);
+    REQUIRE(Apply(def, s, {ActionKind::BattleAbility, I8(jab), I8(-1)})); // no target named: the first foe standing
+    CHECK(Current(s) == d2);
+    REQUIRE(Apply(def, s, {ActionKind::BattleAbility, I8(jab), I8(a2)}));
+    // 3. Round two begins again with the fastest.
+    CHECK(s.battle.round == 2);
+    CHECK(Current(s) == a2);
 }

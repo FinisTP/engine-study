@@ -45,7 +45,8 @@ TEST_CASE("The shipped match data loads (T274)", "[match][data]")
     REQUIRE(gamble >= 0);
     CHECK(def.abilities[static_cast<std::size_t>(gamble)].dice.count == 2);
     CHECK(def.abilities[static_cast<std::size_t>(gamble)].dice.sides == 6);
-    CHECK(def.rules.board.squareCapacity == 1);
+    CHECK(def.rules.board.squareCapacity == 2);
+    CHECK(def.rules.board.stride == 2);
     CHECK(def.rules.levels.xp.size() == 4);
 }
 
@@ -95,7 +96,7 @@ TEST_CASE("The new columns load (T310)", "[match][data]")
     CHECK(monster("usherette").behaviour == Behaviour::Hunt);
     CHECK(monster("usherette").level == 2);
     CHECK(monster("usherette").size == 1);
-    CHECK(monster("usherette").sight == 3);
+    CHECK(monster("usherette").sight == 6); // tiles: three squares
     CHECK(monster("ghost-chorus").size == 2);
     CHECK(monster("the-spider").size == 3);
     CHECK(monster("the-spider").essence > monster("ghost-chorus").essence);

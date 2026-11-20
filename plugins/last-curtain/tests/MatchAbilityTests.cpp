@@ -148,7 +148,13 @@ TEST_CASE("Board abilities: Hit at range, Heal an ally at the healer's cost (T29
     TurnOf(s, me);
     const int snipe = SlotOf(def, s.units[U(me)], "snipe"); // range 3, cost 3, power 4
     REQUIRE(snipe >= 0);
-    const int near = SquareAt(s, s.units[U(me)].cell, 2), far = SquareAt(s, s.units[U(me)].cell, 6);
+    const int from = s.units[U(me)].cell, w = s.board.width, range = def.abilities[U(s.units[U(me)].abilities[U(snipe)])].range;
+    int far = -1;
+    for (int c = 0; c < static_cast<int>(s.board.cells.size()) && far < 0; ++c)
+        if (s.board.cells[U(c)].kind != CellKind::Wall && std::abs(c % w - from % w) + std::abs(c / w - from / w) > range &&
+            std::ranges::none_of(s.units, [&](const Unit &u) { return u.cell == c; }))
+            far = c; // beyond its range even counted straight
+    const int near = SquareAt(s, from, 2);
     REQUIRE(near >= 0);
     REQUIRE(far >= 0);
     s.units[U(foe)].cell = static_cast<std::int16_t>(far);

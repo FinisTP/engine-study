@@ -23,8 +23,24 @@ namespace umbra::match
             return std::ranges::any_of(u.abilities, [&](std::int8_t a) { return a >= 0 && def.abilities[U(a)].kind == AbilityClass::FirstStrike; });
         }
 
-        int Side(const MatchState &s, int unit) { return unit == s.battle.attacker ? 0 : 1; }
-        int Foe(const MatchState &s, int unit) { return unit == s.battle.attacker ? s.battle.defender : s.battle.attacker; }
+        bool GroupStanding(const MatchState &s, int group) { return Standing(s, group * 2) || Standing(s, group * 2 + 1); }
+
+        // The round's order: first strike first, then speed, the attackers first on a tie.
+        void OrderRound(const MatchDef &def, MatchState &s)
+        {
+            std::vector<int> places;
+            for (int p = 0; p < 4; ++p)
+                if (Standing(s, p))
+                    places.push_back(p);
+            std::ranges::stable_sort(places, [&](int x, int y) {
+                const Unit &a = s.units[U(s.battle.fighters[U(x)])], &b = s.units[U(s.battle.fighters[U(y)])];
+                return std::tuple{!HasFirstStrike(def, a), -a.speed, x / 2} < std::tuple{!HasFirstStrike(def, b), -b.speed, y / 2};
+            });
+            s.battle.order.fill(-1);
+            for (std::size_t i = 0; i < places.size(); ++i)
+                s.battle.order[i] = static_cast<std::int8_t>(places[i]);
+            s.battle.next = 0;
+        }
 
         void EndBattle(const MatchDef &def, MatchState &s)
         {
@@ -43,10 +59,10 @@ namespace umbra::match
         {
             while (s.battle.on)
             {
-                const int next = s.battle.next == 0 ? s.battle.attacker : s.battle.defender;
+                const int next = Picker(s);
                 if (s.units[U(next)].kind != 1)
                     return;
-                Pick(def, s, next, MonsterPick(def, s, next));
+                Pick(def, s, next, MonsterPick(def, s, next), MonsterTarget(def, s, next));
             }
         }
     }
@@ -79,6 +95,19 @@ namespace umbra::match
             return best;
         }
 
+        bool Room(const MatchDef &def, const MatchState &s, int cell, int faction)
+        {
+            int there = 0;
+            for (const Unit &o : s.units)
+                if (Covers(s.board, o, cell))
+                {
+                    if (o.faction != faction)
+                        return false; // never with a foe (wild monsters are their own side)
+                    ++there;
+                }
+            return there < (cell == s.stage ? 1 : def.rules.board.squareCapacity);
+        }
+
         int StraightTo(const Board &b, int from, const Unit &t)
         {
             // Squares counted straight, walls ignored (Manhattan), to the nearest square it covers.
@@ -103,11 +132,36 @@ namespace umbra::match
             return Why::Ok;
         }
 
-        Why CheckBattleAbility(const MatchDef &def, const MatchState &s, int me, int slot)
+        // A unit's place among the fighters, -1 if it is not one; standing: still in the fight.
+        int Place(const MatchState &s, int unit)
+        {
+            const auto it = std::ranges::find(s.battle.fighters, unit);
+            return unit >= 0 && it != s.battle.fighters.end() ? static_cast<int>(it - s.battle.fighters.begin()) : -1;
+        }
+        bool Standing(const MatchState &s, int place)
+        {
+            const int f = s.battle.fighters[U(place)];
+            return f >= 0 && s.units[U(f)].hp > 0 && s.units[U(f)].cell >= 0;
+        }
+        int Picker(const MatchState &s) { return s.battle.fighters[U(s.battle.order[U(s.battle.next)])]; }
+
+        int FirstFoe(const MatchState &s, int me)
+        {
+            const int group = 1 - Place(s, me) / 2;
+            for (int p : {group * 2, group * 2 + 1})
+                if (Standing(s, p))
+                    return s.battle.fighters[U(p)];
+            return -1;
+        }
+
+        Why CheckBattleAbility(const MatchDef &def, const MatchState &s, int me, int slot, int target)
         {
             const AbilityDef *a = Slot(def, s.units[U(me)], slot);
             if (!a || a->use != Use::Battle)
                 return Why::NothingHere;
+            // A strike goes at a standing fighter of the other group (none named: the first one standing).
+            if (a->kind == AbilityClass::Strike && target >= 0 && (Place(s, target) < 0 || Place(s, target) / 2 == Place(s, me) / 2 || !Standing(s, Place(s, target))))
+                return Why::OwnSide;
             if (s.units[U(me)].hp <= CostOf(def, s.units[U(me)], slot))
                 return Why::TooCostly;
             return Why::Ok;
@@ -115,17 +169,31 @@ namespace umbra::match
 
         void StartBattle(const MatchDef &def, MatchState &s, int me, int target)
         {
-            const bool turned = HasFirstStrike(def, s.units[U(target)]) && !HasFirstStrike(def, s.units[U(me)]);
-            s.battle = {true, static_cast<std::int8_t>(me), static_cast<std::int8_t>(target), 1, static_cast<std::int8_t>(turned), static_cast<std::int8_t>(turned), {}};
+            // 1. Each group: the one and whoever of its side shares its tile (up to two).
+            s.battle = Battle{};
+            s.battle.on = true, s.battle.attacker = static_cast<std::int8_t>(me), s.battle.defender = static_cast<std::int8_t>(target), s.battle.round = 1;
+            for (int group = 0; group < 2; ++group)
+            {
+                const int lead = group == 0 ? me : target;
+                s.battle.fighters[U(group * 2)] = static_cast<std::int8_t>(lead);
+                for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
+                    if (const Unit &o = s.units[U(i)]; i != lead && o.hp > 0 && o.faction == s.units[U(lead)].faction &&
+                                                       std::ranges::any_of(Squares(s.board, s.units[U(lead)]), [&](int c) { return Covers(s.board, o, c); }))
+                    {
+                        s.battle.fighters[U(group * 2 + 1)] = static_cast<std::int8_t>(i);
+                        break;
+                    }
+            }
             Log(s, LogKind::Battle, me, target);
+            OrderRound(def, s);
             MonstersPick(def, s);
         }
 
-        void Pick(const MatchDef &def, MatchState &s, int me, int slot)
+        void Pick(const MatchDef &def, MatchState &s, int me, int slot, int target)
         {
             const AbilityDef &a = *Slot(def, s.units[U(me)], slot);
             Unit &u = s.units[U(me)];
-            const int foe = Foe(s, me);
+            const int foe = target >= 0 ? target : FirstFoe(s, me);
             u.hp = static_cast<std::int16_t>(u.hp - CostOf(def, u, slot));
             // 1. The ability: a blow, a shield for the rest of the battle, or healing.
             if (a.kind == AbilityClass::Strike)
@@ -135,19 +203,27 @@ namespace umbra::match
                 s.units[U(foe)].hp = static_cast<std::int16_t>(std::max(0, s.units[U(foe)].hp - dmg));
                 Log(s, LogKind::Blow, me, foe, dmg);
                 if (s.units[U(foe)].hp <= 0)
-                    return Down(def, s, foe, me);
+                    Down(def, s, foe, me);
+                if (!s.battle.on)
+                    return;
             }
             else if (a.kind == AbilityClass::Shield)
-                s.battle.shield[U(Side(s, me))] = static_cast<std::int16_t>(s.battle.shield[U(Side(s, me))] + PowerOf(def, u, slot));
+                s.battle.shield[U(Place(s, me))] = static_cast<std::int16_t>(s.battle.shield[U(Place(s, me))] + PowerOf(def, u, slot));
             else if (a.kind == AbilityClass::Heal)
                 u.hp = static_cast<std::int16_t>(std::min<int>(u.maxHp, u.hp + PowerOf(def, u, slot)));
-            // 2. The other side picks next; after both, the next round; after the last round, the end.
-            if (s.battle.next == s.battle.first)
-                s.battle.next = static_cast<std::int8_t>(1 - s.battle.first);
-            else if (++s.battle.round > def.rules.battle.rounds)
-                return EndBattle(def, s);
-            else
-                s.battle.next = s.battle.first;
+            // 2. The next standing fighter in the round's order; after the last, the next round; after the last round, the end.
+            do
+                ++s.battle.next;
+            while (s.battle.next < 4 && s.battle.order[U(s.battle.next)] >= 0 && !Standing(s, s.battle.order[U(s.battle.next)]));
+            if (s.battle.next >= 4 || s.battle.order[U(s.battle.next)] < 0)
+            {
+                if (++s.battle.round > def.rules.battle.rounds)
+                {
+                    s.battle.round = static_cast<std::int8_t>(def.rules.battle.rounds); // the counter never shows past the last round
+                    return EndBattle(def, s);
+                }
+                OrderRound(def, s);
+            }
             MonstersPick(def, s);
         }
 
@@ -180,7 +256,7 @@ namespace umbra::match
                     ScheduleSpawn(def, s, v.home);
             }
             v.cell = -1;
-            if (s.battle.on && (victim == s.battle.attacker || victim == s.battle.defender))
+            if (s.battle.on && Place(s, victim) >= 0 && !GroupStanding(s, Place(s, victim) / 2)) // a whole group down: the battle is over
                 EndBattle(def, s);
         }
     }
@@ -188,7 +264,7 @@ namespace umbra::match
     int Damage(const MatchDef &def, const MatchState &s, int ability, int from, int to, int roll)
     {
         const AbilityDef &a = def.abilities[U(ability)];
-        const int shield = s.battle.on && (to == s.battle.attacker || to == s.battle.defender) ? s.battle.shield[U(Side(s, to))] : 0;
+        const int shield = s.battle.on && Place(s, to) >= 0 ? s.battle.shield[U(Place(s, to))] : 0;
         // An upgraded ability adds the unit's boost for the slot that holds it.
         const Unit &f = s.units[U(from)];
         const auto slot = std::ranges::find(f.abilities, ability);
@@ -216,7 +292,7 @@ namespace umbra::match
         if (!a)
             return f;
         f.cost = CostOf(def, u, act.a);
-        const int target = act.kind == ActionKind::BattleAbility ? (s.battle.on ? Foe(s, me) : -1) : act.b;
+        const int target = act.kind == ActionKind::BattleAbility ? (!s.battle.on ? -1 : act.b >= 0 ? act.b : FirstFoe(s, me)) : act.b;
         if (a->kind == AbilityClass::Heal)
             f.healed = PowerOf(def, u, act.a);
         else if ((a->kind == AbilityClass::Strike || a->kind == AbilityClass::Hit) && target >= 0)

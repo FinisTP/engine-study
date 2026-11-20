@@ -145,7 +145,7 @@ namespace umbra::match
                 v = (*g)[key].get<int>();
             };
             auto &b = r.board;
-            for (auto [k, v] : {std::pair{"width", &b.width}, {"height", &b.height}, {"lanes", &b.lanes}, {"squareCapacity", &b.squareCapacity},
+            for (auto [k, v] : {std::pair{"width", &b.width}, {"height", &b.height}, {"lanes", &b.lanes}, {"squareCapacity", &b.squareCapacity}, {"stride", &b.stride},
                                 {"weakMin", &b.weakMin}, {"weakMax", &b.weakMax}, {"strongMin", &b.strongMin}, {"strongMax", &b.strongMax},
                                 {"weakPerHalf", &b.weakPerHalf}, {"strongPerHalf", &b.strongPerHalf}, {"eventsPerHalf", &b.eventsPerHalf},
                                 {"eventGap", &b.eventGap}, {"itemsPerHalf", &b.itemsPerHalf}})

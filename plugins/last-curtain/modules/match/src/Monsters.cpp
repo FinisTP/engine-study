@@ -11,10 +11,9 @@ namespace umbra::match
 
     namespace
     {
-        bool Free(const MatchDef &def, const MatchState &s, int cell)
+        bool Free(const MatchDef &def, const MatchState &s, int cell, int faction)
         {
-            const int there = static_cast<int>(std::ranges::count_if(s.units, [&](const Unit &u) { return Covers(s.board, u, cell); }));
-            return cell != s.stage && there < def.rules.board.squareCapacity; // monsters never take the stage
+            return cell != s.stage && Room(def, s, cell, faction); // monsters never take the stage
         }
 
         int NearestCharacter(const MatchState &s, int cell)
@@ -33,7 +32,7 @@ namespace umbra::match
             int best = -1, bestScore = score(m.cell);
             for (int d = 0; d < 4; ++d)
                 if (const int n = Neighbour(s.board, m.cell, d); n >= 0 && score(n) > bestScore &&
-                    (m.size > 1 ? Fits(s, m.size, n, static_cast<int>(&m - s.units.data())) : Free(def, s, n)))
+                    (m.size > 1 ? Fits(s, m.size, n, static_cast<int>(&m - s.units.data())) : Free(def, s, n, m.faction)))
                     best = n, bestScore = score(n);
             if (best < 0)
                 return false;
@@ -68,7 +67,7 @@ namespace umbra::match
                 probe.cell = static_cast<std::int16_t>(anchor);
                 return AllCentre(s.board, m.size, anchor) ? -StepsTo(s.board, goal, probe) : -1000;
             };
-            for (int k = 0; k < m.speed && !Beside(s.board, m, s.units[U(target)]) && StepBy(def, s, m, score); ++k) {}
+            for (int k = 0; k < m.speed * def.rules.board.stride && !Beside(s.board, m, s.units[U(target)]) && StepBy(def, s, m, score); ++k) {}
             if (Beside(s.board, m, s.units[U(target)]))
                 StartBattle(def, s, i, target);
         }
@@ -82,10 +81,10 @@ namespace umbra::match
             case Behaviour::Stay: break;
             case Behaviour::Hunt: Hunt(def, s, i); break;
             case Behaviour::Flee: // 1. up to `speed` steps away from the nearest character
-                for (int k = 0; k < m.speed && StepBy(def, s, m, [&](int c) { return NearestCharacter(s, c); }); ++k) {}
+                for (int k = 0; k < m.speed * def.rules.board.stride && StepBy(def, s, m, [&](int c) { return NearestCharacter(s, c); }); ++k) {}
                 break;
             case Behaviour::Stage: // 2. up to `speed` steps toward the stage, onto it when free
-                for (int k = 0; k < m.speed && m.cell != s.stage && StepBy(def, s, m, [&](int c) { return -Steps(s.board, c, s.stage); }); ++k) {}
+                for (int k = 0; k < m.speed * def.rules.board.stride && m.cell != s.stage && StepBy(def, s, m, [&](int c) { return -Steps(s.board, c, s.stage); }); ++k) {}
                 break;
             case Behaviour::Guard: // 3. a blow to every enemy character next to it, no battle
                 for (int v = 0; v < static_cast<int>(s.units.size()); ++v)

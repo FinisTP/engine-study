@@ -3,6 +3,7 @@
 #include <Match.hpp>
 
 #include <algorithm>
+#include <array>
 
 using namespace umbra::match;
 
@@ -185,7 +186,11 @@ TEST_CASE("Anyone next to any of its squares can attack it, and its blows reach 
     const int me = Current(s);
     s.units[U(me)].cell = s.now.origin = static_cast<std::int16_t>(below);
     CHECK(Check(def, s, {ActionKind::Attack, I8(m)}) == Why::Ok);
-    const int away = Neighbour(s.board, below, 2);
+    int away = -1;
+    for (int d = 0; d < 4 && away < 0; ++d)
+        if (const int n = Neighbour(s.board, below, d);
+            n >= 0 && std::ranges::none_of(squares, [&](int q) { return n == q || std::ranges::any_of(std::array{0, 1, 2, 3}, [&](int e) { return Neighbour(s.board, q, e) == n; }); }))
+            away = n;
     REQUIRE(away >= 0);
     s.units[U(me)].cell = s.now.origin = static_cast<std::int16_t>(away);
     CHECK(Check(def, s, {ActionKind::Attack, I8(m)}) == Why::OutOfRange);
@@ -323,7 +328,11 @@ TEST_CASE("Monsters pick shields and heals when they help (T319)", "[match][mons
         s.units[U(m)].defence = static_cast<std::int16_t>(d.defence);
         s.units[U(m)].hp = static_cast<std::int16_t>(hp);
         s.units[U(foe)].hp = static_cast<std::int16_t>(foeHp);
-        s.battle = {true, I8(foe), I8(m), 1, 1, 1, {}};
+        s.battle = Battle{};
+        s.battle.on = true, s.battle.attacker = I8(foe), s.battle.defender = I8(m), s.battle.round = 1;
+        s.battle.fighters = {I8(foe), -1, I8(m), -1};
+        s.battle.order = {0, 2, -1, -1};
+        s.battle.next = 1; // the monster's pick
         return m;
     };
     // 1. Ghost chorus (bite; mend): healthy it bites, below half HP it mends.

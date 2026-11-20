@@ -23,9 +23,22 @@ namespace
     // The first direction the current unit can step in, or -1.
     int OpenStep(const MatchDef &def, const MatchState &s)
     {
-        for (int d = 0; d < 4; ++d)
-            if (Check(def, s, {ActionKind::Move, static_cast<std::int8_t>(d)}) == Why::Ok)
-                return d;
+        // An open step that does not lead back to where the turn began.
+        const int here = s.units[static_cast<std::size_t>(Current(s))].cell;
+        // Prefer a step after which another such step is open (a hub ringed by friends is a dead end).
+        for (int pass = 0; pass < 2; ++pass)
+            for (int d = 0; d < 4; ++d)
+                if (Check(def, s, {ActionKind::Move, static_cast<std::int8_t>(d)}) == Why::Ok && Neighbour(s.board, here, d) != s.now.origin)
+                {
+                    MatchState t = s;
+                    Apply(def, t, {ActionKind::Move, static_cast<std::int8_t>(d)});
+                    const int there = t.units[static_cast<std::size_t>(Current(t))].cell;
+                    for (int e = 0; pass == 0 && e < 4; ++e)
+                        if (Check(def, t, {ActionKind::Move, static_cast<std::int8_t>(e)}) == Why::Ok && Neighbour(t.board, there, e) != t.now.origin)
+                            return d;
+                    if (pass == 1)
+                        return d;
+                }
         return -1;
     }
 }
@@ -121,4 +134,41 @@ TEST_CASE("The match ends after its rounds, with the tie rule (T286)", "[match][
     v.score = {5, 9};
     playOut(v);
     CHECK(v.winner == 1);
+}
+
+TEST_CASE("Two of one side may share a square, never with a foe, never three (T355)", "[match][turn]")
+{
+    const MatchDef def = Data();
+    REQUIRE(def.rules.board.squareCapacity == 2);
+    MatchState s = Start(def);
+    const int me = Current(s);
+    Unit &u = s.units[U(me)];
+    // 1. A square beside me with a friend on it: I may step in.
+    int dir = -1, friendUnit = -1, foeUnit = -1;
+    for (int d = 0; d < 4 && dir < 0; ++d)
+        if (const int n = Neighbour(s.board, u.cell, d); n >= 0 && n != s.stage && n != s.board.hub[1 - u.faction] &&
+                                                         std::ranges::none_of(s.units, [&](const Unit &o) { return o.cell == n; }))
+            dir = d;
+    REQUIRE(dir >= 0);
+    const int n = Neighbour(s.board, u.cell, dir);
+    for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
+        if (i != me && s.units[U(i)].kind == 0 && s.units[U(i)].cell >= 0)
+            (s.units[U(i)].faction == u.faction ? friendUnit : foeUnit) = i;
+    REQUIRE(friendUnit >= 0);
+    REQUIRE(foeUnit >= 0);
+    s.units[U(friendUnit)].cell = static_cast<std::int16_t>(n);
+    CHECK(Check(def, s, {ActionKind::Move, static_cast<std::int8_t>(dir)}) == Why::Ok);
+    // 2. Not with a foe there.
+    s.units[U(friendUnit)].cell = static_cast<std::int16_t>(-1);
+    s.units[U(foeUnit)].cell = static_cast<std::int16_t>(n);
+    CHECK(Check(def, s, {ActionKind::Move, static_cast<std::int8_t>(dir)}) == Why::Blocked);
+    // 3. Not as a third.
+    s.units[U(foeUnit)].cell = static_cast<std::int16_t>(-1);
+    int second = -1;
+    for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
+        if (i != me && i != friendUnit && s.units[U(i)].faction == u.faction && s.units[U(i)].cell >= 0)
+            second = i;
+    REQUIRE(second >= 0);
+    s.units[U(friendUnit)].cell = s.units[U(second)].cell = static_cast<std::int16_t>(n);
+    CHECK(Check(def, s, {ActionKind::Move, static_cast<std::int8_t>(dir)}) == Why::Blocked);
 }

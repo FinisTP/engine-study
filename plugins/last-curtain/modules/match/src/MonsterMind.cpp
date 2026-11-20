@@ -33,7 +33,7 @@ namespace umbra::match
     int MonsterPick(const MatchDef &def, const MatchState &s, int unit)
     {
         const Unit &u = s.units[U(unit)];
-        const int foe = unit == s.battle.attacker ? s.battle.defender : s.battle.attacker;
+        const int foe = MonsterTarget(def, s, unit);
         const bool threatened = Best(def, s, foe, unit) >= u.hp, hurt = u.hp * 2 < u.maxHp;
         // 1. Each usable ability scores: a strike its damage (a kill above all), a shield or heal only when it helps.
         int pick = 0, bestValue = -1;
@@ -53,6 +53,22 @@ namespace umbra::match
             if (value > bestValue)
                 pick = slot, bestValue = value;
         }
+        return pick;
+    }
+
+    int MonsterTarget(const MatchDef &def, const MatchState &s, int unit)
+    {
+        // 1. Among the other group's standing fighters: the one its best blow downs, else the one with least HP.
+        int pick = FirstFoe(s, unit), bestValue = -1000;
+        const int group = 1 - Place(s, unit) / 2;
+        for (int p : {group * 2, group * 2 + 1})
+            if (Standing(s, p))
+            {
+                const int f = s.battle.fighters[U(p)], hp = s.units[U(f)].hp;
+                const int value = (Best(def, s, unit, f) >= hp ? 1000 : 0) - hp;
+                if (value > bestValue)
+                    pick = f, bestValue = value;
+            }
         return pick;
     }
 }

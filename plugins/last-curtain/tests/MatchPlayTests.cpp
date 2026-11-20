@@ -77,6 +77,8 @@ TEST_CASE("The order strip runs on past the round's end (T323)", "[match][play]"
     {
         if (p.PlayerTurn())
             REQUIRE(p.Do({ActionKind::EndTurn}));
+        if (p.State().turn != 0)
+            break; // the hand-over itself, before the next one acts
         p.Update(0.25F);
     }
     REQUIRE(p.State().turn == 1);
@@ -297,6 +299,8 @@ TEST_CASE("The battle screen follows the rules' battle, a hunter's included (T32
     p.Click(p.State().units[static_cast<std::size_t>(me)].cell);
     REQUIRE(p.HandleUi("", "act", "attack"));
     p.Click(p.State().units[static_cast<std::size_t>(enemy)].cell);
+    for (int i = 0; i < 40 && !p.PlayerTurn(); ++i) // the attack is told in beats (T357)
+        p.Update(0.25F);
     // 1. The player picks first: both fighters, the round, the picks with damage.
     REQUIRE(p.Screen() == "battle");
     nlohmann::json b = p.UiData()["battle"];
@@ -329,7 +333,10 @@ TEST_CASE("The battle screen follows the rules' battle, a hunter's included (T32
         for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
             if (s.units[static_cast<std::size_t>(i)].kind == 1 && def.monsters[static_cast<std::size_t>(s.units[static_cast<std::size_t>(i)].def)].behaviour == Behaviour::Hunt)
                 hunter = i;
-        s.battle = {true, static_cast<std::int8_t>(hunter), static_cast<std::int8_t>(mine), 1, 1, 0, {}};
+        s.battle = Battle{};
+        s.battle.on = true, s.battle.attacker = static_cast<std::int8_t>(hunter), s.battle.defender = static_cast<std::int8_t>(mine), s.battle.round = 1;
+        s.battle.fighters = {static_cast<std::int8_t>(hunter), -1, static_cast<std::int8_t>(mine), -1};
+        s.battle.order = {2, 0, -1, -1}; // the hunter has struck: the player's pick
     });
     REQUIRE(h.Screen() == "battle");
     CHECK(def.monsters[static_cast<std::size_t>(h.State().units[static_cast<std::size_t>(h.UiData()["battle"]["fighters"][0]["unit"].get<int>())].def)].behaviour == Behaviour::Hunt);
@@ -382,7 +389,7 @@ TEST_CASE("The end screen's numbers come from the state (T330)", "[match][play]"
 {
     const MatchDef def = Data();
     MatchPlay p = Make(def, 5);
-    for (int i = 0; i < 400 && !p.State().over; ++i)
+    for (int i = 0; i < 2000 && !p.State().over; ++i)
     {
         if (p.PlayerTurn())
             REQUIRE(p.Do(ChooseAction(def, p.State(), BotLevel::Medium)));
@@ -528,6 +535,8 @@ TEST_CASE("A blow or a fall puts a short line in a bubble by its speaker; the sa
     p.Click(p.State().units[static_cast<std::size_t>(me)].cell);
     REQUIRE(p.HandleUi("", "act", "attack"));
     p.Click(p.State().units[static_cast<std::size_t>(enemy)].cell);
+    for (int i = 0; i < 40 && !p.PlayerTurn(); ++i) // the attack is told in beats (T357)
+        p.Update(0.25F);
     REQUIRE(p.HandleUi("battle", "pick", "0"));
     // 1. Once the blow is told, its speaker has a bubble with one of the written lines.
     for (int i = 0; i < 10 && p.UiData()["bubbles"].empty(); ++i)
@@ -649,7 +658,7 @@ TEST_CASE("A battle is staged while it lasts and a little after its last blow is
     p.Click(p.State().units[static_cast<std::size_t>(enemy)].cell);
     // 2. The fighters, attacker first, while the battle runs.
     REQUIRE(p.UiData().contains("fight"));
-    CHECK(p.UiData()["fight"] == nlohmann::json{me, enemy});
+    CHECK(p.UiData()["fight"] == nlohmann::json{me, -1, enemy, -1}); // by place: two a group
     while (p.State().battle.on)
     {
         if (p.PlayerTurn())
@@ -681,10 +690,51 @@ TEST_CASE("Whoever a told line is about is in focus for the camera, for as long 
     p.Click(p.State().units[static_cast<std::size_t>(me)].cell);
     REQUIRE(p.HandleUi("", "act", "attack"));
     p.Click(p.State().units[static_cast<std::size_t>(enemy)].cell);
+    for (int i = 0; i < 40 && !p.PlayerTurn(); ++i) // the attack is told in beats (T357)
+        p.Update(0.25F);
     REQUIRE(p.HandleUi("battle", "pick", "0"));
+    p.Update(0.25F); // the blow is told a beat after the pick
     // 1. The blow just told: striker and struck.
     REQUIRE(p.UiData().contains("focus"));
     const std::vector<int> focus = p.UiData()["focus"].get<std::vector<int>>();
     CHECK(std::ranges::find(focus, me) != focus.end());
     CHECK(std::ranges::find(focus, enemy) != focus.end());
+}
+
+TEST_CASE("A battle is told blow by blow: cards follow the told lines, the fallen stand until their fall (T357)", "[match][play]")
+{
+    const MatchDef def = Data();
+    int enemy = -1;
+    MatchPlay p = AtPlayer(def, [&](MatchState &s) {
+        const int me = Current(s);
+        for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
+            if (s.units[static_cast<std::size_t>(i)].kind == 0 && s.units[static_cast<std::size_t>(i)].faction == 1)
+                enemy = i;
+        s.units[static_cast<std::size_t>(enemy)].cell = static_cast<std::int16_t>(FreeBeside(s, s.units[static_cast<std::size_t>(me)].cell));
+        s.units[static_cast<std::size_t>(me)].hp = s.units[static_cast<std::size_t>(me)].maxHp = 90;
+        s.units[static_cast<std::size_t>(enemy)].hp = 1; // the first blow downs it
+        s.units[static_cast<std::size_t>(enemy)].speed = 0; // and I strike first
+    });
+    const int me = Current(p.State());
+    p.Click(p.State().units[static_cast<std::size_t>(me)].cell);
+    REQUIRE(p.HandleUi("", "act", "attack"));
+    p.Click(p.State().units[static_cast<std::size_t>(enemy)].cell);
+    for (int i = 0; i < 20 && !p.PlayerTurn(); ++i)
+        p.Update(0.5F);
+    REQUIRE(p.Screen() == "battle");
+    REQUIRE(p.HandleUi("battle", "pick", "0"));
+    // 1. The rules have downed it, but nothing is told yet: its card still shows 1 HP and it still stands.
+    REQUIRE(p.State().units[static_cast<std::size_t>(enemy)].cell < 0);
+    nlohmann::json ui = p.UiData();
+    CHECK(ui["battle"]["fighters"][1]["hp"] == 1);
+    REQUIRE(ui.contains("standing"));
+    const std::vector<int> standing = ui["standing"].get<std::vector<int>>();
+    CHECK(std::ranges::find(standing, enemy) != standing.end());
+    CHECK_FALSE(p.PlayerTurn()); // the fight is still being told
+    // 2. A beat later the blow is told: 0 HP; then the fall: no longer standing.
+    for (int i = 0; i < 40 && p.UiData().contains("standing"); ++i)
+        p.Update(0.25F);
+    CHECK_FALSE(p.UiData().contains("standing"));
+    CHECK(p.Screen() == "battle"); // still staged a beat after its last line
+    CHECK(p.UiData()["battle"]["fighters"][1]["hp"] == 0);
 }

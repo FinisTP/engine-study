@@ -152,17 +152,17 @@ TEST_CASE("A bot does not walk a hurt character into a hunter's sight (T320)", "
     const int h = s.units[U(hunter)].cell, sight = def.monsters[U(s.units[U(hunter)].def)].sight;
     int spot = -1;
     for (int c = 0; c < static_cast<int>(s.board.cells.size()) && spot < 0; ++c)
-        if (s.board.cells[U(c)].kind == CellKind::Centre && c != s.stage && Steps(s.board, h, c) == 2 &&
+        if (s.board.cells[U(c)].kind == CellKind::Centre && c != s.stage && Steps(s.board, h, c) == 4 && // two squares: four tiles
             Steps(s.board, c, u.home) > Steps(s.board, h, u.home) &&
             std::ranges::none_of(s.units, [&](const Unit &o) { return o.cell == c && o.hp > 0; }))
             spot = c;
     REQUIRE(spot >= 0);
     u.cell = s.now.origin = static_cast<std::int16_t>(spot);
     u.hp = static_cast<std::int16_t>(u.maxHp / 4);
-    u.move = 3;
-    s.now.movesLeft = 3;
+    u.move = 6;
+    s.now.movesLeft = 6;
     // 2. Its whole move ends out of the hunter's sight.
-    for (int i = 0; i < 8; ++i)
+    for (int i = 0; i < 12; ++i)
     {
         const Action a = ChooseAction(def, s, BotLevel::Hard);
         if (a.kind != ActionKind::Move)

@@ -69,10 +69,11 @@ namespace umbra::match
     struct Battle
     {
         bool on = false;
-        std::int8_t attacker = -1, defender = -1;
-        std::int8_t round = 0, next = 0; // next to pick: 0 attacker, 1 defender
-        std::int8_t first = 0;           // who picks first each round
-        std::array<std::int16_t, 2> shield{};
+        std::int8_t attacker = -1, defender = -1;               // who began it, on whom (each leads a group)
+        std::int8_t round = 0, next = 0;                        // next: the place in `order` whose pick it is
+        std::array<std::int8_t, 4> fighters{-1, -1, -1, -1};    // places 0-1 the attacker's group, 2-3 the defender's
+        std::array<std::int8_t, 4> order{-1, -1, -1, -1};       // this round's picks, by place (Match.md "Group battles")
+        std::array<std::int16_t, 4> shield{};                   // by place
     };
 
     // The current character's turn: where it began, steps left, whether it has acted.
@@ -187,4 +188,5 @@ namespace umbra::match
     void RunMonsters(const MatchDef &def, MatchState &s);
     // The battle ability slot a monster picks now (MonsterMind.cpp).
     int MonsterPick(const MatchDef &def, const MatchState &s, int unit);
+    int MonsterTarget(const MatchDef &def, const MatchState &s, int unit); // the foe it strikes: one it can down, else the weakest
 }

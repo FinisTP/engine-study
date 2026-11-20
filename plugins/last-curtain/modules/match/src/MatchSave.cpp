@@ -8,7 +8,7 @@ namespace umbra::match
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Unit, kind, def, faction, cell, home, hp, maxHp, attack, defence, speed, move, xp, level, size, back,
                                        pending, essence, kills, abilities, items, boost, cut)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Floor, cell, item, essence, treasure)
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Battle, on, attacker, defender, round, next, first, shield)
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Battle, on, attacker, defender, round, next, fighters, order, shield)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(TurnState, origin, movesLeft, acted)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LogEntry, kind, a, b, c)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Spawn, cell, monster, round)
@@ -20,7 +20,7 @@ namespace umbra::match
     namespace
     {
         constexpr const char *format = "umbra.match";
-        constexpr int version = 2; // 2: spawns, a fixed stage
+        constexpr int version = 3; // 2: spawns, a fixed stage; 3: the tile board, shared squares
     }
 
     nlohmann::json SaveMatch(const MatchState &s)
