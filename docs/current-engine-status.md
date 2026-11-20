@@ -15,6 +15,14 @@
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
 
+## Update 2026-11-21 (The Last Curtain: plan 4, tiles, group battles, the told match, the café hub, `#UMBRA-291`-`#UMBRA-297`, branch `factions`)
+
+- **Rules.** The board is tiles (walls are tiles); two of a side share a tile; battles take in both groups, everyone picking in speed order at a chosen foe; ranges walk or go straight; heals skip the whole; board abilities teach. Saves version 3.
+- **The match on screen.** Every blow told one by one, the fallen stand until told; up to four on the fight's stage; engine UI hover, pressed and an eased scale; a hint at every moment; twelve-portrait order strip.
+- **The café hub.** The game opens in a café: walk, open the shop, make drinks at four stations for ten ghosts against their patience, tips, talks told once, the company board; a saved career (money, levels, abilities) carried into and out of matches.
+- **Verified (Linux).** GCC suites pass (match 76, café 4, UI 12); the soak holds (side 0 48.0%, comebacks 29.9%). Clang and ASan not run this round.
+- **Open.** The Windows checks (`testing/s42-tiles-groups-cafe.md` section 4); the ghosts' own art (the PC was offline); shipping from `#294` on.
+
 ## Update 2026-11-20 (The Last Curtain: faction matches, plans 2 and 3, `#UMBRA-264`-`#UMBRA-289`, branch `factions`)
 
 - **Rules.** A fixed stage; monsters spawn by `spawns.csv` (the centre's Usherette hunts and spawns once; den monsters belong to their half's side, so players push into the other half); monsters of 2x2 and 3x3; treasure as 2-5 face-down cards; claimed rooms come back in the same half after 16 rounds; level-ups offer three cards (learn, a stat, an upgrade); events show 2d6 over the same chance. Saves version 2.

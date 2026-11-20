@@ -120,6 +120,7 @@ MatchTable::MatchTable(umbra::render::Renderer &renderer, const umbra::assets::A
     }
     for (const MonsterDef &m : def.monsters)
         load(m.sprite);
+    load("specter"); // a ghost without its own art yet takes the shared specter (Sprite)
 }
 
 glm::vec3 MatchTable::Centre(const Board &b, int cell) const
@@ -425,13 +426,18 @@ void MatchTable::Sprite(int index, const Unit &u, glm::vec3 feet, umbra::core::D
     const glm::vec3 forward = glm::normalize(camera.target - camera.position);
     const glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3{0, 1, 0})), up = SpriteUp();
     const std::string &sprite = u.kind == 0 ? def_.characters[U(u.def)].sprite : def_.monsters[U(u.def)].sprite;
-    const float h = Height(u, index), aspect = aspects_.contains(sprite) ? aspects_.at(sprite) : 0.3F;
+    const float h = Height(u, index);
+    float aspect = aspects_.contains(sprite) ? aspects_.at(sprite) : 0.3F;
     const umbra::night::SpriteState idle;
     const umbra::night::SpriteState &st = U(index) < states_.size() ? states_[U(index)] : idle;
     const umbra::night::MotionPose pose = st.Pose(motions_);
     auto art = sprites_.find(sprite + "/" + pose.face);
     if (art == sprites_.end())
         art = sprites_.find(sprite + "/calm");
+    if (art == sprites_.end())
+        art = sprites_.find("specter/" + pose.face), aspect = aspects_.contains("specter") ? aspects_.at("specter") : aspect;
+    if (art == sprites_.end())
+        art = sprites_.find("specter/calm");
     if (art == sprites_.end())
         return Box(out, box_, feet + glm::vec3{0, h * 0.5F, 0}, {h * aspect, h, h * aspect}, Hex(0x8a8178));
     // 2. The sprite surface: colour = tint and opacity, emissive = how much tint (a monster's colour, or the motion's).

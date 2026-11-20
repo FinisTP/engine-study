@@ -163,3 +163,24 @@ text). Fight backdrops (`fight/<kind>.jpg`): the dread style, eye-level, empty o
 floor in front; seeds 5 and 9, kept centre 9, hall 9, hub 9, room 5 (room 9 drew a woman), darkened
 to 70%. Wallpaper (`wall.jpg`): "seamless tileable wallpaper ... damask ... dark jade green and dull
 tarnished gold", seed 3 of 3 and 7, 512 px.
+
+### The ten ghosts (planned, 2026-11-21: to make when ComfyUI is reachable)
+
+One full figure each, plain light background (cut out like the characters), 832x1216, SDXL base,
+the dread style: "full body figure of <ghost>, 1960s Vietnamese horror poster gouache, muted jade
+and dark red, pale glowing skin, standing, plain background". Save each as
+`art/sprites/<id>/body_calm.png` (and `face_calm.png`, its head), then set its `sprite` in
+`assets/match/monsters.csv` to `<id>`.
+
+| id | ghost |
+|---|---|
+| moths | a swarm of pale moths shaped like a hunched woman |
+| rats | a pack of grey rats wearing a torn usher's cap |
+| stagehand | a hanged stagehand, rope at the neck, work clothes, feet off the ground |
+| prompter | a thin man in a prompter's hood holding a script, mouth sewn shut |
+| usher | an old usher in a red uniform with a lantern, eyes white |
+| usherette | a young usherette in a 1940s uniform with a tray of tickets, burnt edges |
+| ghost-chorus | three singers in white ao dai fused at the shoulders |
+| the-spider | a great spider with a porcelain opera mask for a face |
+| pianist | a pit pianist in a charred tailcoat, fingers too long |
+| ticket-girl | a box office girl behind a floating ticket window, gold coins in her hands |

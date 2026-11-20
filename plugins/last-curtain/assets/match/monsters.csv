@@ -1,9 +1,11 @@
 id,name,tier,behaviour,hp,attack,defence,speed,essence,xp,level,size,sight,abilities,sprite,tint
-moths,Moth swarm,weak,stay,8,2,1,2,1,2,1,1,0,claw,specter,9A9A80
-stagehand,Hanged stagehand,strong,stay,18,4,3,2,6,5,3,1,0,bite,specter,806050
-prompter,The Prompter,strong,stage,20,4,3,3,22,6,3,1,0,bite,specter,507080
-usher,The Usher,guardian,guard,20,6,2,1,20,10,5,1,0,crush,specter,A04040
-usherette,The Usherette,strong,hunt,16,5,2,3,7,5,2,1,6,claw;brace,specter,C08090
-ghost-chorus,Ghost chorus,strong,hunt,30,6,3,2,18,8,4,2,6,bite;mend,specter,8090C0
-the-spider,The Great Spider,great,hunt,50,8,4,3,40,14,6,3,8,crush;brace;mend,specter,C0C0C0
-rats,Rat pack,weak,stay,12,3,1,3,12,3,3,1,0,bite,specter,706858
+moths,Moth swarm,weak,stay,8,2,1,2,1,2,1,1,0,claw,moths,9A9A80
+stagehand,Hanged stagehand,strong,stay,18,4,3,2,6,5,3,1,0,bite,stagehand,806050
+prompter,The Prompter,strong,stage,20,4,3,3,22,6,3,1,0,bite,prompter,507080
+usher,The Usher,guardian,guard,20,6,2,1,20,10,5,1,0,crush,usher,A04040
+usherette,The Usherette,strong,hunt,16,5,2,3,7,5,2,1,6,claw;brace,usherette,C08090
+ghost-chorus,Ghost chorus,strong,hunt,30,6,3,2,18,8,4,2,6,bite;mend,ghost-chorus,8090C0
+the-spider,The Great Spider,great,hunt,50,8,4,3,40,14,6,3,8,crush;brace;mend,the-spider,C0C0C0
+rats,Rat pack,weak,stay,12,3,1,3,12,3,3,1,0,bite,rats,706858
+ticket-girl,The Box Office Girl,weak,stay,12,3,1,4,12,3,3,1,0,claw,ticket-girl,B8A070
+pianist,The Pit Pianist,strong,stay,22,5,2,3,20,7,4,1,0,bite;brace,pianist,6A6A90
