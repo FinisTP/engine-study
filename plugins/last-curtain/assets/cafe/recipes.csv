@@ -1,0 +1,8 @@
+id,name,steps,price
+den,Black coffee,phin,2
+sua-nong,Milk coffee,phin;milk,3
+den-da,Iced black coffee,phin;ice,3
+sua-da,Iced milk coffee,phin;milk;ice,5
+tra-sen,Lotus tea,tea,2
+tra-da,Iced tea,tea;ice,3
+tra-sua,Milk tea,tea;milk,3

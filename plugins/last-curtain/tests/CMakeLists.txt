@@ -37,3 +37,12 @@ umbra_copy_asan_runtime(UmbraMatchTests)
 add_test(NAME Umbra.Match COMMAND UmbraMatchTests "~[match-balance]")
 add_test(NAME Umbra.Match.Balance COMMAND UmbraMatchTests "[match-balance]")
 add_test(NAME Umbra.Night.Balance COMMAND UmbraNightTests "[balance]")
+
+# The cafe between matches, headless (modules/cafe/include/Cafe.md).
+add_executable(UmbraCafeTests)
+target_sources(UmbraCafeTests PRIVATE CafeTests.cpp)
+target_compile_definitions(UmbraCafeTests PRIVATE UMBRA_CAFE_DATA="${CMAKE_CURRENT_SOURCE_DIR}/../assets/cafe")
+target_compile_features(UmbraCafeTests PRIVATE cxx_std_20)
+target_link_libraries(UmbraCafeTests PRIVATE Umbra::Cafe Umbra::Warnings Umbra::Sanitizers Catch2::Catch2WithMain)
+umbra_copy_asan_runtime(UmbraCafeTests)
+add_test(NAME Umbra.Cafe COMMAND UmbraCafeTests)

@@ -1,0 +1,83 @@
+{
+  "note": "Talks at the counter after a served drink: by ghost id, then the serving character's id or any. Each talk is told once (the career remembers it); who is ghost or me.",
+  "moths": {
+    "any": [
+      [{"who": "ghost", "text": "We were the lamp's. Then the lamp went out in '44."}, {"who": "me", "text": "And you stayed for the dark?"}, {"who": "ghost", "text": "We stayed for the next light. Yours will do."}]
+    ],
+    "huy": [
+      [{"who": "ghost", "text": "Your little lamp on your forehead. May we?"}, {"who": "me", "text": "Not while I'm filming, okay? Chat would lose it."}]
+    ]
+  },
+  "rats": {
+    "any": [
+      [{"who": "ghost", "text": "Black, no sugar. Like the cellar."}, {"who": "me", "text": "What is down there?"}, {"who": "ghost", "text": "The old stage. And the boy under it."}]
+    ],
+    "mai": [
+      [{"who": "ghost", "text": "Caretaker. You still leave rice by the trap door."}, {"who": "me", "text": "Someone has to feed him, dear."}, {"who": "ghost", "text": "We eat it. He never comes up."}]
+    ]
+  },
+  "stagehand": {
+    "any": [
+      [{"who": "ghost", "text": "Rope burns. Milk helps, I find."}, {"who": "me", "text": "Who strung you up there?"}, {"who": "ghost", "text": "The patron's man. I saw the fire start before the bombs did."}]
+    ],
+    "bao": [
+      [{"who": "ghost", "text": "Doctor. You wrote 'fall from the flies' on my paper."}, {"who": "me", "text": "Did I, Mr. Stagehand? Was it not a fall?"}, {"who": "ghost", "text": "It was a long one. It ended in a knot."}]
+    ]
+  },
+  "prompter": {
+    "any": [
+      [{"who": "ghost", "text": "Line?"}, {"who": "me", "text": "I don't have a line."}, {"who": "ghost", "text": "Everyone has a line. Yours comes in the last act."}]
+    ],
+    "lan": [
+      [{"who": "ghost", "text": "The masks you came to price. I knew the faces under them."}, {"who": "me", "text": "Then you know they are worth more with stories, sir."}]
+    ]
+  },
+  "usher": {
+    "any": [
+      [{"who": "ghost", "text": "Ticket, please."}, {"who": "me", "text": "I work here now. Behind the counter."}, {"who": "ghost", "text": "Then you have the worst seat in the house. Welcome."}]
+    ],
+    "khang": [
+      [{"who": "ghost", "text": "You hit me twice on the stairs, boss."}, {"who": "me", "text": "You were in my way, old man. Coffee's on me, okay?"}, {"who": "ghost", "text": "Coffee is on the house. Everything is."}]
+    ]
+  },
+  "usherette": {
+    "any": [
+      [{"who": "ghost", "text": "Iced, please. It was so hot that night."}, {"who": "me", "text": "The night of the raid?"}, {"who": "ghost", "text": "The night of the singer. The raid only helped."}]
+    ],
+    "huy": [
+      [{"who": "ghost", "text": "You filmed me last year."}, {"who": "me", "text": "I didn't film anything last year. I wasn't... was I here?"}, {"who": "ghost", "text": "You still are."}]
+    ]
+  },
+  "ghost-chorus": {
+    "any": [
+      [{"who": "ghost", "text": "We sang behind her. Nobody remembers the chorus."}, {"who": "me", "text": "I'll remember. What did you sing?"}, {"who": "ghost", "text": "The song she never finished. Hum it with us."}]
+    ],
+    "mai": [
+      [{"who": "ghost", "text": "Little Mai. You swept under our feet."}, {"who": "me", "text": "I was eight. You were kind to me."}]
+    ]
+  },
+  "the-spider": {
+    "any": [
+      [{"who": "ghost", "text": "Sweet. Cold. Many cups."}, {"who": "me", "text": "One cup each, please."}, {"who": "ghost", "text": "Then I have eight cups."}]
+    ],
+    "bao": [
+      [{"who": "ghost", "text": "Your hands do not shake, doctor."}, {"who": "me", "text": "Thirty years of practice. Do yours?"}, {"who": "ghost", "text": "All eight. Always."}]
+    ]
+  },
+  "pianist": {
+    "any": [
+      [{"who": "ghost", "text": "Something with ice. My fingers are still warm from the keys."}, {"who": "me", "text": "Do you still play?"}, {"who": "ghost", "text": "Every night at midnight. The house listens."}]
+    ],
+    "lan": [
+      [{"who": "ghost", "text": "You priced my piano once. Too low."}, {"who": "me", "text": "The keys were burnt, sir. I priced what was left."}, {"who": "ghost", "text": "What is left still plays."}]
+    ]
+  },
+  "ticket-girl": {
+    "any": [
+      [{"who": "ghost", "text": "I sold the last ticket that night. To him."}, {"who": "me", "text": "To the patron?"}, {"who": "ghost", "text": "He paid in gold. I can still feel it burning."}]
+    ],
+    "khang": [
+      [{"who": "ghost", "text": "You are collecting something."}, {"who": "me", "text": "A debt, kid. Same as always."}, {"who": "ghost", "text": "The house collects too. It is ahead of you in line."}]
+    ]
+  }
+}

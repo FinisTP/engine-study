@@ -1,0 +1,7 @@
+{
+  "shift": { "seconds": 150, "firstArrival": 3, "arrivalMin": 6, "arrivalMax": 12 },
+  "seats": 4,
+  "tipMax": 3,
+  "maxSteps": 3,
+  "moneyPerEssence": 1
+}

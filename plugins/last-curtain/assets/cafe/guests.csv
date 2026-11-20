@@ -1,0 +1,11 @@
+id,name,sprite,likes,patience,weight
+moths,Moth swarm,moths,tra-sen;tra-da,24,3
+rats,Rat pack,rats,den;den-da,22,3
+stagehand,Hanged stagehand,stagehand,den;sua-nong,30,2
+prompter,The Prompter,prompter,sua-nong;tra-sua,34,2
+usher,The Usher,usher,den;sua-da,40,1
+usherette,The Usherette,usherette,sua-da;tra-da,28,2
+ghost-chorus,Ghost chorus,ghost-chorus,tra-sua;sua-da;tra-sen,26,2
+the-spider,The Great Spider,the-spider,sua-da,45,1
+pianist,The Pit Pianist,pianist,den-da;sua-nong,32,2
+ticket-girl,The Box Office Girl,ticket-girl,tra-da;tra-sua;den,30,2

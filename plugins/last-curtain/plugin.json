@@ -14,7 +14,8 @@
     "board",
     "nightmind",
     "match",
-    "matchbots"
+    "matchbots",
+    "cafe"
   ],
   "links": [
     "Umbra::Night",
@@ -22,6 +23,7 @@
     "Umbra::NightBoard",
     "Umbra::NightMind",
     "Umbra::Match",
-    "Umbra::MatchBots"
+    "Umbra::MatchBots",
+    "Umbra::Cafe"
   ]
 }
