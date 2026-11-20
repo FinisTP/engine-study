@@ -1,0 +1,64 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "root": {
+    "type": "panel",
+    "anchor": "fill",
+    "style": "layer",
+    "children": [
+      {
+        "type": "list",
+        "items": "{labels}",
+        "as": "l",
+        "entry": {
+          "type": "stack",
+          "style": "plain",
+          "gap": 2,
+          "align": "center",
+          "at": "{l.at}",
+          "children": [
+            {
+              "type": "text",
+              "style": "bubble",
+              "text": "{l.say}",
+              "visible": "{l.say}",
+              "wrap": true,
+              "size": [
+                240,
+                0
+              ]
+            },
+            {
+              "type": "stack",
+              "style": "tagCard",
+              "gap": 2,
+              "visible": "{l.order}",
+              "children": [
+                {
+                  "type": "text",
+                  "style": "tagName",
+                  "text": "{l.drink}"
+                },
+                {
+                  "type": "bar",
+                  "style": "hpMine",
+                  "size": [
+                    110,
+                    6
+                  ],
+                  "value": "{l.patience}",
+                  "max": "{l.maxPatience}"
+                },
+                {
+                  "type": "text",
+                  "style": "tagNum",
+                  "text": "{l.guest}"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

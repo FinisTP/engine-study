@@ -199,7 +199,19 @@
                   44
                 ],
                 "text": "Quit",
-                "action": "quit"
+                "action": "quit",
+                "visible": "{single}"
+              },
+              {
+                "type": "button",
+                "style": "act",
+                "size": [
+                  240,
+                  44
+                ],
+                "text": "Back to the cafe",
+                "action": "cafe",
+                "visible": "{career}"
               }
             ]
           }

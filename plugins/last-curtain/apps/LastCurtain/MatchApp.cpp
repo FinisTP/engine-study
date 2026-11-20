@@ -1,5 +1,8 @@
 #include "MatchApp.hpp"
 
+#include "CareerMatch.hpp"
+#include "GameContext.hpp"
+
 #include "MatchPlay.hpp"
 #include "MatchTable.hpp"
 #include "Screens.hpp"
@@ -60,6 +63,15 @@ namespace
 
 int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool watch, const std::filesystem::path &capture, int frames, float zoom)
 {
+    GameContext game;
+    if (!game.Open(assets))
+        return 1;
+    return RunMatch(game, assets, seed, watch, capture, frames, zoom, nullptr, 0, {});
+}
+
+int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool watch, const std::filesystem::path &capture,
+             int frames, float zoom, umbra::cafe::Career *career, int moneyPerEssence, const std::filesystem::path &careerFile)
+{
     // 1. The match's data, its words and the pace.
     MatchDef def;
     std::vector<umbra::core::Diagnostic> diagnostics;
@@ -75,19 +87,15 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
     if (!loaded || words.is_discarded())
         return 1;
 
-    // 2. Window, renderer, screens, the table.
-    umbra::core::FrameClock clock;
-    umbra::platform::Input input;
-    umbra::platform::ApplicationEvents events;
-    umbra::platform::EventPump pump;
-    umbra::platform::Window window;
-    if (!window.Create("The Last Curtain", 1280, 720))
-        return 1;
-    umbra::render::Renderer renderer;
-    if (!renderer.Initialize(window))
-        return 1;
-    Screens screens(renderer, assets);
-    Sounds sounds(assets); // sounds.csv; silent without a sound card or a file
+    // 2. The shared window, renderer, screens and sounds; the table.
+    umbra::core::FrameClock &clock = game.clock;
+    umbra::platform::Input &input = game.input;
+    umbra::platform::ApplicationEvents &events = game.events;
+    umbra::platform::EventPump &pump = game.pump;
+    umbra::platform::Window &window = game.window;
+    umbra::render::Renderer &renderer = game.renderer;
+    Screens &screens = *game.screens;
+    Sounds &sounds = *game.sounds; // sounds.csv; silent without a sound card or a file
     MatchTable table(renderer, assets, def);
     if (std::ifstream in(assets / "match-look.json"); in)
         table.SetLook(nlohmann::json::parse(in, nullptr, false));
@@ -123,6 +131,8 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
         play->SetWords(words);
         play->SetOptions(pace);
         play->SetWatch(watch);
+        if (career && !restored)
+            play->StartFrom(*career); // the player's side as the career left it
         if (screens.Ready())
             screens.Ui().Open("match-labels"), screens.Ui().Open("match-hud");
         savedRound = -1, ended = false, hudOpen = true;
@@ -221,6 +231,8 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
         if (screens.Ready())
         {
             nlohmann::json data = ui;
+            data["career"] = career != nullptr; // the end screen leads back to the café
+            data["single"] = career == nullptr;
             if (!play)
                 data["pick"] = MatchPlay::PickData(def, picks, canContinue, level);
             else
@@ -251,6 +263,19 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
                     begin(nullptr);
                 else if (a.screen == "match-pick" && a.action == "continue" && canContinue)
                     begin(&saved);
+                else if (a.screen == "match-end" && a.action == "again" && career && play)
+                {
+                    // The career's match is over: its progress and takings kept, back to the café.
+                    umbra::night::RecordMatch(def, play->State(), *career, moneyPerEssence);
+                    std::string error;
+                    if (!careerFile.empty() && !umbra::cafe::SaveCareer(careerFile, *career, error))
+                        umbra::diagnostics::Error("The career was not saved: " + error);
+                    std::error_code removed;
+                    std::filesystem::remove(SavePath(), removed); // a finished match is not continued
+                    result = 2, quit = true;
+                }
+                else if (a.action == "cafe" && career)
+                    result = 2, quit = true; // back to the café without playing
                 else if (a.screen == "match-end" && a.action == "again")
                     backToPick();
                 else if (a.screen == "pause" && a.action == "resume")
@@ -295,8 +320,11 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
         }
         std::this_thread::sleep_for(std::chrono::milliseconds{1});
     }
-    // 8. Quitting mid-match saves it for Continue.
+    // 8. Quitting mid-match saves it for Continue; the match's screens close for whoever comes next.
     if (play && !play->State().over && !watch)
         WriteSave(*play);
+    if (screens.Ready())
+        for (const char *name : {"match-hud", "match-labels", "match-pick", "match-end", "match-battle", "match-level", "match-event", "match-treasure", "match-banner", "pause"})
+            screens.Ui().Close(name);
     return result;
 }

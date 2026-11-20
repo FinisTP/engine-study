@@ -1,0 +1,140 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "root": {
+    "type": "panel",
+    "anchor": "fill",
+    "style": "layer",
+    "children": [
+      {
+        "type": "stack",
+        "anchor": "top-left",
+        "offset": [
+          20,
+          14
+        ],
+        "style": "float",
+        "direction": "horizontal",
+        "gap": 12,
+        "align": "center",
+        "children": [
+          {
+            "type": "image",
+            "image": "art/ui/match/icons/essence.png",
+            "style": "iconGold",
+            "size": [
+              28,
+              28
+            ]
+          },
+          {
+            "type": "text",
+            "style": "essence",
+            "text": "{money}"
+          },
+          {
+            "type": "text",
+            "style": "muted",
+            "text": "Day {day}"
+          }
+        ]
+      },
+      {
+        "type": "stack",
+        "anchor": "top",
+        "offset": [
+          0,
+          14
+        ],
+        "style": "float",
+        "gap": 2,
+        "align": "center",
+        "visible": "{clock}",
+        "children": [
+          {
+            "type": "text",
+            "style": "heading",
+            "text": "{clock}"
+          }
+        ]
+      },
+      {
+        "type": "stack",
+        "anchor": "top-right",
+        "offset": [
+          -20,
+          14
+        ],
+        "style": "float",
+        "gap": 6,
+        "size": [
+          260,
+          0
+        ],
+        "children": [
+          {
+            "type": "text",
+            "style": "muted",
+            "text": "The cup"
+          },
+          {
+            "type": "text",
+            "style": "small",
+            "text": "{cupEmpty}",
+            "visible": "{cupEmpty}"
+          },
+          {
+            "type": "list",
+            "items": "{cup}",
+            "as": "c",
+            "gap": 4,
+            "entry": {
+              "type": "text",
+              "style": "strong",
+              "text": "+ {c.name}"
+            }
+          },
+          {
+            "type": "text",
+            "style": "good",
+            "text": "= {cupMakes}",
+            "visible": "{cupMakes}"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "anchor": "bottom",
+        "offset": [
+          0,
+          -110
+        ],
+        "style": "bubble",
+        "text": "{note}",
+        "visible": "{note}"
+      },
+      {
+        "type": "text",
+        "anchor": "bottom",
+        "offset": [
+          0,
+          -66
+        ],
+        "style": "card",
+        "text": "{prompt}",
+        "visible": "{prompt}"
+      },
+      {
+        "type": "text",
+        "anchor": "bottom",
+        "offset": [
+          0,
+          -24
+        ],
+        "style": "card",
+        "text": "{hint}",
+        "visible": "{hint}"
+      }
+    ]
+  }
+}

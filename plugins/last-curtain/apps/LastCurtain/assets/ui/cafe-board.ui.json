@@ -1,0 +1,96 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "dim": true,
+  "back": "close",
+  "root": {
+    "type": "stack",
+    "anchor": "center",
+    "style": "float",
+    "gap": 12,
+    "align": "center",
+    "size": [
+      1100,
+      0
+    ],
+    "children": [
+      {
+        "type": "text",
+        "style": "title",
+        "text": "{boardTitle}"
+      },
+      {
+        "type": "list",
+        "items": "{board}",
+        "as": "c",
+        "columns": 5,
+        "gap": 10,
+        "entry": {
+          "type": "stack",
+          "style": "slot",
+          "size": [
+            200,
+            0
+          ],
+          "gap": 4,
+          "align": "center",
+          "selected": "{c.walking}",
+          "children": [
+            {
+              "type": "image",
+              "image": "{c.portrait}",
+              "fit": "top",
+              "size": [
+                100,
+                100
+              ]
+            },
+            {
+              "type": "text",
+              "style": "strong",
+              "text": "{c.name}",
+              "wrap": true,
+              "size": [
+                186,
+                0
+              ]
+            },
+            {
+              "type": "text",
+              "style": "muted",
+              "text": "{c.level}"
+            },
+            {
+              "type": "text",
+              "style": "small",
+              "text": "{c.abilities}",
+              "wrap": true,
+              "size": [
+                186,
+                0
+              ]
+            },
+            {
+              "type": "button",
+              "style": "act",
+              "text": "{c.walk}",
+              "action": "walk",
+              "arg": "{c.id}"
+            }
+          ]
+        }
+      },
+      {
+        "type": "button",
+        "style": "act",
+        "size": [
+          200,
+          44
+        ],
+        "text": "Close",
+        "action": "close"
+      }
+    ]
+  }
+}

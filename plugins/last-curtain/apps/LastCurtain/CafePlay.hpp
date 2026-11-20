@@ -25,6 +25,7 @@ namespace umbra::night
         void WalkTo(glm::vec2 at);                 // a click: walk there on its own
         void Update(float dt);                     // the walk, the shift's clock, the talk's lines
         bool Interact();                           // E: the nearest spot's action
+        bool OpenShop();                           // the sign's opening (once a day)
         [[nodiscard]] int Near() const;            // the nearest spot in reach, -1 none
         [[nodiscard]] glm::vec2 Position() const { return at_; }
         [[nodiscard]] const cafe::Shift &Shift() const { return shift_; }

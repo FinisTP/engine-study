@@ -13,6 +13,8 @@
 
 // One faction match as the person plays it, without a window (tested; MatchPlay.md): the player's
 // side waits for input, bots and monsters play one beat at a time, and each screen gets its JSON.
+namespace umbra::cafe { struct Career; }
+
 class MatchPlay final
 {
 public:
@@ -21,6 +23,7 @@ public:
 
     void SetWords(nlohmann::json words) { words_ = std::move(words); }      // assets/match-words.json
     void SetOptions(const umbra::night::GameOptions &o) { options_ = o; } // the pace (assets/options.csv)
+    void StartFrom(const umbra::cafe::Career &career); // the player's side as the career left it (CareerMatch)
     void SetWatch(bool watch) { watch_ = watch; }                          // both sides are bots (--watch)
 
     bool Do(const umbra::match::Action &action); // the player's action; false unless it is theirs and legal

@@ -1,0 +1,54 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "dim": true,
+  "root": {
+    "type": "stack",
+    "anchor": "center",
+    "style": "float",
+    "gap": 10,
+    "align": "center",
+    "size": [
+      520,
+      0
+    ],
+    "children": [
+      {
+        "type": "text",
+        "style": "title",
+        "text": "{takings.title}"
+      },
+      {
+        "type": "text",
+        "style": "strong",
+        "text": "{takings.served}"
+      },
+      {
+        "type": "text",
+        "style": "muted",
+        "text": "{takings.lost}"
+      },
+      {
+        "type": "text",
+        "style": "small",
+        "text": "{takings.money}"
+      },
+      {
+        "type": "text",
+        "style": "essence",
+        "text": "{takings.total}"
+      },
+      {
+        "type": "button",
+        "style": "act",
+        "size": [
+          200,
+          44
+        ],
+        "text": "Good night",
+        "action": "ok"
+      }
+    ]
+  }
+}

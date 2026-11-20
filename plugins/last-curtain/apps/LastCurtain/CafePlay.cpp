@@ -119,6 +119,14 @@ namespace umbra::night
         noteLeft_ = std::max(0.0F, noteLeft_ - dt);
     }
 
+    bool CafePlay::OpenShop()
+    {
+        if (open_ || done_)
+            return false;
+        shift_ = cafe::OpenShop(def_, seed_ + static_cast<std::uint64_t>(career_.day)), open_ = true, sounds_.push_back("turn");
+        return true;
+    }
+
     void CafePlay::Finish()
     {
         // The day is done: its takings land in the career, once.
@@ -166,7 +174,7 @@ namespace umbra::night
             if (open_)
                 cafe::CloseShop(shift_), Finish(), sounds_.push_back("turn");
             else
-                shift_ = cafe::OpenShop(def_, seed_ + static_cast<std::uint64_t>(career_.day)), open_ = true, sounds_.push_back("turn");
+                OpenShop();
             return true;
         }
         if (kind == "station")

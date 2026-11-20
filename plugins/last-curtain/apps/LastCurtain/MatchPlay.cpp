@@ -1,5 +1,6 @@
 #include <MatchPlay.hpp>
 
+#include "CareerMatch.hpp"
 #include <MatchSave.hpp>
 
 #include <algorithm>
@@ -915,3 +916,9 @@ int MatchPlay::DiceTarget(int chance)
 }
 
 nlohmann::json MatchPlay::Save() const { return SaveMatch(s_); }
+
+void MatchPlay::StartFrom(const umbra::cafe::Career &career)
+{
+    umbra::night::ApplyCareer(def_, s_, career);
+    SyncHp();
+}

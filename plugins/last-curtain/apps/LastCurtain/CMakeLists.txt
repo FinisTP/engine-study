@@ -23,6 +23,11 @@ target_sources(
     PRIVATE
         Main.cpp
         MatchApp.cpp
+        CafeApp.cpp
+        CafeApp.hpp
+        CafeRoom.cpp
+        CafeRoom.hpp
+        GameContext.hpp
         MatchApp.hpp
         MatchTable.cpp
         MatchTable.hpp

@@ -1,9 +1,14 @@
 #include "Art.hpp"
+#include "CafeApp.hpp"
+#include "GameContext.hpp"
 #include "MatchApp.hpp"
 #include "Play.hpp"
 #include "Screens.hpp"
 #include "Sounds.hpp"
 #include "Table.hpp"
+
+#include <Cafe.hpp>
+#include <Career.hpp>
 
 #include <BoardView.hpp>
 #include <Narrate.hpp>
@@ -49,6 +54,7 @@ namespace
         std::filesystem::path capture; // save the last frame here and quit
         int frames = 0;                // frames to run (0 = until closed; 3 with --capture)
         bool night = false;            // the old night (--night); else the faction match
+        bool cafe = false;             // --cafe: a capture of the café
         float zoom = 0.0F;             // the match: wheel steps at the start (--zoom N)
     };
 
@@ -127,6 +133,40 @@ namespace
     // Play's slide as the table draws it.
     Table::Slide ToDraw(const Play::Slide &s) { return {s.guest, s.from, s.to, s.t}; }
 
+    // <preferences>/last-curtain/career.json, "" when the system gives no folder.
+    std::filesystem::path CareerPath()
+    {
+        const std::filesystem::path folder = umbra::platform::Platform::PreferencesFolder();
+        return folder.empty() ? std::filesystem::path{} : folder / "last-curtain" / "career.json";
+    }
+
+    int RunCareer(const umbra::assets::AssetFolders &assets, const Options &options)
+    {
+        GameContext game;
+        if (!game.Open(assets))
+            return 1;
+        // 1. The career from its file, or a new one (a bad file is reported and left alone).
+        umbra::cafe::Career career;
+        const std::filesystem::path file = CareerPath();
+        std::string error;
+        if (!file.empty() && std::filesystem::exists(file) && !umbra::cafe::LoadCareer(file, career, error))
+            umbra::diagnostics::Error("The career could not be read (" + error + "); a new one starts and the file is kept.");
+        if (!file.empty())
+        {
+            std::error_code made;
+            std::filesystem::create_directories(file.parent_path(), made);
+        }
+        const std::filesystem::path save = error.empty() ? file : std::filesystem::path{};
+        // 2. The café, then the match, until the window closes.
+        umbra::cafe::CafeDef cafe;
+        std::vector<umbra::core::Diagnostic> diagnostics;
+        const int moneyPerEssence = umbra::cafe::LoadCafe(assets.RootOf("cafe/cafe.json") / "cafe", cafe, diagnostics) ? cafe.rules.moneyPerEssence : 1;
+        while (RunCafe(game, assets, career, save, options.capture, options.frames) == 1)
+            if (RunMatch(game, assets, options.seed, false, {}, 0, 0.0F, &career, moneyPerEssence, save) != 2)
+                break;
+        return 0;
+    }
+
     int Run(Options options)
     {
         umbra::platform::Platform platform;
@@ -136,9 +176,16 @@ namespace
         {
             // 1. The night's data and the narrator's lines.
             const umbra::assets::AssetFolders assets = FindAssets();
-            if (!options.night)
+            if (!options.night && (options.watch || (!options.capture.empty() && !options.cafe)))
             {
                 result = RunMatch(assets, options.seed, options.watch, options.capture, options.frames, options.zoom);
+                platform.Shutdown();
+                return result;
+            }
+            if (!options.night)
+            {
+                // The career: the café, then a match, then the café again (CafePlay.md).
+                result = RunCareer(assets, options);
                 platform.Shutdown();
                 return result;
             }
@@ -505,6 +552,8 @@ int main(int argc, char **argv)
             options.frames = std::atoi(argv[++i]);
         else if (arg == "--night")
             options.night = true;
+        else if (arg == "--cafe")
+            options.cafe = true;
         else if (arg == "--zoom" && more)
             options.zoom = static_cast<float>(std::atof(argv[++i]));
     }
