@@ -1,5 +1,6 @@
 #include "MatchTestData.hpp"
 
+#include <CareerMatch.hpp>
 #include <MatchPlay.hpp>
 
 #include <fstream>
@@ -739,4 +740,43 @@ TEST_CASE("A battle is told blow by blow: cards follow the told lines, the falle
     CHECK_FALSE(p.UiData().contains("standing"));
     CHECK(p.Screen() == "battle"); // still staged a beat after its last line
     CHECK(p.UiData()["battle"]["fighters"][1]["hp"] == 0);
+}
+
+TEST_CASE("A match starts the player's characters from the career and writes them back with the takings (T364)", "[match][play]")
+{
+    const MatchDef def = Data();
+    const int mai = MatchDef::Find(def.characters, "mai");
+    // 1. A career where Mai is level 3 with Bloom learned and Tap upgraded.
+    umbra::cafe::Career career;
+    umbra::cafe::CharacterProgress p;
+    p.id = "mai", p.level = 3, p.xp = 8, p.maxHp = 26, p.attack = 4, p.abilities = {"tap", "tend", "bloom"};
+    p.boost[0] = 2;
+    career.characters.push_back(p);
+    MatchState s = NewMatch(def, 7, {mai, MatchDef::Find(def.characters, "bao"), MatchDef::Find(def.characters, "khang")});
+    umbra::night::ApplyCareer(def, s, career);
+    int unit = -1;
+    for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
+        if (s.units[static_cast<std::size_t>(i)].kind == 0 && s.units[static_cast<std::size_t>(i)].faction == 0 && s.units[static_cast<std::size_t>(i)].def == mai)
+            unit = i;
+    REQUIRE(unit >= 0);
+    const Unit &u = s.units[static_cast<std::size_t>(unit)];
+    CHECK(u.level == 3);
+    CHECK(u.maxHp == 26);
+    CHECK(u.hp == 26);
+    CHECK(u.attack == 4);
+    CHECK(u.abilities[2] == MatchDef::Find(def.abilities, "bloom"));
+    CHECK(u.boost[0] == 2);
+    // The other side's Mai is untouched.
+    for (const Unit &o : s.units)
+        if (o.kind == 0 && o.faction == 1 && o.def == mai)
+            CHECK(o.level == 1);
+    // 2. After the match: progress written back, the takings added, a new day.
+    s.units[static_cast<std::size_t>(unit)].level = 4;
+    s.score[0] = 30;
+    const int earned = umbra::night::RecordMatch(def, s, career, 2);
+    CHECK(earned == 60);
+    CHECK(career.money == 60);
+    CHECK(career.day == 2);
+    CHECK(career.Find("mai")->level == 4);
+    CHECK(career.Find("bao") != nullptr);
 }

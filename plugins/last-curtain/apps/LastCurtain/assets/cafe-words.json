@@ -1,0 +1,40 @@
+{
+  "note": "Every word the cafe shows (CafePlay.md). {braces} are filled in.",
+  "prompt": {
+    "signOpen": "E: open the shop for the night",
+    "signClose": "E: close the shop",
+    "signDone": "Closed for today",
+    "station": "E: add {name}",
+    "stationClosed": "The shop is closed: open it at the sign.",
+    "trash": "E: empty the cup",
+    "seat": "E: serve the cup ({drink} ordered)",
+    "board": "E: look at the company",
+    "door": "E: the stage door, on to the next match",
+    "doorOpen": "Close the shop before the next match."
+  },
+  "hint": {
+    "closed": "WASD or click to walk; E at the sign to open the shop.",
+    "open": "Make each order at the stations, step by step, then serve it at its table. The bucket empties a wrong cup.",
+    "done": "The day is done. The notice board shows the company; the stage door leads to the next match."
+  },
+  "clock": "{m}:{s} until closing",
+  "closing": "Closing: the last guests finish",
+  "cupEmpty": "The cup is empty",
+  "takings": {
+    "title": "Day {day}: the takings",
+    "served": "Served {n}",
+    "lost": "Lost {n}",
+    "money": "{takings} for drinks, {tips} in tips",
+    "total": "+{n}"
+  },
+  "board": {
+    "title": "The company",
+    "walk": "Walk as {name}",
+    "level": "Lv {n}"
+  },
+  "notes": {
+    "served": "+{n}",
+    "wrong": "Wrong drink: they leave.",
+    "left": "Tired of waiting, they leave."
+  }
+}

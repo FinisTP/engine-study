@@ -11,11 +11,11 @@ target_link_libraries(UmbraNightPlay PUBLIC Umbra::Night Umbra::NightBots Umbra:
                       PRIVATE Threads::Threads Umbra::Warnings Umbra::Sanitizers)
 
 # The faction match as the person plays it, without a window (MatchPlay.md).
-add_library(UmbraMatchPlay STATIC MatchPlay.cpp MatchPlay.hpp)
+add_library(UmbraMatchPlay STATIC MatchPlay.cpp MatchPlay.hpp CareerMatch.cpp CareerMatch.hpp CafePlay.cpp CafePlay.hpp)
 add_library(Umbra::MatchPlay ALIAS UmbraMatchPlay)
 target_include_directories(UmbraMatchPlay PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_features(UmbraMatchPlay PUBLIC cxx_std_20)
-target_link_libraries(UmbraMatchPlay PUBLIC Umbra::Match Umbra::MatchBots Umbra::NightPlay nlohmann_json::nlohmann_json PRIVATE Umbra::Warnings Umbra::Sanitizers)
+target_link_libraries(UmbraMatchPlay PUBLIC Umbra::Match Umbra::MatchBots Umbra::NightPlay Umbra::Cafe nlohmann_json::nlohmann_json PRIVATE Umbra::Warnings Umbra::Sanitizers)
 
 add_executable(LastCurtain)
 target_sources(

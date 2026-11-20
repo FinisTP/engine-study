@@ -1,0 +1,28 @@
+{
+  "note": "The cafe room in metres: x across (0..size[0]), z deep (0 is the back wall). Spots are where E does something; blocks are where no one walks.",
+  "size": [12, 8],
+  "start": [6, 6],
+  "speed": 3.2,
+  "reach": 1.1,
+  "spots": [
+    {"kind": "sign", "at": [6.0, 2.2], "label": "the shop sign"},
+    {"kind": "station", "station": "phin", "at": [2.0, 1.4], "label": "the phin filters"},
+    {"kind": "station", "station": "tea", "at": [3.6, 1.4], "label": "the lotus tea"},
+    {"kind": "station", "station": "milk", "at": [8.4, 1.4], "label": "the condensed milk"},
+    {"kind": "station", "station": "ice", "at": [10.0, 1.4], "label": "the ice box"},
+    {"kind": "trash", "at": [11.2, 2.4], "label": "the slop bucket"},
+    {"kind": "seat", "seat": 0, "at": [2.2, 4.4], "label": "a table"},
+    {"kind": "seat", "seat": 1, "at": [4.8, 4.4], "label": "a table"},
+    {"kind": "seat", "seat": 2, "at": [7.2, 4.4], "label": "a table"},
+    {"kind": "seat", "seat": 3, "at": [9.8, 4.4], "label": "a table"},
+    {"kind": "board", "at": [0.8, 6.4], "label": "the notice board"},
+    {"kind": "door", "at": [11.2, 7.4], "label": "the stage door"}
+  ],
+  "blocks": [
+    {"min": [0.5, 0.0], "max": [11.5, 1.0], "note": "the counter"},
+    {"min": [1.6, 3.6], "max": [2.8, 4.0], "note": "table 1"},
+    {"min": [4.2, 3.6], "max": [5.4, 4.0], "note": "table 2"},
+    {"min": [6.6, 3.6], "max": [7.8, 4.0], "note": "table 3"},
+    {"min": [9.2, 3.6], "max": [10.4, 4.0], "note": "table 4"}
+  ]
+}
