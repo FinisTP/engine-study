@@ -164,3 +164,11 @@ from `levelcards.csv`, never the same card twice (`MatchState::offer`; the unit 
   reads power and cost through `PowerOf` and `CostOf`; `Damage` adds the attacker's boost.
 `LevelUp` (a = the card) applies it; a further level waiting is dealt next. Level-1 rows of
 `jobs.csv` are still the starting abilities. Bots favour a new ability, attack and power.
+
+## Range and heals (2026-11-20, the user's notes)
+
+An ability's `range` is counted by its `reach` column: `walk` (steps through doors, `Steps`) or
+`straight` (squares counted straight, walls ignored: the Manhattan distance to the nearest square
+the target covers). The shipped data makes the ranged hits (Snipe, Dart, Throw) straight and the
+rest walk. A heal on someone already at full HP is refused (`FullHp`), so bots and players never
+waste one.

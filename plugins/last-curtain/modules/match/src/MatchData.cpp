@@ -224,7 +224,7 @@ namespace umbra::match
 
         void LoadAbilities(const std::filesystem::path &folder, MatchDef &def, Diagnostics &out)
         {
-            Sheet s(out, folder, "abilities.csv", {"id", "name", "use", "class", "target", "hpCost", "power", "dice", "range", "animation"});
+            Sheet s(out, folder, "abilities.csv", {"id", "name", "use", "class", "target", "hpCost", "power", "dice", "range", "reach", "animation"});
             for (int r = 0; r < s.Rows(); ++r)
             {
                 AbilityDef a;
@@ -236,7 +236,8 @@ namespace umbra::match
                 a.target = static_cast<Target>(s.Pick(r, "target", {"enemy", "ally", "self", "monster", "room", "any"}));
                 a.hpCost = s.Int(r, "hpCost", 0, 99);
                 a.power = s.Int(r, "power", 0, 99);
-                a.range = s.Int(r, "range", 0, 20);
+                a.range = s.Int(r, "range", 0, 40);
+                a.reach = static_cast<RangeBy>(s.Pick(r, "reach", {"walk", "straight"}));
                 a.dice = ParseDice(s, r);
                 // 1. Each class has its place: strike and shield in battle, hit on the board, first strike passive.
                 const bool fits = a.kind == AbilityClass::Heal ? a.use != Use::Passive

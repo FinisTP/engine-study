@@ -252,3 +252,45 @@ TEST_CASE("Board abilities are told and teach: a heal is logged, both grant abil
     REQUIRE(Apply(def, s, {ActionKind::BoardAbility, I8(SlotOf(def, s.units[U(me)], "snipe")), I8(foe)}));
     CHECK(s.units[U(me)].xp == baoXp + def.rules.levels.abilityXp);
 }
+
+TEST_CASE("A heal never goes to someone already at full HP (T353)", "[match][abilities]")
+{
+    const MatchDef def = Data();
+    MatchState s = Start(def);
+    const int mai = UnitOf(def, s, "mai", 0), ally = UnitOf(def, s, "khang", 0);
+    TurnOf(s, mai);
+    s.units[U(ally)].cell = static_cast<std::int16_t>(SquareAt(s, s.units[U(mai)].cell, 2));
+    s.units[U(ally)].hp = s.units[U(ally)].maxHp;
+    const Action tend{ActionKind::BoardAbility, I8(SlotOf(def, s.units[U(mai)], "tend")), I8(ally)};
+    CHECK(Check(def, s, tend) == Why::FullHp);
+    const std::vector<Action> legal = Legal(def, s);
+    CHECK(std::ranges::find(legal, tend) == legal.end());
+    s.units[U(ally)].hp = static_cast<std::int16_t>(s.units[U(ally)].maxHp - 1);
+    CHECK(Check(def, s, tend) == Why::Ok);
+}
+
+TEST_CASE("A straight ability counts squares across walls, a walking one counts steps through doors (T354)", "[match][abilities]")
+{
+    const MatchDef def = Data();
+    const AbilityDef &snipe = def.abilities[U(MatchDef::Find(def.abilities, "snipe"))];
+    REQUIRE(snipe.reach == RangeBy::Straight);
+    REQUIRE(def.abilities[U(MatchDef::Find(def.abilities, "bash"))].reach == RangeBy::Walk);
+    MatchState s = Start(def);
+    const int me = UnitOf(def, s, "bao", 0), foe = 3;
+    TurnOf(s, me);
+    // 1. A free open square within snipe's range in a straight count but farther by the doors.
+    const Board &b = s.board;
+    const int from = s.units[U(me)].cell;
+    int far = -1;
+    for (int c = 0; c < static_cast<int>(b.cells.size()) && far < 0; ++c)
+    {
+        const int manhattan = std::abs(c % b.width - from % b.width) + std::abs(c / b.width - from / b.width);
+        if (b.cells[U(c)].kind != CellKind::Wall && manhattan <= snipe.range && Steps(b, from, c) > snipe.range &&
+            std::ranges::none_of(s.units, [&](const Unit &u) { return u.cell == c; }))
+            far = c;
+    }
+    REQUIRE(far >= 0);
+    s.units[U(foe)].cell = static_cast<std::int16_t>(far);
+    s.units[U(foe)].hp = 90;
+    CHECK(Check(def, s, {ActionKind::BoardAbility, I8(SlotOf(def, s.units[U(me)], "snipe")), I8(foe)}) == Why::Ok);
+}

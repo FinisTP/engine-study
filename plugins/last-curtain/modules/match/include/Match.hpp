@@ -164,7 +164,7 @@ namespace umbra::match
     enum class Why : std::uint8_t
     {
         Ok, NotYourTurn, NoMovesLeft, Blocked, AlreadyActed, OutOfRange, OwnSide, TooCostly,
-        NotOnStage, NothingToPerform, NothingHere, BagFull, MustChoose, Over
+        NotOnStage, NothingToPerform, NothingHere, BagFull, MustChoose, Over, FullHp
     };
 
     int Current(const MatchState &s); // the unit that acts next, -1 when the match is over

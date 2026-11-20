@@ -53,7 +53,8 @@
     "BagFull": "Your bag is full.",
     "MustChoose": "Choose first.",
     "Over": "The match is over.",
-    "NoTarget": "No one in reach to aim at."
+    "NoTarget": "No one in reach to aim at.",
+    "FullHp": "Already at full HP: the heal would be wasted."
   },
   "actions": {
     "undo": "Undo move",

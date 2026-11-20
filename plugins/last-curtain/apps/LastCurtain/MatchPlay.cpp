@@ -45,7 +45,7 @@ const char *MatchPlay::LogName(LogKind kind)
 const char *MatchPlay::WhyName(Why why)
 {
     static const char *names[] = {"Ok", "NotYourTurn", "NoMovesLeft", "Blocked", "AlreadyActed", "OutOfRange", "OwnSide", "TooCostly",
-                                  "NotOnStage", "NothingToPerform", "NothingHere", "BagFull", "MustChoose", "Over"};
+                                  "NotOnStage", "NothingToPerform", "NothingHere", "BagFull", "MustChoose", "Over", "FullHp"};
     return names[static_cast<int>(why)];
 }
 
@@ -398,10 +398,16 @@ nlohmann::json MatchPlay::UiData() const
                 for (int c : Squares(s_.board, s_.units[U(a.kind == ActionKind::Attack ? a.a : a.b)]))
                     targets.push_back(c);
             const int me = Current(s_);
-            const int reachSteps = armed_ == "attack" ? 1 : def_.abilities[U(s_.units[U(me)].abilities[U(std::stoi(armed_.substr(8)))])].range;
+            const AbilityDef *ability = armed_ == "attack" ? nullptr : &def_.abilities[U(s_.units[U(me)].abilities[U(std::stoi(armed_.substr(8)))])];
+            const int reachSteps = ability ? ability->range : 1, from = s_.units[U(me)].cell, w = s_.board.width;
             for (int c = 0; c < static_cast<int>(s_.board.cells.size()); ++c)
-                if (const int d = Steps(s_.board, s_.units[U(me)].cell, c); d > 0 && d <= reachSteps)
+            {
+                // The area the ability reaches: steps through doors, or squares counted straight (its reach column).
+                const bool straight = ability && ability->reach == RangeBy::Straight;
+                const int d = straight ? std::abs(c % w - from % w) + std::abs(c / w - from / w) : Steps(s_.board, from, c);
+                if (d > 0 && d <= reachSteps && s_.board.cells[U(c)].kind != CellKind::Wall)
                     range.push_back(c);
+            }
             j["targets"] = targets;
             j["reach"] = range;
             j["armed"] = armed_;

@@ -50,6 +50,7 @@ namespace umbra::match::inner
     bool Adjacent(const Board &b, int a, int c); // one step apart through a door
     bool Beside(const Board &b, const Unit &a, const Unit &c); // any square of one next to any of the other
     int StepsTo(const Board &b, int from, const Unit &t); // to its nearest square, -1 if unreachable
+    int StraightTo(const Board &b, int from, const Unit &t); // the same counted straight, walls ignored
 }
 
 namespace umbra::match::inner

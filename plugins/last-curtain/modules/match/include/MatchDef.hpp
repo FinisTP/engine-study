@@ -33,6 +33,8 @@ namespace umbra::match
         int count = 0, sides = 0; // used instead of power when count > 0
     };
 
+    enum class RangeBy : std::uint8_t { Walk, Straight }; // range by steps through doors, or squares counted straight (Manhattan)
+
     struct AbilityDef
     {
         std::string id, name, animation;
@@ -40,6 +42,7 @@ namespace umbra::match
         AbilityClass kind = AbilityClass::Strike;
         Target target = Target::Enemy;
         int hpCost = 0, power = 0, range = 0;
+        RangeBy reach = RangeBy::Walk;
         Dice dice;
     };
 

@@ -79,6 +79,16 @@ namespace umbra::match
             return best;
         }
 
+        int StraightTo(const Board &b, int from, const Unit &t)
+        {
+            // Squares counted straight, walls ignored (Manhattan), to the nearest square it covers.
+            int best = -1;
+            for (int c : Squares(b, t))
+                if (const int d = std::abs(c % b.width - from % b.width) + std::abs(c / b.width - from / b.width); best < 0 || d < best)
+                    best = d;
+            return best;
+        }
+
         Why CheckAttack(const MatchDef &, const MatchState &s, int me, int target)
         {
             if (s.now.acted)
