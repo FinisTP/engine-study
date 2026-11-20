@@ -103,7 +103,8 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
     std::uint64_t matches = 0;
     std::string shown;
     int savedRound = -1;
-    bool ended = false; // the end scene has started
+    bool ended = false;  // the end scene has started
+    bool hudOpen = false; // the HUD is open (closed while a fight is staged)
     const auto show = [&](const std::string &want) {
         if (!screens.Ready() || want == shown)
             return;
@@ -123,7 +124,7 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
         play->SetWatch(watch);
         if (screens.Ready())
             screens.Ui().Open("match-labels"), screens.Ui().Open("match-hud");
-        savedRound = -1, ended = false;
+        savedRound = -1, ended = false, hudOpen = true;
         if (!restored)
             table.StartScene("open", -1);
     };
@@ -131,6 +132,7 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
         play.reset();
         if (screens.Ready())
             screens.Ui().Close("match-hud"), screens.Ui().Close("match-labels");
+        hudOpen = false;
         canContinue = ReadSave(saved);
     };
     if (watch)
@@ -174,6 +176,11 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
                 table.Play(unit, motion);
             for (const std::string &cue : play->TakeSounds())
                 sounds.Play(cue);
+            {
+                const nlohmann::json fight = play->UiData().value("fight", nlohmann::json::array());
+                table.SetFight(fight.size() == 2 ? fight[0].get<int>() : -1, fight.size() == 2 ? fight[1].get<int>() : -1);
+            }
+            table.SetFocus(play->UiData().value("focus", std::vector<int>{}));
             table.Animate(play->State(), dt);
             hover = table.Pick(play->State().board, uiInput.mouse, pixels);
             play->Hover(hover);
@@ -196,6 +203,15 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
             table.Draw(play->State(), ui, hover, drawList);
         const std::string screen = paused ? "pause" : play ? (play->Screen().empty() ? "" : "match-" + play->Screen()) : "match-pick";
         show(screen);
+        // A staged fight has the screen to itself: the HUD steps away (the user, 2026-11-20).
+        if (const bool hud = play && !ui.contains("fight"); screens.Ready() && play && hud != hudOpen)
+        {
+            if (hud)
+                screens.Ui().Open("match-hud");
+            else
+                screens.Ui().Close("match-hud");
+            hudOpen = hud;
+        }
 
         // 6. The screens and their actions; a click no screen took goes to the board.
         bool uiTook = false;

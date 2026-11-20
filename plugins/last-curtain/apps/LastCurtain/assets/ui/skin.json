@@ -21,6 +21,10 @@
     "heading": {
       "file": "ui/fonts/Lora.ttf",
       "size": 22
+    },
+    "tag": {
+      "file": "ui/fonts/Poppins-Medium.ttf",
+      "size": 14
     }
   },
   "dim": [
@@ -211,8 +215,17 @@
       "fill": "#a83232"
     },
     "float": {
-      "background": "#070504c8",
-      "padding": 12
+      "image": "art/ui/match/frame.png",
+      "slice": [
+        20,
+        20,
+        20,
+        20
+      ],
+      "padding": [
+        24,
+        22
+      ]
     },
     "plain": {},
     "face": {
@@ -308,14 +321,14 @@
       "base": "small",
       "image": "art/ui/match/card.png",
       "slice": [
-        70,
-        70,
-        70,
-        70
+        19,
+        19,
+        19,
+        19
       ],
       "padding": [
-        54,
-        64
+        24,
+        22
       ]
     },
     "iconGold": {
@@ -336,6 +349,75 @@
       "padding": [
         0,
         6
+      ]
+    },
+    "tagCard": {
+      "background": "#0a0705e0",
+      "padding": [
+        0,
+        0,
+        6,
+        0
+      ]
+    },
+    "stripMine": {
+      "background": "#5b9bd5",
+      "padding": 0
+    },
+    "stripTheirs": {
+      "background": "#e08a3c",
+      "padding": 0
+    },
+    "stripWild": {
+      "background": "#8a8178",
+      "padding": 0
+    },
+    "tagName": {
+      "font": "tag",
+      "color": "#f1ead8"
+    },
+    "tagLevel": {
+      "font": "tag",
+      "color": "#1b1410",
+      "background": "#d8b25a",
+      "padding": [
+        4,
+        0
+      ]
+    },
+    "tagNum": {
+      "font": "tag",
+      "color": "#bdb5a2"
+    },
+    "tagEssence": {
+      "font": "tag",
+      "color": "#f3d98a"
+    },
+    "hpMine": {
+      "font": "small",
+      "color": "#ffffff",
+      "background": "#1c1714",
+      "padding": 0,
+      "fill": "#7fbf6a"
+    },
+    "hpFoe": {
+      "font": "small",
+      "color": "#ffffff",
+      "background": "#1c1714",
+      "padding": 0,
+      "fill": "#d0584f"
+    },
+    "fighterCard": {
+      "image": "art/ui/match/frame.png",
+      "slice": [
+        20,
+        20,
+        20,
+        20
+      ],
+      "padding": [
+        20,
+        16
       ]
     }
   }

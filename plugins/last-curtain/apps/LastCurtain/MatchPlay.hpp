@@ -88,6 +88,10 @@ private:
     int eventCell_ = -1;
     nlohmann::json eventDice_;  // the event's two dice, as shown (display only: the rules' roll decides)
     float diceLeft_ = 0.0F;     // seconds the dice still tumble
+    int fight_[2] = {-1, -1};   // the battle on the table: attacker, defender (MatchPlay.md "The battle view")
+    float fightHold_ = 0.0F;    // seconds it stays after its last line
+    std::vector<int> focus_;    // whom the last told line is about, for the camera (MatchPlay.md "Focus")
+    float focusLeft_ = 0.0F;
     struct Bubble
     {
         int unit = -1;

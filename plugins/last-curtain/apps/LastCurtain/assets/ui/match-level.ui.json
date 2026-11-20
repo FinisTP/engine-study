@@ -7,10 +7,10 @@
     { "type": "text", "style": "title", "text": "{level.name} reaches level {level.level}" },
     { "type": "text", "style": "small", "text": "Choose one." },
     { "type": "list", "items": "{level.choices}", "as": "c", "direction": "horizontal", "gap": 16, "action": "pick", "arg": "{c.index}",
-      "entry": { "type": "stack", "style": "cardArt", "size": [290, 330], "gap": 8, "align": "center", "children": [
+      "entry": { "type": "stack", "style": "cardArt", "size": [260, 230], "gap": 8, "align": "center", "children": [
         { "type": "image", "style": "iconGold", "image": "{c.icon}", "size": [64, 64], "fit": "contain" },
-        { "type": "text", "style": "heading", "text": "{c.name}", "wrap": true, "size": [220, 0] },
-        { "type": "text", "style": "small", "text": "{c.text}", "wrap": true, "size": [220, 0] }
+        { "type": "text", "style": "heading", "text": "{c.name}", "wrap": true, "size": [210, 0] },
+        { "type": "text", "style": "small", "text": "{c.text}", "wrap": true, "size": [210, 0] }
       ] } }
   ] }
 }

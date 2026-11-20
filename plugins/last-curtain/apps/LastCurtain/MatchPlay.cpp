@@ -38,7 +38,7 @@ MatchPlay::MatchPlay(const MatchDef &def, MatchState saved, BotLevel level) : de
 const char *MatchPlay::LogName(LogKind kind)
 {
     static const char *names[] = {"Moved", "Battle", "Blow", "Down", "Essence", "Performed", "Level", "Back",
-                                  "SpawnSoon", "Spawned", "Event", "Item", "Treasure", "Over"};
+                                  "SpawnSoon", "Spawned", "Event", "Item", "Treasure", "Over", "Healed"};
     return names[static_cast<int>(kind)];
 }
 
@@ -126,8 +126,28 @@ bool MatchPlay::Reveal()
     if (e.kind == LogKind::Blow)
         lastBlow_ = line;
     else if (e.kind == LogKind::Battle)
-        lastBlow_.clear();
+        lastBlow_.clear(), fight_[0] = e.a, fight_[1] = e.b;
+    if (e.kind == LogKind::Battle || e.kind == LogKind::Blow || e.kind == LogKind::Down)
+        fightHold_ = options_.beatSeconds;
     wait_ = e.kind == LogKind::Moved ? options_.plainBeatSeconds : options_.beatSeconds;
+    // 2. Whom it is about: the camera frames them while the line stays.
+    switch (e.kind)
+    {
+    case LogKind::Battle:
+    case LogKind::Blow:
+    case LogKind::Healed:
+    case LogKind::Down: focus_ = {e.a, e.b}; break;
+    case LogKind::Performed:
+    case LogKind::Level:
+    case LogKind::Event:
+    case LogKind::Item:
+    case LogKind::Treasure:
+    case LogKind::Back: focus_ = {e.a}; break;
+    case LogKind::Spawned: focus_ = {e.b}; break;
+    default: return true;
+    }
+    std::erase_if(focus_, [&](int u) { return u < 0 || u >= static_cast<int>(s_.units.size()); });
+    focusLeft_ = options_.beatSeconds;
     return true;
 }
 
@@ -151,7 +171,8 @@ void MatchPlay::RevealAll()
 {
     Queue();
     while (Reveal()) {}
-    wait_ = 0.0F;
+    if (focus_.empty() || focusLeft_ <= 0.0F)
+        wait_ = 0.0F; // nothing to look at: go on at once
 }
 
 bool MatchPlay::Do(const Action &action)
@@ -172,6 +193,10 @@ void MatchPlay::Update(float dt)
     if (dt <= 0.0F)
         return;
     diceLeft_ = std::max(0.0F, diceLeft_ - dt);
+    if ((focusLeft_ -= dt) <= 0.0F)
+        focus_.clear();
+    if ((fightHold_ = std::max(0.0F, fightHold_ - dt)) <= 0.0F && !s_.battle.on && shown_ == s_.log.size())
+        fight_[0] = fight_[1] = -1; // the battle is told: the board comes back
     for (Bubble &b : bubbles_)
         b.left -= dt;
     std::erase_if(bubbles_, [](const Bubble &b) { return b.left <= 0.0F; });
@@ -308,7 +333,7 @@ std::string MatchPlay::Screen() const
     const int now = Current(s_);
     if (shown_ == s_.log.size() && now >= 0 && s_.units[U(now)].pending >= 0 && Mine(now))
         return "level";
-    return s_.battle.on && shown_ == s_.log.size() ? "battle" : "";
+    return (s_.battle.on && shown_ == s_.log.size()) || fight_[0] >= 0 ? "battle" : ""; // the fight's own screen stays while it is staged
 }
 
 nlohmann::json MatchPlay::UiData() const
@@ -386,7 +411,7 @@ nlohmann::json MatchPlay::UiData() const
         }
     }
     j["forecast"] = Forecast();
-    if (s_.battle.on)
+    if (s_.battle.on || fight_[0] >= 0)
         j["battle"] = BattleData();
     if (const int now = Current(s_); now >= 0 && s_.units[U(now)].pending >= 0)
     {
@@ -436,6 +461,12 @@ nlohmann::json MatchPlay::UiData() const
     for (const Bubble &b : bubbles_)
         bubbles.push_back({{"unit", b.unit}, {"text", b.text}});
     j["bubbles"] = bubbles;
+    if (fight_[0] >= 0)
+        j["fight"] = {fight_[0], fight_[1]};
+    else if (s_.battle.on) // a battle loaded from a save
+        j["fight"] = {s_.battle.attacker, s_.battle.defender};
+    if (!focus_.empty())
+        j["focus"] = focus_;
     j["log"] = log_;
     j["logTail"] = std::vector<std::string>(log_.end() - std::min<std::ptrdiff_t>(6, static_cast<std::ptrdiff_t>(log_.size())), log_.end());
     j["logOpen"] = logOpen_;
@@ -659,12 +690,13 @@ nlohmann::json MatchPlay::Fighter(int unit, int side) const
 nlohmann::json MatchPlay::BattleData() const
 {
     const Battle &b = s_.battle;
-    nlohmann::json j{{"fighters", {Fighter(b.attacker, 0), Fighter(b.defender, 1)}}, {"round", b.round}, {"rounds", def_.rules.battle.rounds},
+    const int a = fight_[0] >= 0 ? fight_[0] : b.attacker, d = fight_[0] >= 0 ? fight_[1] : b.defender;
+    nlohmann::json j{{"fighters", {Fighter(a, 0), Fighter(d, 1)}}, {"round", b.round}, {"rounds", def_.rules.battle.rounds},
                      {"title", Fill(Word("battle", "title"), {{"r", std::to_string(b.round)}, {"n", std::to_string(def_.rules.battle.rounds)}})},
                      {"line", lastBlow_}};
     // 1. The player's pick: each battle ability with what it would do, or why not.
     nlohmann::json picks = nlohmann::json::array();
-    if (PlayerTurn())
+    if (PlayerTurn() && s_.battle.on)
     {
         const Unit &u = s_.units[U(Current(s_))];
         for (int slot = 0; slot < maxAbilities; ++slot)
@@ -735,6 +767,7 @@ std::vector<std::pair<int, std::string>> MatchPlay::Moves(const LogEntry &e)
     {
     case LogKind::Moved: return {{e.a, "walk"}};
     case LogKind::Blow: return {{e.a, "attack"}, {e.b, "hit"}};
+    case LogKind::Healed: return {{e.a, "power"}, {e.b, "levelup"}};
     case LogKind::Down: return {{e.a, "down"}};
     case LogKind::Back: return {{e.a, "revive"}};
     case LogKind::Performed: return {{e.a, "bow"}};
@@ -755,6 +788,7 @@ std::string MatchPlay::Sound(const LogEntry &e)
     case LogKind::Blow: return "hit";
     case LogKind::Down: return "death";
     case LogKind::Performed:
+    case LogKind::Healed:
     case LogKind::Level: return "pass";
     case LogKind::SpawnSoon:
     case LogKind::Spawned: return "door";

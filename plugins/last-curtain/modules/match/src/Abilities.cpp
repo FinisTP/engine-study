@@ -171,7 +171,11 @@ namespace umbra::match
             u.hp = static_cast<std::int16_t>(u.hp - CostOf(def, u, slot));
             Unit &t = s.units[U(target)];
             if (a.kind == AbilityClass::Heal)
+            {
+                const int before = t.hp;
                 t.hp = static_cast<std::int16_t>(std::min<int>(t.maxHp, t.hp + PowerOf(def, u, slot)));
+                Log(s, LogKind::Healed, me, target, t.hp - before);
+            }
             else
             {
                 int roll = 0;
@@ -183,6 +187,7 @@ namespace umbra::match
                 if (t.hp == 0)
                     Down(def, s, target, me);
             }
+            GainXp(def, s, me, def.rules.levels.abilityXp); // using an ability teaches (the user, 2026-11-20)
             Acted(def, s);
         }
 

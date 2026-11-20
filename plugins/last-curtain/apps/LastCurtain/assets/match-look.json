@@ -34,8 +34,11 @@
     "seconds": 1.0
   },
   "follow": {
-    "seconds": 0.6,
-    "pull": 0.2
+    "seconds": 0.5,
+    "pull": 1.0,
+    "edge": 0.45,
+    "fit": 2.4,
+    "margin": 6
   },
   "open": {
     "seconds": 3.0,
@@ -101,6 +104,42 @@
     ],
     "boardDistance": 19,
     "roomDistance": 7,
-    "wallHeight": 1.1
+    "wallHeight": 1.1,
+    "wallLow": 0.22,
+    "wallArt": "art/ui/match/wall.jpg",
+    "wallRepeat": 0.8
+  },
+  "walk": {
+    "note": "Figures walk square by square to where the rules put them (display only).",
+    "squaresPerSecond": 3.5
+  },
+  "figures": {
+    "note": "Figures grow with the camera's distance (distance / rooms.boardDistance) so they keep their size on screen, within these bounds.",
+    "minScale": 0.3,
+    "maxScale": 1.6,
+    "lean": 0.5
+  },
+  "battle": {
+    "note": "The battle view: the camera comes down to distance/tilt over seconds, the two fighters stand gap squares either side of their middle at figureScale.",
+    "seconds": 0.6,
+    "distance": 7,
+    "tilt": 14,
+    "gap": 0.8,
+    "figureScale": 0.75,
+    "fade": 3.0,
+    "backdropWidth": 24,
+    "backdropDepth": 3,
+    "backdropAspect": 1.75,
+    "backdropDrop": 3.5,
+    "backdropGlow": 0.7,
+    "backdrops": {
+      "hall": "art/ui/match/fight/hall.jpg",
+      "room": "art/ui/match/fight/room.jpg",
+      "centre": "art/ui/match/fight/centre.jpg",
+      "hub": "art/ui/match/fight/hub.jpg",
+      "default": "art/ui/match/backdrop.jpg"
+    },
+    "light": 25,
+    "near": 2.0
   }
 }

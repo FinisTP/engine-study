@@ -103,3 +103,13 @@ The rules roll an event's percent chance. The screen shows two dice against the 
 (the ways of 36 to reach it or more) are nearest that chance (`DiceTarget`; ties go to the lower
 total), tumbling for `diceSeconds` and landing on a total that agrees with what the rules decided:
 the middle of the totals that pass, or that fail. Display only; nothing reads them.
+
+## The battle view and focus
+
+`UiData()["fight"]` is the battle on the table: attacker and defender, from the moment its `Battle`
+line is told until its last blow or fall has been told and a beat (`beatSeconds`) has passed, so a
+bot's battle that the rules finish at once is still seen. The battle screen stays up as long, with
+picks only while the rules' battle runs. `UiData()["focus"]` is whom the last told line is about
+(striker and struck, healer and healed, the one who levels, performs, takes or appears) for
+`beatSeconds`; the table frames them. The player's own action that has someone to look at keeps
+its beat before the bots go on.

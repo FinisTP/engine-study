@@ -151,3 +151,15 @@ pure black background" (seed 5); each cropped to one glyph (three came as 2x2 gr
 the model drew dark on light, cut out by brightness into a white glyph with alpha, 128x128. The skin
 tints them (`iconGold`, `iconRed`, `iconPale`); the table stands the "?" and the chest in optional
 rooms' corners.
+
+### Frames, fight backdrops and wallpaper (2026-11-20, the user's notes)
+
+Same ComfyUI and model. Frames: "thin rectangular decorative frame border ... art deco ... thin
+tarnished antique brass lines ... isolated on plain pure black background, empty pure black
+interior", seeds 31 and 47; kept `panel` 47 (`frame.png`, the HUD's panels, 9-sliced at 20 px) and
+`card` 31 (`card.png`, the level and treasure cards, 19 px), each scaled down, near-black turned to
+a dark brown and the inside filled flat so the border is thin (the old card's border covered its
+text). Fight backdrops (`fight/<kind>.jpg`): the dread style, eye-level, empty of people, an open
+floor in front; seeds 5 and 9, kept centre 9, hall 9, hub 9, room 5 (room 9 drew a woman), darkened
+to 70%. Wallpaper (`wall.jpg`): "seamless tileable wallpaper ... damask ... dark jade green and dull
+tarnished gold", seed 3 of 3 and 7, 512 px.

@@ -66,7 +66,8 @@ healing and cost.
 
 ## Levels, abilities, items, events (`Abilities.cpp`)
 
-XP comes from monsters (their `xp`) and character kills (`levels.killXp`), items and events. Each
+XP comes from monsters (their `xp`) and character kills (`levels.killXp`), items and events, and
+every board ability used, hit or heal (`levels.abilityXp`; a heal is logged `Healed`: healer, healed, HP back). Each
 `levels.xp` step passed raises the level and max HP (`levels.hp`) and teaches the job's row for
 that level; a row with a `choice` waits (`pending`) for `LevelUp` 0 (the ability) or 1 (the
 choice), which comes before any other action, even for a downed character. A board ability is the

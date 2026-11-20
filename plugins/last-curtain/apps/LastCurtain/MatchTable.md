@@ -46,3 +46,29 @@ one. The kind's colour tints it lightly, so the centre still reads warmer. There
 room view to switch to: as the wheel brings the camera from `boardDistance` to `roomDistance`, walls
 rise (up to `wallHeight`) on every side of a square without a door, so the board becomes rooms in
 one seamless zoom. `--zoom N` starts a capture that many wheel steps in.
+
+## Walking, size and the camera (2026-11-20, the user's notes)
+
+- A figure walks to its new square along the doors (a breadth-first search, display only) at
+  `walk.squaresPerSecond`; a jump of more than 12 squares (a respawn) is not walked.
+- Figures keep their size on screen: their height grows with the camera's distance
+  (`distance / rooms.boardDistance`, within `figures.minScale..maxScale`), so in the room view they
+  are people in rooms. They lean back with the camera only `figures.lean` of the way, so a head
+  never pokes through the wall behind.
+- The camera follows whoever acts all the way (`follow.pull` 1), kept within `follow.edge` of the
+  board's middle when far out; whom a told line is about (`focus`) is framed together, the camera
+  backing off to `spread * follow.fit + follow.margin` when they are apart.
+- The goals are edged: each hub in its side's colour, the centre red where it meets other squares,
+  the stage gold; hubs and stage keep a strong tint. Walls are always there, `rooms.wallLow` high on
+  the board, papered (`rooms.wallArt`, repeating every `rooms.wallRepeat` metres). The "?" and the
+  chest stand in the middle of their room. The reach is a flashing frame, not a fill. A gold arrow
+  bobs over the head of the one whose turn it is.
+
+## The battle view
+
+While `MatchPlay` stages a fight the camera comes down (`battle.distance`, `battle.tilt`) and the
+screen dips to dark halfway (`battle.fade`); past it the fight has its own stage: the board, the
+marks and everyone else are gone, a backdrop by the defender's square kind
+(`battle.backdrops`, ComfyUI paintings) stands behind the two, who face each other `battle.gap`
+squares apart, `battle.near` metres toward the camera, at `battle.figureScale`. The HUD closes;
+the battle screen shows both fighters' cards, the blow and the picks.

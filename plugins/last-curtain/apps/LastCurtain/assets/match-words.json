@@ -35,7 +35,8 @@
     "Event": "{who} faces the room: {result}.",
     "Item": "{who} takes {item}.",
     "Over": "The curtain falls: {side}.",
-    "Treasure": "{who} turns a card: {card}."
+    "Treasure": "{who} turns a card: {card}.",
+    "Healed": "{who} tends {whom}: {n} HP back."
   },
   "why": {
     "Ok": "Ready.",

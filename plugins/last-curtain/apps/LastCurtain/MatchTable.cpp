@@ -104,6 +104,11 @@ MatchTable::MatchTable(umbra::render::Renderer &renderer, const umbra::assets::A
             disc.indices.insert(disc.indices.end(), {0u, static_cast<std::uint32_t>(k + 1), static_cast<std::uint32_t>(k)});
     }
     disc_ = renderer.CreateMesh(disc);
+    // 2b. The turn's arrow: a triangle pointing down, its tip at the origin.
+    umbra::core::MeshData arrow;
+    arrow.vertices = {{{0, 0, 0}, {0, 0, 1}, {0.5F, 1}}, {{0.5F, 1, 0}, {0, 0, 1}, {1, 0}}, {{-0.5F, 1, 0}, {0, 0, 1}, {0, 0}}};
+    arrow.indices = {0, 1, 2, 0, 2, 1};
+    triangle_ = renderer.CreateMesh(arrow);
     // 3. The marks of optional rooms: white glyphs, tinted when drawn.
     for (auto [file, handle] : {std::pair{"event", &eventIcon_}, {"item", &chestIcon_}})
     {
@@ -130,12 +135,95 @@ glm::vec3 MatchTable::Feet(const Board &b, const Unit &u) const
     return Centre(b, u.cell) + glm::vec3{-1.0F, 0.0F, 1.0F} * (static_cast<float>(u.size - 1) * tile * 0.5F) + glm::vec3{0.0F, 0.12F, 0.0F};
 }
 
-float MatchTable::Height(const Unit &u) const
+float MatchTable::Height(const Unit &u, int index) const
 {
+    // A fighter grows to the battle's size as the view comes in (smoothstep of fightT_).
+    const float e = fightT_ * fightT_ * (3.0F - 2.0F * fightT_);
+    const float scale = Fighter(index) >= 0 ? FigureScale() + (Look("battle", "figureScale", 0.0F, 0.7F) - FigureScale()) * e : FigureScale();
     if (u.kind == 0)
-        return 3.0F;
+        return 3.0F * scale;
     static const float byTier[] = {1.5F, 2.2F, 2.6F, 2.6F}; // weak, strong, great, guardian
-    return byTier[static_cast<int>(def_.monsters[U(u.def)].tier)] * static_cast<float>(u.size);
+    return byTier[static_cast<int>(def_.monsters[U(u.def)].tier)] * std::min(static_cast<float>(u.size), 1.8F) * scale;
+}
+
+float MatchTable::FigureScale() const
+{
+    // Height in metres grows with the camera's distance, so a figure keeps its size on screen.
+    const umbra::core::Camera c = view_.Camera();
+    const float distance = glm::length(c.position - c.target), board = Look("rooms", "boardDistance", 0.0F, 19.0F);
+    return std::clamp(distance / board, Look("figures", "minScale", 0.0F, 0.3F), Look("figures", "maxScale", 0.0F, 1.6F));
+}
+
+glm::vec3 MatchTable::Shown(const MatchState &s, int unit) const
+{
+    const auto walked = [&](int i) { return U(i) < shown_.size() && lastCell_[U(i)] == s.units[U(i)].cell ? shown_[U(i)] : Feet(s.board, s.units[U(i)]); };
+    const int side = Fighter(unit);
+    if (side < 0 || s.units[U(staged_[0])].cell < 0 || s.units[U(staged_[1])].cell < 0)
+        return walked(unit);
+    // A fighter: the pair's middle, apart along the screen's right (the attacker on the left), eased in.
+    const umbra::core::Camera camera = view_.Camera();
+    const glm::vec3 right = glm::normalize(glm::cross(camera.target - camera.position, glm::vec3{0, 1, 0}));
+    const glm::vec3 middle = (walked(staged_[0]) + walked(staged_[1])) * 0.5F;
+    const float e = fightT_ * fightT_ * (3.0F - 2.0F * fightT_);
+    const glm::vec3 stand = middle + right * (side == 0 ? -1.0F : 1.0F) * Look("battle", "gap", 0.0F, 0.7F) * tile;
+    return glm::mix(walked(unit), stand, e);
+}
+
+void MatchTable::Walk(const MatchState &s, float dt)
+{
+    const Board &b = s.board;
+    shown_.resize(s.units.size()), route_.resize(s.units.size()), lastCell_.resize(s.units.size(), -1);
+    const umbra::core::Camera camera = view_.Camera();
+    const glm::vec3 right = glm::normalize(glm::cross(camera.target - camera.position, glm::vec3{0, 1, 0}));
+    const float speed = Look("walk", "squaresPerSecond", 0.0F, 3.5F) * tile;
+    for (std::size_t i = 0; i < s.units.size(); ++i)
+    {
+        const Unit &u = s.units[i];
+        // 1. A new square: the route there through doors (a breadth-first search, display only), or a jump.
+        if (u.cell != lastCell_[i])
+        {
+            const int from = lastCell_[i];
+            lastCell_[i] = u.cell, route_[i].clear();
+            if (u.cell < 0)
+                continue;
+            const glm::vec3 offset = Feet(b, u) - Centre(b, u.cell);
+            std::vector<int> back(b.cells.size(), -2);
+            std::vector<int> queue{from};
+            if (from >= 0)
+                back[U(from)] = -1;
+            for (std::size_t q = 0; from >= 0 && q < queue.size() && back[U(u.cell)] == -2; ++q)
+                for (int dir = 0; dir < 4; ++dir)
+                    if (const int n = Neighbour(b, queue[q], dir); n >= 0 && back[U(n)] == -2)
+                        back[U(n)] = queue[q], queue.push_back(n);
+            if (from < 0 || back[U(u.cell)] == -2 || queue.size() > 400)
+            {
+                shown_[i] = Feet(b, u);
+                continue;
+            }
+            for (int c = u.cell; c != from; c = back[U(c)])
+                route_[i].insert(route_[i].begin(), Centre(b, c) + offset);
+            if (route_[i].size() > 12) // too far to walk (a respawn): appear there
+                shown_[i] = route_[i].back(), route_[i].clear();
+            if (!route_[i].empty() && U(i) < states_.size())
+                states_[i].Base("walk");
+        }
+        // 2. Walk toward the next point at a steady pace, facing the way it goes on screen.
+        while (!route_[i].empty() && dt > 0.0F)
+        {
+            const glm::vec3 to = route_[i].front() - shown_[i];
+            const float d = glm::length(to), step = speed * dt;
+            if (std::abs(glm::dot(to, right)) > 0.01F && i < states_.size())
+                states_[i].facing = glm::dot(to, right) > 0.0F ? 1.0F : -1.0F;
+            if (d > step)
+            {
+                shown_[i] += to * (step / d);
+                break;
+            }
+            shown_[i] = route_[i].front(), route_[i].erase(route_[i].begin()), dt -= d / speed;
+            if (route_[i].empty() && i < states_.size())
+                states_[i].Base("idle");
+        }
+    }
 }
 
 void MatchTable::Play(int unit, const std::string &motion)
@@ -149,8 +237,8 @@ void MatchTable::Play(int unit, const std::string &motion)
         st.Hold("down");
     else if (motion == "revive")
         st.Release(), st.Play("revive");
-    else if (motion == "walk")
-        st.Play("walk");
+    else if (motion == "walk") // the route sets the walk (Walk)
+        return;
     else
         st.Play(motion);
 }
@@ -166,12 +254,54 @@ void MatchTable::Animate(const MatchState &s, float dt)
             ringUnit_ = now, ringT_ = 0.0F, Play(now, "nod");
     }
     ringT_ = std::min(1.0F, ringT_ + dt / Look("ring", "seconds", 0.0F, 1.0F));
+    states_.resize(s.units.size());
+    Walk(s, dt);
+    // 1b. The battle view eases in while a fight is asked for and out after; the camera comes down into the room.
+    const bool fighting = fight_[0] >= 0 && fight_[1] >= 0 && U(std::max(fight_[0], fight_[1])) < s.units.size();
+    if (fighting)
+        staged_[0] = fight_[0], staged_[1] = fight_[1];
+    fightT_ = std::clamp(fightT_ + (fighting ? dt : -dt) / Look("battle", "seconds", 0.0F, 0.6F), 0.0F, 1.0F);
+    if (fightT_ <= 0.0F)
+        staged_[0] = staged_[1] = -1;
+    // 1c. A told line's people: framed together, the camera backing off far enough to see them all.
+    std::erase_if(focus_, [&](int u) { return u < 0 || U(u) >= s.units.size() || s.units[U(u)].cell < 0; });
+    if (!focus_.empty())
+        framed_ = focus_;
+    focusT_ = std::clamp(focusT_ + (focus_.empty() ? -dt : dt) / Look("follow", "seconds", 0.0F, 0.5F), 0.0F, 1.0F);
+    std::erase_if(framed_, [&](int u) { return U(u) >= s.units.size() || s.units[U(u)].cell < 0; });
+    if (focusT_ <= 0.0F)
+        framed_.clear();
+    float spread = 0.0F;
+    for (const int a : framed_)
+        for (const int b : framed_)
+            spread = std::max(spread, glm::length(Shown(s, a) - Shown(s, b)));
+    if (scene_.empty())
+    {
+        const float e = fightT_ * fightT_ * (3.0F - 2.0F * fightT_), q = focusT_ * focusT_ * (3.0F - 2.0F * focusT_);
+        const float far = spread * Look("follow", "fit", 0.0F, 2.4F) + Look("follow", "margin", 0.0F, 6.0F);
+        if (e > 0.0F)
+            view_.SetShot(true, view_.Distance() + (Look("battle", "distance", 0.0F, 7.0F) - view_.Distance()) * e, 0.0F,
+                          view_.Tilt() + (Look("battle", "tilt", 0.0F, 30.0F) - view_.Tilt()) * e);
+        else if (q > 0.0F && far > view_.Distance())
+            view_.SetShot(true, view_.Distance() + (far - view_.Distance()) * q, 0.0F, view_.Tilt());
+        else
+            view_.SetShot(false, 0.0F, 0.0F, 50.0F);
+    }
     if (follow_ && now >= 0 && s.units[U(now)].cell >= 0 && scene_.empty())
     {
-        glm::vec3 at = Feet(s.board, s.units[U(now)]);
-        if (s.battle.on && s.units[U(s.battle.defender)].cell >= 0)
-            at = (at + Feet(s.board, s.units[U(s.battle.defender)])) * 0.5F;
-        const glm::vec3 target{at.x * Look("follow", "pull", 0.0F, 0.2F), 0.0F, at.z * Look("follow", "pull", 0.0F, 0.2F)};
+        glm::vec3 at = Shown(s, now);
+        if (staged_[0] >= 0 && s.units[U(staged_[0])].cell >= 0 && s.units[U(staged_[1])].cell >= 0) // a battle: its middle
+            at = (Shown(s, staged_[0]) + Shown(s, staged_[1])) * 0.5F;
+        else if (!framed_.empty()) // a told line: the middle of whom it is about
+        {
+            at = glm::vec3{0.0F};
+            for (const int u : framed_)
+                at += Shown(s, u) / static_cast<float>(framed_.size());
+        }
+        // The figure in the middle, but the board stays on screen: the farther out, the nearer the board's middle it may go.
+        const float pull = Look("follow", "pull", 0.0F, 1.0F), keep = Look("follow", "edge", 0.0F, 0.45F) + (1.0F - Look("follow", "edge", 0.0F, 0.45F)) * RoomT();
+        const glm::vec2 half{static_cast<float>(s.board.height) * tile * 0.5F * keep, static_cast<float>(s.board.width) * tile * 0.5F * keep};
+        const glm::vec3 target{std::clamp(at.x * pull, -half.x, half.x), 0.0F, std::clamp(at.z * pull, -half.y, half.y)};
         if (glm::length(target - view_.Target()) > 0.05F)
             view_.Aim(target, Look("follow", "seconds", 0.0F, 0.6F));
     }
@@ -193,10 +323,12 @@ void MatchTable::Animate(const MatchState &s, float dt)
         if (t >= 1.0F && scene_ == "open")
             scene_.clear(), view_.SetShot(false, 0, 0, 50);
     }
-    states_.resize(s.units.size());
     for (std::size_t i = 0; i < states_.size(); ++i)
     {
-        states_[i].facing = s.units[i].kind == 0 && s.units[i].faction == 1 ? -1.0F : 1.0F;
+        if (Fighter(static_cast<int>(i)) >= 0) // fighters face each other
+            states_[i].facing = Fighter(static_cast<int>(i)) == 0 ? 1.0F : -1.0F;
+        else if (route_[i].empty()) // standing: side 1's characters face left
+            states_[i].facing = s.units[i].kind == 0 && s.units[i].faction == 1 ? -1.0F : 1.0F;
         states_[i].Update(dt, motions_);
     }
 }
@@ -206,9 +338,11 @@ void MatchTable::Sprite(int index, const Unit &u, glm::vec3 feet, umbra::core::D
     // 1. Facing the camera square on, upright on screen (a 2D board's figures), moved by its motion.
     const umbra::core::Camera camera = view_.Camera();
     const glm::vec3 forward = glm::normalize(camera.target - camera.position);
-    const glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3{0, 1, 0})), up = glm::cross(right, forward);
+    const glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3{0, 1, 0}));
+    // Leaning back with the camera keeps a figure upright on screen; only part way, so its head stays out of the wall behind.
+    const glm::vec3 up = glm::normalize(glm::mix(glm::vec3{0, 1, 0}, glm::cross(right, forward), Look("figures", "lean", 0.0F, 0.5F)));
     const std::string &sprite = u.kind == 0 ? def_.characters[U(u.def)].sprite : def_.monsters[U(u.def)].sprite;
-    const float h = Height(u), aspect = aspects_.contains(sprite) ? aspects_.at(sprite) : 0.3F;
+    const float h = Height(u, index), aspect = aspects_.contains(sprite) ? aspects_.at(sprite) : 0.3F;
     const umbra::night::SpriteState idle;
     const umbra::night::SpriteState &st = U(index) < states_.size() ? states_[U(index)] : idle;
     const umbra::night::MotionPose pose = st.Pose(motions_);
@@ -231,10 +365,22 @@ void MatchTable::Sprite(int index, const Unit &u, glm::vec3 feet, umbra::core::D
 void MatchTable::SetLook(nlohmann::json look)
 {
     look_ = std::move(look);
-    // 1. The painted floors each square kind may take; a missing picture is skipped.
+    // 1. The fight's backdrops by square kind, then the painted floors each kind may take; a missing picture is skipped.
+    backdrops_.clear();
+    if (look_.contains("battle") && look_["battle"].contains("backdrops"))
+        for (const auto &[kind, file] : look_["battle"]["backdrops"].items())
+        {
+            umbra::core::TextureData data;
+            std::string error;
+            if (umbra::assets::LoadImageFile(assets_ / file.get<std::string>(), data, error))
+                backdrops_[kind] = renderer_.CreateTexture(data);
+        }
     floors_.clear();
     if (!look_.contains("rooms"))
         return;
+    if (umbra::core::TextureData data; look_["rooms"].contains("wallArt"))
+        if (std::string error; umbra::assets::LoadImageFile(assets_ / look_["rooms"]["wallArt"].get<std::string>(), data, error))
+            wallArt_ = renderer_.CreateTexture(data);
     for (const char *kind : {"hall", "room", "centre", "hub", "stage"})
         for (const auto &name : look_["rooms"].value(kind, nlohmann::json::array()))
         {
@@ -278,7 +424,7 @@ float MatchTable::Look(const char *group, const char *key, float t, float fallba
 
 void MatchTable::Mark(glm::vec3 at, umbra::core::TextureHandle icon, glm::vec3 color, float strength, umbra::core::DrawList &out) const
 {
-    // A small glyph standing in the room's corner, facing the camera; all tint (the glyph is white).
+    // A small glyph standing in the room's middle, facing the camera; all tint (the glyph is white).
     if (!icon)
         return;
     const umbra::core::Camera camera = view_.Camera();
@@ -292,6 +438,70 @@ void MatchTable::Mark(glm::vec3 at, umbra::core::TextureHandle icon, glm::vec3 c
     model[3] = glm::vec4(at + glm::vec3{0.0F, 0.05F, 0.0F} + up * (size * 0.5F), 1.0F);
     out.items.push_back({quad_, icon, model, glm::vec4(color * strength, 1.0F), 0.0F, 0.99F});
     out.items.back().surface = out.SurfaceIndex("sprite");
+}
+
+glm::vec3 MatchTable::FightNear() const
+{
+    const umbra::core::Camera camera = view_.Camera();
+    glm::vec3 back = camera.position - camera.target;
+    back.y = 0.0F;
+    return glm::length(back) > 0.0F ? glm::normalize(back) * Look("battle", "near", 0.0F, 2.5F) : glm::vec3{0.0F};
+}
+
+void MatchTable::DrawFight(const MatchState &s, umbra::core::DrawList &out) const
+{
+    // 1. Where: the fighters' middle; the backdrop stands behind them square to the camera, a floor before it.
+    const umbra::core::Camera camera = view_.Camera();
+    glm::vec3 forward = camera.target - camera.position;
+    forward.y = 0.0F;
+    forward = glm::normalize(forward);
+    const glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3{0, 1, 0})), middle = (Shown(s, staged_[0]) + Shown(s, staged_[1])) * 0.5F;
+    const float width = Look("battle", "backdropWidth", 0.0F, 24.0F), depth = Look("battle", "backdropDepth", 0.0F, 3.0F);
+    // The picture by the kind of square the defender stands on (the stage counts as the centre).
+    static const char *kinds[] = {"", "hall", "room", "centre", "hub"};
+    const int cell = s.units[U(staged_[1])].cell;
+    auto art = backdrops_.find(cell == s.stage ? "centre" : kinds[static_cast<int>(s.board.cells[U(cell)].kind)]);
+    if (art == backdrops_.end())
+        art = backdrops_.find("default");
+    const float height = width / Look("battle", "backdropAspect", 0.0F, 1.75F);
+    glm::mat4 model{1.0F};
+    model[0] = glm::vec4(right * width, 0.0F);
+    model[1] = glm::vec4(glm::vec3{0, 1, 0} * height, 0.0F);
+    model[2] = glm::vec4(-forward, 0.0F);
+    model[3] = glm::vec4(middle + forward * depth + glm::vec3{0.0F, height * 0.5F - Look("battle", "backdropDrop", 0.0F, 1.5F), 0.0F}, 1.0F);
+    out.items.push_back({quad_, art != backdrops_.end() ? art->second : umbra::core::TextureHandle{}, model, glm::vec4(1.0F), 0.0F, Look("battle", "backdropGlow", 0.0F, 0.7F)});
+    Box(out, box_, middle + forward * (depth * 0.5F - 3.0F) + glm::vec3{0.0F, -0.05F, 0.0F}, glm::vec3{width, 0.1F, width} * glm::vec3{1.0F, 1.0F, 0.5F}, Hex(0x0d0907));
+    // 2. A pool of warm light on the two, then the two themselves and their shadows.
+    out.lights.push_back({middle + glm::vec3{0.0F, 4.0F, 0.0F} - forward * 2.0F, {1.0F, 0.85F, 0.65F}, Look("battle", "light", 0.0F, 25.0F), 14.0F, 0.0F});
+    for (const int i : staged_)
+    {
+        const Unit &u = s.units[U(i)];
+        const glm::vec3 at = Shown(s, i) + FightNear(); // a little nearer the camera than its middle: low on the screen, in front of the backdrop
+        Shadow(at + glm::vec3{0.0F, 0.0F, 0.15F}, tile * Look("shadow", "width", 0.0F, 0.75F) * Height(u, i) / std::max(0.01F, Height(u, -1)) * FigureScale(), out);
+        Sprite(i, u, at, out);
+    }
+}
+
+void MatchTable::Arrow(glm::vec3 tip, float size, umbra::core::DrawList &out) const
+{
+    // Square to the camera like the figures; both faces drawn so it shows from any side.
+    const umbra::core::Camera camera = view_.Camera();
+    const glm::vec3 forward = glm::normalize(camera.target - camera.position);
+    const glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3{0, 1, 0})), up = glm::cross(right, forward);
+    glm::mat4 model{1.0F};
+    model[0] = glm::vec4(right * size, 0.0F);
+    model[1] = glm::vec4(up * size, 0.0F);
+    model[2] = glm::vec4(-forward, 0.0F);
+    model[3] = glm::vec4(tip, 1.0F);
+    out.items.push_back({triangle_, {}, model, Hex(0xE8C060), 0.0F, 1.2F});
+}
+
+void MatchTable::Edge(glm::vec3 centre, int dir, glm::vec4 color, float glow, umbra::core::DrawList &out) const
+{
+    // A glowing bar along one side of a square, just inside it and raised off the floor.
+    const float bar = glow > 0.7F ? 0.18F : 0.12F, h = tile * 0.5F - bar * 0.5F;
+    const glm::vec3 side[] = {{h, 0, 0}, {0, 0, h}, {-h, 0, 0}, {0, 0, -h}};
+    Box(out, box_, centre + side[dir] + glm::vec3{0, 0.04F, 0}, dir % 2 == 0 ? glm::vec3{bar, 0.06F, tile} : glm::vec3{tile, 0.06F, bar}, color, glow);
 }
 
 void MatchTable::Shadow(glm::vec3 feet, float width, umbra::core::DrawList &out) const
@@ -323,6 +533,11 @@ void MatchTable::Draw(const MatchState &s, const nlohmann::json &ui, int hover, 
     const float lamp = 1.0F - Look("flicker", "x", t, 0.0F) * stutter;
     out.lights.push_back({{0.0F, 9.0F, 4.0F}, {1.0F, 0.88F, 0.72F}, 140.0F * lamp, 70.0F, 0.0F});
     out.camera = view_.Camera();
+    // 1b. The battle view: the screen dips to dark halfway, and past it the fight has its own stage (DrawFight).
+    const float fe = fightT_ * fightT_ * (3.0F - 2.0F * fightT_);
+    out.post.exposure -= Look("battle", "fade", 0.0F, 3.0F) * std::max(0.0F, 1.0F - std::abs(2.0F * fe - 1.0F));
+    if (fe >= 0.5F && staged_[0] >= 0 && s.units[U(staged_[0])].cell >= 0 && s.units[U(staged_[1])].cell >= 0)
+        return DrawFight(s, out);
 
     // 2. Squares by kind; the stage glows gold; walls stay dark under the table.
     Box(out, box_, {0.0F, -0.2F, 0.0F}, {static_cast<float>(b.height) * tile + 0.6F, 0.2F, static_cast<float>(b.width) * tile + 0.6F}, Hex(0x1a1411));
@@ -338,31 +553,56 @@ void MatchTable::Draw(const MatchState &s, const nlohmann::json &ui, int hover, 
             color = Hex(0x8a6a24), glow = 0.35F + 0.1F * std::sin(clock_ * 2.0F);
         // A painted floor, tinted by its kind (the colour shows where no picture is).
         const umbra::core::TextureHandle art = FloorArt(b, c, c == s.stage);
-        const glm::vec4 tint = art ? glm::mix(glm::vec4{1.0F}, color, 0.45F) * 0.9F : color;
+        const bool zone = c == s.stage || c == b.hub[0] || c == b.hub[1]; // the goals keep a strong colour
+        const glm::vec4 tint = art ? glm::mix(glm::vec4{1.0F}, color, zone ? 0.7F : 0.45F) * (zone ? 1.2F : 0.9F) : color;
         out.items.push_back({box_, art, glm::scale(glm::translate(glm::mat4{1.0F}, Centre(b, c) + glm::vec3{0, -0.05F, 0}), {tile * 0.96F, 0.1F, tile * 0.96F}),
                              glm::vec4(glm::vec3(tint), 1.0F), 0.0F, glow});
-        // Walls rise on the sides with no door as the camera comes close (the room view); board N is +x, E is +z.
-        if (const float t = RoomT(); t > 0.02F)
+        // Walls on the sides with no door: low on the board, rising as the camera comes close (the room view); board N is +x, E is +z.
         {
-            const float h = Look("rooms", "wallHeight", 0.0F, 1.1F) * t, half = tile * 0.5F;
+            const float t = RoomT(), low = Look("rooms", "wallLow", 0.0F, 0.22F);
+            const float h = low + (Look("rooms", "wallHeight", 0.0F, 1.1F) - low) * t, half = tile * 0.5F;
             const glm::vec3 side[] = {{half, 0, 0}, {0, 0, half}, {-half, 0, 0}, {0, 0, -half}};
             for (int dir = 0; dir < 4; ++dir)
                 if (!(b.cells[U(c)].doors & (1 << dir)))
-                    Box(out, box_, Centre(b, c) + side[dir] + glm::vec3{0, h * 0.5F, 0}, dir % 2 == 0 ? glm::vec3{0.08F, h, tile} : glm::vec3{tile, h, 0.08F}, Hex(0x2a1d16));
+                {
+                    // Papered walls: the picture repeats in world space, so long and short walls share its scale.
+                    const glm::vec3 size = dir % 2 == 0 ? glm::vec3{0.1F, h, tile} : glm::vec3{tile, h, 0.1F};
+                    out.items.push_back({box_, wallArt_, glm::scale(glm::translate(glm::mat4{1.0F}, Centre(b, c) + side[dir] + glm::vec3{0, h * 0.5F, 0}), size),
+                                         wallArt_ ? glm::vec4(0.85F, 0.8F, 0.75F, 1.0F) : Hex(0x5e4838), wallArt_ ? Look("rooms", "wallRepeat", 0.0F, 0.8F) : 0.0F});
+                }
         }
         if (b.cells[U(c)].event >= 0 && !b.cells[U(c)].resolved) // an event room: a "?" in its corner (optional goals stay quiet)
-            Mark(Centre(b, c) + glm::vec3{tile * 0.22F, 0.0F, -tile * 0.22F}, eventIcon_, glm::vec3(Hex(0xB9A2E8)), 1.0F, out);
+            Mark(Centre(b, c), eventIcon_, glm::vec3(Hex(0xB9A2E8)), 1.0F, out);
+    }
+    // 2a. The zones, edged where they meet other squares: each hub in its side's colour, the centre red, the stage gold.
+    for (int c = 0; c < static_cast<int>(b.cells.size()); ++c)
+    {
+        const CellKind kind = b.cells[U(c)].kind;
+        const int x = c % b.width, y = c / b.width;
+        for (int dir = 0; dir < 4; ++dir)
+        {
+            // Board N is y - 1 (+x on the table), E x + 1.
+            const int nx = x + (dir == 1) - (dir == 3), ny = y - (dir == 0) + (dir == 2);
+            const bool inside = nx >= 0 && ny >= 0 && nx < b.width && ny < b.height;
+            const int n = inside ? ny * b.width + nx : -1;
+            if (kind == CellKind::Centre && (n < 0 || b.cells[U(n)].kind != CellKind::Centre))
+                Edge(Centre(b, c), dir, Hex(0xC0393B), 0.6F, out);
+            if (c == b.hub[0] || c == b.hub[1])
+                Edge(Centre(b, c), dir, c == b.hub[0] ? Hex(0x5b9bd5) : Hex(0xe08a3c), 0.8F + 0.3F * std::sin(clock_ * 2.0F), out);
+            if (c == s.stage)
+                Edge(Centre(b, c), dir, Hex(0xE8C060), 1.0F + 0.4F * std::sin(clock_ * 2.0F), out);
+        }
     }
     // 2b. An item on the floor: a small gold mark in the opposite corner.
     for (const Floor &f : s.floor)
         if (f.cell >= 0 && f.treasure) // a treasure: a chest
-            Mark(Centre(b, f.cell) + glm::vec3{tile * 0.22F, 0.0F, tile * 0.22F}, chestIcon_, glm::vec3(Hex(0xE2C068)), 1.0F, out);
+            Mark(Centre(b, f.cell), chestIcon_, glm::vec3(Hex(0xE2C068)), 1.0F, out);
         else if (f.cell >= 0) // dropped essence or an item
             Box(out, box_, Centre(b, f.cell) + glm::vec3{tile * 0.3F, 0.02F, tile * 0.3F}, {0.18F, 0.03F, 0.18F}, Hex(0xC9A54A), 0.25F);
     // 2c. A room coming back: its mark, faint, from the round before.
     for (const RoomSpawn &r : s.roomSpawns)
         if (r.round - 1 <= s.round)
-            Mark(Centre(b, r.cell) + glm::vec3{tile * 0.22F, 0.0F, r.kind == 0 ? -tile * 0.22F : tile * 0.22F}, r.kind == 0 ? eventIcon_ : chestIcon_,
+            Mark(Centre(b, r.cell), r.kind == 0 ? eventIcon_ : chestIcon_,
                  glm::vec3(Hex(0x8a8178)), 0.6F, out);
     // 3. Announced spawns: an orange marker pulsing on the square.
     for (const Spawn &w : s.spawns)
@@ -370,8 +610,9 @@ void MatchTable::Draw(const MatchState &s, const nlohmann::json &ui, int hover, 
             Outline(out, box_, Centre(b, w.cell), tile * 0.9F, Hex(0xE08A3C), 0.5F + 0.4F * std::sin(clock_ * 4.0F));
     // 4. The player's turn: the reach (blue, or orange as an armed ability's range), the path, the targets (red), the hovered square.
     const bool armed = ui.contains("armed");
+    const float flash = 0.45F + 0.4F * std::sin(clock_ * 5.0F); // the reach: a flashing frame, the room still seen
     for (int c : Cells(ui.value("reach", nlohmann::json::array())))
-        Box(out, box_, Centre(b, c) + glm::vec3{0, 0.01F, 0}, {tile * 0.9F, 0.02F, tile * 0.9F}, armed ? Hex(0xC07030) : Hex(0x4a7fb5), 0.25F);
+        Outline(out, box_, Centre(b, c), tile * 0.86F, armed ? Hex(0xE08A3C) : Hex(0x7FB5E8), flash);
     for (int c : Cells(ui.value("path", nlohmann::json::array())))
         Box(out, box_, Centre(b, c) + glm::vec3{0, 0.08F, 0}, {0.2F, 0.06F, 0.2F}, Hex(0xEFE6D6), 0.8F);
     for (int c : Cells(ui.value("targets", nlohmann::json::array())))
@@ -384,13 +625,16 @@ void MatchTable::Draw(const MatchState &s, const nlohmann::json &ui, int hover, 
         const Unit &u = s.units[U(i)];
         if (u.cell < 0 || u.hp <= 0)
             continue;
-        const glm::vec3 feet = Feet(b, u);
+        const glm::vec3 feet = Shown(s, i);
         if (i == ringUnit_ && ringT_ < 1.0F) // the turn's ring: grows and fades
             Outline(out, box_, feet - glm::vec3{0, 0.08F, 0}, tile * (0.6F + 0.9F * ringT_), Hex(0xD8B25A), 1.2F * (1.0F - ringT_));
-        Shadow(feet + glm::vec3{0.0F, 0.0F, 0.15F}, tile * Look("shadow", "width", 0.0F, 0.75F) * static_cast<float>(u.size), out);
+        const float k = Height(u, i) / std::max(0.01F, Height(u, -1)) * FigureScale(); // a fighter's shadow grows with it
+        Shadow(feet + glm::vec3{0.0F, 0.0F, 0.15F * k}, tile * Look("shadow", "width", 0.0F, 0.75F) * static_cast<float>(u.size) * k, out);
         if (u.faction >= 0)
             Outline(out, box_, feet - glm::vec3{0, 0.1F, 0}, tile * 0.7F * static_cast<float>(u.size), u.faction == 0 ? Hex(0x5b9bd5) : Hex(0xe08a3c), 0.5F);
         Sprite(i, u, feet, out);
+        if (i == Current(s) && !s.battle.on) // the one whose turn it is: a gold arrow bobbing over its head
+            Arrow(feet + glm::vec3{0.0F, Height(u, i) + 0.35F * FigureScale() + 0.12F * FigureScale() * std::sin(clock_ * 4.0F), 0.0F}, 0.45F * FigureScale(), out);
     }
 }
 
@@ -416,7 +660,9 @@ nlohmann::json MatchTable::Labels(const MatchState &s, glm::vec2 pixels) const
         const Unit &u = s.units[U(i)];
         if (u.cell < 0 || u.hp <= 0)
             continue;
-        const auto at = ScreenPoint(Feet(s.board, u) + glm::vec3{0.0F, Height(u) + 0.15F, 0.0F}, pixels);
+        if (fightT_ > 0.3F && Fighter(i) < 0) // the battle view: only the fighters, and only their bubbles
+            continue;
+        const auto at = ScreenPoint(Shown(s, i) + (fightT_ >= 0.5F ? FightNear() : glm::vec3{0.0F}) + glm::vec3{0.0F, Height(u, i) + 0.15F, 0.0F}, pixels);
         if (!at)
             continue;
         const bool character = u.kind == 0;
@@ -424,7 +670,8 @@ nlohmann::json MatchTable::Labels(const MatchState &s, glm::vec2 pixels) const
         const std::string &name = character ? def_.characters[U(u.def)].name : def_.monsters[U(u.def)].name;
         labels.push_back({{"unit", i}, {"at", {at->x, at->y}}, {"name", name.substr(name.rfind(' ') + 1)}, {"level", character ? u.level : def_.monsters[U(u.def)].level},
                           {"hp", u.hp}, {"maxHp", u.maxHp}, {"portrait", "art/sprites/" + sprite + "/face_calm.png"}, {"acting", i == acting},
-                          {"essence", character && u.essence > 0 ? std::to_string(u.essence) : ""}, {"side", u.faction}});
+                          {"essence", character && u.essence > 0 ? std::to_string(u.essence) : ""}, {"side", u.faction},
+                          {"mine", u.faction == 0}, {"theirs", u.faction == 1}, {"wild", u.faction < 0}, {"foe", u.faction != 0}, {"plate", fightT_ <= 0.3F}});
     }
     return labels;
 }

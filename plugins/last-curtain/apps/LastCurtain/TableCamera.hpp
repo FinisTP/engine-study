@@ -26,6 +26,8 @@ public:
         distance_ = distance, minDistance_ = minDistance, maxDistance_ = maxDistance, tilt_ = tilt;
     }
     [[nodiscard]] float RoomT() const { return roomT_; } // 0 the table, 1 the room view
+    [[nodiscard]] float Distance() const { return distance_; } // the seat's, without a shot
+    [[nodiscard]] float Tilt() const { return tilt_; }
     [[nodiscard]] bool WantsRoom() const { return wantRoom_; }
     [[nodiscard]] glm::vec3 Target() const;              // the eased target, on the table
     [[nodiscard]] umbra::core::Camera Camera() const;    // in table space, or room space while RoomT() > 0

@@ -314,7 +314,7 @@ TEST_CASE("The battle screen follows the rules' battle, a hunter's included (T32
     b = p.UiData()["battle"];
     CHECK(b["round"] == 2);
     CHECK_FALSE(b["line"].get<std::string>().empty());
-    while (p.Screen() == "battle" && p.PlayerTurn())
+    while (p.Screen() == "battle" && p.State().battle.on && p.PlayerTurn()) // the screen outlives the battle while it is staged (T350)
     {
         REQUIRE(p.HandleUi("battle", "pick", "0"));
         for (int i = 0; i < 20 && !p.PlayerTurn() && p.State().battle.on; ++i)
@@ -627,4 +627,64 @@ TEST_CASE("An event's roll shows two dice against a target that matches its chan
         CHECK((a + b >= d["target"].get<int>()) == passed);
         CHECK(d["passed"] == passed);
     }
+}
+
+TEST_CASE("A battle is staged while it lasts and a little after its last blow is told (T350)", "[match][play]")
+{
+    const MatchDef def = Data();
+    int enemy = -1;
+    MatchPlay p = AtPlayer(def, [&](MatchState &s) {
+        const int me = Current(s);
+        for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
+            if (s.units[static_cast<std::size_t>(i)].kind == 0 && s.units[static_cast<std::size_t>(i)].faction == 1)
+                enemy = i;
+        s.units[static_cast<std::size_t>(enemy)].cell = static_cast<std::int16_t>(FreeBeside(s, s.units[static_cast<std::size_t>(me)].cell));
+        s.units[static_cast<std::size_t>(me)].hp = s.units[static_cast<std::size_t>(enemy)].hp = 90;
+        s.units[static_cast<std::size_t>(me)].maxHp = s.units[static_cast<std::size_t>(enemy)].maxHp = 90;
+    });
+    const int me = Current(p.State());
+    CHECK_FALSE(p.UiData().contains("fight")); // 1. No battle, nothing staged.
+    p.Click(p.State().units[static_cast<std::size_t>(me)].cell);
+    REQUIRE(p.HandleUi("", "act", "attack"));
+    p.Click(p.State().units[static_cast<std::size_t>(enemy)].cell);
+    // 2. The fighters, attacker first, while the battle runs.
+    REQUIRE(p.UiData().contains("fight"));
+    CHECK(p.UiData()["fight"] == nlohmann::json{me, enemy});
+    while (p.State().battle.on)
+    {
+        if (p.PlayerTurn())
+            REQUIRE(p.HandleUi("battle", "pick", "0"));
+        p.Update(0.5F);
+    }
+    // 3. It stays staged until its last lines are told and a beat has passed, then the board comes back.
+    CHECK(p.UiData().contains("fight"));
+    for (int i = 0; i < 40 && p.UiData().contains("fight"); ++i)
+        p.Update(0.25F);
+    CHECK_FALSE(p.UiData().contains("fight"));
+}
+
+TEST_CASE("Whoever a told line is about is in focus for the camera, for as long as the line stays (T352)", "[match][play]")
+{
+    const MatchDef def = Data();
+    int enemy = -1;
+    MatchPlay p = AtPlayer(def, [&](MatchState &s) {
+        const int me = Current(s);
+        for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
+            if (s.units[static_cast<std::size_t>(i)].kind == 0 && s.units[static_cast<std::size_t>(i)].faction == 1)
+                enemy = i;
+        s.units[static_cast<std::size_t>(enemy)].cell = static_cast<std::int16_t>(FreeBeside(s, s.units[static_cast<std::size_t>(me)].cell));
+        s.units[static_cast<std::size_t>(me)].hp = s.units[static_cast<std::size_t>(enemy)].hp = 90;
+        s.units[static_cast<std::size_t>(me)].maxHp = s.units[static_cast<std::size_t>(enemy)].maxHp = 90;
+    });
+    const int me = Current(p.State());
+    CHECK_FALSE(p.UiData().contains("focus"));
+    p.Click(p.State().units[static_cast<std::size_t>(me)].cell);
+    REQUIRE(p.HandleUi("", "act", "attack"));
+    p.Click(p.State().units[static_cast<std::size_t>(enemy)].cell);
+    REQUIRE(p.HandleUi("battle", "pick", "0"));
+    // 1. The blow just told: striker and struck.
+    REQUIRE(p.UiData().contains("focus"));
+    const std::vector<int> focus = p.UiData()["focus"].get<std::vector<int>>();
+    CHECK(std::ranges::find(focus, me) != focus.end());
+    CHECK(std::ranges::find(focus, enemy) != focus.end());
 }

@@ -223,3 +223,32 @@ TEST_CASE("An event's choice rolls its chance and resolves the room (T295)", "[m
         REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
     }
 }
+
+TEST_CASE("Board abilities are told and teach: a heal is logged, both grant abilityXp (T351)", "[match][abilities]")
+{
+    const MatchDef def = Data();
+    REQUIRE(def.rules.levels.abilityXp > 0);
+    // 1. Mai's Tend: logged as Healed with the amount; Mai gains abilityXp.
+    MatchState t = Start(def);
+    const int mai = UnitOf(def, t, "mai", 0), ally = UnitOf(def, t, "khang", 0);
+    TurnOf(t, mai);
+    t.units[U(ally)].hp = 10;
+    t.units[U(ally)].cell = static_cast<std::int16_t>(SquareAt(t, t.units[U(mai)].cell, 2));
+    const int xp = t.units[U(mai)].xp;
+    const std::size_t logged = t.log.size();
+    REQUIRE(Apply(def, t, {ActionKind::BoardAbility, I8(SlotOf(def, t.units[U(mai)], "tend")), I8(ally)}));
+    bool healed = false;
+    for (std::size_t i = logged; i < t.log.size(); ++i)
+        healed = healed || (t.log[i].kind == LogKind::Healed && t.log[i].a == mai && t.log[i].b == ally && t.log[i].c == 6);
+    CHECK(healed);
+    CHECK(t.units[U(mai)].xp == xp + def.rules.levels.abilityXp);
+    // 2. Bao's Snipe on a foe: abilityXp too.
+    MatchState s = Start(def);
+    const int me = UnitOf(def, s, "bao", 0), foe = 3;
+    TurnOf(s, me);
+    s.units[U(foe)].cell = static_cast<std::int16_t>(SquareAt(s, s.units[U(me)].cell, 2));
+    s.units[U(foe)].hp = 90;
+    const int baoXp = s.units[U(me)].xp;
+    REQUIRE(Apply(def, s, {ActionKind::BoardAbility, I8(SlotOf(def, s.units[U(me)], "snipe")), I8(foe)}));
+    CHECK(s.units[U(me)].xp == baoXp + def.rules.levels.abilityXp);
+}

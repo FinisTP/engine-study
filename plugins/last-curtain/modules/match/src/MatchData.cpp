@@ -155,6 +155,7 @@ namespace umbra::match
             num("battle", "minDamage", r.battle.minDamage);
             num("levels", "hp", r.levels.hp);
             num("levels", "killXp", r.levels.killXp);
+            num("levels", "abilityXp", r.levels.abilityXp);
             num("levels", "cards", r.levels.cards);
             num("levels", "upgradePower", r.levels.upgradePower);
             num("levels", "upgradeCost", r.levels.upgradeCost);

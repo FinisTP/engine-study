@@ -1,18 +1,160 @@
 {
   "format": "umbra.ui",
   "version": 1,
-  "root": { "type": "panel", "anchor": "fill", "style": "layer", "children": [
-    { "type": "list", "items": "{labels}", "as": "l",
-      "entry": { "type": "stack", "style": "plain", "gap": 0, "align": "center", "at": "{l.at}", "children": [
-        { "type": "text", "style": "bubble", "text": "{l.say}", "visible": "{l.say}", "wrap": true, "size": [170, 0] },
-        { "type": "text", "style": "warning", "text": "v", "visible": "{l.acting}" },
-        { "type": "stack", "style": "card", "direction": "horizontal", "gap": 3, "align": "center", "children": [
-          { "type": "stack", "style": "plain", "gap": 1, "children": [
-            { "type": "text", "style": "small", "text": "{l.name} {l.level}" },
-            { "type": "bar", "style": "hp", "size": [46, 4], "value": "{l.hp}", "max": "{l.maxHp}" }
-          ] },
-          { "type": "text", "style": "essence", "text": "{l.essence}", "visible": "{l.essence}" }
-        ] }
-      ] } }
-  ] }
+  "root": {
+    "type": "panel",
+    "anchor": "fill",
+    "style": "layer",
+    "children": [
+      {
+        "type": "list",
+        "items": "{labels}",
+        "as": "l",
+        "entry": {
+          "type": "stack",
+          "style": "plain",
+          "gap": 2,
+          "align": "center",
+          "at": "{l.at}",
+          "children": [
+            {
+              "type": "text",
+              "style": "bubble",
+              "text": "{l.say}",
+              "visible": "{l.say}",
+              "wrap": true,
+              "size": [
+                170,
+                0
+              ]
+            },
+            {
+              "type": "stack",
+              "style": "tagCard",
+              "direction": "horizontal",
+              "gap": 6,
+              "align": "stretch",
+              "children": [
+                {
+                  "type": "panel",
+                  "style": "stripMine",
+                  "size": [
+                    4,
+                    0
+                  ],
+                  "visible": "{l.mine}"
+                },
+                {
+                  "type": "panel",
+                  "style": "stripTheirs",
+                  "size": [
+                    4,
+                    0
+                  ],
+                  "visible": "{l.theirs}"
+                },
+                {
+                  "type": "panel",
+                  "style": "stripWild",
+                  "size": [
+                    4,
+                    0
+                  ],
+                  "visible": "{l.wild}"
+                },
+                {
+                  "type": "stack",
+                  "style": "plain",
+                  "gap": 2,
+                  "children": [
+                    {
+                      "type": "stack",
+                      "style": "plain",
+                      "direction": "horizontal",
+                      "gap": 5,
+                      "align": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "style": "tagName",
+                          "text": "{l.name}"
+                        },
+                        {
+                          "type": "text",
+                          "style": "tagLevel",
+                          "text": "Lv {l.level}",
+                          "tip": "Level"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "stack",
+                      "style": "plain",
+                      "direction": "horizontal",
+                      "gap": 5,
+                      "align": "center",
+                      "children": [
+                        {
+                          "type": "bar",
+                          "style": "hpMine",
+                          "size": [
+                            64,
+                            6
+                          ],
+                          "value": "{l.hp}",
+                          "max": "{l.maxHp}",
+                          "visible": "{l.mine}"
+                        },
+                        {
+                          "type": "bar",
+                          "style": "hpFoe",
+                          "size": [
+                            64,
+                            6
+                          ],
+                          "value": "{l.hp}",
+                          "max": "{l.maxHp}",
+                          "visible": "{l.foe}"
+                        },
+                        {
+                          "type": "text",
+                          "style": "tagNum",
+                          "text": "{l.hp}/{l.maxHp}"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "stack",
+                  "style": "plain",
+                  "direction": "horizontal",
+                  "gap": 2,
+                  "align": "center",
+                  "visible": "{l.essence}",
+                  "children": [
+                    {
+                      "type": "image",
+                      "image": "art/ui/match/icons/essence.png",
+                      "style": "iconGold",
+                      "size": [
+                        16,
+                        16
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "style": "tagEssence",
+                      "text": "{l.essence}"
+                    }
+                  ]
+                }
+              ],
+              "visible": "{l.plate}"
+            }
+          ]
+        }
+      }
+    ]
+  }
 }

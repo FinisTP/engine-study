@@ -2,21 +2,156 @@
   "format": "umbra.ui",
   "version": 1,
   "modal": true,
-  "dim": true,
-  "root": { "type": "stack", "anchor": "center", "style": "float", "gap": 12, "align": "center", "size": [820, 0], "children": [
-    { "type": "text", "style": "title", "text": "{battle.title}" },
-    { "type": "list", "items": "{battle.fighters}", "as": "f", "direction": "horizontal", "gap": 60,
-      "entry": { "type": "stack", "style": "cardArt", "gap": 4, "align": "center", "size": [320, 0], "children": [
-        { "type": "image", "image": "{f.portrait}", "fit": "top", "size": [120, 120] },
-        { "type": "text", "style": "heading", "text": "{f.name}   Lv {f.level}" },
-        { "type": "bar", "style": "hp", "size": [240, 10], "value": "{f.hp}", "max": "{f.maxHp}" },
-        { "type": "text", "style": "small", "text": "HP {f.hp}/{f.maxHp}" },
-        { "type": "text", "style": "good", "text": "Shield {f.shield}", "visible": "{f.shield}" }
-      ] } },
-    { "type": "text", "style": "blow", "text": "{battle.line}", "visible": "{battle.line}" },
-    { "type": "list", "items": "{battle.picks}", "as": "p", "gap": 6, "visible": "{battle.picks}",
-      "entry": { "type": "button", "style": "act", "size": [420, 0], "text": "{p.label}   {p.dealtMin}-{p.dealtMax}   cost {p.cost} HP", "action": "pick", "arg": "{p.slot}",
-                 "disabled": "{p.off}", "tip": "{p.why}" } },
-    { "type": "text", "style": "warning", "text": "{tip}", "visible": "{tip}" }
-  ] }
+  "root": {
+    "type": "panel",
+    "anchor": "fill",
+    "style": "layer",
+    "children": [
+      {
+        "type": "stack",
+        "anchor": "top",
+        "offset": [
+          0,
+          36
+        ],
+        "style": "plain",
+        "gap": 4,
+        "align": "center",
+        "children": [
+          {
+            "type": "text",
+            "style": "heading",
+            "text": "{battle.title}"
+          },
+          {
+            "type": "text",
+            "style": "blow",
+            "text": "{battle.line}",
+            "visible": "{battle.line}"
+          }
+        ]
+      },
+      {
+        "type": "list",
+        "anchor": "bottom",
+        "offset": [
+          0,
+          -120
+        ],
+        "items": "{battle.fighters}",
+        "as": "f",
+        "direction": "horizontal",
+        "gap": 200,
+        "entry": {
+          "type": "stack",
+          "style": "fighterCard",
+          "direction": "horizontal",
+          "gap": 10,
+          "align": "center",
+          "size": [
+            270,
+            0
+          ],
+          "children": [
+            {
+              "type": "image",
+              "image": "{f.portrait}",
+              "fit": "top",
+              "size": [
+                72,
+                72
+              ]
+            },
+            {
+              "type": "stack",
+              "style": "plain",
+              "gap": 3,
+              "children": [
+                {
+                  "type": "stack",
+                  "style": "plain",
+                  "direction": "horizontal",
+                  "gap": 6,
+                  "align": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "style": "tagName",
+                      "text": "{f.name}"
+                    },
+                    {
+                      "type": "text",
+                      "style": "tagLevel",
+                      "text": "Lv {f.level}"
+                    }
+                  ]
+                },
+                {
+                  "type": "bar",
+                  "style": "hp",
+                  "size": [
+                    150,
+                    8
+                  ],
+                  "value": "{f.hp}",
+                  "max": "{f.maxHp}"
+                },
+                {
+                  "type": "text",
+                  "style": "tagNum",
+                  "text": "HP {f.hp}/{f.maxHp}"
+                },
+                {
+                  "type": "text",
+                  "style": "good",
+                  "text": "Shield {f.shield}",
+                  "visible": "{f.shield}"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "type": "stack",
+        "anchor": "bottom",
+        "offset": [
+          0,
+          -28
+        ],
+        "style": "float",
+        "gap": 6,
+        "align": "center",
+        "visible": "{battle.picks}",
+        "children": [
+          {
+            "type": "list",
+            "items": "{battle.picks}",
+            "as": "p",
+            "direction": "horizontal",
+            "gap": 8,
+            "entry": {
+              "type": "button",
+              "style": "act",
+              "size": [
+                0,
+                0
+              ],
+              "text": "{p.label}   {p.dealtMin}-{p.dealtMax}   cost {p.cost} HP",
+              "action": "pick",
+              "arg": "{p.slot}",
+              "disabled": "{p.off}",
+              "tip": "{p.why}"
+            }
+          },
+          {
+            "type": "text",
+            "style": "warning",
+            "text": "{tip}",
+            "visible": "{tip}"
+          }
+        ]
+      }
+    ]
+  }
 }

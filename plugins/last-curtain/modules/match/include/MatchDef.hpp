@@ -136,7 +136,7 @@ namespace umbra::match
         } board;
         struct { int turns = 0; } respawn;
         struct { int rounds = 0, minDamage = 0; } battle;
-        struct { std::vector<int> xp; int hp = 0, killXp = 0, cards = 3, upgradePower = 2, upgradeCost = 1; } levels;
+        struct { std::vector<int> xp; int hp = 0, killXp = 0, abilityXp = 0, cards = 3, upgradePower = 2, upgradeCost = 1; } levels;
         struct { int min = 2, max = 5, fullEssence = 2; } treasure;
         struct { int respawn = 8; } rooms; // a claimed item or event room comes back this many rounds later // cards per item room; an item card with a full bag gives essence
         struct { int warn = 1, centre = 2; } spawn; // warn: rounds marked before; centre: steps from the stage

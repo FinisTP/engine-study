@@ -83,7 +83,7 @@ namespace umbra::match
         bool acted = false;
     };
 
-    enum class LogKind : std::uint8_t { Moved, Battle, Blow, Down, Essence, Performed, Level, Back, SpawnSoon, Spawned, Event, Item, Treasure, Over };
+    enum class LogKind : std::uint8_t { Moved, Battle, Blow, Down, Essence, Performed, Level, Back, SpawnSoon, Spawned, Event, Item, Treasure, Over, Healed };
     struct LogEntry
     {
         LogKind kind = LogKind::Moved;

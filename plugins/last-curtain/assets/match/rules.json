@@ -4,7 +4,7 @@
              "eventsPerHalf": 2, "eventGap": 2, "itemsPerHalf": 2 },
   "respawn": { "turns": 1 },
   "battle": { "rounds": 3, "minDamage": 1 },
-  "levels": { "xp": [3, 7, 12, 18], "hp": 2, "killXp": 3, "cards": 3, "upgradePower": 2, "upgradeCost": 1 },
+  "levels": { "xp": [3, 7, 12, 18], "hp": 2, "killXp": 3, "abilityXp": 1, "cards": 3, "upgradePower": 2, "upgradeCost": 1 },
   "treasure": { "min": 2, "max": 5, "fullEssence": 2 },
   "rooms": { "respawn": 16 },
   "spawn": { "warn": 1, "centre": 2 },
