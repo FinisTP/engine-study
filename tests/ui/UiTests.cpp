@@ -385,3 +385,48 @@ TEST_CASE("A picture keeps its shape: contain, cover, or cover from the top (UI.
     CHECK(f.uv0.y == 0.0F);
     CHECK(f.uv1.y == 0.5F);
 }
+
+TEST_CASE("Buttons answer the pointer: hover and pressed styles, a scale that eases in and out (UI.md States)")
+{
+    // 1. A skin of our own: a button that grows on hover and shrinks while pressed.
+    const auto root = test::TempDir("ui-states");
+    std::filesystem::create_directories(root / "ui");
+    const json skin{{"format", "umbra.ui-skin"}, {"fonts", {{"body", {{"file", "ui/fonts/Poppins-Regular.ttf"}, {"size", 18}}}}},
+                    {"styles", {{"text", json::object()}, {"panel", json::object()}, {"stack", json::object()},
+                                {"button", {{"background", "#202020"}, {"hover", {{"scale", 1.1}}}, {"pressed", {{"scale", 0.9}}}}}}}};
+    test::WriteText(root / "ui" / "skin.json", skin.dump());
+    const json screen{{"format", "umbra.ui"}, {"version", 1},
+                      {"root", {{"type", "stack"}, {"anchor", "top-left"}, {"children", {
+                          {{"type", "button"}, {"size", {200, 50}}, {"text", "Go"}, {"action", "go"}}}}}}};
+    test::WriteText(root / "ui" / "hud.ui.json", screen.dump());
+    assets::AssetFolders folders(root);
+    folders.AddPlugin(UMBRA_RPG_UI_ASSETS);
+    ui::UiSystem uiSystem;
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(uiSystem.Load(folders, diagnostics));
+    REQUIRE(uiSystem.Open("hud"));
+    core::UiDrawList draw;
+    const auto frame = [&](glm::vec2 mouse, bool held) {
+        ui::UiInput in;
+        in.mouse = mouse, in.mouseMoved = true, in.held = held;
+        draw.Clear();
+        uiSystem.Update(json::object(), {1280, 720}, in, draw);
+        return uiSystem.ChoiceScale("hud", 0);
+    };
+    // 2. Away it rests at 1; over it, it eases up toward 1.1 (not at once); held, toward 0.9; away again, back to 1.
+    CHECK(frame({900, 600}, false) == 1.0F);
+    const float first = frame({100, 25}, false);
+    CHECK(first > 1.0F);
+    CHECK(first < 1.1F);
+    float s = first;
+    for (int i = 0; i < 30; ++i)
+        s = frame({100, 25}, false);
+    CHECK(s > 1.09F);
+    for (int i = 0; i < 30; ++i)
+        s = frame({100, 25}, true);
+    CHECK(s < 0.91F);
+    for (int i = 0; i < 30; ++i)
+        s = frame({900, 600}, false);
+    CHECK(s > 0.99F);
+    CHECK(s < 1.01F);
+}

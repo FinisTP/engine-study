@@ -45,10 +45,12 @@
     "attack": 6,
     "defence": 2,
     "essence": 6,
+    "group": 0,
     "hp": 20,
     "level": 1,
     "maxHp": 20,
     "name": "Dinh Quoc Bao",
+    "picking": false,
     "portrait": "art/sprites/bao/face_calm.png",
     "shield": 0,
     "side": 0,
@@ -59,10 +61,12 @@
     "attack": 3,
     "defence": 5,
     "essence": 0,
+    "group": 1,
     "hp": 30,
     "level": 1,
     "maxHp": 30,
     "name": "Vo Minh Khang (theirs)",
+    "picking": false,
     "portrait": "art/sprites/khang/face_calm.png",
     "shield": 0,
     "side": 1,
@@ -71,67 +75,50 @@
    }
   ],
   "line": "",
-  "picks": [
+  "mine": [
    {
-    "cost": 0,
-    "dealtMax": 4,
-    "dealtMin": 4,
-    "enabled": true,
-    "healed": 0,
-    "label": "Jab",
-    "off": false,
-    "slot": 0,
-    "why": ""
+    "attack": 6,
+    "defence": 2,
+    "essence": 6,
+    "group": 0,
+    "hp": 20,
+    "level": 1,
+    "maxHp": 20,
+    "name": "Dinh Quoc Bao",
+    "picking": false,
+    "portrait": "art/sprites/bao/face_calm.png",
+    "shield": 0,
+    "side": 0,
+    "sprite": "bao",
+    "unit": 0
    }
   ],
+  "picks": [],
   "round": 1,
   "rounds": 3,
+  "theirs": [
+   {
+    "attack": 3,
+    "defence": 5,
+    "essence": 0,
+    "group": 1,
+    "hp": 30,
+    "level": 1,
+    "maxHp": 30,
+    "name": "Vo Minh Khang (theirs)",
+    "picking": false,
+    "portrait": "art/sprites/khang/face_calm.png",
+    "shield": 0,
+    "side": 1,
+    "sprite": "khang",
+    "unit": 5
+   }
+  ],
   "title": "Round 1 of 3"
  },
  "bubbles": [],
  "canSkip": false,
- "end": {
-  "kills": [
-   4,
-   10
-  ],
-  "monsters": [
-   1,
-   7
-  ],
-  "performed": [
-   0,
-   70
-  ],
-  "rows": [
-   {
-    "label": "Score",
-    "mine": 0,
-    "theirs": 70
-   },
-   {
-    "label": "Kills",
-    "mine": 4,
-    "theirs": 10
-   },
-   {
-    "label": "Essence performed",
-    "mine": 0,
-    "theirs": 70
-   },
-   {
-    "label": "Monsters downed",
-    "mine": 1,
-    "theirs": 7
-   }
-  ],
-  "score": [
-   0,
-   70
-  ],
-  "title": "their side wins",
-  "winner": 1
- },
+ "end": null,
  "event": {
   "choices": [
    {
@@ -166,6 +153,28 @@
   "unit": 5
  },
  "hint": "Click a red square to choose the target, or Back.",
+ "hp": [
+  20,
+  30,
+  20,
+  24,
+  20,
+  30,
+  20,
+  20,
+  8,
+  8,
+  8,
+  8,
+  8,
+  8,
+  18,
+  18,
+  18,
+  18,
+  16,
+  16
+ ],
  "level": {
   "choices": [
    {
@@ -173,7 +182,7 @@
     "index": 0,
     "kind": "learn",
     "name": "Learn Cleave",
-    "text": "A new ability for your role."
+    "text": "A new ability:\nIn battle: a blow of 7 plus your Attack. Costs 3 HP."
    },
    {
     "icon": "art/ui/match/icons/attack.png",
@@ -187,7 +196,7 @@
     "index": 2,
     "kind": "upgrade",
     "name": "Jab +2",
-    "text": "Upgrade: Jab gains 2 power."
+    "text": "Upgrade: Jab gains 2 power.\nIn battle: a blow of 3 plus your Attack. Costs 0 HP."
    }
   ],
   "level": 1,
@@ -214,6 +223,7 @@
    "side": 0,
    "sprite": "bao",
    "theirs": false,
+   "tip": "Dinh Quoc Bao  Lv 1\nHP 20/20   ATK 6   DEF 2   essence 6\nClick: look at them.",
    "unit": 0
   },
   {
@@ -227,6 +237,7 @@
    "side": 1,
    "sprite": "huy",
    "theirs": true,
+   "tip": "Hoang Gia Huy  Lv 1\nHP 24/24   ATK 4   DEF 3   essence 0\nClick: look at them.",
    "unit": 3
   },
   {
@@ -240,6 +251,7 @@
    "side": 1,
    "sprite": "mai",
    "theirs": true,
+   "tip": "Phan Thi Mai (theirs)  Lv 1\nHP 20/20   ATK 2   DEF 3   essence 0\nClick: look at them.",
    "unit": 4
   },
   {
@@ -253,6 +265,7 @@
    "side": 0,
    "sprite": "mai",
    "theirs": false,
+   "tip": "Phan Thi Mai  Lv 1\nHP 20/20   ATK 2   DEF 3   essence 0\nClick: look at them.",
    "unit": 2
   },
   {
@@ -266,6 +279,7 @@
    "side": 0,
    "sprite": "khang",
    "theirs": false,
+   "tip": "Vo Minh Khang  Lv 1\nHP 30/30   ATK 3   DEF 5   essence 0\nClick: look at them.",
    "unit": 1
   },
   {
@@ -279,11 +293,96 @@
    "side": 1,
    "sprite": "khang",
    "theirs": true,
+   "tip": "Vo Minh Khang (theirs)  Lv 1\nHP 30/30   ATK 3   DEF 5   essence 0\nClick: look at them.",
    "unit": 5
   },
   {
    "marker": true,
    "text": "next turn"
+  },
+  {
+   "acted": true,
+   "current": false,
+   "down": false,
+   "mine": true,
+   "name": "Dinh Quoc Bao",
+   "portrait": "art/sprites/bao/face_calm.png",
+   "short": "Bao",
+   "side": 0,
+   "sprite": "bao",
+   "theirs": false,
+   "tip": "Dinh Quoc Bao  Lv 1\nHP 20/20   ATK 6   DEF 2   essence 6\nClick: look at them.",
+   "unit": 0
+  },
+  {
+   "acted": true,
+   "current": false,
+   "down": false,
+   "mine": false,
+   "name": "Hoang Gia Huy",
+   "portrait": "art/sprites/huy/face_calm.png",
+   "short": "Huy",
+   "side": 1,
+   "sprite": "huy",
+   "theirs": true,
+   "tip": "Hoang Gia Huy  Lv 1\nHP 24/24   ATK 4   DEF 3   essence 0\nClick: look at them.",
+   "unit": 3
+  },
+  {
+   "acted": true,
+   "current": false,
+   "down": false,
+   "mine": false,
+   "name": "Phan Thi Mai (theirs)",
+   "portrait": "art/sprites/mai/face_calm.png",
+   "short": "Mai",
+   "side": 1,
+   "sprite": "mai",
+   "theirs": true,
+   "tip": "Phan Thi Mai (theirs)  Lv 1\nHP 20/20   ATK 2   DEF 3   essence 0\nClick: look at them.",
+   "unit": 4
+  },
+  {
+   "acted": true,
+   "current": false,
+   "down": false,
+   "mine": true,
+   "name": "Phan Thi Mai",
+   "portrait": "art/sprites/mai/face_calm.png",
+   "short": "Mai",
+   "side": 0,
+   "sprite": "mai",
+   "theirs": false,
+   "tip": "Phan Thi Mai  Lv 1\nHP 20/20   ATK 2   DEF 3   essence 0\nClick: look at them.",
+   "unit": 2
+  },
+  {
+   "acted": true,
+   "current": false,
+   "down": false,
+   "mine": true,
+   "name": "Vo Minh Khang",
+   "portrait": "art/sprites/khang/face_calm.png",
+   "short": "Khang",
+   "side": 0,
+   "sprite": "khang",
+   "theirs": false,
+   "tip": "Vo Minh Khang  Lv 1\nHP 30/30   ATK 3   DEF 5   essence 0\nClick: look at them.",
+   "unit": 1
+  },
+  {
+   "acted": true,
+   "current": false,
+   "down": false,
+   "mine": false,
+   "name": "Vo Minh Khang (theirs)",
+   "portrait": "art/sprites/khang/face_calm.png",
+   "short": "Khang",
+   "side": 1,
+   "sprite": "khang",
+   "theirs": true,
+   "tip": "Vo Minh Khang (theirs)  Lv 1\nHP 30/30   ATK 3   DEF 5   essence 0\nClick: look at them.",
+   "unit": 5
   }
  ],
  "pick": {
@@ -296,7 +395,7 @@
     "defence": 2,
     "hp": 20,
     "id": 0,
-    "move": 3,
+    "move": 6,
     "name": "Dinh Quoc Bao",
     "picked": true,
     "portrait": "art/sprites/bao/face_calm.png",
@@ -308,7 +407,7 @@
     "defence": 5,
     "hp": 30,
     "id": 1,
-    "move": 3,
+    "move": 6,
     "name": "Vo Minh Khang",
     "picked": true,
     "portrait": "art/sprites/khang/face_calm.png",
@@ -320,7 +419,7 @@
     "defence": 3,
     "hp": 20,
     "id": 2,
-    "move": 3,
+    "move": 6,
     "name": "Phan Thi Mai",
     "picked": false,
     "portrait": "art/sprites/mai/face_calm.png",
@@ -332,7 +431,7 @@
     "defence": 2,
     "hp": 18,
     "id": 3,
-    "move": 5,
+    "move": 10,
     "name": "Tran Ngoc Lan",
     "picked": false,
     "portrait": "art/sprites/lan/face_calm.png",
@@ -344,7 +443,7 @@
     "defence": 3,
     "hp": 24,
     "id": 4,
-    "move": 4,
+    "move": 8,
     "name": "Hoang Gia Huy",
     "picked": false,
     "portrait": "art/sprites/huy/face_calm.png",
@@ -353,13 +452,15 @@
    }
   ],
   "count": 2,
+  "easy": false,
+  "hard": false,
   "level": "medium",
+  "medium": true,
   "side": 3
  },
  "reach": [
-  122,
-  130,
-  132
+  450,
+  484
  ],
  "score": [
   0,
@@ -370,7 +471,7 @@
   "theirs": 0
  },
  "targets": [
-  122
+  484
  ],
  "tip": "No one in reach to aim at.",
  "unit": {

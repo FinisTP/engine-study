@@ -26,6 +26,7 @@ namespace umbra::ui
         std::string image;               // panel picture (asset path), drawn 9-sliced with `slice`
         glm::vec4 slice{0.0F};
         glm::vec4 tint{1.0F};            // image color
+        float scale = 1.0F;              // drawn this much larger about its middle (buttons ease to it: hover, pressed)
     };
 
     enum class State
@@ -33,7 +34,8 @@ namespace umbra::ui
         Normal,
         Hover,    // mouse over it, or keyboard/gamepad focus
         Selected, // a list entry the game marks as chosen
-        Disabled
+        Disabled,
+        Pressed // the mouse is held on it (a style without "pressed" uses "hover")
     };
 
     struct FontFile final

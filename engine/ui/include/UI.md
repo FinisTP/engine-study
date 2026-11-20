@@ -115,7 +115,10 @@ top. Everything else goes back to the game from `Update`.
 ```
 
 A style takes the fields of its `base`, then its own. `hover` (focused), `selected` and
-`disabled` override fields in that state. Fields: `font`, `color`, `background`, `border`,
+`disabled` override fields in that state. `pressed` (the mouse held on it; without one a style uses `hover`)
+too. A button, or a list entry with an action, is in `hover` under the pointer on any screen, and
+eases toward its state's `scale` (0.35 of the way a frame: a bounce in and out); a selected one
+stays `selected` under the pointer. Fields: `font`, `color`, `background`, `border`,
 `borderWidth`, `padding` (one number, `[x, y]`, or `[left, top, right, bottom]`), `fill` (bars),
 `image` + `slice` (a 9-slice picture as the box), `tint`. Colors are `"#rrggbb"`, `"#rrggbbaa"`
 or `[r, g, b, a]` from 0 to 1.

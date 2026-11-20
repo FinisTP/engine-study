@@ -23,8 +23,10 @@ namespace umbra::ui
         std::vector<int> indices;    // their positions, for "{index}"
         std::optional<State> entryState; // the state of the next list entry's root widget
         State inherited = State::Normal; // a focused or disabled entry's state, seen by the widgets inside it
-        glm::vec2 mouse{-1.0F};          // for tips
+        glm::vec2 mouse{-1.0F};          // for tips and the pointer's hover
         std::string tip;                 // the last tipped widget placed under the mouse
+        bool held = false;               // the mouse button is down: what is under it looks pressed
+        std::string screen;              // whose choices these are (scales_ keys)
 
         // "hero.health" -> the value: list entry names first, then the data; nullptr if missing.
         const json *Lookup(const std::string &path) const
@@ -307,20 +309,31 @@ namespace umbra::ui
         //    the state of the entry this widget is inside (so an arrow can light up with its entry).
         const bool disabled = !node.disabled.empty() && c.Truthy(node.disabled);
         State state = entryState.value_or(!node.selected.empty() && c.Truthy(node.selected) ? State::Selected : c.inherited);
-        if (node.type == "button" && !disabled)
+        const bool choice = node.type == "button" && !disabled;
+        if (choice)
         {
-            if (c.input && static_cast<int>(c.choices.size()) == c.focus)
-                state = State::Hover;
+            if ((c.input && static_cast<int>(c.choices.size()) == c.focus) || rect.Contains(c.mouse))
+                state = rect.Contains(c.mouse) && c.held ? State::Pressed : State::Hover; // focused, or under the pointer
             c.choices.push_back({rect, c.Text(node.action), c.Text(node.arg)});
         }
         if ((node.type == "panel" || node.type == "stack") && !node.action.empty() && !disabled)
             c.boxes.push_back({rect, c.Text(node.action), c.Text(node.arg)});
+        if (state == State::Hover && !node.selected.empty() && c.Truthy(node.selected))
+            state = State::Selected; // chosen stays lit under the pointer (its scale still answers below)
         if (disabled)
             state = State::Disabled;
         if (!node.tip.empty() && rect.Contains(c.mouse))
             if (std::string t = c.Text(node.tip); !t.empty())
                 c.tip = std::move(t); // placed later = drawn on top
         const Style style = skin_.Get(DefaultStyle(node), state);
+        // 1b. A choice (a button, a list entry with an action) eases toward its style's scale: a bounce in and out.
+        if (choice || entryState)
+        {
+            float &scale = scales_.try_emplace(c.screen + "#" + std::to_string(c.choices.size() - 1), 1.0F).first->second;
+            scale += (style.scale - scale) * 0.35F;
+            if (std::abs(scale - 1.0F) > 0.001F)
+                rect = {rect.x + rect.w * (1.0F - scale) * 0.5F, rect.y + rect.h * (1.0F - scale) * 0.5F, rect.w * scale, rect.h * scale};
+        }
         const State outer = std::exchange(c.inherited, state);
         struct Restore { Context &c; State state; ~Restore() { c.inherited = state; } } restore{c, outer};
         DrawBox(style, rect, c);
@@ -422,10 +435,10 @@ namespace umbra::ui
                 const bool entryDisabled = !node.entry->disabled.empty() && c.Truthy(node.entry->disabled);
                 if (!node.action.empty() && !entryDisabled)
                 {
-                    const bool focused = c.input && static_cast<int>(c.choices.size()) == c.focus;
+                    const bool focused = (c.input && static_cast<int>(c.choices.size()) == c.focus) || r.Contains(c.mouse);
                     c.choices.push_back({r, c.Text(node.action), c.Text(node.arg)});
                     if (focused)
-                        c.entryState = State::Hover;
+                        c.entryState = r.Contains(c.mouse) && c.held ? State::Pressed : State::Hover;
                 }
                 Place(*node.entry, r, c);
                 c.entryState.reset();
@@ -507,7 +520,7 @@ namespace umbra::ui
             const Screen &screen = screens_.at(name);
             if (screen.dim)
                 painter.Fill(view, skin_.Dim());
-            Context c{data, painter, name == target, focus_[name], {}, {}, {}, {}, State::Normal, State::Normal, input.mouse, {}};
+            Context c{data, painter, name == target, focus_[name], {}, {}, {}, {}, State::Normal, State::Normal, input.mouse, {}, input.held, name};
             Place(screen.root, AnchorRect(view, Measure(screen.root, c, view.w), screen.root.anchor, screen.root.offset), c);
             choices_[name] = std::move(c.choices);
             boxes_[name] = std::move(c.boxes);
@@ -515,5 +528,11 @@ namespace umbra::ui
                 tip_ = std::move(c.tip);
         }
         return actions;
+    }
+
+    float UiSystem::ChoiceScale(const std::string &screen, int choice) const
+    {
+        const auto it = scales_.find(screen + "#" + std::to_string(choice));
+        return it == scales_.end() ? 1.0F : it->second;
     }
 }

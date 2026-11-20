@@ -59,6 +59,7 @@ umbra::ui::UiInput Screens::MapInput(const umbra::platform::Input &input, glm::v
     ui.mouse = glm::vec2{input.GetMouseX(), input.GetMouseY()} * scale;
     ui.mouseMoved = input.MouseMoved();
     ui.click = input.IsMouseButtonPressed(0);
+    ui.held = input.IsMouseButtonHeld(0);
     ui.up = pressed({InputKey::Up});
     ui.down = pressed({InputKey::Down});
     ui.left = pressed({InputKey::Left});

@@ -113,3 +113,14 @@ picks only while the rules' battle runs. `UiData()["focus"]` is whom the last to
 (striker and struck, healer and healed, the one who levels, performs, takes or appears) for
 `beatSeconds`; the table frames them. The player's own action that has someone to look at keeps
 its beat before the bots go on.
+
+## Told, not ahead (2026-11-20 evening)
+
+A blow, a heal, an attack and a board ability are told beat by beat, the player's own too
+(`blowSeconds` a blow): the cards' HP follow the told lines (`toldHp_`, `UiData()["hp"]`), and a
+fighter the rules have downed stands (`standing`) until its fall is told. No round banner and no
+bot's action while a finished fight is still on its stage, and the player cannot act then. Group
+battles: `fight` is the four places, `picking` whose pick it is; the battle screen has `mine` and
+`theirs`, and a strike is offered at each foe standing ("slot:target"). The hint line always says
+what to do next; the order strip runs `orderLength` (12) portraits, each with a tip of its numbers
+and a click to look at it; level cards say what an ability does (`AbilityText`).

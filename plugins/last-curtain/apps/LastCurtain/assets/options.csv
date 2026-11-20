@@ -20,3 +20,4 @@ turnBannerSeconds,1.2,each turn opens with a banner naming whose turn it is (sec
 plainBeatSeconds,0.6,a seen bot step where nothing happens (a plain room)
 matchCameraDistance,19,the faction match: metres from the table
 matchCameraTilt,57,the faction match: degrees above the table
+orderLength,12,portraits in the faction match's order strip

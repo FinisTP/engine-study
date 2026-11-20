@@ -32,6 +32,7 @@ namespace umbra::night
         bool light = true;               // false: everyone sees everything (the user's test switch)
         float matchCameraDistance = 26.0F; // the faction match's table: the seat's distance
         float matchCameraTilt = 58.0F;     // ... and its degrees above the table
+        float orderLength = 12.0F;         // portraits in the match's order strip
     };
 
     // Reads key,value,note rows; an unknown key or a bad value is refused with its row.

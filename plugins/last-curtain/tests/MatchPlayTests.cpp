@@ -62,13 +62,15 @@ TEST_CASE("Every log kind and every Why has words (T322)", "[match][play]")
         CHECK(line.get<std::string>().find('{') == std::string::npos);
 }
 
-TEST_CASE("The order strip runs on past the round's end (T323)", "[match][play]")
+TEST_CASE("The order strip runs on past the round's end, twelve portraits long (T323)", "[match][play]")
 {
     const MatchDef def = Data();
     MatchPlay p = Make(def);
     const auto &order = p.State().order;
     nlohmann::json strip = p.UiData()["order"];
-    REQUIRE(strip.size() == order.size() + 1);
+    REQUIRE(strip.size() == 12 + 1); // twelve portraits and the marker (options orderLength)
+    CHECK(strip[order.size() + 1]["unit"] == order[0]); // the next round goes on after the marker
+    CHECK_FALSE(strip[0]["tip"].get<std::string>().empty());
     CHECK(strip[0]["unit"] == order[0]);
     CHECK(strip[0]["current"] == true);
     CHECK(strip[order.size()]["marker"] == true);

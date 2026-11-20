@@ -1,77 +1,515 @@
 {
   "format": "umbra.ui",
   "version": 1,
-  "root": { "type": "panel", "anchor": "fill", "style": "layer", "children": [
-    { "type": "stack", "anchor": "top-left", "offset": [20, 14], "style": "float", "direction": "horizontal", "gap": 12, "align": "center", "children": [
-      { "type": "text", "style": "mine", "text": "Your side" },
-      { "type": "text", "style": "mineBig", "text": "{scores.mine}" },
-      { "type": "text", "style": "muted", "text": "|" },
-      { "type": "text", "style": "theirsBig", "text": "{scores.theirs}" },
-      { "type": "text", "style": "theirs", "text": "Their side" }
-    ] },
-    { "type": "list", "anchor": "top", "offset": [0, 10], "style": "float", "items": "{order}", "as": "o", "direction": "horizontal", "gap": 6,
-      "entry": { "type": "stack", "style": "face", "gap": 1, "align": "center", "selected": "{o.current}", "disabled": "{o.down}", "children": [
-        { "type": "image", "image": "{o.portrait}", "fit": "top", "size": [44, 44], "visible": "{o.portrait}" },
-        { "type": "text", "style": "small", "text": "{o.short}", "visible": "{o.mine}" },
-        { "type": "text", "style": "warning", "text": "{o.short}", "visible": "{o.theirs}" },
-        { "type": "text", "style": "warning", "text": "next turn", "visible": "{o.marker}" }
-      ] } },
-    { "type": "stack", "anchor": "bottom-left", "offset": [20, -20], "style": "float", "direction": "horizontal", "gap": 12, "children": [
-      { "type": "image", "image": "{unit.portrait}", "fit": "top", "size": [92, 92] },
-      { "type": "stack", "gap": 4, "children": [
-        { "type": "text", "style": "heading", "text": "{unit.name}" },
-        { "type": "text", "style": "muted", "text": "{unit.role}   Lv {unit.level}" },
-        { "type": "bar", "style": "hp", "size": [200, 10], "value": "{unit.hp}", "max": "{unit.maxHp}" },
-        { "type": "stack", "direction": "horizontal", "gap": 5, "align": "center", "children": [
-          { "type": "image", "style": "iconRed", "image": "art/ui/match/icons/hp.png", "size": [16, 16], "fit": "contain" },
-          { "type": "text", "style": "small", "text": "{unit.hp}/{unit.maxHp}" },
-          { "type": "spacer", "size": [10, 0] },
-          { "type": "image", "style": "iconGold", "image": "art/ui/match/icons/essence.png", "size": [16, 16], "fit": "contain" },
-          { "type": "text", "style": "essence", "text": "{unit.essence}" }
-        ] },
-        { "type": "stack", "direction": "horizontal", "gap": 5, "align": "center", "visible": "{armed}", "children": [
-          { "type": "image", "style": "iconPale", "image": "art/ui/match/icons/attack.png", "size": [16, 16], "fit": "contain" },
-          { "type": "text", "style": "small", "text": "{unit.attack}" },
-          { "type": "spacer", "size": [10, 0] },
-          { "type": "image", "style": "iconPale", "image": "art/ui/match/icons/defence.png", "size": [16, 16], "fit": "contain" },
-          { "type": "text", "style": "small", "text": "{unit.defence}" }
-        ] }
-      ] }
-    ] },
-    { "type": "stack", "anchor": "left", "offset": [20, -30], "gap": 6, "visible": "{actions}", "children": [
-      { "type": "list", "items": "{actions}", "as": "a", "gap": 5,
-        "entry": { "type": "button", "style": "act", "size": [230, 0], "text": "{a.label}   {a.note}", "action": "act", "arg": "{a.id}", "disabled": "{a.off}", "tip": "{a.why}" } }
-    ] },
-    { "type": "stack", "anchor": "top-right", "offset": [-20, 96], "style": "float", "gap": 5, "size": [280, 0], "visible": "{forecast}", "children": [
-      { "type": "text", "style": "muted", "text": "Forecast" },
-      { "type": "text", "style": "heading", "text": "{forecast.name}  Lv {forecast.level}", "visible": "{forecast.name}" },
-      { "type": "bar", "style": "hp", "size": [250, 8], "value": "{forecast.hp}", "max": "{forecast.maxHp}", "visible": "{forecast.maxHp}" },
-      { "type": "stack", "direction": "horizontal", "gap": 5, "align": "center", "visible": "{forecast.maxHp}", "children": [
-        { "type": "image", "style": "iconRed", "image": "art/ui/match/icons/hp.png", "size": [14, 14], "fit": "contain" },
-        { "type": "text", "style": "small", "text": "{forecast.hp}/{forecast.maxHp}" },
-        { "type": "spacer", "size": [8, 0] },
-        { "type": "image", "style": "iconPale", "image": "art/ui/match/icons/attack.png", "size": [14, 14], "fit": "contain" },
-        { "type": "text", "style": "small", "text": "{forecast.attack}" },
-        { "type": "spacer", "size": [8, 0] },
-        { "type": "image", "style": "iconPale", "image": "art/ui/match/icons/defence.png", "size": [14, 14], "fit": "contain" },
-        { "type": "text", "style": "small", "text": "{forecast.defence}" }
-      ] },
-      { "type": "text", "style": "small", "text": "Carries {forecast.essence} essence", "visible": "{forecast.essence}" },
-      { "type": "text", "style": "bad", "text": "Your blow: {forecast.dealtMin}-{forecast.dealtMax}", "visible": "{forecast.dealtMax}" },
-      { "type": "text", "style": "good", "text": "Heals {forecast.healed}", "visible": "{forecast.healed}" },
-      { "type": "text", "style": "warning", "text": "Appears on round {forecast.round}", "visible": "{forecast.round}" },
-      { "type": "text", "style": "small", "text": "{forecast.text}", "wrap": true, "size": [250, 0], "visible": "{forecast.text}" }
-    ] },
-    { "type": "stack", "anchor": "bottom-right", "offset": [-20, -20], "style": "float", "gap": 3, "size": [300, 0], "visible": "{logOpen}", "children": [
-      { "type": "stack", "direction": "horizontal", "gap": 190, "align": "center", "children": [
-        { "type": "text", "style": "muted", "text": "Log" },
-        { "type": "button", "style": "entry", "text": "hide", "action": "log" }
-      ] },
-      { "type": "list", "items": "{logTail}", "as": "l", "gap": 2, "entry": { "type": "text", "style": "small", "text": "{l}", "wrap": true, "size": [280, 0] } }
-    ] },
-    { "type": "button", "style": "act", "anchor": "bottom-right", "offset": [-20, -20], "text": "Log", "action": "log", "visible": "{logClosed}" },
-    { "type": "button", "style": "act", "anchor": "bottom-right", "offset": [-340, -20], "text": "Skip", "action": "skip", "visible": "{canSkip}" },
-    { "type": "text", "anchor": "bottom", "offset": [0, -70], "style": "card", "text": "{tip}", "visible": "{tip}" },
-    { "type": "text", "anchor": "bottom", "offset": [0, -24], "style": "card", "text": "{hint}", "visible": "{hint}" }
-  ] }
+  "root": {
+    "type": "panel",
+    "anchor": "fill",
+    "style": "layer",
+    "children": [
+      {
+        "type": "stack",
+        "anchor": "top-left",
+        "offset": [
+          20,
+          14
+        ],
+        "style": "float",
+        "direction": "horizontal",
+        "gap": 12,
+        "align": "center",
+        "children": [
+          {
+            "type": "text",
+            "style": "mine",
+            "text": "Your side"
+          },
+          {
+            "type": "text",
+            "style": "mineBig",
+            "text": "{scores.mine}"
+          },
+          {
+            "type": "text",
+            "style": "muted",
+            "text": "|"
+          },
+          {
+            "type": "text",
+            "style": "theirsBig",
+            "text": "{scores.theirs}"
+          },
+          {
+            "type": "text",
+            "style": "theirs",
+            "text": "Their side"
+          }
+        ]
+      },
+      {
+        "type": "list",
+        "anchor": "top",
+        "offset": [
+          130,
+          10
+        ],
+        "style": "float",
+        "items": "{order}",
+        "as": "o",
+        "direction": "horizontal",
+        "gap": 6,
+        "entry": {
+          "type": "stack",
+          "style": "face",
+          "gap": 1,
+          "align": "center",
+          "selected": "{o.current}",
+          "disabled": "{o.down}",
+          "children": [
+            {
+              "type": "image",
+              "image": "{o.portrait}",
+              "fit": "top",
+              "size": [
+                44,
+                44
+              ],
+              "visible": "{o.portrait}"
+            },
+            {
+              "type": "text",
+              "style": "small",
+              "text": "{o.short}",
+              "visible": "{o.mine}"
+            },
+            {
+              "type": "text",
+              "style": "warning",
+              "text": "{o.short}",
+              "visible": "{o.theirs}"
+            },
+            {
+              "type": "text",
+              "style": "warning",
+              "text": "next turn",
+              "visible": "{o.marker}"
+            }
+          ],
+          "tip": "{o.tip}"
+        },
+        "action": "focus",
+        "arg": "{o.unit}"
+      },
+      {
+        "type": "stack",
+        "anchor": "bottom-left",
+        "offset": [
+          20,
+          -20
+        ],
+        "style": "float",
+        "direction": "horizontal",
+        "gap": 12,
+        "children": [
+          {
+            "type": "image",
+            "image": "{unit.portrait}",
+            "fit": "top",
+            "size": [
+              92,
+              92
+            ]
+          },
+          {
+            "type": "stack",
+            "gap": 4,
+            "children": [
+              {
+                "type": "text",
+                "style": "heading",
+                "text": "{unit.name}"
+              },
+              {
+                "type": "text",
+                "style": "muted",
+                "text": "{unit.role}   Lv {unit.level}"
+              },
+              {
+                "type": "bar",
+                "style": "hp",
+                "size": [
+                  200,
+                  10
+                ],
+                "value": "{unit.hp}",
+                "max": "{unit.maxHp}"
+              },
+              {
+                "type": "stack",
+                "direction": "horizontal",
+                "gap": 5,
+                "align": "center",
+                "children": [
+                  {
+                    "type": "image",
+                    "style": "iconRed",
+                    "image": "art/ui/match/icons/hp.png",
+                    "size": [
+                      16,
+                      16
+                    ],
+                    "fit": "contain"
+                  },
+                  {
+                    "type": "text",
+                    "style": "small",
+                    "text": "{unit.hp}/{unit.maxHp}"
+                  },
+                  {
+                    "type": "spacer",
+                    "size": [
+                      10,
+                      0
+                    ]
+                  },
+                  {
+                    "type": "image",
+                    "style": "iconGold",
+                    "image": "art/ui/match/icons/essence.png",
+                    "size": [
+                      16,
+                      16
+                    ],
+                    "fit": "contain"
+                  },
+                  {
+                    "type": "text",
+                    "style": "essence",
+                    "text": "{unit.essence}"
+                  }
+                ]
+              },
+              {
+                "type": "stack",
+                "direction": "horizontal",
+                "gap": 5,
+                "align": "center",
+                "visible": "{armed}",
+                "children": [
+                  {
+                    "type": "image",
+                    "style": "iconPale",
+                    "image": "art/ui/match/icons/attack.png",
+                    "size": [
+                      16,
+                      16
+                    ],
+                    "fit": "contain"
+                  },
+                  {
+                    "type": "text",
+                    "style": "small",
+                    "text": "{unit.attack}"
+                  },
+                  {
+                    "type": "spacer",
+                    "size": [
+                      10,
+                      0
+                    ]
+                  },
+                  {
+                    "type": "image",
+                    "style": "iconPale",
+                    "image": "art/ui/match/icons/defence.png",
+                    "size": [
+                      16,
+                      16
+                    ],
+                    "fit": "contain"
+                  },
+                  {
+                    "type": "text",
+                    "style": "small",
+                    "text": "{unit.defence}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "list",
+        "items": "{dock}",
+        "as": "d",
+        "entry": {
+          "type": "stack",
+          "style": "float",
+          "gap": 6,
+          "at": "{d.at}",
+          "children": [
+            {
+              "type": "list",
+              "items": "{actions}",
+              "as": "a",
+              "gap": 5,
+              "entry": {
+                "type": "button",
+                "style": "act",
+                "size": [
+                  230,
+                  0
+                ],
+                "text": "{a.label}   {a.note}",
+                "action": "act",
+                "arg": "{a.id}",
+                "disabled": "{a.off}",
+                "tip": "{a.why}"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "stack",
+        "anchor": "top-right",
+        "offset": [
+          -20,
+          96
+        ],
+        "style": "float",
+        "gap": 5,
+        "size": [
+          280,
+          0
+        ],
+        "visible": "{forecast}",
+        "children": [
+          {
+            "type": "text",
+            "style": "muted",
+            "text": "Forecast"
+          },
+          {
+            "type": "text",
+            "style": "heading",
+            "text": "{forecast.name}  Lv {forecast.level}",
+            "visible": "{forecast.name}"
+          },
+          {
+            "type": "bar",
+            "style": "hp",
+            "size": [
+              250,
+              8
+            ],
+            "value": "{forecast.hp}",
+            "max": "{forecast.maxHp}",
+            "visible": "{forecast.maxHp}"
+          },
+          {
+            "type": "stack",
+            "direction": "horizontal",
+            "gap": 5,
+            "align": "center",
+            "visible": "{forecast.maxHp}",
+            "children": [
+              {
+                "type": "image",
+                "style": "iconRed",
+                "image": "art/ui/match/icons/hp.png",
+                "size": [
+                  14,
+                  14
+                ],
+                "fit": "contain"
+              },
+              {
+                "type": "text",
+                "style": "small",
+                "text": "{forecast.hp}/{forecast.maxHp}"
+              },
+              {
+                "type": "spacer",
+                "size": [
+                  8,
+                  0
+                ]
+              },
+              {
+                "type": "image",
+                "style": "iconPale",
+                "image": "art/ui/match/icons/attack.png",
+                "size": [
+                  14,
+                  14
+                ],
+                "fit": "contain"
+              },
+              {
+                "type": "text",
+                "style": "small",
+                "text": "{forecast.attack}"
+              },
+              {
+                "type": "spacer",
+                "size": [
+                  8,
+                  0
+                ]
+              },
+              {
+                "type": "image",
+                "style": "iconPale",
+                "image": "art/ui/match/icons/defence.png",
+                "size": [
+                  14,
+                  14
+                ],
+                "fit": "contain"
+              },
+              {
+                "type": "text",
+                "style": "small",
+                "text": "{forecast.defence}"
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "style": "small",
+            "text": "Carries {forecast.essence} essence",
+            "visible": "{forecast.essence}"
+          },
+          {
+            "type": "text",
+            "style": "bad",
+            "text": "Your blow: {forecast.dealtMin}-{forecast.dealtMax}",
+            "visible": "{forecast.dealtMax}"
+          },
+          {
+            "type": "text",
+            "style": "good",
+            "text": "Heals {forecast.healed}",
+            "visible": "{forecast.healed}"
+          },
+          {
+            "type": "text",
+            "style": "warning",
+            "text": "Appears on round {forecast.round}",
+            "visible": "{forecast.round}"
+          },
+          {
+            "type": "text",
+            "style": "small",
+            "text": "{forecast.text}",
+            "wrap": true,
+            "size": [
+              250,
+              0
+            ],
+            "visible": "{forecast.text}"
+          }
+        ]
+      },
+      {
+        "type": "stack",
+        "anchor": "bottom-right",
+        "offset": [
+          -20,
+          -20
+        ],
+        "style": "float",
+        "gap": 3,
+        "size": [
+          300,
+          0
+        ],
+        "visible": "{logOpen}",
+        "children": [
+          {
+            "type": "stack",
+            "direction": "horizontal",
+            "gap": 190,
+            "align": "center",
+            "children": [
+              {
+                "type": "text",
+                "style": "muted",
+                "text": "Log"
+              },
+              {
+                "type": "button",
+                "style": "entry",
+                "text": "hide",
+                "action": "log"
+              }
+            ]
+          },
+          {
+            "type": "list",
+            "items": "{logTail}",
+            "as": "l",
+            "gap": 2,
+            "entry": {
+              "type": "text",
+              "style": "small",
+              "text": "{l}",
+              "wrap": true,
+              "size": [
+                280,
+                0
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "button",
+        "style": "act",
+        "anchor": "bottom-right",
+        "offset": [
+          -20,
+          -20
+        ],
+        "text": "Log",
+        "action": "log",
+        "visible": "{logClosed}"
+      },
+      {
+        "type": "button",
+        "style": "act",
+        "anchor": "bottom-right",
+        "offset": [
+          -340,
+          -20
+        ],
+        "text": "Skip",
+        "action": "skip",
+        "visible": "{canSkip}"
+      },
+      {
+        "type": "text",
+        "anchor": "bottom",
+        "offset": [
+          0,
+          -70
+        ],
+        "style": "card",
+        "text": "{tip}",
+        "visible": "{tip}"
+      },
+      {
+        "type": "text",
+        "anchor": "bottom",
+        "offset": [
+          0,
+          -24
+        ],
+        "style": "card",
+        "text": "{hint}",
+        "visible": "{hint}"
+      }
+    ]
+  }
 }

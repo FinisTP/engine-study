@@ -28,11 +28,20 @@ MatchPlay::MatchPlay(const MatchDef &def, std::uint64_t seed, std::vector<int> p
     : def_(def), s_(NewMatch(def, seed, picks)), level_(level)
 {
     queued_ = shown_ = s_.log.size(); // the setup is not told
+    SyncHp();
 }
 
 MatchPlay::MatchPlay(const MatchDef &def, MatchState saved, BotLevel level) : def_(def), s_(std::move(saved)), level_(level)
 {
     queued_ = shown_ = s_.log.size();
+    SyncHp();
+}
+
+void MatchPlay::SyncHp()
+{
+    toldHp_.clear();
+    for (const Unit &u : s_.units)
+        toldHp_.push_back(u.hp);
 }
 
 const char *MatchPlay::LogName(LogKind kind)
@@ -100,9 +109,13 @@ std::string MatchPlay::Caption(const LogEntry &e) const
 
 bool MatchPlay::Mine(int unit) const { return !watch_ && unit >= 0 && s_.units[U(unit)].kind == 0 && s_.units[U(unit)].faction == 0; }
 
-bool MatchPlay::BannerDue() const { return !s_.over && shown_ == s_.log.size() && shownRound_ != s_.round; }
+bool MatchPlay::BannerDue() const { return !s_.over && shown_ == s_.log.size() && shownRound_ != s_.round && fight_[0] < 0; }
 
-bool MatchPlay::PlayerTurn() const { return !s_.over && shown_ == s_.log.size() && !BannerDue() && Mine(Current(s_)); }
+bool MatchPlay::PlayerTurn() const
+{
+    // Not while a finished fight is still on its stage, nor while a round's banner is due.
+    return !s_.over && shown_ == s_.log.size() && !BannerDue() && (s_.battle.on || fight_[0] < 0) && Mine(Current(s_));
+}
 
 void MatchPlay::Queue() { queued_ = s_.log.size(); }
 
@@ -123,13 +136,27 @@ bool MatchPlay::Reveal()
     Speak(e, shown_ - 1);
     if (const std::string cue = Sound(e); !cue.empty())
         sounds_.push_back(cue);
+    // 1b. The cards follow the told lines.
+    if (e.kind == LogKind::Blow && U(e.b) < toldHp_.size())
+        toldHp_[U(e.b)] = std::max(0, toldHp_[U(e.b)] - e.c);
+    else if (e.kind == LogKind::Healed && U(e.b) < toldHp_.size())
+        toldHp_[U(e.b)] = std::min<int>(s_.units[U(e.b)].maxHp, toldHp_[U(e.b)] + e.c);
+    else if (e.kind == LogKind::Down && U(e.a) < toldHp_.size())
+        toldHp_[U(e.a)] = 0;
     if (e.kind == LogKind::Blow)
         lastBlow_ = line;
     else if (e.kind == LogKind::Battle)
+    {
+        // The fighters of this battle: the rules' list when it is the same battle, else just the two.
         lastBlow_.clear(), fight_[0] = e.a, fight_[1] = e.b;
+        fighters_ = {e.a, -1, e.b, -1};
+        if (s_.battle.attacker == e.a && s_.battle.defender == e.b)
+            for (int p = 0; p < 4; ++p)
+                fighters_[U(p)] = s_.battle.fighters[U(p)];
+    }
     if (e.kind == LogKind::Battle || e.kind == LogKind::Blow || e.kind == LogKind::Down)
         fightHold_ = options_.beatSeconds;
-    wait_ = e.kind == LogKind::Moved ? options_.plainBeatSeconds : options_.beatSeconds;
+    wait_ = e.kind == LogKind::Moved ? options_.plainBeatSeconds : e.kind == LogKind::Blow || e.kind == LogKind::Battle ? options_.blowSeconds : options_.beatSeconds;
     // 2. Whom it is about: the camera frames them while the line stays.
     switch (e.kind)
     {
@@ -179,10 +206,14 @@ bool MatchPlay::Do(const Action &action)
 {
     if (!PlayerTurn() || Check(def_, s_, action) != Why::Ok)
         return false;
+    SyncHp();
     Apply(def_, s_, action);
     Queue();
-    // 1. While it stays the player's turn, what they did shows at once; else it plays out in beats.
-    if (!s_.over && Mine(Current(s_)) && shownRound_ == s_.round)
+    // 1. A blow, a heal or a fight is told beat by beat, the player's too; anything else shows at once while it stays their turn.
+    const bool told = action.kind == ActionKind::Attack || action.kind == ActionKind::BattleAbility || action.kind == ActionKind::BoardAbility;
+    if (told)
+        wait_ = options_.fastBeatSeconds;
+    else if (!s_.over && Mine(Current(s_)) && shownRound_ == s_.round)
         RevealAll();
     clock_ = 0.0F;
     return true;
@@ -196,7 +227,7 @@ void MatchPlay::Update(float dt)
     if ((focusLeft_ -= dt) <= 0.0F)
         focus_.clear();
     if ((fightHold_ = std::max(0.0F, fightHold_ - dt)) <= 0.0F && !s_.battle.on && shown_ == s_.log.size())
-        fight_[0] = fight_[1] = -1; // the battle is told: the board comes back
+        fight_[0] = fight_[1] = -1, fighters_.fill(-1); // the battle is told: the board comes back
     for (Bubble &b : bubbles_)
         b.left -= dt;
     std::erase_if(bubbles_, [](const Bubble &b) { return b.left <= 0.0F; });
@@ -217,8 +248,9 @@ void MatchPlay::Update(float dt)
     if (Reveal() || s_.over || shown_ != s_.log.size())
         return;
     const int now = Current(s_);
-    if (now < 0 || Mine(now))
+    if (now < 0 || Mine(now) || (fight_[0] >= 0 && !s_.battle.on)) // a finished fight keeps its stage a moment
         return;
+    SyncHp();
     Apply(def_, s_, ChooseAction(def_, s_, level_));
     Queue();
     Reveal();
@@ -230,7 +262,11 @@ bool MatchPlay::HandleUi(const std::string &screen, const std::string &action, c
         return logOpen_ = !logOpen_, true;
     // 1. The battle's pick, the level choice, the event's choice and its close.
     if ((screen == "battle" || screen == "level") && action == "pick" && !arg.empty())
-        return Do({screen == "battle" ? ActionKind::BattleAbility : ActionKind::LevelUp, static_cast<std::int8_t>(std::stoi(arg))});
+    {
+        const auto colon = arg.find(':'); // "slot:target" picks a foe in a group battle
+        const int target = colon == std::string::npos ? -1 : std::stoi(arg.substr(colon + 1));
+        return Do({screen == "battle" ? ActionKind::BattleAbility : ActionKind::LevelUp, static_cast<std::int8_t>(std::stoi(arg)), static_cast<std::int8_t>(target)});
+    }
     // 1b. Treasure: pick a face-down card, see what it was, close.
     if (screen == "treasure")
     {
@@ -345,19 +381,23 @@ nlohmann::json MatchPlay::UiData() const
     // 1. The order strip: the acting one to the round's end, the marker, then those who have acted.
     nlohmann::json order = nlohmann::json::array();
     const int n = static_cast<int>(s_.order.size()), turn = s_.monsterTurn >= 0 ? n : s_.turn;
-    auto entry = [&](int i, bool acted) {
+    auto entry = [&](int i, bool later) {
         const int u = s_.order[U(i)];
         const Unit &unit = s_.units[U(u)];
+        const std::string tip = Fill(Word("misc", "orderTip"), {{"name", Name(u)}, {"level", std::to_string(unit.level)}, {"hp", std::to_string(U(u) < toldHp_.size() ? toldHp_[U(u)] : unit.hp)},
+                                                                  {"maxHp", std::to_string(unit.maxHp)}, {"attack", std::to_string(unit.attack)}, {"defence", std::to_string(unit.defence)},
+                                                                  {"essence", std::to_string(unit.essence)}});
         order.push_back({{"unit", u}, {"name", Name(u)}, {"side", unit.faction}, {"sprite", def_.characters[U(unit.def)].sprite},
                          {"portrait", Portrait(def_.characters[U(unit.def)].sprite)}, {"mine", unit.faction == 0}, {"theirs", unit.faction == 1},
                          {"short", def_.characters[U(unit.def)].name.substr(def_.characters[U(unit.def)].name.rfind(' ') + 1)},
-                         {"current", !acted && i == turn}, {"acted", acted}, {"down", unit.cell < 0}});
+                         {"current", !later && i == turn}, {"acted", later}, {"down", unit.cell < 0}, {"tip", tip}});
     };
+    // Twelve portraits: the rest of this round, the marker, then the rounds after in the same order.
     for (int i = turn; i < n; ++i)
         entry(i, false);
     order.push_back({{"marker", true}, {"text", Word("misc", "nextTurn")}});
-    for (int i = 0; i < turn; ++i)
-        entry(i, true);
+    for (int k = 0; static_cast<float>(order.size()) < options_.orderLength + 1.0F && n > 0; ++k)
+        entry(k % n, true);
     j["order"] = order;
     // 2. The panel: the acting character, else the player's first one standing.
     int shown = Current(s_);
@@ -390,7 +430,7 @@ nlohmann::json MatchPlay::UiData() const
             j["hint"] = Word("hints", "move");
         }
         else
-            j["actions"] = Actions();
+            j["actions"] = Actions(), j["hint"] = Word("hints", "act");
         if (Armed())
         {
             nlohmann::json targets = nlohmann::json::array(), range = nlohmann::json::array();
@@ -419,6 +459,14 @@ nlohmann::json MatchPlay::UiData() const
     j["forecast"] = Forecast();
     if (s_.battle.on || fight_[0] >= 0)
         j["battle"] = BattleData();
+    // The hint line always says what to do next (the user's note 19).
+    if (!j.contains("hint"))
+    {
+        const std::string screen = Screen();
+        j["hint"] = screen == "battle" ? Word("hints", PlayerTurn() ? "battle" : "fight")
+                  : screen == "level" || screen == "treasure" || screen == "event" ? Word("hints", screen)
+                  : s_.over ? std::string{} : Word("hints", "watch");
+    }
     if (const int now = Current(s_); now >= 0 && s_.units[U(now)].pending >= 0)
     {
         // 4. The level's cards (Vampire Survivors style): learn, a stat, an upgrade; each with its words.
@@ -433,7 +481,8 @@ nlohmann::json MatchPlay::UiData() const
             const int amount = c.kind == 1 ? c.b : c.kind == 2 ? (c.b == 0 ? def_.rules.levels.upgradePower : def_.rules.levels.upgradeCost) : 0;
             choices.push_back({{"index", choices.size()}, {"kind", c.kind == 0 ? "learn" : c.kind == 1 ? "stat" : "upgrade"},
                                {"name", Fill(Word("levelcards", key + "Title"), {{"ability", name}, {"n", std::to_string(amount)}})},
-                               {"text", Fill(Word("levelcards", key), {{"ability", name}, {"n", std::to_string(amount)}})},
+                               {"text", Fill(Word("levelcards", key), {{"ability", name}, {"n", std::to_string(amount)}}) +
+                                            (ability >= 0 ? "\n" + AbilityText(ability) : std::string{})},
                                {"icon", Word("levelcards", key + "Icon")}});
         }
         j["level"] = {{"unit", now}, {"name", Name(now)}, {"level", s_.units[U(now)].level}, {"choices", choices}};
@@ -468,11 +517,21 @@ nlohmann::json MatchPlay::UiData() const
         bubbles.push_back({{"unit", b.unit}, {"text", b.text}});
     j["bubbles"] = bubbles;
     if (fight_[0] >= 0)
-        j["fight"] = {fight_[0], fight_[1]};
+        j["fight"] = fighters_;
     else if (s_.battle.on) // a battle loaded from a save
-        j["fight"] = {s_.battle.attacker, s_.battle.defender};
+        j["fight"] = s_.battle.fighters;
+    if (j.contains("fight") && s_.battle.on && shown_ == s_.log.size())
+        j["picking"] = Current(s_); // whose pick it is: the stage's arrow
     if (!focus_.empty())
         j["focus"] = focus_;
+    // Downed by the rules but not yet told: they stand until their fall is told (MatchPlay.md "The battle view").
+    nlohmann::json standing = nlohmann::json::array();
+    for (std::size_t i = shown_; i < s_.log.size(); ++i)
+        if (s_.log[i].kind == LogKind::Down && s_.units[U(s_.log[i].a)].cell < 0)
+            standing.push_back(s_.log[i].a);
+    if (!standing.empty())
+        j["standing"] = standing;
+    j["hp"] = toldHp_; // HP as the told lines leave it, by unit
     j["log"] = log_;
     j["logTail"] = std::vector<std::string>(log_.end() - std::min<std::ptrdiff_t>(6, static_cast<std::ptrdiff_t>(log_.size())), log_.end());
     j["logOpen"] = logOpen_;
@@ -635,7 +694,7 @@ nlohmann::json MatchPlay::UnitNumbers(int unit) const
     const Unit &u = s_.units[U(unit)];
     const int level = u.kind == 0 ? u.level : def_.monsters[U(u.def)].level;
     const std::string sprite = u.kind == 0 ? def_.characters[U(u.def)].sprite : def_.monsters[U(u.def)].sprite;
-    return {{"unit", unit}, {"name", Name(unit)}, {"side", u.faction}, {"level", level}, {"portrait", Portrait(sprite)}, {"hp", u.hp}, {"maxHp", u.maxHp},
+    return {{"unit", unit}, {"name", Name(unit)}, {"side", u.faction}, {"level", level}, {"portrait", Portrait(sprite)}, {"hp", U(unit) < toldHp_.size() ? toldHp_[U(unit)] : u.hp}, {"maxHp", u.maxHp},
             {"attack", u.attack}, {"defence", u.defence}, {"essence", u.essence}};
 }
 
@@ -684,11 +743,13 @@ nlohmann::json MatchPlay::Forecast() const
     return {{"kind", "tile"}, {"text", Word("tiles", kinds[static_cast<int>(s_.board.cells[U(hover_)].kind)])}};
 }
 
-nlohmann::json MatchPlay::Fighter(int unit, int side) const
+nlohmann::json MatchPlay::Fighter(int unit, int place) const
 {
     const Unit &u = s_.units[U(unit)];
     nlohmann::json f = UnitNumbers(unit);
-    f["shield"] = s_.battle.shield[U(side)];
+    f["shield"] = s_.battle.on ? s_.battle.shield[U(place)] : 0;
+    f["group"] = place / 2;
+    f["picking"] = s_.battle.on && shown_ == s_.log.size() && Current(s_) == unit;
     f["sprite"] = u.kind == 0 ? def_.characters[U(u.def)].sprite : def_.monsters[U(u.def)].sprite;
     return f;
 }
@@ -696,27 +757,56 @@ nlohmann::json MatchPlay::Fighter(int unit, int side) const
 nlohmann::json MatchPlay::BattleData() const
 {
     const Battle &b = s_.battle;
-    const int a = fight_[0] >= 0 ? fight_[0] : b.attacker, d = fight_[0] >= 0 ? fight_[1] : b.defender;
-    nlohmann::json j{{"fighters", {Fighter(a, 0), Fighter(d, 1)}}, {"round", b.round}, {"rounds", def_.rules.battle.rounds},
+    // 1. Everyone in it by place: the attacker's group first.
+    const std::array<int, 4> places = fight_[0] >= 0 ? fighters_ : std::array<int, 4>{b.fighters[0], b.fighters[1], b.fighters[2], b.fighters[3]};
+    nlohmann::json fighters = nlohmann::json::array(), groups = {nlohmann::json::array(), nlohmann::json::array()};
+    for (int p = 0; p < 4; ++p)
+        if (places[U(p)] >= 0)
+            fighters.push_back(Fighter(places[U(p)], p)), groups[U(p / 2)].push_back(Fighter(places[U(p)], p));
+    nlohmann::json j{{"fighters", fighters}, {"mine", groups[0]}, {"theirs", groups[1]}, {"round", b.round}, {"rounds", def_.rules.battle.rounds},
                      {"title", Fill(Word("battle", "title"), {{"r", std::to_string(b.round)}, {"n", std::to_string(def_.rules.battle.rounds)}})},
                      {"line", lastBlow_}};
     // 1. The player's pick: each battle ability with what it would do, or why not.
     nlohmann::json picks = nlohmann::json::array();
     if (PlayerTurn() && s_.battle.on)
     {
-        const Unit &u = s_.units[U(Current(s_))];
+        // With two foes standing, a strike is offered at each ("Jab: Mai"); the arg is "slot:target".
+        const int me = Current(s_);
+        const Unit &u = s_.units[U(me)];
+        const int mine = static_cast<int>(std::ranges::find(b.fighters, me) - b.fighters.begin());
+        std::vector<int> foes;
+        for (int p = mine < 2 ? 2 : 0, end = p + 2; p < end; ++p)
+            if (const int f = b.fighters[U(p)]; f >= 0 && s_.units[U(f)].hp > 0 && s_.units[U(f)].cell >= 0)
+                foes.push_back(f);
         for (int slot = 0; slot < maxAbilities; ++slot)
             if (const int id = u.abilities[U(slot)]; id >= 0 && def_.abilities[U(id)].use == Use::Battle)
             {
-                const Action a{ActionKind::BattleAbility, static_cast<std::int8_t>(slot)};
-                const Why w = Check(def_, s_, a);
-                const umbra::match::Forecast f = Preview(def_, s_, a);
-                picks.push_back({{"slot", slot}, {"label", def_.abilities[U(id)].name}, {"dealtMin", f.dealtMin}, {"dealtMax", f.dealtMax},
-                                 {"healed", f.healed}, {"cost", f.cost}, {"enabled", w == Why::Ok}, {"off", w != Why::Ok}, {"why", w == Why::Ok ? "" : WhyText(w)}});
+                const bool strike = def_.abilities[U(id)].kind == AbilityClass::Strike;
+                for (int foe : strike && foes.size() > 1 ? foes : std::vector<int>{-1})
+                {
+                    const Action a{ActionKind::BattleAbility, static_cast<std::int8_t>(slot), static_cast<std::int8_t>(foe)};
+                    const Why w = Check(def_, s_, a);
+                    const umbra::match::Forecast f = Preview(def_, s_, a);
+                    const std::string label = def_.abilities[U(id)].name + (foe >= 0 ? ": " + Name(foe) : "");
+                    picks.push_back({{"slot", foe >= 0 ? std::to_string(slot) + ":" + std::to_string(foe) : std::to_string(slot)}, {"label", label},
+                                     {"dealtMin", f.dealtMin}, {"dealtMax", f.dealtMax}, {"healed", f.healed}, {"cost", f.cost},
+                                     {"enabled", w == Why::Ok}, {"off", w != Why::Ok}, {"why", w == Why::Ok ? "" : WhyText(w)}});
+                }
             }
     }
     j["picks"] = picks;
     return j;
+}
+
+std::string MatchPlay::AbilityText(int ability) const
+{
+    // What it does, from its row: the class's words with its numbers (match-words.json "abilityText").
+    const AbilityDef &a = def_.abilities[U(ability)];
+    static const char *classes[] = {"strike", "shield", "heal", "hit", "firststrike"};
+    const std::string dice = a.dice.count > 0 ? std::to_string(a.dice.count) + "d" + std::to_string(a.dice.sides) : std::to_string(a.power);
+    return Fill(Word("abilityText", classes[static_cast<int>(a.kind)]),
+                {{"power", dice}, {"cost", std::to_string(a.hpCost)}, {"range", std::to_string(a.range)},
+                 {"reach", Word("abilityText", a.reach == RangeBy::Straight ? "straight" : "walk")}, {"where", Word("abilityText", a.use == Use::Board ? "board" : "battle")}});
 }
 
 nlohmann::json MatchPlay::EndData() const
@@ -752,7 +842,8 @@ nlohmann::json MatchPlay::PickData(const MatchDef &def, const std::vector<int> &
                          {"picked", std::ranges::find(picks, c) != picks.end()}});
     }
     return {{"characters", cards}, {"count", picks.size()}, {"side", def.options.side},
-            {"canStart", static_cast<int>(picks.size()) == def.options.side}, {"cannotStart", static_cast<int>(picks.size()) != def.options.side}, {"canContinue", canContinue}, {"level", levels[static_cast<int>(level)]}};
+            {"canStart", static_cast<int>(picks.size()) == def.options.side}, {"cannotStart", static_cast<int>(picks.size()) != def.options.side}, {"canContinue", canContinue}, {"level", levels[static_cast<int>(level)]},
+            {"easy", level == BotLevel::Easy}, {"medium", level == BotLevel::Medium}, {"hard", level == BotLevel::Hard}};
 }
 
 bool MatchPlay::TogglePick(const MatchDef &def, std::vector<int> &picks, int character)

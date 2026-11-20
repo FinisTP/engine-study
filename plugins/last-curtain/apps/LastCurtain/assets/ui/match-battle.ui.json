@@ -20,7 +20,7 @@
         "children": [
           {
             "type": "text",
-            "style": "heading",
+            "style": "title",
             "text": "{battle.title}"
           },
           {
@@ -33,15 +33,14 @@
       },
       {
         "type": "list",
-        "anchor": "bottom",
+        "anchor": "bottom-left",
         "offset": [
-          0,
+          30,
           -120
         ],
-        "items": "{battle.fighters}",
+        "items": "{battle.mine}",
         "as": "f",
-        "direction": "horizontal",
-        "gap": 200,
+        "gap": 10,
         "entry": {
           "type": "stack",
           "style": "fighterCard",
@@ -109,7 +108,89 @@
                 }
               ]
             }
-          ]
+          ],
+          "selected": "{f.picking}"
+        }
+      },
+      {
+        "type": "list",
+        "anchor": "bottom-right",
+        "offset": [
+          -30,
+          -120
+        ],
+        "items": "{battle.theirs}",
+        "as": "f",
+        "gap": 10,
+        "entry": {
+          "type": "stack",
+          "style": "fighterCard",
+          "direction": "horizontal",
+          "gap": 10,
+          "align": "center",
+          "size": [
+            270,
+            0
+          ],
+          "children": [
+            {
+              "type": "image",
+              "image": "{f.portrait}",
+              "fit": "top",
+              "size": [
+                72,
+                72
+              ]
+            },
+            {
+              "type": "stack",
+              "style": "plain",
+              "gap": 3,
+              "children": [
+                {
+                  "type": "stack",
+                  "style": "plain",
+                  "direction": "horizontal",
+                  "gap": 6,
+                  "align": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "style": "tagName",
+                      "text": "{f.name}"
+                    },
+                    {
+                      "type": "text",
+                      "style": "tagLevel",
+                      "text": "Lv {f.level}"
+                    }
+                  ]
+                },
+                {
+                  "type": "bar",
+                  "style": "hp",
+                  "size": [
+                    150,
+                    8
+                  ],
+                  "value": "{f.hp}",
+                  "max": "{f.maxHp}"
+                },
+                {
+                  "type": "text",
+                  "style": "tagNum",
+                  "text": "HP {f.hp}/{f.maxHp}"
+                },
+                {
+                  "type": "text",
+                  "style": "good",
+                  "text": "Shield {f.shield}",
+                  "visible": "{f.shield}"
+                }
+              ]
+            }
+          ],
+          "selected": "{f.picking}"
         }
       },
       {

@@ -3,6 +3,7 @@
 #include "Motion.hpp"
 #include "TableCamera.hpp"
 
+#include <array>
 #include <Match.hpp>
 
 #include <AssetFolders.hpp>
@@ -45,8 +46,12 @@ public:
     void StartScene(const std::string &name, int cell) { scene_ = name, sceneT_ = 0.0F, sceneCell_ = cell; }
     [[nodiscard]] bool InScene() const { return !scene_.empty(); }
     void StopFollow() { follow_ = false; } // a drag frees the camera until the next turn
+    void LookAt(const umbra::match::MatchState &s, int unit); // the camera glides to it (frees it from following)
+    [[nodiscard]] std::optional<glm::vec2> HeadOnScreen(const umbra::match::MatchState &s, int unit, glm::vec2 pixels) const;
     // The battle view (MatchTable.md): the two fighters stand apart, facing, the camera comes down into their room.
-    void SetFight(int attacker, int defender) { fight_[0] = attacker, fight_[1] = defender; }
+    void SetFight(const std::vector<int> &places, int picking); // by place, two a group (MatchPlay "fight"); empty: none
+    // From MatchPlay: the fallen not yet told (still drawn), and HP as told (the cards over figures).
+    void SetTold(std::vector<int> standing, std::vector<int> hp) { standing_ = std::move(standing), toldHp_ = std::move(hp); }
     // Whom the told line is about (MatchPlay "focus"): the camera frames them all.
     void SetFocus(std::vector<int> units) { focus_ = std::move(units); }
 
@@ -54,8 +59,15 @@ private:
     [[nodiscard]] glm::vec3 Centre(const umbra::match::Board &b, int cell) const;          // a square's middle on the table
     [[nodiscard]] glm::vec3 Feet(const umbra::match::Board &b, const umbra::match::Unit &u) const; // the middle of its footprint
     [[nodiscard]] float Height(const umbra::match::Unit &u, int index) const;
-    [[nodiscard]] int Fighter(int unit) const { return unit == staged_[0] ? 0 : unit == staged_[1] ? 1 : -1; }
-    int fight_[2] = {-1, -1}, staged_[2] = {-1, -1}; // asked for; the pair being staged (kept while the view eases out)
+    [[nodiscard]] int Fighter(int unit) const; // its place on the stage, -1 none
+    [[nodiscard]] bool Staged() const { return staged_[0] >= 0 && staged_[2] >= 0; }
+    [[nodiscard]] bool Present(const umbra::match::MatchState &s, int unit) const; // on the board, or fallen but not yet told
+    [[nodiscard]] glm::vec3 Head(const umbra::match::MatchState &s, int unit) const; // the top of its figure, as drawn
+    [[nodiscard]] glm::vec3 SpriteUp() const;
+    std::array<int, 4> fight_{-1, -1, -1, -1}, staged_{-1, -1, -1, -1}; // asked for; being staged (kept while the view eases out)
+    int picking_ = -1, stageCell_ = -1;
+    glm::vec3 stageMiddle_{0.0F}; // where the stage stands: fixed when the fight begins
+    std::vector<int> standing_, toldHp_;
     float fightT_ = 0.0F, focusT_ = 0.0F;
     std::vector<int> focus_, framed_; // asked for; framed (kept while the camera eases back)
     [[nodiscard]] glm::vec3 FightNear() const; // how far toward the camera the fighters stand on their stage

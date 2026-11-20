@@ -24,7 +24,7 @@ namespace umbra::ui
     struct UiInput final
     {
         glm::vec2 mouse{-1.0F};
-        bool mouseMoved = false, click = false;
+        bool mouseMoved = false, click = false, held = false; // held: the button is down (a pressed look)
         bool up = false, down = false, left = false, right = false; // focus moves
         bool confirm = false, back = false;                          // Enter / A, Esc / B
     };
@@ -67,6 +67,8 @@ namespace umbra::ui
         [[nodiscard]] const Skin &GetSkin() const { return skin_; }
         // The `tip` of the topmost widget under the mouse in the last Update ("" none), disabled ones too.
         [[nodiscard]] const std::string &Tip() const { return tip_; }
+        // How large a screen's n-th choice is drawn now (1 at rest; eased toward its style's scale).
+        [[nodiscard]] float ChoiceScale(const std::string &screen, int choice) const;
 
     private:
         struct Choice final // something the player can choose on the input screen
@@ -89,5 +91,6 @@ namespace umbra::ui
         core::TextureHandle atlasTexture_;
         std::function<ImageRef(const std::string &)> images_;
         std::string tip_;
+        std::map<std::string, float> scales_; // "screen#choice" -> its drawn scale, eased each Update
     };
 }

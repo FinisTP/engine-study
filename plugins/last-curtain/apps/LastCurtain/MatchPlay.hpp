@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <Match.hpp>
 #include <MatchBots.hpp>
 #include <Options.hpp>
@@ -63,7 +64,8 @@ private:
     [[nodiscard]] std::vector<umbra::match::Action> ArmedActions() const; // the armed action on each valid target
     [[nodiscard]] nlohmann::json Forecast() const;
     [[nodiscard]] nlohmann::json UnitNumbers(int unit) const;
-    [[nodiscard]] nlohmann::json Fighter(int unit, int side) const;
+    [[nodiscard]] nlohmann::json Fighter(int unit, int place) const;
+    [[nodiscard]] std::string AbilityText(int ability) const; // what an ability does, in words from its numbers
     [[nodiscard]] nlohmann::json BattleData() const;
     [[nodiscard]] nlohmann::json EndData() const;
     void Queue();       // the log entries the rules added since the last call
@@ -89,8 +91,11 @@ private:
     nlohmann::json eventDice_;  // the event's two dice, as shown (display only: the rules' roll decides)
     float diceLeft_ = 0.0F;     // seconds the dice still tumble
     int fight_[2] = {-1, -1};   // the battle on the table: attacker, defender (MatchPlay.md "The battle view")
+    std::array<int, 4> fighters_{-1, -1, -1, -1}; // ... and everyone in it by place (two a group)
     float fightHold_ = 0.0F;    // seconds it stays after its last line
     std::vector<int> focus_;    // whom the last told line is about, for the camera (MatchPlay.md "Focus")
+    std::vector<int> toldHp_;   // HP as the told lines leave it (cards never run ahead of the blows)
+    void SyncHp();
     float focusLeft_ = 0.0F;
     struct Bubble
     {

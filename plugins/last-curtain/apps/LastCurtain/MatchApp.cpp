@@ -5,6 +5,7 @@
 #include "Screens.hpp"
 #include "Sounds.hpp"
 
+#include <cctype>
 #include <MatchSave.hpp>
 
 #include <ApplicationEvents.hpp>
@@ -177,12 +178,14 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
             for (const std::string &cue : play->TakeSounds())
                 sounds.Play(cue);
             {
-                const nlohmann::json fight = play->UiData().value("fight", nlohmann::json::array());
-                table.SetFight(fight.size() == 2 ? fight[0].get<int>() : -1, fight.size() == 2 ? fight[1].get<int>() : -1);
+                const nlohmann::json told = play->UiData();
+                table.SetFight(told.value("fight", std::vector<int>{}), told.value("picking", -1));
+                table.SetTold(told.value("standing", std::vector<int>{}), told.value("hp", std::vector<int>{}));
             }
             table.SetFocus(play->UiData().value("focus", std::vector<int>{}));
             table.Animate(play->State(), dt);
-            hover = table.Pick(play->State().board, uiInput.mouse, pixels);
+            // A screen over the board (level, treasure, event, battle) takes the mouse: nothing falls through to the board.
+            hover = play->Screen().empty() && !paused ? table.Pick(play->State().board, uiInput.mouse, pixels) : -1;
             play->Hover(hover);
             const bool held = input.IsMouseButtonHeld(0);
             if (held && !wasHeld)
@@ -224,6 +227,10 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
             {
                 // Spoken lines ride on their speaker's card as a bubble.
                 data["labels"] = table.Labels(play->State(), pixels);
+                // The actions dock beside the one acting (to the right of its head).
+                if (ui.contains("actions"))
+                    if (const auto at = table.HeadOnScreen(play->State(), Current(play->State()), pixels))
+                        data["dock"] = {{{"at", {at->x + 190.0F, at->y + 150.0F}}}};
                 for (auto &l : data["labels"])
                     for (const auto &b : ui["bubbles"])
                         if (b["unit"] == l["unit"])
@@ -254,6 +261,8 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
                     if (a.action == "savequit")
                         paused = false, backToPick();
                 }
+                else if (play && a.action == "focus" && !a.arg.empty() && std::isdigit(static_cast<unsigned char>(a.arg[0]))) // an order portrait: the camera goes to that one
+                    table.LookAt(play->State(), std::stoi(a.arg));
                 else if (play)
                     (void)play->HandleUi(a.screen == "match-hud" ? "" : a.screen.substr(a.screen.starts_with("match-") ? 6 : 0), a.action, a.arg);
             }
@@ -262,7 +271,7 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
             drawList.hud.warnings = screens.Problems();
         if (uiInput.click)
             pressTook = uiTook;
-        if (play && !paused && wasHeld && !input.IsMouseButtonHeld(0) && !dragging && !pressTook)
+        if (play && !paused && wasHeld && !input.IsMouseButtonHeld(0) && !dragging && !pressTook && play->Screen().empty())
             play->Click(hover);
         wasHeld = input.IsMouseButtonHeld(0), lastMouse = uiInput.mouse;
 

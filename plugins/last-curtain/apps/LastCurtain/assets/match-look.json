@@ -34,7 +34,7 @@
     "seconds": 1.0
   },
   "follow": {
-    "seconds": 0.5,
+    "seconds": 0.2,
     "pull": 1.0,
     "edge": 0.45,
     "fit": 2.4,
@@ -104,14 +104,16 @@
     ],
     "boardDistance": 19,
     "roomDistance": 7,
-    "wallHeight": 1.1,
-    "wallLow": 0.22,
+    "wallHeight": 0.9,
+    "wallLow": 0.45,
     "wallArt": "art/ui/match/wall.jpg",
-    "wallRepeat": 0.8
+    "wallRepeat": 0.8,
+    "wallShade": 0.55
   },
   "walk": {
     "note": "Figures walk square by square to where the rules put them (display only).",
-    "squaresPerSecond": 3.5
+    "squaresPerSecond": 3.5,
+    "shareApart": 0.22
   },
   "figures": {
     "note": "Figures grow with the camera's distance (distance / rooms.boardDistance) so they keep their size on screen, within these bounds.",
@@ -124,8 +126,8 @@
     "seconds": 0.6,
     "distance": 7,
     "tilt": 14,
-    "gap": 0.8,
-    "figureScale": 0.75,
+    "gap": 1.3,
+    "figureScale": 1.2,
     "fade": 3.0,
     "backdropWidth": 24,
     "backdropDepth": 3,
@@ -140,6 +142,13 @@
       "default": "art/ui/match/backdrop.jpg"
     },
     "light": 25,
-    "near": 2.0
+    "near": 2.0,
+    "pairGap": 1.2,
+    "pairDepth": 0.8
+  },
+  "reach": {
+    "note": "The player's reach and targets wash the tile half over in their colour, blinking.",
+    "wash": 0.5,
+    "glow": 0.35
   }
 }

@@ -72,3 +72,18 @@ marks and everyone else are gone, a backdrop by the defender's square kind
 (`battle.backdrops`, ComfyUI paintings) stands behind the two, who face each other `battle.gap`
 squares apart, `battle.near` metres toward the camera, at `battle.figureScale`. The HUD closes;
 the battle screen shows both fighters' cards, the blow and the picks.
+
+## The tile board and the user's second notes (2026-11-20 evening)
+
+- Tiles are 1 m; walls are tiles of their own, papered blocks (`rooms.wallLow` on the board up to
+  `rooms.wallHeight` close in, shaded by `rooms.wallShade`). Figure heights keep their old look
+  through `figureMetres`.
+- Two on a tile stand apart (`walk.shareApart`) and drift back when one leaves.
+- The reach (cyan; an armed range orange) and the targets (red) wash their tiles half over,
+  blinking (`reach.wash`, `reach.glow`): the picture stays seen.
+- Cards and the turn arrow sit on the figure's own head (`Head`, along the sprite's leaning up).
+- The camera follows tightly (`follow.seconds` 0.2); an order portrait clicked looks at that one.
+- Fights: up to four on the stage, each group on its side, the second a little behind
+  (`battle.pairGap`, `battle.pairDepth`); the stage stands where the fight began, so a fallen
+  fighter does not move it; a fighter whose fall is not yet told still stands (`SetTold`); the
+  one picking has the gold arrow.

@@ -42,7 +42,7 @@ namespace umbra::ui
             return std::nullopt;
         }
 
-        const char *stateNames[] = {"", "hover", "selected", "disabled"};
+        const char *stateNames[] = {"", "hover", "selected", "disabled", "pressed"};
     }
 
     bool Skin::Load(const nlohmann::json &json, const std::string &file, std::vector<core::Diagnostic> &diagnostics)
@@ -107,6 +107,7 @@ namespace umbra::ui
         out.font = style.value("font", out.font);
         out.borderWidth = style.value("borderWidth", out.borderWidth);
         out.image = style.value("image", out.image);
+        out.scale = style.value("scale", out.scale);
         if (style.contains("padding"))
             out.padding = ParseSides(style["padding"]).value_or(out.padding);
         if (style.contains("slice"))
@@ -121,6 +122,19 @@ namespace umbra::ui
             return out;
         Apply(it->second, out, 0);
         // 2. The state's changes, if the style (or its base) has them.
+        // A pressed look falls back to the hover look when a style has none.
+        const auto has = [&](const char *key) {
+            for (const nlohmann::json *s = &it->second; s != nullptr;)
+            {
+                if (s->contains(key))
+                    return true;
+                const auto base = s->contains("base") ? styles_.find((*s)["base"].get<std::string>()) : styles_.end();
+                s = base == styles_.end() ? nullptr : &base->second;
+            }
+            return false;
+        };
+        if (state == State::Pressed && !has("pressed"))
+            state = State::Hover;
         if (state != State::Normal)
             for (const nlohmann::json *s = &it->second; s != nullptr;)
             {
