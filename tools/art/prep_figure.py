@@ -28,6 +28,7 @@ if over:
 w = hw * 2.0
 h = w * 627 / 512
 box = (int(hx - w / 2), int(y0 - h * 0.06), int(hx + w / 2), int(y0 - h * 0.06 + h))
+import json; json.dump(box, open(out + '_box.json', 'w'))
 ImageOps.pad(im.crop(box), (1024, 1256), color=im.getpixel((5, 5))).save(out + '_pcrop.png')
 # 3. A gridded close-up of the head (labels in original pixels).
 hbox = (int(hx - hw), y0 - 10, int(hx + hw), y0 + int(fh * 0.16))
