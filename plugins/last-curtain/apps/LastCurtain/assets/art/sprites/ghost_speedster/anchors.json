@@ -1,0 +1,19 @@
+{
+ "estimated": true,
+ "shoulder_l": [
+  0.338,
+  0.2
+ ],
+ "shoulder_r": [
+  0.753,
+  0.2
+ ],
+ "wrist_l": [
+  0.1,
+  0.47
+ ],
+ "wrist_r": [
+  0.9,
+  0.47
+ ]
+}
