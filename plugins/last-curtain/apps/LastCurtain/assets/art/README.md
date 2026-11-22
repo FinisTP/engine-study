@@ -246,3 +246,42 @@ ComfyUI on the user's PC, SDXL base 1.0, 30 steps, cfg 7, dpmpp_2m karras. Promp
 | `backdrops/portrait_corridor.jpg` | `s1_portrait_corridor_71` | 72 had a realistic man's portrait on the wall. |
 | `backdrops/box_office.jpg` | concept `box_office_12` | |
 | `cafe/back_wall.jpg` | `slice1/cafe_back_wall_ext_92` | 2480 x 640. The plain outpaint (81, 82) drew green panels and seams; instead the centre (paper margin cut off) got mirrored sides, inpainted at 0.62. Not yet wired into `CafeRoom.cpp` (a code task). |
+
+### Slice 2: all the characters (art list sections 1b-7)
+
+Picks (ComfyUI `slice2/<id>_freed_<seed>`, bound `bound/<id>_bound_<seed>`); every recruit and
+boon giver has `<sprite>` (freed: body, 7 faces) and `<sprite>_bound` (body, `face_calm` cut at
+the same portrait box). Bound inpaint 0.55 removed the cloth on Quang and the girl with the hoe;
+0.42-0.48 kept it, so later ones used 0.44-0.5.
+
+| Sprite | Pick (freed, bound) | Notes |
+|---|---|---|
+| `nhan` | 2, 2 | Shirt and jacket, sandals; no banner scarf or satchel. |
+| `diep` | 1, 2 | Glasses, green shirt, medical bag; no armband or notebook. |
+| `quang` | 1, 4 | Helmet without leaves, rifle and pack. |
+| `tai` | 4 (0.85), 3 | Seeds 1-2 drew an old man in a coat. White shirt; no tape or shears. |
+| `tulanh` | 4 (0.85), 3 | Checked scarf, black trousers, white blouse (not black áo bà ba); no rifle. |
+| `phong` | 4 (0.82), 3 | Seeds 1-2 came out old; "young man of 28" weighted. |
+| `khoi` | 2, 2 | Wire coil at his feet. |
+| `hien` | 2, 2 | Violin and bow; head box set by hand (`prep_figure.py ... 372 115`). |
+| `bay` | 2, 2 | Pale pith helmet on, walking stick; a collar tab is painted (minor). |
+| `boon_ferry_mother` | 2, 2 | Conical hat and oar. Icon `ui/boons/boon_ferry_mother.png`. |
+| `boon_girl_with_hoe` | 2, 3 | **No hoe** in either seed. Icon drawn. |
+| `boon_wife_four_days` | 2, 2 | Pale pink áo dài on a pink ground (cut out); no pillow. Icon drawn. |
+| `cafe_bao`, `cafe_mai` | 2, 2 | Freed only. Bảo wears a coat and tie, not a doctor's coat; **neither has the loose khăn tang at the neck** yet. Mai holds a bowl. |
+| `hero_electrician` | 1 | Standing (a board figure), not seated at a table; no tool pouch. |
+| `ghost_defender`, `_supporter`, `_speedster`, `_allrounder` | `slice1/ghost_<id>_1`, bound 3 | Bound only, like `ghost_attacker`. |
+| `zodiac_<animal>` | text to image, `zodiac/<animal>_<seed>` | rooster 13, cat 11, buffalo 13 m, dog 13 m, goat 12, pig 11 m, monkey 13 m, horse 12, snake 11 m, tiger 13 m, dragon 13 (m = mirrored); `pack_ghost.py` head points in the commit history. **No props came through** on any of them (the list says props are a guide); most read as pale animals rather than ghosts, and the engine's red glow and strings carry the menace. The portraits are `face_calm` crops, not separate paintings. |
+| `backdrops/dragon_smoke.jpg` | `zodiac/dragon_smoke_21` | A crouching smoke dragon with red threads; not coiled above the stage. |
+| `lethanh` extras | | `portrait_revealed.png` is `portrait_cold` with red strings drawn in code. |
+| `boon_*` icons | `tools/art/draw_boon_icons.py` | Drawn glyphs, like the slingshot. |
+
+**Le Thanh's other forms** (img2img from the hostess; 0.7 kept her pose, so 0.85-0.88):
+`lethanh_dance` (`lethanh/dance_4`, a hand over her head), `lethanh_conductor` (`conductor_3`: one
+arm raised, not both), `lethanh_ember` (`ember_bride_3` from the concept `ember_b_41`, mirrored:
+an orange dress in smoke, still not embers; its `face_calm` is the ember portrait). At this
+denoise the face drifts from the hostess: **provisional**, worth a better method (a pose control
+model, if the user installs one).
+
+**Not made:** the player's `fan_open` pictures and the fan itself (inpainting a closed fan into
+the hand failed twice).
