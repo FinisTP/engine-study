@@ -170,3 +170,13 @@ F1, F2, F3, F6 and F7 remain open.
 - The game-over screen, and what a retry keeps.
 - Allies (light green) next to friendly ghosts (soft green). I read green as "on your side", with a
   name plate on allies.
+
+## Answers (the user, 2026-11-23 00:26)
+
+1. **The early party:** in the third tutorial, Bảo and Mai join temporarily. Stage 1's party is left
+   open, with my proposal: they stay one more stage.
+2. **Bảo and Mai** are café characters.
+3. **Allies glow blue.** Kept apart from the neutral ghosts' blue-grey by a clearer blue and a name
+   plate.
+4. **Game over:** a retry restarts the stage from its beginning.
+5. **Boon givers** carry the gold knot.

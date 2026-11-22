@@ -16,8 +16,8 @@ user hasn't overruled; they can still change. Nothing here is built yet.
 | `2026-11-21-campaign-design.md` | The campaign design (revised 2026-11-22) |
 | `candidates-2026-11-22.md` | Real-war inspirations, facts, sensitivities |
 | `campaign-content-2026-11-22.md` | 10 recruits, 12 zodiac spirits, all stages |
-| `cast-2-2026-11-22.md` | Allies, heroes, boon givers, ghosts, player, Le Thanh |
-| `art-requests-2026-11-22.md` | The art list for the art agent (~186 images, concept art first; refined 2026-11-23) |
+| `cast-2-2026-11-22.md` | Bảo and Mai (café), heroes, boon givers, ghosts, player, Le Thanh |
+| `art-requests-2026-11-22.md` | The art list for the art agent (~194 images, concept art first; refined 2026-11-23) |
 | `art-and-design-review-2026-11-22.md` | The review of the art list and this document, with the user's answers |
 | `claude/ai-agency-research-2026-11-22.md` | The AI direction and market research |
 
@@ -91,14 +91,14 @@ and in the café shapes who stands with you at the end.
 - **Each stage** has authored enemies, map, items and gimmick (the user); new mechanics are taught in
   the stage that brings them (the user).
 - **Party size** grows 3 → 4 → 5. **The level cap** rises 5 → 15 [call].
-- **Retries** give XP up to the stage's cap; you can **save in the middle of a stage** [call].
+- **Retries** give XP up to the stage's cap; you can **save in the middle of a stage** to resume after quitting [call]; a game-over retry always starts the stage over (the user).
 
 ### 3.4 Fight rules (campaign)
 
 | Build | Now |
 |---|---|
 | Essence, Perform, a stage race, a score after 30 rounds | **A conventional tactical RPG:** defeat the zodiac (the user) |
-| Respawn after 1 turn at the hub | **Falls stay down** until revived by rare items or abilities (the user). **If the living player falls, it is game over** (the user, 2026-11-23): retry the stage, go back to the café, or quit. The stage is also lost if the whole side is down |
+| Respawn after 1 turn at the hub | **Falls stay down** until revived by rare items or abilities (the user). **If the living player falls, it is game over** (the user, 2026-11-23): retry, go back to the café, or quit. **A retry restarts the stage from its beginning** (the user). The stage is also lost if the whole side is down |
 | Move + one action | Unchanged, plus **biding** (the user): skip a whole turn to gain 1 action point (AP), store at most 2, spend at most 2 in a turn, so **at most 3 actions**; no borrowing. Biding gives a small Defence bonus, and enemies can bide too, shown as pips [call] |
 | A 3-round fight screen per attack | **Kept** (the user). **Auto-battle later** (the user): 3 rounds played on the board with heal, aggressive, defend or balanced presets |
 | Mirrored board, hubs, guardians | Hand-shaped room maps; no hubs or guardians in the campaign |
@@ -114,9 +114,9 @@ start of your next turn unless hit; agreed 2026-11-21).
 |---|---|
 | Five performers (Bảo, Khang, Mai, Lan, Huy) | **The player** + **the ten allies** (the recruits) |
 | — | **The player** (the user): a living guest, typed **name**, **male or female**, an **All-Rounder** by default; eyes in shadow, no khăn tang |
-| — | **The ten recruits are the official allies** (the user, 2026-11-23). **Bảo and Bà Mai are not allies**; whether they stay as café characters (the doctor who signed her false death paper; the caretaker looking for her son) or are dropped is open |
-| — | **Before Tí joins** [call]: you fight T1 alone, and in T3 and Stage 1 Le Thanh lends you two **friendly ghosts** (generic, green). Each recruit who joins takes a lent ghost's place, so the party grows 3 → 4 → 5 with recruits |
-| Khang, Lan, Huy (and Bảo and Mai as fighters) | Not in the campaign. The later quick match uses the campaign's characters instead (the user) |
+| — | **The ten recruits are the official allies** (the user, 2026-11-23). **Bảo and Bà Mai are café characters** (the user): the doctor who signed her false death paper, and the caretaker looking for her son |
+| — | **Bảo and Bà Mai join you temporarily in T3** (the user), so the party is 3 there. Stage 1's party is open: my proposal is that they stay through Stage 1, then return to the café once Tí joins |
+| Khang, Lan, Huy | Not in the campaign. The later quick match uses the campaign's characters instead (the user) |
 | — | **The 10 recruits** inspired by real people **from the Vietnamese side** (the user), names and stories adjusted, two per class: Bé Tí, Ba Tài (Speedster); Nhân, Khôi (All-Rounder); Diệp, Hiền (Supporter); Quang, Tư Lành (Attacker); Thầy Phong and Thủ trưởng Bảy, an unnamed composite (the user) (Defender) |
 | — | **2 heroes, by titles only** (the user): the Young Electrician of Công Lý and the Girl of Đất Đỏ. Honoured café guests, never fought; each gives a **power card** |
 | — | **3 boon givers:** the Ferry Mother, the Girl With the Hoe, the Wife of Four Days; each gives a **boon** |
@@ -171,7 +171,7 @@ people". AI acts inside rules; facts are authored; local only.
   turned to the right**; the existing sizes (body 768 px tall, portrait 512 × 627) and cut-out workflow.
 - **Visual language:** the dead wear a white **khăn tang** (mourning cloth) over the eyes: the rite
   (the user). **Red strings** mark control; a **gold knot** marks a recruit (the user). **Warm gold
-  light** marks the moment of freeing, heroes and the ending. **Allies glow light green** (the user).
+  light** marks the moment of freeing, heroes and the ending. **Allies glow blue** (the user), a clearer blue than the neutral ghosts' blue-grey, with a name plate. Boon givers carry the gold knot too (the user).
   The player is **solid, with eyes in shadow**. Zodiacs are **animal-shaped** ghosts, each with a prop
   from the person it was (a guide, not a rule) (the user).
 - **The engine draws the forms** (the user): tint, glow, opacity, strings and the gold knot come from
@@ -182,7 +182,7 @@ people". AI acts inside rules; facts are authored; local only.
 - **Concept art first** (the user): one of each kind (the player, Le Thanh, a recruit, a zodiac, a
   hero, a ghost, a boss form, a backdrop, the café wall, a still, a card and an icon), plus a mock-up
   style board of the engine forms, before any set is made in bulk.
-- **~186 images**, listed with descriptions, sizes and prompts in `art-requests-2026-11-22.md`: 14
+- **~194 images**, listed with descriptions, sizes and prompts in `art-requests-2026-11-22.md`: 14
   concept pictures first, then a first slice of 20 (11 of them come from the concept art).
 - **Rules:** no gore or bodies; invented faces only, never likenesses of real people; no real songs,
   posters or logos.
@@ -220,17 +220,17 @@ plugin's memory, built-in model and storyteller are reused for the ghosts.
 
 ## 7. Still open
 
-1. Bảo and Bà Mai: café characters, or dropped? (The ten recruits are the allies.)
+1. Bảo and Bà Mai's café roles, and their kits for T3.
 2. Can the player change class later, or stay an All-Rounder?
 3. Le Thanh's 12 story pieces: the words for each.
-4. Where Bà Mai's son is found (only if she stays).
+4. Where Bà Mai's son is found.
 5. Revive items now that money is gone (names, drops).
 6. Level cap 15: the XP steps.
 7. The stage file format, the gimmick switches, save v2.
 8. Le Thanh's songs, Hiền's theme and the Girl of Đất Đỏ's song: all written fresh.
 9. Review: the recruits' names, looks and fragments; the zodiac order and roles.
-10. The two friendly ghosts Le Thanh lends before Tí joins [call].
-11. Game over when the player falls: the retry / café / quit screen, and what a retry keeps.
+10. Stage 1's party: Bảo and Mai once more, or another way.
+11. The game-over screen: retry (the stage from its start), café, quit.
 
 ## 8. Next steps [call]
 

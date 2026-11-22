@@ -11,11 +11,12 @@ design, abilities, dialogue and AI text, bosses and difficulty, and level design
 - The model gets a Vietnamese testing phase.
 
 **Settled by the user on 2026-11-22 and 2026-11-23.**
-- **The ten recruits are the official allies.** Bảo and Mai are not allies.
+- **The ten recruits are the official allies.** Bảo and Mai are café characters who join you
+  temporarily in the third tutorial.
 - The zodiac spirits are **animal-shaped** ghosts.
 - The dead wear a **khăn tang** over the eyes.
-- **Allies glow light green.** A recruit specter carries a **gold knot**.
-- If the **living player falls, it is game over**.
+- **Allies glow blue.** A recruit (or boon giver) specter carries a **gold knot**.
+- If the **living player falls, it is game over**; a retry starts the stage over.
 - Le Thanh is the **hostess**.
 - Heroes are known by **titles only**.
 
@@ -62,7 +63,7 @@ inspirations are in `candidates-2026-11-22.md`.
 - **As a red specter**, a recruit carries a **gold knot** on its strings (the user), so the player
   knows to free it, not destroy it.
 - **In the café**, before joining, it glows pale.
-- **Joined**, the cloth is gone and it glows **light green**: an ally (the user).
+- **Joined**, the cloth is gone and it glows **blue**: an ally (the user).
 
 The engine draws the tints, the strings and the knot; the art is one painting with the cloth and one
 without (`art-requests` section 3).
@@ -420,17 +421,17 @@ box office, a balcony seat, the costume rack. Restored spirits sit there as regu
 
 **Party and level targets [call].**
 - **Who fights:** the living player is always in the party, and **if the player falls, it is game
-  over**: retry the stage, go back to the café, or quit (the user).
-- **Until recruits join**, Le Thanh lends two friendly ghosts. Each joined recruit takes a lent ghost's
-  place.
+  over**: retry (the stage starts over from its beginning), go back to the café, or quit (the user).
+- **Before recruits join:** Bảo and Bà Mai, café characters, fight beside you temporarily in T3 (the
+  user). Stage 1's party is open; my proposal is that they stay one more stage.
 - **Level cap:** it must rise from 5 to **15** for the campaign, with new XP steps. The recommended
   levels are what each stage is tuned for.
 
 | # | Stage (Vietnamese / English) | Room and look | Enemy | Party | Lvl | New | Freed / met | Le Thanh unlocks |
 |---|---|---|---|---|---|---|---|---|
 | T1 | **Khách lạ** / The Stranger | The real foyer today: a night tour, phone light, dust sheets. The lights die and the old theatre appears behind them. | Rat specters | 1 (you) | 1 | Moving, attacking | Le Thanh's rescue | — |
-| T2 | **Quán cà phê** / The Café | The hub, first visit | — | — | — | Café talk | Two friendly ghosts lent [call] | Café |
-| T3 | **Hành lang chân dung** / Portrait Corridor | A corridor of portraits whose eyes follow you, red carpet, gaslight | Specters, a mini-boss | 3 (you + 2 lent) | 2 | Biding, falls, reviving, game over if you fall | — | — |
+| T2 | **Quán cà phê** / The Café | The hub, first visit | — | — | — | Café talk | Bảo and Bà Mai | Café |
+| T3 | **Hành lang chân dung** / Portrait Corridor | A corridor of portraits whose eyes follow you, red carpet, gaslight | Specters, a mini-boss | 3 (you + Bảo and Mai, temporarily) | 2 | Biding, falls, reviving, game over if you fall | — | — |
 | 1 | **Phòng vé** / The Box Office | Brass grilles, ceiling fans, drifts of old tickets, a safe | Rat | 3 | 3 | Items, stealing, the gold knot | Bé Tí | Memory restoring |
 | 2 | **Lô ban công** / The Balcony Boxes | Gilded boxes, velvet curtains, the stage far below | Rooster | 3 | 4 | Reach, height | Nhân | — |
 | 3 | **Phòng hóa trang** / The Dressing Rooms | Bulb-ringed mirrors, powder dust, wigs on stands | Cat | 3 | 5 | Group battles, decoys | Diệp | **Boons usable** |
@@ -480,8 +481,8 @@ and locks, class swaps, rule dice, levels and ropes, Perform, timers, flooding, 
 spread, phases. Most reuse existing code (spawns, Perform, hunters). New ones: flooding, fire spread,
 rule dice, levels.
 
-**Also needed:** game over when the player falls (retry, café, quit); lent friendly ghosts; the
-engine forms (tints, strings, the gold knot).
+**Also needed:** game over when the player falls (retry from the stage's start, café, quit);
+temporary party members (Bảo and Mai in T3); the engine forms (tints, strings, the gold knot).
 
 **Level cap:** 15, with XP steps tuned in the soak.
 
@@ -496,5 +497,5 @@ player's control.
 1. The 12 tormentors are first drafts. Swap any role, animal or order.
 2. Le Thanh's wedding night as the night of the fire: keep or change?
 3. Each recruit's adjusted name, look and fragments: edit freely.
-4. Bảo and Mai: café characters, or dropped?
-5. The two lent friendly ghosts before Tí joins [call]: accept, or another way to fill the early party?
+4. Bảo and Mai's café roles.
+5. Stage 1's party: Bảo and Mai once more (my proposal), or another way.

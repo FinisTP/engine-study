@@ -1,4 +1,4 @@
-# The Last Curtain: art requests (2026-11-22, refined 2026-11-23 00:10)
+# The Last Curtain: art requests (2026-11-22, refined 2026-11-23 00:30)
 
 **For:** an AI art agent working in ComfyUI on the user's PC (SDXL base 1.0 only; birefnet,
 inpainting and ExpressionEditor installed; no LoRA, ControlNet, IP-Adapter or upscaler; about 85 s a
@@ -7,7 +7,7 @@ picture).
 `cast-2-2026-11-22.md` (heroes, boon givers, ghosts, player, Le Thanh).
 **Recipe:** the existing one in `plugins/last-curtain/apps/LastCurtain/assets/art/README.md`
 (how Huy, Bảo, Khang, Mai and Lan were made). Follow it unless this list says otherwise.
-**Total:** about **186** images (was 216). Make the **concept art** (section 00) first, then the
+**Total:** about **194** images (was 216). Make the **concept art** (section 00) first, then the
 **first slice** (section 0).
 
 **Refined (the user, 2026-11-22 23:43):**
@@ -22,8 +22,9 @@ picture).
 **Refined (the user, 2026-11-23 00:00):**
 - Heroes, freed spirits, the café wall and the good ending use the same medium with **calm, warm,
   dignified** mood words.
-- **Allies glow light green.** The ten recruits are the official allies; Bảo and Mai are not
-  allies (their art is on hold).
+- **Allies glow blue** (00:26; was light green). The ten recruits are the official allies.
+- **Bảo and Mai are café characters** who fight beside you only in the third tutorial.
+- **Boon givers carry the gold knot too.**
 - The zodiac props are a guide, not a rule.
 - Heroes' art needs no adviser review first.
 - **Concept art comes first**, to preview every style.
@@ -101,7 +102,7 @@ the strings from there.
 **Why:** to see every look in the game once, before any set is made in bulk, and to approve or
 change it cheaply. One of each kind of subject, made with the recipe above. Then a **style board** is
 put together from them in the cloud (Python, no engine work). It places the cut-outs on a backdrop
-and applies the planned engine forms as a mock-up: the tints, the light-green ally glow, the red
+and applies the planned engine forms as a mock-up: the tints, the blue ally glow, the red
 strings, the gold knot and the warm gold rim. About 1-1.5 hours of GPU time.
 
 | # | Picture | Shows the style of |
@@ -123,7 +124,7 @@ strings, the gold knot and the warm gold rim. About 1-1.5 hours of GPU time.
 
 **The style board** (one image) shows:
 - Tí as a **specter** (red tint, strings, gold knot), as a **café ghost** (pale), as an **ally**
-  (light green) and **freed** (gold rim).
+  (blue) and **freed** (gold rim).
 - The **ghost** in its three natures (green, blue-grey, red with strings).
 - The **Rat** with its strong red glow and thick strings.
 - The **player** and **Le Thanh** on the box office.
@@ -187,12 +188,20 @@ Thanh's gift: a **folded fan of ghostly red-gold light**.
 | `player/male_portrait` | From the body: eyes in shadow, uneasy but determined. Plus the 7 expressions. |
 | `player/female_portrait` | The same, the woman. |
 
-## 1b. Bảo and Mai (on hold, not counted)
+## 1b. Bảo and Mai, café characters (4)
 
-The ten recruits are the official allies (the user, 2026-11-23); Bảo and Mai are not allies. Their
-new look waits until their role is decided (café characters, or dropped):
-- **Bác sĩ Bảo:** about 50, a 1940s white doctor's coat, a stethoscope, round spectacles, a scalpel.
-- **Bà Mai:** about 65, a brown áo bà ba, a grey bun, keys at her belt, a bowl of rice.
+They are café characters who fight beside you only in the third tutorial (the user). The khăn tang
+hangs **loose around the neck**, because they serve Le Thanh by choice, a hint for the reveal. The
+engine gives them a pale glow in the café and the ally blue in T3.
+
+| ID | Description |
+|---|---|
+| `cafe_npc/bao` | **Bác sĩ Bảo**, about 50: a 1940s white doctor's coat over dark trousers, a stethoscope, round spectacles, a fountain pen in his breast pocket, a slim surgeon's scalpel. |
+| `cafe_npc/bao_portrait` | His portrait, dry and guarded. Plus the 7 expressions. |
+| `cafe_npc/mai` | **Bà Mai**, about 65: a brown áo bà ba (a plain loose button-front blouse and trousers), a grey bun with a wooden pin, a bunch of keys at her belt, a small bowl of rice in her hands. |
+| `cafe_npc/mai_portrait` | Her portrait, warm and stern. Plus the 7 expressions. |
+
+These are new pictures; the old blindfolded Bảo and Mai are retired with the old quick match.
 
 ## 2. Le Thanh (8)
 
@@ -212,7 +221,7 @@ new look waits until their role is decided (café characters, or dropped):
 One painting serves every form, because the engine changes the rest:
 - **Specter:** red tint, strings, the **gold knot**.
 - **Café ghost** (before joining): a pale glow.
-- **Ally** (joined, in fights and the café): a **light green** glow (the user).
+- **Ally** (joined, in fights and the café): a **blue** glow (the user).
 - **The moment of freeing**, and the ending: a warm gold rim.
 
 | Painting | What it is |
@@ -294,8 +303,8 @@ Use the warm mood words. No adviser review is needed before making them (the use
 ## 6. The three boon givers (12)
 
 Each needs:
-- `_bound`: the cloth over the eyes. It is used for the specter; the engine adds the red tint and
-  the strings.
+- `_bound`: the cloth over the eyes. It is used for the specter; the engine adds the red tint, the
+  strings and the **gold knot** (the user).
 - `_freed`: the cloth painted out.
 - `_portrait`
 - `boon/<id>`: an icon
@@ -381,13 +390,13 @@ inside the theatre foyer:
 | `cut/ending_good` | Dawn in the empty theatre, spirits leaving through the doors in gold light, Le Thanh in white looking back. |
 | `cut/ending_bad` | A full house of ghosts watching Le Thanh sing, the player among them, a khăn tang tied over their eyes. |
 
-## 10. UI icons (about 45)
+## 10. UI icons (about 49)
 
 128 × 128, matching the existing 12.
 
 | ID | Icons |
 |---|---|
-| `icon/ability_<id>` × 30 | One per recruit ability (3 each, ids from `campaign-content` section 1); add Bảo's 3 and Bà Mai's 1 only if they return. For example a slingshot, a message, a bandage, a grenade, shears, a rifle, a notebook, telephone wire, a violin, a walking stick. |
+| `icon/ability_<id>` × 34 | One per recruit ability (3 each, ids from `campaign-content` section 1), plus Bảo's 3 (scalpel, diagnosis, death paper) and Bà Mai's cold rice for the third tutorial. For example a slingshot, a message, a bandage, a grenade, shears, a rifle, a notebook, telephone wire, a violin, a walking stick. |
 | `icon/status_*` | silence (a mouth crossed by a paper strip), poison (a teacup with green steam), root (a leash), marked (a red string knot), linked (wire), last stand (a standing silhouette), bide / AP pip (a small candle, lit or unlit). |
 | `icon/item_*` | Revive items ×2 (a joss stick; a small bell), a permanent boost (a silver bracelet). |
 | `icon/fragment_*` × 8 | Memory fragment types: diary page, letter, photograph, ticket, flower, bracelet, song sheet, name tag. |
@@ -408,12 +417,12 @@ inside the theatre foyer:
 | Form | Tint / glow | Opacity | Strings | Mark |
 |---|---|---|---|---|
 | Player | none | 1 | — | — |
-| Ally (a joined recruit) | **light green** glow (the user) | 0.95 | — | — |
+| Ally (a joined recruit; Bảo and Mai in T3) | **blue** glow (the user): a clear blue, stronger than the neutral blue-grey, plus a name plate | 0.95 | — | — |
 | Recruit specter | red tint | 0.9 | yes | **gold knot** on its strings |
-| Recruit / boon giver café ghost | pale white glow | 0.85 | — | — |
+| Recruit / boon giver café ghost; Bảo and Mai in the café | pale white glow | 0.85 | — | — |
 | The moment of freeing, freed boon givers, the ending, heroes | warm gold rim | 1 | — | — |
-| Ghost, friendly | soft green glow [call: green means "on your side"; allies are lighter and carry a name plate] | 0.85 | — | — |
-| Ghost, neutral | pale blue-grey glow | 0.85 | — | — |
+| Ghost, friendly | soft green glow | 0.85 | — | — |
+| Ghost, neutral | pale blue-grey glow (greyer than the ally blue) | 0.85 | — | — |
 | Ghost, aggressive | red glow | 0.85 | yes | — |
 | Zodiac | strong red glow | 1 | thick | — |
 | Le Thanh | faint warm glow | 0.95 | phase 1: to every specter, cut one by one | — |
@@ -433,6 +442,7 @@ inside the theatre foyer:
 | Group | Images |
 |---|---|
 | Player | 6 |
+| Bảo and Mai | 4 |
 | Le Thanh | 8 |
 | Recruits | 30 |
 | Zodiacs | 25 |
@@ -442,9 +452,9 @@ inside the theatre foyer:
 | Backdrops | 16 |
 | Café | 13 |
 | Cutscenes | 19 |
-| Icons | ≈45 |
+| Icons | ≈49 |
 | Key art | 1 |
-| **Total** | **≈ 186** (Bảo and Mai on hold: +10 if they return) |
+| **Total** | **≈ 194** |
 
 Each figure's portrait also gets 7 expressions through ExpressionEditor; they cost no new
 generation. If the player can change class later, add 8.
@@ -452,5 +462,5 @@ generation. If the player can change class later, add 8.
 **Quick match (a later phase, the user):** the human side picks from 12 (the player, Le Thanh and
 the ten allies), and the monster side from the 12 zodiacs. It needs no new art beyond this list.
 
-**GPU time:** ≈ 186 × 2-3 tries × 85 s, plus the khăn tang and cut-out passes, about 12-16 hours.
+**GPU time:** ≈ 194 × 2-3 tries × 85 s, plus the khăn tang and cut-out passes, about 12-16 hours.
 The concept art takes about 1-1.5 hours, and the rest of the first slice about 1 more.
