@@ -1,0 +1,127 @@
+{
+ "note": "The twelve Vietnamese zodiac ghosts (the user, 2026-11-22): ghost monsters of the opera house, one per zodiac animal. SDXL base 1.0, 1024 x 1024, dpmpp_2m karras, 30 steps, cfg 7. Positive: '(the ghost of a <animal>:1.2), ' + prompt + ', ' + style. Try 1 (seeds x01-x02, the character sprite style alone) drew plain animal studies with no ghostliness; try 2 (seeds x11-x12, this style) is the one used.",
+ "style": "(ghost:1.4), (spectral apparition:1.3), (translucent glowing pale bone-white body:1.3), its body thins into drifting wisps of smoke and mist at the edges, (hollow empty black eye sockets:1.3), faint cold pale glow around it, seen from the side facing right, full body, the whole creature visible with empty space around it, plain dark charcoal grey paper background, Vietnamese oil pastel drawing on toned paper, thick waxy smudged strokes, visible paper grain, ash grey, bone white, faded jade, dull blood red accents, silent, morbid, uncanny, eerie stillness, unsettling, horror",
+ "negative": "realistic animal, natural history illustration, wildlife, healthy, solid opaque body, normal eyes, shiny eyes, cute, chibi, kawaii, cartoon, anime, toy, mascot, bright saturated colours, photo, 3d render, text, letters, watermark, signature, frame, border, multiple creatures, scenery, landscape, room, people, human, gore, cropped, close-up, portrait crop, deformed",
+ "ghosts": [
+  {
+   "id": "ty",
+   "animal": "rat",
+   "name": "Ty, the Rat ghost",
+   "seeds": [
+    111,
+    112
+   ],
+   "prompt": "a hunched gaunt rat ghost as big as a child, standing on its hind legs, long naked tail curling behind, thin clawed hands clutching an old tarnished brass coin, a ragged dull red silk scarf around its neck"
+  },
+  {
+   "id": "suu",
+   "animal": "buffalo",
+   "name": "Suu, the Buffalo ghost",
+   "seeds": [
+    211,
+    212
+   ],
+   "prompt": "an emaciated water buffalo ghost with huge sweeping curved horns, ribs showing through its pale hide, a broken wooden yoke and loose rusted chains hanging from its neck, head bowed low"
+  },
+  {
+   "id": "dan",
+   "animal": "tiger",
+   "name": "Dan, the Tiger ghost",
+   "seeds": [
+    311,
+    312
+   ],
+   "prompt": "a lean prowling tiger ghost, its stripes faded like smeared black ink, its face is a cracked painted Vietnamese hat boi opera mask in white and red, long thin tail"
+  },
+  {
+   "id": "mao",
+   "animal": "cat",
+   "name": "Mao, the Cat ghost",
+   "seeds": [
+    411,
+    412
+   ],
+   "prompt": "a tall thin black cat ghost sitting upright, its neck unnaturally long, a small brass bell on a frayed red cord at its throat, long tail wrapped around its paws"
+  },
+  {
+   "id": "thin",
+   "animal": "dragon",
+   "name": "Thin, the Dragon ghost",
+   "seeds": [
+    511,
+    512
+   ],
+   "prompt": "a long serpentine Vietnamese dragon ghost coiling in the air, tattered scales like torn old paper lanterns, long drifting whiskers, small clawed legs, a pale pearl held in one claw"
+  },
+  {
+   "id": "ty-snake",
+   "animal": "snake",
+   "name": "Ty, the Snake ghost",
+   "seeds": [
+    611,
+    612
+   ],
+   "prompt": "a huge cobra ghost rearing up tall, its hood spread wide, scales like peeling old paper, its long body coiled on the ground beneath it"
+  },
+  {
+   "id": "ngo",
+   "animal": "horse",
+   "name": "Ngo, the Horse ghost",
+   "seeds": [
+    711,
+    712
+   ],
+   "prompt": "a skeletal horse ghost standing still, long mane and tail of drifting smoke, a torn faded red ceremonial saddle cloth with gold tassels hanging over its back"
+  },
+  {
+   "id": "mui",
+   "animal": "goat",
+   "name": "Mui, the Goat ghost",
+   "seeds": [
+    811,
+    812
+   ],
+   "prompt": "a goat ghost standing upright on its hind legs like a man, long white beard, heavy spiral horns, wrapped in a faded white mourning cloth"
+  },
+  {
+   "id": "than",
+   "animal": "monkey",
+   "name": "Than, the Monkey ghost",
+   "seeds": [
+    911,
+    912
+   ],
+   "prompt": "a crouching monkey ghost with very long thin arms, wearing a tattered red and gold Vietnamese hat boi opera costume and a tall ornate opera headdress"
+  },
+  {
+   "id": "dau",
+   "animal": "rooster",
+   "name": "Dau, the Rooster ghost",
+   "seeds": [
+    1011,
+    1012
+   ],
+   "prompt": "a tall thin rooster ghost, ragged tail feathers like burnt paper, a bloodless dark red comb, long sharp spurs, standing very still"
+  },
+  {
+   "id": "tuat",
+   "animal": "dog",
+   "name": "Tuat, the Dog ghost",
+   "seeds": [
+    1111,
+    1112
+   ],
+   "prompt": "a starved dog ghost with sharp ribs, head held low, a broken iron chain hanging from its collar, long thin legs"
+  },
+  {
+   "id": "hoi",
+   "animal": "pig",
+   "name": "Hoi, the Pig ghost",
+   "seeds": [
+    1211,
+    1212
+   ],
+   "prompt": "a bloated pig ghost with cracked pale porcelain skin, small curved tusks, tiny legs, a faded red paper talisman stuck on its forehead"
+  }
+ ]
+}

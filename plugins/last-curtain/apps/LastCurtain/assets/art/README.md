@@ -184,3 +184,28 @@ and dark red, pale glowing skin, standing, plain background". Save each as
 | the-spider | a great spider with a porcelain opera mask for a face |
 | pianist | a pit pianist in a charred tailcoat, fingers too long |
 | ticket-girl | a box office girl behind a floating ticket window, gold coins in her hands |
+
+### The twelve zodiac ghosts (2026-11-22)
+
+The user asked for the ghosts as the twelve Vietnamese zodiac animals (Ty, Suu, Dan, Mao, Thin, Ty,
+Ngo, Mui, Than, Dau, Tuat, Hoi: rat, buffalo, tiger, cat, dragon, snake, horse, goat, monkey,
+rooster, dog, pig), ghost monsters of the house. `sprites/<animal>/` holds `body_calm.png` (768 px
+tall, facing right) and `face_calm.png` (512 px); the other faces fall back to calm.
+
+1. Text to image, SDXL base, 1024 x 1024 (tiger and pig 1216 x 832), 30 steps, cfg 7, dpmpp_2m
+   karras. Prompts and style in `tools/art/lastcurtain_zodiac.json`: "(the ghost of a <animal>:1.2),
+   <subject>, (ghost:1.4), (spectral apparition:1.3), (translucent glowing pale bone-white
+   body:1.3), ... (hollow empty black eye sockets:1.3) ..." + the oil pastel words.
+   The characters' style alone (seeds x01-x02) drew plain animal studies; the weighted ghost words fixed it.
+2. Picks (ComfyUI `output/lastcurtain/zodiac2/`): rat 112, buffalo 212, tiger 322, cat 412,
+   dragon 514, snake 612, horse 712, goat 811, monkey 911, rooster 1022, dog 1111, pig 1222.
+   Turned down: tiger 311-314 and dragon 512 (head close-ups; "small in the frame, seen from far
+   away" and a landscape page fixed the tiger), dragon 511 (a winged western dragon), snake 611
+   (legs), pig 1211 and rooster 1011-1012 (plain farm animals), pig 1221 (not a pig).
+3. Cut-out: birefnet (`RemoveBackground`) mask saved as an image, then
+   `python3 tools/art/pack_ghost.py <picture> <mask> <animal> <this folder> <head x> <head y> [mirror]`
+   (head point and mirror per ghost: rat .85 .4 m, buffalo .85 .3 m, tiger .9 .3 m, cat .8 .15,
+   dragon .75 .12, snake .8 .1 m, horse .85 .2, goat .82 .22 m, monkey .5 .15, rooster .85 .05 m,
+   dog .95 .25 m, pig 1 .35 m).
+
+Not yet tied to the match: which monster or café guest each one becomes is the user's call.
