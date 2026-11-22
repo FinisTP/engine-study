@@ -220,7 +220,7 @@ ComfyUI on the user's PC, SDXL base 1.0, 30 steps, cfg 7, dpmpp_2m karras. Promp
 1. **Body:** img2img at 0.75-0.8 from a pose base: an approved concept figure, mirrored so it turns
    right (men: `ghost_attacker_12`; women: `hero_datdo_12`; the boy: `ti_12`). Text to image gave
    front views, crops and a different style every seed; the base keeps the stance, scale and paper.
-2. **Cut-out:** birefnet mask (`mask/`), then `~/art/prep.py`-style crops: the figure, and a
+2. **Cut-out:** birefnet mask (`mask/`), then `tools/art/prep_figure.py`: the figure, and a
    portrait box (head and shoulders, 512:627, the head about half the width) scaled to 1024 x 1256.
 3. **Portrait:** img2img 0.3 over that crop (`portrait/`), then 7 faces with ExpressionEditor
    (`soft` values of `tools/art/lastcurtain_expressions.json`, crop 1.7), each cut out (`expr/`).
@@ -228,7 +228,7 @@ ComfyUI on the user's PC, SDXL base 1.0, 30 steps, cfg 7, dpmpp_2m karras. Promp
    `body_calm.png` (768 px tall), `face_<face>.png` (512 x 627; without portraits `face_calm` is
    cut from the body) and `anchors.json` (shoulders and wrists, **estimated** from the outline).
    Only `body_calm` is painted; other body faces fall back to calm.
-5. **Bound form:** the khăn tang painted (`~/art/paint.py`: band and eye hollows, mask = band + 10
+5. **Bound form:** the khăn tang painted (`tools/art/paint_khantang.py`: band and eye hollows, mask = band + 10
    px) and inpainted at 0.55 (`ghost_bound_2` recipe); the freed mask is reused.
 
 ### Slice 1 (art list section 0)
