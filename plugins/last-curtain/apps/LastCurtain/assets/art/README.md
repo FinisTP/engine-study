@@ -209,3 +209,40 @@ tall, facing right) and `face_calm.png` (512 px); the other faces fall back to c
    dog .95 .25 m, pig 1 .35 m).
 
 Not yet tied to the match: which monster or café guest each one becomes is the user's call.
+
+## The campaign's characters (2026-11-23, overnight; art list `docs/design/art-requests-2026-11-22.md`)
+
+ComfyUI on the user's PC, SDXL base 1.0, 30 steps, cfg 7, dpmpp_2m karras. Prompts:
+`tools/art/lastcurtain_characters.json`. Outputs in ComfyUI's `output/lastcurtain/` (`slice1/`,
+`slice2/`, `zodiac/`, `lethanh/`, `portrait/`, `expr/`, `mask/`, `work/`).
+
+**How a figure is made** (the "same person" rule and the pose fix from the concept art):
+1. **Body:** img2img at 0.75-0.8 from a pose base: an approved concept figure, mirrored so it turns
+   right (men: `ghost_attacker_12`; women: `hero_datdo_12`; the boy: `ti_12`). Text to image gave
+   front views, crops and a different style every seed; the base keeps the stance, scale and paper.
+2. **Cut-out:** birefnet mask (`mask/`), then `~/art/prep.py`-style crops: the figure, and a
+   portrait box (head and shoulders, 512:627, the head about half the width) scaled to 1024 x 1256.
+3. **Portrait:** img2img 0.3 over that crop (`portrait/`), then 7 faces with ExpressionEditor
+   (`soft` values of `tools/art/lastcurtain_expressions.json`, crop 1.7), each cut out (`expr/`).
+4. **Pack:** `python3 tools/art/pack_figure.py <cut body> <id> <this folder> [faces dir]`:
+   `body_calm.png` (768 px tall), `face_<face>.png` (512 x 627; without portraits `face_calm` is
+   cut from the body) and `anchors.json` (shoulders and wrists, **estimated** from the outline).
+   Only `body_calm` is painted; other body faces fall back to calm.
+5. **Bound form:** the khăn tang painted (`~/art/paint.py`: band and eye hollows, mask = band + 10
+   px) and inpainted at 0.55 (`ghost_bound_2` recipe); the freed mask is reused.
+
+### Slice 1 (art list section 0)
+
+| Sprite | From | Notes |
+|---|---|---|
+| `player_male` | `slice1/player_male_103` (man base, 0.75) | Dark jacket, white T-shirt; trousers came out khaki, not jeans. **No fan:** two inpaints at the hand (351, 352) drew a pocket. |
+| `player_female` | `slice1/player_female_h_201` (woman base, 0.75) | Same outfit; from the woman base, not the man (the same stance came out either way). No fan. |
+| `lethanh` | concept `lethanh_b_21` | The hostess; `face_happy` is `portrait_kind`. Extra: `portrait_uneasy.png`, `portrait_cold.png` (ExpressionEditor; the revealed portrait still needs its strings). |
+| `ti`, `ti_bound` | concept `ti_12`, `ti_bound_2` | Front view (approved concept). **The hat stays on his head:** inpainting it onto his back failed 4 ways (hat redrawn, seams, a cartoon head). |
+| `zodiac_rat` | concept `rat_b_33` | `pack_ghost.py`, head .6 .12. **No props:** img2img 0.6 (41, 42) and text (s1_rat_71) lost the ghost or added a robe, never the spectacles. |
+| `ghost_attacker` | concept `ghost_bound_2` | Bound only (ordinary ghosts have one painting). |
+| `hero_datdo` | concept `hero_datdo_12`, mirrored | With portrait and 7 faces (warm). |
+| `backdrops/foyer_today.jpg` | `s1_foyer_today_72` | 1344 x 768, text to image. |
+| `backdrops/portrait_corridor.jpg` | `s1_portrait_corridor_71` | 72 had a realistic man's portrait on the wall. |
+| `backdrops/box_office.jpg` | concept `box_office_12` | |
+| `cafe/back_wall.jpg` | `slice1/cafe_back_wall_ext_92` | 2480 x 640. The plain outpaint (81, 82) drew green panels and seams; instead the centre (paper margin cut off) got mirrored sides, inpainted at 0.62. Not yet wired into `CafeRoom.cpp` (a code task). |

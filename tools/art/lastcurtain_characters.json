@@ -1,0 +1,36 @@
+{
+ "_note": "The Last Curtain character art, slices 1 and 2 (2026-11-23). SDXL base 1.0, dpmpp_2m karras, 30 steps, cfg 7, 832 x 1216. Figures are img2img from a pose base (an approved concept figure, mirrored so it turns right) at 'denoise', so the stance, scale and paper match. Positive: subject + ', ' + FIG + ', ' + the mood (WARM for the freed, DREAD for the bound). The bound form is the freed one with the khan tang inpainted (README, 'Blindfold').",
+ "FIG": "full length figure, standing, feet visible, small in the frame with empty space around, seen in three-quarter view turned to the right side of the picture, plain dim greyish paper background",
+ "MED": "Vietnamese oil pastel drawing on toned paper, thick waxy smudged strokes, visible paper grain, muted desaturated earth colours, raw umber, ash grey, faded olive, dull deep red accents",
+ "WARM": "soft lamplight, calm, warm, dignified, quiet, tender",
+ "DREAD": "dim light, silent, morbid, uncanny, eerie stillness, unsettling, melancholic",
+ "NEG": "blood, gore, wounds, corpse, skull, close-up, portrait crop, cropped legs, cropped feet, facing the viewer, front view, photo, 3d render, photorealistic face, likeness of a real person, anime, cartoon, chibi, bright saturated colours, text, letters, logo, watermark, frame, border, multiple figures, scenery, jump-scare face, deformed",
+ "bases": {
+  "man": "concept ghost_attacker_12, mirrored",
+  "woman": "concept hero_datdo_12, mirrored",
+  "boy": "concept ti_12"
+ },
+ "recruits": [
+  {"id": "nhan", "base": "man", "prompt": "a thin Vietnamese student of 19, a white short-sleeved school shirt tucked into dark trousers, a canvas satchel on a strap across his body, ink-stained fingers, a torn strip of cloth banner tied loosely as a scarf at his neck, sandals"},
+  {"id": "diep", "base": "woman", "prompt": "a young Vietnamese woman doctor of 27, a faded green field shirt with rolled sleeves and dark trousers, a white armband with a red cross, hair in a low bun, small round glasses, a worn notebook held to her chest with loose pages escaping from it, a canvas medical bag on her shoulder"},
+  {"id": "quang", "base": "man", "prompt": "a young Vietnamese soldier of 20, a faded olive uniform, mud up to the knees, a helmet covered with leaves for camouflage, a wooden slide rule in his breast pocket, a rifle held low pointing at the ground"},
+  {"id": "tai", "base": "man", "prompt": "a Vietnamese tailor of 34 from old Saigon, a crisp white long-sleeved shirt and dark trousers, a cloth measuring tape hanging round his neck, a piece of tailor's chalk behind his ear, sandals, a pair of large tailor's shears in one hand"},
+  {"id": "tulanh", "base": "woman", "prompt": "a strong Mekong delta woman of 37, a black ao ba ba (a plain loose button-front blouse and loose black trousers), a black-and-white checked khan ran scarf around her neck, a rifle slung across her back, a tiny silver baby bracelet on her wrist, barefoot"},
+  {"id": "phong", "base": "man", "prompt": "a thin Vietnamese village teacher of 28, round glasses, a worn faded khaki shirt and trousers, a small poetry notebook in his shirt pocket, standing very straight with his hands at his sides, sandals"},
+  {"id": "khoi", "base": "man", "prompt": "a thin young Vietnamese man of 19 with big ears, a faded shirt and trousers, a coil of black field-telephone wire over one shoulder, a pencil and a small diary in his hand"},
+  {"id": "hien", "base": "man", "prompt": "a Vietnamese composer of 39, a white shirt with rolled sleeves and dark trousers, a small violin held at his side, a few sheets of music with charred edges in his other hand"},
+  {"id": "bay", "base": "man", "prompt": "a grey-haired Vietnamese commander of about 50, cropped grey hair, a plain faded olive uniform with no badges, a round pith helmet held in one hand, leaning lightly on a bamboo walking stick, a rice ball wrapped in a banana leaf tied at his belt"}
+ ],
+ "boon_givers": [
+  {"id": "ferry_mother", "base": "woman", "prompt": "a Vietnamese ferry woman of 60, a dark ao ba ba (a plain loose button-front blouse and trousers), a conical straw hat, her trousers rolled up and wet, holding a long wooden oar upright, weathered face"},
+  {"id": "girl_with_hoe", "base": "woman", "prompt": "a Vietnamese volunteer girl of 19, a faded green shirt and trousers, a faded soft cloth hat, a hoe resting on her shoulder, dust up to her elbows, sandals"},
+  {"id": "wife_four_days", "base": "woman", "prompt": "a young Vietnamese woman of 22, (a simple wedding ao dai faded to pale pink:1.3), (a long fitted tunic dress with a high collar and side slits, over loose white trousers:1.2), hair pinned up, holding a small embroidered pillow to her chest"}
+ ],
+ "cafe": [
+  {"id": "bao", "base": "man", "prompt": "a Vietnamese doctor of about 50, a 1940s white doctor's coat over dark trousers, a stethoscope round his neck, round spectacles, a fountain pen in his breast pocket, a white mourning cloth hanging loose around his neck, dry and guarded"},
+  {"id": "mai", "base": "woman", "prompt": "an old Vietnamese woman of 65, a brown ao ba ba (a plain loose button-front blouse and trousers), grey hair in a bun with a wooden pin, a bunch of old keys at her belt, holding a small bowl of rice in both hands, a white mourning cloth hanging loose around her neck, warm and stern"}
+ ],
+ "heroes": [
+  {"id": "electrician", "base": "man", "prompt": "a young Vietnamese electrician of 24, a white short-sleeved work shirt and dark trousers, a leather tool pouch at his belt, a calm steady gaze, sandals"}
+ ]
+}
