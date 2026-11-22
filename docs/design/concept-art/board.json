@@ -1,0 +1,42 @@
+{"size":[2400,1640],
+ "pictures":[
+  {"file":"ComfyUI output lastcurtain/concept/box_office_12_00001_.png","x":40,"y":70,"w":1120,"h":640},
+  {"file":"ComfyUI output lastcurtain/concept/cafe_wall_b_52_00001_.png","x":1200,"y":70,"w":1160,"h":484},
+  {"file":"ComfyUI output lastcurtain/concept/cut_rescue_12_00001_.png","x":1200,"y":610,"w":560,"h":320},
+  {"file":"ComfyUI output lastcurtain/concept/card_dawn_12_00001_.png","x":1800,"y":600,"w":163,"h":249},
+  {"file":"sprites/icon_slingshot.png","x":2000,"y":640,"w":128,"h":128},
+  {"file":"sprites/ti_freed_portrait.png","x":1200,"y":1000,"w":160,"h":196},
+  {"file":"sprites/rat_portrait.png","x":1370,"y":1000,"w":160,"h":196},
+  {"file":"sprites/lethanh_portrait.png","x":1540,"y":1000,"w":160,"h":196},
+  {"file":"sprites/player_portrait.png","x":1710,"y":1000,"w":160,"h":196},
+  {"file":"sprites/hero_portrait.png","x":1880,"y":1000,"w":160,"h":196}
+ ],
+ "figures":[
+  {"file":"sprites/player.png","form":"none","x":120,"y":330,"w":200,"h":360},
+  {"file":"sprites/lethanh.png","form":"hostess","x":300,"y":320,"w":220,"h":370},
+  {"file":"sprites/ti_bound.png","form":"specter","x":560,"y":400,"w":180,"h":290,"strings":[[0.25,0.22],[0.75,0.22],[0.12,0.52],[0.88,0.52]],"top":80,"knot":true},
+  {"file":"sprites/rat.png","form":"zodiac","x":760,"y":220,"w":380,"h":470,"strings":[[0.35,0.3],[0.62,0.28],[0.3,0.5]],"top":80,"string_width":4},
+
+  {"file":"sprites/ti_bound.png","form":"specter","x":40,"y":1000,"w":170,"h":340,"strings":[[0.25,0.22],[0.75,0.22],[0.12,0.52],[0.88,0.52]],"top":960,"knot":true},
+  {"file":"sprites/ti_bound.png","form":"cafe","x":220,"y":1000,"w":170,"h":340},
+  {"file":"sprites/ti_freed.png","form":"ally","x":400,"y":1000,"w":170,"h":340},
+  {"file":"sprites/ti_freed.png","form":"freed","x":580,"y":1000,"w":170,"h":340},
+  {"file":"sprites/ghost.png","form":"friendly","x":780,"y":1050,"w":130,"h":290},
+  {"file":"sprites/ghost.png","form":"neutral","x":920,"y":1050,"w":130,"h":290},
+  {"file":"sprites/ghost.png","form":"aggressive","x":1060,"y":1050,"w":130,"h":290,"strings":[[0.28,0.25],[0.72,0.25],[0.2,0.55]],"top":960},
+  {"file":"sprites/hero.png","form":"freed","x":2080,"y":930,"w":150,"h":420},
+  {"file":"sprites/ember.png","form":"none","x":2220,"y":930,"w":170,"h":420}
+ ],
+ "labels":[
+  {"x":40,"y":20,"text":"THE LAST CURTAIN - concept art and style board (mock-up of the engine forms; 2026-11-23)","size":30},
+  {"x":40,"y":720,"text":"Fight backdrop (the box office) with the player, Le Thanh (hostess glow), Ti as a red specter with the gold knot, and the Rat (zodiac glow, thick strings)","size":18},
+  {"x":1200,"y":560,"text":"Cafe back wall (centre panel; outpainted to 2480 x 640 after approval)","size":18},
+  {"x":1200,"y":940,"text":"Cutscene still (the rescue)","size":18},
+  {"x":1800,"y":860,"text":"Power card","size":18},
+  {"x":2000,"y":780,"text":"Icon (glyph drawn in code)","size":18},
+  {"x":40,"y":960,"text":"Ti: specter / cafe ghost / ally (blue) / freed (gold)","size":20},
+  {"x":780,"y":960,"text":"Ordinary ghost: friendly / neutral / aggressive","size":20},
+  {"x":1200,"y":1210,"text":"Portraits: Ti, the Rat, Le Thanh, the player, the Girl of Dat Do","size":18},
+  {"x":2080,"y":1360,"text":"Hero        Ember bride","size":18},
+  {"x":40,"y":1400,"text":"Mood: dread words for the dead and the zodiacs; calm, warm, dignified for the freed, heroes, the cafe wall and the cards. The figures are not yet 3/4 turned right in every case; see the notes.","size":18}
+ ]}
