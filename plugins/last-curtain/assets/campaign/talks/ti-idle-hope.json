@@ -1,0 +1,14 @@
+{
+  "format": "umbra.lc-talk",
+  "version": 1,
+  "id": "ti-idle-hope",
+  "who": "ti",
+  "scene": "ti-idle-hope",
+  "opens": {
+    "all": [
+      "joined:ti",
+      "talked:ti-idle-3",
+      "ti.first=hope"
+    ]
+  }
+}

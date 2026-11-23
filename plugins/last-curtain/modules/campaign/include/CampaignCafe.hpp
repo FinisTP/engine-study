@@ -84,6 +84,7 @@ namespace umbra::campaign
         std::string id, who, scene, after, memory;
         std::vector<std::string> all, none; // facts "key" (any value) or "key=value"
         Facts sets;
+        std::vector<std::string> teaches; // recipe ids learnt
         bool repeat = false;
     };
 

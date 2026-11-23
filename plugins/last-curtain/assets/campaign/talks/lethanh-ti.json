@@ -5,5 +5,9 @@
   "who": "lethanh",
   "scene": "ti-memory-1",
   "after": "stage1",
-  "memory": "ti_1"
+  "memory": "ti_1",
+  "teaches": [
+    "mut_gung",
+    "nuoc_gung"
+  ]
 }

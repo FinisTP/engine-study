@@ -1,0 +1,28 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "ti-idle-1",
+  "note": "ti-content 4.6 (draft).",
+  "lines": [
+    {
+      "id": "a",
+      "speaker": "ti",
+      "face": "talk",
+      "text": "Quán ni có bánh tét không {anh/chị}? Tui thèm quá.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "ti",
+          "side": "right",
+          "slot": 0,
+          "face": "talk"
+        }
+      ]
+    }
+  ]
+}

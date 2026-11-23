@@ -903,4 +903,15 @@ TEST_CASE("Talks open by stage and facts, at most three new a visit; a fight lea
     for (const campaign::Talk *t : campaign::OpenTalks(talks, save, 10))
         memory |= t->memory == "ti_1";
     CHECK(memory);
+    // 5. Talking with Le Thanh after Stage 1 teaches the two ginger recipes; Ti's idle lines open once he joined.
+    for (const campaign::Talk *t : campaign::OpenTalks(talks, save, 10))
+        if (t->id == "lethanh-ti")
+            campaign::Talked(save, *t);
+    CHECK(save.recipes.contains("mut_gung"));
+    CHECK(save.recipes.contains("nuoc_gung"));
+    save.facts["joined:ti"] = "1";
+    bool idle = false;
+    for (const campaign::Talk *t : campaign::OpenTalks(talks, save, 10))
+        idle |= t->who == "ti";
+    CHECK(idle);
 }

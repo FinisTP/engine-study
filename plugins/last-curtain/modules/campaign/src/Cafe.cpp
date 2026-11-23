@@ -136,7 +136,7 @@ namespace umbra::campaign
             return false;
         save.memories.insert(memory.id);
         if (memory.joins)
-            save.joined.insert(memory.recruit);
+            save.joined.insert(memory.recruit), save.facts["joined:" + memory.recruit] = "1";
         // The answer picks the version; a version once chosen stays (P8).
         if (const auto answer = facts.find(memory.fact); answer != facts.end() && memory.versions.contains(answer->second) && !save.versions.contains(memory.upgrade))
             save.versions[memory.upgrade] = memory.versions.at(answer->second);
@@ -191,10 +191,11 @@ namespace umbra::campaign
                 error("format", "expected format umbra.lc-talk, version 1");
                 continue;
             }
-            Talk t{j.value("id", ""), j.value("who", ""), j.value("scene", ""), j.value("after", ""), j.value("memory", ""), {}, {}, {}, j.value("repeat", false)};
+            Talk t{j.value("id", ""), j.value("who", ""), j.value("scene", ""), j.value("after", ""), j.value("memory", ""), {}, {}, {}, {}, j.value("repeat", false)};
             const nlohmann::json opens = j.value("opens", nlohmann::json::object());
             t.all = opens.value("all", std::vector<std::string>{}), t.none = opens.value("none", std::vector<std::string>{});
             t.sets = j.value("sets", Facts{});
+            t.teaches = j.value("teaches", std::vector<std::string>{});
             if (!cast.Find(t.who))
                 error("who", "\"" + t.who + "\" is not in cast.csv");
             if (!std::filesystem::exists(scenes / (t.scene + ".json")))
@@ -230,9 +231,10 @@ namespace umbra::campaign
 
     void Talked(Save &save, const Talk &talk)
     {
-        save.talks.insert(talk.id);
+        save.talks.insert(talk.id), save.facts["talked:" + talk.id] = "1"; // talks can open after other talks
         for (const auto &[key, value] : talk.sets)
             save.facts[key] = value;
+        save.recipes.insert(talk.teaches.begin(), talk.teaches.end());
     }
 
     void RecordFight(const match::MatchDef &def, Save &save, const std::string &stage, const match::MatchState &s, const std::vector<std::string> &who)

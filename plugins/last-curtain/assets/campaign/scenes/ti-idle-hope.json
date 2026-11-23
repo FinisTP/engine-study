@@ -1,0 +1,28 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "ti-idle-hope",
+  "note": "ti-content 4.6 (draft).",
+  "lines": [
+    {
+      "id": "a",
+      "speaker": "ti",
+      "face": "talk",
+      "text": "Hồi nãy tui mơ thấy mạ đứng đầu ngõ. Mạ cười.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "ti",
+          "side": "right",
+          "slot": 0,
+          "face": "talk"
+        }
+      ]
+    }
+  ]
+}

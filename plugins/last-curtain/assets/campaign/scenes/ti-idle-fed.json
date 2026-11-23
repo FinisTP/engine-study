@@ -1,0 +1,28 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "ti-idle-fed",
+  "note": "ti-content 4.6 (draft).",
+  "lines": [
+    {
+      "id": "a",
+      "speaker": "ti",
+      "face": "talk",
+      "text": "{Anh/Chị} còn cơm không? Tui ăn được thêm chén nữa.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "ti",
+          "side": "right",
+          "slot": 0,
+          "face": "talk"
+        }
+      ]
+    }
+  ]
+}
