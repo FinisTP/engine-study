@@ -68,4 +68,13 @@ TEST_CASE("The analog screen: strengths from options.csv, the player's two switc
     AnalogScreen nowhere = LoadAnalog({}, options);
     CHECK(nowhere.Toggle("crt", {}));
     CHECK_FALSE(nowhere.crtOn);
+    // 4. Large text (campaign plan 5): off at first, a switch, saved, and its scale.
+    std::filesystem::remove(file);
+    AnalogScreen big = LoadAnalog(file, options);
+    CHECK_FALSE(big.bigText);
+    CHECK(big.TextScale() == 1.0F);
+    CHECK(big.Toggle("bigtext", file));
+    CHECK(LoadAnalog(file, options).bigText);
+    CHECK(LoadAnalog(file, options).TextScale() == 1.25F);
+    CHECK(big.Data()["bigText"] == true);
 }

@@ -554,3 +554,23 @@ TEST_CASE("An image can be mirrored and tinted (UI.md Images)")
     REQUIRE_FALSE(found.empty());
     CHECK(found.back().field == "root.children[1].tint");
 }
+
+TEST_CASE("A text scale rebuilds the fonts larger; open screens lay out again (campaign plan 5)")
+{
+    ui::UiSystem uiSystem;
+    std::vector<core::Diagnostic> diagnostics;
+    const assets::AssetFolders folders(UMBRA_RPG_UI_ASSETS);
+    REQUIRE(uiSystem.Load(folders, diagnostics));
+    const float before = ui::FontAtlas::Measure(*uiSystem.Fonts().Find("body"), "Kết thúc lượt").x;
+    REQUIRE(uiSystem.SetTextScale(1.25F, diagnostics));
+    CHECK(uiSystem.TextScale() == 1.25F);
+    const float after = ui::FontAtlas::Measure(*uiSystem.Fonts().Find("body"), "Kết thúc lượt").x;
+    CHECK(after > before * 1.15F);
+    CHECK(after < before * 1.35F);
+    // Back to 1: the same width as at the start.
+    REQUIRE(uiSystem.SetTextScale(1.0F, diagnostics));
+    CHECK(ui::FontAtlas::Measure(*uiSystem.Fonts().Find("body"), "Kết thúc lượt").x == before);
+    // A scale out of 0.5..2 is refused.
+    CHECK_FALSE(uiSystem.SetTextScale(5.0F, diagnostics));
+    CHECK(uiSystem.TextScale() == 1.0F);
+}

@@ -99,6 +99,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
     umbra::render::Renderer &renderer = game.renderer;
     Screens &screens = *game.screens;
     Sounds &sounds = *game.sounds; // sounds.csv; silent without a sound card or a file
+    screens.SetTextScale(analog.TextScale()); // large text, as the player left it
     MatchTable table(renderer, assets, def);
     if (std::ifstream in(assets / "match-look.json"); in)
         table.SetLook(nlohmann::json::parse(in, nullptr, false));
@@ -266,7 +267,10 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                 uiTook = true;
                 sounds.Play("click");
                 if (a.screen == "pause" && analog.Toggle(a.action, umbra::night::AnalogPath()))
+                {
+                    screens.SetTextScale(analog.TextScale());
                     continue; // the pause menu's screen switches
+                }
                 if (a.action == "quit")
                     quit = true;
                 else if (a.screen == "match-pick" && a.action == "pick")

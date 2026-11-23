@@ -42,6 +42,7 @@ int RunScene(GameContext &game, const umbra::assets::AssetFolders &assets, const
 
     // 2. The loop: the typewriter, clicks and keys; the log over it.
     umbra::campaign::ScenePlayer play(scene, cast, player, facts);
+    screens.SetTextScale(analog.TextScale()); // large text, as the player left it
     screens.Ui().Open("dialog");
     bool logOpen = false;
     umbra::core::DrawList drawList;

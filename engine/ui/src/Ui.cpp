@@ -206,10 +206,11 @@ namespace umbra::ui
                 diagnostics.push_back({core::Severity::Error, "ui.skin", skinFile.generic_string(), "", "no ui/skin.json in the project or its plugins"});
             return false;
         }
-        std::vector<FontSource> sources;
+        sources_.clear();
         for (const auto &[name, font] : skin_.Fonts())
-            sources.push_back({name, ReadBytes(assets / font.file), font.size});
-        if (!fonts_.Build(sources, diagnostics))
+            sources_.push_back({name, ReadBytes(assets / font.file), font.size});
+        textScale_ = 1.0F;
+        if (!fonts_.Build(sources_, diagnostics))
             return false;
         // 2. Every screen file.
         screens_.clear();
@@ -224,6 +225,19 @@ namespace umbra::ui
                 screens_[name] = std::move(screen);
         }
         return !core::HasErrors(diagnostics);
+    }
+
+    bool UiSystem::SetTextScale(float scale, std::vector<core::Diagnostic> &diagnostics)
+    {
+        if (scale < 0.5F || scale > 2.0F)
+            return false;
+        std::vector<FontSource> sized = sources_;
+        for (FontSource &f : sized)
+            f.size *= scale;
+        if (!fonts_.Build(sized, diagnostics))
+            return false;
+        textScale_ = scale;
+        return true;
     }
 
     bool UiSystem::Open(const std::string &screen)

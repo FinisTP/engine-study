@@ -17,11 +17,13 @@ namespace umbra::night
     {
         float crt = 0.0F, vhs = 0.0F;    // strengths from options.csv
         bool crtOn = true, vhsOn = true; // the player's switches (on until turned off, the user)
+        bool bigText = false;            // large text (campaign plan 5): fonts x1.25
+        [[nodiscard]] float TextScale() const { return bigText ? 1.25F : 1.0F; }
 
         void Apply(core::PostSettings &post) const;
         // "crt" or "vhs" from the pause screen: flips it and saves to `file` ("" = don't save). False for other actions.
         bool Toggle(const std::string &action, const std::filesystem::path &file);
-        // For the pause screen: crt, crtOff, vhs, vhsOff.
+        // For the pause screen: crt, crtOff, vhs, vhsOff, bigText, bigTextOff.
         [[nodiscard]] nlohmann::json Data() const;
     };
 

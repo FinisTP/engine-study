@@ -68,6 +68,10 @@ namespace umbra::ui
         std::vector<UiAction> Update(const nlohmann::json &data, glm::vec2 viewport, const UiInput &input, core::UiDrawList &out);
 
         [[nodiscard]] const FontAtlas &Fonts() const { return fonts_; }
+        // Large text (UI.md "Text scale"): every font rebuilt at its size times scale (0.5..2); screens lay
+        // out from the new sizes next frame. The game uploads Atlas() again after a change.
+        bool SetTextScale(float scale, std::vector<core::Diagnostic> &diagnostics);
+        [[nodiscard]] float TextScale() const { return textScale_; }
         [[nodiscard]] const std::map<std::string, Screen> &Screens() const { return screens_; }
         void SetScreen(Screen screen) { screens_[screen.name] = std::move(screen); } // e.g. edited in the editor
         [[nodiscard]] const Skin &GetSkin() const { return skin_; }
@@ -89,6 +93,8 @@ namespace umbra::ui
         void DrawBox(const Style &style, Rect rect, Context &c);
 
         FontAtlas fonts_;
+        std::vector<FontSource> sources_; // the skin's fonts at scale 1
+        float textScale_ = 1.0F;
         Skin skin_;
         std::map<std::string, Screen> screens_;
         std::vector<std::string> stack_;

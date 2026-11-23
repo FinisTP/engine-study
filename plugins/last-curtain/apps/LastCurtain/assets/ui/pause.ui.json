@@ -13,6 +13,8 @@
     { "type": "button", "size": [300, 44], "text": "Old TV screen: off", "action": "crt", "visible": "{analog.crtOff}" },
     { "type": "button", "size": [300, 44], "text": "Worn tape: on", "action": "vhs", "visible": "{analog.vhs}" },
     { "type": "button", "size": [300, 44], "text": "Worn tape: off", "action": "vhs", "visible": "{analog.vhsOff}" },
+    { "type": "button", "size": [300, 44], "text": "Large text: on", "action": "bigtext", "visible": "{analog.bigText}" },
+    { "type": "button", "size": [300, 44], "text": "Large text: off", "action": "bigtext", "visible": "{analog.bigTextOff}" },
     { "type": "text", "style": "muted", "text": "Written lines: the model is not installed", "visible": "{writtenLines}", "wrap": true, "size": [300, 0] }
   ] }
 }

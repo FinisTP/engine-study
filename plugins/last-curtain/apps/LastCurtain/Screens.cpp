@@ -21,10 +21,22 @@ Screens::Screens(umbra::render::Renderer &renderer, const umbra::assets::AssetFo
     ui_.SetImageLoader([this](const std::string &path) { return Image(path); });
 }
 
+void Screens::SetTextScale(float scale)
+{
+    std::vector<umbra::core::Diagnostic> diagnostics;
+    if (!ready_ || ui_.TextScale() == scale || !ui_.SetTextScale(scale, diagnostics))
+        return;
+    oldAtlases_.push_back(atlas_);
+    atlas_ = renderer_.CreateTexture(ui_.Atlas());
+    ui_.SetAtlasTexture(atlas_);
+}
+
 Screens::~Screens()
 {
     if (atlas_)
         renderer_.DestroyTexture(atlas_);
+    for (const umbra::core::TextureHandle old : oldAtlases_)
+        renderer_.DestroyTexture(old);
     for (const auto &[path, image] : images_)
         if (image.texture)
             renderer_.DestroyTexture(image.texture);

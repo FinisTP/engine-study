@@ -24,6 +24,9 @@ public:
     [[nodiscard]] const std::vector<std::string> &Problems() const { return problems_; }
     [[nodiscard]] umbra::ui::UiSystem &Ui() { return ui_; }
     [[nodiscard]] umbra::ui::ImageRef Image(const std::string &path);
+    // Large text: fonts rebuilt at this scale and the atlas uploaded again (the old one is freed at the end,
+    // a frame in flight may still draw with it).
+    void SetTextScale(float scale);
 
     // Input for this frame; window mouse coordinates become render pixels.
     [[nodiscard]] static umbra::ui::UiInput MapInput(const umbra::platform::Input &input, glm::vec2 windowSize, glm::vec2 pixels);
@@ -35,5 +38,6 @@ private:
     bool ready_ = false;
     std::vector<std::string> problems_;
     umbra::core::TextureHandle atlas_;
+    std::vector<umbra::core::TextureHandle> oldAtlases_;
     std::map<std::string, umbra::ui::ImageRef> images_;
 };

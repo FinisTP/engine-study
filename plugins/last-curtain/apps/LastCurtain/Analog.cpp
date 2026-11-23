@@ -19,6 +19,8 @@ namespace umbra::night
             crtOn = !crtOn;
         else if (action == "vhs")
             vhsOn = !vhsOn;
+        else if (action == "bigtext")
+            bigText = !bigText;
         else
             return false;
         // Saved whole at once: a temp file, then moved over the old one.
@@ -27,13 +29,13 @@ namespace umbra::night
             std::error_code error;
             std::filesystem::create_directories(file.parent_path(), error);
             const std::filesystem::path temp = file.string() + ".tmp";
-            std::ofstream(temp) << nlohmann::json{{"format", "umbra.lc-screen"}, {"version", 1}, {"crt", crtOn}, {"vhs", vhsOn}}.dump(2) << "\n";
+            std::ofstream(temp) << nlohmann::json{{"format", "umbra.lc-screen"}, {"version", 1}, {"crt", crtOn}, {"vhs", vhsOn}, {"bigText", bigText}}.dump(2) << "\n";
             std::filesystem::rename(temp, file, error);
         }
         return true;
     }
 
-    nlohmann::json AnalogScreen::Data() const { return {{"crt", crtOn}, {"crtOff", !crtOn}, {"vhs", vhsOn}, {"vhsOff", !vhsOn}}; }
+    nlohmann::json AnalogScreen::Data() const { return {{"crt", crtOn}, {"crtOff", !crtOn}, {"vhs", vhsOn}, {"vhsOff", !vhsOn}, {"bigText", bigText}, {"bigTextOff", !bigText}}; }
 
     std::filesystem::path AnalogPath()
     {
@@ -52,6 +54,7 @@ namespace umbra::night
         {
             analog.crtOn = saved.value("crt", true);
             analog.vhsOn = saved.value("vhs", true);
+            analog.bigText = saved.value("bigText", false);
         }
         return analog;
     }

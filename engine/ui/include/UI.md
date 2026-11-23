@@ -69,6 +69,12 @@ y = parent.y + (parent.h - h) * ay + offset.y      ay = 0 top,  0.5 middle, 1 bo
 `fill` takes the whole area; `offset` is then a margin on each side. Inside a `stack`, children
 are placed in order instead, and `align` lines them up across (start, center, end, stretch).
 
+### Text scale
+
+`UiSystem::SetTextScale(scale)` (0.5 to 2) builds every skin font again at its size times `scale`;
+screens are laid out each frame, so they grow at once (panels with their text; fixed `size`s stay).
+The game uploads `Atlas()` again afterwards. The Last Curtain's "Large text" switch uses 1.25.
+
 ### Pictures
 
 An `image` fills its box by default, stretched. `fit` keeps its shape: `contain` shows all of it,
