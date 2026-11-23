@@ -59,6 +59,34 @@
   texts): marks on every letter, titles and buttons.
 - Full run: `cmake --build build-gcc` then `ctest`: **59/59 passed** (58 before + `Umbra.TalkMind`), 1491 s.
 
+## 2b. Arcee-VyLinh, first run (CPU, 2026-11-23)
+
+The user downloaded Arcee-VyLinh 3B (`projects/reference/models/vietnamese.gguf`, Q4_K_M, 1.93 GB;
+its header names VyLinh 3B merged with Qwen2.5-3B-Instruct; git ignores it). There was no Windows
+build to run it on in the user's absence, so Claude built a static Linux copy of the same test (the
+`talkmind` sources and `LlamaMind.cpp` against llama.cpp `b9030`, CPU only, not committed) and ran it in
+the user's PC's Linux shell (i5-12500H, 2 threads), in chunks of 10 lines.
+
+- **60 lines, 55% pass the checks** (needs 90%). Report: `s44/arcee-vylinh-cpu-2026-11-23.md`.
+  Times (about 11 s a line) are the CPU shell's, not the game's: speed and video memory still need the
+  Windows run on the graphics card.
+- **Good:** the Vietnamese is natural and keeps each voice ("Con tới rồi hỉ? Ngồi xuống, bà để phần
+  cơm cho con đó.", "Đêm đó hả? Bác sĩ cũng có quyền quên vài ca bệnh chớ."); Tí keeps "tui", "mạ",
+  "răng", "hè"; no English at all; memories not yet regained never leaked.
+- **Failures, by kind:** narration 13 ("Bác sĩ Bảo nói: …", "Tí chào {anh/chị}…"), missing fact 4
+  (3 are Lệ Thanh's dance told in the first person instead of as narration), the player's gender
+  guessed 3 ("Chào cô {player}", "Chào anh {player}"), tokens invented 2 (`{Tí}`, `{anh}`), a Chinese
+  letter 1 ("một阵"), a run-on explanation 1, a Northern "thế" from Tí 1.
+- **The checks grew from it** (`#UMBRA-331`): narration, a dropped `{anh/chị}`/`{player}`, and any
+  letter the fonts can't draw (which also covers Chinese).
+- **A second prompt** (no narration, keep the tokens, no Chinese, spelled out) did not help: 10 of 20
+  on seed 1, and the model began wrapping words in braces. The first prompt stays.
+
+Reading: VyLinh writes good Vietnamese but doesn't follow the format reliably at 3B. In the game a
+refused line shows the authored one, so 55% would still give variety; but it is under the agreed 90%.
+Next: the same run on Windows with the graphics card (speed, memory), then Qwen3 4B and other
+candidates side by side; the user decides.
+
 **Found, not caused by this plan:** `UmbraTool ui-preview start` with the shipped `sample.json`
 crashes (an image whose path is empty makes it read the assets folder as a file). The capture above
 gave each guest a portrait to get round it.
