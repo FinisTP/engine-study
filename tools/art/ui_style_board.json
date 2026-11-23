@@ -3,25 +3,178 @@
   "style": "Vietnamese oil pastel drawing on toned paper, thick waxy smudged strokes, visible paper grain, muted colours, soft lamplight",
   "negative": "text, letters, words, writing, watermark, signature, logo, frame, border, blood, skull, body, person, face, hands",
   "jobs": [
-    {"name": "tex_lacquer_a", "w": 1024, "h": 1024, "seeds": [101, 102], "plain": true,
-     "prompt": "extreme close-up flat surface of Vietnamese black lacquer (son mai), deep red-black, soft glossy depth, faint fine crackle, no pattern, even soft light, seamless material texture, top-down"},
-    {"name": "tex_lacquer_b", "w": 1024, "h": 1024, "seeds": [111, 112], "plain": true,
-     "prompt": "extreme close-up flat surface of warm brown Vietnamese lacquer (son mai), dark chestnut and oxblood brown, soft glossy depth, faint fine crackle, no pattern, even soft light, seamless material texture, top-down"},
-    {"name": "tex_gold_leaf", "w": 1024, "h": 1024, "seeds": [121, 122], "plain": true,
-     "prompt": "extreme close-up flat sheet of gold leaf, slightly worn and uneven, warm gold, faint wrinkles, flat even light, seamless material texture, top-down"},
-    {"name": "tex_eggshell", "w": 1024, "h": 1024, "seeds": [131, 132], "plain": true,
-     "prompt": "extreme close-up of crushed eggshell inlay pressed into black lacquer, sparse fine ivory fragments scattered on deep black, even light, seamless material texture, top-down"},
-    {"name": "tex_paper_plan", "w": 1344, "h": 768, "seeds": [141, 142], "plain": true,
-     "prompt": "aged off-white architectural drawing paper, faint tea stains, soft foxing, slightly creased, empty sheet, no lines, flat even light, top-down"},
-    {"name": "icon_mark_cleared", "w": 1024, "h": 1024, "seeds": [151, 152],
-     "prompt": "single small gold tick mark brushed as one thick lacquer stroke, centred, isolated object, plain flat cream background, game icon, simple silhouette"},
-    {"name": "icon_mark_skirmish", "w": 1024, "h": 1024, "seeds": [161, 162],
-     "prompt": "two crossed folded paper hand fans, dark red and gold, centred, isolated object, plain flat cream background, game icon, simple silhouette"},
-    {"name": "icon_cmd_cut", "w": 1024, "h": 1024, "seeds": [171, 172],
-     "prompt": "old iron scissors cutting a single red thread, centred, isolated object, plain flat cream background, game icon, simple silhouette"},
-    {"name": "icon_rite", "w": 1024, "h": 1024, "seeds": [181, 182],
-     "prompt": "one burning incense stick standing upright with a thin curl of rising smoke, centred, isolated object, plain flat cream background, game icon, simple silhouette"},
-    {"name": "item_gung", "w": 1024, "h": 1024, "seeds": [191, 192],
-     "prompt": "still life of a knob of old ginger root, centred, isolated object, plain flat cream background, game item icon"}
+    {
+      "name": "tex_lacquer_a",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        101,
+        102
+      ],
+      "plain": true,
+      "prompt": "extreme close-up flat surface of Vietnamese black lacquer (son mai), deep red-black, soft glossy depth, faint fine crackle, no pattern, even soft light, seamless material texture, top-down"
+    },
+    {
+      "name": "tex_lacquer_b",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        111,
+        112
+      ],
+      "plain": true,
+      "prompt": "extreme close-up flat surface of warm brown Vietnamese lacquer (son mai), dark chestnut and oxblood brown, soft glossy depth, faint fine crackle, no pattern, even soft light, seamless material texture, top-down"
+    },
+    {
+      "name": "tex_gold_leaf",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        121,
+        122
+      ],
+      "plain": true,
+      "prompt": "extreme close-up flat sheet of gold leaf, slightly worn and uneven, warm gold, faint wrinkles, flat even light, seamless material texture, top-down"
+    },
+    {
+      "name": "tex_eggshell",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        131,
+        132
+      ],
+      "plain": true,
+      "prompt": "extreme close-up of crushed eggshell inlay pressed into black lacquer, sparse fine ivory fragments scattered on deep black, even light, seamless material texture, top-down"
+    },
+    {
+      "name": "tex_paper_plan",
+      "w": 1344,
+      "h": 768,
+      "seeds": [
+        141,
+        142
+      ],
+      "plain": true,
+      "prompt": "aged off-white architectural drawing paper, faint tea stains, soft foxing, slightly creased, empty sheet, no lines, flat even light, top-down"
+    },
+    {
+      "name": "icon_mark_cleared",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        151,
+        152
+      ],
+      "prompt": "single small gold tick mark brushed as one thick lacquer stroke, centred, isolated object, plain flat cream background, game icon, simple silhouette"
+    },
+    {
+      "name": "icon_mark_skirmish",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        161,
+        162
+      ],
+      "prompt": "two crossed folded paper hand fans, dark red and gold, centred, isolated object, plain flat cream background, game icon, simple silhouette"
+    },
+    {
+      "name": "icon_cmd_cut",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        171,
+        172
+      ],
+      "prompt": "old iron scissors cutting a single red thread, centred, isolated object, plain flat cream background, game icon, simple silhouette"
+    },
+    {
+      "name": "icon_rite",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        181,
+        182
+      ],
+      "prompt": "one burning incense stick standing upright with a thin curl of rising smoke, centred, isolated object, plain flat cream background, game icon, simple silhouette"
+    },
+    {
+      "name": "item_gung",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        191,
+        192
+      ],
+      "prompt": "still life of a knob of old ginger root, centred, isolated object, plain flat cream background, game item icon"
+    },
+    {
+      "name": "tex_lacquer_a2",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        201,
+        202,
+        203
+      ],
+      "plain": true,
+      "prompt": "macro photo of a glossy black lacquer panel, near-black with a faint deep red undertone, mirror-smooth polished surface, very fine hairline craquelure, soft studio reflection, uniform, no objects, top-down"
+    },
+    {
+      "name": "tex_lacquer_b2",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        211,
+        212,
+        213
+      ],
+      "plain": true,
+      "prompt": "macro photo of a glossy dark oxblood red-brown lacquer panel, polished resin coating, mirror-smooth, very fine hairline craquelure, uniform, not wood, no grain, no objects, top-down"
+    },
+    {
+      "name": "tex_eggshell2",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        221,
+        222
+      ],
+      "plain": true,
+      "prompt": "glossy black lacquer surface with a few tiny scattered ivory eggshell flecks, mostly empty black, very sparse, top-down, uniform light"
+    },
+    {
+      "name": "tex_paper2",
+      "w": 1344,
+      "h": 768,
+      "seeds": [
+        231,
+        232
+      ],
+      "plain": true,
+      "prompt": "blank sheet of aged ivory paper, completely empty, nothing drawn, faint tea stains and foxing at the edges, soft paper fibre texture, flat even light, top-down"
+    },
+    {
+      "name": "icon_rite2",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        241,
+        242,
+        243
+      ],
+      "prompt": "a single thin red joss stick (incense stick) standing upright in a small bowl of sand, a thin curl of grey smoke rising, centred, isolated object, plain flat cream background, game icon, simple silhouette"
+    },
+    {
+      "name": "icon_mark_skirmish2",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        251,
+        252,
+        253
+      ],
+      "prompt": "exactly two folded paper hand fans crossed in an X shape, dark red and gold, centred, isolated object, plain flat cream background, game icon, simple silhouette"
+    }
   ]
 }
