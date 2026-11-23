@@ -1,0 +1,22 @@
+{
+  "format": "umbra.lc-keys",
+  "version": 1,
+  "note": "What each key means in a campaign fight, the dialog and the cafe (campaign plan 5). Change a key name to remap it.",
+  "keys": {
+    "back": "Esc",
+    "confirm": "Enter",
+    "next": "Space",
+    "hurry": "Space",
+    "endTurn": "F",
+    "skip": "F",
+    "log": "L",
+    "pin": "I",
+    "notebook": "J",
+    "menu1": "1",
+    "menu2": "2",
+    "menu3": "3",
+    "menu4": "4",
+    "menu5": "5",
+    "menu6": "6"
+  }
+}

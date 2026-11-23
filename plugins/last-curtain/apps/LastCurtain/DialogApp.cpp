@@ -12,7 +12,6 @@
 #include <fstream>
 #include <thread>
 
-using umbra::platform::InputKey;
 
 int RunScene(GameContext &game, const umbra::assets::AssetFolders &assets, const std::string &sceneId, const std::string &backdrop,
              const umbra::campaign::Speaker &player, umbra::campaign::Facts &facts, const std::filesystem::path &capture, int frames)
@@ -69,13 +68,12 @@ int RunScene(GameContext &game, const umbra::assets::AssetFolders &assets, const
         const glm::vec2 pixels{static_cast<float>(width), static_cast<float>(height)};
         const umbra::ui::UiInput uiInput = Screens::MapInput(game.input, {static_cast<float>(game.window.GetWidth()), static_cast<float>(game.window.GetHeight())}, pixels);
 
-        // 3. Keys: Space advances, 1-4 choose (the screen's clicks are its actions below).
+        // 3. Keys (keys-keyboard.json): next advances, menu1-4 choose (the screen's clicks are its actions below).
         play.Update(dt, options.lettersPerSecond);
-        if (!logOpen && game.input.IsKeyPressed(InputKey::Space))
+        if (!logOpen && game.keys.Pressed(game.input, "next"))
             play.Advance();
-        const InputKey numbers[] = {InputKey::Num1, InputKey::Num2, InputKey::Num3, InputKey::Num4};
         for (int i = 0; i < 4 && !logOpen; ++i)
-            if (game.input.IsKeyPressed(numbers[i]))
+            if (game.keys.Pressed(game.input, "menu" + std::to_string(i + 1)))
                 (void)play.Choose(i);
         if (!capture.empty() && frame == 1)
             play.Skip(); // a capture shows the first choice, or the end

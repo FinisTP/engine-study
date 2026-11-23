@@ -30,7 +30,6 @@
 #include <thread>
 
 using namespace umbra::match;
-using umbra::platform::InputKey;
 
 namespace
 {
@@ -181,7 +180,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         umbra::ui::UiInput uiInput = Screens::MapInput(input, {static_cast<float>(window.GetWidth()), static_cast<float>(window.GetHeight())}, pixels);
         drawList.Clear();
         drawList.hud.diagnosticsWindow = false;
-        if (input.IsKeyPressed(InputKey::Escape) && play)
+        if (game.keys.Pressed(input, "back") && play)
             paused = !paused, uiInput.back = false;
 
         // 5. The match: bots and monsters play on beats; the board follows the mouse.

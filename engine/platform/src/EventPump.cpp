@@ -96,6 +96,10 @@ namespace
             return InputKey::Num3;
         case SDL_SCANCODE_4:
             return InputKey::Num4;
+        case SDL_SCANCODE_5:
+            return InputKey::Num5;
+        case SDL_SCANCODE_6:
+            return InputKey::Num6;
         case SDL_SCANCODE_I:
             return InputKey::I;
         case SDL_SCANCODE_K:

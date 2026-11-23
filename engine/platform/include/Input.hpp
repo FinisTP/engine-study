@@ -55,6 +55,8 @@ namespace umbra::platform
         PadRight,
         PadStart,
         PadBack,
+        Num5, // added last so the values above keep their numbers
+        Num6,
         Count
     };
 
