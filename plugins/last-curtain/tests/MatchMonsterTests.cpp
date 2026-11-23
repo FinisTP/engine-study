@@ -17,6 +17,14 @@ namespace
         return NewMatch(def, 7, {MatchDef::Find(def.characters, "bao"), MatchDef::Find(def.characters, "khang"), MatchDef::Find(def.characters, "mai")});
     }
 
+    // Every monster on the board takes its turn, in unit order (what the old monsters' phase did).
+    void ActAll(const MatchDef &def, MatchState &s)
+    {
+        for (int i = 0; i < static_cast<int>(s.units.size()) && !s.battle.on; ++i)
+            if (s.units[U(i)].kind == 1 && Up(s.units[U(i)]))
+                MonsterAct(def, s, i);
+    }
+
     bool Taken(const MatchState &s, int c) { return std::ranges::any_of(s.units, [&](const Unit &u) { return u.cell == c; }); }
 
     // A free square `steps` from `from`, of a kind other than a room.
@@ -62,7 +70,7 @@ namespace
     }
 }
 
-TEST_CASE("Monsters act after each round by their behaviour (T299)", "[match][monsters]")
+TEST_CASE("Monsters act by their behaviour on their turn (T299)", "[match][monsters]")
 {
     MatchDef def = Data();
     def.monsters[U(MatchDef::Find(def.monsters, "stagehand"))].behaviour = Behaviour::Flee;
@@ -71,13 +79,13 @@ TEST_CASE("Monsters act after each round by their behaviour (T299)", "[match][mo
     const int near = SquareAt(s, s.units[U(me)].cell, 2);
     const int spider = Add(def, s, "stagehand", near);
     const int before = Nearest(s, near);
-    RunMonsters(def, s);
+    ActAll(def, s);
     CHECK(Nearest(s, s.units[U(spider)].cell) > before);
 
     MatchState t = Start(def);
     const int start = SquareAt(t, t.stage, 2);
     const int prompter = Add(def, t, "prompter", start); // speed 3, goes for the stage but never onto it
-    RunMonsters(def, t);
+    ActAll(def, t);
     CHECK(Steps(t.board, t.units[U(prompter)].cell, t.stage) == 1);
 }
 
@@ -97,7 +105,7 @@ TEST_CASE("A guardian strikes enemies next to it, and its own side cannot attack
     s.units[U(enemyOfG1)].cell = static_cast<std::int16_t>(beside);
     s.units[U(enemyOfG1)].hp = 40;
     const int expected = 40 - Damage(def, s, s.units[U(g1)].abilities[0], g1, enemyOfG1, 0);
-    RunMonsters(def, s);
+    ActAll(def, s);
     CHECK(s.units[U(enemyOfG1)].hp == expected);
 
     // Side 1 cannot attack its own guardian; side 0 cannot step into side 1's hub while it stands.
@@ -202,7 +210,7 @@ TEST_CASE("Anyone next to any of its squares can attack it, and its blows reach 
     const int victim = Current(t);
     t.units[U(victim)].cell = static_cast<std::int16_t>(Neighbour(t.board, Squares(t.board, t.units[U(g)]).back(), 2));
     t.units[U(victim)].hp = 90;
-    RunMonsters(def, t);
+    ActAll(def, t);
     CHECK(t.units[U(victim)].hp < 90);
 }
 
@@ -234,7 +242,7 @@ TEST_CASE("A hunter walks to a character it sees, never out of the centre (T317)
     const int me = s.order[0];
     s.units[U(me)].cell = static_cast<std::int16_t>(CentreSquare(s, a, 3));
     s.units[U(me)].hp = 99;
-    RunMonsters(def, s);
+    ActAll(def, s);
     CHECK(InCentre(s, s.units[U(a)]));
     REQUIRE(s.battle.on);
     CHECK(s.battle.attacker == a);
@@ -264,7 +272,7 @@ TEST_CASE("A hunter walks to a character it sees, never out of the centre (T317)
     const int you = t.order[0];
     t.units[U(you)].cell = static_cast<std::int16_t>(far);
     const int before = Steps(t.board, t.units[U(h)].cell, far);
-    RunMonsters(def, t);
+    ActAll(def, t);
     CHECK(InCentre(t, t.units[U(h)]));
     CHECK(Steps(t.board, t.units[U(h)].cell, far) < before);
     CHECK_FALSE(t.battle.on);
@@ -273,46 +281,39 @@ TEST_CASE("A hunter walks to a character it sees, never out of the centre (T317)
     MatchState u = Start(Data());
     const int still = SpawnedOn(u, u.board.centreSpawns[0]);
     const int at = u.units[U(still)].cell;
-    RunMonsters(Data(), u);
+    ActAll(Data(), u);
     CHECK(u.units[U(still)].cell == at);
 }
 
-TEST_CASE("A hunter's battle waits for the defender's picks, then the monsters' phase goes on (T318)", "[match][monsters][hunt]")
+TEST_CASE("A hunter's battle waits for the defender's picks, then the order goes on (T318)", "[match][monsters][hunt]")
 {
     const MatchDef def = Data();
     MatchState s = Start(def);
-    const int a = SpawnedOn(s, s.board.centreSpawns[0]), b = SpawnedOn(s, s.board.centreSpawns[1]);
-    const int x = s.order.back(), y = s.order[s.order.size() - 2];
+    const int a = SpawnedOn(s, s.board.centreSpawns[0]);
+    int x = -1; // the last character in the order
+    for (const std::int8_t u : s.order)
+        if (s.units[U(u)].kind == 0)
+            x = u;
+    for (int u = 0; u < static_cast<int>(s.units.size()); ++u)
+        if (s.units[U(u)].kind == 0 && u != x)
+            s.units[U(u)].hp = s.units[U(u)].maxHp = 99;
     s.units[U(x)].cell = static_cast<std::int16_t>(CentreSquare(s, a, 2));
-    int beside = -1;
-    for (int d = 0; d < 4; ++d)
-        if (const int n = Neighbour(s.board, s.units[U(b)].cell, d); n >= 0 && !Taken(s, n) && n != s.stage)
-            beside = n;
-    REQUIRE(beside >= 0);
-    s.units[U(y)].cell = static_cast<std::int16_t>(beside);
-    s.units[U(x)].hp = s.units[U(y)].hp = 99;
-    // 1. Every character ends its turn; the phase pauses on the first hunter's battle.
-    for (int i = 0; i < static_cast<int>(s.order.size()); ++i)
+    s.units[U(x)].hp = 99;
+    // 1. Characters end their turns until the hunter's turn comes and it starts a battle with X.
+    for (int i = 0; i < 200 && !s.battle.on; ++i)
         REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
-    CHECK(s.round == 1);
-    CHECK(s.monsterTurn == a);
     REQUIRE(s.battle.on);
+    CHECK(s.battle.attacker == a);
     CHECK(s.battle.defender == x);
+    CHECK(s.order[U(s.turn)] == a); // the battle is the hunter's turn
     CHECK(Current(s) == x);
     CHECK(Check(def, s, {ActionKind::EndTurn}) == Why::MustChoose);
-    // 2. X picks to the end; then the second hunter's battle with Y.
+    // 2. X picks to the end; then the order goes on after the hunter.
+    const int place = s.turn, round = s.round;
     while (s.battle.on && s.battle.defender == x)
         REQUIRE(Apply(def, s, {ActionKind::BattleAbility, 0}));
-    CHECK(s.round == 1);
-    REQUIRE(s.battle.on);
-    CHECK(s.battle.attacker == b);
-    CHECK(Current(s) == y);
-    while (s.battle.on)
-        REQUIRE(Apply(def, s, {ActionKind::BattleAbility, 0}));
-    // 3. Then the round ends and the first character's turn begins.
-    CHECK(s.round == 2);
-    CHECK(s.monsterTurn == -1);
-    CHECK(Current(s) == s.order[0]);
+    CHECK((s.round > round || s.turn > place));
+    CHECK(Current(s) >= 0);
 }
 
 TEST_CASE("Monsters pick shields and heals when they help (T319)", "[match][monsters]")

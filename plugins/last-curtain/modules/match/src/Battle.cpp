@@ -45,10 +45,11 @@ namespace umbra::match
         void EndBattle(const MatchDef &def, MatchState &s)
         {
             s.battle.on = false;
-            if (s.monsterTurn >= 0)
-                return; // a hunter's battle: the monsters' phase goes on (Apply, Monsters.cpp)
-            // 1. The turn belongs to whoever holds it in order: passed on if it went down, else its action is spent.
-            if (!Up(s.units[U(s.order[U(s.turn)])]))
+            if (s.over)
+                return;
+            // 1. The turn belongs to whoever holds it in order: a monster's (a hunter's battle) or one that
+            //    went down passes on; else the character's action is spent.
+            if (const Unit &holder = s.units[U(s.order[U(s.turn)])]; holder.kind == 1 || !Up(holder))
                 NextTurn(def, s);
             else
                 Acted(def, s);

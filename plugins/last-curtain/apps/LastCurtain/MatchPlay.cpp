@@ -381,29 +381,34 @@ nlohmann::json MatchPlay::UiData() const
     j["canSkip"] = !s_.over && !PlayerTurn() && !BannerDue();
     // 1. The order strip: the acting one to the round's end, the marker, then those who have acted.
     nlohmann::json order = nlohmann::json::array();
-    const int n = static_cast<int>(s_.order.size()), turn = s_.monsterTurn >= 0 ? n : s_.turn;
+    // Every unit in the order, monsters too (one Speed order, campaign plan 2); monsters only while on the board.
+    const int n = static_cast<int>(s_.order.size()), turn = std::max(0, s_.turn);
     auto entry = [&](int i, bool later) {
         const int u = s_.order[U(i)];
         const Unit &unit = s_.units[U(u)];
+        if (unit.kind == 1 && !Up(unit))
+            return;
+        const std::string &sprite = unit.kind == 0 ? def_.characters[U(unit.def)].sprite : def_.monsters[U(unit.def)].sprite;
+        const std::string &full = unit.kind == 0 ? def_.characters[U(unit.def)].name : def_.monsters[U(unit.def)].name;
         const std::string tip = Fill(Word("misc", "orderTip"), {{"name", Name(u)}, {"level", std::to_string(unit.level)}, {"hp", std::to_string(U(u) < toldHp_.size() ? toldHp_[U(u)] : unit.hp)},
                                                                   {"maxHp", std::to_string(unit.maxHp)}, {"attack", std::to_string(unit.attack)}, {"defence", std::to_string(unit.defence)},
                                                                   {"essence", std::to_string(unit.essence)}});
-        order.push_back({{"unit", u}, {"name", Name(u)}, {"side", unit.faction}, {"sprite", def_.characters[U(unit.def)].sprite},
-                         {"portrait", Portrait(def_.characters[U(unit.def)].sprite)}, {"mine", unit.faction == 0}, {"theirs", unit.faction == 1},
-                         {"short", def_.characters[U(unit.def)].name.substr(def_.characters[U(unit.def)].name.rfind(' ') + 1)},
+        order.push_back({{"unit", u}, {"name", Name(u)}, {"side", unit.faction}, {"sprite", sprite},
+                         {"portrait", unit.kind == 0 ? Portrait(sprite) : ""}, {"mine", unit.faction == 0}, {"theirs", unit.faction == 1},
+                         {"short", full.substr(full.rfind(' ') + 1)},
                          {"current", !later && i == turn}, {"acted", later}, {"down", !Up(unit)}, {"tip", tip}});
     };
     // Twelve portraits: the rest of this round, the marker, then the rounds after in the same order.
-    for (int i = turn; i < n; ++i)
+    for (int i = turn; i < n && static_cast<float>(order.size()) < options_.orderLength; ++i)
         entry(i, false);
     order.push_back({{"marker", true}, {"text", Word("misc", "nextTurn")}});
-    for (int k = 0; static_cast<float>(order.size()) < options_.orderLength + 1.0F && n > 0; ++k)
+    for (int k = 0; static_cast<float>(order.size()) < options_.orderLength + 1.0F && n > 0 && k < n * 4; ++k)
         entry(k % n, true);
     j["order"] = order;
     // 2. The panel: the acting character, else the player's first one standing.
     int shown = Current(s_);
-    if (shown < 0 || s_.units[U(shown)].kind != 0)
-        shown = s_.order[U(std::min(turn, n - 1))];
+    for (int k = 0; (shown < 0 || s_.units[U(shown)].kind != 0) && k < n; ++k) // a monster's turn: the next character
+        shown = s_.order[U((std::min(turn, n - 1) + k) % n)];
     const Unit &u = s_.units[U(shown)];
     const CharacterDef &c = def_.characters[U(u.def)];
     static const char *roles[] = {"attacker", "defender", "supporter", "speedster", "allrounder"};

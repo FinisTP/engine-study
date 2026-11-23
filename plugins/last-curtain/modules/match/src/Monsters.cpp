@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-// Monsters act once a round, after the last character (Match.md "Monsters").
+// Monsters take their turns in the order, by their behaviour (Match.md "Monsters").
 namespace umbra::match
 {
     using namespace inner;
@@ -104,29 +104,14 @@ namespace umbra::match
         }
     }
 
-    void RunMonsters(const MatchDef &def, MatchState &s)
+    void MonsterAct(const MatchDef &def, MatchState &s, int unit)
     {
-        s.monsterTurn = 0;
-        MonsterPhase(def, s);
+        if (const Unit &m = s.units[U(unit)]; m.kind == 1 && Up(m))
+            Act(def, s, unit);
     }
 
     namespace inner
     {
-        bool MonsterPhase(const MatchDef &def, MatchState &s)
-        {
-            // 1. Every monster on the board, in unit order; stop while a battle waits on a character.
-            for (; s.monsterTurn < static_cast<int>(s.units.size()); ++s.monsterTurn)
-            {
-                const Unit &m = s.units[U(s.monsterTurn)];
-                if (m.kind == 1 && Up(m))
-                    Act(def, s, s.monsterTurn);
-                if (s.battle.on)
-                    return false;
-            }
-            s.monsterTurn = -1;
-            return true;
-        }
-
         bool Fits(const MatchState &s, int size, int anchor, int self)
         {
             const Board &b = s.board;
@@ -208,6 +193,7 @@ namespace umbra::match
                         const int zone = ZoneOf(s.board, w.cell), half = w.cell / s.board.width > s.board.height / 2 ? 0 : 1;
                         s.units[U(slot)] = FromMonster(def, w.monster, zone == 2 ? -1 : half, anchor);
                         s.units[U(slot)].home = w.cell;
+                        s.units[U(slot)].from = static_cast<std::int16_t>(s.round + 1); // joins the order next round
                         Log(s, LogKind::Spawned, w.cell, slot);
                         break;
                     }

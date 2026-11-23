@@ -67,29 +67,42 @@ TEST_CASE("The order strip runs on past the round's end, twelve portraits long (
 {
     const MatchDef def = Data();
     MatchPlay p = Make(def);
-    const auto &order = p.State().order;
+    const auto marker = [](const nlohmann::json &strip) {
+        for (std::size_t i = 0; i < strip.size(); ++i)
+            if (strip[i].value("marker", false))
+                return static_cast<int>(i);
+        return -1;
+    };
     nlohmann::json strip = p.UiData()["order"];
     REQUIRE(strip.size() == 12 + 1); // twelve portraits and the marker (options orderLength)
-    CHECK(strip[order.size() + 1]["unit"] == order[0]); // the next round goes on after the marker
     CHECK_FALSE(strip[0]["tip"].get<std::string>().empty());
-    CHECK(strip[0]["unit"] == order[0]);
+    CHECK(strip[0]["unit"] == p.State().order[static_cast<std::size_t>(p.State().turn)]);
     CHECK(strip[0]["current"] == true);
-    CHECK(strip[order.size()]["marker"] == true);
+    const int m = marker(strip);
+    REQUIRE(m >= 1);
+    for (std::size_t i = static_cast<std::size_t>(m) + 1; i < strip.size(); ++i)
+        CHECK(strip[i]["acted"] == true); // after the marker: the next round, in the same order
     // 1. Once the first has acted, it comes after the marker.
-    for (int i = 0; i < 20000 && p.State().turn == 0; ++i)
+    const int first = strip[0]["unit"];
+    for (int i = 0; i < 20000 && p.State().order[static_cast<std::size_t>(p.State().turn)] == first; ++i)
     {
         if (p.PlayerTurn())
             REQUIRE(p.Do({ActionKind::EndTurn}));
-        if (p.State().turn != 0)
-            break; // the hand-over itself, before the next one acts
         p.Update(0.25F);
     }
-    REQUIRE(p.State().turn == 1);
     strip = p.UiData()["order"];
-    CHECK(strip[0]["unit"] == order[1]);
-    CHECK(strip[order.size() - 1]["marker"] == true);
-    CHECK(strip[order.size()]["unit"] == order[0]);
-    CHECK(strip[order.size()]["acted"] == true);
+    CHECK(strip[0]["unit"] != first);
+    // It is not before the marker any more; after it, if the next round fits in the twelve.
+    const int m2 = marker(strip);
+    bool before = false, after = false;
+    for (int i = 0; i < static_cast<int>(strip.size()); ++i)
+        (i < m2 ? before : after) |= strip[static_cast<std::size_t>(i)].value("unit", -1) == first;
+    CHECK_FALSE(before);
+    std::size_t up = 0;
+    for (const Unit &u : p.State().units)
+        up += Up(u) ? 1 : 0;
+    if (static_cast<std::size_t>(m2) + up < strip.size())
+        CHECK(after);
     CHECK(p.UiData()["unit"].contains("hp"));
 }
 

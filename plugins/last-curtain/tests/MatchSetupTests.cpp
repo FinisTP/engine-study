@@ -83,7 +83,7 @@ TEST_CASE("Turn order follows Speed, ties by the seed (T282)", "[match][setup]")
     for (std::uint64_t seed = 1; seed <= 50; ++seed)
     {
         const MatchState s = NewMatch(def, seed, picks);
-        REQUIRE(s.order.size() == 6);
+        REQUIRE(s.order.size() == s.units.size()); // every unit, monsters included (campaign plan 2)
         for (std::size_t i = 1; i < s.order.size(); ++i)
             CHECK(s.units[U(s.order[i - 1])].speed >= s.units[U(s.order[i])].speed);
         const auto at = [&](int unit) { return std::ranges::find(s.order, unit) - s.order.begin(); };

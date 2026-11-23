@@ -138,11 +138,11 @@ namespace umbra::match
         Mode mode; // the switches (Match.md "Modes")
         Board board;
         std::vector<Unit> units; // side 0's characters, side 1's, then monsters
-        std::vector<std::int8_t> order; // characters by Speed, set once
+        std::vector<std::int8_t> order; // every unit by Speed, sorted again at each round's start (Match.md "The order")
+        std::uint64_t orderSeed = 0;    // ties between equal Speeds
         int turn = 0, round = 1;
         std::array<int, 2> score{};
         std::int16_t stage = -1; // the centre of the middle row, fixed
-        int monsterTurn = -1;    // the monster acting in the monsters' phase, -1 outside it
         std::vector<Spawn> spawns; // shown once round - spawn.warn has come
         std::vector<Floor> floor;
         std::vector<RoomSpawn> roomSpawns;
@@ -165,6 +165,10 @@ namespace umbra::match
     // A unit from a characters.csv row (home: its hub) or a monsters.csv row (standing on `cell`).
     Unit FromCharacter(const MatchDef &def, int row, int faction, int home);
     Unit FromMonster(const MatchDef &def, int row, int faction, int cell);
+
+    // Starts a fight whose units stand placed: everyone may act, the order by Speed (ties from `seed`),
+    // round 1, the first turn (monsters faster than everyone act at once). NewMatch ends with it.
+    void BeginMatch(const MatchDef &def, MatchState &s, std::uint64_t seed);
 
     // picks: side 0's characters.csv rows (options.side of them, no repeats). Side 1 is RiggedPick.
     MatchState NewMatch(const MatchDef &def, std::uint64_t seed, const std::vector<int> &picks);
@@ -209,8 +213,8 @@ namespace umbra::match
     // power (or the roll, for dice) + Attack - (Defence + battle shield), at least battle.minDamage.
     int Damage(const MatchDef &def, const MatchState &s, int ability, int from, int to, int roll);
 
-    // Monsters act once a round, after the last character, one by one (Monsters.cpp).
-    void RunMonsters(const MatchDef &def, MatchState &s);
+    // A monster's turn: it acts by its behaviour (Monsters.cpp). The order calls it at the monster's place.
+    void MonsterAct(const MatchDef &def, MatchState &s, int unit);
     // The battle ability slot a monster picks now (MonsterMind.cpp).
     int MonsterPick(const MatchDef &def, const MatchState &s, int unit);
     int MonsterTarget(const MatchDef &def, const MatchState &s, int unit); // the foe it strikes: one it can down, else the weakest

@@ -49,8 +49,7 @@ with falls). Without falls a unit at 0 HP leaves the board, so `Up` is the old `
 `NewMatch(def, seed, picks)`: the board from the seed; side 0's characters as picked, side 1's
 from `RiggedPick` (no role twice, Defender, Supporter, All-Rounder and Attacker before the
 Speedster; a character may be on both sides). Characters start on the halls nearest the hub
-(not the hub itself, which stays free), side 1 on the mirror squares. `order` is every character by Speed, highest first, ties by a
-key drawn from the seed; it never changes. Each side's guardian stands on its `door` square with
+(not the hub itself, which stays free), side 1 on the mirror squares. `order` is every unit by Speed ("The order"). Each side's guardian stands on its `door` square with
 that side's faction; every spawn square (the dens and `centreSpawns`) gets its zone's
 kind for round 1 (see Spawns); each item room an item. The stage is the centre of the middle row
 and never moves.
@@ -67,6 +66,17 @@ stepping in and undoing heals nothing. After the last character in `order`, `Run
 new round; after round `rounds` the match ends: most score, then the side whose guardian alone
 stands, then more kills, else a draw (`winner` -1). `Check` gives the reason (`Why`) an action
 cannot be taken, for the app's tooltips.
+
+## The order (campaign plan 2)
+
+Every unit, monsters included, acts in one order by Speed, in both modes (the monsters' phase is
+gone). `order` holds every unit; `BeginMatch` sorts it and `NewRound` sorts it again at each round's
+start (Speed, highest first; ties by a key drawn for each unit from `orderSeed`, the same every round),
+so a spawned monster or a level card's Speed takes its place. `NextTurn` walks the order and skips a
+unit that is not `Up` or whose `from` is later than this round: a unit placed mid-fight (a spawn, a
+revive, a return home) gets `from = round + 1` and acts from the next round. A downed faction
+character still counts down `back` at its own place. A monster acts by its behaviour at its place
+(`MonsterAct`) and the order goes on; a battle it starts waits for the picks.
 
 ## Battles (`Battle.cpp`)
 
@@ -108,8 +118,7 @@ turn's action on the stage with essence carried, adds it all to the side's score
 
 ## Monsters (`Monsters.cpp`)
 
-After the last character in a round comes the monsters' phase: in unit order (`monsterTurn`, -1
-outside the phase), every monster on the board acts by its behaviour: Stay does nothing; Flee takes up to `speed` steps away from the nearest character;
+A monster on the board acts at its own place in the order ("The order"), by its behaviour: Stay does nothing; Flee takes up to `speed` steps away from the nearest character;
 Stage takes up to `speed` steps toward the stage and stops beside it; Hunt finds the nearest
 character within `sight` steps (to any of its squares), walks up to `speed` steps toward it on
 centre squares only, and when beside it starts a battle as the attacker; Guard deals its
@@ -117,9 +126,8 @@ first ability's damage to every enemy character next to it, without a battle (gu
 start battles), which can down them. Monsters fight back only when attacked. A unit cannot attack
 a monster of its own faction. A downed monster never returns.
 
-A hunter's battle pauses the phase: `Current` is the character whose side must pick, and nothing
-else can be done. When that battle ends (`Apply`, a battle pick), the phase goes on from the next
-monster; after the last, a new round begins. Every monster's battle pick is `MonsterPick`
+A hunter's battle is its turn: `Current` is the character whose side must pick, and nothing
+else can be done. When that battle ends (`EndBattle`), the order goes on from the next unit. Every monster's battle pick is `MonsterPick`
 (`MonsterMind.cpp`): each usable ability gets a value, the highest wins, ties to the first slot. A
 strike is worth its damage (dice at their average), or 1000 if it downs the foe; a shield is worth
 `50 + power` only when the foe's hardest next blow would down the monster; a heal `50 + HP healed`

@@ -125,17 +125,6 @@ namespace umbra::match
                 s.units.push_back(u);
             }
 
-        // 2. Turn order: Speed, highest first; ties by a key from the seed.
-        std::vector<std::uint64_t> key(s.units.size());
-        for (std::size_t i = 0; i < s.units.size(); ++i)
-        {
-            s.order.push_back(static_cast<std::int8_t>(i));
-            key[i] = rng.Next();
-        }
-        std::sort(s.order.begin(), s.order.end(), [&](int a, int c) {
-            return s.units[U(a)].speed != s.units[U(c)].speed ? s.units[U(a)].speed > s.units[U(c)].speed : key[U(a)] < key[U(c)];
-        });
-
         // 3. Guardians on their squares.
         for (int f = 0; f < 2; ++f)
             if (const int g = OfTier(def, rng, Tier::Guardian); g >= 0)
@@ -162,9 +151,38 @@ namespace umbra::match
         s.stage = static_cast<std::int16_t>((b.height / 2) * b.width + b.width / 2);
         RunSpawns(def, s, false);
         s.rng = rng.Next();
-        const Unit &first = s.units[U(s.order[0])];
-        s.now = {first.cell, static_cast<std::int8_t>(first.move), false};
+        BeginMatch(def, s, rng.Next());
         return s;
+    }
+
+    void BeginMatch(const MatchDef &def, MatchState &s, std::uint64_t seed)
+    {
+        for (Unit &u : s.units)
+            u.from = 0, u.ap = 0;
+        s.orderSeed = seed;
+        s.round = 1;
+        s.turn = -1;
+        SortOrder(s);
+        NextTurn(def, s);
+    }
+
+    namespace inner
+    {
+        void SortOrder(MatchState &s)
+        {
+            // Speed, highest first; ties by a key drawn for each unit from orderSeed (the same every round).
+            s.order.clear();
+            std::vector<std::uint64_t> key;
+            Rng rng{s.orderSeed};
+            for (std::size_t i = 0; i < s.units.size(); ++i)
+            {
+                s.order.push_back(static_cast<std::int8_t>(i));
+                key.push_back(rng.Next());
+            }
+            std::ranges::stable_sort(s.order, [&](int a, int c) {
+                return s.units[U(a)].speed != s.units[U(c)].speed ? s.units[U(a)].speed > s.units[U(c)].speed : key[U(a)] < key[U(c)];
+            });
+        }
     }
 
     int TurnsLeft(const MatchDef &def, const MatchState &s) { return std::max(0, def.options.rounds - s.round + 1); }

@@ -15,7 +15,7 @@ namespace umbra::match
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Spawn, cell, monster, round)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RoomSpawn, cell, kind, round)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LevelCard, kind, a, b)
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MatchState, mode, board, units, order, turn, round, score, stage, monsterTurn, spawns, roomSpawns, floor, cards, offer, battle,
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MatchState, mode, board, units, order, orderSeed, turn, round, score, stage, spawns, roomSpawns, floor, cards, offer, battle,
                                        now, log, rng, over, winner, loss, riteReady, riteUsed)
 
     namespace

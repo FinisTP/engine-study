@@ -1,6 +1,7 @@
 #include "MatchTestData.hpp"
 
 #include <Match.hpp>
+#include <MatchBots.hpp>
 
 #include <algorithm>
 
@@ -106,6 +107,7 @@ TEST_CASE("The match ends after its rounds, with the tie rule (T286)", "[match][
 {
     MatchDef def = Data();
     def.options.rounds = 2;
+    def.modes.at("faction").roundLimit = 2; // the limit lives in the mode (campaign plan 2)
     auto playOut = [&](MatchState &s) {
         int applies = 0;
         while (Current(s) >= 0 && applies++ < 100)
@@ -113,7 +115,7 @@ TEST_CASE("The match ends after its rounds, with the tie rule (T286)", "[match][
     };
     MatchState s = Start(def);
     CHECK(TurnsLeft(def, s) == 2);
-    for (std::size_t i = 0; i < s.order.size(); ++i)
+    while (s.round == 1)
         REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
     CHECK(s.round == 2);
     CHECK(TurnsLeft(def, s) == 1);
@@ -171,4 +173,99 @@ TEST_CASE("Two of one side may share a square, never with a foe, never three (T3
     REQUIRE(second >= 0);
     s.units[U(friendUnit)].cell = s.units[U(second)].cell = static_cast<std::int16_t>(n);
     CHECK(Check(def, s, {ActionKind::Move, static_cast<std::int8_t>(dir)}) == Why::Blocked);
+}
+
+TEST_CASE("Every unit, monsters included, takes its turn by Speed (campaign plan 2)", "[match][turn][order]")
+{
+    const MatchDef def = Data();
+    const MatchState s = Start(def);
+    CHECK(s.order.size() == s.units.size());
+    for (std::size_t i = 1; i < s.order.size(); ++i)
+        CHECK(s.units[U(s.order[i - 1])].speed >= s.units[U(s.order[i])].speed);
+    CHECK(Start(def).order == s.order); // ties are the same for the same seed
+}
+
+TEST_CASE("A monster acts at its own place in the order (campaign plan 2)", "[match][turn][order]")
+{
+    MatchDef def = Data();
+    const int prompter = MatchDef::Find(def.monsters, "prompter"); // walks toward the stage
+    MatchState s = Start(def);
+    // 1. A fast monster and a slow one, two steps from the stage; both join the order next round.
+    const auto add = [&](int speed) {
+        Unit u = FromMonster(def, prompter, -1, -1);
+        u.speed = static_cast<std::int16_t>(speed);
+        for (int c = 0; c < static_cast<int>(s.board.cells.size()); ++c)
+            if (Steps(s.board, c, s.stage) == 2 && std::ranges::none_of(s.units, [&](const Unit &o) { return o.cell == c; }))
+                u.cell = static_cast<std::int16_t>(c);
+        s.units.push_back(u);
+        return static_cast<int>(s.units.size()) - 1;
+    };
+    const int fast = add(50), slow = add(0);
+    // 2. Round 1 ends; in round 2 the fast one has walked before the first character's turn, the slow one not yet.
+    while (s.round == 1)
+        REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
+    REQUIRE(s.units[U(Current(s))].kind == 0);
+    CHECK(Steps(s.board, s.units[U(fast)].cell, s.stage) == 1);
+    CHECK(Steps(s.board, s.units[U(slow)].cell, s.stage) == 2);
+    CHECK(s.order.front() == fast);
+}
+
+TEST_CASE("A unit that appears mid-fight acts from the next round (campaign plan 2)", "[match][turn][order]")
+{
+    const MatchDef def = Data();
+    MatchState s = Start(def);
+    // A monster that appeared in round 2 (from = 3) waits through round 2, then acts.
+    Unit u = FromMonster(def, MatchDef::Find(def.monsters, "prompter"), -1, -1);
+    u.speed = 50;
+    for (int c = 0; c < static_cast<int>(s.board.cells.size()); ++c)
+        if (Steps(s.board, c, s.stage) == 3 && std::ranges::none_of(s.units, [&](const Unit &o) { return o.cell == c; }))
+            u.cell = static_cast<std::int16_t>(c);
+    u.from = 3;
+    s.units.push_back(u);
+    const int m = static_cast<int>(s.units.size()) - 1;
+    while (s.round == 1)
+        REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
+    CHECK(Steps(s.board, s.units[U(m)].cell, s.stage) == 3);
+    while (s.round == 2)
+        REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
+    CHECK(Steps(s.board, s.units[U(m)].cell, s.stage) < 3);
+}
+
+TEST_CASE("A spawned monster joins from the round after it appears (campaign plan 2)", "[match][turn][order]")
+{
+    const MatchDef def = Data();
+    MatchState s = Start(def, 11);
+    for (int i = 0; i < 20000 && Current(s) >= 0; ++i)
+    {
+        const std::size_t logged = s.log.size();
+        const int round = s.round;
+        REQUIRE(Apply(def, s, ChooseAction(def, s, BotLevel::Hard)));
+        for (std::size_t l = logged; l < s.log.size(); ++l)
+            if (s.log[l].kind == LogKind::Spawned && round >= 2)
+            {
+                CHECK(s.units[U(s.log[l].b)].from > round);
+                return;
+            }
+    }
+    FAIL("no spawn after round 1");
+}
+
+TEST_CASE("A round where no one else can act still moves on (campaign plan 2)", "[match][turn][order]")
+{
+    const MatchDef def = Data();
+    MatchState s = Fight(def);
+    // Everyone but the player has fallen; the ally is revived but waits for the next round.
+    for (int u : {1, 2, 3})
+        s.units[U(u)].hp = 0;
+    s.units[1].hp = 5;
+    s.units[1].from = static_cast<std::int16_t>(s.round + 1);
+    while (Current(s) != 0)
+        REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
+    const int round = s.round;
+    REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
+    CHECK(s.round == round + 1);
+    std::vector<int> acted{Current(s)};
+    REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
+    acted.push_back(Current(s));
+    CHECK(std::ranges::count(acted, 1) == 1); // the revived ally has its turn in the new round
 }
