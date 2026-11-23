@@ -2,7 +2,8 @@
 
 - **The room** comes from `assets/cafe/room.json` in metres: room x is world x, room depth is
   world z (0 at the back wall). The floor, the papered back and side walls (`art/ui/match/wall.jpg`
-  repeating every metre), the counter and the tables as boxes from `blocks`, warm lamps over the
+  repeating every metre; the painted café wall `art/cafe/back_wall.jpg` covers the back wall edge to
+  edge, 12.4 x 3.2 m, when the file is there), the counter and the tables as boxes from `blocks`, warm lamps over the
   counter and each table. No front wall: the camera looks in from there.
 - **Spots**: stations as coloured boxes on the counter (phin brown, tea green, milk cream, ice
   blue), the sign (green when open, red closed), the bucket, the notice board on the left wall,

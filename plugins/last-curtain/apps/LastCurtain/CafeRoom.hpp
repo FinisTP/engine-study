@@ -35,7 +35,7 @@ private:
     umbra::render::Renderer &renderer_;
     umbra::assets::AssetFolders assets_;
     umbra::core::MeshHandle box_, quad_, mirrorQuad_;
-    umbra::core::TextureHandle wall_, floor_;
+    umbra::core::TextureHandle wall_, floor_, backWall_; // backWall_: the painted café wall (art/cafe/back_wall.jpg)
     std::map<std::string, umbra::core::TextureHandle> pictures_; // by sprite id (body_calm)
     std::map<std::string, float> aspects_;
     glm::vec3 look_{6.0F, 0.0F, 4.0F}; // the camera's target, easing after the walker

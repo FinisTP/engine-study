@@ -72,6 +72,8 @@ CafeRoom::CafeRoom(umbra::render::Renderer &renderer, const umbra::assets::Asset
     std::string error;
     if (umbra::assets::LoadImageFile(assets / "art/ui/match/wall.jpg", data, error))
         wall_ = renderer.CreateTexture(data);
+    if (umbra::assets::LoadImageFile(assets / "art/cafe/back_wall.jpg", data, error))
+        backWall_ = renderer.CreateTexture(data);
     for (const umbra::match::CharacterDef &c : match.characters)
         Picture(c.sprite);
     for (const umbra::cafe::Guest &g : def.guests)
@@ -144,9 +146,11 @@ void CafeRoom::Draw(const umbra::night::CafePlay &play, umbra::core::DrawList &o
     for (const nlohmann::json &b : room["blocks"])
         if (b.value("note", std::string{}).starts_with("table"))
             out.lights.push_back({{(b["min"][0].get<float>() + b["max"][0].get<float>()) * 0.5F, 2.4F, 3.8F}, {1.0F, 0.78F, 0.55F}, 9.0F, 6.0F, 0.0F});
-    // 2. The floor, the papered walls (back and sides), the counter and the tables.
+    // 2. The floor, the walls (the painted café wall at the back, paper at the sides), the counter and the tables.
     Box(out, box_, World(size * 0.5F, -0.05F), {size.x, 0.1F, size.y}, Hex(0x4a3324));
     Box(out, box_, {size.x * 0.5F, 1.6F, -0.1F}, {size.x + 0.4F, 3.2F, 0.2F}, glm::vec4(0.8F, 0.75F, 0.7F, 1.0F), 0.0F, wall_, 1.0F);
+    if (backWall_) // the painting over the wall's face, upright, edge to edge
+        out.items.push_back({quad_, backWall_, glm::scale(glm::translate(glm::mat4{1.0F}, {size.x * 0.5F, 0.0F, 0.005F}), {size.x + 0.4F, 3.2F, 1.0F}), glm::vec4(1.0F), 0.0F, 0.0F});
     for (const float x : {-0.1F, size.x + 0.1F})
         Box(out, box_, {x, 1.6F, size.y * 0.5F}, {0.2F, 3.2F, size.y}, glm::vec4(0.7F, 0.66F, 0.62F, 1.0F), 0.0F, wall_, 1.0F);
     for (const nlohmann::json &b : room["blocks"])
