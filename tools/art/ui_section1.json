@@ -1,0 +1,208 @@
+{
+  "note": "Campaign UI art, slice 1 (docs/design/2026-11-23-ui-art-requests.md section 1). Style A chosen by the user 2026-11-24. Frames, glyphs and lacquer are drawn in code; these are the painted parts.",
+  "style": "Vietnamese oil pastel drawing on toned paper, thick waxy smudged strokes, muted colours, soft lamplight",
+  "negative": "text, letters, words, writing, watermark, signature, logo, frame, border, blood, skull, body, person, face, pattern, repeated objects",
+  "jobs": [
+    {
+      "name": "icon_mark_next",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        301,
+        302
+      ],
+      "prompt": "a single small gold lozenge (diamond shape) brushed in gold leaf, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+    },
+    {
+      "name": "icon_mark_unknown",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        311,
+        312,
+        313
+      ],
+      "prompt": "a dim curl of grey smoke rising from a small dot, shaped like a question mark, no letter, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+    },
+    {
+      "name": "icon_upgrade_ready",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        321,
+        322
+      ],
+      "prompt": "one round glowing gold bead, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+    },
+    {
+      "name": "icon_upgrade_locked",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        331,
+        332
+      ],
+      "prompt": "one round dull unlit dark bead with a thin gold rim, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+    },
+    {
+      "name": "icon_cmd_move",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        341,
+        342,
+        343
+      ],
+      "prompt": "a pair of small bare footprints in dark ink, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+    },
+    {
+      "name": "icon_cmd_attack",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        351,
+        352,
+        353
+      ],
+      "prompt": "a raised clenched fist holding a closed paper fan, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+    },
+    {
+      "name": "icon_cmd_skills",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        361,
+        362
+      ],
+      "prompt": "one open folding paper hand fan, dark red and gold, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+    },
+    {
+      "name": "icon_cmd_items",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        371,
+        372
+      ],
+      "prompt": "a small cloth bundle tied with a knot, indigo cloth, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+    },
+    {
+      "name": "icon_cmd_end",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        381,
+        382
+      ],
+      "prompt": "a small brass hourglass with sand, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+    },
+    {
+      "name": "item_duong",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        401,
+        402
+      ],
+      "prompt": "game item icon: a small paper twist of cane sugar, the paper yellowed, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+    },
+    {
+      "name": "item_mut_gung",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        411,
+        412
+      ],
+      "prompt": "game item icon: candied ginger slices in a small glazed ceramic bowl, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+    },
+    {
+      "name": "item_nuoc_gung",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        421,
+        422
+      ],
+      "prompt": "game item icon: a small ceramic cup of hot ginger water with rising steam, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+    },
+    {
+      "name": "item_giay_gap_tu",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        431,
+        432,
+        433
+      ],
+      "prompt": "game item icon: a small yellowed paper note folded in four, worn soft edges, no readable writing, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+    },
+    {
+      "name": "pic_gung",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        501,
+        502
+      ],
+      "prompt": "still life of a knob of old ginger root, Vietnamese oil pastel on toned paper, soft lamplight, plain background, warm and quiet",
+      "plain": true
+    },
+    {
+      "name": "pic_duong",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        511,
+        512
+      ],
+      "prompt": "still life of a small paper twist of cane sugar, the paper yellowed, Vietnamese oil pastel on toned paper, soft lamplight, plain background, warm and quiet",
+      "plain": true
+    },
+    {
+      "name": "pic_mut_gung",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        521,
+        522
+      ],
+      "prompt": "still life of candied ginger slices in a small glazed ceramic bowl, Vietnamese oil pastel on toned paper, soft lamplight, plain background, warm and quiet",
+      "plain": true
+    },
+    {
+      "name": "pic_nuoc_gung",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        531,
+        532
+      ],
+      "prompt": "still life of a small cup of hot ginger water with rising steam, Vietnamese oil pastel on toned paper, soft lamplight, plain background, warm and quiet",
+      "plain": true
+    },
+    {
+      "name": "pic_giay_gap_tu",
+      "w": 1024,
+      "h": 1024,
+      "seeds": [
+        541,
+        542,
+        543
+      ],
+      "prompt": "still life of a small yellowed paper note folded in four, worn soft edges, no readable writing, Vietnamese oil pastel on toned paper, soft lamplight, plain background, warm and quiet",
+      "plain": true
+    },
+    {
+      "name": "tex_plan_paper",
+      "w": 1344,
+      "h": 768,
+      "seeds": [
+        551,
+        552
+      ],
+      "prompt": "aged off-white architectural drawing paper, completely empty, nothing drawn, faint tea stains and foxing at the edges, flat even light, top-down",
+      "plain": true
+    }
+  ]
+}

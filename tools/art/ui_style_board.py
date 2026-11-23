@@ -48,8 +48,9 @@ def main():
     parser.add_argument('--host', default='')
     parser.add_argument('--out', default=os.path.join('Temp', 'art-ui', 'raw'))
     parser.add_argument('--only', default='')
+    parser.add_argument('--spec', default='ui_style_board.json') # a job list beside this script
     args = parser.parse_args()
-    spec = json.load(open(os.path.join(os.path.dirname(__file__), 'ui_style_board.json'), encoding='utf-8'))
+    spec = json.load(open(os.path.join(os.path.dirname(__file__), args.spec), encoding='utf-8'))
     os.makedirs(args.out, exist_ok=True)
     # 1. ComfyUI Desktop listens on 8000, the portable one on 8188: take the first that answers.
     for host in ([args.host] if args.host else ['127.0.0.1:8000', '127.0.0.1:8188']):
