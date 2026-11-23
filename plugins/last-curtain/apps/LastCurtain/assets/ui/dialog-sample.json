@@ -1,0 +1,66 @@
+{
+ "words": {
+  "skip": "Bỏ qua",
+  "log": "Nhật ký",
+  "logTitle": "Nhật ký hội thoại",
+  "close": "Đóng"
+ },
+ "dialog": {
+  "backdrop": "art/backdrops/foyer_today.jpg",
+  "slots": {
+   "l0": {
+    "image": "art/sprites/lethanh/face_talk.png",
+    "show": true,
+    "flip": false,
+    "tint": "#ffe8d0ff"
+   },
+   "l1": {
+    "image": "",
+    "show": false,
+    "flip": false,
+    "tint": "#ffffffff"
+   },
+   "r0": {
+    "image": "art/sprites/ti_bound/face_calm.png",
+    "show": true,
+    "flip": true,
+    "tint": "#8a5353ff"
+   },
+   "r1": {
+    "image": "",
+    "show": false,
+    "flip": true,
+    "tint": "#ffffffff"
+   }
+  },
+  "name": "Lệ Thanh",
+  "narration": false,
+  "nameLeft": true,
+  "nameRight": false,
+  "text": "Chào chị Lan. Nhà hát này không còn bán vé từ lâu lắm rồi, nhưng đêm nay cửa vẫn mở cho chị.",
+  "more": false,
+  "hasChoices": true,
+  "choices": [
+   {
+    "text": "Ai đang gọi tôi?",
+    "index": 0,
+    "key": "1"
+   },
+   {
+    "text": "Tôi về đây.",
+    "index": 1,
+    "key": "2"
+   }
+  ],
+  "log": [
+   {
+    "name": "",
+    "text": "Đêm ấy, nhà hát tối om."
+   },
+   {
+    "name": "Lệ Thanh",
+    "text": "Chào chị Lan."
+   }
+  ]
+ }
+}

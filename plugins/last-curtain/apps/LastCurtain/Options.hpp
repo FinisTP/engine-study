@@ -35,6 +35,7 @@ namespace umbra::night
         float orderLength = 12.0F;         // portraits in the match's order strip
         float crt = 0.0F;                  // the analog screen's CRT strength, 0..1 (Analog.hpp)
         float vhs = 0.0F;                  // ... and its VHS tape strength, 0..1
+        float lettersPerSecond = 40.0F;    // a dialog line appears this fast (DialogApp.hpp)
     };
 
     // Reads key,value,note rows; an unknown key or a bad value is refused with its row.

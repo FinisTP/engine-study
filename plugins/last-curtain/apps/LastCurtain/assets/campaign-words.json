@@ -1,0 +1,12 @@
+{
+ "skip": "Bỏ qua",
+ "log": "Nhật ký",
+ "logTitle": "Nhật ký hội thoại",
+ "close": "Đóng",
+ "en": {
+  "skip": "Skip",
+  "log": "Log",
+  "logTitle": "Conversation log",
+  "close": "Close"
+ }
+}

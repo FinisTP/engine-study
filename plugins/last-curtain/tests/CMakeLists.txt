@@ -61,10 +61,18 @@ add_test(NAME Umbra.TalkMind COMMAND UmbraTalkMindTests)
 
 # The campaign: cast, scenes (modules/campaign/include/Campaign.md), headless.
 add_executable(UmbraCampaignTests)
-target_sources(UmbraCampaignTests PRIVATE CampaignTests.cpp)
+target_sources(UmbraCampaignTests PRIVATE CampaignTests.cpp CampaignViewTests.cpp)
 target_compile_definitions(UmbraCampaignTests PRIVATE UMBRA_CAMPAIGN_DATA="${CMAKE_CURRENT_SOURCE_DIR}/../assets/campaign"
-                                                      UMBRA_CAMPAIGN_TEST_DATA="${CMAKE_CURRENT_SOURCE_DIR}/data")
+                                                      UMBRA_CAMPAIGN_TEST_DATA="${CMAKE_CURRENT_SOURCE_DIR}/data"
+                                                      UMBRA_LASTCURTAIN_APP_ASSETS="${CMAKE_CURRENT_SOURCE_DIR}/../apps/LastCurtain/assets")
 target_compile_features(UmbraCampaignTests PRIVATE cxx_std_20)
-target_link_libraries(UmbraCampaignTests PRIVATE Umbra::Campaign Umbra::Warnings Umbra::Sanitizers Catch2::Catch2WithMain)
+target_link_libraries(UmbraCampaignTests PRIVATE Umbra::Campaign Umbra::CampaignPlay Umbra::Warnings Umbra::Sanitizers Catch2::Catch2WithMain)
 umbra_copy_asan_runtime(UmbraCampaignTests)
 add_test(NAME Umbra.Campaign COMMAND UmbraCampaignTests)
+# The dialog screens drawn with their sample data: no errors, no warnings (campaign plan 3).
+if(TARGET UmbraTool)
+    add_test(NAME Umbra.Tool.DialogPreview
+             COMMAND UmbraTool ui-preview dialog dialog-log --assets ${CMAKE_CURRENT_SOURCE_DIR}/../apps/LastCurtain/assets
+                     --data ${CMAKE_CURRENT_SOURCE_DIR}/../apps/LastCurtain/assets/ui/dialog-sample.json --out ${CMAKE_CURRENT_BINARY_DIR}/dialog.png)
+    set_tests_properties(Umbra.Tool.DialogPreview PROPERTIES PASS_REGULAR_EXPRESSION "0 error\\(s\\), 0 warning")
+endif()

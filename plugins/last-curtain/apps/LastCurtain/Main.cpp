@@ -1,6 +1,7 @@
 #include "Analog.hpp"
 #include "Art.hpp"
 #include "CafeApp.hpp"
+#include "DialogApp.hpp"
 #include "GameContext.hpp"
 #include "MatchApp.hpp"
 #include "Play.hpp"
@@ -57,6 +58,8 @@ namespace
         bool night = false;            // the old night (--night); else the faction match
         bool cafe = false;             // --cafe: a capture of the café
         float zoom = 0.0F;             // the match: wheel steps at the start (--zoom N)
+        std::string scene, backdrop;   // --scene <id> [--backdrop <name>]: play one campaign scene (developers)
+        umbra::campaign::Speaker speaker{"", "female"}; // --name <text> --gender male|female
     };
 
     // The program's assets: assets/ next to it (a package), else the source tree above the build:
@@ -177,6 +180,15 @@ namespace
         {
             // 1. The night's data and the narrator's lines.
             const umbra::assets::AssetFolders assets = FindAssets();
+            if (!options.scene.empty())
+            {
+                // One campaign scene on the dialog screen (DialogApp.hpp), for writers and captures.
+                GameContext game;
+                umbra::campaign::Facts facts;
+                result = game.Open(assets) && RunScene(game, assets, options.scene, options.backdrop, options.speaker, facts, options.capture, options.frames) >= 0 ? 0 : 1;
+                platform.Shutdown();
+                return result;
+            }
             if (!options.night && (options.watch || (!options.capture.empty() && !options.cafe)))
             {
                 result = RunMatch(assets, options.seed, options.watch, options.capture, options.frames, options.zoom);
@@ -563,6 +575,14 @@ int main(int argc, char **argv)
             options.cafe = true;
         else if (arg == "--zoom" && more)
             options.zoom = static_cast<float>(std::atof(argv[++i]));
+        else if (arg == "--scene" && more)
+            options.scene = argv[++i];
+        else if (arg == "--backdrop" && more)
+            options.backdrop = argv[++i];
+        else if (arg == "--name" && more)
+            options.speaker.name = argv[++i];
+        else if (arg == "--gender" && more)
+            options.speaker.gender = argv[++i];
     }
     umbra::diagnostics::Initialize();
     umbra::diagnostics::InstallCrashHandlers();

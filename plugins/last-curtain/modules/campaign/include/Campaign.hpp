@@ -106,6 +106,7 @@ namespace umbra::campaign
         void Skip();                                        // to the end, stopping at the first choice
         bool Choose(int index);                             // sets the fact and jumps; false with no choice shown
         [[nodiscard]] bool Done() const { return at_ >= scene_.lines.size(); }
+        [[nodiscard]] bool Complete() const { return Done() || shown_ >= letters_; } // the whole line is shown
         [[nodiscard]] std::string Shown() const;
         [[nodiscard]] const std::string &SpeakerName() const { return name_; }
         [[nodiscard]] Side SpeakerSide() const;
@@ -118,7 +119,6 @@ namespace umbra::campaign
     private:
         void Enter(std::size_t index);
         void Next(const std::string &jump);
-        bool Complete() const { return shown_ >= letters_; }
         std::array<Portrait, 2> Row(Side side) const;
 
         const Scene &scene_;

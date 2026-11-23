@@ -1,0 +1,64 @@
+{
+ "format": "umbra.ui",
+ "version": 1,
+ "modal": true,
+ "dim": true,
+ "back": "close",
+ "root": {
+  "type": "stack",
+  "anchor": "center",
+  "style": "panel",
+  "size": [
+   900,
+   560
+  ],
+  "gap": 10,
+  "children": [
+   {
+    "type": "text",
+    "style": "title",
+    "text": "{words.logTitle}"
+   },
+   {
+    "type": "list",
+    "items": "{dialog.log}",
+    "as": "l",
+    "gap": 6,
+    "entry": {
+     "type": "stack",
+     "size": [
+      860,
+      0
+     ],
+     "children": [
+      {
+       "type": "text",
+       "style": "strong",
+       "text": "{l.name}",
+       "visible": "{l.name}"
+      },
+      {
+       "type": "text",
+       "style": "text",
+       "text": "{l.text}",
+       "wrap": true,
+       "size": [
+        860,
+        0
+       ]
+      }
+     ]
+    }
+   },
+   {
+    "type": "button",
+    "size": [
+     140,
+     40
+    ],
+    "text": "{words.close}",
+    "action": "close"
+   }
+  ]
+ }
+}

@@ -41,6 +41,7 @@ TEST_CASE("The analog screen: strengths from options.csv, the player's two switc
     REQUIRE(LoadOptions(std::filesystem::path(UMBRA_LASTCURTAIN_ASSETS) / "options.csv", options, diagnostics));
     CHECK(options.crt > 0.0F);
     CHECK(options.vhs > 0.0F);
+    CHECK(options.lettersPerSecond > 0.0F);
     const std::filesystem::path file = std::filesystem::temp_directory_path() / "umbra-analog-test" / "screen.json";
     std::filesystem::remove_all(file.parent_path());
     AnalogScreen analog = LoadAnalog(file, options); // no file yet: on
