@@ -18,7 +18,8 @@ namespace umbra::match
     enum class Use : std::uint8_t { Battle, Board, Passive };
     // Strike, Shield: battle. Heal: battle or board. Hit: board. FirstStrike: passive.
     // Revive (a fallen ally stands up), Remove (a fallen foe leaves the fight): board (Match.md "Falls").
-    enum class AbilityClass : std::uint8_t { Strike, Shield, Heal, Hit, FirstStrike, Revive, Remove };
+    // GiveAp: one of the user's action points to an ally, board (Match.md "Biding").
+    enum class AbilityClass : std::uint8_t { Strike, Shield, Heal, Hit, FirstStrike, Revive, Remove, GiveAp };
     enum class Tier : std::uint8_t { Weak, Strong, Great, Guardian };
     enum class Behaviour : std::uint8_t { Stay, Flee, Stage, Guard, Hunt };
     // Who a board ability may aim at: the target symbol beside it on screen.
@@ -44,6 +45,7 @@ namespace umbra::match
         AbilityClass kind = AbilityClass::Strike;
         Target target = Target::Enemy;
         int hpCost = 0, power = 0, range = 0;
+        int ap = 0; // action points it costs, paid first (board abilities only; Match.md "Biding")
         RangeBy reach = RangeBy::Walk;
         Dice dice;
     };

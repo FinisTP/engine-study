@@ -117,6 +117,24 @@ namespace umbra::match
             return Why::Ok;
         }
 
+        // A bide: only as the whole turn, before moving or acting (Match.md "Biding").
+        Why CheckBide(const MatchState &s, const Unit &u)
+        {
+            if (!s.mode.biding)
+                return Why::Off;
+            return s.now.acted || s.now.apSpent > 0 || u.cell != s.now.origin || s.now.movesLeft != u.move ? Why::AlreadyActed : Why::Ok;
+        }
+
+        // An extra action: after this turn's action, one action point for another move and action.
+        Why CheckExtra(const MatchState &s, const Unit &u)
+        {
+            if (!s.mode.biding)
+                return Why::Off;
+            if (!s.now.acted)
+                return Why::NothingHere;
+            return u.ap >= 1 && s.now.apSpent < s.mode.apPerTurn ? Why::Ok : Why::NoAp;
+        }
+
         Why CheckPickUp(const MatchDef &def, const MatchState &s, const Unit &u, int index)
         {
             if (s.now.acted)
@@ -223,6 +241,8 @@ namespace umbra::match
         case ActionKind::Undo: return s.now.acted ? Why::AlreadyActed : u.cell == s.now.origin ? Why::NothingHere : Why::Ok;
         case ActionKind::PickUp: return CheckPickUp(def, s, u, a.a);
         case ActionKind::EndTurn: return Why::Ok;
+        case ActionKind::Bide: return CheckBide(s, u);
+        case ActionKind::Extra: return CheckExtra(s, u);
         default: return Why::Blocked;
         }
     }
@@ -256,7 +276,7 @@ namespace umbra::match
             all.push_back({ActionKind::PickUp, i8(f)});
         for (int c = 0; c < static_cast<int>(s.cards.size()); ++c)
             all.push_back({ActionKind::Card, i8(c)});
-        for (ActionKind k : {ActionKind::Perform, ActionKind::EndTurn})
+        for (ActionKind k : {ActionKind::Perform, ActionKind::EndTurn, ActionKind::Bide, ActionKind::Extra})
             all.push_back({k});
         for (int c = 0; c < 2; ++c)
             all.push_back({ActionKind::Answer, i8(c)});
@@ -314,6 +334,18 @@ namespace umbra::match
         case ActionKind::LevelUp: LevelUp(def, s, me, a.a); break;
         case ActionKind::Perform: Perform(def, s, me); break;
         case ActionKind::EndTurn: NextTurn(def, s); break;
+        case ActionKind::Bide:
+            u.ap = static_cast<std::int8_t>(std::min<int>(u.ap + 1, s.mode.maxAp));
+            Log(s, LogKind::Bided, me, u.ap);
+            NextTurn(def, s);
+            break;
+        case ActionKind::Extra:
+            --u.ap;
+            ++s.now.apSpent;
+            s.now.acted = false;
+            s.now.movesLeft = static_cast<std::int8_t>(u.move);
+            s.now.origin = u.cell;
+            break;
         case ActionKind::Card: TakeCard(def, s, me, a.a); break;
         default: return false;
         }

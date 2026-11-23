@@ -158,7 +158,12 @@ namespace umbra::match
             const bool onFallen = a.kind == AbilityClass::Revive || a.kind == AbilityClass::Remove;
             if (onFallen != Fallen(t))
                 return onFallen ? Why::NotFallen : Fallen(t) ? Why::Fallen : Why::NothingHere;
-            // 2. Hit or remove an enemy, heal or revive your own side (yourself included), within range.
+            // 2. Action points: the ability's own cost first, from the same pool and limit (Match.md "Biding").
+            if (a.ap > 0 && (u.ap < a.ap || s.now.apSpent + a.ap > s.mode.apPerTurn))
+                return Why::NoAp;
+            if (a.kind == AbilityClass::GiveAp && (u.ap < 1 + a.ap || t.ap >= s.mode.maxAp || target == me))
+                return Why::NoAp;
+            // 3. Hit or remove an enemy, heal, revive or give to your own side (yourself included), within range.
             const bool foe = a.kind == AbilityClass::Hit || a.kind == AbilityClass::Remove;
             if (foe == (t.faction == u.faction) || (a.kind == AbilityClass::Heal && t.kind != 0))
                 return Why::OwnSide;
@@ -180,8 +185,15 @@ namespace umbra::match
             const int ability = u.abilities[U(slot)];
             const AbilityDef &a = def.abilities[U(ability)];
             u.hp = static_cast<std::int16_t>(u.hp - CostOf(def, u, slot));
+            u.ap = static_cast<std::int8_t>(u.ap - a.ap);
+            s.now.apSpent = static_cast<std::int8_t>(s.now.apSpent + a.ap);
             Unit &t = s.units[U(target)];
-            if (a.kind == AbilityClass::Revive)
+            if (a.kind == AbilityClass::GiveAp)
+            {
+                --u.ap;
+                ++t.ap;
+            }
+            else if (a.kind == AbilityClass::Revive)
                 Revive(def, s, target, me, PowerOf(def, u, slot));
             else if (a.kind == AbilityClass::Remove)
                 Remove(s, target, me);

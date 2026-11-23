@@ -257,7 +257,7 @@ namespace umbra::match
 
         void LoadAbilities(const std::filesystem::path &folder, MatchDef &def, Diagnostics &out)
         {
-            Sheet s(out, folder, "abilities.csv", {"id", "name", "use", "class", "target", "hpCost", "power", "dice", "range", "reach", "animation"});
+            Sheet s(out, folder, "abilities.csv", {"id", "name", "use", "class", "target", "hpCost", "ap", "power", "dice", "range", "reach", "animation"});
             for (int r = 0; r < s.Rows(); ++r)
             {
                 AbilityDef a;
@@ -265,15 +265,16 @@ namespace umbra::match
                 a.name = s.Text(r, "name");
                 a.animation = s.Text(r, "animation");
                 a.use = static_cast<Use>(s.Pick(r, "use", {"battle", "board", "passive"}));
-                a.kind = static_cast<AbilityClass>(s.Pick(r, "class", {"strike", "shield", "heal", "hit", "firststrike", "revive", "remove"}));
+                a.kind = static_cast<AbilityClass>(s.Pick(r, "class", {"strike", "shield", "heal", "hit", "firststrike", "revive", "remove", "giveap"}));
                 a.target = static_cast<Target>(s.Pick(r, "target", {"enemy", "ally", "self", "monster", "room", "any"}));
                 a.hpCost = s.Int(r, "hpCost", 0, 99);
+                a.ap = s.Int(r, "ap", 0, 2);
                 a.power = s.Int(r, "power", 0, 99);
                 a.range = s.Int(r, "range", 0, 40);
                 a.reach = static_cast<RangeBy>(s.Pick(r, "reach", {"walk", "straight"}));
                 a.dice = ParseDice(s, r);
                 // 1. Each class has its place: strike and shield in battle, hit on the board, first strike passive.
-                const bool board = a.kind == AbilityClass::Hit || a.kind == AbilityClass::Revive || a.kind == AbilityClass::Remove;
+                const bool board = a.kind == AbilityClass::Hit || a.kind == AbilityClass::Revive || a.kind == AbilityClass::Remove || a.kind == AbilityClass::GiveAp;
                 const bool fits = a.kind == AbilityClass::Heal ? a.use != Use::Passive
                                 : board ? a.use == Use::Board
                                 : a.kind == AbilityClass::FirstStrike ? a.use == Use::Passive
@@ -284,12 +285,14 @@ namespace umbra::match
                 const Target t = a.target;
                 const bool aims = a.kind == AbilityClass::Hit ? t == Target::Enemy || t == Target::Monster || t == Target::Any
                                 : a.kind == AbilityClass::Heal && a.use == Use::Board ? t == Target::Ally || t == Target::Self
-                                : a.kind == AbilityClass::Revive ? t == Target::Ally
+                                : a.kind == AbilityClass::Revive || a.kind == AbilityClass::GiveAp ? t == Target::Ally
                                 : a.kind == AbilityClass::Remove ? t == Target::Enemy
                                 : a.kind == AbilityClass::Strike ? t == Target::Enemy
                                                                  : t == Target::Self;
                 if (s.ok && !aims)
                     s.Bad(s.Where(r, "target"), "this class cannot aim there");
+                if (s.ok && a.ap > 0 && a.use != Use::Board)
+                    s.Bad(s.Where(r, "ap"), "only a board ability may cost action points");
                 def.abilities.push_back(a);
             }
         }

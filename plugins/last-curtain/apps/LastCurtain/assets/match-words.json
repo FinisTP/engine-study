@@ -37,7 +37,8 @@
     "Item": "{who} takes {item}.",
     "Over": "The curtain falls: {side}.",
     "Treasure": "{who} turns a card: {card}.",
-    "Healed": "{who} tends {whom}: {n} HP back."
+    "Healed": "{who} tends {whom}: {n} HP back.",
+    "Bided": "{who} bides their time."
   },
   "why": {
     "Ok": "Ready.",
@@ -58,7 +59,8 @@
     "FullHp": "Already at full HP: the heal would be wasted.",
     "Off": "Not in this fight.",
     "Fallen": "That one has fallen.",
-    "NotFallen": "Only for one who has fallen."
+    "NotFallen": "Only for one who has fallen.",
+    "NoAp": "Not enough action points."
   },
   "actions": {
     "undo": "Undo move",

@@ -10,7 +10,7 @@ one copyable value, and only `Apply` changes it. Bots and the app send the same 
 | `options.csv` | `id,value`: rounds (the countdown), side (characters per side), autoEndTurn (0/1), bots (easy, medium, hard) |
 | `rules.json` | modes ("Modes"), board (size, lanes, one unit per square, den and event distances, counts per half), respawn (turns away), battle (rounds, minimum damage), levels (XP steps, HP per level, XP for a kill), spawn (`warn`: rounds a spawn square is marked first; `centre`: steps from the stage to each centre spawn square), carry, bot noise per level, the soak's balance bands |
 | `characters.csv` | id, name, role, the five stats (hp, attack, defence, speed, move), sprite, tint |
-| `abilities.csv` | id, name, use (battle, board, passive), class (strike, shield, heal, hit, firststrike; revive, remove: "Falls"), target (enemy, ally, self, monster, room, any: a strike aims at an enemy, a shield or battle heal at yourself, a board heal at your side, a hit at enemy, monster or any), hpCost, power, dice (`2d6` or none), range, animation (a `motions.json` name) |
+| `abilities.csv` | id, name, use (battle, board, passive), class (strike, shield, heal, hit, firststrike; revive, remove: "Falls"; giveap: "Biding"), ap (action points it costs, board only), target (enemy, ally, self, monster, room, any: a strike aims at an enemy, a shield or battle heal at yourself, a board heal at your side, a hit at enemy, monster or any), hpCost, power, dice (`2d6` or none), range, animation (a `motions.json` name) |
 | `jobs.csv` | role, level, ability, choice (a second ability to pick between, or none); level 1 = starting abilities |
 | `monsters.csv` | id, name, tier (weak, strong, great, guardian), behaviour (stay, flee, stage, guard, hunt), stats, essence, xp, level (shown to the player), size (1-3 squares a side), sight (steps a hunter sees; 1+ for hunt), abilities (`a;b`, the first is its strike), sprite, tint |
 | `spawns.csv` | zone (weak, strong, centre), from (first round), monster (never a guardian), every (rounds after its square empties; 0 = once); loaded sorted by zone, then from |
@@ -93,6 +93,21 @@ has no fighter `Up`. Range to a fallen unit is measured as usual (`Squares` is w
   Either side revives its own; a strung recruit stands up still strung.
 - **Remove** (class `remove`, board, target `enemy`): a fallen foe leaves the fight for good
   (`cell` -1, `flag::Removed`); nothing can revive it (`Why::NotFallen`).
+
+## Biding (campaign plan 2, `biding` on)
+
+- **Bide** (`ActionKind::Bide`): the whole turn, before moving or acting; the unit gains 1 action
+  point (AP), at most `maxAp` (2). No Defence bonus. Refused once it has moved or acted
+  (`AlreadyActed`), and in the faction match (`Off`).
+- **Extra** (`ActionKind::Extra`): after the turn's action, 1 AP buys another full move and action;
+  at most `apPerTurn` (2) AP spent in a turn (`TurnState::apSpent`), so at most three actions.
+- **AP abilities** (`abilities.csv` column `ap`, board abilities only): the ability's AP is paid
+  first, from the same pool and the same limit. With 2 AP: a normal turn and 2 extras; a 1-AP ability
+  and 1 extra; or a 2-AP ability alone. Without the AP: `NoAp` (and `Legal` leaves it out).
+- **Give AP** (class `giveap`, board, target `ally`): moves 1 of the user's AP to an ally that has
+  room (`NoAp` otherwise). It counts as spending.
+- AP is 0 when a fight begins (`BeginMatch`) and lost when a unit falls. Monsters don't bide yet
+  (their behaviours come with campaign plan 4).
 
 ## Battles (`Battle.cpp`)
 

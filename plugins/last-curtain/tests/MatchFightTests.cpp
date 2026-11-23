@@ -272,3 +272,137 @@ TEST_CASE("Enemies revive their own; a strung recruit stands up strung (campaign
     CHECK(Up(s.units[3]));
     CHECK((s.units[3].flags & flag::Strung) != 0);
 }
+
+namespace
+{
+    // An action that spends the turn without a battle: drinking a bandage.
+    void UseBandage(const MatchDef &def, MatchState &s, int unit, int slot)
+    {
+        s.units[U(unit)].items[U(slot)] = I8(MatchDef::Find(def.items, "bandage"));
+        REQUIRE(Apply(def, s, {ActionKind::UseItem, I8(slot)}));
+    }
+
+    int OpenMove(const MatchDef &def, const MatchState &s)
+    {
+        for (int d = 0; d < 4; ++d)
+            if (Check(def, s, {ActionKind::Move, I8(d)}) == Why::Ok)
+                return d;
+        return -1;
+    }
+}
+
+TEST_CASE("Biding is the whole turn and gives 1 AP, at most 2 (campaign plan 2)", "[match][fight][biding]")
+{
+    const MatchDef def = Data();
+    MatchState s = ::Fight(def);
+    for (int k = 1; k <= 3; ++k)
+    {
+        TurnOf(def, s, 0);
+        REQUIRE(Apply(def, s, {ActionKind::Bide}));
+        CHECK(Current(s) != 0); // the turn is over
+        CHECK(s.units[0].ap == std::min(k, 2));
+    }
+}
+
+TEST_CASE("A bide is refused after a move, after an action, and in the faction match (campaign plan 2)", "[match][fight][biding]")
+{
+    const MatchDef def = Data();
+    MatchState s = ::Fight(def);
+    TurnOf(def, s, 0);
+    MatchState moved = s;
+    const int d = OpenMove(def, moved);
+    REQUIRE(d >= 0);
+    REQUIRE(Apply(def, moved, {ActionKind::Move, I8(d)}));
+    CHECK(Check(def, moved, {ActionKind::Bide}) == Why::AlreadyActed);
+    MatchState acted = s;
+    UseBandage(def, acted, 0, 0);
+    CHECK(Check(def, acted, {ActionKind::Bide}) == Why::AlreadyActed);
+    const MatchState f = NewMatch(def, 7, {0, 1, 2});
+    CHECK(Check(def, f, {ActionKind::Bide}) == Why::Off);
+    CHECK(Check(def, f, {ActionKind::Extra}) == Why::Off);
+}
+
+TEST_CASE("With 2 AP a turn has three actions, each with its own move (campaign plan 2)", "[match][fight][biding]")
+{
+    const MatchDef def = Data();
+    MatchState s = ::Fight(def);
+    TurnOf(def, s, 0);
+    s.units[0].ap = 2;
+    s.units[0].hp = 1;
+    CHECK(Check(def, s, {ActionKind::Extra}) == Why::NothingHere); // act first
+    UseBandage(def, s, 0, 0);
+    REQUIRE(Apply(def, s, {ActionKind::Extra}));
+    CHECK(s.now.movesLeft == s.units[0].move);
+    const int d = OpenMove(def, s);
+    REQUIRE(d >= 0);
+    REQUIRE(Apply(def, s, {ActionKind::Move, I8(d)}));
+    UseBandage(def, s, 0, 1);
+    REQUIRE(Apply(def, s, {ActionKind::Extra}));
+    UseBandage(def, s, 0, 2);
+    CHECK(s.units[0].ap == 0);
+    CHECK(Check(def, s, {ActionKind::Extra}) == Why::NoAp);
+    CHECK(Current(s) == 0); // still the player's turn until it ends it
+}
+
+TEST_CASE("An AP ability is paid first from the same pool and limit (campaign plan 2)", "[match][fight][biding]")
+{
+    MatchDef def = Data();
+    const int one = AddAbility(def, "rally1", AbilityClass::Heal, Target::Ally, 3);
+    const int two = AddAbility(def, "rally2", AbilityClass::Heal, Target::Ally, 3);
+    def.abilities[U(one)].ap = 1;
+    def.abilities[U(two)].ap = 2;
+    MatchState s = ::Fight(def);
+    TurnOf(def, s, 0);
+    s.units[0].hp = 5;
+    s.units[0].abilities[6] = I8(one);
+    s.units[0].abilities[7] = I8(two);
+    const Action heal1{ActionKind::BoardAbility, 6, 0}, heal2{ActionKind::BoardAbility, 7, 0};
+    // 1. No AP: both are refused and Legal leaves them out.
+    CHECK(Check(def, s, heal1) == Why::NoAp);
+    const std::vector<Action> legal = Legal(def, s);
+    CHECK(std::ranges::find(legal, heal1) == legal.end());
+    // 2. Two AP: the 1-AP ability, then one extra action, then no more.
+    MatchState a = s;
+    a.units[0].ap = 2;
+    REQUIRE(Apply(def, a, heal1));
+    CHECK(a.units[0].ap == 1);
+    REQUIRE(Apply(def, a, {ActionKind::Extra}));
+    UseBandage(def, a, 0, 0);
+    CHECK(Check(def, a, {ActionKind::Extra}) == Why::NoAp);
+    // 3. Two AP: the 2-AP ability alone.
+    MatchState b = s;
+    b.units[0].ap = 2;
+    REQUIRE(Apply(def, b, heal2));
+    CHECK(b.units[0].ap == 0);
+    CHECK(Check(def, b, {ActionKind::Extra}) == Why::NoAp);
+}
+
+TEST_CASE("Give-AP moves one AP to an ally (campaign plan 2)", "[match][fight][biding]")
+{
+    MatchDef def = Data();
+    const int give = AddAbility(def, "word", AbilityClass::GiveAp, Target::Ally, 0, 6);
+    MatchState s = ::Fight(def);
+    TurnOf(def, s, 0);
+    Give(s, 0, give);
+    const Action pass{ActionKind::BoardAbility, maxAbilities - 1, 1};
+    CHECK(Check(def, s, pass) == Why::NoAp); // nothing to give
+    s.units[0].ap = 1;
+    s.units[1].ap = 2;
+    CHECK(Check(def, s, pass) == Why::NoAp); // the ally is full
+    s.units[1].ap = 0;
+    Put(s, 1, Beside(s, s.units[0].cell));
+    REQUIRE(Apply(def, s, pass));
+    CHECK(s.units[0].ap == 0);
+    CHECK(s.units[1].ap == 1);
+}
+
+TEST_CASE("Every unit starts a fight at 0 AP (campaign plan 2)", "[match][fight][biding]")
+{
+    const MatchDef def = Data();
+    MatchState s = ::Fight(def);
+    for (Unit &u : s.units)
+        u.ap = 2;
+    BeginMatch(def, s, 9);
+    for (const Unit &u : s.units)
+        CHECK(u.ap == 0);
+}

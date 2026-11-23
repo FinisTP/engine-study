@@ -99,7 +99,7 @@ namespace umbra::match
         std::int8_t apSpent = 0; // action points spent this turn
     };
 
-    enum class LogKind : std::uint8_t { Moved, Battle, Blow, Down, Essence, Performed, Level, Back, SpawnSoon, Spawned, Event, Item, Treasure, Over, Healed };
+    enum class LogKind : std::uint8_t { Moved, Battle, Blow, Down, Essence, Performed, Level, Back, SpawnSoon, Spawned, Event, Item, Treasure, Over, Healed, Bided };
     struct LogEntry
     {
         LogKind kind = LogKind::Moved;
@@ -179,7 +179,9 @@ namespace umbra::match
 
     // ---- Actions (Turn.cpp) ----
 
-    enum class ActionKind : std::uint8_t { Move, Undo, Attack, BattleAbility, BoardAbility, UseItem, PickUp, Perform, Answer, LevelUp, EndTurn, Card };
+    // Bide: the turn passes for one action point. Extra: spend one after acting for another move and action
+    // (Match.md "Biding").
+    enum class ActionKind : std::uint8_t { Move, Undo, Attack, BattleAbility, BoardAbility, UseItem, PickUp, Perform, Answer, LevelUp, EndTurn, Card, Bide, Extra };
 
     // Move: a = direction 0-3. Attack: a = unit. BattleAbility: a = ability slot. BoardAbility: a = slot,
     // b = target unit. UseItem: a = item slot, b = the target of a revive item (else -1). PickUp: a = floor index. Answer: a = choice. LevelUp: a = 0 or 1.
@@ -198,7 +200,8 @@ namespace umbra::match
         NotOnStage, NothingToPerform, NothingHere, BagFull, MustChoose, Over, FullHp,
         Off,      // not in this fight's mode (Match.md "Modes")
         Fallen,   // the target has fallen (Match.md "Falls")
-        NotFallen // revive and remove need a fallen target
+        NotFallen, // revive and remove need a fallen target
+        NoAp       // not enough action points, or none left to spend this turn
     };
 
     int Current(const MatchState &s); // the unit that acts next, -1 when the match is over
