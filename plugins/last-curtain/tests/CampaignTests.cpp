@@ -915,3 +915,45 @@ TEST_CASE("Talks open by stage and facts, at most three new a visit; a fight lea
         idle |= t->who == "ti";
     CHECK(idle);
 }
+
+TEST_CASE("The campaign save: a round trip, a wrong version refused, a corrupt file kept, an interrupted write harmless (campaign plan 7)")
+{
+    namespace fs = std::filesystem;
+    const fs::path dir = fs::temp_directory_path() / "umbra-campaign-save";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+    const fs::path file = dir / "campaign.json";
+    campaign::Save save;
+    save.player = {"Lan", "female"};
+    save.roster = {{"player", 3, 40}, {"bao", 3, 10}};
+    save.storage = {{"gung", 2}};
+    save.recipes = {"mut_gung"};
+    save.facts = {{"won:t1", "1"}};
+    save.versions = {{"dua_tin", "dua_tin_ve_kip"}};
+    save.rooms["sk_props"] = {true, 1, {"x"}};
+    save.chapter = 1, save.riteUnlocked = true, save.riteUsed = false;
+    std::string error;
+    // 1. A round trip.
+    REQUIRE(campaign::SaveCampaign(file, save, error));
+    campaign::Save back;
+    REQUIRE(campaign::LoadCampaign(file, back, error));
+    CHECK(back.player.name == "Lan");
+    CHECK(back.roster.size() == 2);
+    CHECK(back.roster[0].xp == 40);
+    CHECK(back.storage["gung"] == 2);
+    CHECK(back.versions["dua_tin"] == "dua_tin_ve_kip");
+    CHECK(back.rooms["sk_props"].refill == 1);
+    CHECK(back.riteUnlocked);
+    // 2. A wrong version is refused; a corrupt file is reported and left alone.
+    std::ofstream(file) << R"({"format":"umbra.lc-campaign","version":1})";
+    CHECK_FALSE(campaign::LoadCampaign(file, back, error));
+    CHECK(error.find("version") != std::string::npos);
+    std::ofstream(file) << "{ broken";
+    CHECK_FALSE(campaign::LoadCampaign(file, back, error));
+    CHECK(fs::file_size(file) > 0);
+    // 3. A write that stops halfway (a stale temp file) does not replace the good file.
+    REQUIRE(campaign::SaveCampaign(file, save, error));
+    std::ofstream(file.string() + ".tmp") << "{ half";
+    REQUIRE(campaign::LoadCampaign(file, back, error));
+    CHECK(back.player.name == "Lan");
+}

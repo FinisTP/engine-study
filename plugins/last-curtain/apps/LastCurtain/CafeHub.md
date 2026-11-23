@@ -14,3 +14,11 @@ Calm by design: nothing counts time or money and nothing fails (campaign plan 6)
 
 `LastCurtain --campaign-cafe` opens it with a sample save after Stage 1 (recipes known, ginger, sugar,
 the folded note). The walking room of the career café is not used yet.
+
+## The save
+
+`SaveCampaign` writes `campaign.json` (format `umbra.lc-campaign`, version 2): the player, roster, rooms
+(cleared, refill, taken), chapter, the rite (unlocked, used), storage, recipes, memories, talks, recruits,
+facts, versions, boosts, slots and party. It writes a temp file and renames it over the old one, so a write
+that stops halfway leaves the last good save. `LoadCampaign` refuses another version and never deletes a bad
+file; the error names the file and says it was kept.

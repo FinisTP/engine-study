@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <system_error>
 
 namespace umbra::campaign
 {
@@ -247,5 +248,53 @@ namespace umbra::campaign
                 save.facts["fell:" + name(e.a)] = "1";
         for (const match::Stolen &st : s.stash)
             save.facts["ratStole:" + def.items[static_cast<std::size_t>(st.item)].id] = "1";
+    }
+
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Member, id, level, xp)
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Room, cleared, refill, taken)
+
+    bool SaveCampaign(const std::filesystem::path &file, const Save &save, std::string &error)
+    {
+        // 1. The whole save as JSON.
+        const nlohmann::json j{{"format", "umbra.lc-campaign"}, {"version", 2}, {"player", {{"name", save.player.name}, {"gender", save.player.gender}}},
+                               {"roster", save.roster}, {"rooms", save.rooms}, {"chapter", save.chapter}, {"riteUnlocked", save.riteUnlocked},
+                               {"riteUsed", save.riteUsed}, {"storage", save.storage}, {"recipes", save.recipes}, {"taken", save.taken},
+                               {"memories", save.memories}, {"talks", save.talks}, {"joined", save.joined}, {"facts", save.facts},
+                               {"versions", save.versions}, {"boosts", save.boosts}, {"slots", save.slots}, {"party", save.party}};
+        // 2. A temp file, then renamed over the old one.
+        std::error_code ec;
+        std::filesystem::create_directories(file.parent_path(), ec);
+        const std::filesystem::path temp = file.string() + ".tmp";
+        if (std::ofstream out(temp, std::ios::binary); !(out << j.dump(1) << "\n"))
+            return error = "cannot write " + temp.string(), false;
+        std::filesystem::rename(temp, file, ec);
+        return ec ? (error = "cannot replace " + file.string() + ": " + ec.message(), false) : true;
+    }
+
+    bool LoadCampaign(const std::filesystem::path &file, Save &save, std::string &error)
+    {
+        std::ifstream in(file, std::ios::binary);
+        const nlohmann::json j = nlohmann::json::parse(in, nullptr, false);
+        if (!j.is_object() || j.value("format", "") != "umbra.lc-campaign")
+            return error = file.string() + " is not a campaign save (kept as it is)", false;
+        if (j.value("version", 0) != 2)
+            return error = file.string() + " is save version " + std::to_string(j.value("version", 0)) + "; this game reads version 2", false;
+        try
+        {
+            Save s;
+            s.player = {j["player"].value("name", ""), j["player"].value("gender", "female")};
+            s.roster = j.value("roster", s.roster), s.rooms = j.value("rooms", s.rooms), s.chapter = j.value("chapter", 0);
+            s.riteUnlocked = j.value("riteUnlocked", false), s.riteUsed = j.value("riteUsed", false);
+            s.storage = j.value("storage", s.storage), s.recipes = j.value("recipes", s.recipes), s.taken = j.value("taken", s.taken);
+            s.memories = j.value("memories", s.memories), s.talks = j.value("talks", s.talks), s.joined = j.value("joined", s.joined);
+            s.facts = j.value("facts", s.facts), s.versions = j.value("versions", s.versions), s.boosts = j.value("boosts", s.boosts);
+            s.slots = j.value("slots", s.slots), s.party = j.value("party", s.party);
+            save = std::move(s);
+            return true;
+        }
+        catch (const nlohmann::json::exception &e)
+        {
+            return error = file.string() + ": " + e.what() + " (kept as it is)", false;
+        }
     }
 }

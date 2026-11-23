@@ -12,8 +12,26 @@
 // campaign save. Plan 7 writes the save to disk; here it lives in memory.
 namespace umbra::campaign
 {
+    struct Member // one character in the roster
+    {
+        std::string id;
+        int level = 1, xp = 0;
+    };
+
+    struct Room // a room on the theatre map
+    {
+        bool cleared = false;
+        int refill = 0;                 // a skirmish's refills so far (its twist)
+        std::vector<std::string> taken; // take-once items picked up there
+    };
+
     struct Save
     {
+        Speaker player;              // name and form of address
+        std::vector<Member> roster;  // who can fight, with levels
+        std::map<std::string, Room> rooms;
+        int chapter = 0;
+        bool riteUnlocked = false, riteUsed = false; // the rite: once in the whole game
         std::map<std::string, int> storage;                      // items.csv id -> count (ingredients, keepsakes, items)
         std::set<std::string> recipes, taken, memories, talks, joined; // known recipes; take-once ids; memories back; talks seen; recruits
         Facts facts;
@@ -98,4 +116,9 @@ namespace umbra::campaign
     void Talked(Save &save, const Talk &talk);
     // What a fight leaves in the save's facts: won:<stage>, fell:<cast id>, ratStole:<item> (who: each unit's cast id).
     void RecordFight(const match::MatchDef &def, Save &save, const std::string &stage, const match::MatchState &s, const std::vector<std::string> &who);
+
+    // The save file (CampaignCafe.md "The save"): JSON version 2, written to a temp file then renamed over the
+    // old one, so a write that stops halfway leaves the last good save. A bad file is reported, never removed.
+    bool SaveCampaign(const std::filesystem::path &file, const Save &save, std::string &error);
+    bool LoadCampaign(const std::filesystem::path &file, Save &save, std::string &error);
 }
