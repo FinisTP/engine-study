@@ -26,6 +26,7 @@
     "panel": { "background": "#15151ce6", "border": "#a8874a", "borderWidth": 2, "padding": 18 },
     "hud": { "background": "#0d0d12b0", "padding": [12, 10] },
     "prompt": { "base": "strong", "background": "#0d0d12c8", "border": "#a8874a", "borderWidth": 1, "padding": [16, 8] },
+    "field": { "base": "text", "background": "#1c1c22", "border": "#4a4636", "borderWidth": 1, "padding": [12, 8], "hover": { "border": "#f2d58a" } },
     "button": {
       "base": "text", "background": "#25252f", "border": "#4a4636", "borderWidth": 1, "padding": [16, 8],
       "hover": { "background": "#3a3428", "border": "#f2d58a", "color": "#fff4d0" },

@@ -430,3 +430,79 @@ TEST_CASE("Buttons answer the pointer: hover and pressed styles, a scale that ea
     CHECK(s > 0.99F);
     CHECK(s < 1.01F);
 }
+
+TEST_CASE("A text field takes typed letters, Vietnamese too; backspace, a letter limit, Enter sends it (UI.md Text fields)")
+{
+    // 1. A name screen: a field and a button.
+    const json screen = {{"format", "umbra.ui"}, {"version", 1}, {"modal", true},
+                         {"root", {{"type", "stack"}, {"anchor", "center"}, {"children", {
+                             {{"type", "field"}, {"id", "name"}, {"placeholder", "{hint}"}, {"max", "5"}, {"action", "named"}, {"size", {300, 40}}},
+                             {{"type", "button"}, {"text", "OK"}, {"action", "ok"}}}}}}};
+    ui::UiSystem uiSystem;
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(uiSystem.Load(TestProject("field", {{"name", screen}}), diagnostics));
+    REQUIRE(uiSystem.Open("name"));
+    const json data = {{"hint", "Your name"}};
+    core::UiDrawList draw;
+    const auto send = [&](const ui::UiInput &input) {
+        draw.Clear();
+        return uiSystem.Update(data, {1280, 720}, input, draw);
+    };
+    send({});
+    CHECK(uiSystem.WantsText()); // the field has the focus: the game turns on text input
+    CHECK(uiSystem.FieldText("name", "name").empty());
+
+    // 2. Typing, then a backspace that removes one whole letter (two bytes for "í").
+    ui::UiInput type;
+    type.text = "B\xC3\xA9 T\xC3\xAD"; // "Bé Tí"
+    send(type);
+    CHECK(uiSystem.FieldText("name", "name") == "B\xC3\xA9 T\xC3\xAD");
+    type.text = "\b";
+    send(type);
+    CHECK(uiSystem.FieldText("name", "name") == "B\xC3\xA9 T");
+
+    // 3. At most "max" letters; control characters other than backspace are dropped.
+    type.text = "x\tyz";
+    send(type);
+    CHECK(uiSystem.FieldText("name", "name") == "B\xC3\xA9 Tx");
+
+    // 3b. A letter key that also moves the focus (W/A/S/D in some games) types, it doesn't move.
+    ui::UiInput wasd;
+    wasd.down = true;
+    wasd.text = "\b";
+    send(wasd);
+    CHECK(uiSystem.WantsText());
+    CHECK(uiSystem.FieldText("name", "name") == "B\xC3\xA9 T");
+    type.text = "x";
+    send(type);
+
+    // 4. Left and right stay in the field; Enter sends its action with the text.
+    ui::UiInput right;
+    right.right = true;
+    send(right);
+    CHECK(uiSystem.WantsText());
+    ui::UiInput confirm;
+    confirm.confirm = true;
+    auto actions = send(confirm);
+    REQUIRE(actions.size() == 1);
+    CHECK(actions[0].action == "named");
+    CHECK(actions[0].arg == "B\xC3\xA9 Tx");
+
+    // 5. Down moves to the button: typing no longer goes into the field.
+    ui::UiInput down;
+    down.down = true;
+    send(down);
+    CHECK_FALSE(uiSystem.WantsText());
+    type.text = "q";
+    send(type);
+    CHECK(uiSystem.FieldText("name", "name") == "B\xC3\xA9 Tx");
+
+    // 6. The game can set the text; a field without an id is an error.
+    uiSystem.SetFieldText("name", "name", "Lan");
+    CHECK(uiSystem.FieldText("name", "name") == "Lan");
+    ui::Screen parsed;
+    std::vector<core::Diagnostic> bad;
+    json noId = screen;
+    noId["root"]["children"][0].erase("id");
+    CHECK_FALSE(ui::ParseScreen(noId, "name", "name.ui.json", parsed, bad));
+}

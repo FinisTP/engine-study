@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <string>
 #include <vector>
 #include <cstddef>
 #include <cstdint>
@@ -114,6 +115,9 @@ namespace umbra::platform
         // Wheel steps since the last BeginFrame (positive: away from the user).
         void HandleWheel(float steps) noexcept { wheel_ += steps; }
         [[nodiscard]] float Wheel() const noexcept { return wheel_; }
+        // Text typed since the last BeginFrame (UTF-8, from SDL's text input); each Backspace adds a '\b'.
+        void HandleText(const char *utf8) { text_ += utf8; }
+        [[nodiscard]] const std::string &Text() const noexcept { return text_; }
         [[nodiscard]] bool IsMouseButtonPressed(int button) const noexcept;
         [[nodiscard]] bool IsMouseButtonHeld(int button) const noexcept;
 
@@ -147,6 +151,7 @@ namespace umbra::platform
         float mouseDeltaX_ = 0.0F;
         float mouseDeltaY_ = 0.0F;
         float wheel_ = 0.0F;
+        std::string text_;
         float mouseX_ = -1.0F, mouseY_ = -1.0F;
         std::vector<Finger> fingers_;
         bool touchSeen_ = false;

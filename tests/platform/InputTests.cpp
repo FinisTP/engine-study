@@ -102,3 +102,15 @@ TEST_CASE("Input adds up wheel steps for one frame")
     input.BeginFrame();
     CHECK(input.Wheel() == 0.0F);
 }
+
+TEST_CASE("Input keeps the text typed this frame; backspace is a \\b in it (UI.md Text fields)")
+{
+    umbra::platform::Input input;
+    input.HandleText("B\xC3\xA9"); // "Bé" in UTF-8
+    input.HandleKeyDown(umbra::platform::InputKey::Backspace, false);
+    input.HandleKeyDown(umbra::platform::InputKey::Backspace, true); // a held key repeats
+    input.HandleText(" T");
+    CHECK(input.Text() == "B\xC3\xA9\b\b T");
+    input.BeginFrame();
+    CHECK(input.Text().empty());
+}

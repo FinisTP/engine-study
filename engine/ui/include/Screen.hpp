@@ -15,7 +15,7 @@ namespace umbra::ui
     // "HP {hero.health}"; `visible`, `items`, `value`... are a single binding like "{menu.items}".
     struct Node final
     {
-        std::string type;                 // panel, stack, text, bar, image, button, list, spacer
+        std::string type;                 // panel, stack, text, bar, image, button, list, spacer, field
         std::string id;
         std::string anchor = "top-left";  // top-left, top, top-right, left, center, right, bottom-left, bottom, bottom-right, fill
         glm::vec2 offset{0.0F};           // pixels from the anchor (fill: margins)
@@ -30,7 +30,8 @@ namespace umbra::ui
         std::string visible, disabled, selected; // bindings; empty = always visible, never disabled/selected
         std::string tip;                         // text told while the mouse is over it (UiSystem::Tip)
         std::string fit;                         // an image: "" stretch, "contain", "cover" or "top" (Painter.hpp FitPicture)
-        std::string value, max;           // bar
+        std::string value, max;           // bar; field: max = most letters (default 24)
+        std::string placeholder;          // field: shown dimmed while it is empty
         std::string image;                // asset path (may contain bindings)
         std::string action, arg;          // button or list entry: what the game gets when it is chosen
         std::string items, as = "item";   // list: an array binding and the name of each entry

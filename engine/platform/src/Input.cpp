@@ -13,6 +13,8 @@ namespace umbra::platform
             return;
         }
 
+        if (key == InputKey::Backspace)
+            text_ += '\b'; // held keys repeat: each repeat erases one more letter
         const std::size_t index = ToIndex(key);
         if (!isRepeat && !heldKeys_[index])
         {
@@ -42,6 +44,7 @@ namespace umbra::platform
         mouseDeltaX_ = 0.0F;
         mouseDeltaY_ = 0.0F;
         wheel_ = 0.0F;
+        text_.clear();
         // Lifted fingers were seen for one frame; the others start a new frame.
         std::erase_if(fingers_, [](const Finger &f) { return !f.down; });
         for (Finger &f : fingers_)

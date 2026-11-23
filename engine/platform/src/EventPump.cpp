@@ -165,6 +165,9 @@ namespace umbra::platform
             case SDL_EVENT_KEY_DOWN:
                 input.HandleKeyDown(TranslateKeyCode(event.key.scancode), event.key.repeat);
                 break;
+            case SDL_EVENT_TEXT_INPUT: // only while the window has text input on (Window::SetTextInput)
+                input.HandleText(event.text.text);
+                break;
             case SDL_EVENT_KEY_UP:
                 input.HandleKeyUp(TranslateKeyCode(event.key.scancode));
                 break;

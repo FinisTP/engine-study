@@ -66,5 +66,6 @@ umbra::ui::UiInput Screens::MapInput(const umbra::platform::Input &input, glm::v
     ui.right = pressed({InputKey::Right});
     ui.confirm = pressed({InputKey::Enter});
     ui.back = pressed({InputKey::Escape});
+    ui.text = input.Text(); // for a focused text field (UI.md "Text fields")
     return ui;
 }

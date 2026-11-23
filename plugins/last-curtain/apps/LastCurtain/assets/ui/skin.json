@@ -142,6 +142,7 @@
         8
       ]
     },
+    "field": { "base": "text", "background": "#1c1c22", "border": "#4a4636", "borderWidth": 1, "padding": [12, 8], "hover": { "border": "#f2d58a" } },
     "button": {
       "base": "text",
       "background": "#25252f",

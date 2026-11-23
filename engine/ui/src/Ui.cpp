@@ -149,6 +149,45 @@ namespace umbra::ui
             return {r.x + padding.x, r.y + padding.y, std::max(0.0F, r.w - padding.x - padding.z), std::max(0.0F, r.h - padding.y - padding.w)};
         }
 
+        // The field widget with this id, anywhere in a screen (list entries included); nullptr if none.
+        const Node *FindField(const Node &node, const std::string &id)
+        {
+            if (node.type == "field" && node.id == id)
+                return &node;
+            for (const Node &child : node.children)
+                if (const Node *found = FindField(child, id))
+                    return found;
+            return node.entry ? FindField(*node.entry, id) : nullptr;
+        }
+
+        bool Continuation(char ch) { return (static_cast<unsigned char>(ch) & 0xC0) == 0x80; } // a UTF-8 letter's later bytes
+
+        // Typed text into a field (UI.md "Text fields"): '\b' erases the last letter with all its
+        // bytes, other control characters are dropped, and the field keeps at most `max` letters.
+        void Type(std::string &field, const std::string &typed, std::size_t max)
+        {
+            for (std::size_t i = 0; i < typed.size(); ++i)
+            {
+                const auto ch = static_cast<unsigned char>(typed[i]);
+                if (ch == '\b')
+                {
+                    while (!field.empty() && Continuation(field.back()))
+                        field.pop_back();
+                    if (!field.empty())
+                        field.pop_back();
+                }
+                else if (ch >= 0x20 && ch != 0x7F && !Continuation(typed[i]))
+                {
+                    std::size_t end = i + 1;
+                    while (end < typed.size() && Continuation(typed[end]))
+                        ++end;
+                    if (static_cast<std::size_t>(std::count_if(field.begin(), field.end(), [](char c) { return !Continuation(c); })) < max)
+                        field.append(typed, i, end - i);
+                    i = end - 1;
+                }
+            }
+        }
+
         std::vector<unsigned char> ReadBytes(const std::filesystem::path &file)
         {
             std::ifstream in(file, std::ios::binary);
@@ -227,7 +266,16 @@ namespace umbra::ui
         const Style style = skin_.Get(DefaultStyle(node), State::Normal);
         const glm::vec2 pad{style.padding.x + style.padding.z, style.padding.y + style.padding.w};
         glm::vec2 content{0.0F};
-        if (node.type == "text" || node.type == "button")
+        if (node.type == "field")
+        {
+            if (const Face *face = fonts_.Find(style.font))
+            {
+                const std::string &typed = fields_[c.screen + "#" + node.id];
+                content = FontAtlas::Measure(*face, typed.empty() ? c.Text(node.placeholder) : typed);
+                content.y = face->lineHeight;
+            }
+        }
+        else if (node.type == "text" || node.type == "button")
         {
             if (const Face *face = fonts_.Find(style.font))
             {
@@ -309,12 +357,16 @@ namespace umbra::ui
         //    the state of the entry this widget is inside (so an arrow can light up with its entry).
         const bool disabled = !node.disabled.empty() && c.Truthy(node.disabled);
         State state = entryState.value_or(!node.selected.empty() && c.Truthy(node.selected) ? State::Selected : c.inherited);
-        const bool choice = node.type == "button" && !disabled;
+        const bool choice = (node.type == "button" || node.type == "field") && !disabled;
+        const bool focused = choice && c.input && static_cast<int>(c.choices.size()) == c.focus;
         if (choice)
         {
-            if ((c.input && static_cast<int>(c.choices.size()) == c.focus) || rect.Contains(c.mouse))
+            if (focused || rect.Contains(c.mouse))
                 state = rect.Contains(c.mouse) && c.held ? State::Pressed : State::Hover; // focused, or under the pointer
-            c.choices.push_back({rect, c.Text(node.action), c.Text(node.arg)});
+            if (node.type == "field")
+                c.choices.push_back({rect, c.Text(node.action), "", node.id});
+            else
+                c.choices.push_back({rect, c.Text(node.action), c.Text(node.arg)});
         }
         if ((node.type == "panel" || node.type == "stack") && !node.action.empty() && !disabled)
             c.boxes.push_back({rect, c.Text(node.action), c.Text(node.arg)});
@@ -350,6 +402,23 @@ namespace umbra::ui
                 if (node.type == "button") // centered vertically in the button
                     area.y += std::round((inner.h - FontAtlas::Measure(*face, text, node.wrap ? inner.w : 0.0F).y) * 0.5F);
                 c.painter.Text(*face, area, text, style.color, node.wrap, align);
+            }
+        }
+        else if (node.type == "field")
+        {
+            // The typed text, or the placeholder dimmed; a caret after the text while it has the focus.
+            if (const Face *face = fonts_.Find(style.font))
+            {
+                const std::string &typed = fields_[c.screen + "#" + node.id];
+                const std::string shown = typed.empty() ? c.Text(node.placeholder) : typed;
+                const float top = inner.y + std::round((inner.h - face->lineHeight) * 0.5F);
+                const glm::vec4 color = typed.empty() ? glm::vec4(glm::vec3(style.color), style.color.a * 0.5F) : style.color;
+                c.painter.Text(*face, {inner.x, top, inner.w, face->lineHeight}, shown, color, false, 0.0F);
+                if (focused)
+                {
+                    const float x = typed.empty() ? 0.0F : FontAtlas::Measure(*face, typed).x;
+                    c.painter.Fill({inner.x + std::min(x, inner.w - 2.0F), top, 2.0F, face->lineHeight}, style.color);
+                }
             }
         }
         else if (node.type == "bar")
@@ -466,9 +535,18 @@ namespace umbra::ui
             focus = count == 0 ? 0 : std::clamp(focus, 0, count - 1);
             if (count > 0)
             {
-                if (input.up || input.left)
+                // 1a. A focused text field takes the typed text and keeps left and right for itself;
+                //     a key that typed something (W/A/S/D in some games) doesn't move the focus either.
+                const std::string &field = choices[static_cast<std::size_t>(focus)].field;
+                const bool typing = !field.empty() && !input.text.empty();
+                if (!field.empty())
+                {
+                    const Node *node = FindField(screens_.at(target).root, field);
+                    Type(fields_[target + "#" + field], input.text, node ? static_cast<std::size_t>(std::max(1, std::atoi(node->max.c_str()))) : 24);
+                }
+                if (!typing && (input.up || (input.left && field.empty())))
                     focus = (focus + count - 1) % count;
-                if (input.down || input.right)
+                if (!typing && (input.down || (input.right && field.empty())))
                     focus = (focus + 1) % count;
                 for (int i = 0; i < count; ++i)
                     if (choices[static_cast<std::size_t>(i)].rect.Contains(input.mouse))
@@ -476,8 +554,9 @@ namespace umbra::ui
                         if (input.mouseMoved)
                             focus = i;
                     }
-                if (input.confirm)
-                    actions.push_back({target, choices[static_cast<std::size_t>(focus)].action, choices[static_cast<std::size_t>(focus)].arg});
+                const Choice &chosen = choices[static_cast<std::size_t>(focus)];
+                if (input.confirm && !chosen.action.empty())
+                    actions.push_back({target, chosen.action, chosen.field.empty() ? chosen.arg : fields_[target + "#" + chosen.field]});
             }
             if (input.back && !screens_.at(target).back.empty())
                 actions.push_back({target, screens_.at(target).back, ""});
@@ -489,7 +568,10 @@ namespace umbra::ui
                 const auto hit = std::find_if(choices_[*it].begin(), choices_[*it].end(), [&](const Choice &c) { return c.rect.Contains(input.mouse); });
                 if (hit != choices_[*it].end())
                 {
-                    actions.push_back({*it, hit->action, hit->arg});
+                    if (hit->field.empty())
+                        actions.push_back({*it, hit->action, hit->arg});
+                    else // a click on a text field gives it the focus
+                        focus_[*it] = static_cast<int>(hit - choices_[*it].begin());
                     break;
                 }
                 // ... else the innermost clickable box under it (the last placed).
@@ -528,6 +610,27 @@ namespace umbra::ui
                 tip_ = std::move(c.tip);
         }
         return actions;
+    }
+
+    std::string UiSystem::FieldText(const std::string &screen, const std::string &id) const
+    {
+        const auto it = fields_.find(screen + "#" + id);
+        return it == fields_.end() ? std::string() : it->second;
+    }
+
+    bool UiSystem::WantsText() const
+    {
+        // The top modal screen's focused choice (last frame's layout) is a text field.
+        for (auto it = stack_.rbegin(); it != stack_.rend(); ++it)
+            if (screens_.at(*it).modal)
+            {
+                const auto choices = choices_.find(*it);
+                const auto focus = focus_.find(*it);
+                const int at = focus == focus_.end() ? 0 : focus->second;
+                return choices != choices_.end() && at >= 0 && at < static_cast<int>(choices->second.size()) &&
+                       !choices->second[static_cast<std::size_t>(at)].field.empty();
+            }
+        return false;
     }
 
     float UiSystem::ChoiceScale(const std::string &screen, int choice) const

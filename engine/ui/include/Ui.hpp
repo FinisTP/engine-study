@@ -27,6 +27,7 @@ namespace umbra::ui
         bool mouseMoved = false, click = false, held = false; // held: the button is down (a pressed look)
         bool up = false, down = false, left = false, right = false; // focus moves
         bool confirm = false, back = false;                          // Enter / A, Esc / B
+        std::string text; // typed this frame (UTF-8) for a focused text field; '\b' erases a letter
     };
 
     // What the player chose: a button's or list entry's action, with its argument.
@@ -56,6 +57,11 @@ namespace umbra::ui
         [[nodiscard]] bool Has(const std::string &screen) const { return screens_.contains(screen); }
         // Focus the first choosable widget of a screen (e.g. after its content changed).
         void ResetFocus(const std::string &screen);
+        // Text fields (UI.md "Text fields"): the text typed into one, by screen and field id.
+        [[nodiscard]] std::string FieldText(const std::string &screen, const std::string &id) const;
+        void SetFieldText(const std::string &screen, const std::string &id, std::string text) { fields_[screen + "#" + id] = std::move(text); }
+        // A text field has the focus: the game turns the window's text input on (Window::SetTextInput).
+        [[nodiscard]] bool WantsText() const;
 
         // One frame: input first (with last frame's layout), then every open screen is laid out
         // and drawn bottom to top from `data`. Returns the actions chosen this frame.
@@ -75,6 +81,7 @@ namespace umbra::ui
         {
             Rect rect;
             std::string action, arg;
+            std::string field; // a text field's id ("" for other choices)
         };
         struct Context; // one screen's layout pass
         glm::vec2 Measure(const Node &node, Context &c, float width);
@@ -91,6 +98,7 @@ namespace umbra::ui
         core::TextureHandle atlasTexture_;
         std::function<ImageRef(const std::string &)> images_;
         std::string tip_;
+        std::map<std::string, std::string> fields_; // "screen#id" -> a text field's text
         std::map<std::string, float> scales_; // "screen#choice" -> its drawn scale, eased each Update
     };
 }

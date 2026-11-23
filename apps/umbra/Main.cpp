@@ -571,6 +571,7 @@ int RunApplication(std::string scenePath, std::optional<float> benchmarkSeconds,
 						hud.warnings = warnings; // without screens, at least say why
 					if (gameUi.Ready())
 						feel.Draw(drawList.camera, {static_cast<float>(pixelWidth), static_cast<float>(pixelHeight)}, gameUi.Screens().Fonts(), gameUi.AtlasTexture(), drawList.ui);
+					window.SetTextInput(gameUi.Screens().WantsText()); // typed text only while a text field has the focus
 					for (const umbra::ui::UiAction &action : gameUi.Screens().Update(uiData, {static_cast<float>(pixelWidth), static_cast<float>(pixelHeight)}, uiInput, drawList.ui))
 					{
 						play("audio/ui_click.wav", 0.6F, umbra::audio::Bus::Ui);

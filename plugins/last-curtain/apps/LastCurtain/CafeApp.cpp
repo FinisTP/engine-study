@@ -108,6 +108,7 @@ int RunCafe(GameContext &game, const umbra::assets::AssetFolders &assets, umbra:
             nlohmann::json data = play.UiData();
             data["labels"] = view.Labels(play, pixels);
             data["tip"] = screens.Ui().Tip();
+            game.window.SetTextInput(screens.Ui().WantsText()); // typed text only while a text field has the focus
             for (const umbra::ui::UiAction &a : screens.Ui().Update(data, pixels, uiInput, drawList.ui))
             {
                 uiTook = true;

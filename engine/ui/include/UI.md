@@ -51,6 +51,7 @@ All under a project's or plugin's `assets/ui/` (project files win, see `AssetFol
 | `button` | a choosable box with text | `text`, `action`, `arg` |
 | `list` | one `entry` widget per array element; a grid with `columns` > 1 | `items`, `as`, `entry`, `action`, `arg` |
 | `spacer` | nothing, takes room | `size` |
+| `field` | a box the player types into (below) | `id`, `placeholder`, `max`, `action` |
 
 Every widget also has `id`, `anchor`, `offset`, `size` (0 = from the content), `style` (default:
 the style named like the type), `visible`, `disabled`, `selected`, `tip`, `fit`.
@@ -103,6 +104,27 @@ The top modal screen takes the input (`UiInput`, mapped from keys, mouse and gam
    buttons work beside a menu; a dimmed (`dim`) screen blocks clicks on everything below it.
 5. A `panel` or `stack` with an `action` is clicked anywhere inside it (a dialog's "click to go
    on"). Its own buttons and lists win where they are; keys and the gamepad never focus the box.
+
+### Text fields
+
+A `field` is a choice like a button. While it has the focus it takes what the player types:
+
+- The game turns the window's text input on only then: `window.SetTextInput(ui.WantsText())` each
+  frame. SDL then sends typed text, keyboard layouts and input methods included (Vietnamese
+  Telex/VNI through Unikey or Windows' own keyboard), and a phone shows its keyboard.
+- `UiInput::text` is what was typed this frame (UTF-8, `Input::Text()`); each Backspace adds a
+  `\b`, which erases the last letter with all its bytes (one Vietnamese letter can be 2-3 bytes).
+  Other control characters are dropped; the field keeps at most `max` letters (default 24).
+- Left and right stay in the field, and a key that typed something doesn't move the focus (some
+  games move it with W/A/S/D). Up, down, the mouse and a click move it as usual; a click on a field
+  focuses it.
+- Enter sends the field's `action` with its text as the argument. The game can also read and set
+  the text by screen and id: `FieldText("name", "player")`, `SetFieldText(...)`.
+- Drawn in the `field` style: the text, or the `placeholder` at half strength while empty, and a
+  caret after the text while focused. The caret sits at the end; there is no moving it yet.
+- Letters must be in the font atlas (`Font.md`); Vietnamese is. A keyboard that sends a letter and
+  its tone mark as two code points (decomposed) is not joined into one letter yet; Unikey's default
+  (precomposed Unicode) is fine.
 
 Two actions belong to the UI itself: `close` closes the screen and `open:<screen>` opens one on
 top. Everything else goes back to the game from `Update`.

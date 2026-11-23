@@ -445,6 +445,7 @@ namespace
                                                          {"portrait", ArtPath("portraits", def.guests[static_cast<std::size_t>(pawn.guest)].id).generic_string()},
                                                          {"at", {at->x - 14.0F, at->y - 28.0F}}});
                     }
+                    window.SetTextInput(screens.Ui().WantsText()); // typed text only while a text field has the focus
                     for (const umbra::ui::UiAction &action : screens.Ui().Update(data, pixels, uiInput, drawList.ui))
                     {
                         sounds.Play("click");

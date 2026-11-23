@@ -6,10 +6,10 @@ namespace umbra::ui
 {
     namespace
     {
-        const std::set<std::string> types{"panel", "stack", "text", "bar", "image", "button", "list", "spacer"};
+        const std::set<std::string> types{"panel", "stack", "text", "bar", "image", "button", "list", "spacer", "field"};
         const std::set<std::string> anchors{"top-left", "top", "top-right", "left", "center", "right", "bottom-left", "bottom", "bottom-right", "fill"};
         const std::set<std::string> known{"type", "id", "anchor", "offset", "size", "style", "direction", "align", "gap", "columns", "text", "textAlign", "wrap",
-                                          "visible", "disabled", "selected", "tip", "fit", "value", "max", "image", "action", "arg", "items", "as", "entry", "children", "at"};
+                                          "visible", "disabled", "selected", "tip", "fit", "value", "max", "image", "action", "arg", "items", "as", "entry", "children", "at", "placeholder"};
 
         struct Reader final
         {
@@ -57,7 +57,7 @@ namespace umbra::ui
                 // 1. Kind and placement.
                 node.type = Text(j, "type", where);
                 if (!types.contains(node.type))
-                    Error(where + ".type", "expected panel, stack, text, bar, image, button, list or spacer");
+                    Error(where + ".type", "expected panel, stack, text, bar, image, button, list, spacer or field");
                 node.id = Text(j, "id", where);
                 node.anchor = Text(j, "anchor", where, node.anchor);
                 if (!anchors.contains(node.anchor))
@@ -83,7 +83,8 @@ namespace umbra::ui
                 node.fit = Text(j, "fit", where);
                 node.selected = Text(j, "selected", where);
                 node.value = Text(j, "value", where);
-                node.max = Text(j, "max", where, "1");
+                node.max = Text(j, "max", where, node.type == "field" ? "24" : "1"); // bar: its full value; field: most letters
+                node.placeholder = Text(j, "placeholder", where);
                 node.image = Text(j, "image", where);
                 node.action = Text(j, "action", where);
                 node.arg = Text(j, "arg", where);
@@ -97,6 +98,8 @@ namespace umbra::ui
                     if (!j.contains("entry"))
                         Error(where + ".entry", "a list needs \"entry\": the widget drawn for each item");
                 }
+                if (node.type == "field" && node.id.empty())
+                    Error(where + ".id", "a field needs \"id\": the game reads its text by it (UiSystem::FieldText)");
                 if (node.type == "bar" && node.value.empty())
                     Error(where + ".value", "a bar needs \"value\"");
                 // 3. Children.

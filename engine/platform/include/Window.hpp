@@ -22,6 +22,9 @@ namespace umbra::platform
         [[nodiscard]] bool Resize(int width, int height);
         // Captured: cursor hidden and locked, mouse motion stays relative (for camera control).
         void SetMouseCaptured(bool captured) noexcept;
+        // Text input on: SDL sends typed text (Input::Text), keyboard layouts and IMEs such as
+        // Vietnamese Telex included; phones show their keyboard. Off when no text field has focus.
+        void SetTextInput(bool on) noexcept;
 
         [[nodiscard]] int GetWidth() const noexcept { return width_; }
         [[nodiscard]] int GetHeight() const noexcept { return height_; }
