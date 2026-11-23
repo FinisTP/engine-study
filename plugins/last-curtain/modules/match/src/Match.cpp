@@ -10,28 +10,48 @@ namespace umbra::match
 {
     using namespace inner;
 
+    Unit FromCharacter(const MatchDef &def, int c, int faction, int home)
+    {
+        const CharacterDef &d = def.characters[U(c)];
+        Unit u;
+        u.kind = 0;
+        u.def = static_cast<std::int8_t>(c);
+        u.faction = static_cast<std::int8_t>(faction);
+        u.home = static_cast<std::int16_t>(home);
+        u.hp = u.maxHp = static_cast<std::int16_t>(d.hp);
+        u.attack = static_cast<std::int16_t>(d.attack);
+        u.defence = static_cast<std::int16_t>(d.defence);
+        u.speed = static_cast<std::int16_t>(d.speed);
+        u.move = static_cast<std::int16_t>(d.move);
+        // 1. The job's level-1 abilities, in jobs.csv order.
+        std::size_t slot = 0;
+        for (const JobLevel &j : def.jobs)
+            if (j.role == d.role && j.level == 1 && slot < u.abilities.size())
+                u.abilities[slot++] = static_cast<std::int8_t>(j.ability);
+        return u;
+    }
+
+    Unit FromMonster(const MatchDef &def, int m, int faction, int cell)
+    {
+        const MonsterDef &d = def.monsters[U(m)];
+        Unit u;
+        u.kind = 1;
+        u.def = static_cast<std::int8_t>(m);
+        u.faction = static_cast<std::int8_t>(faction);
+        u.cell = u.home = static_cast<std::int16_t>(cell);
+        u.hp = u.maxHp = static_cast<std::int16_t>(d.hp);
+        u.attack = static_cast<std::int16_t>(d.attack);
+        u.defence = static_cast<std::int16_t>(d.defence);
+        u.speed = static_cast<std::int16_t>(d.speed);
+        u.size = static_cast<std::int8_t>(d.size);
+        u.essence = d.essence;
+        for (std::size_t i = 0; i < d.abilities.size() && i < u.abilities.size(); ++i)
+            u.abilities[i] = static_cast<std::int8_t>(d.abilities[i]);
+        return u;
+    }
+
     namespace
     {
-        Unit FromCharacter(const MatchDef &def, int c, int faction, int home)
-        {
-            const CharacterDef &d = def.characters[U(c)];
-            Unit u;
-            u.kind = 0;
-            u.def = static_cast<std::int8_t>(c);
-            u.faction = static_cast<std::int8_t>(faction);
-            u.home = static_cast<std::int16_t>(home);
-            u.hp = u.maxHp = static_cast<std::int16_t>(d.hp);
-            u.attack = static_cast<std::int16_t>(d.attack);
-            u.defence = static_cast<std::int16_t>(d.defence);
-            u.speed = static_cast<std::int16_t>(d.speed);
-            u.move = static_cast<std::int16_t>(d.move);
-            // 1. The job's level-1 abilities, in jobs.csv order.
-            std::size_t slot = 0;
-            for (const JobLevel &j : def.jobs)
-                if (j.role == d.role && j.level == 1 && slot < u.abilities.size())
-                    u.abilities[slot++] = static_cast<std::int8_t>(j.ability);
-            return u;
-        }
 
         // Squares nearest the hub, never the hub (it stays free to step through) nor the guardian's square.
         std::vector<int> StartSquares(const Board &b, int count)
@@ -63,28 +83,6 @@ namespace umbra::match
         }
     }
 
-    namespace inner
-    {
-        Unit FromMonster(const MatchDef &def, int m, int faction, int cell)
-        {
-            const MonsterDef &d = def.monsters[U(m)];
-            Unit u;
-            u.kind = 1;
-            u.def = static_cast<std::int8_t>(m);
-            u.faction = static_cast<std::int8_t>(faction);
-            u.cell = u.home = static_cast<std::int16_t>(cell);
-            u.hp = u.maxHp = static_cast<std::int16_t>(d.hp);
-            u.attack = static_cast<std::int16_t>(d.attack);
-            u.defence = static_cast<std::int16_t>(d.defence);
-            u.speed = static_cast<std::int16_t>(d.speed);
-            u.size = static_cast<std::int8_t>(d.size);
-            u.essence = d.essence;
-            for (std::size_t i = 0; i < d.abilities.size() && i < u.abilities.size(); ++i)
-                u.abilities[i] = static_cast<std::int8_t>(d.abilities[i]);
-            return u;
-        }
-    }
-
     std::vector<int> RiggedPick(const MatchDef &def, std::uint64_t seed, int count)
     {
         Rng rng{seed ^ 0xB0757EEDULL};
@@ -111,6 +109,7 @@ namespace umbra::match
     MatchState NewMatch(const MatchDef &def, std::uint64_t seed, const std::vector<int> &picks)
     {
         MatchState s;
+        s.mode = def.modes.at("faction");
         s.board = BuildBoard(def, seed);
         Rng rng{seed};
         const Board &b = s.board;

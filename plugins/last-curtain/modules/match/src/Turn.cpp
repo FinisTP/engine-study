@@ -50,7 +50,7 @@ namespace umbra::match
             if (s.turn < 0)
                 return;
             Unit &u = s.units[U(s.order[U(s.turn)])];
-            if (u.cell >= 0 && u.cell == u.home)
+            if (Up(u) && u.cell == u.home)
                 u.hp = u.maxHp;
         }
 
@@ -169,7 +169,7 @@ namespace umbra::match
                 RunSpawns(def, s, false);
                 // 2. A downed character misses this turn; when its count runs out it is back home, whole.
                 Unit &u = s.units[U(s.order[U(s.turn)])];
-                if (u.cell >= 0)
+                if (Up(u))
                     return BeginTurn(s);
                 if (u.back > 0 && --u.back == 0)
                 {

@@ -168,7 +168,7 @@ TEST_CASE("Spawns survive a save (T314)", "[match][spawn][save]")
     MatchState loaded;
     std::string error;
     nlohmann::json j = SaveMatch(s);
-    CHECK(j["version"] == 3);
+    CHECK(j["version"] == 4);
     REQUIRE(LoadMatch(j, loaded, error));
     CHECK(Fingerprint(loaded) == Fingerprint(s));
     REQUIRE(loaded.spawns.size() == s.spawns.size());

@@ -28,10 +28,28 @@ TEST_CASE("A saved match loads to the same state (T308)", "[match][save]")
     for (int i = 0; i < 5000 && !s.battle.on && Current(s) >= 0; ++i)
         REQUIRE(Apply(def, s, ChooseAction(def, s, BotLevel::Medium)));
     REQUIRE(s.battle.on);
+    // The campaign's fields come back too (plan 2).
+    s.units[0].flags = flag::Player;
+    s.units[0].ap = 2;
+    s.units[0].from = 3;
+    s.mode = def.modes.at("campaign");
+    s.riteUsed = true;
+    s.loss = Loss::Trapped;
+    s.now.apSpent = 1;
     MatchState loaded;
     std::string error;
     REQUIRE(LoadMatch(SaveMatch(s), loaded, error));
     CHECK(Fingerprint(loaded) == Fingerprint(s));
+    CHECK(loaded.units[0].flags == flag::Player);
+    CHECK(loaded.units[0].ap == 2);
+    CHECK(loaded.units[0].from == 3);
+    CHECK(loaded.mode.fallsStay);
+    CHECK(loaded.mode.win == WinBy::Boss);
+    CHECK(loaded.riteUsed);
+    CHECK(loaded.loss == Loss::Trapped);
+    CHECK(loaded.now.apSpent == 1);
+    s.mode = def.modes.at("faction"); // the bots below play the faction match
+    loaded.mode = s.mode;
     CHECK(Current(loaded) == Current(s));
     for (int i = 0; i < 200 && Current(s) >= 0; ++i)
     {
@@ -51,7 +69,7 @@ TEST_CASE("A save of another version or a broken file is refused (T309)", "[matc
     const std::uint64_t before = Fingerprint(out);
     std::string error;
     nlohmann::json j = SaveMatch(s);
-    j["version"] = 1;
+    j["version"] = 3; // a faction save from before plan 2
     CHECK_FALSE(LoadMatch(j, out, error));
     CHECK(error.find("version") != std::string::npos);
     nlohmann::json cut = SaveMatch(s);

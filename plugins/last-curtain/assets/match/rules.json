@@ -10,5 +10,9 @@
   "spawn": { "warn": 1, "centre": 2 },
   "carry": 4,
   "bots": { "noise": [60, 25, 0] },
-  "balance": { "sideMin": 45, "sideMax": 55, "firstMoverMax": 5, "sourceMax": 60, "comebackMin": 25 }
+  "balance": { "sideMin": 45, "sideMax": 55, "firstMoverMax": 5, "sourceMax": 60, "comebackMin": 25 },
+  "modes": {
+    "faction":  { "essence": true,  "perform": true,  "respawn": true,  "fightXp": true,  "biding": false, "fallsStay": false, "playerLoss": false, "mustFree": false, "win": "score" },
+    "campaign": { "essence": false, "perform": false, "respawn": false, "fightXp": false, "biding": true,  "fallsStay": true,  "playerLoss": true,  "mustFree": false, "win": "boss", "roundLimit": 0, "maxAp": 2, "apPerTurn": 2 }
+  }
 }

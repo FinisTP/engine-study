@@ -20,7 +20,7 @@ namespace umbra::match
         {
             int best = 1 << 20;
             for (const Unit &u : s.units)
-                if (u.kind == 0 && u.cell >= 0)
+                if (u.kind == 0 && Up(u))
                     if (const int d = Steps(s.board, cell, u.cell); d >= 0)
                         best = std::min(best, d);
             return best;
@@ -56,7 +56,7 @@ namespace umbra::match
             Unit &m = s.units[U(i)];
             int target = -1, best = def.monsters[U(m.def)].sight + 1;
             for (int v = 0; v < static_cast<int>(s.units.size()); ++v)
-                if (const Unit &c = s.units[U(v)]; c.kind == 0 && c.cell >= 0 && c.hp > 0)
+                if (const Unit &c = s.units[U(v)]; c.kind == 0 && Up(c))
                     if (const int d = StepsTo(s.board, c.cell, m); d >= 0 && d < best)
                         target = v, best = d;
             if (target < 0)
@@ -90,7 +90,7 @@ namespace umbra::match
                 for (int v = 0; v < static_cast<int>(s.units.size()); ++v)
                 {
                     Unit &t = s.units[U(v)];
-                    if (t.kind == 0 && t.cell >= 0 && t.faction != m.faction && Beside(s.board, m, t) && m.abilities[0] >= 0)
+                    if (t.kind == 0 && Up(t) && t.faction != m.faction && Beside(s.board, m, t) && m.abilities[0] >= 0)
                     {
                         const int dmg = Damage(def, s, m.abilities[0], i, v, 0);
                         t.hp = static_cast<std::int16_t>(std::max(0, t.hp - dmg));
@@ -118,7 +118,7 @@ namespace umbra::match
             for (; s.monsterTurn < static_cast<int>(s.units.size()); ++s.monsterTurn)
             {
                 const Unit &m = s.units[U(s.monsterTurn)];
-                if (m.kind == 1 && m.cell >= 0 && m.hp > 0)
+                if (m.kind == 1 && Up(m))
                     Act(def, s, s.monsterTurn);
                 if (s.battle.on)
                     return false;

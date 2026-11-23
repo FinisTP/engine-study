@@ -48,7 +48,7 @@ namespace umbra::match
             if (s.monsterTurn >= 0)
                 return; // a hunter's battle: the monsters' phase goes on (Apply, Monsters.cpp)
             // 1. The turn belongs to whoever holds it in order: passed on if it went down, else its action is spent.
-            if (s.units[U(s.order[U(s.turn)])].cell < 0)
+            if (!Up(s.units[U(s.order[U(s.turn)])]))
                 NextTurn(def, s);
             else
                 Acted(def, s);
@@ -141,7 +141,7 @@ namespace umbra::match
         bool Standing(const MatchState &s, int place)
         {
             const int f = s.battle.fighters[U(place)];
-            return f >= 0 && s.units[U(f)].hp > 0 && s.units[U(f)].cell >= 0;
+            return f >= 0 && Up(s.units[U(f)]);
         }
         int Picker(const MatchState &s) { return s.battle.fighters[U(s.battle.order[U(s.battle.next)])]; }
 

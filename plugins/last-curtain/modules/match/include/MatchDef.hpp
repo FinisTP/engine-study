@@ -5,6 +5,7 @@
 #include <array>
 #include <cstdint>
 #include <filesystem>
+#include <map>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -148,6 +149,18 @@ namespace umbra::match
         struct { int sideMin = 0, sideMax = 0, firstMoverMax = 0, sourceMax = 0, comebackMin = 0; } balance;
     };
 
+    // The switches of a fight (Match.md "Modes"): the faction match's and the campaign's, from
+    // rules.json "modes"; a campaign stage may change them (plan 4).
+    enum class WinBy : std::uint8_t { Score, Boss };
+    struct Mode
+    {
+        bool essence = true, perform = true, respawn = true, fightXp = true; // the faction match's
+        bool biding = false, fallsStay = false, playerLoss = false, mustFree = false;
+        WinBy win = WinBy::Score;
+        int roundLimit = 0; // 0 = none
+        int maxAp = 2, apPerTurn = 2;
+    };
+
     inline constexpr int maxAbilities = 8, maxItems = 4; // slots in a Unit; rules.carry may not exceed maxItems
 
     struct MatchDef
@@ -163,6 +176,7 @@ namespace umbra::match
         std::vector<LevelCardDef> levelCards;
         std::vector<ItemDef> items;
         std::vector<EventDef> events;
+        std::map<std::string, Mode> modes; // "faction" and "campaign"
 
         // The index of the row with this id, or -1.
         template <class T> static int Find(const std::vector<T> &rows, std::string_view id)

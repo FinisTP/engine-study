@@ -391,7 +391,7 @@ nlohmann::json MatchPlay::UiData() const
         order.push_back({{"unit", u}, {"name", Name(u)}, {"side", unit.faction}, {"sprite", def_.characters[U(unit.def)].sprite},
                          {"portrait", Portrait(def_.characters[U(unit.def)].sprite)}, {"mine", unit.faction == 0}, {"theirs", unit.faction == 1},
                          {"short", def_.characters[U(unit.def)].name.substr(def_.characters[U(unit.def)].name.rfind(' ') + 1)},
-                         {"current", !later && i == turn}, {"acted", later}, {"down", unit.cell < 0}, {"tip", tip}});
+                         {"current", !later && i == turn}, {"acted", later}, {"down", !Up(unit)}, {"tip", tip}});
     };
     // Twelve portraits: the rest of this round, the marker, then the rounds after in the same order.
     for (int i = turn; i < n; ++i)

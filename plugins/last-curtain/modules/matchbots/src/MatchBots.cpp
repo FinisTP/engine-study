@@ -118,7 +118,7 @@ namespace umbra::match
             for (int h = 0; h < static_cast<int>(s.units.size()); ++h)
             {
                 const Unit &m = s.units[U(h)];
-                if (m.kind != 1 || m.cell < 0 || m.hp <= 0 || def.monsters[U(m.def)].behaviour != Behaviour::Hunt)
+                if (m.kind != 1 || !Up(m) || def.monsters[U(m.def)].behaviour != Behaviour::Hunt)
                     continue;
                 int d = 99;
                 for (int c : Squares(s.board, m))
@@ -147,7 +147,7 @@ namespace umbra::match
             {
                 const bool prey = role == BotRole::Defend ? t.kind == 0 && t.faction != u.faction && t.essence > 0
                                                           : t.kind == 1 && t.faction != u.faction && def.monsters[U(t.def)].tier != Tier::Guardian;
-                if (prey && t.cell >= 0 && t.hp > 0)
+                if (prey && Up(t))
                     best = std::min(best, Dist(s, cell, t.cell));
             }
             if (role == BotRole::Defend)
@@ -201,7 +201,7 @@ namespace umbra::match
             {
                 const int foe = s.battle.fighters[U(place)];
                 const Action a{ActionKind::BattleAbility, I8(slot), I8(foe)};
-                if (foe < 0 || s.units[U(foe)].hp <= 0 || s.units[U(foe)].cell < 0 || Check(def, s, a) != Why::Ok)
+                if (foe < 0 || !Up(s.units[U(foe)]) || Check(def, s, a) != Why::Ok)
                     continue;
                 const AbilityDef &ab = def.abilities[U(u.abilities[U(slot)])];
                 const Forecast f = Preview(def, s, a);
@@ -223,7 +223,7 @@ namespace umbra::match
         std::vector<BotRole> roles(s.units.size(), BotRole::Carry);
         std::vector<int> mine;
         for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
-            if (s.units[U(i)].kind == 0 && s.units[U(i)].faction == faction && s.units[U(i)].cell >= 0)
+            if (s.units[U(i)].kind == 0 && s.units[U(i)].faction == faction && Up(s.units[U(i)]))
                 mine.push_back(i);
         auto nearest = [&](int cell, int skip) {
             int best = -1;
@@ -236,7 +236,7 @@ namespace umbra::match
         const int hub = s.board.hub[U(faction)];
         int guard = -1;
         const bool threat = std::ranges::any_of(s.units, [&](const Unit &t) {
-            return t.kind == 0 && t.faction != faction && t.cell >= 0 && Dist(s, t.cell, hub) <= def.rules.board.strongMin;
+            return t.kind == 0 && t.faction != faction && Up(t) && Dist(s, t.cell, hub) <= def.rules.board.strongMin;
         });
         const bool guardian = std::ranges::any_of(s.units, [&](const Unit &t) {
             return t.kind == 1 && t.faction == faction && t.hp > 0 && def.monsters[U(t.def)].tier == Tier::Guardian;
@@ -244,7 +244,7 @@ namespace umbra::match
         if (threat && guardian && (guard = nearest(hub, -1)) >= 0)
             roles[U(guard)] = BotRole::Guard;
         // 2. Defend: the one nearest the stage, while an enemy carries essence.
-        const bool carrier = std::ranges::any_of(s.units, [&](const Unit &t) { return t.kind == 0 && t.faction != faction && t.essence > 0 && t.cell >= 0; });
+        const bool carrier = std::ranges::any_of(s.units, [&](const Unit &t) { return t.kind == 0 && t.faction != faction && t.essence > 0 && Up(t); });
         if (carrier && mine.size() > 1)
             if (const int d = nearest(s.stage, guard); d >= 0 && s.units[U(d)].essence == 0)
                 roles[U(d)] = BotRole::Defend;

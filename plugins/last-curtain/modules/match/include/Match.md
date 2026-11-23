@@ -8,7 +8,7 @@ one copyable value, and only `Apply` changes it. Bots and the app send the same 
 | File | Holds |
 |---|---|
 | `options.csv` | `id,value`: rounds (the countdown), side (characters per side), autoEndTurn (0/1), bots (easy, medium, hard) |
-| `rules.json` | board (size, lanes, one unit per square, den and event distances, counts per half), respawn (turns away), battle (rounds, minimum damage), levels (XP steps, HP per level, XP for a kill), spawn (`warn`: rounds a spawn square is marked first; `centre`: steps from the stage to each centre spawn square), carry, bot noise per level, the soak's balance bands |
+| `rules.json` | modes ("Modes"), board (size, lanes, one unit per square, den and event distances, counts per half), respawn (turns away), battle (rounds, minimum damage), levels (XP steps, HP per level, XP for a kill), spawn (`warn`: rounds a spawn square is marked first; `centre`: steps from the stage to each centre spawn square), carry, bot noise per level, the soak's balance bands |
 | `characters.csv` | id, name, role, the five stats (hp, attack, defence, speed, move), sprite, tint |
 | `abilities.csv` | id, name, use (battle, board, passive), class (strike, shield, heal, hit, firststrike), target (enemy, ally, self, monster, room, any: a strike aims at an enemy, a shield or battle heal at yourself, a board heal at your side, a hit at enemy, monster or any), hpCost, power, dice (`2d6` or none), range, animation (a `motions.json` name) |
 | `jobs.csv` | role, level, ability, choice (a second ability to pick between, or none); level 1 = starting abilities |
@@ -20,6 +20,29 @@ one copyable value, and only `Apply` changes it. Bots and the app send the same 
 | `events.csv` | id, name, text, two choices: label, chance (percent), success, failure (`none`, `hp:-3`, `essence:2`, `xp:2`, `item:<id>`) |
 
 The loader refuses a role without a free (0 HP) level-1 Strike, so a fighter at 1 HP can always act.
+
+## Modes (campaign plan 2)
+
+The same rules run the faction match and the campaign's fights. `MatchState::mode` holds the
+switches, copied at the start from `rules.json` `"modes"` (`faction` by `NewMatch`; a campaign stage
+takes `campaign` and may change it, plan 4):
+
+| Switch | Faction | Campaign | Off means |
+|---|---|---|---|
+| `essence` | on | off | no essence dropped, carried, banked or scored |
+| `perform` | on | off | `Perform` is refused (`Why::Off`) |
+| `respawn` | on | off | no return at the hub, no den respawns, no hub healing |
+| `fightXp` | on | off | no XP (so no level choice) inside a fight; the campaign pays XP per stage |
+| `biding` | off | on | no `Bide` or `Extra` ("Biding") |
+| `fallsStay` | off | on | a unit at 0 HP keeps its square, fallen ("Falls") |
+| `playerLoss` | off | on | the unit flagged `flag::Player` falling loses the fight |
+| `mustFree` | off | a stage's | the win also needs every recruit freed ("Freeing and the end") |
+| `win` | `score` | `boss` | score after the round limit, or every boss down |
+| `roundLimit` | `options.csv` rounds | 0 | 0 = no limit |
+| `maxAp`, `apPerTurn` | | 2, 2 | AP stored at most, spent at most a turn |
+
+A unit is `Up` when it is on the board with HP left; `Fallen` when it is on the board at 0 HP (only
+with falls). Without falls a unit at 0 HP leaves the board, so `Up` is the old `cell >= 0`.
 
 ## A new match (`Match.cpp`)
 

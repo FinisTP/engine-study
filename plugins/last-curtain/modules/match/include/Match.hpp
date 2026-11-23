@@ -41,7 +41,15 @@ namespace umbra::match
 
     // ---- The match (Match.cpp, Turn.cpp, Battle.cpp, ...) ----
 
+    // A unit's flags (Match.md "Freeing and the end"): the living player, a boss, a recruit to free,
+    // still on its strings, freed, removed for good.
+    namespace flag
+    {
+        constexpr std::uint8_t Player = 1, Boss = 2, Recruit = 4, Strung = 8, Freed = 16, Removed = 32;
+    }
+
     // A character or a monster. faction -1 = neutral. cell -1 = off the board (down, or not woken).
+    // With falls (Mode::fallsStay) a fallen unit keeps its cell at 0 HP.
     struct Unit
     {
         std::int8_t kind = 0; // 0 character (characters.csv row), 1 monster (monsters.csv row)
@@ -55,7 +63,13 @@ namespace umbra::match
         std::array<std::int8_t, maxAbilities> abilities{-1, -1, -1, -1, -1, -1, -1, -1};
         std::array<std::int8_t, maxItems> items{-1, -1, -1, -1};
         std::array<std::int8_t, maxAbilities> boost{}, cut{}; // level-card upgrades: +power, -HP cost, by slot
+        std::uint8_t flags = 0;  // flag::
+        std::int8_t ap = 0;      // action points stored by biding (Match.md "Biding")
+        std::int16_t from = 0;   // the first round it may act (one that appears mid-fight waits a round)
     };
+
+    inline bool Up(const Unit &u) { return u.cell >= 0 && u.hp > 0; }      // on the board and standing
+    inline bool Fallen(const Unit &u) { return u.cell >= 0 && u.hp <= 0; } // on the board, fallen (falls only)
 
     struct Floor
     {
@@ -82,6 +96,7 @@ namespace umbra::match
         std::int16_t origin = -1;
         std::int8_t movesLeft = 0;
         bool acted = false;
+        std::int8_t apSpent = 0; // action points spent this turn
     };
 
     enum class LogKind : std::uint8_t { Moved, Battle, Blow, Down, Essence, Performed, Level, Back, SpawnSoon, Spawned, Event, Item, Treasure, Over, Healed };
@@ -115,8 +130,12 @@ namespace umbra::match
         int round = 0;
     };
 
+    // Why a campaign fight was lost (Match.md "Freeing and the end").
+    enum class Loss : std::uint8_t { None, PlayerFell, SideDown, Trapped };
+
     struct MatchState
     {
+        Mode mode; // the switches (Match.md "Modes")
         Board board;
         std::vector<Unit> units; // side 0's characters, side 1's, then monsters
         std::vector<std::int8_t> order; // characters by Speed, set once
@@ -135,11 +154,17 @@ namespace umbra::match
         std::uint64_t rng = 0;
         bool over = false;
         int winner = -1; // -1 a draw
+        Loss loss = Loss::None;
+        bool riteReady = false, riteUsed = false; // Le Thanh's rite: offered once in the whole game (plan 5 saves it)
     };
 
     // A unit's squares: size x size from its cell, the top-left (Match.md "Large monsters").
     std::vector<int> Squares(const Board &b, const Unit &u);
     bool Covers(const Board &b, const Unit &u, int cell);
+
+    // A unit from a characters.csv row (home: its hub) or a monsters.csv row (standing on `cell`).
+    Unit FromCharacter(const MatchDef &def, int row, int faction, int home);
+    Unit FromMonster(const MatchDef &def, int row, int faction, int cell);
 
     // picks: side 0's characters.csv rows (options.side of them, no repeats). Side 1 is RiggedPick.
     MatchState NewMatch(const MatchDef &def, std::uint64_t seed, const std::vector<int> &picks);

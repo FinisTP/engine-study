@@ -1,6 +1,11 @@
 #include "MatchTestData.hpp"
 
+#include <Match.hpp>
+
+#include <nlohmann/json.hpp>
+
 #include <algorithm>
+#include <fstream>
 
 using namespace umbra::match;
 
@@ -129,4 +134,38 @@ TEST_CASE("Bad spawn or size data is refused (T311)", "[match][data]")
     const auto d4 = DataCopy("umbra-match-t311d");
     SetCell(d4 / "spawns.csv", 0, "every", "-1");
     CHECK(FirstError(d4) == "spawns.csv:1:every");
+}
+
+TEST_CASE("rules.json modes load, and a broken mode is refused (campaign plan 2)", "[match][data]")
+{
+    const MatchDef def = Data();
+    REQUIRE(def.modes.count("faction") == 1);
+    REQUIRE(def.modes.count("campaign") == 1);
+    const Mode &f = def.modes.at("faction"), &c = def.modes.at("campaign");
+    CHECK((f.essence && f.perform && f.respawn && f.fightXp));
+    CHECK_FALSE((f.biding || f.fallsStay || f.playerLoss || f.mustFree));
+    CHECK(f.win == WinBy::Score);
+    CHECK_FALSE((c.essence || c.perform || c.respawn || c.fightXp));
+    CHECK((c.biding && c.fallsStay && c.playerLoss));
+    CHECK(c.win == WinBy::Boss);
+    CHECK(c.roundLimit == 0);
+    CHECK(c.maxAp == 2);
+    CHECK(c.apPerTurn == 2);
+    // The faction match's round limit is options.csv's rounds when rules.json leaves it out.
+    CHECK(NewMatch(def, 3, {0, 1, 2}).mode.roundLimit == def.options.rounds);
+
+    const auto dir = DataCopy("umbra-match-modes");
+    std::ifstream in(dir / "rules.json");
+    nlohmann::json rules = nlohmann::json::parse(in);
+    in.close();
+    rules["modes"]["campaign"]["win"] = "most";
+    std::ofstream(dir / "rules.json") << rules.dump();
+    CHECK(FirstError(dir) == "rules.json:modes.campaign.win");
+    rules["modes"]["campaign"]["win"] = "boss";
+    rules["modes"]["campaign"]["fly"] = true;
+    std::ofstream(dir / "rules.json") << rules.dump();
+    CHECK(FirstError(dir) == "rules.json:modes.campaign.fly");
+    rules["modes"].erase("campaign");
+    std::ofstream(dir / "rules.json") << rules.dump();
+    CHECK(FirstError(dir) == "rules.json:modes.campaign");
 }

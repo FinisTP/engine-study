@@ -93,8 +93,6 @@ namespace umbra::match::inner
 
 namespace umbra::match::inner
 {
-    // Match.cpp
-    Unit FromMonster(const MatchDef &def, int m, int faction, int cell);
     // Monsters.cpp (Match.md "Spawns")
     int ZoneOf(const Board &b, int cell);                         // 0 weak den, 1 strong den, 2 centre, -1 none
     int SpawnKind(const MatchDef &def, int zone, int round);     // the zone's latest row by that round, or -1

@@ -39,7 +39,7 @@ namespace umbra::match
             }
         }
 
-        bool Ready(const MatchState &s, int me) { return !s.now.acted && s.units[U(me)].cell >= 0; }
+        bool Ready(const MatchState &s, int me) { return !s.now.acted && Up(s.units[U(me)]); }
     }
 
     namespace inner
@@ -149,7 +149,7 @@ namespace umbra::match
             const AbilityDef &a = def.abilities[U(u.abilities[U(slot)])];
             if (a.use != Use::Board)
                 return Why::NothingHere;
-            if (target < 0 || target >= static_cast<int>(s.units.size()) || s.units[U(target)].cell < 0 || s.units[U(target)].hp <= 0)
+            if (target < 0 || target >= static_cast<int>(s.units.size()) || !Up(s.units[U(target)]))
                 return Why::NothingHere;
             const Unit &t = s.units[U(target)];
             // 1. Hit an enemy, heal your own side (yourself included), within range.
@@ -231,7 +231,7 @@ namespace umbra::match
             const bool passed = Roll(s, 100) < ch.chance;
             Log(s, LogKind::Event, me, choice, passed);
             Take(def, s, me, passed ? ch.success : ch.failure);
-            if (s.units[U(me)].cell >= 0)
+            if (Up(s.units[U(me)]))
                 Acted(def, s);
             else if (!s.over)
                 NextTurn(def, s);

@@ -187,6 +187,39 @@ namespace umbra::match
                 Fail(out, "rules.json", "rules.json:board", "the board is too small or too large");
         }
 
+        // rules.json "modes": each a set of switches (Match.md "Modes"); faction and campaign required.
+        void LoadModes(const std::filesystem::path &folder, int rounds, std::map<std::string, Mode> &modes, Diagnostics &out)
+        {
+            std::ifstream in(folder / "rules.json");
+            const nlohmann::json j = nlohmann::json::parse(in, nullptr, false);
+            if (j.is_discarded())
+                return; // LoadRules said so
+            const nlohmann::json all = j.value("modes", nlohmann::json::object());
+            for (const char *name : {"faction", "campaign"})
+                if (!all.contains(name))
+                    Fail(out, "rules.json", std::string("rules.json:modes.") + name, "this mode is required");
+            for (const auto &[name, m] : all.items())
+            {
+                Mode mode;
+                if (name == "faction")
+                    mode.roundLimit = rounds; // options.csv's countdown, unless the mode sets one
+                const std::string at = "rules.json:modes." + name + ".";
+                const std::map<std::string, bool Mode::*> flags{{"essence", &Mode::essence}, {"perform", &Mode::perform}, {"respawn", &Mode::respawn},
+                    {"fightXp", &Mode::fightXp}, {"biding", &Mode::biding}, {"fallsStay", &Mode::fallsStay}, {"playerLoss", &Mode::playerLoss}, {"mustFree", &Mode::mustFree}};
+                const std::map<std::string, int Mode::*> numbers{{"roundLimit", &Mode::roundLimit}, {"maxAp", &Mode::maxAp}, {"apPerTurn", &Mode::apPerTurn}};
+                for (const auto &[key, value] : m.items())
+                    if (flags.count(key) && value.is_boolean())
+                        mode.*flags.at(key) = value.get<bool>();
+                    else if (numbers.count(key) && value.is_number_integer() && value.get<int>() >= 0)
+                        mode.*numbers.at(key) = value.get<int>();
+                    else if (key == "win" && value.is_string() && (value == "score" || value == "boss"))
+                        mode.win = value == "boss" ? WinBy::Boss : WinBy::Score;
+                    else
+                        Fail(out, "rules.json", at + key, "not a switch of a mode (true/false), a whole number of 0 or more, or win \"score\"/\"boss\"");
+                modes[name] = mode;
+            }
+        }
+
         // "2d6" or "none".
         Dice ParseDice(Sheet &s, int row)
         {
@@ -418,6 +451,7 @@ namespace umbra::match
         MatchDef def;
         LoadOptions(folder, def.options, diagnostics);
         LoadRules(folder, def.rules, diagnostics);
+        LoadModes(folder, def.options.rounds, def.modes, diagnostics);
         LoadAbilities(folder, def, diagnostics);
         LoadJobs(folder, def, diagnostics);
         LoadCharacters(folder, def, diagnostics);
