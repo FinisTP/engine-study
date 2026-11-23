@@ -14,6 +14,7 @@ target_sources(
         src/Moments.cpp
         src/Soak.cpp
         src/Cafe.cpp
+        src/Progress.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include

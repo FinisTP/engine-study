@@ -957,3 +957,45 @@ TEST_CASE("The campaign save: a round trip, a wrong version refused, a corrupt f
     REQUIRE(campaign::LoadCampaign(file, back, error));
     CHECK(back.player.name == "Lan");
 }
+
+TEST_CASE("Progress: a win shares XP (capped in skirmishes), keeps finds and refills skirmishes; a loss keeps only the rite's use (campaign plan 7)")
+{
+    const match::MatchDef def = MatchData();
+    const std::vector<campaign::StageDef> stages = TheStages();
+    const auto stage = [&](const char *id) { return *std::ranges::find(stages, std::string(id), &campaign::StageDef::id); };
+    campaign::Save save;
+    save.roster = {{"player", 1, 0}};
+    save.party = {"player"};
+    // 1. T1 won: 100 XP, level 2; the room cleared; the skirmishes that are open refill.
+    campaign::BuiltStage t1 = campaign::BuildStage(def, TheCast(), TheGrowth(), stage("t1"), {{"player", 1, {}}}, 0, {}, 3);
+    t1.state.over = true, t1.state.winner = 0;
+    t1.state.found = {static_cast<std::int8_t>(std::ranges::find(def.items, std::string("gung"), &match::ItemDef::id) - def.items.begin())};
+    campaign::WinStage(def, save, stage("t1"), t1, stages);
+    CHECK(save.roster[0].level == 2);
+    CHECK(save.rooms["t1"].cleared);
+    CHECK(save.storage["gung"] == 1);
+    CHECK(save.facts["won:t1"] == "1");
+    // 2. A skirmish gives no XP past the next story stage's level (T3: 2).
+    campaign::BuiltStage sk = campaign::BuildStage(def, TheCast(), TheGrowth(), stage("sk_props"), {{"player", 2, {}}}, 0, {}, 3);
+    sk.state.over = true, sk.state.winner = 0;
+    const int xp = save.roster[0].xp;
+    campaign::WinStage(def, save, stage("sk_props"), sk, stages);
+    CHECK(save.roster[0].level == 2);
+    CHECK(save.roster[0].xp == xp);
+    // 3. A story win refills skirmishes: the next twist.
+    const int refill = save.rooms["sk_props"].refill;
+    campaign::BuiltStage t3 = campaign::BuildStage(def, TheCast(), TheGrowth(), stage("t3"), {{"player", 2, {}}}, 0, {}, 3);
+    t3.state.over = true, t3.state.winner = 0;
+    campaign::WinStage(def, save, stage("t3"), t3, stages);
+    CHECK(save.rooms["sk_props"].refill == refill + 1);
+    CHECK(save.riteUnlocked);
+    // 4. A lost stage keeps nothing, except that the rite was used.
+    const campaign::Save before = save;
+    campaign::BuiltStage lost = campaign::BuildStage(def, TheCast(), TheGrowth(), stage("stage1"), {{"player", 3, {}}}, 0, {}, 3);
+    lost.state.over = true, lost.state.winner = 1, lost.state.riteUsed = true;
+    lost.state.found = t1.state.found;
+    const campaign::Save after = campaign::LoseStage(before, lost);
+    CHECK(after.storage == before.storage);
+    CHECK(after.roster[0].xp == before.roster[0].xp);
+    CHECK(after.riteUsed);
+}

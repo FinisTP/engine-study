@@ -22,3 +22,11 @@ the folded note). The walking room of the career café is not used yet.
 facts, versions, boosts, slots and party. It writes a temp file and renames it over the old one, so a write
 that stops halfway leaves the last good save. `LoadCampaign` refuses another version and never deletes a bad
 file; the error names the file and says it was kept.
+
+## Progress
+
+A won stage shares its `xp` with who fought: 100 XP a level, up to 15 (about a level a stage, slice design
+14). A skirmish gives none past the next unwon story stage's recommended level. Finds go to storage, picked
+take-once items are remembered, the room is cleared, the fight leaves its facts (won, fell, freed, ratStole),
+T3 unlocks the rite. A story win refills every cleared skirmish with its next twist. A lost stage keeps
+nothing but the rite's use.

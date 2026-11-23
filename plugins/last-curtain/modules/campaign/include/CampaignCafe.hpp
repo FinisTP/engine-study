@@ -121,4 +121,13 @@ namespace umbra::campaign
     // old one, so a write that stops halfway leaves the last good save. A bad file is reported, never removed.
     bool SaveCampaign(const std::filesystem::path &file, const Save &save, std::string &error);
     bool LoadCampaign(const std::filesystem::path &file, Save &save, std::string &error);
+
+    // Progress (CafeHub.md "Progress"): 100 XP a level, up to 15.
+    constexpr int xpPerLevel = 100, levelCap = 15;
+    void AddXp(Member &m, int xp, int capLevel); // no XP while at or past capLevel
+    // A won stage: shared XP (a skirmish's stops at the next story stage's level), finds to storage, take-once
+    // items, the room cleared, the fight's facts, freed recruits; a story win refills the cleared skirmishes.
+    void WinStage(const match::MatchDef &def, Save &save, const StageDef &stage, const BuiltStage &fight, const std::vector<StageDef> &stages);
+    // A lost stage: the save from before it, except that the rite stays used.
+    Save LoseStage(const Save &before, const BuiltStage &fight);
 }
