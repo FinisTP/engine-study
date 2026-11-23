@@ -1,6 +1,7 @@
 #include "NightTestData.hpp"
 
 #include <Art.hpp>
+#include <Font.hpp>
 #include <Play.hpp>
 #include <Wav.hpp>
 
@@ -8,6 +9,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <nlohmann/json.hpp>
 
 using namespace umbra::night;
 
@@ -149,4 +151,25 @@ TEST_CASE("Every sound cue in sounds.csv names a WAV the engine plays (T227)", "
         ++cues;
     }
     CHECK(cues == 12); // with the killer (battle royale), pass and fail (2026-11-17)
+}
+
+TEST_CASE("Every font in the Last Curtain skin draws every Vietnamese letter (campaign plan 1)", "[night][art]")
+{
+    // 1. The letters: U+1EA0-1EF9, plus the Vietnamese ones outside that range.
+    std::u32string vietnamese = U"\u0102\u0103\u00C2\u00E2\u0110\u0111\u00CA\u00EA\u00D4\u00F4\u01A0\u01A1\u01AF\u01B0"
+                                U"\u00C0\u00C1\u00C3\u00C8\u00C9\u00CC\u00CD\u00D2\u00D3\u00D5\u00D9\u00DA\u00DD"
+                                U"\u00E0\u00E1\u00E3\u00E8\u00E9\u00EC\u00ED\u00F2\u00F3\u00F5\u00F9\u00FA\u00FD\u0128\u0129\u0168\u0169";
+    for (char32_t c = 0x1EA0; c <= 0x1EF9; ++c)
+        vietnamese += c;
+    // 2. Each font file the skin names.
+    const std::filesystem::path assets = UMBRA_LASTCURTAIN_ASSETS;
+    std::ifstream skinFile(assets / "ui/skin.json");
+    const nlohmann::json skin = nlohmann::json::parse(skinFile);
+    for (const auto &[role, face] : skin["fonts"].items())
+    {
+        std::ifstream in(assets / face["file"].get<std::string>(), std::ios::binary);
+        const std::vector<unsigned char> ttf{std::istreambuf_iterator<char>(in), {}};
+        INFO(role);
+        CHECK(umbra::ui::MissingGlyphs(ttf, vietnamese).empty());
+    }
 }

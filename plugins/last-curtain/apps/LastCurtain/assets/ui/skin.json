@@ -3,19 +3,19 @@
   "version": 1,
   "fonts": {
     "body": {
-      "file": "ui/fonts/Poppins-Regular.ttf",
+      "file": "ui/fonts/BeVietnamPro-Regular.ttf",
       "size": 18
     },
     "small": {
-      "file": "ui/fonts/Poppins-Regular.ttf",
+      "file": "ui/fonts/BeVietnamPro-Regular.ttf",
       "size": 15
     },
     "strong": {
-      "file": "ui/fonts/Poppins-Medium.ttf",
+      "file": "ui/fonts/BeVietnamPro-Medium.ttf",
       "size": 18
     },
     "title": {
-      "file": "ui/fonts/AbrilFatface-Regular.ttf",
+      "file": "ui/fonts/PlayfairDisplay.ttf",
       "size": 32
     },
     "heading": {
@@ -23,11 +23,11 @@
       "size": 22
     },
     "tag": {
-      "file": "ui/fonts/Poppins-Medium.ttf",
+      "file": "ui/fonts/BeVietnamPro-Medium.ttf",
       "size": 14
     },
     "essence": {
-      "file": "ui/fonts/AbrilFatface-Regular.ttf",
+      "file": "ui/fonts/PlayfairDisplay.ttf",
       "size": 44
     }
   },

@@ -51,6 +51,7 @@ ComfyUI and their models.
 | llama.cpp and ggml (the living town's built-in model, when the build has them) | https://github.com/ggml-org/llama.cpp | MIT |
 | `audio/*.wav` | Synthesized by `plugins/third-person/tools/make_sounds.py` (sine waves and noise); `audio/swing.wav` by `tools/audio/make_swing.py` (filtered noise) | Project's own |
 | `ui/fonts/Poppins-*.ttf`, `ui/fonts/Lora.ttf` | Google Fonts (rpg-ui plugin) | SIL Open Font License 1.1 (license files next to the fonts) |
+| The Last Curtain's `apps/LastCurtain/assets/ui/fonts/`: `BeVietnamPro-*.ttf`, `PlayfairDisplay.ttf`, `Lora.ttf` | Google Fonts (google/fonts, pinned commit in that folder's `README.md`) | SIL Open Font License 1.1 (license files next to the fonts); "Playfair Display" is a Reserved Font Name |
 | `ui/images/target-arrow.png` | Drawn for this project (S4) | Project's own |
 | `textures/sample_bricks.png` | Drawn by `tools/textures/make_sample_bricks.py` | Project's own |
 | `policies/*.policy.json` | Trained for this project (`tools/policy`) | Project's own |

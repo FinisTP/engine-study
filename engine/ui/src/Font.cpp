@@ -190,4 +190,20 @@ namespace umbra::ui
         }
         return size;
     }
+
+    std::u32string MissingGlyphs(const std::vector<unsigned char> &ttf, const std::u32string &wanted)
+    {
+        // 1. Same check as Build: stb_truetype trusts its input.
+        const auto tag = [&](const char *t) { return ttf.size() >= 64 && std::equal(t, t + 4, ttf.begin()); };
+        stbtt_fontinfo info;
+        const bool known = tag("\x00\x01\x00\x00") || tag("true") || tag("OTTO") || tag("ttcf");
+        if (!known || !stbtt_InitFont(&info, ttf.data(), stbtt_GetFontOffsetForIndex(ttf.data(), 0)))
+            return wanted;
+        // 2. Glyph index 0 is the font's "missing" box.
+        std::u32string missing;
+        for (const char32_t c : wanted)
+            if (stbtt_FindGlyphIndex(&info, static_cast<int>(c)) == 0)
+                missing += c;
+        return missing;
+    }
 }

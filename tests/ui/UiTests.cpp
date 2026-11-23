@@ -67,6 +67,16 @@ TEST_CASE("Fonts are packed into one atlas with a white block; text is measured 
     CHECK(core::HasErrors(bad));
 }
 
+TEST_CASE("MissingGlyphs names the letters a font lacks (campaign plan 1)")
+{
+    assets::AssetFolders plugin(UMBRA_RPG_UI_ASSETS);
+    std::ifstream in(plugin / "ui/fonts/Lora.ttf", std::ios::binary);
+    const std::vector<unsigned char> lora{std::istreambuf_iterator<char>(in), {}};
+    CHECK(ui::MissingGlyphs(lora, U"A\u01B0\u1EE3").empty()); // A, u-horn, o-horn with a dot
+    CHECK(ui::MissingGlyphs(lora, U"\u4E2D") == U"\u4E2D");    // a CJK letter Lora lacks
+    CHECK(ui::MissingGlyphs({1, 2, 3}, U"ab") == U"ab");         // not a font
+}
+
 TEST_CASE("Screen files are checked; problems name the field (S3.2)")
 {
     ui::Screen screen;

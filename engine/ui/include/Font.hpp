@@ -61,4 +61,7 @@ namespace umbra::ui
 
     // Next code point of UTF-8 text (bad bytes become U+FFFD); advances `at`.
     char32_t NextCodePoint(std::string_view text, std::size_t &at);
+
+    // The code points of `wanted` the font has no glyph for (all of them if `ttf` is not a font).
+    [[nodiscard]] std::u32string MissingGlyphs(const std::vector<unsigned char> &ttf, const std::u32string &wanted);
 }

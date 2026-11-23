@@ -17,6 +17,7 @@ target_link_libraries(
         Umbra::NightMind
         Umbra::Assets
         Umbra::Scene
+        Umbra::Ui
         Umbra::Warnings
         Umbra::Sanitizers
         Catch2::Catch2WithMain
