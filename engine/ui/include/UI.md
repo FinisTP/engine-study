@@ -77,6 +77,10 @@ the top (a portrait keeps its face). `FitPicture` in `Painter.hpp` does the arit
 `contain` scales by `min(boxW / w, boxH / h)`, `cover` by the `max`, and the shown part of the
 picture is `box / (size * scale)` of it in uv.
 
+`flip` (`true` or a binding) mirrors the picture left to right, e.g. a portrait on the right that
+faces the middle. `tint` (`"#rrggbbaa"` or a binding) multiplies the picture's colour, on top of the
+style's `tint`, e.g. a dimmed listener. A tint that is not a colour is refused, naming the field.
+
 ### Tips
 
 `tip` is text (with bindings) told while the mouse is over the widget, disabled or not:

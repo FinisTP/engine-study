@@ -1,4 +1,5 @@
 #include <Screen.hpp>
+#include <Skin.hpp>
 
 #include <set>
 
@@ -9,7 +10,7 @@ namespace umbra::ui
         const std::set<std::string> types{"panel", "stack", "text", "bar", "image", "button", "list", "spacer", "field"};
         const std::set<std::string> anchors{"top-left", "top", "top-right", "left", "center", "right", "bottom-left", "bottom", "bottom-right", "fill"};
         const std::set<std::string> known{"type", "id", "anchor", "offset", "size", "style", "direction", "align", "gap", "columns", "text", "textAlign", "wrap",
-                                          "visible", "disabled", "selected", "tip", "fit", "value", "max", "image", "action", "arg", "items", "as", "entry", "children", "at", "placeholder"};
+                                          "visible", "disabled", "selected", "tip", "fit", "value", "max", "image", "action", "arg", "items", "as", "entry", "children", "at", "placeholder", "flip", "tint"};
 
         struct Reader final
         {
@@ -86,6 +87,11 @@ namespace umbra::ui
                 node.max = Text(j, "max", where, node.type == "field" ? "24" : "1"); // bar: its full value; field: most letters
                 node.placeholder = Text(j, "placeholder", where);
                 node.image = Text(j, "image", where);
+                // 1. flip: true, false or a binding; tint: "#rrggbb(aa)" or a binding.
+                node.flip = j.contains("flip") && j["flip"].is_boolean() ? (j["flip"].get<bool>() ? "true" : "") : Text(j, "flip", where);
+                node.tint = Text(j, "tint", where);
+                if (!node.tint.empty() && node.tint.front() != '{' && !ParseColor(node.tint))
+                    Error(where + ".tint", "expected a colour \"#rrggbb\" or \"#rrggbbaa\", or a binding");
                 node.action = Text(j, "action", where);
                 node.arg = Text(j, "arg", where);
                 node.items = Text(j, "items", where);

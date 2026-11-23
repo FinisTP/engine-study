@@ -33,6 +33,7 @@ namespace umbra::ui
         std::string value, max;           // bar; field: max = most letters (default 24)
         std::string placeholder;          // field: shown dimmed while it is empty
         std::string image;                // asset path (may contain bindings)
+        std::string flip, tint;           // image: mirror left-right (binding or true); colour "#rrggbbaa" or a binding
         std::string action, arg;          // button or list entry: what the game gets when it is chosen
         std::string items, as = "item";   // list: an array binding and the name of each entry
         std::string at;                   // list entry: "{target.at}" = [x, y] pixels; the entry sits centered above that point

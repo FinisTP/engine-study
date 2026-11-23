@@ -438,8 +438,15 @@ namespace umbra::ui
         {
             if (const ImageRef image = images_(c.Text(node.image)); image.texture)
             {
-                const Fitted f = FitPicture(inner, image.size, node.fit);
-                c.painter.Image(f.rect, image.texture, style.tint, f.uv0, f.uv1);
+                Fitted f = FitPicture(inner, image.size, node.fit);
+                // 1. Mirrored: the picture's left and right swap.
+                if (!node.flip.empty() && c.Truthy(node.flip))
+                    std::swap(f.uv0.x, f.uv1.x);
+                // 2. Tinted: the node's colour times the style's.
+                glm::vec4 tint = style.tint;
+                if (!node.tint.empty())
+                    tint *= ParseColor(c.Text(node.tint)).value_or(glm::vec4{1.0F});
+                c.painter.Image(f.rect, image.texture, tint, f.uv0, f.uv1);
             }
         }
         else if (node.type == "panel")

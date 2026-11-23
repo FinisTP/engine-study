@@ -516,3 +516,41 @@ TEST_CASE("A text field takes typed letters, Vietnamese too; backspace, a letter
     noId["root"]["children"][0].erase("id");
     CHECK_FALSE(ui::ParseScreen(noId, "name", "name.ui.json", parsed, bad));
 }
+
+TEST_CASE("An image can be mirrored and tinted (UI.md Images)")
+{
+    // 1. Two images of one picture: the first mirrored by a binding, the second tinted half grey.
+    const json screen{{"format", "umbra.ui"}, {"version", 1},
+                      {"root", {{"type", "stack"}, {"anchor", "top-left"}, {"children", {
+                          {{"type", "image"}, {"image", "pic.png"}, {"size", {100, 50}}, {"flip", "{left}"}},
+                          {{"type", "image"}, {"image", "pic.png"}, {"size", {100, 50}}, {"tint", "#80808080"}}}}}}};
+    ui::UiSystem uiSystem;
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(uiSystem.Load(TestProject("flip", {{"pics", screen}}), diagnostics));
+    REQUIRE(uiSystem.Open("pics"));
+    core::TextureHandle picture;
+    picture.index = 7;
+    picture.generation = 1;
+    uiSystem.SetImageLoader([&](const std::string &) { return ui::ImageRef{picture, {2.0F, 1.0F}}; });
+    core::UiDrawList draw;
+    uiSystem.Update(json{{"left", true}}, {1280, 720}, {}, draw);
+    // 2. The picture's quads in order: the first starts at u = 1 (mirrored), the second at u = 0 and half bright.
+    std::vector<const core::UiVertex *> firsts;
+    for (const core::UiBatch &b : draw.batches)
+        if (b.texture == picture)
+            for (std::uint32_t i = 0; i < b.indexCount; i += 6)
+                firsts.push_back(&draw.vertices[b.firstVertex + draw.indices[b.firstIndex + i]]);
+    REQUIRE(firsts.size() == 2);
+    CHECK(firsts[0]->uv.x == 1.0F);
+    CHECK(firsts[1]->uv.x == 0.0F);
+    CHECK((firsts[1]->color & 0xFFu) == 0x80u);
+    CHECK((firsts[1]->color >> 24) == 0x80u);
+    // 3. A bad tint is refused and named.
+    json bad = screen;
+    bad["root"]["children"][1]["tint"] = "#zz";
+    ui::Screen parsed;
+    std::vector<core::Diagnostic> found;
+    CHECK_FALSE(ui::ParseScreen(bad, "pics", "pics.ui.json", parsed, found));
+    REQUIRE_FALSE(found.empty());
+    CHECK(found.back().field == "root.children[1].tint");
+}
