@@ -1,0 +1,7 @@
+id,name,sprite,bound,form,voice
+player,{player},player_female,,player,
+lethanh,Lệ Thanh,lethanh,,host,lethanh
+ti,Bé Tí,ti,ti_bound,strung,ti
+bao,Bác sĩ Bảo,cafe_bao,,ghost,bao
+mai,Bà Mai,cafe_mai,,ghost,mai
+rat,Con Chuột,zodiac_rat,,zodiac,

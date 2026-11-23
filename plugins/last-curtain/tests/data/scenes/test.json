@@ -1,0 +1,15 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "test",
+  "lines": [
+    {"id": "a", "text": "Đêm ấy, nhà hát tối om.", "enter": [{"who": "lethanh", "side": "left", "slot": 0, "face": "calm"}]},
+    {"id": "b", "speaker": "lethanh", "face": "talk", "text": "Chào {anh/chị} {player}.", "enter": [{"who": "ti", "side": "right", "slot": 0, "face": "afraid"}]},
+    {"id": "c", "speaker": "ti", "face": "afraid", "text": "Cứu em!", "choices": [
+      {"text": "Ừ, anh cứu em.", "fact": "ti.promise", "value": "kept", "jump": "d"},
+      {"text": "Im lặng.", "fact": "ti.promise", "value": "none", "jump": "e"}]},
+    {"id": "d", "speaker": "ti", "face": "happy", "text": "Cảm ơn!", "jump": "f"},
+    {"id": "e", "speaker": "ti", "face": "calm", "text": "..."},
+    {"id": "f", "speaker": "lethanh", "face": "calm", "text": "Đi thôi.", "leave": ["ti"]}
+  ]
+}

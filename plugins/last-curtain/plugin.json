@@ -16,7 +16,8 @@
     "match",
     "matchbots",
     "cafe",
-    "talkmind"
+    "talkmind",
+    "campaign"
   ],
   "links": [
     "Umbra::Night",
@@ -26,6 +27,7 @@
     "Umbra::Match",
     "Umbra::MatchBots",
     "Umbra::Cafe",
-    "Umbra::TalkMind"
+    "Umbra::TalkMind",
+    "Umbra::Campaign"
   ]
 }

@@ -58,3 +58,13 @@ target_compile_features(UmbraTalkMindTests PRIVATE cxx_std_20)
 target_link_libraries(UmbraTalkMindTests PRIVATE Umbra::TalkMind Umbra::Warnings Umbra::Sanitizers Catch2::Catch2WithMain)
 umbra_copy_asan_runtime(UmbraTalkMindTests)
 add_test(NAME Umbra.TalkMind COMMAND UmbraTalkMindTests)
+
+# The campaign: cast, scenes (modules/campaign/include/Campaign.md), headless.
+add_executable(UmbraCampaignTests)
+target_sources(UmbraCampaignTests PRIVATE CampaignTests.cpp)
+target_compile_definitions(UmbraCampaignTests PRIVATE UMBRA_CAMPAIGN_DATA="${CMAKE_CURRENT_SOURCE_DIR}/../assets/campaign"
+                                                      UMBRA_CAMPAIGN_TEST_DATA="${CMAKE_CURRENT_SOURCE_DIR}/data")
+target_compile_features(UmbraCampaignTests PRIVATE cxx_std_20)
+target_link_libraries(UmbraCampaignTests PRIVATE Umbra::Campaign Umbra::Warnings Umbra::Sanitizers Catch2::Catch2WithMain)
+umbra_copy_asan_runtime(UmbraCampaignTests)
+add_test(NAME Umbra.Campaign COMMAND UmbraCampaignTests)
