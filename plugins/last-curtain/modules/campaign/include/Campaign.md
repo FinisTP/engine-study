@@ -111,6 +111,14 @@ A stage's `gimmicks` object; a twist's `gimmicks` replace the stage's keys of th
 
 `Sync(BuiltStage&)` gives spawned units a name, height and plain behaviour; call it after each action.
 
+## Scenes inside a fight
+
+`StageMoments(def, stage, told, moments)` returns the scene ids whose moments the fight has reached,
+each once per attempt (a fresh `Moments` for each try): `start`, `round:<n>`, then from the told log
+lines `firstAttacked:<id>` (a blow), `falls:<id>`, `freed:<id>`, then `end` once all is told. It only
+reads. The stage screen calls it when `MatchPlay::Quiet()` (no battle on the table, every line told),
+pauses the fight (`Pause`), plays the scenes on the dialog screen and resumes.
+
 ## The enemy brain
 
 `EnemyAction(def, built, state, level)`: an **aggressive** unit holds (ends its turn) until round

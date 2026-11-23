@@ -21,6 +21,12 @@ the monsters' phase), it plays out in beats like a bot's.
 `Skip` (the `skip` action on the main screen) tells everything at once and runs the bots to the
 player's next turn.
 
+## Pausing for a scene (campaign plan 4)
+
+`Pause(true)` stops `Update`: no beat, no bot, no banner. `Quiet()` is true between told beats: every
+log line shown, no battle on the table, no banner. `Told()` is how many log lines were shown; the
+campaign's `StageMoments` reads only those, so a scene never runs ahead of what the person saw.
+
 ## The player's turn (the prototype's flow)
 
 1. **Move.** `reach` lists every square the acting character can walk to (breadth first, `Check`

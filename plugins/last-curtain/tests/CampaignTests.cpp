@@ -1,8 +1,10 @@
 #include <Campaign.hpp>
+#include <MatchSave.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
 #include <fstream>
 #include <functional>
 
@@ -585,4 +587,35 @@ TEST_CASE("A stage's gimmicks are checked and set up in its fight; twists overri
     campaign::Sync(b);
     CHECK(b.who.back() == "rat_specter");
     CHECK(b.behaviour.size() == b.state.units.size());
+}
+
+TEST_CASE("A fight's moments start their scenes once each, only when told (campaign plan 4)")
+{
+    const match::MatchDef def = MatchData();
+    campaign::StageDef stage = TestStage();
+    stage.scenes = {{"start", "a"}, {"firstAttacked:rat", "b"}, {"falls:rat", "c"}, {"round:2", "d"}, {"end", "e"}, {"freed:ti", "f"}};
+    campaign::BuiltStage b = campaign::BuildStage(def, TheCast(), TheGrowth(), stage, {{"player", 3, {}}}, 0, {}, 7);
+    match::MatchState &s = b.state;
+    campaign::Moments m;
+    const auto at = [&](const char *who) { return static_cast<std::int16_t>(std::ranges::find(b.who, who) - b.who.begin()); };
+    const std::int16_t rat = at("rat"), ti = at("ti");
+    // 1. The start, once.
+    CHECK(campaign::StageMoments(stage, b, s.log.size(), m) == std::vector<std::string>{"a"});
+    CHECK(campaign::StageMoments(stage, b, s.log.size(), m).empty());
+    // 2. A blow on the rat: only once it is told, and only the first.
+    const std::size_t before = s.log.size();
+    s.log.push_back({match::LogKind::Blow, 0, rat, 3});
+    CHECK(campaign::StageMoments(stage, b, before, m).empty());
+    CHECK(campaign::StageMoments(stage, b, s.log.size(), m) == std::vector<std::string>{"b"});
+    s.log.push_back({match::LogKind::Blow, 0, rat, 3});
+    CHECK(campaign::StageMoments(stage, b, s.log.size(), m).empty());
+    // 3. A round reached, a fall, a freeing, the end; the state is not touched.
+    s.round = 2;
+    s.log.push_back({match::LogKind::Freed, 0, ti, 0});
+    s.log.push_back({match::LogKind::Down, rat, 0, 0});
+    s.over = true;
+    const nlohmann::json saved = match::SaveMatch(s);
+    CHECK(campaign::StageMoments(stage, b, s.log.size(), m) == std::vector<std::string>{"d", "f", "c", "e"});
+    CHECK(match::SaveMatch(s) == saved);
+    CHECK(campaign::StageMoments(stage, b, s.log.size(), m).empty());
 }

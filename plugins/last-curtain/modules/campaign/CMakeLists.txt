@@ -10,7 +10,7 @@ target_sources(
         src/Units.cpp
         src/Stage.cpp
         src/Build.cpp
-        src/Brain.cpp
+        src/Brain.cpp src/Moments.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include

@@ -813,3 +813,40 @@ TEST_CASE("A brain set from outside plays the other side (campaign plan 4)", "[m
     CHECK(asked > 0);
     CHECK(p.PlayerTurn());
 }
+
+TEST_CASE("A paused fight stands still; it is quiet only between told beats (campaign plan 4)", "[match][play]")
+{
+    const MatchDef def = Data();
+    MatchState s = NewMatch(def, 7, {MatchDef::Find(def.characters, "bao"), MatchDef::Find(def.characters, "khang"), MatchDef::Find(def.characters, "mai")});
+    while (s.units[static_cast<std::size_t>(Current(s))].faction == 0)
+        REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
+    MatchPlay p(def, s, BotLevel::Medium);
+    p.SetWords(Words());
+    p.SetOptions(Pace());
+    // 1. Paused: nothing moves however long it waits.
+    p.Pause(true);
+    const std::size_t lines = p.State().log.size();
+    const int turn = p.State().turn;
+    for (int i = 0; i < 20; ++i)
+        p.Update(2.0F);
+    CHECK(p.State().log.size() == lines);
+    CHECK(p.State().turn == turn);
+    // 2. Resumed: the bots play; whenever a battle is on the table, it is not quiet.
+    p.Pause(false);
+    bool sawBattle = false;
+    for (int i = 0; i < 400 && !p.PlayerTurn(); ++i)
+    {
+        p.Update(0.1F);
+        if (p.Screen() == "battle")
+        {
+            sawBattle = true;
+            CHECK_FALSE(p.Quiet());
+        }
+        CHECK(p.Told() <= p.State().log.size());
+    }
+    CHECK(p.PlayerTurn());
+    for (int i = 0; i < 100 && !p.Quiet(); ++i)
+        p.Update(0.5F);
+    CHECK(p.Quiet());
+    (void)sawBattle;
+}

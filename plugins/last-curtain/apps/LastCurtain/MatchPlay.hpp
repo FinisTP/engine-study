@@ -30,6 +30,11 @@ public:
     // Who plays the units that aren't the player's (a campaign stage's enemy brain); default the faction bots.
     void SetBrain(std::function<umbra::match::Action(const umbra::match::MatchState &)> brain) { brain_ = std::move(brain); }
 
+    // A campaign scene over the fight (campaign plan 4): paused, nothing moves; Quiet is between told beats.
+    void Pause(bool paused) { paused_ = paused; }
+    [[nodiscard]] bool Quiet() const;
+    [[nodiscard]] std::size_t Told() const { return shown_; } // log entries the person has seen
+
     bool Do(const umbra::match::Action &action); // the player's action; false unless it is theirs and legal
     void Update(float dt);
     [[nodiscard]] bool PlayerTurn() const;
@@ -91,7 +96,7 @@ private:
     float banner_ = 0.0F, clock_ = 0.0F, wait_ = 0.0F;
     bool bannerOn_ = false, logOpen_ = true;
     int hover_ = -1, chosen_ = -1, armedKey_ = -1;
-    bool watch_ = false;
+    bool watch_ = false, paused_ = false;
     std::string armed_; // "attack" or "ability:<slot>"
     std::string lastBlow_, eventResult_, treasureResult_; // the battle's last blow; the event's outcome; the card turned
     int eventCell_ = -1;

@@ -139,6 +139,17 @@ namespace umbra::campaign
         std::string spawnWho;       // what a window lets out (its cast id)
     };
 
+    // Which of a stage's scenes have played this attempt, and how much of the log was read.
+    struct Moments
+    {
+        std::set<std::string> done;
+        std::size_t read = 0;
+    };
+
+    // The scenes whose moments the fight has reached in its first `told` log lines, each once per attempt:
+    // start, round:<n>, then firstAttacked/falls/freed:<cast id> in log order, then end. Reads only.
+    std::vector<std::string> StageMoments(const StageDef &def, const BuiltStage &stage, std::size_t told, Moments &m);
+
     // After play adds units (a window's spawn), gives them their name, height and a plain behaviour.
     void Sync(BuiltStage &stage);
 

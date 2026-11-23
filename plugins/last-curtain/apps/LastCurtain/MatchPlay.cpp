@@ -224,9 +224,14 @@ bool MatchPlay::Do(const Action &action)
     return true;
 }
 
+bool MatchPlay::Quiet() const
+{
+    return shown_ == s_.log.size() && !s_.battle.on && fight_[0] < 0 && !bannerOn_;
+}
+
 void MatchPlay::Update(float dt)
 {
-    if (dt <= 0.0F)
+    if (dt <= 0.0F || paused_)
         return;
     diceLeft_ = std::max(0.0F, diceLeft_ - dt);
     if ((focusLeft_ -= dt) <= 0.0F)
