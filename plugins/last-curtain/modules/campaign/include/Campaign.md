@@ -58,3 +58,16 @@ the restored opera house; the guide's torch dies; Lệ Thanh in a red bridal áo
 knows the player's name; the house is "full tonight" in front of empty seats; she is gone and a red
 string creaks down (into T1). Its one choice sets `lethanh.first` to `kind` or `wary`, which colours one
 café line later (plan 6).
+
+## Units
+
+`assets/campaign/growth.csv` holds each class line by level (1–15): HP +2 a level (as the match's
+`levels.hp`), Attack +1 at levels 4, 7, 10, 13, Defence +1 at 5, 9, 13, Speed +1 at 6 and 12; level 1 is
+the match's `characters.csv` line. `cast.csv` adds `role` (the line), `hpPlus`, `attackPlus`, `movePlus`
+(the character's own changes) and `kit` (ability ids joined by `;`; empty: the class's abilities up to
+its level, from `jobs.csv`).
+
+`MakeUnit(def, cast, growth, id, level, faction, enemy)` builds the fighting unit. An enemy is scaled by
+its form: a **zodiac's attack and HP ×1.33**, an **ordinary ghost's ×0.6** (rounded). Allies never are.
+At level 3: the Rat (attacker) 8 attack and 32 HP; an ordinary ghost attacker 4 attack and 14 HP; Tí
+(speedster, HP −2, Move +2) 20 HP and 12 move.

@@ -2,6 +2,7 @@
 #include <Csv.hpp>
 
 #include <array>
+#include <cstdlib>
 
 namespace umbra::campaign
 {
@@ -43,6 +44,18 @@ namespace umbra::campaign
             const auto cell = [&](int i) { return static_cast<std::size_t>(col[i]) < row.size() ? row[col[i]] : std::string(); };
             const std::string where = "rows[" + std::to_string(r) + "].";
             CastMember m{cell(0), cell(1), cell(2), cell(3), Form::Ghost, cell(5)};
+            // 1. The class line and this character's changes to it (optional columns).
+            const auto opt = [&](const char *name) { const int c = table.Column(name); return c >= 0 && static_cast<std::size_t>(c) < row.size() ? row[static_cast<std::size_t>(c)] : std::string(); };
+            const auto num = [&](const char *name) { const std::string v = opt(name); return v.empty() ? 0 : std::atoi(v.c_str()); };
+            if (!opt("role").empty())
+                m.role = opt("role");
+            m.hpPlus = num("hpPlus"), m.attackPlus = num("attackPlus"), m.movePlus = num("movePlus");
+            for (std::string kit = opt("kit"); !kit.empty();)
+            {
+                const std::size_t semi = kit.find(';');
+                m.kit.push_back(kit.substr(0, semi));
+                kit = semi == std::string::npos ? std::string() : kit.substr(semi + 1);
+            }
             if (m.id.empty() || out.Find(m.id))
                 error(where + "id", "each row needs its own id");
             std::size_t f = 0;

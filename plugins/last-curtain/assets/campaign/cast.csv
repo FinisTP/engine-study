@@ -1,8 +1,14 @@
-id,name,sprite,bound,form,voice
-player,{player},player_female,,player,
-lethanh,Lệ Thanh,lethanh,,host,lethanh
-ti,Bé Tí,ti,ti_bound,strung,ti
-bao,Bác sĩ Bảo,cafe_bao,,ghost,bao
-mai,Bà Mai,cafe_mai,,ghost,mai
-rat,Con Chuột,zodiac_rat,,zodiac,
-nameless,Linh,,,player,
+id,name,sprite,bound,form,voice,role,hpPlus,attackPlus,movePlus,kit
+player,{player},player_female,,player,,allrounder,0,0,0,
+lethanh,Lệ Thanh,lethanh,,host,lethanh,supporter,0,0,0,
+ti,Bé Tí,ti,ti_bound,strung,ti,speedster,-2,0,2,
+bao,Bác sĩ Bảo,cafe_bao,,ally,bao,attacker,0,0,0,
+mai,Bà Mai,cafe_mai,,ally,mai,supporter,0,0,0,
+rat,Con Chuột,zodiac_rat,,zodiac,,attacker,0,0,0,
+keeper,Người giữ tranh,ghost_defender,,ghost,,defender,0,0,0,
+ghost_attacker,Bóng ma,ghost_attacker,,ghost,,attacker,0,0,0,
+ghost_defender,Bóng ma,ghost_defender,,ghost,,defender,0,0,0,
+ghost_speedster,Bóng ma,ghost_speedster,,ghost,,speedster,0,0,0,
+ghost_supporter,Bóng ma,ghost_supporter,,ghost,,supporter,0,0,0,
+rat_specter,Bóng chuột,specter,,ghost,,speedster,0,0,0,
+nameless,Linh,,,player,,allrounder,0,0,0,

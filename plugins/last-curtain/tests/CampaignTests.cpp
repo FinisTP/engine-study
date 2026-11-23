@@ -253,3 +253,49 @@ TEST_CASE("The prologue loads and plays to the end both ways through its choice"
             CHECK(text.find('{') == std::string::npos);
     }
 }
+
+namespace
+{
+    match::MatchDef MatchData()
+    {
+        match::MatchDef def;
+        std::vector<core::Diagnostic> d;
+        REQUIRE(match::LoadMatch(UMBRA_MATCH_DATA, def, d));
+        return def;
+    }
+}
+
+TEST_CASE("Class lines by level, and units made from the cast with their adjustments and the enemy scaling (campaign plan 4)")
+{
+    const match::MatchDef def = MatchData();
+    const campaign::Cast cast = TheCast();
+    campaign::Growth growth;
+    std::vector<core::Diagnostic> d;
+    REQUIRE(campaign::LoadGrowth(data / "growth.csv", growth, d));
+    // 1. Level 1 is the match's class line; HP grows 2 a level.
+    const match::Unit p = campaign::MakeUnit(def, cast, growth, "player", 1, 0, false);
+    CHECK(p.maxHp == 24);
+    CHECK(p.attack == 4);
+    CHECK(p.move == 8);
+    // 2. Ti at level 3: the Speedster line, HP -2 and Move +2.
+    const match::Unit ti = campaign::MakeUnit(def, cast, growth, "ti", 3, 0, false);
+    CHECK(ti.maxHp == 20);
+    CHECK(ti.attack == 4);
+    CHECK(ti.defence == 2);
+    CHECK(ti.speed == 6);
+    CHECK(ti.move == 12);
+    // 3. Enemies: a zodiac's attack and HP x1.33, an ordinary ghost's x0.6 (rounded).
+    const match::Unit rat = campaign::MakeUnit(def, cast, growth, "rat", 3, 1, true);
+    CHECK(rat.attack == 8);
+    CHECK(rat.maxHp == 32);
+    CHECK(rat.faction == 1);
+    const match::Unit ghost = campaign::MakeUnit(def, cast, growth, "ghost_attacker", 3, 1, true);
+    CHECK(ghost.attack == 4);
+    CHECK(ghost.maxHp == 14);
+    // 4. Allies are never scaled; abilities are the class's up to the level.
+    CHECK(campaign::MakeUnit(def, cast, growth, "bao", 3, 0, false).attack == 6);
+    CHECK(p.abilities[0] >= 0);
+    // 5. A broken line is refused.
+    campaign::Growth bad;
+    CHECK_FALSE(campaign::LoadGrowth(Write("growth.csv", "role,level,hp,attack,defence,speed,move\nwizard,1,1,1,1,1,1\n"), bad, d));
+}

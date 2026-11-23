@@ -7,6 +7,7 @@ target_sources(
         src/Cast.cpp
         src/Scene.cpp
         src/ScenePlayer.cpp
+        src/Units.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
@@ -23,6 +24,7 @@ target_link_libraries(
     UmbraCampaign
     PUBLIC
         Umbra::Core
+        Umbra::Match
         nlohmann_json::nlohmann_json
     PRIVATE
         Umbra::Night

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Diagnostic.hpp>
+#include <Match.hpp>
+#include <MatchDef.hpp>
 
 #include <array>
 #include <cstdint>
@@ -28,6 +30,9 @@ namespace umbra::campaign
         std::string id, name, sprite, bound; // bound: the sprite while strung ("" = none)
         Form form = Form::Ghost;
         std::string voice;
+        std::string role = "allrounder";     // the class line (growth.csv)
+        int hpPlus = 0, attackPlus = 0, movePlus = 0; // this character's change to its line
+        std::vector<std::string> kit;        // its abilities; empty: the class's up to its level
     };
 
     struct Cast
@@ -37,6 +42,18 @@ namespace umbra::campaign
     };
 
     bool LoadCast(const std::filesystem::path &file, Cast &cast, std::vector<core::Diagnostic> &d);
+
+    // growth.csv: each class line's numbers at each level (Campaign.md "Units").
+    struct Growth
+    {
+        std::map<std::pair<std::string, int>, std::array<int, 5>> lines; // (role, level) -> hp, attack, defence, speed, move
+    };
+
+    bool LoadGrowth(const std::filesystem::path &file, Growth &growth, std::vector<core::Diagnostic> &d);
+
+    // A fighting unit for a cast member at a level: its class line, its own changes, and for an
+    // enemy the form's scaling (zodiac attack and HP x1.33, ordinary ghost x0.6).
+    match::Unit MakeUnit(const match::MatchDef &def, const Cast &cast, const Growth &growth, const std::string &id, int level, int faction, bool enemy);
 
     enum class Side : std::uint8_t
     {
