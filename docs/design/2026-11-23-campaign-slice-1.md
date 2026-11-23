@@ -164,9 +164,9 @@ balance targets stay as they are.
   user), so Tí's freeing is never contested there; enemy revives come in later stages.
 - **Lệ Thanh's rite of resurrection** (the user, 2026-11-23): an early power that **revives every unit
   on the player's side to full HP, once in the whole game**, so a late game over doesn't have to cost
-  the whole stage. (accepted: it is unlocked after T3, where falls are taught; while unused it appears as a
-  choice on the game-over screen (*Lễ cầu hồn*), and the fight goes on where it stopped; its use is
-  written to the save at once, so losing the stage afterwards doesn't give it back.)
+  the whole stage. (accepted: it is unlocked after T3, where falls are taught; while unused it appears
+  as a choice on the game-over screen (*Lễ cầu hồn*), and the fight goes on where it stopped.) **Once
+  used it stays used, win or lose** (the user): the one thing a lost stage doesn't undo.
 - **Strings and the gold knot** (the user, 2026-11-23). Red strings mark a zodiac's control; the gold
   knot marks a person to free (recruits and boon givers).
   1. **Freeing:** a gold-knot specter **falls at 0 HP** like anyone; it is freed when its strings are
@@ -176,12 +176,14 @@ balance targets stay as they are.
      fall is game over, at risk.
   3. **Never cut, or removed for good** by a removal ability: **it is gone for good** (the user,
      2026-11-23): it doesn't come back in later stages. The only way to recruit it is to replay its
-     stage and free it there.
+     stage and free it there. In the finale, Lệ Thanh's stage, every recruit never freed returns as
+     an enemy and can't be freed there (the user, 2026-11-23).
   4. **Freeing isn't needed to win:** the stage is won when the zodiac falls, but a specter still strung
      then is gone (rule 3). **Stage 1 is the exception** (the user, 2026-11-23, replacing the earlier
      "no exception"): **freeing Tí is part of winning it**, so the player has to reach Tí and cut him
      free, which teaches the recruit mechanic. The stage is won when Tí is freed **and** the Rat is
-     defeated.
+     defeated. **If the Rat falls while Tí is still strung, Tí is trapped for good and the stage is
+     lost** (the user): a game over, and the retry starts the stage over.
   5. **Ordinary red ghosts:** strings don't matter in this slice; they are simply defeated. Later,
      cutting a fallen one may send it to the café and shrink the finale's audience.
   6. **Zodiacs drawing power from their strings:** not in this slice; kept for later bosses (the user).
@@ -189,10 +191,12 @@ balance targets stay as they are.
      strings until cut; cutting plays a snap and the warm gold light.
   The freeing is logged with when, where and what happened, for the café to remember (only the player
   cuts, so "who" is always the player).
-- **Lệ Thanh's hint** (the user, 2026-11-23, simplified): she gives hints **only at the start of a
-  stage**, in the opening scene and the hint line (in Stage 1: Tí must be cut free to win). There are no warnings during the fight (an earlier list of in-fight warnings was dropped
-  to keep the plan simple). The hint is data (`aims` in the stage file). The recap after the fight
-  names anyone left strung.
+- **Hints and scenes during a fight** (the user, 2026-11-23, replacing "hints only at the start"): a
+  dialog scene (7.11) may come in at any moment of a fight, set off by the stage file. The stage-start
+  hint stays (in Stage 1: Tí must be cut free first), tutorials show their teaching beats when they
+  first matter, and characters speak in the fight for the story, e.g. the Rat when he is first
+  attacked: "Tao cần tiền, Lệ Thanh, mau đưa tiền cho tao!" The recap after the fight names anyone
+  left strung.
 
 ### 7.4 Stage files (`campaign` module, `assets/campaign/stages/*.json`)
 
@@ -227,7 +231,10 @@ and the fix, and the stage doesn't start):
 - `aims`: the stage-start hints (Lệ Thanh's voice), the teaching beats (what each tutorial
   teaches, shown when it first matters), and the recap after the fight.
 - `scenes`: the dialog scenes (7.11) at the start and end, and the ones a moment in the fight sets
-  off (a unit falls, a round begins, the boss drops below some HP, a freeing).
+  off (a unit is first attacked, a unit falls, a round begins, the boss drops below some HP, a
+  freeing), at any time (the user).
+- **Passive monsters see** by the board's light rule: the same room, up to 4 squares (accepted).
+  **Reinforcements** show the existing "spawns soon" marker one round ahead (accepted).
 
 **The cast sheet** (`assets/campaign/cast.csv`) links every campaign character to its stats row, its
 sprite folders (`<id>` and `<id>_bound`), its form, its voice sheet and its memory fragments. This is
@@ -251,7 +258,11 @@ where the 2026-11-23 sprites are hooked in.
 - **Enemy stats** (the user): a ghost or a zodiac is built like a player character of a class at a
   level, then scaled. A zodiac is **buffed** above that line (example: a level-3 attacker has 6
   attack; the Rat as a fighter at that level gets 8); an ordinary ghost has **about 60%** (about 4).
-  Difficulty settings later change the buff. First numbers are tuned by a campaign soak (7.10).
+  Difficulty settings later change the buff. **The Rat is a level-3 fighter**; the zodiac buff
+  multiplies attack and HP (about +33%), other stats follow the class line (accepted). If stats alone
+  don't make a zodiac hard enough, balancing may give it an ability instead (the user), e.g. the Rat's
+  *Speedkill*: double damage against an attacker slower than him. First numbers are tuned by a
+  campaign soak (7.10).
 - **Levels:** the cap rises to **15** with new XP steps in data; the player gains about **one level a
   stage** (the user); the slice reaches level 4 at most. **Recruits join at a fixed level** set in
   data; **Tí joins at level 3** (the user).
@@ -273,6 +284,12 @@ where the 2026-11-23 sprites are hooked in.
   debugging and balancing only (the user).
 - **A lost stage keeps nothing** (the user): a game over or a quit returns to the save from before
   the stage, as if the stage was never started: XP, items and **the café's timeline** are as they were.
+- **Between stages everyone's HP is restored**, fallen allies included (the user).
+- **The café shelf** (accepted) is the party's storage: items not in anyone's 4 slots wait there (Lệ
+  Thanh's gifts first). In a fight a character with 4 full slots may swap, leaving the dropped item on
+  the square (accepted). Characters keep today's number of ability slots (accepted); new abilities
+  come from levels and the story; assignment happens in the café and on the screen before a stage
+  (accepted).
 - **The flow:** title → new game (name, male or female) → T1 → T2 → T3 → Stage 1 → café → (a fight) →
   café. Between stages the player picks from a short list: the next stage, a cleared stage to replay
   for XP, or the café.
@@ -498,7 +515,8 @@ the voice test); whether the player can change class.
 4. Bosses' biding is the difficulty ramp; early bosses are passive and don't store AP (7.2).
 5. Tí acts like every other character. Lệ Thanh hints only at the start of a stage; a player who
    misses it replays the stage. This replaces the second review's "the Rat waits for Tí" and the
-   in-fight warnings (7.3).
+   in-fight warnings (7.3). *(Replaced later that day: Stage 1 needs Tí freed (section 12, answer 7)
+   and scenes may come in at any time (section 13, answer 8).)*
 
 **2026-11-23, the user's confirmation:** section 7.11 (dialog scenes) matches the user's intention
 exactly; its proposals became the user's decisions.
@@ -523,33 +541,22 @@ The user also accepted every open proposal except four, which the user changed: 
 is gone for good (7.3); campaign maps are asymmetric with monster behaviours (7.4); enemies are a
 class at a level, scaled (7.5); drink serving is off for now (7.7).
 
-## 13. Still vague (2026-11-23)
+## 13. Vague points, answered by the user (2026-11-23)
 
-To be answered before the plan that needs each one (the step of section 8 in brackets):
+1. The rite stays used, win or lose (7.3).
+2. The Rat falling with Tí still strung loses Stage 1: Tí is trapped (7.3).
+3. A café shelf is the party's storage; a full character may swap in a fight (7.6).
+4. Ability slots as today; assignment in the café and before a stage (7.6).
+5. Passive sight by the light rule, 4 squares; reinforcements warned one round ahead (7.4).
+6. The Rat is a level-3 fighter, +33% attack and HP; abilities such as *Speedkill* if stats are not
+   enough (7.5).
+7. Everyone's HP is restored between stages (7.6).
+8. Dialog scenes may come in at any time of a fight, for hints, teaching or the story (7.3, 7.4).
+9. Recruits never freed return as enemies in Lệ Thanh's stage, the finale, and can't be freed
+   there (7.3).
 
-1. **The rite vs "a loss keeps nothing"** (step 2): a loss now reverts everything, but the rite's use
-   was to stay spent after a loss. Which wins? **[call]**: the rite stays spent, the one thing a loss
-   doesn't undo; otherwise it becomes a free retry.
-2. **Stage 1 when the Rat falls first** (step 2): the stage isn't won yet. **[call]**: the Rat stays
-   down and the fight goes on until Tí is freed or the player falls.
-3. **Unassigned items and full slots** (steps 2 and 6): where do Lệ Thanh's gift items wait before they
-   are assigned, and what happens when a character with 4 full slots steps on an item? **[call]**: a
-   small café shelf holds unassigned items; in a fight a full character may swap, leaving the dropped
-   item on the square.
-4. **Ability slots** (step 6): how many abilities can a character have assigned at once, where do new
-   abilities come from, and where can assignment happen? **[call]**: as many slots as today's career;
-   new abilities from levels and the story; assignment in the café and on the screen before a stage.
-5. **Passive monsters' "sight"** (step 4). **[call]**: the board's existing light rule, same room, up to
-   4 squares. **Reinforcements' warning**: **[call]** the existing "spawns soon" marker one round ahead.
-6. **Enemy scaling** (step 4): the Rat's class and level, and whether the buff is one factor on every
-   stat. **[call]**: the Rat is a fighter at level 3; the zodiac buff multiplies attack and HP (about
-   +33%); other stats follow the class line.
-7. **Between stages** (step 5): does everyone start a stage at full HP, fallen allies included?
-   **[call]**: yes.
-8. **XP** (step 5): what gives XP, so the player gains about one level a stage? **[call]**: a fixed XP
-   reward per stage won, set in the stage file, shared by the party. Bảo and Bà Mai join at a fixed
-   level like recruits: **[call]** level 2, matching T3's party.
-9. **Tutorial teaching beats** (step 4): may T1 and T3 show their teaching beats as short dialog
-   scenes during the fight, an exception to "hints only at the start"? **[call]**: yes, tutorials only.
-10. **The finale** (a later slice): with strung specters gone for good, who fights for Lệ Thanh in the
-    finale?
+## 14. Still open (2026-11-23)
+
+1. **XP** (step 5), not yet answered: **[call]** a fixed XP reward for each stage won, set in the
+   stage file and shared by the party, sized for about one level a stage; no XP per kill. Bảo and Bà
+   Mai join at a fixed level 2, matching T3.
