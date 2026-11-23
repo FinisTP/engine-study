@@ -5,6 +5,7 @@
 
 #include "MatchPlay.hpp"
 #include "MatchTable.hpp"
+#include "Analog.hpp"
 #include "Screens.hpp"
 #include "Sounds.hpp"
 
@@ -82,6 +83,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
     umbra::night::GameOptions pace;
     if (!umbra::night::LoadOptions(assets / "options.csv", pace, diagnostics))
         pace = {};
+    umbra::night::AnalogScreen analog = umbra::night::LoadAnalog(umbra::night::AnalogPath(), pace); // CRT and VHS (Analog.hpp)
     for (const umbra::core::Diagnostic &d : diagnostics)
         umbra::diagnostics::Error(umbra::core::Format(d));
     if (!loaded || words.is_discarded())
@@ -249,11 +251,14 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                             l["say"] = b["text"];
             }
             data["tip"] = screens.Ui().Tip();
+            data["analog"] = analog.Data();
             window.SetTextInput(screens.Ui().WantsText()); // typed text only while a text field has the focus
             for (const umbra::ui::UiAction &a : screens.Ui().Update(data, pixels, uiInput, drawList.ui))
             {
                 uiTook = true;
                 sounds.Play("click");
+                if (a.screen == "pause" && analog.Toggle(a.action, umbra::night::AnalogPath()))
+                    continue; // the pause menu's screen switches
                 if (a.action == "quit")
                     quit = true;
                 else if (a.screen == "match-pick" && a.action == "pick")
@@ -309,6 +314,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                            static_cast<bool>(std::ofstream(capture, std::ios::binary).write(reinterpret_cast<const char *>(png.data()), static_cast<std::streamsize>(png.size())));
                 umbra::diagnostics::Info((captured ? "Captured " : "Could not write ") + capture.string());
             });
+        analog.Apply(drawList.post);
         if (!renderer.RenderFrame(dt, drawList))
         {
             result = 1;

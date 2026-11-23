@@ -321,6 +321,7 @@ namespace umbra::render
         implementation_->overlay.EndFrame();
 
         implementation_->post.SetGrade(drawList.post, drawList.postLut); // only does work when the grade changed
+        implementation_->post.SetTime(static_cast<float>(implementation_->seconds));
         const FrameResult result = implementation_->frameResources.DrawFrame(
             implementation_->device.GetGraphicsQueue(),
             implementation_->device.GetPresentQueue(),

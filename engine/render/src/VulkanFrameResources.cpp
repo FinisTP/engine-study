@@ -50,6 +50,19 @@ namespace
         }
     }
 
+    // Orders work on a picture that stays "ready to be sampled" (the analog screen's screen picture).
+    void Barrier(VkCommandBuffer commandBuffer, VkImage image, VkPipelineStageFlags fromStage, VkAccessFlags fromAccess, VkPipelineStageFlags toStage, VkAccessFlags toAccess)
+    {
+        VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+        barrier.oldLayout = barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barrier.srcAccessMask = fromAccess;
+        barrier.dstAccessMask = toAccess;
+        barrier.srcQueueFamilyIndex = barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = image;
+        barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        vkCmdPipelineBarrier(commandBuffer, fromStage, toStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    }
+
     // Moves a swapchain image between "ready to show" and "ready to copy from".
     void Transition(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout from, VkImageLayout to, VkAccessFlags fromAccess, VkAccessFlags toAccess)
     {
@@ -143,14 +156,31 @@ namespace
         }
         vkCmdEndRenderPass(commandBuffer);
 
-        // 3. Bloom, then the screen: the finished picture (Post.md), then the overlay on top.
+        // 3. Bloom, then the screen: the finished picture (Post.md), then the overlay on top. With the
+        //    analog screen on, that goes into the screen picture instead, and CRT/VHS draws it onto
+        //    the swapchain (Post.md "6").
         post.RecordBloom(commandBuffer, imageIndex, drawList.post);
-        renderPassInfo.renderPass = pipeline.GetRenderPass();
-        renderPassInfo.framebuffer = pipeline.GetFramebuffers()[imageIndex];
+        const bool analog = umbra::core::AnalogOn(drawList.post);
+        const VkImage screen = post.GetScreenImage(imageIndex);
+        if (analog) // the last frame's analog pass may still be reading the screen picture
+            Barrier(commandBuffer, screen, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0);
+        renderPassInfo.renderPass = analog ? post.GetScreenRenderPass() : pipeline.GetRenderPass();
+        renderPassInfo.framebuffer = analog ? post.GetScreenFramebuffer(imageIndex) : pipeline.GetFramebuffers()[imageIndex];
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
         post.DrawComposite(commandBuffer, imageIndex, drawList.post);
         overlay.Render(commandBuffer, frameIndex);
         vkCmdEndRenderPass(commandBuffer);
+        if (analog)
+        {
+            // The analog pass reads what the screen pass wrote.
+            Barrier(commandBuffer, screen, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                    VK_ACCESS_SHADER_READ_BIT);
+            renderPassInfo.renderPass = pipeline.GetRenderPass();
+            renderPassInfo.framebuffer = pipeline.GetFramebuffers()[imageIndex];
+            vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+            post.DrawAnalog(commandBuffer, imageIndex, drawList.post);
+            vkCmdEndRenderPass(commandBuffer);
+        }
 
         // 4. A capture: copy the finished picture into a buffer the CPU can read.
         if (captureBuffer != VK_NULL_HANDLE)

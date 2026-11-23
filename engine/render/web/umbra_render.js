@@ -203,6 +203,38 @@ fn toLinear(c: vec3f) -> vec3f { return select(pow((c + 0.055) / 1.055, vec3f(2.
   let d = length(i.uv - vec2f(0.5)) * 1.41421356;
   color *= 1.0 - post.exposure.w * d * d;
   return vec4f(color, 1.0);
+}
+// The analog screen (Post.md "6"; AnalogPS in Post.hlsl): exposure = (crt, vhs, seconds, 0), sizes = (1/w, 1/h, w, h).
+fn hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(12.9898, 78.233))) * 43758.5453); }
+fn crtWarp(uv: vec2f, crt: f32) -> vec2f { let c = uv * 2.0 - 1.0; return c * (1.0 + 0.08 * crt * dot(c, c)) * 0.5 + 0.5; }
+fn screenAt(uv: vec2f) -> vec3f { return textureSampleLevel(source, clampSampler, uv, 0.0).rgb; }
+@fragment fn analogFs(i: Out) -> @location(0) vec4f {
+  let crt = post.exposure.x; let vhs = post.exposure.y; let t = post.exposure.z;
+  let texel = post.sizes.xy; let size = post.sizes.zw;
+  var uv = crtWarp(i.uv, crt);
+  if (any(uv < vec2f(0.0)) || any(uv > vec2f(1.0))) { return vec4f(0.0, 0.0, 0.0, 1.0); }
+  let row = floor(uv.y * size.y * 0.5);
+  var shift = (hash(vec2f(row, floor(t * 24.0))) - 0.5) * 3.0 * texel.x * vhs;
+  let band = saturate(1.0 - abs(uv.y - fract(t * 0.06)) / 0.035);
+  shift += band * (hash(vec2f(row, t)) - 0.5) * 0.03 * vhs;
+  shift += saturate((uv.y - 0.965) / 0.035) * 0.02 * vhs;
+  uv.x += shift;
+  let fringe = (uv - 0.5) * 0.006 * crt;
+  var c = vec3f(screenAt(uv + fringe).r, screenAt(uv).g, screenAt(uv - fringe).b);
+  var smear = vec3f(0.0);
+  for (var k = 1; k <= 4; k++) { smear += screenAt(uv - vec2f(texel.x * 2.0 * f32(k), 0.0)) * 0.25; }
+  let luma = vec3f(0.299, 0.587, 0.114);
+  c = mix(c, dot(c, luma) + (smear - dot(smear, luma)), 0.7 * vhs);
+  let scan = 0.5 + 0.5 * cos(uv.y * size.y * 6.2831853 / 3.0);
+  c *= 1.0 - 0.35 * crt * (1.0 - scan);
+  let column = i32(i.position.x) % 3;
+  c *= 1.0 - 0.12 * crt + 0.24 * crt * vec3f(f32(column == 0), f32(column == 1), f32(column == 2));
+  c += (hash(uv * size + t * 61.0) - 0.5) * 0.07 * vhs;
+  c += band * hash(vec2f(uv.x * size.x, row + t)) * 0.12 * vhs;
+  c = mix(c, vec3f(dot(c, luma)), 0.25 * vhs) * (1.0 - 0.06 * vhs) + 0.02 * vhs;
+  let edge = abs(i.uv - 0.5) * 2.0;
+  c *= 1.0 - 0.5 * crt * pow(max(edge.x, edge.y), 6.0);
+  return vec4f(max(c, vec3f(0.0)), 1.0);
 }`,
 
     uiShader: `
@@ -221,7 +253,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
 @fragment fn fs(i: Out) -> @location(0) vec4f { return i.color * textureSample(uiTexture, uiSampler, i.uv); }`,
 
     // HDR picture and bloom levels for a canvas of w x h, with one bind group per post pass.
-    // Pass slots in postBuffer (256 bytes each): 0..5 down, 6..10 up, 11 composite.
+    // Pass slots in postBuffer (256 bytes each): 0..5 down, 6..10 up, 11 composite, 12 analog.
     makePostTargets: function (w, h) {
       var device = UG.device;
       (UG.postTextures || []).forEach(function (t) { t.destroy(); });
@@ -242,7 +274,13 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
       for (var i = 0; i < 6; ++i) { var from = i === 0 ? UG.hdr : UG.levels[i - 1]; UG.downGroups.push(group(i, from, from)); }
       for (var i = 0; i < 5; ++i) UG.upGroups.push(group(6 + i, UG.levels[i + 1], UG.levels[i + 1]));
       UG.compositeGroup = group(11, UG.hdr, UG.levels[0]);
+      // The analog screen (Post.md "6"): the frame and the UI go into this picture, then CRT/VHS onto the canvas.
+      UG.screen = device.createTexture({ size: [w, h], format: UG.format, usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING });
+      UG.postTextures.push(UG.screen);
+      UG.analogGroup = group(12, UG.screen, UG.screen);
     },
+    // Where the frame and the UI draw: the screen picture when the analog screen is on, else the canvas.
+    target: function () { return UG.analogOn ? UG.screen.createView() : UG.context.getCurrentTexture().createView({ format: UG.format }); },
     // Writes each pass's constants (exposure block + the source's texel size) and records bloom.
     postPasses: function (encoder, post) {
       var p = HEAPF32.subarray(post >> 2, (post >> 2) + 4), data = new Float32Array(12 * 64);
@@ -412,6 +450,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
       UG.downPipeline = postPipeline('downFs', 'rgba16float', false);
       UG.upPipeline = postPipeline('upFs', 'rgba16float', true);
       UG.compositePipeline = postPipeline('compositeFs', UG.format, false);
+      UG.analogPipeline = postPipeline('analogFs', UG.format, false);
       UG.clampSampler = device.createSampler({ magFilter: 'linear', minFilter: 'linear' });
       UG.lut = device.createTexture({ size: [16, 16, 16], dimension: '3d', format: 'rgba8unorm', usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST });
       UG.postBuffer = device.createBuffer({ size: 16 * 256, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
@@ -584,7 +623,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
     pass.end();
     // 5. Bloom down then up, then the composite onto the canvas (Post.md); debug lines on top.
     UG.postPasses(encoder, post);
-    pass = encoder.beginRenderPass({ colorAttachments: [{ view: UG.context.getCurrentTexture().createView({ format: UG.format }), loadOp: 'clear',
+    pass = encoder.beginRenderPass({ colorAttachments: [{ view: UG.target(), loadOp: 'clear',
       clearValue: { r: 0, g: 0, b: 0, a: 1 }, storeOp: 'store' }] });
     pass.setPipeline(UG.compositePipeline);
     pass.setBindGroup(0, UG.compositeGroup);
@@ -616,7 +655,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
     var ib = UG.buffer(GPUBufferUsage.INDEX, HEAPU16.subarray(indices >> 1, (indices >> 1) + indexCount + (indexCount & 1)));
     var b = HEAPF32.subarray(batches >> 2, (batches >> 2) + batchCount * 8);
     var encoder = device.createCommandEncoder();
-    var pass = encoder.beginRenderPass({ colorAttachments: [{ view: UG.context.getCurrentTexture().createView({ format: UG.format }), loadOp: 'load', storeOp: 'store' }] });
+    var pass = encoder.beginRenderPass({ colorAttachments: [{ view: UG.target(), loadOp: 'load', storeOp: 'store' }] });
     pass.setPipeline(UG.uiPipeline);
     pass.setBindGroup(0, UG.uiGroup);
     pass.setVertexBuffer(0, vb);
@@ -633,6 +672,21 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
     pass.end();
     device.queue.submit([encoder.finish()]);
     vb.destroy(); ib.destroy(); // freed once the submitted work is done
+  },
+
+  umbra_gpu_screen__deps: ['$UG'],
+  umbra_gpu_screen: function (on) { UG.analogOn = on !== 0; }, // before umbra_gpu_frame: draw into the screen picture?
+
+  umbra_gpu_analog__deps: ['$UG'],
+  umbra_gpu_analog: function (block) {
+    // The analog screen's pass: the screen picture onto the canvas with CRT/VHS (8 floats: exposure, sizes).
+    var device = UG.device;
+    device.queue.writeBuffer(UG.postBuffer, 12 * 256, HEAPF32.subarray(block >> 2, (block >> 2) + 8));
+    var encoder = device.createCommandEncoder();
+    var pass = encoder.beginRenderPass({ colorAttachments: [{ view: UG.context.getCurrentTexture().createView({ format: UG.format }), loadOp: 'clear',
+      clearValue: { r: 0, g: 0, b: 0, a: 1 }, storeOp: 'store' }] });
+    pass.setPipeline(UG.analogPipeline); pass.setBindGroup(0, UG.analogGroup); pass.draw(3); pass.end();
+    device.queue.submit([encoder.finish()]);
   },
 
   umbra_wait_frame__async: true,

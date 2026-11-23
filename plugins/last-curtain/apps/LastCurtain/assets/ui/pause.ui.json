@@ -9,6 +9,10 @@
     { "type": "button", "size": [300, 44], "text": "Save", "action": "save" },
     { "type": "button", "size": [300, 44], "text": "Resume", "action": "resume" },
     { "type": "button", "size": [300, 44], "text": "Save and quit", "action": "savequit" },
+    { "type": "button", "size": [300, 44], "text": "Old TV screen: on", "action": "crt", "visible": "{analog.crt}" },
+    { "type": "button", "size": [300, 44], "text": "Old TV screen: off", "action": "crt", "visible": "{analog.crtOff}" },
+    { "type": "button", "size": [300, 44], "text": "Worn tape: on", "action": "vhs", "visible": "{analog.vhs}" },
+    { "type": "button", "size": [300, 44], "text": "Worn tape: off", "action": "vhs", "visible": "{analog.vhsOff}" },
     { "type": "text", "style": "muted", "text": "Written lines: the model is not installed", "visible": "{writtenLines}", "wrap": true, "size": [300, 0] }
   ] }
 }

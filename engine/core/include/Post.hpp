@@ -2,6 +2,7 @@
 
 #include <MeshData.hpp>
 
+#include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
@@ -24,6 +25,8 @@ namespace umbra::core
         float temperature = 0.0F;    // -1 cold (blue) .. +1 warm (orange)
         float vignette = 0.25F;      // darker corners, 0 = none
         std::string lut;             // optional color table image (256x16), asset path
+        float crt = 0.0F;            // the analog screen (Post.md "6"): an old CRT, 0 = off .. 1 = strong
+        float vhs = 0.0F;            // a worn VHS tape, 0 = off .. 1 = strong
     };
 
     // How much post work the device does (user decision 2026-11-09: phones get Reduced).
@@ -50,6 +53,14 @@ namespace umbra::core
         glm::vec4 sizes{0.0F};                        // xy = 1 / screen size, z = lutSize
     };
     [[nodiscard]] PostBlock PackPost(const PostSettings &settings, std::uint32_t width, std::uint32_t height);
+
+    // The analog screen (Post.md "6"): a last pass over the finished frame, menus and text included.
+    inline constexpr float crtBulge = 0.08F; // the CRT's curve at full strength (Post.hlsl uses the same)
+    [[nodiscard]] bool AnalogOn(const PostSettings &settings);
+    // What it uploads: exposure = (crt, vhs, seconds, 0), sizes = (1/width, 1/height, width, height).
+    [[nodiscard]] PostBlock PackAnalog(const PostSettings &settings, std::uint32_t width, std::uint32_t height, float seconds);
+    // The CRT's bulge, as the shader does it: where on the picture the screen point `uv` (0..1) looks.
+    [[nodiscard]] glm::vec2 CrtWarp(glm::vec2 uv, float crt);
 
     // The same steps the GPU does, on one pixel (for tests and pictures): tonemap, grade, vignette.
     // `uv` 0..1 across the screen; returns linear color 0..1.

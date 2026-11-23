@@ -84,7 +84,50 @@ d = distance(uv, center) · √2      (0 in the middle, 1 in a corner)
 color *= 1 − vignette · d²
 ```
 
-## 6. The `post` component
+## 6. The analog screen (CRT and VHS)
+
+An optional last pass makes the whole screen, menus and text included, look like an old television
+playing a worn tape (S45, for The Last Curtain's analog horror; user 2026-11-23). `PostSettings::crt`
+and `vhs` set each one's strength, 0 (off) to 1; both 0 means the pass doesn't run at all.
+
+```
+scene ──► composite + overlay ──► screen picture ──► analog pass ──► screen
+                       (only when the analog screen is on; otherwise straight to the screen)
+```
+
+On Vulkan the frame and the overlay go into a **screen picture** (`VulkanPost`, one per swapchain
+image) through a render pass built to be *compatible* with the swapchain's own (same attachments,
+subpass and dependency; only the final layout differs), so the composite, ImGui and UI pipelines draw
+into it unchanged. `AnalogPS` in `Post.hlsl` then draws it onto the swapchain. In the browser the
+composite and UI passes target `UG.screen` and `umbra_gpu_analog` draws it onto the canvas
+(`analogFs` in `umbra_render.js`; keep the two in step).
+
+The pass, in order (`uv` 0..1, `t` seconds, wrapped at 1000 so the noise keeps its precision):
+
+1. **Curved glass (CRT).** From the centre `c = 2·uv − 1`, a point looks further out:
+   `c' = c · (1 + 0.08 · crt · |c|²)`. Corners land outside the picture and are drawn black, the tube's
+   rim. `CrtWarp` in `Post.hpp` is the same formula, for tests.
+2. **Shaking lines (VHS).** Each pair of pixel rows moves sideways by a random amount (up to 1.5
+   pixels), changing 24 times a second. A **tracking band** about 7% of the screen tall rolls down
+   once every 16 seconds and pulls its rows much further (up to 1.5% of the width). The bottom 3.5% of
+   rows tear to the right (a tape's head switching).
+3. **Colour fringe (CRT).** Red is read a little outward from the centre and blue a little inward, by
+   `(uv − 0.5) · 0.006 · crt`: the colours drift apart towards the edges.
+4. **Colour bleed (VHS).** Tape keeps brightness sharp but smears colour. The pixel's brightness
+   (`luma = 0.299 r + 0.587 g + 0.114 b`) is kept; its colour (`rgb − luma`) is replaced by the average
+   of 4 pixels to its left, mixed in by `0.7 · vhs`.
+5. **Scanlines and stripes (CRT).** Brightness dips between lines 3 pixels apart:
+   `scan = 0.5 + 0.5 cos(2π y / 3)`, `c *= 1 − 0.35 · crt · (1 − scan)`. Every pixel column lights one
+   of the phosphors a little more (R, G, B in turn).
+6. **Grain and wear (VHS).** Random grain (±3.5%), brighter noise inside the tracking band, a quarter
+   of the colour washed out and the blacks lifted by 2%.
+7. **Dark rim (CRT).** `c *= 1 − 0.5 · crt · max(|x|, |y|)⁶`, `x, y` from −1 to 1: the tube darkens
+   only near its edges.
+
+The random numbers are the usual `fract(sin(dot(p, (12.9898, 78.233))) · 43758.5453)` hash: cheap,
+good enough for noise, no texture needed.
+
+## 7. The `post` component
 
 ```json
 "post": { "exposure": 0, "bloom": 0.5, "bloomThreshold": 1, "contrast": 1, "saturation": 1,
@@ -95,7 +138,7 @@ There is one per scene; a second one gives the warning `scene.post.twice`. Witho
 above apply. A LUT image that is missing or not 256×16 is an error (`entity.post.lut`), reported with
 the scene.
 
-## 7. Checking without a GPU
+## 8. Checking without a GPU
 
 `PostPixel` runs the same steps on one pixel on the CPU (`tests/core/PostTests.cpp`, T85): middle
 gray is kept, highlights never pass white, a neutral grade changes nothing, each setting moves colors

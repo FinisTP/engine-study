@@ -95,3 +95,60 @@ float4 CompositePS(Output i) : SV_Target0
     color *= 1.0F - post.exposure.w * d * d;
     return float4(color, 1.0F);
 }
+
+// ---------------------------------------------------------------------------------------------
+// The analog screen (Post.md "6"): a last pass over the finished frame, menus and text included.
+// post.exposure = (crt, vhs, seconds, 0); post.sizes = (1/width, 1/height, width, height).
+// `source` is the finished frame (sRGB image: samples come back as linear light).
+
+float Hash(float2 p)
+{
+    return frac(sin(dot(p, float2(12.9898F, 78.233F))) * 43758.5453F);
+}
+
+// The CRT's bulge (Post.hpp CrtWarp): points move out by their squared distance from the centre.
+float2 CrtWarp(float2 uv, float crt)
+{
+    const float2 c = uv * 2.0F - 1.0F;
+    return c * (1.0F + 0.08F * crt * dot(c, c)) * 0.5F + 0.5F;
+}
+
+float4 AnalogPS(Output i) : SV_Target0
+{
+    const float crt = post.exposure.x, vhs = post.exposure.y, t = post.exposure.z;
+    const float2 texel = post.sizes.xy, size = post.sizes.zw;
+    // 1. CRT: the curved glass; outside it is the black of the tube.
+    float2 uv = CrtWarp(i.uv, crt);
+    if (any(uv < 0.0F) || any(uv > 1.0F))
+        return float4(0.0F, 0.0F, 0.0F, 1.0F);
+    // 2. VHS: each pair of lines shakes sideways a little; a tracking band rolls down the screen
+    //    and pulls its lines further; the bottom lines tear to the right (head switching).
+    const float row = floor(uv.y * size.y * 0.5F);
+    float shift = (Hash(float2(row, floor(t * 24.0F))) - 0.5F) * 3.0F * texel.x * vhs;
+    const float band = saturate(1.0F - abs(uv.y - frac(t * 0.06F)) / 0.035F);
+    shift += band * (Hash(float2(row, t)) - 0.5F) * 0.03F * vhs;
+    shift += saturate((uv.y - 0.965F) / 0.035F) * 0.02F * vhs;
+    uv.x += shift;
+    // 3. Colour: the CRT's fringe (red and blue drift apart towards the edges) ...
+    const float2 fringe = (uv - 0.5F) * 0.006F * crt;
+    float3 c = float3(source.Sample(sourceSampler, uv + fringe).r, source.Sample(sourceSampler, uv).g, source.Sample(sourceSampler, uv - fringe).b);
+    // ... and the tape's bleed: brightness stays sharp, colour smears to the right.
+    float3 smear = 0.0F;
+    for (int k = 1; k <= 4; ++k)
+        smear += source.Sample(sourceSampler, uv - float2(texel.x * 2.0F * k, 0.0F)).rgb * 0.25F;
+    const float3 luma = float3(0.299F, 0.587F, 0.114F);
+    c = lerp(c, dot(c, luma) + (smear - dot(smear, luma)), 0.7F * vhs);
+    // 4. CRT: scanlines (darker between lines of 3 pixels) and the phosphor stripes (R, G, B columns).
+    const float scan = 0.5F + 0.5F * cos(uv.y * size.y * 6.2831853F / 3.0F);
+    c *= 1.0F - 0.35F * crt * (1.0F - scan);
+    const int column = int(i.position.x) % 3;
+    c *= 1.0F - 0.12F * crt + 0.24F * crt * float3(column == 0, column == 1, column == 2);
+    // 5. VHS: grain everywhere, brighter noise in the tracking band, washed-out blacks and colour.
+    c += (Hash(uv * size + t * 61.0F) - 0.5F) * 0.07F * vhs;
+    c += band * Hash(float2(uv.x * size.x, row + t)) * 0.12F * vhs;
+    c = lerp(c, dot(c, luma).xxx, 0.25F * vhs) * (1.0F - 0.06F * vhs) + 0.02F * vhs;
+    // 6. CRT: the tube is darker towards its curved edges.
+    const float2 edge = abs(i.uv - 0.5F) * 2.0F;
+    c *= 1.0F - 0.5F * crt * pow(max(edge.x, edge.y), 6.0F);
+    return float4(max(c, 0.0F), 1.0F);
+}

@@ -72,6 +72,24 @@ namespace umbra::core
         return p;
     }
 
+    bool AnalogOn(const PostSettings &settings) { return settings.crt > 0.0F || settings.vhs > 0.0F; }
+
+    PostBlock PackAnalog(const PostSettings &settings, std::uint32_t width, std::uint32_t height, float seconds)
+    {
+        const float w = static_cast<float>(std::max(width, 1u)), h = static_cast<float>(std::max(height, 1u));
+        PostBlock p;
+        p.exposure = {std::clamp(settings.crt, 0.0F, 1.0F), std::clamp(settings.vhs, 0.0F, 1.0F), std::fmod(std::max(seconds, 0.0F), 1000.0F), 0.0F};
+        p.sizes = {1.0F / w, 1.0F / h, w, h};
+        return p;
+    }
+
+    glm::vec2 CrtWarp(glm::vec2 uv, float crt)
+    {
+        // Centre at 0, push each point out by how far it is from the centre (squared).
+        const glm::vec2 c = uv * 2.0F - 1.0F;
+        return c * (1.0F + crtBulge * std::clamp(crt, 0.0F, 1.0F) * glm::dot(c, c)) * 0.5F + 0.5F;
+    }
+
     glm::vec3 Tonemap(glm::vec3 hdr)
     {
         // ACES filmic curve (Narkowicz fit), with 0.8 so middle gray stays about where it was.

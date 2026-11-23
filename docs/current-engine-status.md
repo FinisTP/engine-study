@@ -15,6 +15,11 @@
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
 
+## Update 2026-11-23, evening (the analog screen `#UMBRA-333`; Arcee-VyLinh's first run `#UMBRA-331`, `#UMBRA-332`)
+
+- **The analog screen.** An optional last pass makes the whole screen look like an old TV playing a worn tape (CRT: curve, scanlines, fringe; VHS: jitter, tracking band, colour bleed, grain), menus and text included. The Last Curtain has it on by default; "Old TV screen" and "Worn tape" switches in the pause menu are saved. Pictures under SwiftShader; Windows check open (`testing/s45-analog-screen.md` §4).
+- **Arcee-VyLinh.** Run on the CPU in the PC's Linux shell: natural Vietnamese, 55% of 60 lines pass the checks (needs 90%); narration and guessed gender are the main failures, and three new checks catch them. Windows run on the graphics card and the comparison open.
+
 ## Update 2026-11-23 (The Last Curtain, campaign plan 1: the Vietnamese model test, the voice test, the fonts, `#UMBRA-324`-`#UMBRA-330`)
 
 - **Fonts.** The Last Curtain's screens use Be Vietnam Pro and Playfair Display (Regular: the only weight with Vietnamese that may be shipped under its name), so every Vietnamese letter draws; a test checks every skin font.

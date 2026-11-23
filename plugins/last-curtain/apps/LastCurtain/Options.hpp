@@ -33,6 +33,8 @@ namespace umbra::night
         float matchCameraDistance = 26.0F; // the faction match's table: the seat's distance
         float matchCameraTilt = 58.0F;     // ... and its degrees above the table
         float orderLength = 12.0F;         // portraits in the match's order strip
+        float crt = 0.0F;                  // the analog screen's CRT strength, 0..1 (Analog.hpp)
+        float vhs = 0.0F;                  // ... and its VHS tape strength, 0..1
     };
 
     // Reads key,value,note rows; an unknown key or a bad value is refused with its row.

@@ -1,3 +1,4 @@
+#include "Analog.hpp"
 #include "Art.hpp"
 #include "CafeApp.hpp"
 #include "GameContext.hpp"
@@ -203,6 +204,7 @@ namespace
             GameOptions gameOptions; // the pace and camera (options.csv); a bad file keeps the defaults
             if (!LoadOptions(assets / "options.csv", gameOptions, diagnostics))
                 gameOptions = {};
+            AnalogScreen analog = LoadAnalog(AnalogPath(), gameOptions); // CRT and VHS (Analog.hpp)
             for (const umbra::core::Diagnostic &d : diagnostics)
                 umbra::diagnostics::Error(umbra::core::Format(d));
             umbra::night::Words words(def, LoadModel(assets)); // outlives every Play below
@@ -445,12 +447,15 @@ namespace
                                                          {"portrait", ArtPath("portraits", def.guests[static_cast<std::size_t>(pawn.guest)].id).generic_string()},
                                                          {"at", {at->x - 14.0F, at->y - 28.0F}}});
                     }
+                    data["analog"] = analog.Data();
                     window.SetTextInput(screens.Ui().WantsText()); // typed text only while a text field has the focus
                     for (const umbra::ui::UiAction &action : screens.Ui().Update(data, pixels, uiInput, drawList.ui))
                     {
                         sounds.Play("click");
                         uiTook = true;
                         NightState restored;
+                        if (action.screen == "pause" && analog.Toggle(action.action, AnalogPath()))
+                            continue; // the pause menu's screen switches
                         if (action.action == "quit")
                             quit = true;
                         else if (action.screen == "start" && action.action == "pick") // a guest's page first (Play.md)
@@ -510,6 +515,7 @@ namespace
                                    static_cast<bool>(std::ofstream(options.capture, std::ios::binary).write(reinterpret_cast<const char *>(png.data()), static_cast<std::streamsize>(png.size())));
                         umbra::diagnostics::Info((captured ? "Captured " : "Could not write ") + options.capture.string());
                     });
+                analog.Apply(drawList.post);
                 if (!renderer.RenderFrame(dt, drawList))
                 {
                     result = 1;

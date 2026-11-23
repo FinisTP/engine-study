@@ -62,7 +62,7 @@ set(UMBRA_OVERLAY_FRAGMENT_SHADER "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Overlay.frag
 set(UMBRA_POST_SHADERS
     "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Fullscreen.vert.spv" "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Bright.frag.spv"
     "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Down.frag.spv" "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Up.frag.spv"
-    "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Composite.frag.spv"
+    "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Composite.frag.spv" "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Analog.frag.spv"
     "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Skinned.vert.spv" "${UMBRA_SHADER_OUTPUT_DIRECTORY}/ShadowSkinned.vert.spv"
     "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Particle.vert.spv" "${UMBRA_SHADER_OUTPUT_DIRECTORY}/Particle.frag.spv")
 
@@ -101,6 +101,7 @@ umbra_compile_hlsl("${UMBRA_SHADER_OUTPUT_DIRECTORY}/Bright.frag.spv" shaders/Po
 umbra_compile_hlsl("${UMBRA_SHADER_OUTPUT_DIRECTORY}/Down.frag.spv" shaders/Post.hlsl ps_6_0 DownPS)
 umbra_compile_hlsl("${UMBRA_SHADER_OUTPUT_DIRECTORY}/Up.frag.spv" shaders/Post.hlsl ps_6_0 UpPS)
 umbra_compile_hlsl("${UMBRA_SHADER_OUTPUT_DIRECTORY}/Composite.frag.spv" shaders/Post.hlsl ps_6_0 CompositePS)
+umbra_compile_hlsl("${UMBRA_SHADER_OUTPUT_DIRECTORY}/Analog.frag.spv" shaders/Post.hlsl ps_6_0 AnalogPS)
 
 include(SurfaceShaders.cmake)
 umbra_surface_shaders(vulkan surfaceOutputs)

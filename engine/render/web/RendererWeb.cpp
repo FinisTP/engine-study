@@ -40,6 +40,8 @@ extern "C"
     // The game UI (core::UiDrawList), drawn on top of the frame just sent: 20-byte vertices,
     // uint16 indices, and per batch 8 floats: texture id, clip x0 y0 x1 y1, first vertex, first index, index count.
     void umbra_gpu_ui(const void *vertices, int vertexCount, const unsigned short *indices, int indexCount, const float *batches, int batchCount);
+    void umbra_gpu_screen(int on);
+    void umbra_gpu_analog(const float *block);
     void umbra_wait_frame();                                            // async: next animation frame
     int umbra_gpu_width();
     int umbra_gpu_height();
@@ -263,6 +265,8 @@ namespace umbra::render
             i.gradeImage = drawList.postLut;
         }
         const core::PostBlock postBlock = core::PackPost(post, 1, 1);
+        const bool analog = core::AnalogOn(post); // the frame and the UI into the screen picture, then CRT/VHS (Post.md "6")
+        umbra_gpu_screen(analog ? 1 : 0);
         umbra_gpu_particles(drawList.particles.data(), static_cast<int>(std::min(drawList.particles.size(), core::ParticleSystem::maxDrawn)));
         umbra_gpu_frame(glm::value_ptr(frame.viewProjection), glm::value_ptr(postBlock.exposure), i.draws.data(), static_cast<int>(i.draws.size() / drawFloats), i.lines.data(),
                         static_cast<int>(i.lines.size() / 10), hud.c_str(), drawList.joints.empty() ? nullptr : glm::value_ptr(drawList.joints[0]),
@@ -278,6 +282,12 @@ namespace umbra::render
             }
             umbra_gpu_ui(drawList.ui.vertices.data(), static_cast<int>(drawList.ui.vertices.size()), drawList.ui.indices.data(),
                          static_cast<int>(drawList.ui.indices.size()), batches.data(), static_cast<int>(drawList.ui.batches.size()));
+        }
+        if (analog)
+        {
+            const core::PostBlock block = core::PackAnalog(post, static_cast<std::uint32_t>(umbra_gpu_width()), static_cast<std::uint32_t>(umbra_gpu_height()),
+                                                           static_cast<float>(i.seconds));
+            umbra_gpu_analog(glm::value_ptr(block.exposure));
         }
         umbra_wait_frame();
         return true;

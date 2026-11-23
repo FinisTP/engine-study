@@ -76,3 +76,29 @@ TEST_CASE("Exposure, bloom and vignette in the whole pixel; quality levels (T85)
     CHECK(BloomStartDivisor(PostQuality::Reduced) == 2 * BloomStartDivisor(PostQuality::Full));
     CHECK(BloomLevels(PostQuality::Reduced) < BloomLevels(PostQuality::Full));
 }
+
+TEST_CASE("The analog screen: off by default, packed for the shader, the CRT bulges the picture (S45)", "[post]")
+{
+    // 1. Off unless a strength is set.
+    PostSettings settings;
+    CHECK_FALSE(AnalogOn(settings));
+    settings.vhs = 0.5F;
+    CHECK(AnalogOn(settings));
+    settings.crt = 0.8F;
+    // 2. What the analog pass receives: strengths (clamped), seconds, the screen's size.
+    settings.vhs = 3.0F;
+    const PostBlock block = PackAnalog(settings, 1280, 720, 12.5F);
+    CHECK(block.exposure.x == Approx(0.8F));
+    CHECK(block.exposure.y == Approx(1.0F));
+    CHECK(block.exposure.z == Approx(12.5F));
+    CHECK(block.sizes.x == Approx(1.0F / 1280.0F));
+    CHECK(block.sizes.w == Approx(720.0F));
+    CHECK(PackAnalog(settings, 1, 1, 5000.25F).exposure.z == Approx(0.25F)); // seconds wrap at 1000 so the noise stays precise
+    // 3. The bulge: the centre stays, the edges are pushed out (so the corners fall off the glass).
+    CHECK(CrtWarp({0.5F, 0.5F}, 1.0F).x == Approx(0.5F));
+    CHECK(CrtWarp({0.9F, 0.5F}, 1.0F).x > 0.9F);
+    CHECK(CrtWarp({0.1F, 0.1F}, 1.0F).x < 0.1F);
+    CHECK(CrtWarp({0.9F, 0.5F}, 0.0F).x == Approx(0.9F)); // no CRT, no bulge
+    const glm::vec2 corner = CrtWarp({0.0F, 0.0F}, 1.0F);
+    CHECK((corner.x < 0.0F && corner.y < 0.0F)); // outside the glass: drawn black
+}

@@ -62,6 +62,48 @@ namespace umbra::render
             return vkCreateRenderPass(device, &info, nullptr, &pass) == VK_SUCCESS ? pass : VK_NULL_HANDLE;
         }
 
+        // The screen pass: the same attachments, subpass and dependency as the swapchain's pass
+        // (VulkanVertexPipeline), so pipelines made for one draw in the other ("compatible" passes);
+        // only the color's final layout differs: ready to be sampled by the analog screen.
+        VkRenderPass MakeScreenPass(VkDevice device, VkFormat color, VkFormat depth)
+        {
+            std::array<VkAttachmentDescription, 2> attachments{};
+            attachments[0].format = color;
+            attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+            attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+            attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+            attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            attachments[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            attachments[1] = attachments[0];
+            attachments[1].format = depth;
+            attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            const VkAttachmentReference colorRef{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+            const VkAttachmentReference depthRef{1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
+            VkSubpassDescription subpass{};
+            subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+            subpass.colorAttachmentCount = 1;
+            subpass.pColorAttachments = &colorRef;
+            subpass.pDepthStencilAttachment = &depthRef;
+            VkSubpassDependency dependency{};
+            dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+            dependency.dstSubpass = 0;
+            dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+            dependency.dstStageMask = dependency.srcStageMask;
+            dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            VkRenderPassCreateInfo info{VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
+            info.attachmentCount = 2;
+            info.pAttachments = attachments.data();
+            info.subpassCount = 1;
+            info.pSubpasses = &subpass;
+            info.dependencyCount = 1;
+            info.pDependencies = &dependency;
+            VkRenderPass pass = VK_NULL_HANDLE;
+            return vkCreateRenderPass(device, &info, nullptr, &pass) == VK_SUCCESS ? pass : VK_NULL_HANDLE;
+        }
+
         VkFramebuffer MakeFramebuffer(VkDevice device, VkRenderPass pass, VkExtent2D size, std::initializer_list<VkImageView> views)
         {
             const std::vector<VkImageView> list(views);
@@ -102,7 +144,8 @@ namespace umbra::render
         scenePass_ = MakePass(device_, hdrFormat, VK_ATTACHMENT_LOAD_OP_CLEAR, depthFormat);
         bloomPass_ = MakePass(device_, hdrFormat, VK_ATTACHMENT_LOAD_OP_DONT_CARE);
         addPass_ = MakePass(device_, hdrFormat, VK_ATTACHMENT_LOAD_OP_LOAD);
-        if (!scenePass_ || !bloomPass_ || !addPass_)
+        screenPass_ = MakeScreenPass(device_, swapchain.GetImageFormat(), depthFormat);
+        if (!scenePass_ || !bloomPass_ || !addPass_ || !screenPass_)
             return fail("render passes");
 
         // 2. Descriptors: source picture, bloom picture, color table; constants pushed per pass.
@@ -136,6 +179,10 @@ namespace umbra::render
             if (!allocator.CreateColorTarget(extent_, hdrFormat, t.hdr) || !allocator.CreateDepthImage(extent_, depthFormat, t.depth))
                 return fail("HDR picture");
             t.sceneFramebuffer = MakeFramebuffer(device_, scenePass_, extent_, {t.hdr.GetView(), t.depth.GetView()});
+            // The screen picture for the analog screen; its pass reuses the scene's depth (done with by then).
+            if (!allocator.CreateColorTarget(extent_, swapchain.GetImageFormat(), t.screen))
+                return fail("screen picture");
+            t.screenFramebuffer = MakeFramebuffer(device_, screenPass_, extent_, {t.screen.GetView(), t.depth.GetView()});
             t.levels.resize(levels);
             for (std::size_t i = 0; i < levels; ++i)
             {
@@ -143,12 +190,12 @@ namespace umbra::render
                     return fail("bloom picture");
                 t.levelFramebuffers.push_back(MakeFramebuffer(device_, bloomPass_, LevelSize(i), {t.levels[i].GetView()}));
             }
-            if (!t.sceneFramebuffer || std::count(t.levelFramebuffers.begin(), t.levelFramebuffers.end(), VK_NULL_HANDLE) > 0)
+            if (!t.sceneFramebuffer || !t.screenFramebuffer || std::count(t.levelFramebuffers.begin(), t.levelFramebuffers.end(), VK_NULL_HANDLE) > 0)
                 return fail("framebuffers");
         }
 
-        // 4. One descriptor set per pass: `levels` down, `levels - 1` up, 1 composite.
-        const std::uint32_t sets = static_cast<std::uint32_t>(targets_.size() * levels * 2);
+        // 4. One descriptor set per pass: `levels` down, `levels - 1` up, 1 composite, 1 analog.
+        const std::uint32_t sets = static_cast<std::uint32_t>(targets_.size() * (levels * 2 + 1));
         const VkDescriptorPoolSize poolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, sets * 3};
         VkDescriptorPoolCreateInfo poolInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
         poolInfo.maxSets = sets;
@@ -172,6 +219,7 @@ namespace umbra::render
             for (std::size_t i = 0; i + 1 < levels; ++i)
                 t.upSets.push_back(allocate());
             t.compositeSet = allocate();
+            t.analogSet = allocate();
         }
 
         // 5. A neutral color table until the scene sets a grade.
@@ -181,7 +229,8 @@ namespace umbra::render
 
         // 6. Bloom pipelines: one screen triangle, a fragment shader each, viewport set per pass.
         if (!LoadShaderModule(device_, shaderDirectory / "Fullscreen.vert.spv", fullscreen_) ||
-            !LoadShaderModule(device_, shaderDirectory / "Composite.frag.spv", compositeShader_))
+            !LoadShaderModule(device_, shaderDirectory / "Composite.frag.spv", compositeShader_) ||
+            !LoadShaderModule(device_, shaderDirectory / "Analog.frag.spv", analogShader_))
             return fail("shaders");
         const auto make = [&](const char *file, VkRenderPass pass, bool add) {
             VkShaderModule fragment = VK_NULL_HANDLE;
@@ -253,9 +302,10 @@ namespace umbra::render
     bool VulkanPost::CreateComposite(VkRenderPass finalPass)
     {
         composite_ = compositeShader_ ? MakePipeline(compositeShader_, finalPass, false) : VK_NULL_HANDLE;
-        if (!composite_)
-            diagnostics::Error("Post-processing: composite pipeline");
-        return composite_ != VK_NULL_HANDLE;
+        analog_ = analogShader_ ? MakePipeline(analogShader_, finalPass, false) : VK_NULL_HANDLE;
+        if (!composite_ || !analog_)
+            diagnostics::Error("Post-processing: composite or analog pipeline");
+        return composite_ != VK_NULL_HANDLE && analog_ != VK_NULL_HANDLE;
     }
 
     void VulkanPost::WriteSets()
@@ -287,6 +337,7 @@ namespace umbra::render
             for (std::size_t i = 0; i < t.upSets.size(); ++i)
                 write(t.upSets[i], t.levels[i + 1].GetView(), t.levels[i + 1].GetView());
             write(t.compositeSet, t.hdr.GetView(), t.levels[0].GetView());
+            write(t.analogSet, t.screen.GetView(), t.screen.GetView());
         }
     }
 
@@ -311,9 +362,8 @@ namespace umbra::render
     }
 
     void VulkanPost::Pass(VkCommandBuffer commandBuffer, VkRenderPass pass, VkFramebuffer framebuffer, VkExtent2D size, VkPipeline pipeline,
-                          VkDescriptorSet set, VkExtent2D sourceSize, const core::PostSettings &settings) const
+                          VkDescriptorSet set, const core::PostBlock &block) const
     {
-        core::PostBlock block = core::PackPost(settings, sourceSize.width, sourceSize.height);
         if (pass != VK_NULL_HANDLE)
         {
             VkRenderPassBeginInfo begin{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
@@ -339,16 +389,27 @@ namespace umbra::render
         const Target &t = targets_[imageIndex];
         // 1. Down: the bright light into level 0, then each level halves the one before.
         for (std::size_t i = 0; i < t.levels.size(); ++i)
+        {
+            const VkExtent2D from = i == 0 ? extent_ : LevelSize(i - 1);
             Pass(commandBuffer, bloomPass_, t.levelFramebuffers[i], LevelSize(i), i == 0 ? bright_ : down_, t.downSets[i],
-                 i == 0 ? extent_ : LevelSize(i - 1), settings);
+                 core::PackPost(settings, from.width, from.height));
+        }
         // 2. Up: from the smallest, each level is blurred onto the next bigger one.
         for (std::size_t i = t.levels.size() - 1; i > 0; --i)
-            Pass(commandBuffer, addPass_, t.levelFramebuffers[i - 1], LevelSize(i - 1), up_, t.upSets[i - 1], LevelSize(i), settings);
+            Pass(commandBuffer, addPass_, t.levelFramebuffers[i - 1], LevelSize(i - 1), up_, t.upSets[i - 1],
+                 core::PackPost(settings, LevelSize(i).width, LevelSize(i).height));
     }
 
     void VulkanPost::DrawComposite(VkCommandBuffer commandBuffer, std::uint32_t imageIndex, const core::PostSettings &settings) const
     {
-        Pass(commandBuffer, VK_NULL_HANDLE, VK_NULL_HANDLE, extent_, composite_, targets_[imageIndex].compositeSet, extent_, settings);
+        Pass(commandBuffer, VK_NULL_HANDLE, VK_NULL_HANDLE, extent_, composite_, targets_[imageIndex].compositeSet,
+             core::PackPost(settings, extent_.width, extent_.height));
+    }
+
+    void VulkanPost::DrawAnalog(VkCommandBuffer commandBuffer, std::uint32_t imageIndex, const core::PostSettings &settings) const
+    {
+        Pass(commandBuffer, VK_NULL_HANDLE, VK_NULL_HANDLE, extent_, analog_, targets_[imageIndex].analogSet,
+             core::PackAnalog(settings, extent_.width, extent_.height, seconds_));
     }
 
     void VulkanPost::Shutdown() noexcept
@@ -357,22 +418,23 @@ namespace umbra::render
             return;
         for (Target &t : targets_)
         {
-            if (t.sceneFramebuffer)
-                vkDestroyFramebuffer(device_, t.sceneFramebuffer, nullptr);
+            for (VkFramebuffer f : {t.sceneFramebuffer, t.screenFramebuffer})
+                if (f)
+                    vkDestroyFramebuffer(device_, f, nullptr);
             for (VkFramebuffer f : t.levelFramebuffers)
                 if (f)
                     vkDestroyFramebuffer(device_, f, nullptr);
         }
         targets_.clear();
         lut_.Reset();
-        for (VkPipeline p : {bright_, down_, up_, composite_})
+        for (VkPipeline p : {bright_, down_, up_, composite_, analog_})
             if (p)
                 vkDestroyPipeline(device_, p, nullptr);
-        bright_ = down_ = up_ = composite_ = VK_NULL_HANDLE;
-        for (VkShaderModule m : {fullscreen_, compositeShader_})
+        bright_ = down_ = up_ = composite_ = analog_ = VK_NULL_HANDLE;
+        for (VkShaderModule m : {fullscreen_, compositeShader_, analogShader_})
             if (m)
                 vkDestroyShaderModule(device_, m, nullptr);
-        fullscreen_ = compositeShader_ = VK_NULL_HANDLE;
+        fullscreen_ = compositeShader_ = analogShader_ = VK_NULL_HANDLE;
         if (pool_)
             vkDestroyDescriptorPool(device_, pool_, nullptr);
         if (sampler_)
@@ -381,14 +443,14 @@ namespace umbra::render
             vkDestroyPipelineLayout(device_, layout_, nullptr);
         if (setLayout_)
             vkDestroyDescriptorSetLayout(device_, setLayout_, nullptr);
-        for (VkRenderPass p : {scenePass_, bloomPass_, addPass_})
+        for (VkRenderPass p : {scenePass_, bloomPass_, addPass_, screenPass_})
             if (p)
                 vkDestroyRenderPass(device_, p, nullptr);
         pool_ = VK_NULL_HANDLE;
         sampler_ = VK_NULL_HANDLE;
         layout_ = VK_NULL_HANDLE;
         setLayout_ = VK_NULL_HANDLE;
-        scenePass_ = bloomPass_ = addPass_ = VK_NULL_HANDLE;
+        scenePass_ = bloomPass_ = addPass_ = screenPass_ = VK_NULL_HANDLE;
         grade_ = {};
         gradeImage_.reset();
         device_ = VK_NULL_HANDLE;

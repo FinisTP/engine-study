@@ -3,6 +3,7 @@
 #include "CafePlay.hpp"
 #include "CafeRoom.hpp"
 #include "GameContext.hpp"
+#include "Analog.hpp"
 
 #include <Log.hpp>
 #include <MatchDef.hpp>
@@ -32,6 +33,11 @@ int RunCafe(GameContext &game, const umbra::assets::AssetFolders &assets, umbra:
         umbra::diagnostics::Error(umbra::core::Format(d));
     if (!loaded || words.is_discarded() || room.is_discarded() || match.characters.empty())
         return 0;
+    umbra::night::GameOptions options; // only for the analog screen's strengths (Analog.hpp)
+    std::vector<umbra::core::Diagnostic> ignored;
+    if (!umbra::night::LoadOptions(assets / "options.csv", options, ignored))
+        options = {};
+    const umbra::night::AnalogScreen analog = umbra::night::LoadAnalog(umbra::night::AnalogPath(), options);
 
     // 2. The walker: the first of the company the career knows, else the first character.
     const std::string walker = !career.characters.empty() ? career.characters.front().id : match.characters.front().id;
@@ -129,6 +135,7 @@ int RunCafe(GameContext &game, const umbra::assets::AssetFolders &assets, umbra:
                 captured = umbra::assets::EncodePng(picture, png) &&
                            static_cast<bool>(std::ofstream(capture, std::ios::binary).write(reinterpret_cast<const char *>(png.data()), static_cast<std::streamsize>(png.size())));
             });
+        analog.Apply(drawList.post);
         if (!game.renderer.RenderFrame(dt, drawList))
             break;
         if (captured || (lastFrame > 0 && frame >= lastFrame + (capture.empty() ? 0 : 5)))
