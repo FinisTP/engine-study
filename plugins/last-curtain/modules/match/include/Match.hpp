@@ -66,6 +66,7 @@ namespace umbra::match
         std::uint8_t flags = 0;  // flag::
         std::int8_t ap = 0;      // action points stored by biding (Match.md "Biding")
         std::int16_t from = 0;   // the first round it may act (one that appears mid-fight waits a round)
+        std::int8_t bonusMove = 0; // added to its next turn's moves, then spent (Match.md "Hasten")
     };
 
     inline bool Up(const Unit &u) { return u.cell >= 0 && u.hp > 0; }      // on the board and standing
@@ -77,6 +78,12 @@ namespace umbra::match
         std::int8_t item = -1; // items.csv row, -1 = essence only
         int essence = 0;
         bool treasure = false; // an item room's treasure: picking it up deals face-down cards
+    };
+
+    // A unit's chance to drop an item when it falls (stage files; rolled from the fight's rng).
+    struct Drop
+    {
+        std::int8_t unit = -1, item = -1, percent = 0;
     };
 
     // A three-round battle between two units (Battle.cpp).
@@ -156,6 +163,8 @@ namespace umbra::match
         int winner = -1; // -1 a draw
         Loss loss = Loss::None;
         bool riteReady = false, riteUsed = false; // Le Thanh's rite: offered once in the whole game (plan 5 saves it)
+        std::vector<std::int8_t> found; // ingredients and keepsakes picked up or dropped: for the cafe's storage (Match.md "Found")
+        std::vector<Drop> drops;        // what each unit may drop when it falls
     };
 
     // A unit's squares: size x size from its cell, the top-left (Match.md "Large monsters"), fallen or not.
@@ -206,7 +215,8 @@ namespace umbra::match
         NoAp,      // not enough action points, or none left to spend this turn
         OnlyPlayer, // only the living player cuts strings
         NotStrung, // no gold knot to cut
-        NoRite     // the rite is not offered now
+        NoRite,    // the rite is not offered now
+        NotHere    // the item can't be used here (items.csv "use")
     };
 
     int Current(const MatchState &s); // the unit that acts next; -1 when the match is over (the player while the rite is offered)

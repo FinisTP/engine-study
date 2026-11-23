@@ -95,8 +95,10 @@ namespace umbra::match
 
         void BeginTurn(MatchState &s)
         {
-            const Unit &u = s.units[U(s.order[U(s.turn)])];
-            s.now = {u.cell, static_cast<std::int8_t>(u.move), false};
+            // A move bonus waiting from a hasten is spent on this turn (Match.md "Hasten").
+            Unit &u = s.units[U(s.order[U(s.turn)])];
+            s.now = {u.cell, static_cast<std::int8_t>(u.move + u.bonusMove), false};
+            u.bonusMove = 0;
         }
 
         Why CheckMove(const MatchDef &def, const MatchState &s, const Unit &u, int dir)
@@ -143,7 +145,8 @@ namespace umbra::match
                 return Why::NothingHere;
             const Floor &f = s.floor[U(index)];
             const int carried = static_cast<int>(std::count_if(u.items.begin(), u.items.end(), [](std::int8_t i) { return i >= 0; }));
-            if (!f.treasure && f.item >= 0 && carried >= def.rules.carry)
+            const bool forStorage = f.item >= 0 && def.items[U(f.item)].family != ItemFamily::Item; // never in a slot
+            if (!f.treasure && f.item >= 0 && !forStorage && carried >= def.rules.carry)
                 return Why::BagFull;
             return Why::Ok;
         }
@@ -330,7 +333,9 @@ namespace umbra::match
                 break;
             }
             u.essence += f.essence;
-            if (f.item >= 0)
+            if (f.item >= 0 && def.items[U(f.item)].family != ItemFamily::Item)
+                s.found.push_back(f.item);
+            else if (f.item >= 0)
                 *std::find(u.items.begin(), u.items.end(), std::int8_t(-1)) = f.item;
             Log(s, LogKind::Item, me, f.item, f.essence);
             Acted(def, s);

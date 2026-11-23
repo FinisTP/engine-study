@@ -16,7 +16,7 @@ one copyable value, and only `Apply` changes it. Bots and the app send the same 
 | `spawns.csv` | zone (weak, strong, centre), from (first round), monster (never a guardian), every (rounds after its square empties; 0 = once); loaded sorted by zone, then from |
 | `treasure.csv` | id, kind (item, essence, xp, heal), item (or none), amount, weight: what an item room's face-down cards may hold |
 | `levelcards.csv` | id, kind (learn, stat, upgrade), what (hp, attack, defence, speed, move; power or cost for an upgrade), amount (a stat's), weight |
-| `items.csv` | id, name, text, sprite, class (heal, xp, revive: "Falls"), amount |
+| `items.csv` | id, name, text, sprite, class (heal, xp, revive: "Falls"), amount, use (where it can be used: `cafe`, `board`, `fight`, joined by `;`), family (`item`, `ingredient`, `keepsake`: "Found") |
 | `events.csv` | id, name, text, two choices: label, chance (percent), success, failure (`none`, `hp:-3`, `essence:2`, `xp:2`, `item:<id>`) |
 
 The loader refuses a role without a free (0 HP) level-1 Strike, so a fighter at 1 HP can always act.
@@ -96,6 +96,9 @@ has no fighter `Up`. Range to a fallen unit is measured as usual (`Squares` is w
 
 ## Biding (campaign plan 2, `biding` on)
 
+**Off in the shipped data for now** (the user, 2026-11-24: `rules.json` campaign `biding: false`). The
+rules below stay and their tests switch it on themselves.
+
 - **Bide** (`ActionKind::Bide`): the whole turn, before moving or acting; the unit gains 1 action
   point (AP), at most `maxAp` (2). No Defence bonus. Refused once it has moved or acted
   (`AlreadyActed`), and in the faction match (`Off`).
@@ -108,6 +111,24 @@ has no fighter `Up`. Range to a fallen unit is measured as usual (`Squares` is w
   room (`NoAp` otherwise). It counts as spending.
 - AP is 0 when a fight begins (`BeginMatch`) and lost when a unit falls. Monsters don't bide yet
   (their behaviours come with campaign plan 4).
+
+## Hasten (campaign plan 4)
+
+- `hasten` (a board ability, Tí's Đưa tin): the target, an ally (never the user), gets **a whole extra
+  turn right after the user's**: its id is put into this round's `order` just after the user's place. Its
+  own place stays, so it may act twice this round; the next round's sort has it once again.
+- `afterhasten` (a passive): after the user hastens someone, its **next turn has `power` more moves**
+  (`Unit::bonusMove`, spent by that turn).
+
+## Found: ingredients, keepsakes and drops (campaign plan 4)
+
+- Items of family `ingredient` or `keepsake` never go into a slot: picking one up (never refused for a full
+  bag) puts it in `MatchState::found`, which the campaign moves to the café's storage when the stage is won.
+- `MatchState::drops` (from the stage file): when a unit falls, each of its drops is rolled
+  (`Roll(s, 100) < percent`) and goes to `found`.
+- An item whose `use` lacks `board` is refused on the board (`Why::NotHere`).
+- A campaign fight seeds its random numbers from the fight's seed in `BeginMatch` (the faction match's
+  come from `NewMatch`), so the same seed gives the same drops.
 
 ## Freeing and the end (campaign plan 2, `win` boss)
 
@@ -210,6 +231,8 @@ round, so mirrored squares spawn together. `spawn.warn` rounds before, it is ann
 row starts after round 1 leaves its squares empty until then.
 
 ## Saves (`MatchSave.cpp`)
+
+Version 5 (campaign plan 4): `Unit::bonusMove`, `found`, `drops`.
 
 `SaveMatch` writes every field of `MatchState` by name, the board and the log included, with
 `"format": "umbra.match", "version": 2` (2: spawns, the fixed stage). `LoadMatch` refuses another format or version and any

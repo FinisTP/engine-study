@@ -160,6 +160,8 @@ namespace umbra::match
         for (Unit &u : s.units)
             u.from = 0, u.ap = 0;
         s.orderSeed = seed;
+        if (s.rng == 0) // a campaign fight: its own random numbers from the seed (NewMatch seeds the faction match's)
+            s.rng = Rng{seed ^ 0xC0FFEEULL}.Next();
         s.round = 1;
         s.turn = -1;
         SortOrder(s);

@@ -64,7 +64,8 @@
     "NoAp": "Not enough action points.",
     "OnlyPlayer": "Only the living can cut the strings.",
     "NotStrung": "There are no strings to cut.",
-    "NoRite": "The rite cannot be called now."
+    "NoRite": "The rite cannot be called now.",
+    "NotHere": "This can only be used in the café."
   },
   "actions": {
     "undo": "Undo move",

@@ -265,7 +265,7 @@ namespace umbra::match
                 a.name = s.Text(r, "name");
                 a.animation = s.Text(r, "animation");
                 a.use = static_cast<Use>(s.Pick(r, "use", {"battle", "board", "passive"}));
-                a.kind = static_cast<AbilityClass>(s.Pick(r, "class", {"strike", "shield", "heal", "hit", "firststrike", "revive", "remove", "giveap"}));
+                a.kind = static_cast<AbilityClass>(s.Pick(r, "class", {"strike", "shield", "heal", "hit", "firststrike", "revive", "remove", "giveap", "hasten", "afterhasten"}));
                 a.target = static_cast<Target>(s.Pick(r, "target", {"enemy", "ally", "self", "monster", "room", "any"}));
                 a.hpCost = s.Int(r, "hpCost", 0, 99);
                 a.ap = s.Int(r, "ap", 0, 2);
@@ -386,12 +386,25 @@ namespace umbra::match
 
         void LoadItems(const std::filesystem::path &folder, MatchDef &def, Diagnostics &out)
         {
-            Sheet s(out, folder, "items.csv", {"id", "name", "text", "sprite", "class", "amount"});
+            Sheet s(out, folder, "items.csv", {"id", "name", "text", "sprite", "class", "amount", "use", "family"});
             for (int r = 0; r < s.Rows(); ++r)
             {
                 ItemDef i{s.Text(r, "id"), s.Text(r, "name"), s.Text(r, "text"), s.Text(r, "sprite")};
                 i.kind = static_cast<ItemClass>(s.Pick(r, "class", {"heal", "xp", "revive"}));
                 i.amount = s.Int(r, "amount", 0, 999);
+                i.family = static_cast<ItemFamily>(s.Pick(r, "family", {"item", "ingredient", "keepsake"}));
+                // 1. "use": places joined by ';' (cafe, board, fight).
+                i.use = 0;
+                const std::string use = s.Text(r, "use");
+                for (std::size_t at = 0; at <= use.size();)
+                {
+                    const std::size_t end = std::min(use.find(';', at), use.size());
+                    const std::string word = use.substr(at, end - at);
+                    i.use |= word == "cafe" ? useCafe : word == "board" ? useBoard : word == "fight" ? useFight : 0;
+                    if (word != "cafe" && word != "board" && word != "fight")
+                        s.Bad(s.Where(r, "use"), "'" + word + "' is not cafe, board or fight");
+                    at = end + 1;
+                }
                 def.items.push_back(i);
             }
         }

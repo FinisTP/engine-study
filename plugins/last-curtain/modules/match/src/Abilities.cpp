@@ -163,6 +163,8 @@ namespace umbra::match
                 return Why::NoAp;
             if (a.kind == AbilityClass::GiveAp && (u.ap < 1 + a.ap || t.ap >= s.mode.maxAp || target == me))
                 return Why::NoAp;
+            if (a.kind == AbilityClass::Hasten && target == me)
+                return Why::NothingHere; // an ally, never yourself
             // 3. Hit or remove an enemy, heal, revive or give to your own side (yourself included), within range.
             const bool foe = a.kind == AbilityClass::Hit || a.kind == AbilityClass::Remove;
             if (foe == (t.faction == u.faction) || (a.kind == AbilityClass::Heal && t.kind != 0))
@@ -192,6 +194,15 @@ namespace umbra::match
             {
                 --u.ap;
                 ++t.ap;
+            }
+            else if (a.kind == AbilityClass::Hasten)
+            {
+                // 1. The ally's extra turn comes right after this one; its own place stays (Match.md "Hasten").
+                s.order.insert(s.order.begin() + s.turn + 1, static_cast<std::int8_t>(target));
+                // 2. A passive that runs after a hasten: more moves on the user's next turn.
+                for (const std::int8_t own : u.abilities)
+                    if (own >= 0 && def.abilities[U(own)].kind == AbilityClass::AfterHasten)
+                        u.bonusMove = static_cast<std::int8_t>(def.abilities[U(own)].power);
             }
             else if (a.kind == AbilityClass::Revive)
                 Revive(def, s, target, me, PowerOf(def, u, slot));
@@ -224,6 +235,8 @@ namespace umbra::match
                 return Why::AlreadyActed;
             if (slot < 0 || slot >= maxItems || s.units[U(me)].items[U(slot)] < 0)
                 return Why::NothingHere;
+            if ((def.items[U(s.units[U(me)].items[U(slot)])].use & useBoard) == 0)
+                return Why::NotHere;
             // A revive item stands up a fallen one of your side beside you; the others are for yourself (target -1).
             if (def.items[U(s.units[U(me)].items[U(slot)])].kind != ItemClass::Revive)
                 return target == -1 ? Why::Ok : Why::NothingHere;

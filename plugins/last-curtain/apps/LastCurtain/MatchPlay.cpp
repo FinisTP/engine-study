@@ -55,7 +55,7 @@ const char *MatchPlay::LogName(LogKind kind)
 const char *MatchPlay::WhyName(Why why)
 {
     static const char *names[] = {"Ok", "NotYourTurn", "NoMovesLeft", "Blocked", "AlreadyActed", "OutOfRange", "OwnSide", "TooCostly",
-                                  "NotOnStage", "NothingToPerform", "NothingHere", "BagFull", "MustChoose", "Over", "FullHp", "Off", "Fallen", "NotFallen", "NoAp", "OnlyPlayer", "NotStrung", "NoRite"};
+                                  "NotOnStage", "NothingToPerform", "NothingHere", "BagFull", "MustChoose", "Over", "FullHp", "Off", "Fallen", "NotFallen", "NoAp", "OnlyPlayer", "NotStrung", "NoRite", "NotHere"};
     return names[static_cast<int>(why)];
 }
 

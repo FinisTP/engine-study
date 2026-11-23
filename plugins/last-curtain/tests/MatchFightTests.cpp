@@ -297,6 +297,7 @@ TEST_CASE("Biding is the whole turn and gives 1 AP, at most 2 (campaign plan 2)"
 {
     const MatchDef def = Data();
     MatchState s = ::Fight(def);
+    s.mode.biding = true; // off in the data for now (the user, 2026-11-24); its rules stay
     for (int k = 1; k <= 3; ++k)
     {
         TurnOf(def, s, 0);
@@ -310,6 +311,7 @@ TEST_CASE("A bide is refused after a move, after an action, and in the faction m
 {
     const MatchDef def = Data();
     MatchState s = ::Fight(def);
+    s.mode.biding = true; // off in the data for now (the user, 2026-11-24); its rules stay
     TurnOf(def, s, 0);
     MatchState moved = s;
     const int d = OpenMove(def, moved);
@@ -328,6 +330,7 @@ TEST_CASE("With 2 AP a turn has three actions, each with its own move (campaign 
 {
     const MatchDef def = Data();
     MatchState s = ::Fight(def);
+    s.mode.biding = true; // off in the data for now (the user, 2026-11-24); its rules stay
     TurnOf(def, s, 0);
     s.units[0].ap = 2;
     s.units[0].hp = 1;
@@ -354,6 +357,7 @@ TEST_CASE("An AP ability is paid first from the same pool and limit (campaign pl
     def.abilities[U(one)].ap = 1;
     def.abilities[U(two)].ap = 2;
     MatchState s = ::Fight(def);
+    s.mode.biding = true; // off in the data for now (the user, 2026-11-24); its rules stay
     TurnOf(def, s, 0);
     s.units[0].hp = 5;
     s.units[0].abilities[6] = I8(one);
@@ -384,6 +388,7 @@ TEST_CASE("Give-AP moves one AP to an ally (campaign plan 2)", "[match][fight][b
     MatchDef def = Data();
     const int give = AddAbility(def, "word", AbilityClass::GiveAp, Target::Ally, 0, 6);
     MatchState s = ::Fight(def);
+    s.mode.biding = true; // off in the data for now (the user, 2026-11-24); its rules stay
     TurnOf(def, s, 0);
     Give(s, 0, give);
     const Action pass{ActionKind::BoardAbility, maxAbilities - 1, 1};
@@ -402,6 +407,7 @@ TEST_CASE("Every unit starts a fight at 0 AP (campaign plan 2)", "[match][fight]
 {
     const MatchDef def = Data();
     MatchState s = ::Fight(def);
+    s.mode.biding = true; // off in the data for now (the user, 2026-11-24); its rules stay
     for (Unit &u : s.units)
         u.ap = 2;
     BeginMatch(def, s, 9);
@@ -556,4 +562,117 @@ TEST_CASE("No rite for a trapped loss or when not ready (campaign plan 2)", "[ma
     REQUIRE(s.loss == Loss::Trapped);
     CHECK(Check(def, s, {ActionKind::Rite}) == Why::NoRite);
     CHECK(Current(s) == -1);
+}
+
+TEST_CASE("Biding is off in the campaign's data for now (the user, 2026-11-24)", "[match][fight][biding]")
+{
+    const MatchDef def = Data();
+    CHECK_FALSE(def.modes.at("campaign").biding);
+    MatchState s = ::Fight(def);
+    TurnOf(def, s, 0);
+    CHECK(Check(def, s, {ActionKind::Bide}) == Why::Off);
+}
+
+TEST_CASE("Hasten: the ally takes a full extra turn right after the user and keeps its own (campaign plan 4)", "[match][fight][hasten]")
+{
+    MatchDef def = Data();
+    const int word = AddAbility(def, "word", AbilityClass::Hasten, Target::Ally, 0, 6);
+    MatchState s = ::Fight(def);
+    TurnOf(def, s, 0);
+    Give(s, 0, word);
+    Put(s, 1, Beside(s, s.units[0].cell));
+    const Action onSelf{ActionKind::BoardAbility, maxAbilities - 1, 0}, onAlly{ActionKind::BoardAbility, maxAbilities - 1, 1};
+    CHECK(Check(def, s, onSelf) != Why::Ok);
+    const auto count = [&] { return std::ranges::count(s.order, I8(1)); };
+    REQUIRE(count() == 1);
+    REQUIRE(Apply(def, s, onAlly));
+    CHECK(Check(def, s, onAlly) == Why::AlreadyActed); // once a turn
+    CHECK(count() == 2);                                // its extra turn and its own
+    REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
+    CHECK(Current(s) == 1);
+    CHECK(s.now.movesLeft == s.units[1].move); // a whole turn: move and act
+    // The extra place goes with the round: the next round has it once.
+    const int round = s.round;
+    for (int i = 0; i < 50 && s.round == round; ++i)
+        REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
+    CHECK(count() == 1);
+}
+
+TEST_CASE("After hasten, a unit with the passive gets +3 move on its next turn only (campaign plan 4)", "[match][fight][hasten]")
+{
+    MatchDef def = Data();
+    const int word = AddAbility(def, "word", AbilityClass::Hasten, Target::Ally, 0, 6);
+    const int feet = AddAbility(def, "feet", AbilityClass::AfterHasten, Target::Self, 3);
+    def.abilities[U(feet)].use = Use::Passive;
+    MatchState s = ::Fight(def);
+    TurnOf(def, s, 0);
+    s.units[0].abilities[maxAbilities - 2] = I8(feet);
+    Give(s, 0, word);
+    Put(s, 1, Beside(s, s.units[0].cell));
+    const int move = s.units[0].move;
+    REQUIRE(Apply(def, s, {ActionKind::BoardAbility, maxAbilities - 1, 1}));
+    REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
+    TurnOf(def, s, 0);
+    CHECK(s.now.movesLeft == move + 3);
+    REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
+    TurnOf(def, s, 0);
+    CHECK(s.now.movesLeft == move);
+}
+
+TEST_CASE("Items say where they can be used; a cafe item can't be used in a fight (campaign plan 4)", "[match][fight][items]")
+{
+    MatchDef def = Data();
+    REQUIRE((def.items[0].use & useBoard) != 0); // the shipped items work on the board
+    ItemDef jam = def.items[0];
+    jam.id = jam.name = "jam";
+    jam.use = useCafe;
+    def.items.push_back(jam);
+    MatchState s = ::Fight(def);
+    TurnOf(def, s, 0);
+    s.units[0].items[0] = I8(static_cast<int>(def.items.size()) - 1);
+    CHECK(Check(def, s, {ActionKind::UseItem, 0}) == Why::NotHere);
+}
+
+TEST_CASE("Ingredients and keepsakes picked up go to the found list, never a slot (campaign plan 4)", "[match][fight][items]")
+{
+    MatchDef def = Data();
+    ItemDef ginger = def.items[0];
+    ginger.id = ginger.name = "ginger";
+    ginger.family = ItemFamily::Ingredient;
+    ginger.use = useCafe;
+    def.items.push_back(ginger);
+    const auto g = I8(static_cast<int>(def.items.size()) - 1);
+    MatchState s = ::Fight(def);
+    TurnOf(def, s, 0);
+    s.units[0].items = {0, 0, 0, 0}; // a full bag
+    s.floor.push_back({s.units[0].cell, g, 0, false});
+    const Action pick{ActionKind::PickUp, I8(static_cast<int>(s.floor.size()) - 1)};
+    REQUIRE(Check(def, s, pick) == Why::Ok);
+    REQUIRE(Apply(def, s, pick));
+    CHECK(s.found == std::vector<std::int8_t>{g});
+    CHECK(std::ranges::count(s.units[0].items, g) == 0);
+}
+
+TEST_CASE("A unit's drops are rolled from the fight's seed when it falls (campaign plan 4)", "[match][fight][drops]")
+{
+    MatchDef def = Data();
+    const int blow = AddAbility(def, "blow", AbilityClass::Hit, Target::Enemy, 99, 99);
+    const auto falls = [&](std::uint64_t seed, int percent) {
+        MatchState s = ::Fight(def, seed);
+        s.units[2].flags = 0;
+        s.drops.push_back({2, 0, I8(percent)});
+        TurnOf(def, s, 0);
+        Give(s, 0, blow);
+        REQUIRE(Apply(def, s, {ActionKind::BoardAbility, maxAbilities - 1, 2}));
+        REQUIRE(s.units[2].hp <= 0);
+        return s.found;
+    };
+    CHECK(falls(5, 100) == std::vector<std::int8_t>{0});
+    CHECK(falls(5, 0).empty());
+    CHECK(falls(9, 30) == falls(9, 30)); // the same seed, the same drop
+    int got = 0;
+    for (std::uint64_t seed = 1; seed <= 400; ++seed)
+        got += falls(seed, 30).empty() ? 0 : 1;
+    CHECK(got > 80);
+    CHECK(got < 160);
 }

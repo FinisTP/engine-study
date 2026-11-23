@@ -19,12 +19,16 @@ namespace umbra::match
     // Strike, Shield: battle. Heal: battle or board. Hit: board. FirstStrike: passive.
     // Revive (a fallen ally stands up), Remove (a fallen foe leaves the fight): board (Match.md "Falls").
     // GiveAp: one of the user's action points to an ally, board (Match.md "Biding").
-    enum class AbilityClass : std::uint8_t { Strike, Shield, Heal, Hit, FirstStrike, Revive, Remove, GiveAp };
+    // Hasten: an ally takes an extra turn right after the user, board; AfterHasten: +power move on the
+    // user's next turn after a hasten, passive (Match.md "Hasten").
+    enum class AbilityClass : std::uint8_t { Strike, Shield, Heal, Hit, FirstStrike, Revive, Remove, GiveAp, Hasten, AfterHasten };
     enum class Tier : std::uint8_t { Weak, Strong, Great, Guardian };
     enum class Behaviour : std::uint8_t { Stay, Flee, Stage, Guard, Hunt };
     // Who a board ability may aim at: the target symbol beside it on screen.
     enum class Target : std::uint8_t { Enemy, Ally, Self, Monster, Room, Any };
     enum class ItemClass : std::uint8_t { HealItem, ExpGrant, Revive }; // Revive: amount = percent of max HP
+    enum class ItemFamily : std::uint8_t { Item, Ingredient, Keepsake }; // ingredients and keepsakes go to the cafe's storage
+    constexpr std::uint8_t useCafe = 1, useBoard = 2, useFight = 4; // where an item can be used (items.csv "use")
     enum class TreasureKind : std::uint8_t { Item, Essence, Xp, Heal };
     enum class CardKind : std::uint8_t { Learn, Stat, Upgrade };
     enum class Stat : std::uint8_t { Hp, Attack, Defence, Speed, Move, Power, Cost }; // Power, Cost: what an upgrade raises or cuts
@@ -81,6 +85,8 @@ namespace umbra::match
         std::string id, name, text, sprite;
         ItemClass kind = ItemClass::HealItem;
         int amount = 0;
+        std::uint8_t use = useBoard;
+        ItemFamily family = ItemFamily::Item;
     };
 
     // One treasure.csv row: what a face-down card in an item room may hold, and how often (weight).

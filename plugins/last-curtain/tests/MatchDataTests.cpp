@@ -146,7 +146,7 @@ TEST_CASE("rules.json modes load, and a broken mode is refused (campaign plan 2)
     CHECK_FALSE((f.biding || f.fallsStay || f.playerLoss || f.mustFree));
     CHECK(f.win == WinBy::Score);
     CHECK_FALSE((c.essence || c.perform || c.respawn || c.fightXp));
-    CHECK((c.biding && c.fallsStay && c.playerLoss));
+    CHECK((!c.biding && c.fallsStay && c.playerLoss)); // biding off for now (the user, 2026-11-24)
     CHECK(c.win == WinBy::Boss);
     CHECK(c.roundLimit == 0);
     CHECK(c.maxAp == 2);

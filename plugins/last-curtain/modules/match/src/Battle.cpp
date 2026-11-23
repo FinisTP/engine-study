@@ -239,6 +239,10 @@ namespace umbra::match
             const bool byCharacter = k && k->kind == 0;
             v.hp = 0;
             Log(s, LogKind::Down, victim, killer, v.essence);
+            // 0. What it drops, rolled from the fight's rng, for the cafe's storage.
+            for (const Drop &d : s.drops)
+                if (d.unit == victim && Roll(s, 100) < d.percent)
+                    s.found.push_back(d.item);
             // 1. Essence: to the character who downed it, else dropped where it fell (Mode::essence).
             if (s.mode.essence && byCharacter)
                 k->essence += v.essence;
