@@ -25,18 +25,28 @@ promise, not the dawn message or the white sand.
 `Check` runs these in order; the first that objects names the line's failure:
 
 1. `empty`: nothing came back.
-2. `bad-text`: broken UTF-8, a control character (a new line, a tab), a separate tone mark (U+0300–036F: the screen draws
-   only ready-made letters such as ợ), a number longer than 4 digits, or markup (`< > * # _`).
+2. `bad-text`: broken UTF-8, a letter the screen's fonts don't draw (control characters such as
+   tabs, a separate tone mark U+0300–036F, Chinese or another script: only ASCII, Latin-1, Latin
+   Extended, U+1EA0–1EF9 and dashes/quotes U+2010–2026 are drawn), a number longer than 4 digits,
+   or markup (`< > * # _`).
 3. `length`: fewer than `minLength` or more than `maxLength` letters and spaces (code points).
 4. `no-marks`: fewer than `markedShare` of the words carry a Vietnamese letter (anything past
    U+00BF): Vietnamese written without its marks.
 5. `english`: a word from the `english` list, or a plain-ASCII word with f, j, w or z, which
    Vietnamese doesn't write.
 6. `never`: a phrase from the rules' or the speaker's never-say list.
-7. `dialect`: a marker word of another dialect that isn't among the speaker's own `markers`.
-8. `token`: a `{…}` other than `{player}`, `{anh/chị}`, `{Anh/Chị}`.
-9. `missing-fact`: a `must` phrase is absent.
-10. `added-memory`: a `forbid` phrase is present (a memory not regained yet, or a fact the speaker hides).
+7. `narration`: the line tells instead of speaking: a double quote, a phrase from `narration`
+   ("nói:"), or the speaker's own name among its first four words when the authored line doesn't
+   start that way ("Tí chào anh…" said by Tí).
+8. `dialect`: a marker word of another dialect that isn't among the speaker's own `markers`.
+9. `token`: a `{…}` other than `{player}`, `{anh/chị}`, `{Anh/Chị}`.
+10. `lost-token`: the authored line has `{player}` or `{anh/chị}` and the model's line doesn't (it
+    guessed the player's gender: "Chào cô {player}").
+11. `missing-fact`: a `must` phrase is absent.
+12. `added-memory`: a `forbid` phrase is present (a memory not regained yet, or a fact the speaker hides).
+
+The narration, lost-token and bad-text (other scripts) checks came from Arcee-VyLinh's first run
+(2026-11-23): "Bác sĩ Bảo nói: …", "Chào cô {player}", "một阵".
 
 Words are compared in lower case (`Lower` knows the Vietnamese capitals: Đ, Ơ, Ư, Ạ…Ỹ) and whole:
 `ni` doesn't match inside `nil`, and a phrase like `cát trắng` matches two words in a row.

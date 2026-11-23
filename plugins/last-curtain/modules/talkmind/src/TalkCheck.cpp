@@ -98,7 +98,15 @@ namespace umbra::talk
             return std::any_of(phrases.begin(), phrases.end(), [&](const std::string &p) { return Has(words, line, p); });
         }
 
-        // 1. Broken UTF-8, control characters (new lines, tabs), separate tone marks, long numbers or markup.
+        // Only what the screen's fonts draw (engine/ui/src/Font.cpp): ASCII, Latin-1 and Latin
+        // Extended, Vietnamese U+1EA0-1EF9, dashes and quotes. No control characters, no
+        // separate tone marks (U+0300-036F), no Chinese or other scripts.
+        bool Drawn(char32_t c)
+        {
+            return (c >= 0x20 && c <= 0x7E) || (c >= 0xA0 && c <= 0x24F) || (c >= 0x1EA0 && c <= 0x1EF9) || (c >= 0x2010 && c <= 0x2026);
+        }
+
+        // 1. Broken UTF-8, letters the screen can't draw, long numbers or markup.
         bool BadText(const std::string &line)
         {
             int digits = 0;
@@ -106,10 +114,36 @@ namespace umbra::talk
             {
                 const char32_t c = Next(line, at);
                 digits = (c >= '0' && c <= '9') ? digits + 1 : 0;
-                if (c == bad || c < 0x20 || c == 0x7F || (c >= 0x300 && c <= 0x36F) || digits > 4 ||
-                    c == '<' || c == '>' || c == '*' || c == '#' || c == '_')
+                if (c == bad || !Drawn(c) || digits > 4 || c == '<' || c == '>' || c == '*' || c == '#' || c == '_')
                     return true;
             }
+            return false;
+        }
+
+        // A line that tells instead of speaking: quotes, "says:", or the speaker named in its first
+        // words when the authored line doesn't do that ("Ti greets you..." said by Ti himself).
+        bool Narration(const TalkRules &rules, const Voice *voice, const Situation &situation, const std::string &line, const std::vector<std::string> &words)
+        {
+            if (line.find('"') != std::string::npos || line.find("\xe2\x80\x9c") != std::string::npos || line.find("\xe2\x80\x9d") != std::string::npos)
+                return true;
+            const std::string lower = Lower(line);
+            for (const std::string &phrase : rules.narration)
+                if (lower.find(Lower(phrase)) != std::string::npos)
+                    return true;
+            if (voice == nullptr || Words(voice->name).empty())
+                return false;
+            const std::string name = Words(voice->name).back(); // "ti" of "Be Ti"
+            const auto early = [&](const std::vector<std::string> &w) { return std::find(w.begin(), w.begin() + static_cast<long>(std::min<std::size_t>(4, w.size())), name) != w.begin() + static_cast<long>(std::min<std::size_t>(4, w.size())); };
+            return early(words) && !early(Words(situation.authored));
+        }
+
+        // A {player} or {anh/chi} of the authored line that the model dropped (or replaced by a guess).
+        bool LostToken(const std::string &authored, const std::string &line)
+        {
+            const std::string a = Lower(authored), l = Lower(line);
+            for (const char *token : {"{player}", "{anh/ch\xe1\xbb\x8b}"})
+                if (a.find(token) != std::string::npos && l.find(token) == std::string::npos)
+                    return true;
             return false;
         }
 
@@ -226,6 +260,8 @@ namespace umbra::talk
             return "english";
         if (AnyOf(words, line, rules.never) || (voice != nullptr && AnyOf(words, line, voice->never)))
             return "never";
+        if (Narration(rules, voice, situation, line, words))
+            return "narration";
         // Another dialect's marker the speaker doesn't use itself.
         for (const auto &[dialect, markers] : rules.dialects)
             if (voice != nullptr && dialect != voice->dialect)
@@ -234,6 +270,8 @@ namespace umbra::talk
                         return "dialect";
         if (BadToken(line))
             return "token";
+        if (LostToken(situation.authored, line))
+            return "lost-token";
         for (const std::string &m : situation.must)
             if (!Has(words, line, m))
                 return "missing-fact";

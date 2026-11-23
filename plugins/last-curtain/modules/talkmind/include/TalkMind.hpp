@@ -43,6 +43,7 @@ namespace umbra::talk
         double markedShare = 0.33, passShare = 0.9; // words with Vietnamese letters; lines that must pass
         int maxMs = 1500, maxVideoMb = 3072, seeds = 3, maxTokens = 64;
         std::vector<std::string> never, english;   // for every speaker; English words
+        std::vector<std::string> narration;        // phrases that tell rather than speak ("noi:")
         std::map<std::string, std::vector<std::string>> dialects; // "central" -> {"rang", ...}
     };
 
@@ -65,7 +66,8 @@ namespace umbra::talk
     // Trims spaces and wrapping quotes (straight or curly) a model likes to add.
     [[nodiscard]] std::string Tidy(std::string line);
     // "" = the line passes; else the first objection (TalkMind.md "The checks"): "empty", "bad-text",
-    // "length", "no-marks", "english", "never", "dialect", "token", "missing-fact", "added-memory".
+    // "length", "no-marks", "english", "never", "narration", "dialect", "token", "lost-token",
+    // "missing-fact", "added-memory".
     [[nodiscard]] std::string Check(const TestSet &set, const Situation &situation, const std::string &line);
 
     // The prompt.txt template filled for one situation; one line of text, at most rules.maxTokens.

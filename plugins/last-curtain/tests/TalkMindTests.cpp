@@ -144,7 +144,12 @@ TEST_CASE("The Vietnamese checks, in order: the first objection wins", "[talk]")
     CHECK(Check(set, mother, Line("english-letters")) == "english");
     CHECK(Check(set, mother, Line("upper-insult")) == "never");
     CHECK(Check(set, mother, Line("southern-ti")) == "dialect");
+    CHECK(Check(set, mother, Line("foreign-letter")) == "bad-text"); // a Chinese letter the screen can't draw
+    CHECK(Check(set, mother, Line("narration-quote")) == "narration");
+    CHECK(Check(set, mother, Line("narration-name")) == "narration");  // "Ti greets..." about himself
+    CHECK(Check(set, mother, Line("narration-says")) == "narration");
     CHECK(Check(set, mother, Line("bad-token")) == "token");
+    CHECK(Check(set, mother, Line("lost-address")) == "lost-token");   // {Anh/Chi} replaced by a guessed "chi"
     CHECK(Check(set, mother, Line("no-mother")) == "missing-fact");
     CHECK(Check(set, mother, Line("sand-too-early")) == "added-memory");
 }

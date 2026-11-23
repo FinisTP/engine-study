@@ -93,6 +93,7 @@ namespace umbra::talk
             t.maxTokens = rules.value("maxTokens", t.maxTokens);
             t.never = r.Texts(rules, rulesFile, "", "never");
             t.english = r.Texts(rules, rulesFile, "", "english");
+            t.narration = r.Texts(rules, rulesFile, "", "narration");
             if (rules.contains("dialects") && rules["dialects"].is_object())
                 for (const auto &[name, words] : rules["dialects"].items())
                     t.dialects[name] = r.Texts(rules["dialects"], rulesFile, "dialects.", name.c_str());
