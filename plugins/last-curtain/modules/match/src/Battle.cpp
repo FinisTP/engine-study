@@ -264,6 +264,7 @@ namespace umbra::match
             v.ap = 0;
             if (!s.mode.fallsStay)
                 v.cell = -1;
+            CheckEnd(def, s);
             if (s.battle.on && Place(s, victim) >= 0 && !GroupStanding(s, Place(s, victim) / 2)) // a whole group down: the battle is over
                 EndBattle(def, s);
         }

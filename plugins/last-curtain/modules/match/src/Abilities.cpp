@@ -196,7 +196,7 @@ namespace umbra::match
             else if (a.kind == AbilityClass::Revive)
                 Revive(def, s, target, me, PowerOf(def, u, slot));
             else if (a.kind == AbilityClass::Remove)
-                Remove(s, target, me);
+                Remove(def, s, target, me);
             else if (a.kind == AbilityClass::Heal)
             {
                 const int before = t.hp;

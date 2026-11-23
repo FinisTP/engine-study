@@ -48,14 +48,14 @@ void MatchPlay::SyncHp()
 const char *MatchPlay::LogName(LogKind kind)
 {
     static const char *names[] = {"Moved", "Battle", "Blow", "Down", "Essence", "Performed", "Level", "Back",
-                                  "SpawnSoon", "Spawned", "Event", "Item", "Treasure", "Over", "Healed", "Bided"};
+                                  "SpawnSoon", "Spawned", "Event", "Item", "Treasure", "Over", "Healed", "Bided", "Freed"};
     return names[static_cast<int>(kind)];
 }
 
 const char *MatchPlay::WhyName(Why why)
 {
     static const char *names[] = {"Ok", "NotYourTurn", "NoMovesLeft", "Blocked", "AlreadyActed", "OutOfRange", "OwnSide", "TooCostly",
-                                  "NotOnStage", "NothingToPerform", "NothingHere", "BagFull", "MustChoose", "Over", "FullHp", "Off", "Fallen", "NotFallen", "NoAp"};
+                                  "NotOnStage", "NothingToPerform", "NothingHere", "BagFull", "MustChoose", "Over", "FullHp", "Off", "Fallen", "NotFallen", "NoAp", "OnlyPlayer", "NotStrung", "NoRite"};
     return names[static_cast<int>(why)];
 }
 

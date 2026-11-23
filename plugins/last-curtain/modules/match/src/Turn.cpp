@@ -206,7 +206,7 @@ namespace umbra::match
     int Current(const MatchState &s)
     {
         if (s.over)
-            return -1;
+            return RiteOffered(s) ? Player(s) : -1;
         for (std::size_t i = 0; i < s.units.size(); ++i)
             if (s.units[i].pending >= 0)
                 return static_cast<int>(i);
@@ -218,7 +218,9 @@ namespace umbra::match
     Why Check(const MatchDef &def, const MatchState &s, const Action &a)
     {
         if (s.over)
-            return Why::Over;
+            return a.kind != ActionKind::Rite ? Why::Over : RiteOffered(s) ? Why::Ok : Why::NoRite;
+        if (a.kind == ActionKind::Rite)
+            return Why::NoRite;
         const int me = Current(s);
         const Unit &u = s.units[U(me)];
         // 1. A level choice, then a battle pick, come before anything else.
@@ -242,6 +244,7 @@ namespace umbra::match
         case ActionKind::PickUp: return CheckPickUp(def, s, u, a.a);
         case ActionKind::EndTurn: return Why::Ok;
         case ActionKind::Bide: return CheckBide(s, u);
+        case ActionKind::Cut: return CheckCut(s, me, a.a);
         case ActionKind::Extra: return CheckExtra(s, u);
         default: return Why::Blocked;
         }
@@ -256,7 +259,11 @@ namespace umbra::match
             all.push_back({ActionKind::Move, i8(d)});
         all.push_back({ActionKind::Undo});
         for (int u = 0; u < static_cast<int>(s.units.size()); ++u)
+        {
             all.push_back({ActionKind::Attack, i8(u)});
+            all.push_back({ActionKind::Cut, i8(u)});
+        }
+        all.push_back({ActionKind::Rite});
         for (int slot = 0; slot < maxAbilities; ++slot)
         {
             all.push_back({ActionKind::BattleAbility, i8(slot)});
@@ -293,6 +300,11 @@ namespace umbra::match
     {
         if (Check(def, s, a) != Why::Ok)
             return false;
+        if (a.kind == ActionKind::Rite)
+        {
+            Rite(def, s);
+            return true;
+        }
         const int me = Current(s);
         Unit &u = s.units[U(me)];
         switch (a.kind)
@@ -339,6 +351,7 @@ namespace umbra::match
             Log(s, LogKind::Bided, me, u.ap);
             NextTurn(def, s);
             break;
+        case ActionKind::Cut: Cut(def, s, me, a.a); break;
         case ActionKind::Extra:
             --u.ap;
             ++s.now.apSpent;

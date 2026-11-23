@@ -41,12 +41,106 @@ namespace umbra::match
             Log(s, LogKind::Healed, reviver, unit, u.hp);
         }
 
-        void Remove(MatchState &s, int unit, int by)
+        void Remove(const MatchDef &def, MatchState &s, int unit, int by)
         {
             Unit &u = s.units[U(unit)];
             Log(s, LogKind::Down, unit, by, -1);
             u.cell = -1;
             u.flags |= flag::Removed;
+            CheckEnd(def, s);
+        }
+
+        int Player(const MatchState &s)
+        {
+            for (std::size_t i = 0; i < s.units.size(); ++i)
+                if (s.units[i].flags & flag::Player)
+                    return static_cast<int>(i);
+            return -1;
+        }
+
+        bool RiteOffered(const MatchState &s) { return s.over && s.loss == Loss::PlayerFell && s.riteReady && !s.riteUsed && Player(s) >= 0; }
+
+        void CheckEnd(const MatchDef &, MatchState &s)
+        {
+            if (s.over || s.mode.win != WinBy::Boss)
+                return;
+            const auto all = [&](auto test) { return std::ranges::all_of(s.units, test); };
+            const auto any = [&](auto test) { return std::ranges::any_of(s.units, test); };
+            const auto end = [&](int winner, Loss loss) {
+                s.over = true;
+                s.winner = winner;
+                s.loss = loss;
+                Log(s, LogKind::Over, winner);
+            };
+            // 1. The living player fell; 2. nobody of the side stands.
+            const int player = Player(s);
+            if (s.mode.playerLoss && player >= 0 && !Up(s.units[U(player)]))
+                return end(1, Loss::PlayerFell);
+            if (all([](const Unit &u) { return u.faction != 0 || !Up(u); }))
+                return end(1, Loss::SideDown);
+            // 3. A recruit that can no longer be freed: removed, or strung when the bosses are down.
+            const bool bossesDown = any([](const Unit &u) { return (u.flags & flag::Boss) != 0; }) &&
+                                    all([](const Unit &u) { return (u.flags & flag::Boss) == 0 || !Up(u); });
+            const bool removed = any([](const Unit &u) { return (u.flags & flag::Recruit) && (u.flags & flag::Removed) && !(u.flags & flag::Freed); });
+            const bool strung = any([](const Unit &u) { return (u.flags & flag::Recruit) && (u.flags & flag::Strung); });
+            if (s.mode.mustFree && (removed || (bossesDown && strung)))
+                return end(1, Loss::Trapped);
+            // 4. Every boss down (and, if the stage asks, every recruit freed).
+            if (bossesDown)
+                end(0, Loss::None);
+        }
+
+        Why CheckCut(const MatchState &s, int me, int target)
+        {
+            if (!(s.units[U(me)].flags & flag::Player))
+                return Why::OnlyPlayer;
+            if (s.now.acted)
+                return Why::AlreadyActed;
+            if (target < 0 || target >= static_cast<int>(s.units.size()))
+                return Why::NothingHere;
+            const Unit &u = s.units[U(me)], &t = s.units[U(target)];
+            if (!Fallen(t))
+                return Why::NotFallen;
+            if (!(t.flags & flag::Strung))
+                return Why::NotStrung;
+            return Beside(s.board, u, t) ? Why::Ok : Why::OutOfRange;
+        }
+
+        void Cut(const MatchDef &def, MatchState &s, int me, int target)
+        {
+            // The strings cut: the recruit is freed and leaves the board (it waits in the cafe).
+            Unit &t = s.units[U(target)];
+            Log(s, LogKind::Freed, me, target, t.cell);
+            t.flags = static_cast<std::uint8_t>((t.flags & ~flag::Strung) | flag::Freed);
+            t.cell = -1;
+            Acted(def, s);
+            CheckEnd(def, s);
+        }
+
+        void Rite(const MatchDef &def, MatchState &s)
+        {
+            // 1. The fight is on again; a battle in progress ends.
+            s.over = false;
+            s.winner = -1;
+            s.loss = Loss::None;
+            s.riteReady = false;
+            s.riteUsed = true;
+            s.battle.on = false;
+            // 2. The player first, then the rest of the side: fallen ones stand up, everyone whole.
+            const int player = Player(s);
+            std::vector<int> side{player};
+            for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
+                if (i != player && s.units[U(i)].faction == 0 && !(s.units[U(i)].flags & flag::Removed) && s.units[U(i)].cell >= 0)
+                    side.push_back(i);
+            for (const int i : side)
+            {
+                if (Fallen(s.units[U(i)]))
+                    Revive(def, s, i, player, 100);
+                s.units[U(i)].hp = s.units[U(i)].maxHp;
+            }
+            Log(s, LogKind::Healed, player, player, 0);
+            // 3. The order goes on from where it stopped.
+            NextTurn(def, s);
         }
     }
 }

@@ -99,7 +99,7 @@ namespace umbra::match
         std::int8_t apSpent = 0; // action points spent this turn
     };
 
-    enum class LogKind : std::uint8_t { Moved, Battle, Blow, Down, Essence, Performed, Level, Back, SpawnSoon, Spawned, Event, Item, Treasure, Over, Healed, Bided };
+    enum class LogKind : std::uint8_t { Moved, Battle, Blow, Down, Essence, Performed, Level, Back, SpawnSoon, Spawned, Event, Item, Treasure, Over, Healed, Bided, Freed }; // Freed: a = the player, b = the recruit, c = its square
     struct LogEntry
     {
         LogKind kind = LogKind::Moved;
@@ -181,7 +181,9 @@ namespace umbra::match
 
     // Bide: the turn passes for one action point. Extra: spend one after acting for another move and action
     // (Match.md "Biding").
-    enum class ActionKind : std::uint8_t { Move, Undo, Attack, BattleAbility, BoardAbility, UseItem, PickUp, Perform, Answer, LevelUp, EndTurn, Card, Bide, Extra };
+    // Cut: the player frees a fallen strung recruit beside it (a = unit). Rite: after the player fell, Le
+    // Thanh's rite stands the side up, once a game (Match.md "Freeing and the end").
+    enum class ActionKind : std::uint8_t { Move, Undo, Attack, BattleAbility, BoardAbility, UseItem, PickUp, Perform, Answer, LevelUp, EndTurn, Card, Bide, Extra, Cut, Rite };
 
     // Move: a = direction 0-3. Attack: a = unit. BattleAbility: a = ability slot. BoardAbility: a = slot,
     // b = target unit. UseItem: a = item slot, b = the target of a revive item (else -1). PickUp: a = floor index. Answer: a = choice. LevelUp: a = 0 or 1.
@@ -201,10 +203,13 @@ namespace umbra::match
         Off,      // not in this fight's mode (Match.md "Modes")
         Fallen,   // the target has fallen (Match.md "Falls")
         NotFallen, // revive and remove need a fallen target
-        NoAp       // not enough action points, or none left to spend this turn
+        NoAp,      // not enough action points, or none left to spend this turn
+        OnlyPlayer, // only the living player cuts strings
+        NotStrung, // no gold knot to cut
+        NoRite     // the rite is not offered now
     };
 
-    int Current(const MatchState &s); // the unit that acts next, -1 when the match is over
+    int Current(const MatchState &s); // the unit that acts next; -1 when the match is over (the player while the rite is offered)
     Why Check(const MatchDef &def, const MatchState &s, const Action &a);
     std::vector<Action> Legal(const MatchDef &def, const MatchState &s);
     bool Apply(const MatchDef &def, MatchState &s, const Action &a); // false and no change unless Check is Ok

@@ -36,7 +36,7 @@ namespace
         Put(s, attacker, Beside(s, s.units[U(target)].cell));
         s.now.origin = s.units[U(attacker)].cell;
         REQUIRE(Apply(def, s, {ActionKind::Attack, I8(target)}));
-        for (int i = 0; i < 50 && s.battle.on; ++i)
+        for (int i = 0; i < 50 && s.battle.on && !s.over; ++i)
             REQUIRE(Apply(def, s, {ActionKind::BattleAbility, 0}));
     }
 
@@ -144,6 +144,7 @@ TEST_CASE("A fallen unit stays on its square, can't be hit, is skipped and doesn
 {
     const MatchDef def = Data();
     MatchState s = ::Fight(def);
+    s.units[2].flags = 0; // not the boss here, so its fall doesn't end the fight
     s.units[2].hp = 1;
     Fight(def, s, 0, 2); // the player strikes the boss down in a battle
     const int square = s.units[2].cell;
@@ -242,6 +243,7 @@ TEST_CASE("Revive and remove need a fallen target; a removed unit is gone for th
     const int revive = AddAbility(def, "revive", AbilityClass::Revive, Target::Ally, 30);
     const int remove = AddAbility(def, "remove", AbilityClass::Remove, Target::Enemy, 0);
     MatchState s = ::Fight(def);
+    s.units[2].flags = 0; // not the boss here, so its removal doesn't end the fight
     TurnOf(def, s, 0);
     Put(s, 0, Beside(s, s.units[2].cell));
     s.now.origin = s.units[0].cell;
@@ -405,4 +407,153 @@ TEST_CASE("Every unit starts a fight at 0 AP (campaign plan 2)", "[match][fight]
     BeginMatch(def, s, 9);
     for (const Unit &u : s.units)
         CHECK(u.ap == 0);
+}
+
+TEST_CASE("Only the player cuts, beside a fallen strung recruit, as the turn's action (campaign plan 2)", "[match][fight][free]")
+{
+    const MatchDef def = Data();
+    MatchState s = ::Fight(def);
+    const Action cut{ActionKind::Cut, 3};
+    TurnOf(def, s, 1);
+    Put(s, 1, Beside(s, s.units[3].cell));
+    CHECK(Check(def, s, cut) == Why::OnlyPlayer);
+    TurnOf(def, s, 0);
+    CHECK(Check(def, s, cut) == Why::NotFallen); // still standing
+    Fall(s, 3);
+    CHECK(Check(def, s, cut) == Why::OutOfRange);
+    Put(s, 0, Beside(s, s.units[3].cell));
+    Fall(s, 2);
+    Put(s, 2, Beside(s, s.units[0].cell));
+    CHECK(Check(def, s, {ActionKind::Cut, 2}) == Why::NotStrung); // the boss has no gold knot
+    s.units[2].hp = 5;
+    const int square = s.units[3].cell;
+    REQUIRE(Apply(def, s, cut));
+    CHECK((s.units[3].flags & flag::Freed) != 0);
+    CHECK((s.units[3].flags & flag::Strung) == 0);
+    CHECK(s.units[3].cell == -1); // gone from the board with a gold light (the user, 2026-11-23)
+    CHECK(s.log.back().kind == LogKind::Freed);
+    CHECK(s.log.back().c == square);
+    CHECK(s.now.acted);
+}
+
+TEST_CASE("The fight is won when the boss falls and, if the stage asks, the recruit is freed (campaign plan 2)", "[match][fight][end]")
+{
+    const MatchDef def = Data();
+    MatchState s = ::Fight(def);
+    s.mode.mustFree = true;
+    Fall(s, 3);
+    TurnOf(def, s, 0);
+    Put(s, 0, Beside(s, s.units[3].cell));
+    REQUIRE(Apply(def, s, {ActionKind::Cut, 3}));
+    CHECK_FALSE(s.over);
+    REQUIRE(Apply(def, s, {ActionKind::EndTurn})); // the cut was this turn's action
+    s.units[2].hp = 1;
+    Fight(def, s, 0, 2);
+    CHECK(s.over);
+    CHECK(s.winner == 0);
+    CHECK(s.loss == Loss::None);
+
+    MatchState t = ::Fight(def); // without the extra condition, the boss alone
+    t.units[2].hp = 1;
+    Fight(def, t, 0, 2);
+    CHECK(t.over);
+    CHECK(t.winner == 0);
+}
+
+TEST_CASE("The boss falling while the recruit is strung loses the fight (campaign plan 2)", "[match][fight][end]")
+{
+    const MatchDef def = Data();
+    MatchState s = ::Fight(def);
+    s.mode.mustFree = true;
+    s.units[2].hp = 1;
+    Fight(def, s, 0, 2);
+    CHECK(s.over);
+    CHECK(s.winner == 1);
+    CHECK(s.loss == Loss::Trapped);
+}
+
+TEST_CASE("A removed strung recruit loses a fight that must free it (campaign plan 2)", "[match][fight][end]")
+{
+    MatchDef def = Data();
+    const int remove = AddAbility(def, "remove", AbilityClass::Remove, Target::Enemy, 0);
+    MatchState s = ::Fight(def);
+    s.mode.mustFree = true;
+    Fall(s, 3);
+    TurnOf(def, s, 0);
+    Give(s, 0, remove);
+    Put(s, 0, Beside(s, s.units[3].cell));
+    REQUIRE(Apply(def, s, {ActionKind::BoardAbility, maxAbilities - 1, 3}));
+    CHECK(s.over);
+    CHECK(s.loss == Loss::Trapped);
+}
+
+TEST_CASE("The player falling ends the fight at once, even in an enemy's battle (campaign plan 2)", "[match][fight][end]")
+{
+    const MatchDef def = Data();
+    MatchState s = ::Fight(def);
+    s.units[0].hp = 1;
+    TurnOf(def, s, 2);
+    Put(s, 2, Beside(s, s.units[0].cell));
+    s.now.origin = s.units[2].cell;
+    REQUIRE(Apply(def, s, {ActionKind::Attack, 0}));
+    for (int i = 0; i < 50 && s.battle.on && !s.over; ++i)
+        REQUIRE(Apply(def, s, {ActionKind::BattleAbility, 0}));
+    CHECK(s.over);
+    CHECK(s.winner == 1);
+    CHECK(s.loss == Loss::PlayerFell);
+    CHECK(Current(s) == -1); // no rite offered: not ready
+}
+
+TEST_CASE("The whole side down is a loss (campaign plan 2)", "[match][fight][end]")
+{
+    const MatchDef def = Data();
+    MatchState s = ::Fight(def);
+    s.mode.playerLoss = false; // so the side, not the player, decides
+    Fall(s, 0);
+    s.units[1].hp = 1;
+    Fight(def, s, 2, 1);
+    CHECK(s.over);
+    CHECK(s.loss == Loss::SideDown);
+}
+
+TEST_CASE("The rite stands the side up and the fight goes on; once used it is gone, even after another loss (campaign plan 2)", "[match][fight][rite]")
+{
+    const MatchDef def = Data();
+    MatchState s = ::Fight(def);
+    s.riteReady = true;
+    Fall(s, 1);
+    s.units[0].hp = 1;
+    Fight(def, s, 2, 0);
+    REQUIRE(s.over);
+    REQUIRE(s.loss == Loss::PlayerFell);
+    CHECK(Current(s) == 0); // the rite is offered to the player
+    CHECK(Check(def, s, {ActionKind::EndTurn}) == Why::Over);
+    REQUIRE(Apply(def, s, {ActionKind::Rite}));
+    CHECK_FALSE(s.over);
+    CHECK(s.loss == Loss::None);
+    CHECK(s.riteUsed);
+    CHECK_FALSE(s.riteReady);
+    CHECK(s.units[0].hp == s.units[0].maxHp);
+    CHECK(s.units[1].hp == s.units[1].maxHp);
+    CHECK_FALSE(s.battle.on);
+    CHECK(Current(s) >= 0);
+    // A second loss: no rite any more.
+    s.units[0].hp = 1;
+    Fight(def, s, 2, 0);
+    REQUIRE(s.over);
+    CHECK(Check(def, s, {ActionKind::Rite}) == Why::NoRite);
+    CHECK(s.riteUsed);
+}
+
+TEST_CASE("No rite for a trapped loss or when not ready (campaign plan 2)", "[match][fight][rite]")
+{
+    const MatchDef def = Data();
+    MatchState s = ::Fight(def);
+    s.riteReady = true;
+    s.mode.mustFree = true;
+    s.units[2].hp = 1;
+    Fight(def, s, 0, 2);
+    REQUIRE(s.loss == Loss::Trapped);
+    CHECK(Check(def, s, {ActionKind::Rite}) == Why::NoRite);
+    CHECK(Current(s) == -1);
 }

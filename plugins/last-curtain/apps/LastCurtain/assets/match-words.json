@@ -38,7 +38,8 @@
     "Over": "The curtain falls: {side}.",
     "Treasure": "{who} turns a card: {card}.",
     "Healed": "{who} tends {whom}: {n} HP back.",
-    "Bided": "{who} bides their time."
+    "Bided": "{who} bides their time.",
+    "Freed": "{who} cuts the strings: {whom} is free."
   },
   "why": {
     "Ok": "Ready.",
@@ -60,7 +61,10 @@
     "Off": "Not in this fight.",
     "Fallen": "That one has fallen.",
     "NotFallen": "Only for one who has fallen.",
-    "NoAp": "Not enough action points."
+    "NoAp": "Not enough action points.",
+    "OnlyPlayer": "Only the living can cut the strings.",
+    "NotStrung": "There are no strings to cut.",
+    "NoRite": "The rite cannot be called now."
   },
   "actions": {
     "undo": "Undo move",

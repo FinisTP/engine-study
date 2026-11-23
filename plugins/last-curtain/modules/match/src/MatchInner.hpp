@@ -90,7 +90,13 @@ namespace umbra::match::inner
     // ties nearest the reviver, then the lower cell; -1 if none.
     int RevivePlace(const MatchDef &def, const MatchState &s, int unit, int reviver);
     void Revive(const MatchDef &def, MatchState &s, int unit, int reviver, int percent); // stands up with percent of max HP (at least 1)
-    void Remove(MatchState &s, int unit, int by); // a fallen unit leaves the fight for good
+    void Remove(const MatchDef &def, MatchState &s, int unit, int by); // a fallen unit leaves the fight for good
+    void CheckEnd(const MatchDef &def, MatchState &s);  // a campaign fight won or lost (after every down, removal, cut)
+    int Player(const MatchState &s);                     // the unit flagged flag::Player, or -1
+    bool RiteOffered(const MatchState &s);
+    Why CheckCut(const MatchState &s, int me, int target);
+    void Cut(const MatchDef &def, MatchState &s, int me, int target);
+    void Rite(const MatchDef &def, MatchState &s);
 }
 
 namespace umbra::match::inner

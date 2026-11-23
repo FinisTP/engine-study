@@ -109,6 +109,26 @@ has no fighter `Up`. Range to a fallen unit is measured as usual (`Squares` is w
 - AP is 0 when a fight begins (`BeginMatch`) and lost when a unit falls. Monsters don't bide yet
   (their behaviours come with campaign plan 4).
 
+## Freeing and the end (campaign plan 2, `win` boss)
+
+Flags on units (`flag::`): `Player` (the living player), `Boss`, `Recruit` (a gold knot on its strings),
+`Strung` (still on them), `Freed`, `Removed`.
+
+- **Cut** (`ActionKind::Cut`, a = unit): only the player (`OnlyPlayer`), as the turn's action, beside a
+  *fallen* (`NotFallen`) strung recruit (`NotStrung`). The recruit is freed and leaves the board at once
+  (the user, 2026-11-23: it waits in the café); logged `Freed` (the player, the recruit, its square) for
+  the café to remember. Until cut, its own side may revive it, still strung.
+- **The end** (`CheckEnd`, after every down, removal and cut), in this order: the player fell
+  (`playerLoss`) → lost, `Loss::PlayerFell`; nobody of side 0 stands → `SideDown`; with `mustFree`, a
+  recruit removed, or every boss down while a recruit is still strung → `Trapped` (Stage 1: the Rat
+  falls with Tí on his strings); every boss down → won (`winner` 0). The faction match keeps its
+  scoring after the round limit.
+- **The rite** (`ActionKind::Rite`): offered only after a loss by the player falling, while
+  `riteReady` and not `riteUsed` (`Current` is then the player; otherwise `NoRite`). Every unit of
+  side 0 not removed stands up whole (the fallen placed as by a revive, the player first); a battle in
+  progress ends; `riteUsed` is set and stays set (plan 5 saves it at once); the order goes on from
+  where it stopped.
+
 ## Battles (`Battle.cpp`)
 
 `Attack` a unit exactly one step away, not of your faction. A battle is `battle.rounds` rounds; in
