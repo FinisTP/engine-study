@@ -3,6 +3,7 @@
 #include "MatchInner.hpp"
 
 #include <algorithm>
+#include <utility>
 
 // The campaign's falls, reviving and removal (Match.md "Falls").
 namespace umbra::match
@@ -79,6 +80,75 @@ namespace umbra::match
                 Log(s, LogKind::Arrived, a.unit, u.cell);
                 s.arrivals.erase(s.arrivals.begin() + static_cast<std::ptrdiff_t>(i));
             }
+        }
+
+        void RunGimmicks(const MatchDef &def, MatchState &s)
+        {
+            Gimmicks &g = s.gimmicks;
+            const auto hurt = [&](int unit, int cell, int damage) {
+                Unit &u = s.units[U(unit)];
+                u.hp = static_cast<std::int16_t>(std::max(0, u.hp - damage));
+                Log(s, LogKind::Hazard, unit, cell, damage);
+                if (u.hp <= 0)
+                    Down(def, s, unit, -1);
+            };
+            // 1. Last round's marks: hazards fall on anyone there (not one with sea wind), the breath strikes the
+            //    other side on its row, open windows let out a spawn while fewer than spawnMax are alive.
+            const std::vector<Mark> due = std::exchange(g.marks, {});
+            for (const Mark &m : due)
+                for (int i = 0; i < static_cast<int>(s.units.size()) && !s.over; ++i)
+                {
+                    const Unit &u = s.units[U(i)];
+                    if (!Up(u) || u.cell != m.cell)
+                        continue;
+                    if (m.kind == Mark::Hazard && !std::ranges::any_of(u.abilities, [&](std::int8_t a) { return a >= 0 && def.abilities[U(a)].effect == AbilityEffect::SeaWind; }))
+                        hurt(i, m.cell, g.hazardDamage);
+                    if (m.kind == Mark::Breath && g.breathUnit >= 0 && u.faction != s.units[U(g.breathUnit)].faction)
+                        hurt(i, m.cell, g.breathDamage);
+                }
+            for (const Mark &m : due)
+            {
+                const auto alive = std::ranges::count_if(s.units, [](const Unit &u) { return Up(u) && (u.flags & flag::Spawned); });
+                if (m.kind != Mark::Window || s.over || alive >= g.spawnMax || !Room(def, s, m.cell, g.spawn.faction))
+                    continue;
+                Unit u = g.spawn;
+                u.cell = m.cell;
+                u.hp = u.maxHp;
+                u.flags = static_cast<std::uint8_t>(u.flags | flag::Spawned);
+                u.from = static_cast<std::int16_t>(s.round + 1);
+                s.units.push_back(u);
+                const auto index = static_cast<std::int8_t>(s.units.size() - 1);
+                for (Drop d : g.spawnDrops)
+                    d.unit = index, s.drops.push_back(d);
+                s.order.push_back(index); // after this round's places; the next round sorts it in
+                Log(s, LogKind::Arrived, index, m.cell);
+            }
+            if (s.over)
+                return;
+            // 2. The coming round's marks.
+            std::vector<int> open;
+            for (int c = 0; c < static_cast<int>(s.board.cells.size()); ++c)
+                if (s.board.cells[U(c)].kind != CellKind::Wall)
+                    open.push_back(c);
+            for (int k = 0; k < g.hazards && !open.empty(); ++k)
+            {
+                const int pick = Roll(s, static_cast<int>(open.size()));
+                g.marks.push_back({Mark::Hazard, static_cast<std::int16_t>(open[U(pick)])});
+                open.erase(open.begin() + pick);
+            }
+            if (g.breathUnit >= 0 && Up(s.units[U(g.breathUnit)]) && g.breathEvery > 0 && s.round % g.breathEvery == 1 % g.breathEvery)
+            {
+                const Unit &b = s.units[U(g.breathUnit)];
+                const int row = b.cell / s.board.width;
+                for (int x = 0; x < s.board.width; ++x)
+                    if (const int c = row * s.board.width + x; c != b.cell && s.board.cells[U(c)].kind != CellKind::Wall)
+                        g.marks.push_back({Mark::Breath, static_cast<std::int16_t>(c)});
+                Log(s, LogKind::Breath, g.breathUnit, b.cell);
+            }
+            if (!g.pattern.empty())
+                for (const std::int8_t w : g.pattern[U((s.round - 1) % static_cast<int>(g.pattern.size()))])
+                    if (w >= 0 && w < static_cast<int>(g.windows.size()))
+                        g.marks.push_back({Mark::Window, g.windows[U(w)]});
         }
 
         int Passive(const MatchDef &def, const Unit &u, AbilityEffect effect)

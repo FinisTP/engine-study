@@ -538,3 +538,51 @@ TEST_CASE("The slice's kits: Bao, Ba Mai, the Rat and Ti carry their abilities; 
         CHECK(words["abilities"].contains(id));
     }
 }
+
+namespace
+{
+    const nlohmann::json allGimmicks = {
+        {"windows", {{"pattern", {{0}}}, {"spawn", "rat_specter"}, {"level", 2}, {"max", 2}, {"drops", {{{"item", "bandage"}, {"percent", 30}}}}}},
+        {"hazards", {{"count", 1}, {"damage", 3}}},
+        {"breath", {{"unit", "rat"}, {"damage", 4}, {"every", 2}}},
+        {"dark", {{"sight", 2}}}};
+}
+
+TEST_CASE("A stage's gimmicks are checked and set up in its fight; twists override them (campaign plan 4)")
+{
+    // 1. Checks.
+    CHECK(StageProblem("gimmicks-ok", [](json &j) { j["gimmicks"] = allGimmicks; }).empty());
+    CHECK(StageProblem("no-window", [](json &j) { j["gimmicks"] = allGimmicks; j["map"][1] = "#S..#...#"; }) == "gimmicks.windows");
+    CHECK(StageProblem("pattern", [](json &j) { j["gimmicks"] = allGimmicks; j["gimmicks"]["windows"]["pattern"] = {{5}}; }) == "gimmicks.windows.pattern");
+    CHECK(StageProblem("spawn", [](json &j) { j["gimmicks"] = allGimmicks; j["gimmicks"]["windows"]["spawn"] = "nobody"; }) == "gimmicks.windows.spawn");
+    CHECK(StageProblem("breath", [](json &j) { j["gimmicks"] = allGimmicks; j["gimmicks"]["breath"]["unit"] = "mai"; }) == "gimmicks.breath.unit");
+    CHECK(StageProblem("unknown", [](json &j) { j["gimmicks"] = {{"fog", 1}}; }) == "gimmicks.fog");
+    // 2. Set up.
+    campaign::StageDef stage = TestStage();
+    stage.gimmicks = allGimmicks;
+    stage.twists[0].gimmicks = {{"hazards", {{"count", 2}, {"damage", 1}}}};
+    const match::MatchDef def = MatchData();
+    campaign::BuiltStage b = campaign::BuildStage(def, TheCast(), TheGrowth(), stage, {{"player", 3, {}}}, 0, {}, 7);
+    const match::Gimmicks &g = b.state.gimmicks;
+    REQUIRE(g.windows.size() == 1);
+    CHECK(g.windows[0] == Cell(b.state, 7, 1));
+    CHECK(g.spawnMax == 2);
+    CHECK(g.spawn.faction == 1);
+    CHECK(g.spawn.maxHp > 0);
+    REQUIRE(g.spawnDrops.size() == 1);
+    CHECK(g.spawnDrops[0].percent == 30);
+    CHECK(g.hazards == 1);
+    CHECK(g.breathUnit == 1); // the rat, after the one party member
+    CHECK(b.sight == 2);
+    // 3. A refill's twist replaces what it names.
+    const campaign::BuiltStage r = campaign::BuildStage(def, TheCast(), TheGrowth(), stage, {{"player", 3, {}}}, 1, {}, 7);
+    CHECK(r.state.gimmicks.hazards == 2);
+    CHECK(r.state.gimmicks.windows.size() == 1);
+    // 4. A spawned unit gets its name and a plain behaviour when the stage is synced.
+    for (int i = 0; i < 60 && b.state.units.size() == b.who.size(); ++i)
+        REQUIRE(match::Apply(def, b.state, {match::ActionKind::EndTurn}));
+    REQUIRE(b.state.units.size() > b.who.size());
+    campaign::Sync(b);
+    CHECK(b.who.back() == "rat_specter");
+    CHECK(b.behaviour.size() == b.state.units.size());
+}

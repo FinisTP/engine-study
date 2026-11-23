@@ -116,11 +116,55 @@ namespace umbra::campaign
             for (const auto &[item, percent] : su.drops)
                 s.drops.push_back({static_cast<std::int8_t>(index), static_cast<std::int8_t>(ItemRow(def, item)), static_cast<std::int8_t>(percent)});
         }
-        // 4. Items not taken yet, on their squares.
+        // 4. Gimmicks: the stage's, with the refill's twist replacing what it names (Campaign.md "Gimmicks").
+        nlohmann::json g = stage.gimmicks;
+        if (refill > 0 && !stage.twists.empty())
+            for (const auto &[key, v] : stage.twists[static_cast<std::size_t>(std::min<int>(refill, static_cast<int>(stage.twists.size())) - 1)].gimmicks.items())
+                g[key] = v;
+        match::Gimmicks &mg = s.gimmicks;
+        if (g.contains("windows"))
+        {
+            const nlohmann::json &w = g["windows"];
+            for (int c = 0; c < stage.width * stage.height; ++c)
+                if (stage.At(c % stage.width, c / stage.width) == 'W')
+                    mg.windows.push_back(static_cast<std::int16_t>(c));
+            for (const nlohmann::json &round : w.value("pattern", nlohmann::json::array()))
+                mg.pattern.push_back(round.get<std::vector<std::int8_t>>());
+            out.spawnWho = w.value("spawn", "");
+            mg.spawn = MakeUnit(def, cast, growth, out.spawnWho, w.value("level", 1), 1, true);
+            mg.spawnMax = static_cast<std::int8_t>(w.value("max", 1));
+            for (const nlohmann::json &d : w.value("drops", nlohmann::json::array()))
+                mg.spawnDrops.push_back({-1, static_cast<std::int8_t>(ItemRow(def, d.value("item", ""))), static_cast<std::int8_t>(d.value("percent", 0))});
+        }
+        if (g.contains("hazards"))
+            mg.hazards = static_cast<std::int8_t>(g["hazards"].value("count", 0)), mg.hazardDamage = static_cast<std::int8_t>(g["hazards"].value("damage", 0));
+        if (g.contains("breath"))
+        {
+            const std::string who = g["breath"].value("unit", "");
+            for (std::size_t i = 0; i < out.who.size(); ++i)
+                if (out.who[i] == who && s.units[i].faction != 0)
+                    mg.breathUnit = static_cast<std::int8_t>(i);
+            mg.breathDamage = static_cast<std::int8_t>(g["breath"].value("damage", 0));
+            mg.breathEvery = static_cast<std::int8_t>(g["breath"].value("every", 2));
+        }
+        if (g.contains("dark"))
+            out.sight = g["dark"].value("sight", 4);
+        // 5. Items not taken yet, on their squares.
         for (const StageItem &it : stage.items)
             if (!taken.contains(it.id))
                 s.floor.push_back({static_cast<std::int16_t>(it.y * stage.width + it.x), static_cast<std::int8_t>(ItemRow(def, it.item)), 0, false});
         match::BeginMatch(def, s, seed);
+        Sync(out);
         return out;
+    }
+
+    void Sync(BuiltStage &stage)
+    {
+        while (stage.who.size() < stage.state.units.size())
+        {
+            stage.who.push_back(stage.spawnWho);
+            stage.height.push_back(0.8F); // an ordinary ghost's height
+            stage.behaviour.push_back({});
+        }
     }
 }

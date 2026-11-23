@@ -165,6 +165,7 @@ namespace umbra::match
         s.round = 1;
         s.turn = -1;
         RunArrivals(def, s); // round 1's marks for round 2
+        RunGimmicks(def, s);
         SortOrder(s);
         NextTurn(def, s);
     }

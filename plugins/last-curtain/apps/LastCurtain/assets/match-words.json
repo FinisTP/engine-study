@@ -41,7 +41,9 @@
     "Bided": "{who} bides their time.",
     "Freed": "{who} cuts the strings: {whom} is free.",
     "Arriving": "Something stirs: {who} comes next round.",
-    "Arrived": "{who} steps out of the dark."
+    "Arrived": "{who} steps out of the dark.",
+    "Hazard": "Something falls on {who}: {n} damage.",
+    "Breath": "{who} draws a long breath."
   },
   "why": {
     "Ok": "Ready.",

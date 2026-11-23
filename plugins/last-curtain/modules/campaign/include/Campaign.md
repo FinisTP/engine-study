@@ -98,6 +98,19 @@ stage's units and, for `refill` ≥ 1, that refill's twist (the last twist repea
 the board in `MatchState::arrivals`; items whose id is in `taken` stay away; then `BeginMatch`. It
 returns each unit's cast id and drawn height beside the state.
 
+## Gimmicks
+
+A stage's `gimmicks` object; a twist's `gimmicks` replace the stage's keys of the same name.
+
+| key | fields | becomes |
+|---|---|---|
+| `windows` | `spawn` (cast id), `level`, `max`, `pattern` (lists of window numbers per round), `drops` (`item`, `percent`) | the map's `W` squares in reading order, numbered from 0 |
+| `hazards` | `count`, `damage` | random marked squares each round |
+| `breath` | `unit` (one of the stage's units), `damage`, `every` | a marked row, shown a round ahead |
+| `dark` | `sight` | how far a passive enemy sees (default 4) |
+
+`Sync(BuiltStage&)` gives spawned units a name, height and plain behaviour; call it after each action.
+
 ## The enemy brain
 
 `EnemyAction(def, built, state, level)`: an **aggressive** unit holds (ends its turn) until round

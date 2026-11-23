@@ -11,6 +11,8 @@ namespace umbra::match
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Drop, unit, item, percent)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Arrival, unit, cell, round)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Stolen, thief, item, cell)
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Mark, kind, cell)
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Gimmicks, hazards, hazardDamage, breathUnit, breathDamage, breathEvery, windows, pattern, spawn, spawnMax, spawnDrops, marks)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Battle, on, attacker, defender, round, next, fighters, order, shield)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(TurnState, origin, movesLeft, acted, apSpent)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Mode, essence, perform, respawn, fightXp, biding, fallsStay, playerLoss, mustFree, win, roundLimit, maxAp, apPerTurn)
@@ -19,7 +21,7 @@ namespace umbra::match
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RoomSpawn, cell, kind, round)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LevelCard, kind, a, b)
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MatchState, mode, board, units, order, orderSeed, turn, round, score, stage, spawns, roomSpawns, floor, cards, offer, battle,
-                                       now, log, rng, over, winner, loss, riteReady, riteUsed, found, drops, arrivals, noRevive, stash)
+                                       now, log, rng, over, winner, loss, riteReady, riteUsed, found, drops, arrivals, noRevive, stash, gimmicks)
 
     namespace
     {

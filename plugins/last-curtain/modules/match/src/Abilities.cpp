@@ -237,7 +237,12 @@ namespace umbra::match
                         if (t.items[U(i)] >= 0)
                             full.push_back(i);
                     const int pick = full[U(Roll(s, static_cast<int>(full.size())))];
-                    s.stash.push_back({static_cast<std::int8_t>(me), t.items[U(pick)], -1});
+                    // What is stolen waits on the window nearest the thief, if the stage has windows.
+                    int window = -1;
+                    for (const std::int16_t w : s.gimmicks.windows)
+                        if (window < 0 || Steps(s.board, u.cell, w) < Steps(s.board, u.cell, window))
+                            window = w;
+                    s.stash.push_back({static_cast<std::int8_t>(me), t.items[U(pick)], static_cast<std::int16_t>(window)});
                     Log(s, LogKind::Item, me, t.items[U(pick)]);
                     t.items[U(pick)] = -1;
                 }

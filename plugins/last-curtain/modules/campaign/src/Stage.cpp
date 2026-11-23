@@ -169,11 +169,47 @@ namespace umbra::campaign
             else
                 out.scenes[moment] = scene.get<std::string>();
         }
-        // 5. Twists: each refill's units and gimmicks.
+        // 5. Gimmicks, the stage's and each twist's (Campaign.md "Gimmicks").
+        const auto gimmicks = [&](const json &g, const std::string &at) {
+            if (!g.is_object())
+                return r.Error(at, "expected an object of windows, hazards, breath, dark");
+            int windows = 0;
+            for (const std::string &row : out.map)
+                windows += static_cast<int>(std::ranges::count(row, 'W'));
+            for (const auto &[key, v] : g.items())
+            {
+                const std::string where = at + "." + key;
+                if (key == "windows")
+                {
+                    if (windows == 0)
+                        r.Error(where, "windows need W squares on the map");
+                    for (const json &round : v.value("pattern", json::array()))
+                        for (const json &w : round)
+                            if (!w.is_number_integer() || w.get<int>() < 0 || w.get<int>() >= windows)
+                                r.Error(where + ".pattern", "each entry is a window's number, 0 to " + std::to_string(windows - 1) + " (W squares in reading order)");
+                    if (!cast.Find(v.value("spawn", "")))
+                        r.Error(where + ".spawn", "\"" + v.value("spawn", "") + "\" is not in cast.csv");
+                    for (const json &drop : v.value("drops", json::array()))
+                        if (!r.Item(drop.value("item", "")))
+                            r.Error(where + ".drops", "\"" + drop.value("item", "") + "\" is not in items.csv");
+                }
+                else if (key == "breath")
+                {
+                    const std::string who = v.value("unit", "");
+                    if (std::ranges::none_of(out.units, [&](const StageUnit &u) { return u.who == who; }))
+                        r.Error(where + ".unit", "\"" + who + "\" is not one of this stage's units");
+                }
+                else if (key != "hazards" && key != "dark")
+                    r.Error(where, "expected windows, hazards, breath or dark");
+            }
+        };
+        gimmicks(out.gimmicks, "gimmicks");
+        // 6. Twists: each refill's units and gimmicks.
         const json twists = j.value("twists", json::array());
         for (std::size_t i = 0; i < twists.size(); ++i)
             out.twists.push_back({twists[i].value("name", ""), r.Units(twists[i].value("units", json::array()), "twists[" + std::to_string(i) + "].units"),
-                                  twists[i].value("gimmicks", json::object())});
+                                  twists[i].value("gimmicks", json::object())}),
+                gimmicks(out.twists.back().gimmicks, "twists[" + std::to_string(i) + "].gimmicks");
         if (d.size() != before)
             return false;
         stage = std::move(out);

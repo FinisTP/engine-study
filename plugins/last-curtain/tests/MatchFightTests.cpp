@@ -875,3 +875,118 @@ TEST_CASE("Footsteps: an ally ending its turn beside the unit moves 1 more next 
     REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
     CHECK(s.units[1].bonusMove == 1);
 }
+
+namespace
+{
+    // Ends turns until the round is `round` (gimmicks act at each round's start).
+    void ToRound(const MatchDef &def, MatchState &s, int round)
+    {
+        for (int i = 0; i < 200 && s.round < round && !s.over; ++i)
+            REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
+        REQUIRE(s.round == round);
+    }
+}
+
+TEST_CASE("Hazards: squares marked one round fall the next, hurting who stands there (campaign plan 4)", "[match][fight][gimmicks]")
+{
+    MatchDef def = Data();
+    MatchState s = ::Fight(def);
+    s.units[2].flags = 0;
+    s.gimmicks.hazardDamage = 4;
+    s.gimmicks.marks = {{Mark::Hazard, s.units[0].cell}};
+    const int hp = s.units[0].hp;
+    ToRound(def, s, 2);
+    CHECK(s.units[0].hp == hp - 4);
+    CHECK(std::ranges::any_of(s.log, [](const LogEntry &e) { return e.kind == LogKind::Hazard && e.a == 0; }));
+}
+
+TEST_CASE("Hazards are marked from the fight's rng each round, on open squares (campaign plan 4)", "[match][fight][gimmicks]")
+{
+    MatchDef def = Data();
+    MatchState s = ::Fight(def);
+    s.units[2].flags = 0;
+    s.gimmicks.hazards = 2;
+    s.gimmicks.hazardDamage = 1;
+    ToRound(def, s, 2);
+    const auto hazards = std::ranges::count_if(s.gimmicks.marks, [](const Mark &m) { return m.kind == Mark::Hazard; });
+    CHECK(hazards == 2);
+    for (const Mark &m : s.gimmicks.marks)
+        CHECK(s.board.cells[U(m.cell)].kind != CellKind::Wall);
+}
+
+TEST_CASE("Sea wind: a unit with it takes no hazard damage (campaign plan 4)", "[match][fight][gimmicks]")
+{
+    MatchDef def = Data();
+    const int wind = AddEffect(def, "wind", Use::Passive, AbilityClass::AfterHasten, Target::Self, AbilityEffect::SeaWind, 0, 4);
+    MatchState s = ::Fight(def);
+    s.units[2].flags = 0;
+    s.units[0].abilities[maxAbilities - 1] = I8(wind);
+    s.gimmicks.hazardDamage = 4;
+    s.gimmicks.marks = {{Mark::Hazard, s.units[0].cell}};
+    const int hp = s.units[0].hp;
+    ToRound(def, s, 2);
+    CHECK(s.units[0].hp == hp);
+}
+
+TEST_CASE("Breath: every other round a unit marks its row, and the next round strikes the other side there (campaign plan 4)", "[match][fight][gimmicks]")
+{
+    MatchDef def = Data();
+    MatchState s = ::Fight(def);
+    s.units[2].flags = 0;
+    s.gimmicks.breathUnit = 2;
+    s.gimmicks.breathDamage = 5;
+    s.gimmicks.breathEvery = 2;
+    ToRound(def, s, 2);
+    // Round 1's start marked the row (BeginMatch ran before the gimmicks were set, so round 2 marks for 3).
+    const int row = s.units[2].cell / s.board.width;
+    ToRound(def, s, 3);
+    REQUIRE(std::ranges::any_of(s.gimmicks.marks, [](const Mark &m) { return m.kind == Mark::Breath; }));
+    for (const Mark &m : s.gimmicks.marks)
+        if (m.kind == Mark::Breath)
+            CHECK(m.cell / s.board.width == row);
+    Put(s, 0, s.gimmicks.marks.front().cell);
+    const int hp = s.units[0].hp;
+    ToRound(def, s, 4);
+    CHECK(s.units[0].hp == hp - 5);
+}
+
+TEST_CASE("Windows: marked a round ahead, an open window lets out a spawn with its drops, up to the most alive (campaign plan 4)", "[match][fight][gimmicks]")
+{
+    MatchDef def = Data();
+    MatchState s = ::Fight(def);
+    s.units[2].flags = 0;
+    const int window = Beside(s, s.units[3].cell);
+    s.gimmicks.windows = {static_cast<std::int16_t>(window)};
+    s.gimmicks.pattern = {{0}};
+    s.gimmicks.spawn = s.units[3];
+    s.gimmicks.spawn.flags = 0;
+    s.gimmicks.spawnMax = 1;
+    s.gimmicks.spawnDrops = {{-1, 0, 100}};
+    s.gimmicks.marks = {{Mark::Window, static_cast<std::int16_t>(window)}};
+    const std::size_t units = s.units.size();
+    ToRound(def, s, 2);
+    REQUIRE(s.units.size() == units + 1);
+    CHECK(s.units.back().cell == window);
+    CHECK((s.units.back().flags & flag::Spawned) != 0);
+    CHECK(s.units.back().from == 3);
+    CHECK(std::ranges::any_of(s.drops, [&](const Drop &d) { return d.unit == static_cast<int>(units) && d.percent == 100; }));
+    ToRound(def, s, 3); // one alive already: no second
+    CHECK(s.units.size() == units + 1);
+}
+
+TEST_CASE("Stolen items wait on the window nearest the thief (campaign plan 4)", "[match][fight][gimmicks]")
+{
+    MatchDef def = Data();
+    const int steal = AddEffect(def, "steal", Use::Board, AbilityClass::Effect, Target::Enemy, AbilityEffect::Steal, 0, 0, 1);
+    MatchState s = ::Fight(def);
+    s.units[2].flags = 0;
+    s.units[0].items[0] = 0;
+    TurnOf(def, s, 2);
+    Give(s, 2, steal);
+    Put(s, 2, Beside(s, s.units[0].cell));
+    const int near = Beside(s, s.units[2].cell);
+    s.gimmicks.windows = {static_cast<std::int16_t>(near)};
+    REQUIRE(Apply(def, s, {ActionKind::BoardAbility, maxAbilities - 1, 0}));
+    REQUIRE(s.stash.size() == 1);
+    CHECK(s.stash[0].cell == near);
+}

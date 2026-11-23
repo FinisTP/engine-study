@@ -155,7 +155,20 @@ effect, aimed at an enemy or an ally) and `passive` (always on). Each upgrade ve
 | `rice` | a revive | a fallen ally stands at `power`%; one standing heals `amount` and loses a mark or a slow |
 | `hastemove`, `hasteheal` | a hasten | the ally also gets `amount` more moves, or heals `amount` |
 | `footsteps` | a passive | an ally ending its turn beside the unit gets `amount` more moves next turn |
-| `seawind` | an after-hasten | a name for Chân sáo's version (its `power` is 4); its hazard rule comes with the gimmicks |
+| `seawind` | an after-hasten | a name for Chân sáo's version (its `power` is 4); its unit takes no hazard damage |
+
+## Gimmicks (`Fight.cpp` `RunGimmicks`, campaign plan 4)
+
+`MatchState::gimmicks` holds a stage's tricks; the campaign fills it. At each round's start:
+
+1. Last round's marks act. A hazard hurts whoever stands on it by `hazardDamage` (not a SeaWind unit).
+   A breath hurts the other side on its row by `breathDamage`. A window lets `spawn` out (flag
+   `Spawned`, acting from the next round, with `spawnDrops`) while fewer than `spawnMax` spawns stand.
+2. New marks are laid for next round: `hazards` random open squares; a breath on the breather's row every
+   `breathEvery` rounds (log `Breath`); the windows named by `pattern[(round-1) % size]`.
+
+So every hazard, breath and window is shown one round before it acts. A stolen item is parked on the
+nearest window when there is one.
 
 ## Freeing and the end (campaign plan 2, `win` boss)
 

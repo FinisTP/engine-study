@@ -20,7 +20,7 @@ namespace umbra::campaign
             const auto room = [&](int cell) { return cell >= 0 ? stage.rooms[static_cast<std::size_t>(cell)] : -2; };
             const bool sees = std::ranges::any_of(s.units, [&](const match::Unit &o) {
                 return o.faction == 0 && match::Up(o) && room(o.cell) == room(u.cell) && room(u.cell) >= 0 &&
-                       match::Steps(s.board, u.cell, o.cell) <= 4;
+                       match::Steps(s.board, u.cell, o.cell) <= stage.sight;
             });
             if (!sees)
                 return hold;

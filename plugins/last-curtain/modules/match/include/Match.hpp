@@ -45,7 +45,7 @@ namespace umbra::match
     // still on its strings, freed, removed for good.
     namespace flag
     {
-        constexpr std::uint8_t Player = 1, Boss = 2, Recruit = 4, Strung = 8, Freed = 16, Removed = 32;
+        constexpr std::uint8_t Player = 1, Boss = 2, Recruit = 4, Strung = 8, Freed = 16, Removed = 32, Spawned = 64; // Spawned: let out by a window
     }
 
     // A character or a monster. faction -1 = neutral. cell -1 = off the board (down, or not woken).
@@ -102,6 +102,27 @@ namespace umbra::match
         std::int16_t round = 0;
     };
 
+    // A square marked for the next round's start (Match.md "Gimmicks").
+    struct Mark
+    {
+        enum Kind : std::int8_t { Hazard, Breath, Window };
+        std::int8_t kind = Hazard;
+        std::int16_t cell = -1;
+    };
+
+    // A stage's gimmicks (campaign plan 4): falling hazards, a breath that strikes a row, windows that let out spawns.
+    struct Gimmicks
+    {
+        std::int8_t hazards = 0, hazardDamage = 0;                  // squares marked each round, and the damage when they fall
+        std::int8_t breathUnit = -1, breathDamage = 0, breathEvery = 2; // marks its row every `breathEvery` rounds
+        std::vector<std::int16_t> windows;                          // the window squares
+        std::vector<std::vector<std::int8_t>> pattern;              // which windows open each round, cycling
+        Unit spawn;                                                 // what an open window lets out
+        std::int8_t spawnMax = 0;                                   // at most this many alive
+        std::vector<Drop> spawnDrops;                               // its drops (unit filled in)
+        std::vector<Mark> marks;                                    // for the coming round
+    };
+
     // A three-round battle between two units (Battle.cpp).
     struct Battle
     {
@@ -122,7 +143,7 @@ namespace umbra::match
         std::int8_t apSpent = 0; // action points spent this turn
     };
 
-    enum class LogKind : std::uint8_t { Moved, Battle, Blow, Down, Essence, Performed, Level, Back, SpawnSoon, Spawned, Event, Item, Treasure, Over, Healed, Bided, Freed, Arriving, Arrived }; // Freed: a = the player, b = the recruit, c = its square; Arriving/Arrived: a = the unit, b = its square
+    enum class LogKind : std::uint8_t { Moved, Battle, Blow, Down, Essence, Performed, Level, Back, SpawnSoon, Spawned, Event, Item, Treasure, Over, Healed, Bided, Freed, Arriving, Arrived, Hazard, Breath }; // Freed: a = the player, b = the recruit, c = its square; Arriving/Arrived: a = the unit, b = its square; Hazard: a = the unit hurt, b = its square, c = damage; Breath: a = the breather
     struct LogEntry
     {
         LogKind kind = LogKind::Moved;
@@ -184,6 +205,7 @@ namespace umbra::match
         std::vector<Arrival> arrivals;  // reinforcements still to come
         std::uint8_t noRevive = 0;      // sides (bit 1 << side) that never revive
         std::vector<Stolen> stash;      // what thieves hold
+        Gimmicks gimmicks;
     };
 
     // A unit's squares: size x size from its cell, the top-left (Match.md "Large monsters"), fallen or not.

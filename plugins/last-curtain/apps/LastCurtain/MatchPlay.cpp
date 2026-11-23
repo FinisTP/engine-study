@@ -48,7 +48,7 @@ void MatchPlay::SyncHp()
 const char *MatchPlay::LogName(LogKind kind)
 {
     static const char *names[] = {"Moved", "Battle", "Blow", "Down", "Essence", "Performed", "Level", "Back",
-                                  "SpawnSoon", "Spawned", "Event", "Item", "Treasure", "Over", "Healed", "Bided", "Freed", "Arriving", "Arrived"};
+                                  "SpawnSoon", "Spawned", "Event", "Item", "Treasure", "Over", "Healed", "Bided", "Freed", "Arriving", "Arrived", "Hazard", "Breath"};
     return names[static_cast<int>(kind)];
 }
 
@@ -104,7 +104,9 @@ std::string MatchPlay::Caption(const LogEntry &e) const
     }
     case LogKind::Over: v = {{"side", Word("misc", e.a == 0 ? "side0" : e.a == 1 ? "side1" : "draw")}}; break;
     case LogKind::Arriving:
-    case LogKind::Arrived: v = {{"who", Name(e.a)}}; break;
+    case LogKind::Arrived:
+    case LogKind::Breath: v = {{"who", Name(e.a)}}; break;
+    case LogKind::Hazard: v = {{"who", Name(e.a)}, {"n", std::to_string(e.c)}}; break;
     default: break;
     }
     return Fill(Word("log", LogName(e.kind)), v);

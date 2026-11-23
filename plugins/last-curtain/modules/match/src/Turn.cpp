@@ -166,6 +166,7 @@ namespace umbra::match
             RunSpawns(def, s, true);
             RunRoomSpawns(def, s);
             RunArrivals(def, s);
+            RunGimmicks(def, s);
             SortOrder(s);
             s.turn = -1;
             return true;

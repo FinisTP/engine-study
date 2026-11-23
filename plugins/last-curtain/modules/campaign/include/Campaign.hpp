@@ -135,7 +135,12 @@ namespace umbra::campaign
         std::vector<float> height;
         std::vector<UnitBehaviour> behaviour;
         std::vector<int> rooms;
+        int sight = 4;              // how far a passive unit sees in its room ("dark" lowers it)
+        std::string spawnWho;       // what a window lets out (its cast id)
     };
+
+    // After play adds units (a window's spawn), gives them their name, height and a plain behaviour.
+    void Sync(BuiltStage &stage);
 
     // The stage's fight: its map as the board, the party (up to its cap) on the starts, the player
     // first, enemies (with the refill's twist), items not yet taken, reinforcements waiting.
