@@ -138,6 +138,25 @@ square, or the nearest one with room, log `Arrived`, and act from the next round
 `1 << side`): that side's revive abilities and items are refused (`Why::Off`), as nobody on the Rat's side
 revives in Stage 1.
 
+## Effects (campaign plan 4)
+
+`abilities.csv` columns `effect` and `amount`; classes `effect` (a board ability that only does its
+effect, aimed at an enemy or an ally) and `passive` (always on). Each upgrade version is its own row.
+
+| effect | On | What it does |
+|---|---|---|
+| `mark` | a strike or an effect | the target takes `amount` more damage until its next turn |
+| `alarm` | a strike or an effect | the target has `amount` less Speed until its next turn (the next round's order) |
+| `firstshot` | a strike | `amount` more power against a unit whose place in this round's order is still to come |
+| `steal` | an effect | a random item from the target into `MatchState::stash`; it drops on the thief's square when the thief is hit |
+| `dart` | a passive | after a battle, up to `amount` squares to where the nearest foe is farthest |
+| `speedkill` | a passive | blows deal `amount` times the damage to a slower target |
+| `deathpaper` | a passive | a kill heals `amount` |
+| `rice` | a revive | a fallen ally stands at `power`%; one standing heals `amount` and loses a mark or a slow |
+| `hastemove`, `hasteheal` | a hasten | the ally also gets `amount` more moves, or heals `amount` |
+| `footsteps` | a passive | an ally ending its turn beside the unit gets `amount` more moves next turn |
+| `seawind` | an after-hasten | a name for Chân sáo's version (its `power` is 4); its hazard rule comes with the gimmicks |
+
 ## Freeing and the end (campaign plan 2, `win` boss)
 
 Flags on units (`flag::`): `Player` (the living player), `Boss`, `Recruit` (a gold knot on its strings),

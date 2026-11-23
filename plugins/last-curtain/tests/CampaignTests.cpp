@@ -509,3 +509,32 @@ TEST_CASE("Behaviours steer the enemy brain: aggressive waits for its round, pas
     s.units[1].hp = static_cast<std::int16_t>(s.units[1].maxHp - 1);
     CHECK(campaign::EnemyAction(def, b, s, match::BotLevel::Medium).kind != match::ActionKind::EndTurn);
 }
+
+TEST_CASE("The slice's kits: Bao, Ba Mai, the Rat and Ti carry their abilities; every version exists (campaign plan 4)")
+{
+    const match::MatchDef def = MatchData();
+    const campaign::Cast cast = TheCast();
+    const campaign::Growth growth = TheGrowth();
+    const auto has = [&](const match::Unit &u, const char *id) {
+        return std::ranges::any_of(u.abilities, [&](std::int8_t a) { return a >= 0 && def.abilities[static_cast<std::size_t>(a)].id == id; });
+    };
+    const match::Unit ti = campaign::MakeUnit(def, cast, growth, "ti", 3, 0, false);
+    CHECK(has(ti, "na_cao_su"));
+    CHECK(has(ti, "dua_tin"));
+    CHECK(has(ti, "chan_sao"));
+    const match::Unit rat = campaign::MakeUnit(def, cast, growth, "rat", 3, 1, true);
+    CHECK(has(rat, "moc_tui"));
+    CHECK(has(rat, "chay_lang"));
+    CHECK(has(rat, "speedkill"));
+    CHECK(has(campaign::MakeUnit(def, cast, growth, "bao", 3, 0, false), "chan_doan"));
+    CHECK(has(campaign::MakeUnit(def, cast, growth, "mai", 3, 0, false), "com_nguoi"));
+    // Every upgrade version is an ability row, with its Vietnamese name in campaign-words.json.
+    const nlohmann::json words = nlohmann::json::parse(std::ifstream(std::filesystem::path(UMBRA_LASTCURTAIN_APP_ASSETS) / "campaign-words.json"));
+    for (const char *id : {"na_bao_dong", "na_ban_truoc", "dua_tin_ve_kip", "dua_tin_phan_qua", "chan_sao_gio_bien", "chan_sao_dau_chan",
+                           "na_cao_su", "dua_tin", "chan_sao", "dao_mo", "chan_doan", "giay_chung_tu", "com_nguoi", "moc_tui", "chay_lang", "speedkill"})
+    {
+        INFO(id);
+        CHECK(std::ranges::any_of(def.abilities, [&](const match::AbilityDef &a) { return a.id == id; }));
+        CHECK(words["abilities"].contains(id));
+    }
+}

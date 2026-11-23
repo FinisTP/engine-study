@@ -99,6 +99,7 @@ namespace umbra::match
             Unit &u = s.units[U(s.order[U(s.turn)])];
             s.now = {u.cell, static_cast<std::int8_t>(u.move + u.bonusMove), false};
             u.bonusMove = 0;
+            u.marked = 0, u.slow = 0; // a mark or a slow lasts until its next turn
         }
 
         Why CheckMove(const MatchDef &def, const MatchState &s, const Unit &u, int dir)
@@ -351,7 +352,13 @@ namespace umbra::match
         case ActionKind::Answer: Answer(def, s, me, a.a); break;
         case ActionKind::LevelUp: LevelUp(def, s, me, a.a); break;
         case ActionKind::Perform: Perform(def, s, me); break;
-        case ActionKind::EndTurn: NextTurn(def, s); break;
+        case ActionKind::EndTurn:
+            // Footsteps: ending beside an ally with them gives a move next turn (Match.md "Effects").
+            for (const Unit &o : s.units)
+                if (&o != &u && Up(o) && o.faction == u.faction && Beside(s.board, u, o))
+                    u.bonusMove = static_cast<std::int8_t>(u.bonusMove + Passive(def, o, AbilityEffect::Footsteps));
+            NextTurn(def, s);
+            break;
         case ActionKind::Bide:
             u.ap = static_cast<std::int8_t>(std::min<int>(u.ap + 1, s.mode.maxAp));
             Log(s, LogKind::Bided, me, u.ap);

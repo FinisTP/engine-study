@@ -257,7 +257,7 @@ namespace umbra::match
 
         void LoadAbilities(const std::filesystem::path &folder, MatchDef &def, Diagnostics &out)
         {
-            Sheet s(out, folder, "abilities.csv", {"id", "name", "use", "class", "target", "hpCost", "ap", "power", "dice", "range", "reach", "animation"});
+            Sheet s(out, folder, "abilities.csv", {"id", "name", "use", "class", "target", "hpCost", "ap", "power", "dice", "range", "reach", "animation", "effect", "amount"});
             for (int r = 0; r < s.Rows(); ++r)
             {
                 AbilityDef a;
@@ -265,7 +265,9 @@ namespace umbra::match
                 a.name = s.Text(r, "name");
                 a.animation = s.Text(r, "animation");
                 a.use = static_cast<Use>(s.Pick(r, "use", {"battle", "board", "passive"}));
-                a.kind = static_cast<AbilityClass>(s.Pick(r, "class", {"strike", "shield", "heal", "hit", "firststrike", "revive", "remove", "giveap", "hasten", "afterhasten"}));
+                a.kind = static_cast<AbilityClass>(s.Pick(r, "class", {"strike", "shield", "heal", "hit", "firststrike", "revive", "remove", "giveap", "hasten", "afterhasten", "effect", "passive"}));
+                a.effect = static_cast<AbilityEffect>(s.Pick(r, "effect", {"none", "mark", "steal", "dart", "speedkill", "deathpaper", "rice", "alarm", "firstshot", "hastemove", "hasteheal", "seawind", "footsteps"}));
+                a.amount = s.Int(r, "amount", 0, 99);
                 a.target = static_cast<Target>(s.Pick(r, "target", {"enemy", "ally", "self", "monster", "room", "any"}));
                 a.hpCost = s.Int(r, "hpCost", 0, 99);
                 a.ap = s.Int(r, "ap", 0, 2);
@@ -274,18 +276,21 @@ namespace umbra::match
                 a.reach = static_cast<RangeBy>(s.Pick(r, "reach", {"walk", "straight"}));
                 a.dice = ParseDice(s, r);
                 // 1. Each class has its place: strike and shield in battle, hit on the board, first strike passive.
-                const bool board = a.kind == AbilityClass::Hit || a.kind == AbilityClass::Revive || a.kind == AbilityClass::Remove || a.kind == AbilityClass::GiveAp;
+                const bool board = a.kind == AbilityClass::Hit || a.kind == AbilityClass::Revive || a.kind == AbilityClass::Remove || a.kind == AbilityClass::GiveAp ||
+                                   a.kind == AbilityClass::Hasten || a.kind == AbilityClass::Effect;
+                const bool passive = a.kind == AbilityClass::FirstStrike || a.kind == AbilityClass::AfterHasten || a.kind == AbilityClass::Passive;
                 const bool fits = a.kind == AbilityClass::Heal ? a.use != Use::Passive
                                 : board ? a.use == Use::Board
-                                : a.kind == AbilityClass::FirstStrike ? a.use == Use::Passive
-                                                                      : a.use == Use::Battle;
+                                : passive ? a.use == Use::Passive
+                                          : a.use == Use::Battle;
                 if (!fits)
                     s.Bad(s.Where(r, "use"), "this class cannot be used there");
                 // 2. And its targets: strikes an enemy, shields yourself, board heals your side, hits anyone not on it.
                 const Target t = a.target;
                 const bool aims = a.kind == AbilityClass::Hit ? t == Target::Enemy || t == Target::Monster || t == Target::Any
                                 : a.kind == AbilityClass::Heal && a.use == Use::Board ? t == Target::Ally || t == Target::Self
-                                : a.kind == AbilityClass::Revive || a.kind == AbilityClass::GiveAp ? t == Target::Ally
+                                : a.kind == AbilityClass::Revive || a.kind == AbilityClass::GiveAp || a.kind == AbilityClass::Hasten ? t == Target::Ally
+                                : a.kind == AbilityClass::Effect ? t == Target::Enemy || t == Target::Ally
                                 : a.kind == AbilityClass::Remove ? t == Target::Enemy
                                 : a.kind == AbilityClass::Strike ? t == Target::Enemy
                                                                  : t == Target::Self;

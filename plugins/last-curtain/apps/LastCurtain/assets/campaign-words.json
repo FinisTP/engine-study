@@ -7,6 +7,25 @@
   "skip": "Skip",
   "log": "Log",
   "logTitle": "Conversation log",
-  "close": "Close"
+  "close": "Close",
+  "abilities": {}
+ },
+ "abilities": {
+  "dao_mo": "Dao mổ",
+  "chan_doan": "Chẩn đoán",
+  "giay_chung_tu": "Giấy chứng tử",
+  "com_nguoi": "Cơm nguội",
+  "moc_tui": "Móc túi",
+  "chay_lang": "Chạy làng",
+  "speedkill": "Ra tay chớp nhoáng",
+  "na_cao_su": "Ná cao su",
+  "na_bao_dong": "Ná cao su · Báo động",
+  "na_ban_truoc": "Ná cao su · Bắn trước",
+  "dua_tin": "Đưa tin",
+  "dua_tin_ve_kip": "Đưa tin · Về kịp",
+  "dua_tin_phan_qua": "Đưa tin · Phần quà",
+  "chan_sao": "Chân sáo",
+  "chan_sao_gio_bien": "Chân sáo · Gió biển",
+  "chan_sao_dau_chan": "Chân sáo · Dấu chân"
  }
 }

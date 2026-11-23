@@ -81,6 +81,56 @@ namespace umbra::match
             }
         }
 
+        int Passive(const MatchDef &def, const Unit &u, AbilityEffect effect)
+        {
+            for (const std::int8_t a : u.abilities)
+                if (a >= 0 && def.abilities[U(a)].use == Use::Passive && def.abilities[U(a)].effect == effect)
+                    return def.abilities[U(a)].amount;
+            return 0;
+        }
+
+        void DropStolen(MatchState &s, int thief)
+        {
+            for (std::size_t i = 0; i < s.stash.size();)
+                if (s.stash[i].thief == thief)
+                {
+                    s.floor.push_back({s.units[U(thief)].cell, s.stash[i].item, 0, false});
+                    s.stash.erase(s.stash.begin() + static_cast<std::ptrdiff_t>(i));
+                }
+                else
+                    ++i;
+        }
+
+        void Dart(const MatchDef &def, MatchState &s, int unit)
+        {
+            // Up to `amount` squares to where the nearest foe is farthest; ties: fewer steps, then the lower square.
+            Unit &u = s.units[U(unit)];
+            const int reach = Passive(def, u, AbilityEffect::Dart);
+            if (reach <= 0 || !Up(u))
+                return;
+            const auto nearestFoe = [&](int cell) {
+                int best = 1 << 20;
+                for (const Unit &o : s.units)
+                    if (Up(o) && o.faction != u.faction && o.faction >= 0)
+                        best = std::min(best, Steps(s.board, cell, o.cell));
+                return best;
+            };
+            int to = u.cell, far = nearestFoe(u.cell), steps = 0;
+            for (int c = 0; c < static_cast<int>(s.board.cells.size()); ++c)
+            {
+                const int d = Steps(s.board, u.cell, c);
+                if (d <= 0 || d > reach || !Room(def, s, c, u.faction))
+                    continue;
+                if (const int f = nearestFoe(c); f > far || (f == far && d < steps))
+                    to = c, far = f, steps = d;
+            }
+            if (to != u.cell)
+            {
+                u.cell = static_cast<std::int16_t>(to);
+                Log(s, LogKind::Moved, unit, to);
+            }
+        }
+
         int Player(const MatchState &s)
         {
             for (std::size_t i = 0; i < s.units.size(); ++i)

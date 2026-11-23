@@ -67,6 +67,7 @@ namespace umbra::match
         std::int8_t ap = 0;      // action points stored by biding (Match.md "Biding")
         std::int16_t from = 0;   // the first round it may act (one that appears mid-fight waits a round)
         std::int8_t bonusMove = 0; // added to its next turn's moves, then spent (Match.md "Hasten")
+        std::int8_t marked = 0, slow = 0; // more damage taken, less Speed: until its next turn (Match.md "Effects")
     };
 
     inline bool Up(const Unit &u) { return u.cell >= 0 && u.hp > 0; }      // on the board and standing
@@ -84,6 +85,13 @@ namespace umbra::match
     struct Drop
     {
         std::int8_t unit = -1, item = -1, percent = 0;
+    };
+
+    // An item a thief took (Match.md "Effects"); it drops on the thief's square when the thief is hit.
+    struct Stolen
+    {
+        std::int8_t thief = -1, item = -1;
+        std::int16_t cell = -1; // where it is shown (a window, campaign plan 4's gimmicks); -1 with the thief
     };
 
     // A unit that waits off the board until `round`, then stands on `cell` (a stage's reinforcement).
@@ -175,6 +183,7 @@ namespace umbra::match
         std::vector<Drop> drops;        // what each unit may drop when it falls
         std::vector<Arrival> arrivals;  // reinforcements still to come
         std::uint8_t noRevive = 0;      // sides (bit 1 << side) that never revive
+        std::vector<Stolen> stash;      // what thieves hold
     };
 
     // A unit's squares: size x size from its cell, the top-left (Match.md "Large monsters"), fallen or not.

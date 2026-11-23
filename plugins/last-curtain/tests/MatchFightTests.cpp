@@ -692,3 +692,186 @@ TEST_CASE("A side marked noRevive can't revive (campaign plan 4)", "[match][figh
     s.noRevive = 2; // side 1
     CHECK(Check(def, s, revive) == Why::Off);
 }
+
+namespace
+{
+    // An ability with an effect (campaign plan 4, Match.md "Effects").
+    int AddEffect(MatchDef &def, const char *id, Use use, AbilityClass kind, Target target, AbilityEffect effect, int amount, int power = 0, int range = 3)
+    {
+        const int a = AddAbility(def, id, kind, target, power, range);
+        def.abilities[U(a)].use = use;
+        def.abilities[U(a)].effect = effect;
+        def.abilities[U(a)].amount = amount;
+        return a;
+    }
+}
+
+TEST_CASE("Mark: the target takes more damage until its next turn (campaign plan 4)", "[match][fight][effects]")
+{
+    MatchDef def = Data();
+    const int mark = AddEffect(def, "diagnose", Use::Board, AbilityClass::Effect, Target::Enemy, AbilityEffect::Mark, 1, 0, 6);
+    MatchState s = ::Fight(def);
+    s.units[2].flags = 0;
+    TurnOf(def, s, 0);
+    Give(s, 0, mark);
+    const int before = Damage(def, s, s.units[1].abilities[0], 1, 2, 0);
+    Put(s, 0, Beside(s, s.units[2].cell));
+    REQUIRE(Apply(def, s, {ActionKind::BoardAbility, maxAbilities - 1, 2}));
+    CHECK(s.units[2].marked == 1);
+    CHECK(Damage(def, s, s.units[1].abilities[0], 1, 2, 0) == before + 1);
+    TurnOf(def, s, 2);
+    CHECK(s.units[2].marked == 0);
+}
+
+TEST_CASE("Alarm: the target loses Speed until its next turn and acts later in the next round's order (campaign plan 4)", "[match][fight][effects]")
+{
+    MatchDef def = Data();
+    const int alarm = AddEffect(def, "alarm", Use::Board, AbilityClass::Effect, Target::Enemy, AbilityEffect::Alarm, 2, 0, 9);
+    MatchState s = ::Fight(def);
+    s.units[2].flags = 0;
+    TurnOf(def, s, 0);
+    Give(s, 0, alarm);
+    REQUIRE(Apply(def, s, {ActionKind::BoardAbility, maxAbilities - 1, 2}));
+    CHECK(s.units[2].slow == 2);
+    TurnOf(def, s, 2);
+    CHECK(s.units[2].slow == 0);
+}
+
+TEST_CASE("First shot: more power against a unit that hasn't acted this round (campaign plan 4)", "[match][fight][effects]")
+{
+    MatchDef def = Data();
+    const int first = AddEffect(def, "firstshot", Use::Battle, AbilityClass::Strike, Target::Enemy, AbilityEffect::FirstShot, 3, 3, 1);
+    MatchState s = ::Fight(def);
+    TurnOf(def, s, 0);
+    s.order = {3, 0, 2, 1}; // the recruit has acted, the player acts now, the boss after
+    s.turn = 1;
+    const int plain = AddAbility(def, "plain", AbilityClass::Strike, Target::Enemy, 3, 1);
+    def.abilities[U(plain)].use = Use::Battle;
+    CHECK(Damage(def, s, first, 0, 2, 0) == Damage(def, s, plain, 0, 2, 0) + 3);
+    CHECK(Damage(def, s, first, 0, 3, 0) == Damage(def, s, plain, 0, 3, 0));
+}
+
+TEST_CASE("Speedkill: double damage to a slower target only (campaign plan 4)", "[match][fight][effects]")
+{
+    MatchDef def = Data();
+    const int kill = AddEffect(def, "speedkill", Use::Passive, AbilityClass::Passive, Target::Self, AbilityEffect::Speedkill, 2);
+    MatchState s = ::Fight(def);
+    const int hit = s.units[2].abilities[0];
+    s.units[1].speed = 1, s.units[2].speed = 5;
+    const int plain = Damage(def, s, hit, 2, 1, 0);
+    s.units[2].abilities[maxAbilities - 1] = I8(kill);
+    CHECK(Damage(def, s, hit, 2, 1, 0) == plain * 2);
+    s.units[1].speed = 9; // faster now: no double
+    CHECK(Damage(def, s, hit, 2, 1, 0) == plain);
+}
+
+TEST_CASE("Death paper: a kill heals its owner (campaign plan 4)", "[match][fight][effects]")
+{
+    MatchDef def = Data();
+    const int paper = AddEffect(def, "paper", Use::Passive, AbilityClass::Passive, Target::Self, AbilityEffect::DeathPaper, 2);
+    const int blow = AddAbility(def, "blow", AbilityClass::Hit, Target::Enemy, 99, 99);
+    MatchState s = ::Fight(def);
+    s.units[2].flags = 0;
+    TurnOf(def, s, 0);
+    s.units[0].abilities[maxAbilities - 2] = I8(paper);
+    Give(s, 0, blow);
+    s.units[0].hp = static_cast<std::int16_t>(s.units[0].maxHp - 5);
+    const int hp = s.units[0].hp;
+    REQUIRE(Apply(def, s, {ActionKind::BoardAbility, maxAbilities - 1, 2}));
+    CHECK(s.units[0].hp == hp + 2);
+}
+
+TEST_CASE("Cold rice: heals and clears a mark on one standing, revives one fallen (campaign plan 4)", "[match][fight][effects]")
+{
+    MatchDef def = Data();
+    const int rice = AddEffect(def, "rice", Use::Board, AbilityClass::Revive, Target::Ally, AbilityEffect::Rice, 5, 30, 1);
+    MatchState s = ::Fight(def);
+    TurnOf(def, s, 0);
+    Give(s, 0, rice);
+    Put(s, 1, Beside(s, s.units[0].cell));
+    s.units[1].hp = static_cast<std::int16_t>(s.units[1].maxHp - 8);
+    s.units[1].marked = 1;
+    const int hp = s.units[1].hp;
+    REQUIRE(Apply(def, s, {ActionKind::BoardAbility, maxAbilities - 1, 1}));
+    CHECK(s.units[1].hp == hp + 5);
+    CHECK(s.units[1].marked == 0);
+    // A fallen ally stands up at 30%.
+    MatchState f = ::Fight(def);
+    TurnOf(def, f, 0);
+    Give(f, 0, rice);
+    Put(f, 1, Beside(f, f.units[0].cell));
+    Fall(f, 1);
+    REQUIRE(Apply(def, f, {ActionKind::BoardAbility, maxAbilities - 1, 1}));
+    CHECK(f.units[1].hp == std::max(1, f.units[1].maxHp * 30 / 100));
+}
+
+TEST_CASE("Steal: an item from a neighbour, dropped on the thief's square when the thief is hit (campaign plan 4)", "[match][fight][effects]")
+{
+    MatchDef def = Data();
+    const int steal = AddEffect(def, "steal", Use::Board, AbilityClass::Effect, Target::Enemy, AbilityEffect::Steal, 0, 0, 1);
+    const int blow = AddAbility(def, "blow", AbilityClass::Hit, Target::Enemy, 1, 99);
+    MatchState s = ::Fight(def);
+    s.units[2].flags = 0;
+    s.units[0].items[0] = 0;
+    TurnOf(def, s, 2);
+    Give(s, 2, steal);
+    Put(s, 2, Beside(s, s.units[0].cell));
+    REQUIRE(Apply(def, s, {ActionKind::BoardAbility, maxAbilities - 1, 0}));
+    CHECK(s.units[0].items[0] == -1);
+    REQUIRE(s.stash.size() == 1);
+    CHECK(s.stash[0].thief == 2);
+    TurnOf(def, s, 0);
+    Give(s, 0, blow);
+    s.units[2].hp = 50, s.units[2].maxHp = 50;
+    REQUIRE(Apply(def, s, {ActionKind::BoardAbility, maxAbilities - 1, 2}));
+    CHECK(s.stash.empty());
+    CHECK(std::ranges::any_of(s.floor, [&](const Floor &f) { return f.cell == s.units[2].cell && f.item == 0; }));
+}
+
+TEST_CASE("Dart: after a battle the unit steps up to its amount away from its foe (campaign plan 4)", "[match][fight][effects]")
+{
+    MatchDef def = Data();
+    const int dart = AddEffect(def, "runaway", Use::Passive, AbilityClass::Passive, Target::Self, AbilityEffect::Dart, 3);
+    MatchState s = ::Fight(def);
+    s.units[2].flags = 0;
+    s.units[2].hp = s.units[2].maxHp = 99;
+    s.units[2].abilities[maxAbilities - 1] = I8(dart);
+    Fight(def, s, 0, 2);
+    REQUIRE(Up(s.units[2]));
+    const int d = Steps(s.board, s.units[0].cell, s.units[2].cell);
+    CHECK(d > 1);
+    CHECK(d <= 4);
+}
+
+TEST_CASE("Hasten versions: the ally also moves 2 more, or heals 3 (campaign plan 4)", "[match][fight][hasten]")
+{
+    MatchDef def = Data();
+    const int home = AddEffect(def, "home", Use::Board, AbilityClass::Hasten, Target::Ally, AbilityEffect::HasteMove, 2, 0, 6);
+    const int gift = AddEffect(def, "gift", Use::Board, AbilityClass::Hasten, Target::Ally, AbilityEffect::HasteHeal, 3, 0, 6);
+    MatchState s = ::Fight(def);
+    TurnOf(def, s, 0);
+    Give(s, 0, home);
+    Put(s, 1, Beside(s, s.units[0].cell));
+    REQUIRE(Apply(def, s, {ActionKind::BoardAbility, maxAbilities - 1, 1}));
+    CHECK(s.units[1].bonusMove == 2);
+    MatchState h = ::Fight(def);
+    TurnOf(def, h, 0);
+    Give(h, 0, gift);
+    Put(h, 1, Beside(h, h.units[0].cell));
+    h.units[1].hp = static_cast<std::int16_t>(h.units[1].maxHp - 5);
+    const int hp = h.units[1].hp;
+    REQUIRE(Apply(def, h, {ActionKind::BoardAbility, maxAbilities - 1, 1}));
+    CHECK(h.units[1].hp == hp + 3);
+}
+
+TEST_CASE("Footsteps: an ally ending its turn beside the unit moves 1 more next turn (campaign plan 4)", "[match][fight][hasten]")
+{
+    MatchDef def = Data();
+    const int steps = AddEffect(def, "steps", Use::Passive, AbilityClass::Passive, Target::Self, AbilityEffect::Footsteps, 1);
+    MatchState s = ::Fight(def);
+    s.units[0].abilities[maxAbilities - 1] = I8(steps);
+    TurnOf(def, s, 1);
+    Put(s, 1, Beside(s, s.units[0].cell));
+    REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
+    CHECK(s.units[1].bonusMove == 1);
+}

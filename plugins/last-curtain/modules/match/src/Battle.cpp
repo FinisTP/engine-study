@@ -47,6 +47,10 @@ namespace umbra::match
             s.battle.on = false;
             if (s.over)
                 return;
+            // 0. Fighters with a dart step away.
+            for (const std::int8_t f : s.battle.fighters)
+                if (f >= 0)
+                    Dart(def, s, f);
             // 1. The turn belongs to whoever holds it in order: a monster's (a hunter's battle) or one that
             //    went down passes on; else the character's action is spent.
             if (const Unit &holder = s.units[U(s.order[U(s.turn)])]; holder.kind == 1 || !Up(holder))
@@ -207,6 +211,11 @@ namespace umbra::match
                 const int dmg = Damage(def, s, u.abilities[U(slot)], me, foe, roll);
                 s.units[U(foe)].hp = static_cast<std::int16_t>(std::max(0, s.units[U(foe)].hp - dmg));
                 Log(s, LogKind::Blow, me, foe, dmg);
+                if (a.effect == AbilityEffect::Mark)
+                    s.units[U(foe)].marked = static_cast<std::int8_t>(a.amount);
+                if (a.effect == AbilityEffect::Alarm)
+                    s.units[U(foe)].slow = static_cast<std::int8_t>(a.amount);
+                DropStolen(s, foe);
                 if (s.units[U(foe)].hp <= 0)
                     Down(def, s, foe, me);
                 if (!s.battle.on)
@@ -239,7 +248,10 @@ namespace umbra::match
             const bool byCharacter = k && k->kind == 0;
             v.hp = 0;
             Log(s, LogKind::Down, victim, killer, v.essence);
-            // 0. What it drops, rolled from the fight's rng, for the cafe's storage.
+            // 0. A killer with death paper heals; what the victim drops is rolled for the cafe's storage.
+            if (k)
+                if (const int heal = Passive(def, *k, AbilityEffect::DeathPaper); heal > 0)
+                    k->hp = static_cast<std::int16_t>(std::min<int>(k->maxHp, k->hp + heal));
             for (const Drop &d : s.drops)
                 if (d.unit == victim && Roll(s, 100) < d.percent)
                     s.found.push_back(d.item);
@@ -282,8 +294,20 @@ namespace umbra::match
         const Unit &f = s.units[U(from)];
         const auto slot = std::ranges::find(f.abilities, ability);
         const int boost = slot != f.abilities.end() ? f.boost[U(static_cast<int>(slot - f.abilities.begin()))] : 0;
-        const int power = (a.dice.count > 0 ? roll : a.power) + boost;
-        return std::max(def.rules.battle.minDamage, power + s.units[U(from)].attack - (s.units[U(to)].defence + shield));
+        int power = (a.dice.count > 0 ? roll : a.power) + boost;
+        // Effects (Match.md "Effects"): more power on one who hasn't acted this round; a mark on the target.
+        const Unit &t = s.units[U(to)];
+        if (a.effect == AbilityEffect::FirstShot)
+            for (std::size_t i = static_cast<std::size_t>(std::max(0, s.turn + 1)); i < s.order.size(); ++i)
+                if (s.order[i] == to)
+                {
+                    power += a.amount;
+                    break;
+                }
+        int dmg = std::max(def.rules.battle.minDamage, power + f.attack - (t.defence + shield)) + t.marked;
+        if (const int times = inner::Passive(def, f, AbilityEffect::Speedkill); times > 0 && t.speed < f.speed)
+            dmg *= times; // speedkill: against a slower one
+        return dmg;
     }
 
     Forecast Preview(const MatchDef &def, const MatchState &s, const Action &act)

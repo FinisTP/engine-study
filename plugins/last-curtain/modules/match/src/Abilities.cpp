@@ -158,8 +158,10 @@ namespace umbra::match
             const bool onFallen = a.kind == AbilityClass::Revive || a.kind == AbilityClass::Remove;
             if (a.kind == AbilityClass::Revive && (s.noRevive & (1 << u.faction)))
                 return Why::Off; // this side never revives (a stage's noRevive)
-            if (onFallen != Fallen(t))
+            if (onFallen != Fallen(t) && !(a.effect == AbilityEffect::Rice && Up(t))) // cold rice also tends one standing
                 return onFallen ? Why::NotFallen : Fallen(t) ? Why::Fallen : Why::NothingHere;
+            if (a.effect == AbilityEffect::Steal && std::ranges::none_of(t.items, [](std::int8_t i) { return i >= 0; }))
+                return Why::NothingHere;
             // 2. Action points: the ability's own cost first, from the same pool and limit (Match.md "Biding").
             if (a.ap > 0 && (u.ap < a.ap || s.now.apSpent + a.ap > s.mode.apPerTurn))
                 return Why::NoAp;
@@ -168,7 +170,7 @@ namespace umbra::match
             if (a.kind == AbilityClass::Hasten && target == me)
                 return Why::NothingHere; // an ally, never yourself
             // 3. Hit or remove an enemy, heal, revive or give to your own side (yourself included), within range.
-            const bool foe = a.kind == AbilityClass::Hit || a.kind == AbilityClass::Remove;
+            const bool foe = a.kind == AbilityClass::Hit || a.kind == AbilityClass::Remove || (a.kind == AbilityClass::Effect && a.target == Target::Enemy);
             if (foe == (t.faction == u.faction) || (a.kind == AbilityClass::Heal && t.kind != 0))
                 return Why::OwnSide;
             const int d = a.reach == RangeBy::Straight ? StraightTo(s.board, u.cell, t) : StepsTo(s.board, u.cell, t);
@@ -178,7 +180,7 @@ namespace umbra::match
                 return Why::FullHp;
             if (u.hp <= CostOf(def, u, slot))
                 return Why::TooCostly;
-            if (a.kind == AbilityClass::Revive && RevivePlace(def, s, target, me) < 0)
+            if (a.kind == AbilityClass::Revive && Fallen(t) && RevivePlace(def, s, target, me) < 0)
                 return Why::Blocked;
             return Why::Ok;
         }
@@ -205,9 +207,41 @@ namespace umbra::match
                 for (const std::int8_t own : u.abilities)
                     if (own >= 0 && def.abilities[U(own)].kind == AbilityClass::AfterHasten)
                         u.bonusMove = static_cast<std::int8_t>(def.abilities[U(own)].power);
+                // 3. Its versions: the ally also moves more, or heals.
+                if (a.effect == AbilityEffect::HasteMove)
+                    t.bonusMove = static_cast<std::int8_t>(t.bonusMove + a.amount);
+                if (a.effect == AbilityEffect::HasteHeal)
+                    t.hp = static_cast<std::int16_t>(std::min<int>(t.maxHp, t.hp + a.amount));
+            }
+            else if (a.kind == AbilityClass::Revive && a.effect == AbilityEffect::Rice && Up(t))
+            {
+                // Cold rice on one standing: heals and clears a mark or a slow.
+                const int before = t.hp;
+                t.hp = static_cast<std::int16_t>(std::min<int>(t.maxHp, t.hp + a.amount));
+                t.marked = 0, t.slow = 0;
+                Log(s, LogKind::Healed, me, target, t.hp - before);
             }
             else if (a.kind == AbilityClass::Revive)
                 Revive(def, s, target, me, PowerOf(def, u, slot));
+            else if (a.kind == AbilityClass::Effect)
+            {
+                // Mark, alarm or steal (Match.md "Effects").
+                if (a.effect == AbilityEffect::Mark)
+                    t.marked = static_cast<std::int8_t>(a.amount);
+                else if (a.effect == AbilityEffect::Alarm)
+                    t.slow = static_cast<std::int8_t>(a.amount);
+                else if (a.effect == AbilityEffect::Steal)
+                {
+                    std::vector<int> full;
+                    for (int i = 0; i < maxItems; ++i)
+                        if (t.items[U(i)] >= 0)
+                            full.push_back(i);
+                    const int pick = full[U(Roll(s, static_cast<int>(full.size())))];
+                    s.stash.push_back({static_cast<std::int8_t>(me), t.items[U(pick)], -1});
+                    Log(s, LogKind::Item, me, t.items[U(pick)]);
+                    t.items[U(pick)] = -1;
+                }
+            }
             else if (a.kind == AbilityClass::Remove)
                 Remove(def, s, target, me);
             else if (a.kind == AbilityClass::Heal)
@@ -224,6 +258,7 @@ namespace umbra::match
                 const int dmg = Damage(def, s, ability, me, target, roll);
                 t.hp = static_cast<std::int16_t>(std::max(0, t.hp - dmg));
                 Log(s, LogKind::Blow, me, target, dmg);
+                DropStolen(s, target);
                 if (t.hp == 0)
                     Down(def, s, target, me);
             }

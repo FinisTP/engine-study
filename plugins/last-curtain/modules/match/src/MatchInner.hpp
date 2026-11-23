@@ -91,6 +91,10 @@ namespace umbra::match::inner
     int RevivePlace(const MatchDef &def, const MatchState &s, int unit, int reviver);
     // A stage's reinforcements: marked a round ahead, placed at their round (Match.md "Arrivals").
     void RunArrivals(const MatchDef &def, MatchState &s);
+    // Effects (Match.md "Effects"): a passive's amount (0 if the unit has none); a thief's loot falls on its square.
+    int Passive(const MatchDef &def, const Unit &u, AbilityEffect effect);
+    void DropStolen(MatchState &s, int thief);
+    void Dart(const MatchDef &def, MatchState &s, int unit);
     void Revive(const MatchDef &def, MatchState &s, int unit, int reviver, int percent); // stands up with percent of max HP (at least 1)
     void Remove(const MatchDef &def, MatchState &s, int unit, int by); // a fallen unit leaves the fight for good
     void CheckEnd(const MatchDef &def, MatchState &s);  // a campaign fight won or lost (after every down, removal, cut)

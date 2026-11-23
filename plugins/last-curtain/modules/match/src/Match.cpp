@@ -183,7 +183,8 @@ namespace umbra::match
                 key.push_back(rng.Next());
             }
             std::ranges::stable_sort(s.order, [&](int a, int c) {
-                return s.units[U(a)].speed != s.units[U(c)].speed ? s.units[U(a)].speed > s.units[U(c)].speed : key[U(a)] < key[U(c)];
+                const int sa = s.units[U(a)].speed - s.units[U(a)].slow, sc = s.units[U(c)].speed - s.units[U(c)].slow; // an alarm slows
+                return sa != sc ? sa > sc : key[U(a)] < key[U(c)];
             });
         }
     }
