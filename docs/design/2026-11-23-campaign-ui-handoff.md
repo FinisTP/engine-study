@@ -154,3 +154,25 @@ are the user's.**
 - Project: `claude/last-curtain/slice-1-eval-2026-11-23.md` (the evaluation),
   `claude/last-curtain/tactics-hooks-research-2026-11-23.md` (why memory-as-growth; no quizzes in the
   café), `claude/last-curtain/slice-1-changes-2026-11-23.md`.
+
+---
+
+## 9. Decisions after the review (the user, 2026-11-23 late evening and 2026-11-24)
+
+Recorded by the development session; the plans `docs/design/plans/2026-11-23-campaign-plan-{4..8}-*.md`
+carry them.
+
+| # | Decision | Changes |
+|---|---|---|
+| 1 | **World map: tickets and a cursor** (as `ux/world-map.md`); no walking figure. | the earlier "figure walking room to room" |
+| 2 | **Skirmish rooms refill after each story stage won, each time with a new twist**; the XP cap stays. | the spec's "a limited number, used up when won" (section 2, row 3) |
+| 3 | **Gamepad, the board cursor and the on-screen keyboard come after slice 1 plays** (plan 8); slice 1 is complete with mouse and keyboard, keys already in a key file. | section 6's order (input before the HUD) |
+| 4 | **The career mode (café shift + faction match) stays as a side mode**, with its own café and HUD. | — |
+| 5 | **Stage 1 freeing is required** (the Rat falling with Tí strung loses); Tí's "left strung" recap line is dropped. | — |
+| 6 | **Biding is off for now.** No AP is earned in the campaign; no AP pips, no "Kết thúc lượt +1 AP". | section 2, row 10 |
+| 7 | **Đưa tin:** the chosen ally takes a full extra turn right after Tí and keeps its own; once per Tí turn. **Chân sáo:** +3 move on Tí's next turn after Đưa tin. | `ti-content` §3 |
+| 8 | **The keepsake Mẩu giấy gấp tư lies in a separate side room of Stage 1** (Phòng két), taken by stepping there; to the café's storage; lost with a lost stage. | `ti-content` §2, §6 ("inside the ticket window") |
+| 9 | **A Phòng vé skirmish** (the box office map with a twist) opens after Stage 1; Gừng drops there too. | — |
+| 10 | **Tí's numbers and upgrade names follow `ti-content`**; the mockups' are placeholders. | — |
+| 11 | **Build order:** plan 4 fights you can play (rule additions, stages, content) → plan 5 battle HUD, words, large text → plan 6 café hub, brewing, notebook → plan 7 the save, world map, stage screens, menus → plan 8 input. | section 6 |
+| 12 | **UI art runs in parallel** through `tools/art/style-board.bat` on the user's PC (style board first, for approval). | — |
