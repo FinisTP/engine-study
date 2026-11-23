@@ -42,6 +42,7 @@ TEST_CASE("The analog screen: strengths from options.csv, the player's two switc
     CHECK(options.crt > 0.0F);
     CHECK(options.vhs > 0.0F);
     CHECK(options.lettersPerSecond > 0.0F);
+    CHECK(options.boostCapPerStat == 3); // general drinks per stat per character (the user, campaign plan 6)
     const std::filesystem::path file = std::filesystem::temp_directory_path() / "umbra-analog-test" / "screen.json";
     std::filesystem::remove_all(file.parent_path());
     AnalogScreen analog = LoadAnalog(file, options); // no file yet: on

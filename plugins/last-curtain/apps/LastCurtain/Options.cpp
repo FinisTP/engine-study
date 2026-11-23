@@ -27,7 +27,7 @@ namespace umbra::night
             {"matchCameraDistance", &GameOptions::matchCameraDistance}, {"matchCameraTilt", &GameOptions::matchCameraTilt},
             {"blowSeconds", &GameOptions::blowSeconds},             {"orderLength", &GameOptions::orderLength},
             {"crt", &GameOptions::crt},                             {"vhs", &GameOptions::vhs},
-            {"lettersPerSecond", &GameOptions::lettersPerSecond}};
+            {"lettersPerSecond", &GameOptions::lettersPerSecond}, {"boostCapPerStat", &GameOptions::boostCapPerStat}};
         const std::map<std::string, bool GameOptions::*> flags{{"tapToContinue", &GameOptions::tapToContinue}, {"moments", &GameOptions::moments}, {"light", &GameOptions::light}};
         // 2. Rows: key,value,note (the note may hold commas); the header is skipped.
         std::string line;

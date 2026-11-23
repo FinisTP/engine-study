@@ -68,4 +68,9 @@ namespace umbra::campaign
     bool Remember(Save &save, const Memory &memory, const Facts &facts);
     // The ability a kit's base ability has become (its chosen version), else the base.
     std::string AbilityFor(const Save &save, const std::string &base);
+
+    // A general drink on one character: spends its needs, refused (nothing spent) at `cap` drinks for that
+    // stat; Boosted is what the drinks add to a stat (maxHp, attack...).
+    bool Boost(Save &save, const Recipes &recipes, const Recipe &drink, const std::string &character, int cap);
+    int Boosted(const Save &save, const Recipes &recipes, const std::string &character, const std::string &stat);
 }

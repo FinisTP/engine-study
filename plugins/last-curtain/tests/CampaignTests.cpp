@@ -847,3 +847,20 @@ TEST_CASE("Memories: what each brings back, joining, a version chosen by the ans
             CHECK_FALSE(campaign::Remember(save, m, {{"ti.memory4", "a"}}));
     CHECK(campaign::AbilityFor(save, "chan_sao") == "chan_sao");
 }
+
+TEST_CASE("General drinks: one at a time on one character, refused at the cap; the boost adds to the stat (campaign plan 6)")
+{
+    const campaign::Recipes recipes = TheRecipes();
+    const campaign::Recipe &tea = *recipes.Find("nuoc_gung");
+    campaign::Save save;
+    save.storage["gung"] = 5;
+    for (int i = 0; i < 3; ++i)
+        CHECK(campaign::Boost(save, recipes, tea, "bao", 3));
+    CHECK_FALSE(campaign::Boost(save, recipes, tea, "bao", 3)); // 3 per stat per character
+    CHECK(save.storage["gung"] == 2);                         // the refused one spent nothing
+    CHECK(campaign::Boost(save, recipes, tea, "mai", 3));       // another character has her own
+    CHECK(campaign::Boosted(save, recipes, "bao", "maxHp") == 6);
+    CHECK(campaign::Boosted(save, recipes, "ti", "maxHp") == 0);
+    // A memory drink is not a boost.
+    CHECK_FALSE(campaign::Boost(save, recipes, *recipes.Find("mut_gung"), "ti", 3));
+}

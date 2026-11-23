@@ -147,4 +147,29 @@ namespace umbra::campaign
     {
         return save.versions.contains(base) ? save.versions.at(base) : base;
     }
+
+    bool Boost(Save &save, const Recipes &recipes, const Recipe &drink, const std::string &character, int cap)
+    {
+        if (drink.kind != "general")
+            return false;
+        int drunk = 0; // drinks of this stat already
+        if (save.boosts.contains(character))
+            for (const auto &[id, count] : save.boosts.at(character))
+                if (const Recipe *r = recipes.Find(id); r && r->stat == drink.stat)
+                    drunk += count;
+        if (drunk >= cap || !Brew(save, drink))
+            return false;
+        ++save.boosts[character][drink.id];
+        return true;
+    }
+
+    int Boosted(const Save &save, const Recipes &recipes, const std::string &character, const std::string &stat)
+    {
+        int total = 0;
+        if (save.boosts.contains(character))
+            for (const auto &[id, count] : save.boosts.at(character))
+                if (const Recipe *r = recipes.Find(id); r && r->stat == stat)
+                    total += count * r->amount;
+        return total;
+    }
 }

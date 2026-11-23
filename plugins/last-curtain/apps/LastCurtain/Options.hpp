@@ -35,6 +35,7 @@ namespace umbra::night
         float orderLength = 12.0F;         // portraits in the match's order strip
         float crt = 0.0F;                  // the analog screen's CRT strength, 0..1 (Analog.hpp)
         float vhs = 0.0F;                  // ... and its VHS tape strength, 0..1
+        float boostCapPerStat = 3.0F;      // general drinks per stat per character (campaign plan 6)
         float lettersPerSecond = 40.0F;    // a dialog line appears this fast (DialogApp.hpp)
     };
 

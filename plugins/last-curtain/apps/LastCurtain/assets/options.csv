@@ -24,3 +24,4 @@ orderLength,12,portraits in the faction match's order strip
 crt,0.6,"the analog screen's CRT: curve, scanlines, colour fringe (0 none .. 1 strong; the player can turn it off in the pause menu, user 2026-11-23)"
 vhs,0.45,"... and its VHS tape: shaking lines, a rolling tracking band, smeared colour, grain"
 lettersPerSecond,40,a dialog line appears this many letters a second
+boostCapPerStat,3,general drinks per stat per character (the user; Nuoc gung +2 max HP each)
