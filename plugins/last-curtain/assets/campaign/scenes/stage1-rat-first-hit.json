@@ -1,0 +1,22 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "stage1-rat-first-hit",
+  "note": "Draft for the user's review (2026-11-24, written overnight). Stage 1: the Rat's line when first hit (slice design 7.4).",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Tao cần tiền, Lệ Thanh, mau đưa tiền cho tao!",
+      "speaker": "rat",
+      "face": "angry",
+      "enter": [
+        {
+          "who": "rat",
+          "side": "right",
+          "slot": 0,
+          "face": "angry"
+        }
+      ]
+    }
+  ]
+}

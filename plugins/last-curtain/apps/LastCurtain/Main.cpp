@@ -2,6 +2,7 @@
 #include "Art.hpp"
 #include "CafeApp.hpp"
 #include "DialogApp.hpp"
+#include "StageApp.hpp"
 #include "GameContext.hpp"
 #include "MatchApp.hpp"
 #include "Play.hpp"
@@ -60,6 +61,8 @@ namespace
         bool match = false;            // --match: a faction match at once (no café first)
         float zoom = 0.0F;             // the match: wheel steps at the start (--zoom N)
         std::string scene, backdrop;   // --scene <id> [--backdrop <name>]: play one campaign scene (developers)
+        std::string stage;             // --stage <id> [--refill n]: play one campaign stage (developers)
+        int refill = 0;
         umbra::campaign::Speaker speaker{"", "female"}; // --name <text> --gender male|female
     };
 
@@ -187,6 +190,14 @@ namespace
                 GameContext game;
                 umbra::campaign::Facts facts;
                 result = game.Open(assets) && RunScene(game, assets, options.scene, options.backdrop, options.speaker, facts, options.capture, options.frames) >= 0 ? 0 : 1;
+                platform.Shutdown();
+                return result;
+            }
+            if (!options.stage.empty())
+            {
+                // One campaign stage with its scenes (StageApp.hpp), for designers and the soak's checks.
+                GameContext game;
+                result = game.Open(assets) ? RunStage(game, assets, options.stage, options.refill, options.seed, options.speaker, options.capture, options.frames) : 1;
                 platform.Shutdown();
                 return result;
             }
@@ -580,6 +591,10 @@ int main(int argc, char **argv)
             options.zoom = static_cast<float>(std::atof(argv[++i]));
         else if (arg == "--scene" && more)
             options.scene = argv[++i];
+        else if (arg == "--stage" && more)
+            options.stage = argv[++i];
+        else if (arg == "--refill" && more)
+            options.refill = std::atoi(argv[++i]);
         else if (arg == "--backdrop" && more)
             options.backdrop = argv[++i];
         else if (arg == "--name" && more)

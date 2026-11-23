@@ -230,8 +230,9 @@ namespace umbra::match
             if (all([](const Unit &u) { return u.faction != 0 || !Up(u); }))
                 return end(1, Loss::SideDown);
             // 3. A recruit that can no longer be freed: removed, or strung when the bosses are down.
+            const auto waiting = [&](const Unit &u) { return std::ranges::any_of(s.arrivals, [&](const Arrival &a) { return &s.units[U(a.unit)] == &u; }); };
             const bool bossesDown = any([](const Unit &u) { return (u.flags & flag::Boss) != 0; }) &&
-                                    all([](const Unit &u) { return (u.flags & flag::Boss) == 0 || !Up(u); });
+                                    all([&](const Unit &u) { return (u.flags & flag::Boss) == 0 || (!Up(u) && !waiting(u)); });
             const bool removed = any([](const Unit &u) { return (u.flags & flag::Recruit) && (u.flags & flag::Removed) && !(u.flags & flag::Freed); });
             const bool strung = any([](const Unit &u) { return (u.flags & flag::Recruit) && (u.flags & flag::Strung); });
             if (s.mode.mustFree && (removed || (bossesDown && strung)))

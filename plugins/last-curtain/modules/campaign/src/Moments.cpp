@@ -27,9 +27,9 @@ namespace umbra::campaign
             else if (e.kind == match::LogKind::Freed)
                 reach("freed:" + who(e.b));
         }
-        // 3. The end, once everything is told.
+        // 3. The end (won) or lost, once everything is told.
         if (s.over && m.read == s.log.size())
-            reach("end");
+            reach(s.winner == 0 ? "end" : "lost");
         return out;
     }
 }

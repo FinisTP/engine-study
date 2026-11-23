@@ -1,0 +1,34 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "t1-start",
+  "note": "Draft for the user's review (2026-11-24, written overnight). T1 opens: the strings come down; the first fight.",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Sợi chỉ đỏ thả xuống một cái bóng nhỏ, lom khom, đuôi dài kéo lê trên thảm."
+    },
+    {
+      "id": "b",
+      "text": "Nó ngẩng lên. Hai đốm mắt đỏ như tàn thuốc.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "afraid"
+        }
+      ]
+    },
+    {
+      "id": "c",
+      "text": "Chạy đi! ...Không, cửa đã khóa rồi.",
+      "speaker": "player",
+      "face": "afraid"
+    },
+    {
+      "id": "d",
+      "text": "Bấm vào ô sáng để đi. Đứng cạnh nó rồi chọn Đánh. Dãy chân dung ở trên cho biết ai đi trước."
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "t1-rescue",
+  "note": "Draft for the user's review (2026-11-24, written overnight). T1 ends: Le Thanh finds the player and leads them to the cafe.",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Cái bóng cuối cùng tan ra như khói nhang.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "afraid"
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "text": "Tiếng guốc gõ trên bậc đá. Người phụ nữ áo cưới đỏ đã đứng đó từ lúc nào.",
+      "enter": [
+        {
+          "who": "lethanh",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    },
+    {
+      "id": "c",
+      "text": "{player} đánh khéo lắm. Khách của tôi ít ai đứng vững được tới giờ này.",
+      "speaker": "lethanh",
+      "face": "talk",
+      "model": true
+    },
+    {
+      "id": "d",
+      "text": "Mấy thứ đó là gì vậy?",
+      "speaker": "player",
+      "face": "afraid"
+    },
+    {
+      "id": "e",
+      "text": "Bóng của con Chuột, kẻ giữ phòng vé. Nó trói người ta lại để khỏi phải trả nợ.",
+      "speaker": "lethanh",
+      "face": "calm"
+    },
+    {
+      "id": "f",
+      "text": "Đi theo tôi. Dưới tầng hầm có một quán nước nhỏ, ấm hơn ở đây nhiều.",
+      "speaker": "lethanh",
+      "face": "happy"
+    }
+  ]
+}

@@ -4,6 +4,7 @@ rem   build                     build Release, start The Last Curtain (the cafe,
 rem   build editor              build, start the Umbra Editor (Play / F5 starts the game; pick how in the menu bar)
 rem   build match               build, start a faction match at once
 rem   build scene prologue      build, play one campaign scene
+rem   build stage stage1        build, play one campaign stage (add a number for a skirmish refill: build stage sk_props 1)
 rem   build game --any --flags  build, start The Last Curtain with these flags (its README)
 rem   build test                build, run the tests, but not the long balance soaks
 rem   build soak                build, run the balance soaks only (about 25 minutes)
@@ -14,7 +15,7 @@ cd /d "%~dp0"
 set BUILD=out\build\windows-msvc
 set WHAT=%~1
 if "%WHAT%"=="" set WHAT=game
-set "KNOWN= game editor match scene test soak only "
+set "KNOWN= game editor match scene stage test soak only "
 if /i "!KNOWN: %WHAT% =!"=="!KNOWN!" (
     echo Unknown word "%WHAT%". Use one of:%KNOWN%
     echo See the top of build.bat.
@@ -22,6 +23,10 @@ if /i "!KNOWN: %WHAT% =!"=="!KNOWN!" (
 )
 if /i "%WHAT%"=="scene" if "%~2"=="" (
     echo Which scene? For example: build scene prologue
+    goto failed
+)
+if /i "%WHAT%"=="stage" if "%~2"=="" (
+    echo Which stage? For example: build stage stage1  ^(t1, t3, stage1, sk_props, sk_stairs, sk_boxoffice^)
     goto failed
 )
 
@@ -71,6 +76,8 @@ for /f "tokens=1,* delims= " %%a in ("%*") do set "REST=%%b"
 if /i "%WHAT%"=="game" start "" "%GAME%" !REST!
 if /i "%WHAT%"=="match" start "" "%GAME%" --match
 if /i "%WHAT%"=="scene" start "" "%GAME%" --scene %~2 --backdrop foyer_today
+if /i "%WHAT%"=="stage" if "%~3"=="" start "" "%GAME%" --stage %~2
+if /i "%WHAT%"=="stage" if not "%~3"=="" start "" "%GAME%" --stage %~2 --refill %~3
 if /i "%WHAT%"=="editor" start "" "%EDITOR%" scenes/settlement.scene.json
 if /i "%WHAT%"=="test" (
     ctest --test-dir %BUILD% -C Release --output-on-failure -E Balance

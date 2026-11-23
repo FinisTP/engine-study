@@ -1,0 +1,26 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "stage1-trapped",
+  "note": "Draft for the user's review (2026-11-24, written overnight). Stage 1 lost: the Rat fell with Ti still strung, or a party fall ended it.",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Sợi chỉ đỏ siết lại. Phòng vé chìm vào bóng tối.",
+      "enter": [
+        {
+          "who": "lethanh",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "text": "Mình phải quay lại phòng vé. Lần này cắt dây cho em trước đã.",
+      "speaker": "lethanh",
+      "face": "calm"
+    }
+  ]
+}

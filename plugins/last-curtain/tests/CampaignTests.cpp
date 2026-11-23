@@ -613,9 +613,73 @@ TEST_CASE("A fight's moments start their scenes once each, only when told (campa
     s.round = 2;
     s.log.push_back({match::LogKind::Freed, 0, ti, 0});
     s.log.push_back({match::LogKind::Down, rat, 0, 0});
-    s.over = true;
+    s.over = true, s.winner = 0;
     const nlohmann::json saved = match::SaveMatch(s);
     CHECK(campaign::StageMoments(stage, b, s.log.size(), m) == std::vector<std::string>{"d", "f", "c", "e"});
     CHECK(match::SaveMatch(s) == saved);
     CHECK(campaign::StageMoments(stage, b, s.log.size(), m).empty());
+    // 4. A lost fight plays "lost", not "end".
+    stage.scenes = {{"end", "e"}, {"lost", "l"}};
+    campaign::BuiltStage lost = campaign::BuildStage(def, TheCast(), TheGrowth(), stage, {{"player", 3, {}}}, 0, {}, 7);
+    lost.state.over = true, lost.state.winner = 1;
+    campaign::Moments fresh;
+    CHECK(campaign::StageMoments(stage, lost, lost.state.log.size(), fresh) == std::vector<std::string>{"l"});
+}
+
+TEST_CASE("The slice's stages and scenes load (campaign plan 4)")
+{
+    const match::MatchDef def = MatchData();
+    for (const char *id : {"t1", "t3", "stage1", "sk_props", "sk_stairs", "sk_boxoffice"})
+    {
+        INFO(id);
+        campaign::StageDef stage;
+        std::vector<core::Diagnostic> d;
+        CHECK(campaign::LoadStage(data / "stages" / (std::string(id) + ".json"), TheCast(), def, data / "scenes", stage, d));
+        for (const core::Diagnostic &e : d)
+            UNSCOPED_INFO(core::Format(e));
+        CHECK(d.empty());
+    }
+    for (const auto &file : std::filesystem::directory_iterator(data / "scenes"))
+    {
+        INFO(file.path().string());
+        campaign::Scene scene;
+        std::vector<core::Diagnostic> d;
+        CHECK(campaign::LoadScene(file.path(), TheCast(), scene, d));
+    }
+}
+
+TEST_CASE("Each stage and each refill can be won by the party brain (campaign plan 4)", "[campaign][slow]")
+{
+    const match::MatchDef def = MatchData();
+    for (const char *id : {"t1", "t3", "stage1", "sk_props", "sk_stairs", "sk_boxoffice"})
+    {
+        campaign::StageDef stage;
+        std::vector<core::Diagnostic> d;
+        REQUIRE(campaign::LoadStage(data / "stages" / (std::string(id) + ".json"), TheCast(), def, data / "scenes", stage, d));
+        std::vector<campaign::PartyMember> party;
+        for (const char *who : {"player", "bao", "mai"})
+            if (static_cast<int>(party.size()) < stage.partyCap)
+                party.push_back({who, stage.level, {}});
+        for (int refill = 0; refill <= static_cast<int>(stage.twists.size()); ++refill)
+        {
+            INFO(id << " refill " << refill);
+            int wins = 0;
+            for (std::uint64_t seed = 1; seed <= 20 && wins == 0; ++seed)
+            {
+                campaign::BuiltStage b = campaign::BuildStage(def, TheCast(), TheGrowth(), stage, party, refill, {}, seed);
+                for (int step = 0; step < 4000 && !b.state.over; ++step)
+                {
+                    const int me = match::Current(b.state);
+                    REQUIRE(me >= 0);
+                    const match::Action a = b.state.units[static_cast<std::size_t>(me)].faction == 0
+                                                ? campaign::PartyAction(def, b, b.state, match::BotLevel::Hard)
+                                                : campaign::EnemyAction(def, b, b.state, match::BotLevel::Medium);
+                    REQUIRE(match::Apply(def, b.state, a));
+                    campaign::Sync(b);
+                }
+                wins += b.state.over && b.state.winner == 0;
+            }
+            CHECK(wins > 0);
+        }
+    }
 }

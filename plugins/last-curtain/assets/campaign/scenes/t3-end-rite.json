@@ -1,0 +1,44 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "t3-end-rite",
+  "note": "Draft for the user's review (2026-11-24, written overnight). T3 ends: Le Thanh teaches the rite.",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Người giữ tranh quỳ xuống, khung tranh trên tay nó trống trơn.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "lethanh",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "text": "Đừng để nó đi tay không. Đọc giùm nó một câu tiễn.",
+      "speaker": "lethanh",
+      "face": "calm"
+    },
+    {
+      "id": "c",
+      "text": "Tôi phải nói gì?",
+      "speaker": "player",
+      "face": "afraid"
+    },
+    {
+      "id": "d",
+      "text": "Nói rằng có người còn nhớ. Từ giờ, khi một bóng ma ngã, {anh/chị} có thể làm lễ tiễn nó.",
+      "speaker": "lethanh",
+      "face": "talk"
+    }
+  ]
+}

@@ -30,6 +30,7 @@ target_sources(
     PRIVATE
         Main.cpp
         MatchApp.cpp
+        StageApp.cpp
         CafeApp.cpp
         CafeApp.hpp
         CafeRoom.cpp

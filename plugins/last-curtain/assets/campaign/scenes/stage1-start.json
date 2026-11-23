@@ -1,0 +1,40 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "stage1-start",
+  "note": "Draft for the user's review (2026-11-24, written overnight). Stage 1 opens: the box office; Le Thanh's hint (from ti-content 4.1, Ty -> con Chuot).",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Phòng vé. Quạt trần quay chầm chậm, vé cũ dồn thành đống dưới chân quầy."
+    },
+    {
+      "id": "b",
+      "text": "Sau song sắt, một con chuột to như người đang đếm tiền. Bên cạnh nó, một đứa nhỏ bị trói, khăn tang che mắt.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "lethanh",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    },
+    {
+      "id": "c",
+      "text": "Đứa nhỏ kia bị con Chuột trói rồi. Cắt dây cho em trước khi nó ngã nghe {anh/chị}.",
+      "speaker": "lethanh",
+      "face": "calm"
+    },
+    {
+      "id": "d",
+      "text": "Đánh cho đứa nhỏ ngã xuống, rồi đứng cạnh em mà cắt dây. Đừng hạ con Chuột trước."
+    }
+  ]
+}

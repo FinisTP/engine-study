@@ -1,0 +1,40 @@
+{
+  "format": "umbra.lc-stage",
+  "version": 1,
+  "id": "sk_props",
+  "kind": "skirmish",
+  "title": "Kho đạo cụ",
+  "titleEn": "The Prop Store",
+  "note": "Draft (2026-11-24): hazards marked a round ahead (sandbags). Refill 1 adds rats in the walls, refill 2 both.",
+  "level": 2,
+  "partyCap": 3,
+  "backdrop": "prop_store",
+  "xp": 60,
+  "map": [
+    "#########",
+    "#S.#.#..#",
+    "#S.#.#..#",
+    "#S.#.#..#",
+    "#.......#",
+    "#..#.#..#",
+    "#..#.#..#",
+    "#.......#",
+    "#########"
+  ],
+  "units": [
+    {"who": "ghost_attacker", "at": [7, 1], "side": 1, "level": 2, "flags": ["boss"]},
+    {"who": "ghost_defender", "at": [7, 6], "side": 1, "level": 2, "flags": ["boss"]},
+    {"who": "ghost_speedster", "at": [4, 6], "side": 1, "level": 2, "flags": ["boss"]}
+  ],
+  "gimmicks": {"hazards": {"count": 2, "damage": 4}},
+  "aims": {"start": "Hạ hết bóng ma. Tránh chỗ bao cát sắp rơi.", "recap": ""},
+  "twists": [
+    {"name": "Chuột trong tường",
+     "units": [{"who": "rat_specter", "at": [4, 4], "side": 1, "level": 2, "flags": ["boss"], "behaviour": {"kind": "reinforcement", "round": 3}},
+               {"who": "rat_specter", "at": [1, 7], "side": 1, "level": 2, "flags": ["boss"], "behaviour": {"kind": "reinforcement", "round": 6}}],
+     "gimmicks": {"hazards": {"count": 0, "damage": 0}}},
+    {"name": "Cả hai",
+     "units": [{"who": "rat_specter", "at": [4, 4], "side": 1, "level": 2, "flags": ["boss"], "behaviour": {"kind": "reinforcement", "round": 3}},
+               {"who": "rat_specter", "at": [1, 7], "side": 1, "level": 2, "flags": ["boss"], "behaviour": {"kind": "reinforcement", "round": 6}}]}
+  ]
+}

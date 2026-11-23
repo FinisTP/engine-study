@@ -147,7 +147,7 @@ namespace umbra::campaign
     };
 
     // The scenes whose moments the fight has reached in its first `told` log lines, each once per attempt:
-    // start, round:<n>, then firstAttacked/falls/freed:<cast id> in log order, then end. Reads only.
+    // start, round:<n>, then firstAttacked/falls/freed:<cast id> in log order, then end (won) or lost. Reads only.
     std::vector<std::string> StageMoments(const StageDef &def, const BuiltStage &stage, std::size_t told, Moments &m);
 
     // After play adds units (a window's spawn), gives them their name, height and a plain behaviour.
@@ -160,6 +160,9 @@ namespace umbra::campaign
 
     // The enemy's next action: its behaviour first (hold, or wake), then the faction bots (Campaign.md "The enemy brain").
     match::Action EnemyAction(const match::MatchDef &def, const BuiltStage &stage, const match::MatchState &s, match::BotLevel level);
+    // The party played by a bot (tests, the campaign soak): while a recruit is strung it is the target, never
+    // the boss; the player walks to it once fallen and cuts. Otherwise the faction bots.
+    match::Action PartyAction(const match::MatchDef &def, const BuiltStage &stage, const match::MatchState &s, match::BotLevel level);
 
     enum class Side : std::uint8_t
     {

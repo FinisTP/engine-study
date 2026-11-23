@@ -1,0 +1,26 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "t3-breath",
+  "note": "Draft for the user's review (2026-11-24, written overnight). T3 round 2: the telegraph is explained once.",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Người giữ tranh phồng ngực. Cả một hàng gạch đỏ rực lên."
+    },
+    {
+      "id": "b",
+      "text": "Lượt sau nó thổi hết cả hàng đó. Bước sang hàng khác, rồi đánh lúc nó đang thở ra!",
+      "speaker": "bao",
+      "face": "talk",
+      "enter": [
+        {
+          "who": "bao",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    }
+  ]
+}

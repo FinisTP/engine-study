@@ -1,3 +1,6 @@
 id,name,text,sprite,class,amount,use,family
 bandage,Bandage,Heals 6 HP.,bandage,heal,6,board,item
 programme,Old programme,Reading it gives 3 XP.,programme,xp,3,board,item
+gung,Ginger,An old ginger root. Rat specters in the box office carry it off.,gung,heal,0,cafe,ingredient
+duong,Sugar,A small packet of sugar; the paper has gone yellow.,duong,heal,0,cafe,ingredient
+giay_gap_tu,Folded note,Folded in four; frayed at the edges. Someone kept it very carefully.,giay_gap_tu,heal,0,cafe,keepsake

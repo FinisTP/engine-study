@@ -87,7 +87,7 @@ namespace umbra::campaign
         // A moment a scene may start at (Campaign.md "Stages").
         bool Moment(const std::string &m, const Cast &cast)
         {
-            if (m == "start" || m == "end")
+            if (m == "start" || m == "end" || m == "lost")
                 return true;
             const std::size_t colon = m.find(':');
             if (colon == std::string::npos)
@@ -163,7 +163,7 @@ namespace umbra::campaign
         for (const auto &[moment, scene] : sceneMap.items())
         {
             if (!Moment(moment, cast))
-                r.Error("scenes." + moment, "expected start, end, round:<n>, or firstAttacked:/falls:/freed: and a cast id");
+                r.Error("scenes." + moment, "expected start, end, lost, round:<n>, or firstAttacked:/falls:/freed: and a cast id");
             else if (!scene.is_string() || !std::filesystem::exists(scenes / (scene.get<std::string>() + ".json")))
                 r.Error("scenes." + moment, "no scene file " + (scene.is_string() ? scene.get<std::string>() : std::string("?")) + ".json in " + scenes.string());
             else

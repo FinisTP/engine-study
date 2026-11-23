@@ -1,0 +1,26 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "stage1-freed",
+  "note": "Draft for the user's review (2026-11-24, written overnight). Stage 1: Ti cut free (ti-content 4.1).",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Dây… đứt rồi hả? Tui… tui không nhớ tui là ai nữa.",
+      "speaker": "ti",
+      "face": "afraid",
+      "enter": [
+        {
+          "who": "ti",
+          "side": "right",
+          "slot": 0,
+          "face": "afraid"
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "text": "Một vệt sáng vàng cuốn lấy đứa nhỏ rồi đưa em đi mất. Lệ Thanh bảo em sẽ chờ dưới quán."
+    }
+  ]
+}

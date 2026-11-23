@@ -1,0 +1,22 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "stage1-ti-falls",
+  "note": "Draft for the user's review (2026-11-24, written overnight). Stage 1: Ti falls, strung (ti-content 4.1).",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Mạ ơi… tối quá…",
+      "speaker": "ti",
+      "face": "neardead",
+      "enter": [
+        {
+          "who": "ti",
+          "side": "right",
+          "slot": 0,
+          "face": "neardead"
+        }
+      ]
+    }
+  ]
+}

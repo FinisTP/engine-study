@@ -1,0 +1,22 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "stage1-ti-seen",
+  "note": "Draft for the user's review (2026-11-24, written overnight). Stage 1 round 1: Ti first seen (ti-content 4.1).",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Đừng lại gần… tui phải chạy. Có người đang chờ tin.",
+      "speaker": "ti",
+      "face": "afraid",
+      "enter": [
+        {
+          "who": "ti",
+          "side": "right",
+          "slot": 0,
+          "face": "afraid"
+        }
+      ]
+    }
+  ]
+}

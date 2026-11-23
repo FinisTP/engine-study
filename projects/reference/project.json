@@ -42,6 +42,54 @@
       ]
     },
     {
+      "label": "The Last Curtain: stage 't1'",
+      "program": "LastCurtain",
+      "args": [
+        "--stage",
+        "t1"
+      ]
+    },
+    {
+      "label": "The Last Curtain: stage 't3'",
+      "program": "LastCurtain",
+      "args": [
+        "--stage",
+        "t3"
+      ]
+    },
+    {
+      "label": "The Last Curtain: stage 'stage1'",
+      "program": "LastCurtain",
+      "args": [
+        "--stage",
+        "stage1"
+      ]
+    },
+    {
+      "label": "The Last Curtain: stage 'sk_props'",
+      "program": "LastCurtain",
+      "args": [
+        "--stage",
+        "sk_props"
+      ]
+    },
+    {
+      "label": "The Last Curtain: stage 'sk_stairs'",
+      "program": "LastCurtain",
+      "args": [
+        "--stage",
+        "sk_stairs"
+      ]
+    },
+    {
+      "label": "The Last Curtain: stage 'sk_boxoffice'",
+      "program": "LastCurtain",
+      "args": [
+        "--stage",
+        "sk_boxoffice"
+      ]
+    },
+    {
       "label": "The Last Curtain: the old night",
       "program": "LastCurtain",
       "args": [

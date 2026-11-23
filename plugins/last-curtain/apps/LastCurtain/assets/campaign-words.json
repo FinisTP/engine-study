@@ -27,5 +27,17 @@
   "chan_sao": "Chân sáo",
   "chan_sao_gio_bien": "Chân sáo · Gió biển",
   "chan_sao_dau_chan": "Chân sáo · Dấu chân"
+ },
+ "items": {
+  "bandage": "Băng gạc",
+  "programme": "Tờ chương trình cũ",
+  "gung": "Gừng",
+  "duong": "Đường",
+  "giay_gap_tu": "Mẩu giấy gấp tư"
+ },
+ "itemText": {
+  "gung": "Củ gừng già, cay nồng. Bóng chuột trong phòng vé hay tha theo.",
+  "duong": "Một gói đường cát nhỏ, giấy gói đã ngả vàng.",
+  "giay_gap_tu": "Gấp tư, mép sờn. Có người đã giữ nó rất kỹ."
  }
 }

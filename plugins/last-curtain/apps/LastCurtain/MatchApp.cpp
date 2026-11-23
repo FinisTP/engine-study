@@ -71,7 +71,8 @@ int RunMatch(const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool
 }
 
 int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::uint64_t seed, bool watch, const std::filesystem::path &capture,
-             int frames, float zoom, umbra::cafe::Career *career, int moneyPerEssence, const std::filesystem::path &careerFile)
+             int frames, float zoom, umbra::cafe::Career *career, int moneyPerEssence, const std::filesystem::path &careerFile,
+             const MatchHooks *hooks)
 {
     // 1. The match's data, its words and the pace.
     MatchDef def;
@@ -126,7 +127,9 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         shown = want;
     };
     const auto begin = [&](const MatchState *restored) {
-        if (restored)
+        if (hooks)
+            play.emplace(def, hooks->start(), level), play->SetBrain(hooks->brain);
+        else if (restored)
             play.emplace(def, *restored, level);
         else
             play.emplace(def, first + matches++, picks, level);
@@ -148,7 +151,9 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         hudOpen = false;
         canContinue = ReadSave(saved);
     };
-    if (watch)
+    if (hooks)
+        begin(nullptr);
+    else if (watch)
         picks = RiggedPick(def, first ^ 0x5EEDULL, def.options.side), begin(nullptr);
 
     // 4. The loop.
@@ -184,6 +189,8 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         {
             if (!paused)
                 play->Update(dt);
+            if (hooks && hooks->beat && !paused)
+                hooks->beat(*play); // a stage's scenes, between beats
             // What was just told: figures move, sounds play.
             for (const auto &[unit, motion] : play->TakeMoves())
                 table.Play(unit, motion);
@@ -209,7 +216,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
             if (play->State().over && !ended)
                 ended = true, table.StartScene("end", play->State().board.hub[static_cast<std::size_t>(std::max(0, play->State().winner))]);
             table.Zoom(input.Wheel() + std::exchange(zoom, 0.0F));
-            if (!play->State().over && play->State().round != savedRound && !watch)
+            if (!play->State().over && play->State().round != savedRound && !watch && !hooks)
                 WriteSave(*play), savedRound = play->State().round;
         }
         table.Update(dt);
@@ -283,10 +290,12 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                 else if (a.action == "cafe" && career)
                     result = 2, quit = true; // back to the café without playing
                 else if (a.screen == "match-end" && a.action == "again")
-                    backToPick();
+                    hooks ? begin(nullptr) : backToPick();
                 else if (a.screen == "pause" && a.action == "resume")
                     paused = false;
-                else if (a.screen == "pause" && (a.action == "save" || a.action == "savequit") && play)
+                else if (a.screen == "pause" && a.action == "savequit" && hooks)
+                    quit = true; // stage saves come with the campaign save (plan 7)
+                else if (a.screen == "pause" && (a.action == "save" || a.action == "savequit") && play && !hooks)
                 {
                     WriteSave(*play);
                     if (a.action == "savequit")
@@ -328,7 +337,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         std::this_thread::sleep_for(std::chrono::milliseconds{1});
     }
     // 8. Quitting mid-match saves it for Continue; the match's screens close for whoever comes next.
-    if (play && !play->State().over && !watch)
+    if (play && !play->State().over && !watch && !hooks)
         WriteSave(*play);
     if (screens.Ready())
         for (const char *name : {"match-hud", "match-labels", "match-pick", "match-end", "match-battle", "match-level", "match-event", "match-treasure", "match-banner", "pause"})

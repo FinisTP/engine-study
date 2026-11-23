@@ -1,0 +1,22 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "stage1-ti-hit",
+  "note": "Draft for the user's review (2026-11-24, written overnight). Stage 1: Ti hit once (ti-content 4.1).",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Ui da… tui có làm chi mô…",
+      "speaker": "ti",
+      "face": "afraid",
+      "enter": [
+        {
+          "who": "ti",
+          "side": "right",
+          "slot": 0,
+          "face": "afraid"
+        }
+      ]
+    }
+  ]
+}

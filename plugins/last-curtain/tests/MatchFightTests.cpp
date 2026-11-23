@@ -990,3 +990,17 @@ TEST_CASE("Stolen items wait on the window nearest the thief (campaign plan 4)",
     REQUIRE(s.stash.size() == 1);
     CHECK(s.stash[0].cell == near);
 }
+
+TEST_CASE("A boss still waiting to arrive keeps the fight going (campaign plan 4)", "[match][fight][end]")
+{
+    const MatchDef def = Data();
+    MatchState s = ::Fight(def);
+    // Unit 3 becomes a second boss that arrives at round 9.
+    s.units[3].flags = flag::Boss;
+    const std::int16_t square = static_cast<std::int16_t>(s.units[3].cell);
+    s.units[3].cell = -1;
+    s.arrivals.push_back({3, square, 9});
+    s.units[2].hp = 1;
+    Fight(def, s, 0, 2);
+    CHECK_FALSE(s.over);
+}

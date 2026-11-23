@@ -1,0 +1,44 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "t3-start",
+  "note": "Draft for the user's review (2026-11-24, written overnight). T3 opens: the portrait corridor; Bao and Ba Mai beside the player.",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Hành lang dài hun hút. Mấy bức chân dung cũ nhìn theo từng bước chân.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "bao",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "mai",
+          "side": "right",
+          "slot": 1,
+          "face": "calm"
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "text": "Cái thứ cuối hành lang kia... nó đang hít vào.",
+      "speaker": "bao",
+      "face": "afraid"
+    },
+    {
+      "id": "c",
+      "text": "Thấy hàng nào sáng lên thì bước ra khỏi hàng đó, {anh/chị} nghe. Ai ngã, bà có cơm nguội.",
+      "speaker": "mai",
+      "face": "calm"
+    }
+  ]
+}

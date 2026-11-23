@@ -1,0 +1,60 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "stage1-end",
+  "note": "Draft for the user's review (2026-11-24, written overnight). Stage 1 won: Le Thanh's story piece 1 (money); she regains restoring memories.",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Con Chuột co lại, chỉ còn là một ông thư ký gầy gò, kính trễ xuống mũi.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "lethanh",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "text": "Hồi đó, mỗi đêm diễn xong tôi lên phòng vé lãnh lương. Ông ấy đếm tiền chậm lắm, đếm xong lúc nào cũng thiếu.",
+      "speaker": "lethanh",
+      "face": "calm"
+    },
+    {
+      "id": "c",
+      "text": "Rồi một hôm cái vòng ngọc của má tôi biến mất khỏi phòng thay đồ. Tôi biết ai lấy. Tôi không nói.",
+      "speaker": "lethanh",
+      "face": "talk"
+    },
+    {
+      "id": "d",
+      "text": "Sao cô không nói?",
+      "speaker": "player",
+      "face": "calm"
+    },
+    {
+      "id": "e",
+      "text": "Vì tôi còn cần đứng trên sân khấu đó. Tiền thì mất được. Chỗ đứng thì không.",
+      "speaker": "lethanh",
+      "face": "scheming"
+    },
+    {
+      "id": "f",
+      "text": "Có thứ gì ấm lên trong tay cô ấy. Lệ Thanh nhìn xuống, như vừa nhớ ra một bài hát cũ."
+    },
+    {
+      "id": "g",
+      "text": "Tôi nhớ lại được rồi... cách trả trí nhớ cho người ta. Đứa nhỏ dưới quán đang cần nó.",
+      "speaker": "lethanh",
+      "face": "happy"
+    }
+  ]
+}

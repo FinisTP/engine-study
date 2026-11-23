@@ -13,7 +13,9 @@ cmake --build --preset windows-msvc-release --target LastCurtain
 
 Options: `--player <guest id>` starts at once as that guest (ids in `assets/night/guests.csv`),
 `--watch` lets all seven play themselves, `--seed N` picks the night, `--look` opens Look on your
-first turn, `--match` starts a faction match at once (no café first), `--capture shot.png --frames N` saves frame N and quits. For writers, `--scene <id>
+first turn, `--match` starts a faction match at once (no café first), `--capture shot.png --frames N` saves frame N and quits. For designers, `--stage <id> [--refill n] [--seed n]` plays one campaign stage
+(`assets/campaign/stages/<id>.json`; the party is the player, Bảo and Bà Mai up to its cap, at its level)
+with its scenes at their moments (`StageApp.hpp`). For writers, `--scene <id>
 [--backdrop <name>] [--name <text>] [--gender male|female]` plays one campaign scene
 (`assets/campaign/scenes/<id>.json` of the plugin) on the dialog screen over `art/backdrops/<name>.jpg`:
 Space or a click goes on, 1–4 choose, Esc skips (it stops at a choice), Nhật ký shows the lines so far.
