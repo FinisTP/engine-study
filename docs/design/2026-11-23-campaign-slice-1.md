@@ -236,9 +236,12 @@ where the 2026-11-23 sprites are hooked in.
   Pass: the user is satisfied with the lines and the automatic checks pass for most of them [call:
   90%].
 - **Model comparison (same tool):** it takes several model files and writes one report per model, side
-  by side, so Qwen3 4B is compared with Vietnamese-trained models of the same size [call: first
-  candidates Gemma-SEA-LION-v4-4B, Sailor-4B-Chat, Arcee-VyLinh 3B and SEA-LION v4.5 E2B; the user
-  downloads them]. A candidate must load in the pinned llama.cpp (the tool says so if it doesn't), fit
+  by side, so Qwen3 4B is compared with Vietnamese-trained models of the same size. **Arcee-VyLinh
+  3B** is in the first run (the user, 2026-11-23; Q4_K_M, 1.9 GB, from `QuantFactory/Arcee-VyLinh-GGUF`).
+  Its card says Apache 2.0, but it is merged with Qwen2.5-3B-Instruct, whose licence (qwen-research)
+  forbids commercial use without Alibaba's permission: fine to test, settle before shipping. Other
+  candidates [call]: Sailor-4B-Chat (Apache 2.0, the safe fallback), Gemma-SEA-LION-v4-4B and SEA-LION
+  v4.5 E2B; the user downloads them. A candidate must load in the pinned llama.cpp (the tool says so if it doesn't), fit
   the card with the game (about 3 GB, measured by the tool), answer in under about 1.5 s a line, and
   carry a licence that lets it ship inside the game; a newer llama.cpp is a separate, reviewed change.
   The user picks the winner from the reports.
@@ -248,7 +251,10 @@ where the 2026-11-23 sprites are hooked in.
   services, so they are not used. The local test uses VieNeu-TTS v3 Turbo (Apache 2.0, runs on the
   CPU, preset Northern, Central and Southern voices) on the same test lines, one script writing one
   sound file per line, for the user to listen to [call: a Central voice for Tí and Bà Mai, a Southern
-  one for Bảo, the user picks Le Thanh's]. No voice cloning of real people. If voice is kept, only
+  one for Bảo, the user picks Le Thanh's]. No voice cloning of real people. **First samples**
+  (2026-11-23, the user's VieNeu on port 7860): six lines (Tí as Quang Sơn and as Ngọc Trân, Bà Mai as
+  Ngọc Trân, Bảo as Thái Sơn, Le Thanh as Ngọc Linh and as Thục Đoan) took 10–15 s each for 5–7 s of
+  sound, fine for lines made ahead of time. VieNeu has no child voice, so Tí's voice is the user's pick. If voice is kept, only
   **authored** lines are voiced, ahead of time, as Ogg files in the assets; model lines stay text, so
   the game ships no second model [call]. Voicing itself is a later slice.
 - **Authored text:** Claude drafts the Vietnamese (lines, fragments, aims, menus); the user reviews it
