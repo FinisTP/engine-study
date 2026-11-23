@@ -130,6 +130,14 @@ rules below stay and their tests switch it on themselves.
 - A campaign fight seeds its random numbers from the fight's seed in `BeginMatch` (the faction match's
   come from `NewMatch`), so the same seed gives the same drops.
 
+## Arrivals (campaign plan 4)
+
+A stage's reinforcements wait in `MatchState::arrivals` (unit, square, round). At the start of the round
+before theirs the log says `Arriving` (the mark on the square); at their round's start they stand on their
+square, or the nearest one with room, log `Arrived`, and act from the next round. `noRevive` (bit
+`1 << side`): that side's revive abilities and items are refused (`Why::Off`), as nobody on the Rat's side
+revives in Stage 1.
+
 ## Freeing and the end (campaign plan 2, `win` boss)
 
 Flags on units (`flag::`): `Player` (the living player), `Boss`, `Recruit` (a gold knot on its strings),

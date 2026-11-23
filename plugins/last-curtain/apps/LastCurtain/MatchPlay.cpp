@@ -48,7 +48,7 @@ void MatchPlay::SyncHp()
 const char *MatchPlay::LogName(LogKind kind)
 {
     static const char *names[] = {"Moved", "Battle", "Blow", "Down", "Essence", "Performed", "Level", "Back",
-                                  "SpawnSoon", "Spawned", "Event", "Item", "Treasure", "Over", "Healed", "Bided", "Freed"};
+                                  "SpawnSoon", "Spawned", "Event", "Item", "Treasure", "Over", "Healed", "Bided", "Freed", "Arriving", "Arrived"};
     return names[static_cast<int>(kind)];
 }
 
@@ -103,6 +103,8 @@ std::string MatchPlay::Caption(const LogEntry &e) const
         break;
     }
     case LogKind::Over: v = {{"side", Word("misc", e.a == 0 ? "side0" : e.a == 1 ? "side1" : "draw")}}; break;
+    case LogKind::Arriving:
+    case LogKind::Arrived: v = {{"who", Name(e.a)}}; break;
     default: break;
     }
     return Fill(Word("log", LogName(e.kind)), v);
@@ -252,7 +254,7 @@ void MatchPlay::Update(float dt)
     if (now < 0 || Mine(now) || (fight_[0] >= 0 && !s_.battle.on)) // a finished fight keeps its stage a moment
         return;
     SyncHp();
-    Apply(def_, s_, ChooseAction(def_, s_, level_));
+    Apply(def_, s_, brain_ ? brain_(s_) : ChooseAction(def_, s_, level_));
     Queue();
     Reveal();
 }
@@ -347,7 +349,7 @@ bool MatchPlay::HandleUi(const std::string &screen, const std::string &action, c
         RevealAll();
         for (int guard = 0; guard < 100000 && !s_.over && !Mine(Current(s_)); ++guard)
         {
-            Apply(def_, s_, ChooseAction(def_, s_, level_));
+            Apply(def_, s_, brain_ ? brain_(s_) : ChooseAction(def_, s_, level_));
             RevealAll();
         }
         if (bannerOn_)

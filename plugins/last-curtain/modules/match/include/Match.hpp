@@ -114,7 +114,7 @@ namespace umbra::match
         std::int8_t apSpent = 0; // action points spent this turn
     };
 
-    enum class LogKind : std::uint8_t { Moved, Battle, Blow, Down, Essence, Performed, Level, Back, SpawnSoon, Spawned, Event, Item, Treasure, Over, Healed, Bided, Freed }; // Freed: a = the player, b = the recruit, c = its square
+    enum class LogKind : std::uint8_t { Moved, Battle, Blow, Down, Essence, Performed, Level, Back, SpawnSoon, Spawned, Event, Item, Treasure, Over, Healed, Bided, Freed, Arriving, Arrived }; // Freed: a = the player, b = the recruit, c = its square; Arriving/Arrived: a = the unit, b = its square
     struct LogEntry
     {
         LogKind kind = LogKind::Moved;

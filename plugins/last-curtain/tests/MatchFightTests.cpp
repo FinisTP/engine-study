@@ -676,3 +676,19 @@ TEST_CASE("A unit's drops are rolled from the fight's seed when it falls (campai
     CHECK(got > 80);
     CHECK(got < 160);
 }
+
+TEST_CASE("A side marked noRevive can't revive (campaign plan 4)", "[match][fight][revive]")
+{
+    MatchDef def = Data();
+    const int raise = AddAbility(def, "raise", AbilityClass::Revive, Target::Ally, 50);
+    MatchState s = ::Fight(def);
+    s.units[2].flags = 0;
+    Fall(s, 3);
+    TurnOf(def, s, 2);
+    Give(s, 2, raise);
+    Put(s, 2, Beside(s, s.units[3].cell));
+    const Action revive{ActionKind::BoardAbility, maxAbilities - 1, 3};
+    REQUIRE(Check(def, s, revive) == Why::Ok);
+    s.noRevive = 2; // side 1
+    CHECK(Check(def, s, revive) == Why::Off);
+}

@@ -793,3 +793,23 @@ TEST_CASE("A match starts the player's characters from the career and writes the
     CHECK(career.Find("mai")->level == 4);
     CHECK(career.Find("bao") != nullptr);
 }
+
+TEST_CASE("A brain set from outside plays the other side (campaign plan 4)", "[match][play]")
+{
+    const MatchDef def = Data();
+    MatchState s = NewMatch(def, 7, {MatchDef::Find(def.characters, "bao"), MatchDef::Find(def.characters, "khang"), MatchDef::Find(def.characters, "mai")});
+    while (s.units[static_cast<std::size_t>(Current(s))].faction == 0)
+        REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
+    MatchPlay p(def, s, BotLevel::Medium);
+    p.SetWords(Words());
+    p.SetOptions(Pace());
+    int asked = 0;
+    p.SetBrain([&](const MatchState &) {
+        ++asked;
+        return Action{ActionKind::EndTurn};
+    });
+    for (int i = 0; i < 40 && !p.PlayerTurn(); ++i)
+        p.Update(2.0F);
+    CHECK(asked > 0);
+    CHECK(p.PlayerTurn());
+}

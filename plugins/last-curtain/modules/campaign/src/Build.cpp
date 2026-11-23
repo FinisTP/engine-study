@@ -34,22 +34,53 @@ namespace umbra::campaign
             b.hub = {-1, -1}, b.door = {-1, -1};
             return b;
         }
+
+        // 2. Rooms: flood fill over open squares, stopping at walls and doorways.
+        std::vector<int> Rooms(const StageDef &stage)
+        {
+            std::vector<int> room(static_cast<std::size_t>(stage.width * stage.height), -1);
+            int next = 0;
+            for (int start = 0; start < static_cast<int>(room.size()); ++start)
+            {
+                const char c = stage.At(start % stage.width, start / stage.width);
+                if (c == '#' || c == 'D' || room[static_cast<std::size_t>(start)] >= 0)
+                    continue;
+                std::vector<int> todo{start};
+                room[static_cast<std::size_t>(start)] = next;
+                while (!todo.empty())
+                {
+                    const int at = todo.back();
+                    todo.pop_back();
+                    for (int dir = 0; dir < 4; ++dir)
+                    {
+                        const int x = at % stage.width + dx[dir], y = at / stage.width + dy[dir], n = y * stage.width + x;
+                        const char k = stage.At(x, y);
+                        if (k != '#' && k != 'D' && room[static_cast<std::size_t>(n)] < 0)
+                            room[static_cast<std::size_t>(n)] = next, todo.push_back(n);
+                    }
+                }
+                ++next;
+            }
+            return room;
+        }
     }
 
     BuiltStage BuildStage(const match::MatchDef &def, const Cast &cast, const Growth &growth, const StageDef &stage,
                           const std::vector<PartyMember> &party, int refill, const std::set<std::string> &taken, std::uint64_t seed)
     {
         BuiltStage out;
+        out.rooms = Rooms(stage);
         match::MatchState &s = out.state;
         s.board = MapBoard(stage);
         s.mode = def.modes.at("campaign");
         s.mode.mustFree = stage.mustFree;
         for (const int side : stage.noRevive)
             s.noRevive = static_cast<std::uint8_t>(s.noRevive | (1 << side));
-        const auto add = [&](match::Unit u, const std::string &who, float height) {
+        const auto add = [&](match::Unit u, const std::string &who, float height, UnitBehaviour behaviour = {}) {
             s.units.push_back(u);
             out.who.push_back(who);
             out.height.push_back(height);
+            out.behaviour.push_back(behaviour);
             return static_cast<int>(s.units.size()) - 1;
         };
         // 2. The party, up to the cap, on the starts in reading order; the first is the player.
@@ -79,7 +110,7 @@ namespace umbra::campaign
             u.flags = static_cast<std::uint8_t>((su.boss ? match::flag::Boss : 0) | (su.recruit ? match::flag::Recruit : 0) | (su.strung ? match::flag::Strung : 0));
             const int cell = su.y * stage.width + su.x;
             u.cell = static_cast<std::int16_t>(su.behaviour == Behaviour::Reinforcement ? -1 : cell);
-            const int index = add(u, su.who, su.height);
+            const int index = add(u, su.who, su.height, {su.behaviour, su.after});
             if (su.behaviour == Behaviour::Reinforcement)
                 s.arrivals.push_back({static_cast<std::int8_t>(index), static_cast<std::int16_t>(cell), static_cast<std::int16_t>(su.round)});
             for (const auto &[item, percent] : su.drops)

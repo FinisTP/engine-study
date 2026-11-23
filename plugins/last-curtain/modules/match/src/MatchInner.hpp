@@ -89,6 +89,8 @@ namespace umbra::match::inner
     // Where a revived unit stands: its own square if there is room, else the nearest square with room,
     // ties nearest the reviver, then the lower cell; -1 if none.
     int RevivePlace(const MatchDef &def, const MatchState &s, int unit, int reviver);
+    // A stage's reinforcements: marked a round ahead, placed at their round (Match.md "Arrivals").
+    void RunArrivals(const MatchDef &def, MatchState &s);
     void Revive(const MatchDef &def, MatchState &s, int unit, int reviver, int percent); // stands up with percent of max HP (at least 1)
     void Remove(const MatchDef &def, MatchState &s, int unit, int by); // a fallen unit leaves the fight for good
     void CheckEnd(const MatchDef &def, MatchState &s);  // a campaign fight won or lost (after every down, removal, cut)

@@ -97,3 +97,11 @@ At level 3: the Rat (attacker) 8 attack and 32 HP; an ordinary ghost attacker 4 
 stage's units and, for `refill` ≥ 1, that refill's twist (the last twist repeats); reinforcements wait off
 the board in `MatchState::arrivals`; items whose id is in `taken` stay away; then `BeginMatch`. It
 returns each unit's cast id and drawn height beside the state.
+
+## The enemy brain
+
+`EnemyAction(def, built, state, level)`: an **aggressive** unit holds (ends its turn) until round
+`after`; a **passive** one holds until it is hurt or a party unit stands in its room within 4 squares
+(rooms from the map, doorways `D` between them); otherwise the faction bots (`ChooseAction`) play it.
+The app gives it to `MatchPlay::SetBrain` for a stage. Reinforcements are rules in the match
+(`Match.md` "Arrivals").

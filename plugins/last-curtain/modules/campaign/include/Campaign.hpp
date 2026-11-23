@@ -120,18 +120,30 @@ namespace umbra::campaign
         std::array<std::string, 4> items{};
     };
 
-    // A fight ready to play, and for each unit its cast id and drawn height.
+    struct UnitBehaviour
+    {
+        Behaviour kind = Behaviour::None;
+        int after = 0;
+    };
+
+    // A fight ready to play: per unit its cast id, drawn height and behaviour; per square its room
+    // (open squares joined without passing a doorway 'D'; -1 for walls and doorways).
     struct BuiltStage
     {
         match::MatchState state;
         std::vector<std::string> who;
         std::vector<float> height;
+        std::vector<UnitBehaviour> behaviour;
+        std::vector<int> rooms;
     };
 
     // The stage's fight: its map as the board, the party (up to its cap) on the starts, the player
     // first, enemies (with the refill's twist), items not yet taken, reinforcements waiting.
     BuiltStage BuildStage(const match::MatchDef &def, const Cast &cast, const Growth &growth, const StageDef &stage,
                           const std::vector<PartyMember> &party, int refill, const std::set<std::string> &taken, std::uint64_t seed);
+
+    // The enemy's next action: its behaviour first (hold, or wake), then the faction bots (Campaign.md "The enemy brain").
+    match::Action EnemyAction(const match::MatchDef &def, const BuiltStage &stage, const match::MatchState &s, match::BotLevel level);
 
     enum class Side : std::uint8_t
     {

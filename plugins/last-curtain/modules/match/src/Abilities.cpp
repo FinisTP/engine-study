@@ -156,6 +156,8 @@ namespace umbra::match
             const Unit &t = s.units[U(target)];
             // 1. Revive and remove want a fallen target; everything else one standing (Match.md "Falls").
             const bool onFallen = a.kind == AbilityClass::Revive || a.kind == AbilityClass::Remove;
+            if (a.kind == AbilityClass::Revive && (s.noRevive & (1 << u.faction)))
+                return Why::Off; // this side never revives (a stage's noRevive)
             if (onFallen != Fallen(t))
                 return onFallen ? Why::NotFallen : Fallen(t) ? Why::Fallen : Why::NothingHere;
             // 2. Action points: the ability's own cost first, from the same pool and limit (Match.md "Biding").
@@ -240,6 +242,8 @@ namespace umbra::match
             // A revive item stands up a fallen one of your side beside you; the others are for yourself (target -1).
             if (def.items[U(s.units[U(me)].items[U(slot)])].kind != ItemClass::Revive)
                 return target == -1 ? Why::Ok : Why::NothingHere;
+            if (s.noRevive & (1 << s.units[U(me)].faction))
+                return Why::Off;
             if (target < 0 || target >= static_cast<int>(s.units.size()))
                 return Why::NothingHere;
             const Unit &u = s.units[U(me)], &t = s.units[U(target)];

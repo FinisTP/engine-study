@@ -7,6 +7,8 @@
 
 #include <nlohmann/json.hpp>
 
+#include <functional>
+
 #include <string>
 #include <utility>
 #include <vector>
@@ -25,6 +27,8 @@ public:
     void SetOptions(const umbra::night::GameOptions &o) { options_ = o; } // the pace (assets/options.csv)
     void StartFrom(const umbra::cafe::Career &career); // the player's side as the career left it (CareerMatch)
     void SetWatch(bool watch) { watch_ = watch; }                          // both sides are bots (--watch)
+    // Who plays the units that aren't the player's (a campaign stage's enemy brain); default the faction bots.
+    void SetBrain(std::function<umbra::match::Action(const umbra::match::MatchState &)> brain) { brain_ = std::move(brain); }
 
     bool Do(const umbra::match::Action &action); // the player's action; false unless it is theirs and legal
     void Update(float dt);
@@ -110,4 +114,5 @@ private:
     void Speak(const umbra::match::LogEntry &e, std::size_t index); // a written line beside its speaker
     std::vector<std::pair<int, std::string>> moves_;
     std::vector<std::string> sounds_;                 // the room whose event card is open, -1 none
+    std::function<umbra::match::Action(const umbra::match::MatchState &)> brain_;
 };

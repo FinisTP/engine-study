@@ -445,3 +445,67 @@ TEST_CASE("A taken item stays taken; a refill brings its twist (campaign plan 4)
     CHECK(refill.who.size() == taken.who.size() + 1);
     CHECK(refill.who.back() == "ghost_attacker");
 }
+
+TEST_CASE("Rooms: open squares joined without passing a doorway (campaign plan 4)")
+{
+    const campaign::BuiltStage b = campaign::BuildStage(MatchData(), TheCast(), TheGrowth(), TestStage(), {{"player", 3, {}}}, 0, {}, 7);
+    const match::MatchState &s = b.state;
+    CHECK(b.rooms[static_cast<std::size_t>(Cell(s, 1, 1))] == b.rooms[static_cast<std::size_t>(Cell(s, 3, 4))]);
+    CHECK(b.rooms[static_cast<std::size_t>(Cell(s, 1, 1))] != b.rooms[static_cast<std::size_t>(Cell(s, 6, 1))]);
+    CHECK(b.rooms[static_cast<std::size_t>(Cell(s, 4, 3))] == -1); // the doorway belongs to no room
+}
+
+TEST_CASE("Reinforcements are marked a round ahead, stand on their square at their round, act from the next (campaign plan 4)")
+{
+    const match::MatchDef def = MatchData();
+    campaign::BuiltStage b = campaign::BuildStage(def, TheCast(), TheGrowth(), TestStage(), {{"player", 3, {}}}, 0, {}, 7);
+    match::MatchState &s = b.state;
+    // 1. Round 1: marked, not there.
+    CHECK(std::ranges::any_of(s.log, [](const match::LogEntry &e) { return e.kind == match::LogKind::Arriving && e.a == 3; }));
+    CHECK(s.units[3].cell == -1);
+    // 2. Round 2: on its square; it doesn't act until round 3.
+    for (int i = 0; i < 40 && s.round < 2; ++i)
+        REQUIRE(match::Apply(def, s, {match::ActionKind::EndTurn}));
+    CHECK(s.units[3].cell == Cell(s, 7, 3));
+    CHECK(s.units[3].from == 3);
+    CHECK(s.arrivals.empty());
+}
+
+TEST_CASE("A reinforcement whose square is taken stands on the nearest free one (campaign plan 4)")
+{
+    const match::MatchDef def = MatchData();
+    campaign::BuiltStage b = campaign::BuildStage(def, TheCast(), TheGrowth(), TestStage(), {{"player", 3, {}}}, 0, {}, 7);
+    match::MatchState &s = b.state;
+    s.units[1].cell = static_cast<std::int16_t>(Cell(s, 7, 3)); // the rat stands there
+    s.units[2].cell = static_cast<std::int16_t>(Cell(s, 7, 3)); // and Ti: the square is full
+    for (int i = 0; i < 40 && s.round < 2; ++i)
+        REQUIRE(match::Apply(def, s, {match::ActionKind::EndTurn}));
+    CHECK(s.units[3].cell >= 0);
+    CHECK(s.units[3].cell != Cell(s, 7, 3));
+    CHECK(match::Steps(s.board, s.units[3].cell, Cell(s, 7, 3)) == 1);
+}
+
+TEST_CASE("Behaviours steer the enemy brain: aggressive waits for its round, passive for a party unit in its room (campaign plan 4)")
+{
+    const match::MatchDef def = MatchData();
+    campaign::BuiltStage b = campaign::BuildStage(def, TheCast(), TheGrowth(), TestStage(), {{"player", 3, {}}}, 0, {}, 7);
+    match::MatchState &s = b.state;
+    const auto turnOf = [&](int unit) {
+        for (int i = 0; i < 60 && match::Current(s) != unit; ++i)
+            REQUIRE(match::Apply(def, s, {match::ActionKind::EndTurn}));
+        REQUIRE(match::Current(s) == unit);
+    };
+    // 1. The rat is aggressive after round 2: in round 1 it holds.
+    turnOf(1);
+    REQUIRE(s.round == 1);
+    CHECK(campaign::EnemyAction(def, b, s, match::BotLevel::Medium).kind == match::ActionKind::EndTurn);
+    // 2. Made passive: it holds while the player is in the other room, and acts once the player is beside it.
+    b.behaviour[1] = {campaign::Behaviour::Passive, 0};
+    CHECK(campaign::EnemyAction(def, b, s, match::BotLevel::Medium).kind == match::ActionKind::EndTurn);
+    s.units[0].cell = static_cast<std::int16_t>(Cell(s, 5, 1));
+    CHECK(campaign::EnemyAction(def, b, s, match::BotLevel::Medium).kind != match::ActionKind::EndTurn);
+    // 3. Hurt, a passive unit wakes even with nobody near.
+    s.units[0].cell = static_cast<std::int16_t>(Cell(s, 1, 1));
+    s.units[1].hp = static_cast<std::int16_t>(s.units[1].maxHp - 1);
+    CHECK(campaign::EnemyAction(def, b, s, match::BotLevel::Medium).kind != match::ActionKind::EndTurn);
+}

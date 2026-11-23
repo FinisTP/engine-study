@@ -10,6 +10,7 @@ target_sources(
         src/Units.cpp
         src/Stage.cpp
         src/Build.cpp
+        src/Brain.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
@@ -27,6 +28,7 @@ target_link_libraries(
     PUBLIC
         Umbra::Core
         Umbra::Match
+        Umbra::MatchBots
         nlohmann_json::nlohmann_json
     PRIVATE
         Umbra::Night

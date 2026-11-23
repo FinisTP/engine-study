@@ -50,6 +50,37 @@ namespace umbra::match
             CheckEnd(def, s);
         }
 
+        void RunArrivals(const MatchDef &def, MatchState &s)
+        {
+            for (std::size_t i = 0; i < s.arrivals.size();)
+            {
+                const Arrival a = s.arrivals[i];
+                Unit &u = s.units[U(a.unit)];
+                // 1. Next round's arrival: a mark on its square now.
+                if (a.round == s.round + 1)
+                    Log(s, LogKind::Arriving, a.unit, a.cell);
+                if (a.round > s.round)
+                {
+                    ++i;
+                    continue;
+                }
+                // 2. Its round: on its square, or the nearest one with room; it acts from the next round.
+                u.cell = a.cell;
+                if (!Room(def, s, a.cell, u.faction))
+                {
+                    u.cell = -1;
+                    int best = -1, bestSteps = 1 << 20;
+                    for (int c = 0; c < static_cast<int>(s.board.cells.size()); ++c)
+                        if (const int d = Steps(s.board, a.cell, c); d > 0 && d < bestSteps && Room(def, s, c, u.faction))
+                            best = c, bestSteps = d;
+                    u.cell = static_cast<std::int16_t>(best);
+                }
+                u.from = static_cast<std::int16_t>(s.round + 1);
+                Log(s, LogKind::Arrived, a.unit, u.cell);
+                s.arrivals.erase(s.arrivals.begin() + static_cast<std::ptrdiff_t>(i));
+            }
+        }
+
         int Player(const MatchState &s)
         {
             for (std::size_t i = 0; i < s.units.size(); ++i)

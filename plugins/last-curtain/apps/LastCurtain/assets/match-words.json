@@ -39,7 +39,9 @@
     "Treasure": "{who} turns a card: {card}.",
     "Healed": "{who} tends {whom}: {n} HP back.",
     "Bided": "{who} bides their time.",
-    "Freed": "{who} cuts the strings: {whom} is free."
+    "Freed": "{who} cuts the strings: {whom} is free.",
+    "Arriving": "Something stirs: {who} comes next round.",
+    "Arrived": "{who} steps out of the dark."
   },
   "why": {
     "Ok": "Ready.",
