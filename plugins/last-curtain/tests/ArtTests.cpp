@@ -173,3 +173,37 @@ TEST_CASE("Every font in the Last Curtain skin draws every Vietnamese letter (ca
         CHECK(umbra::ui::MissingGlyphs(ttf, vietnamese).empty());
     }
 }
+
+TEST_CASE("Every letter of the campaign's Vietnamese words and screens is in the fonts (campaign plan 5)", "[night][art]")
+{
+    // 1. The text: the Vietnamese fight words, the campaign words, the campaign HUD and dialog screens.
+    const std::filesystem::path assets = UMBRA_LASTCURTAIN_ASSETS;
+    std::string text;
+    for (const char *file : {"match-words.vi.json", "campaign-words.json", "ui/campaign-hud.ui.json", "ui/dialog.ui.json"})
+    {
+        std::ifstream in(assets / file, std::ios::binary);
+        text += std::string{std::istreambuf_iterator<char>(in), {}};
+    }
+    // 2. UTF-8 to code points (letters only, sorted and unique).
+    std::u32string letters;
+    for (std::size_t i = 0; i < text.size();)
+    {
+        const unsigned char c = static_cast<unsigned char>(text[i]);
+        const int n = c < 0x80 ? 1 : c < 0xE0 ? 2 : c < 0xF0 ? 3 : 4;
+        char32_t cp = n == 1 ? c : c & (0x7F >> n);
+        for (int k = 1; k < n && i + static_cast<std::size_t>(k) < text.size(); ++k)
+            cp = (cp << 6) | (static_cast<unsigned char>(text[i + static_cast<std::size_t>(k)]) & 0x3F);
+        i += static_cast<std::size_t>(n);
+        if (cp >= 0x20 && letters.find(cp) == std::u32string::npos)
+            letters += cp;
+    }
+    // 3. The body and small fonts draw them all.
+    const nlohmann::json skin = nlohmann::json::parse(std::ifstream(assets / "ui/skin.json"));
+    for (const char *role : {"body", "small", "strong"})
+    {
+        std::ifstream in(assets / skin["fonts"][role]["file"].get<std::string>(), std::ios::binary);
+        const std::vector<unsigned char> ttf{std::istreambuf_iterator<char>(in), {}};
+        INFO(role);
+        CHECK(umbra::ui::MissingGlyphs(ttf, letters).empty());
+    }
+}
