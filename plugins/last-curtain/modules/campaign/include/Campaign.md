@@ -33,3 +33,20 @@ fix: unknown cast ids, unknown faces, more than two portraits a side, a speaker 
 choice or more than four, a jump to no id, an id used twice, and lines that jump in a loop with no
 choice (the scene could never end). The stage is checked in file order; a jump that brings a speaker
 who left is the writer's to avoid.
+
+## Playing a scene
+
+`ScenePlayer` plays one scene with no drawing; the app (`DialogView`) reads it each frame.
+
+1. `Update(seconds, lettersPerSecond)` reveals the line letter by letter. Letters are code points,
+   so a Vietnamese letter such as "ử" is never cut in half.
+2. `Advance()` (a click or Space) completes the line; once complete it goes on (the line's `jump`,
+   else the next line). It never passes a line with choices.
+3. `Skip()` runs to the end but stops at the first line with choices, complete, choices shown.
+4. `Choose(i)` sets the choice's fact in the `Facts` map and jumps.
+5. `Left()` and `Right()` give the two places a side (0 near the middle); the speaker is `lit`.
+   Narration lights nobody. Someone brought into a taken place sends its owner out.
+6. `Log()` holds (name, text) of every line started; `TakeSound()` gives a line's sound once.
+
+`FillTokens` fills `{player}` (the typed name, or the cast's `nameless` row when empty), `{anh/chị}`
+and `{Anh/Chị}` (`anh` for "male", `chị` otherwise).

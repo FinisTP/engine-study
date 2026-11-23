@@ -6,6 +6,7 @@ target_sources(
     PRIVATE
         src/Cast.cpp
         src/Scene.cpp
+        src/ScenePlayer.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
