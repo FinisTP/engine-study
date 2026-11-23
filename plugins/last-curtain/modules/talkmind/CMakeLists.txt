@@ -6,6 +6,7 @@ target_sources(
     PRIVATE
         src/TalkData.cpp
         src/TalkCheck.cpp
+        src/TalkRun.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include

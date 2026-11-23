@@ -1,9 +1,14 @@
 #pragma once
 
 #include <Diagnostic.hpp>
+#include <Mind.hpp>
+
+#include <nlohmann/json.hpp>
 
 #include <filesystem>
+#include <cstdint>
 #include <map>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -62,4 +67,34 @@ namespace umbra::talk
     // "" = the line passes; else the first objection (TalkMind.md "The checks"): "empty", "bad-text",
     // "length", "no-marks", "english", "never", "dialect", "token", "missing-fact", "added-memory".
     [[nodiscard]] std::string Check(const TestSet &set, const Situation &situation, const std::string &line);
+
+    // The prompt.txt template filled for one situation; one line of text, at most rules.maxTokens.
+    [[nodiscard]] town::MindRequest Request(const TestSet &set, const Situation &situation, std::uint32_t seed);
+
+    struct LineResult
+    {
+        std::string situation, speaker, authored, line, objection; // objection "" = passed
+        std::uint32_t seed = 0;
+        long long ms = 0;
+    };
+
+    struct ModelRun
+    {
+        std::string model, loadError; // loadError set: this build's llama.cpp could not load the file
+        long long loadMs = 0, warmMs = 0;
+        int videoMb = -1;             // -1: not measured (no graphics card in this build)
+        std::vector<LineResult> lines;
+        [[nodiscard]] double PassShare() const;
+        [[nodiscard]] long long AverageMs() const;
+        [[nodiscard]] long long SlowestMs() const;
+    };
+
+    // Every situation for rules.seeds seeds (seed = base + i): asked, timed, tidied and checked.
+    void RunTest(const TestSet &set, town::Mind &mind, std::uint32_t base, ModelRun &run);
+    // "passes the automatic checks", or every rule it misses (load, share, speed, video memory).
+    [[nodiscard]] std::string Verdict(const TestSet &set, const ModelRun &run);
+    // The report the user reads (Markdown), and its summary for comparing models ("umbra.lc-model-run" v1).
+    void WriteReport(const TestSet &set, const ModelRun &run, std::ostream &markdown);
+    [[nodiscard]] nlohmann::json Summary(const TestSet &set, const ModelRun &run);
+    void WriteComparison(const std::vector<nlohmann::json> &summaries, std::ostream &markdown);
 }

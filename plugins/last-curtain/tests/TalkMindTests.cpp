@@ -1,5 +1,7 @@
 #include <TalkMind.hpp>
 
+#include <Mind.hpp>
+
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
@@ -7,6 +9,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <sstream>
 
 using namespace umbra::talk;
 using nlohmann::json;
@@ -153,4 +156,102 @@ TEST_CASE("Every situation's authored line passes its own checks", "[talk]")
         INFO(s.id);
         CHECK(Check(set, s, s.authored).empty());
     }
+}
+
+namespace
+{
+    // Answers each request with its situation's own authored line, in quotes (Tidy removes them).
+    struct Authored final : umbra::town::Mind
+    {
+        const TestSet &set;
+        explicit Authored(const TestSet &s) : set(s) {}
+        std::string Name() const override { return "authored"; }
+        std::string Complete(const umbra::town::MindRequest &request) override
+        {
+            for (const Situation &s : set.situations)
+                if (request.prompt.find(s.authored) != std::string::npos)
+                    return "\"" + s.authored + "\"";
+            return "";
+        }
+    };
+
+    struct English final : umbra::town::Mind
+    {
+        std::string Name() const override { return "english"; }
+        std::string Complete(const umbra::town::MindRequest &) override { return "Hello, how are you today?"; }
+    };
+}
+
+TEST_CASE("The request carries the voice, the facts, the authored line, one-line grammar and the seed", "[talk]")
+{
+    const TestSet set = Set();
+    const Situation &mother = Find(set, "ti-visit1-mother");
+    const umbra::town::MindRequest request = Request(set, mother, 42);
+    CHECK(request.prompt.find(set.Find("ti")->name) != std::string::npos);
+    CHECK(request.prompt.find(set.Find("ti")->sheet) != std::string::npos);
+    CHECK(request.prompt.find(mother.facts[0]) != std::string::npos);
+    CHECK(request.prompt.find(mother.task) != std::string::npos);
+    CHECK(request.prompt.find(mother.authored) != std::string::npos);
+    for (const char *placeholder : {"{name}", "{sheet}", "{facts}", "{task}", "{authored}"})
+        CHECK(request.prompt.find(placeholder) == std::string::npos);
+    CHECK(request.grammar == "root ::= [^\\n\\r]+");
+    CHECK(request.seed == 42U);
+    CHECK(request.maxTokens == set.rules.maxTokens);
+}
+
+TEST_CASE("A run checks every situation for every seed and gives a verdict", "[talk]")
+{
+    const TestSet set = Set();
+    Authored authored(set);
+    ModelRun good;
+    good.model = "authored";
+    RunTest(set, authored, 1, good);
+    REQUIRE(good.lines.size() == 60); // 20 situations x 3 seeds
+    CHECK(good.lines[1].seed == 2U);
+    CHECK(good.PassShare() == Catch::Approx(1.0));
+    CHECK(Verdict(set, good) == "passes the automatic checks");
+
+    English english;
+    ModelRun bad;
+    RunTest(set, english, 1, bad);
+    CHECK(bad.PassShare() == Catch::Approx(0.0));
+    CHECK(bad.lines[0].objection == "no-marks"); // all English: no Vietnamese letters at all
+    CHECK(Verdict(set, bad).find("90%") != std::string::npos);
+    bad.videoMb = 3500;
+    CHECK(Verdict(set, bad).find("3072") != std::string::npos);
+    good.lines[0].ms = 100000; // one very slow line pulls the average over 1500 ms
+    CHECK(Verdict(set, good).find("1500") != std::string::npos);
+
+    ModelRun none;
+    none.loadError = "unknown model architecture: 'gemma3n'";
+    CHECK(Verdict(set, none).find("cannot load") != std::string::npos);
+    CHECK(none.PassShare() == Catch::Approx(0.0));
+}
+
+TEST_CASE("The report and the comparison name every model and every line", "[talk]")
+{
+    const TestSet set = Set();
+    Authored authored(set);
+    ModelRun run;
+    run.model = "vylinh-test.gguf";
+    RunTest(set, authored, 1, run);
+    std::ostringstream report;
+    WriteReport(set, run, report);
+    const std::string text = report.str();
+    CHECK(text.find("vylinh-test.gguf") != std::string::npos);
+    CHECK(text.find("90%") != std::string::npos);
+    for (const Situation &s : set.situations)
+        CHECK(text.find(s.id) != std::string::npos);
+    CHECK(std::count(text.begin(), text.end(), '\n') > 60);
+
+    const json summary = Summary(set, run);
+    CHECK(summary["format"] == "umbra.lc-model-run");
+    CHECK(summary["lines"] == 60);
+    ModelRun other;
+    other.model = "qwen3-4b.gguf";
+    other.loadError = "cannot load";
+    std::ostringstream compare;
+    WriteComparison({summary, Summary(set, other)}, compare);
+    CHECK(compare.str().find("vylinh-test.gguf") != std::string::npos);
+    CHECK(compare.str().find("qwen3-4b.gguf") != std::string::npos);
 }

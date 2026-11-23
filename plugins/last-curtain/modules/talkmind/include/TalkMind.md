@@ -40,3 +40,15 @@ promise, not the dawn message or the white sand.
 
 Words are compared in lower case (`Lower` knows the Vietnamese capitals: Đ, Ơ, Ư, Ạ…Ỹ) and whole:
 `ni` doesn't match inside `nil`, and a phrase like `cát trắng` matches two words in a row.
+
+## The run and the report
+
+`RunTest` asks every situation `seeds` times (seeds `base`, `base + 1`…), times each answer, tidies it
+and checks it. `Verdict` says "passes the automatic checks" or lists what it misses: the file can't be
+loaded by this build's llama.cpp, fewer than `passShare` of lines pass, the average line is slower
+than `maxMs`, or the model takes more than `maxVideoMb` of video memory. The licence is not checked:
+the user reads it.
+
+`WriteReport` puts the authored line beside the model's for every line, by speaker, so the user can
+judge the wording: the automatic checks are only half of the pass. `Summary` is the same run in a few
+numbers; `WriteComparison` puts several summaries side by side.
