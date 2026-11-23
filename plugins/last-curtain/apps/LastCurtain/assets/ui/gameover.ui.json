@@ -1,0 +1,49 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "dim": true,
+  "back": "retry",
+  "root": {
+    "type": "stack",
+    "anchor": "center",
+    "style": "panel",
+    "size": [
+      700,
+      0
+    ],
+    "gap": 10,
+    "children": [
+      {
+        "type": "text",
+        "style": "title",
+        "text": "{words.gameOver}"
+      },
+      {
+        "type": "text",
+        "style": "small",
+        "text": "{over.reasonText}"
+      },
+      {
+        "type": "button",
+        "style": "act",
+        "text": "{words.retry}",
+        "action": "retry"
+      },
+      {
+        "type": "button",
+        "style": "act",
+        "text": "{words.rite}",
+        "action": "rite",
+        "visible": "{over.rite}"
+      },
+      {
+        "type": "button",
+        "style": "act",
+        "text": "{words.toMap}",
+        "action": "map",
+        "visible": "{over.notRetryOnly}"
+      }
+    ]
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "dim": true,
+  "back": "cafe",
+  "root": {
+    "type": "stack",
+    "anchor": "center",
+    "style": "panel",
+    "size": [
+      700,
+      0
+    ],
+    "gap": 10,
+    "children": [
+      {
+        "type": "text",
+        "style": "title",
+        "text": "{result.title}"
+      },
+      {
+        "type": "list",
+        "items": "{result.lines}",
+        "as": "l",
+        "gap": 3,
+        "entry": {
+          "type": "text",
+          "style": "small",
+          "text": "{l.text}"
+        }
+      },
+      {
+        "type": "button",
+        "style": "act",
+        "text": "{words.toCafe}",
+        "action": "cafe"
+      },
+      {
+        "type": "button",
+        "style": "act",
+        "text": "{words.toMap}",
+        "action": "map"
+      }
+    ]
+  }
+}

@@ -1046,3 +1046,48 @@ TEST_CASE("The theatre map: tickets open in order with marks, the cursor reaches
             CHECK(t.detail == "Mở sau Phòng vé.");
     }
 }
+
+TEST_CASE("Around a stage: who may fight, the revive warning, the result's gains, game over's reason and the rite's box (campaign plan 7)")
+{
+    const match::MatchDef def = MatchData();
+    const std::vector<campaign::StageDef> stages = TheStages();
+    const auto stage = [&](const char *id) { return *std::ranges::find(stages, std::string(id), &campaign::StageDef::id); };
+    campaign::Save save;
+    save.roster = {{"player", 3, 0}, {"bao", 3, 0}, {"mai", 3, 0}, {"ti", 3, 0}};
+    // 1. Pre-stage: the player locked in, up to the cap; no reviver in the party warns.
+    campaign::PreStage pre = campaign::PreStageFor(def, TheCast(), TheGrowth(), save, stage("stage1"), {"player", "bao"});
+    CHECK(pre.cap == 3);
+    CHECK(pre.party.front() == "player");
+    CHECK(pre.reviveWarning); // Bao has no revive; Ba Mai's cold rice is
+    pre = campaign::PreStageFor(def, TheCast(), TheGrowth(), save, stage("stage1"), {"player", "mai"});
+    CHECK_FALSE(pre.reviveWarning);
+    pre = campaign::PreStageFor(def, TheCast(), TheGrowth(), save, stage("stage1"), {"bao", "mai", "ti", "player"});
+    CHECK(pre.party.size() == 3);
+    CHECK(pre.party.front() == "player");
+    // 2. The result: levels gained, finds, freed, as the save changed.
+    campaign::Save after = save;
+    after.roster[0].level = 4;
+    after.storage["gung"] = 1;
+    after.facts["freed:ti"] = "1";
+    const campaign::Result r = campaign::ResultOf(save, after);
+    REQUIRE(r.levels.size() == 1);
+    CHECK(r.levels[0] == "player");
+    CHECK(r.found.at("gung") == 1);
+    CHECK(r.freed == std::vector<std::string>{"ti"});
+    // 3. Game over: the reason; the rite only for the player's fall, unlocked, unused, never in T1.
+    match::MatchState s;
+    s.over = true, s.winner = 1, s.loss = match::Loss::PlayerFell;
+    save.riteUnlocked = true;
+    campaign::Over o = campaign::OverFor(save, stage("stage1"), s);
+    CHECK(o.reason == "playerFell");
+    CHECK(o.rite);
+    CHECK_FALSE(o.retryOnly);
+    CHECK_FALSE(campaign::OverFor(save, stage("t1"), s).rite);
+    CHECK(campaign::OverFor(save, stage("t1"), s).retryOnly);
+    s.loss = match::Loss::Trapped;
+    CHECK_FALSE(campaign::OverFor(save, stage("stage1"), s).rite);
+    CHECK(campaign::OverFor(save, stage("stage1"), s).reason == "trapped");
+    s.loss = match::Loss::PlayerFell;
+    save.riteUsed = true;
+    CHECK_FALSE(campaign::OverFor(save, stage("stage1"), s).rite);
+}

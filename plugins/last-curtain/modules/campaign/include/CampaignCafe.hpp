@@ -152,4 +152,27 @@ namespace umbra::campaign
     std::vector<TicketView> MapView(const TheatreMap &map, const Save &save, const std::vector<StageDef> &stages);
     // The ticket nearest `from` in a direction (u, d, l, r), "" none.
     std::string Nearest(const TheatreMap &map, const std::string &from, char direction);
+
+    // Around a stage (stage-flow.md). Pre-stage: who goes (the player first and always, up to the cap) and
+    // whether nobody can revive. The result: what the win changed. Game over: why, and whether Le Thanh's
+    // rite may be offered (the player fell, unlocked, unused, not T1); T1 offers only a retry.
+    struct PreStage
+    {
+        int cap = 1;
+        std::vector<std::string> party;
+        bool reviveWarning = false;
+    };
+    PreStage PreStageFor(const match::MatchDef &def, const Cast &cast, const Growth &growth, const Save &save, const StageDef &stage, const std::vector<std::string> &wanted);
+    struct Result
+    {
+        std::vector<std::string> levels, freed; // who levelled up; recruits freed
+        std::map<std::string, int> found;      // storage gained
+    };
+    Result ResultOf(const Save &before, const Save &after);
+    struct Over
+    {
+        std::string reason; // playerFell, sideDown, trapped
+        bool rite = false, retryOnly = false;
+    };
+    Over OverFor(const Save &save, const StageDef &stage, const match::MatchState &s);
 }

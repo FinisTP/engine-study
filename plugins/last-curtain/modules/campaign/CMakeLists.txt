@@ -16,6 +16,7 @@ target_sources(
         src/Cafe.cpp
         src/Progress.cpp
         src/Map.cpp
+        src/Around.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include

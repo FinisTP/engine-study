@@ -65,7 +65,27 @@
   "markSkirmish": "giao tranh",
   "markLocked": "?",
   "markUnknown": "?",
-  "levelLine": "Cấp đề nghị {n}"
+  "levelLine": "Cấp đề nghị {n}",
+  "whoFights": "Ai ra trận?",
+  "reviveWarning": "Không ai trong đội cứu được người ngã.",
+  "editInNotebook": "Sửa trong Sổ tay",
+  "fight": "Ra trận",
+  "back": "Quay lại",
+  "toCafe": "Về quán",
+  "toMap": "Về bản đồ",
+  "gameOver": "Màn đã hạ",
+  "retry": "Thử lại",
+  "rite": "Lễ cầu hồn",
+  "won": "Đã qua: {name}",
+  "reasonPlayerFell": "{player} đã ngã.",
+  "reasonSideDown": "Cả đội đã ngã.",
+  "reasonTrapped": "Không kịp cắt dây cho {name}.",
+  "lineLevel": "{name} lên cấp {n}.",
+  "lineFound": "Nhặt được: {item} ×{n}.",
+  "lineFreed": "{name} đã được tự do.",
+  "riteConfirm": "Lễ cầu hồn chỉ làm được một lần trong cả trò chơi. Làm bây giờ?",
+  "no": "Không",
+  "yes": "Có"
  },
  "hub": {
   "backdrop": "art/cafe/back_wall.jpg",
@@ -220,5 +240,45 @@
    "open": true
   },
   "news": "Bé Tí có chuyện muốn kể."
+ },
+ "pre": {
+  "title": "Phòng vé",
+  "levelLine": "Cấp đề nghị 3",
+  "roster": [
+   {
+    "id": "player",
+    "name": "Linh",
+    "levelText": "Cấp 3",
+    "in": true,
+    "locked": true
+   },
+   {
+    "id": "bao",
+    "name": "Bác sĩ Bảo",
+    "levelText": "Cấp 3",
+    "in": true,
+    "locked": false
+   }
+  ],
+  "reviveWarning": true
+ },
+ "result": {
+  "title": "Đã qua: Phòng vé",
+  "lines": [
+   {
+    "text": "Linh lên cấp 4."
+   },
+   {
+    "text": "Nhặt được: Gừng ×1."
+   },
+   {
+    "text": "Bé Tí đã được tự do."
+   }
+  ]
+ },
+ "over": {
+  "reasonText": "Linh đã ngã.",
+  "rite": true,
+  "notRetryOnly": true
  }
 }
