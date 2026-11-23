@@ -1,6 +1,7 @@
 # The Last Curtain: where things stand (2026-11-15, after plan 2c)
 
-For whoever continues this work, in any session. Read this first.
+For whoever continues this work, in any session. **Superseded (2026-11-23):** for the campaign,
+start with `2026-11-23-campaign-slice-1-handoff.md`; this file is the history up to the faction match.
 
 ## State
 

@@ -1,9 +1,9 @@
 # The Last Curtain: the campaign's first slice — design (2026-11-23)
 
-**Status:** for the user's approval. Revised 2026-11-23 with the user's answers to two reviews, the
-evaluation, the dialog scenes (7.11) and the holes (section 12). "The user" marks the user's
-decisions; "(accepted)" marks Claude's proposals the user accepted on 2026-11-23; **[call]** marks new
-proposals, which the user can still change; section 13 lists what is still vague. Builds on
+**Status: approved by the user, 2026-11-23 14:03**, for building (handoff:
+`2026-11-23-campaign-slice-1-handoff.md`). Revised that day with the user's answers to two reviews,
+the evaluation, the dialog scenes (7.11), the holes (12), the vague points (13) and XP (14). "The
+user" marks the user's decisions; "(accepted)" marks Claude's proposals the user accepted. Builds on
 `design-changes-2026-11-22.md` (the new design), `campaign-content-2026-11-22.md` (recruits, zodiacs,
 stages), `cast-2-2026-11-22.md` (Bảo, Mai, the player, Lệ Thanh, ghosts) and the art made on
 2026-11-23 (`assets/art/README.md`).
@@ -266,7 +266,9 @@ where the 2026-11-23 sprites are hooked in.
 - **Levels:** the cap rises to **15** with new XP steps in data; the player gains about **one level a
   stage** (the user); the slice reaches level 4 at most. **Recruits join at a fixed level** set in
   data; **Tí joins at level 3** (the user).
-  Characters sitting out still earn part of the XP (accepted) (no one sits out in this slice); **replays of a
+  **XP** (accepted, 2026-11-23): a fixed reward for each stage won, set in the stage file and shared
+  by the party, sized for about one level a stage; no XP per kill. **Bảo and Bà Mai join at a fixed
+  level 2.** Characters sitting out still earn part of the XP (accepted) (no one sits out in this slice); **replays of a
   cleared stage** give XP up to its cap (the user).
 
 ### 7.6 The campaign save (v2) and flow
@@ -555,8 +557,7 @@ class at a level, scaled (7.5); drink serving is off for now (7.7).
 9. Recruits never freed return as enemies in Lệ Thanh's stage, the finale, and can't be freed
    there (7.3).
 
-## 14. Still open (2026-11-23)
+## 14. XP, accepted by the user (2026-11-23)
 
-1. **XP** (step 5), not yet answered: **[call]** a fixed XP reward for each stage won, set in the
-   stage file and shared by the party, sized for about one level a stage; no XP per kill. Bảo and Bà
-   Mai join at a fixed level 2, matching T3.
+A fixed XP reward for each stage won, set in the stage file and shared by the party, sized for about
+one level a stage; no XP per kill. Bảo and Bà Mai join at a fixed level 2, matching T3 (7.5).
