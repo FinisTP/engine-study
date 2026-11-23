@@ -98,7 +98,7 @@ namespace umbra::talk
             return std::any_of(phrases.begin(), phrases.end(), [&](const std::string &p) { return Has(words, line, p); });
         }
 
-        // 1. Broken UTF-8, more than one line, separate tone marks, long numbers or markup.
+        // 1. Broken UTF-8, control characters (new lines, tabs), separate tone marks, long numbers or markup.
         bool BadText(const std::string &line)
         {
             int digits = 0;
@@ -106,7 +106,7 @@ namespace umbra::talk
             {
                 const char32_t c = Next(line, at);
                 digits = (c >= '0' && c <= '9') ? digits + 1 : 0;
-                if (c == bad || c == '\n' || c == '\r' || (c >= 0x300 && c <= 0x36F) || digits > 4 ||
+                if (c == bad || c < 0x20 || c == 0x7F || (c >= 0x300 && c <= 0x36F) || digits > 4 ||
                     c == '<' || c == '>' || c == '*' || c == '#' || c == '_')
                     return true;
             }

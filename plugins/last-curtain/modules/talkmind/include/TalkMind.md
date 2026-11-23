@@ -25,7 +25,7 @@ promise, not the dawn message or the white sand.
 `Check` runs these in order; the first that objects names the line's failure:
 
 1. `empty`: nothing came back.
-2. `bad-text`: broken UTF-8, more than one line, a separate tone mark (U+0300–036F: the screen draws
+2. `bad-text`: broken UTF-8, a control character (a new line, a tab), a separate tone mark (U+0300–036F: the screen draws
    only ready-made letters such as ợ), a number longer than 4 digits, or markup (`< > * # _`).
 3. `length`: fewer than `minLength` or more than `maxLength` letters and spaces (code points).
 4. `no-marks`: fewer than `markedShare` of the words carry a Vietnamese letter (anything past

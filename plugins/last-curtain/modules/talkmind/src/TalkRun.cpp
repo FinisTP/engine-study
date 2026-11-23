@@ -82,7 +82,7 @@ namespace umbra::talk
     std::string Verdict(const TestSet &set, const ModelRun &run)
     {
         if (!run.loadError.empty())
-            return "cannot load: " + run.loadError;
+            return "cannot load with this build's llama.cpp: " + run.loadError;
         const TalkRules &r = set.rules;
         std::string misses;
         const auto miss = [&](const std::string &text) { misses += (misses.empty() ? "" : "; ") + text; };

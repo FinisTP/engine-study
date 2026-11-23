@@ -21,5 +21,7 @@ namespace umbra::town
     // Loads the model; null with `error` set if the file is missing or not a usable GGUF.
     // Whether this build of llama.cpp can run on a graphics card at all.
     [[nodiscard]] bool LlamaHasGpu();
+    // Free memory on the graphics cards llama.cpp can use, in bytes; -1 if it has none (for measuring a model).
+    [[nodiscard]] long long LlamaGpuFreeBytes();
     [[nodiscard]] std::unique_ptr<Mind> LoadLlamaMind(const std::filesystem::path &file, const LlamaOptions &options, std::string &error);
 }

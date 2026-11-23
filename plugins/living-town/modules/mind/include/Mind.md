@@ -169,6 +169,8 @@ By default every layer of the model goes to the card (`LlamaOptions::gpuLayers =
 then shares video memory with the game: a 2.5 GB model on a 4 GB card leaves little. If loading
 fails or the game stutters, `--gpu 20` (or another number of layers) keeps part of the model on
 the CPU; `--gpu 0` is CPU only. `UmbraTool town-mind` prints which it used.
+`LlamaGpuFreeBytes` reads the cards' free memory, so a tool can measure what a model takes
+(`UmbraTool talk-mind` does, before loading and after the warm-up).
 
 Measured on the same PC on the card (2026-11-12, RTX 3050 Laptop 4 GB, all layers): 0.8 s a line
 and 0.15 s a pick, 14 of 15 lines accepted. Qwen3 4B Q4_K_M on the card is the default model.

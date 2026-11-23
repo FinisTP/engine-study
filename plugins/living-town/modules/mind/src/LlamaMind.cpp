@@ -112,6 +112,21 @@ namespace umbra::town
 
     bool LlamaHasGpu() { return llama_supports_gpu_offload(); }
 
+    long long LlamaGpuFreeBytes()
+    {
+        long long free = -1;
+        for (std::size_t i = 0; i < ggml_backend_dev_count(); ++i)
+        {
+            ggml_backend_dev_t device = ggml_backend_dev_get(i);
+            if (ggml_backend_dev_type(device) != GGML_BACKEND_DEVICE_TYPE_GPU)
+                continue;
+            std::size_t deviceFree = 0, total = 0;
+            ggml_backend_dev_memory(device, &deviceFree, &total);
+            free = (free < 0 ? 0 : free) + static_cast<long long>(deviceFree);
+        }
+        return free;
+    }
+
     std::unique_ptr<Mind> LoadLlamaMind(const std::filesystem::path &file, const LlamaOptions &options, std::string &error)
     {
         std::error_code ignored;

@@ -136,6 +136,7 @@ TEST_CASE("The Vietnamese checks, in order: the first objection wins", "[talk]")
     CHECK(Check(set, mother, Line("decomposed")) == "bad-text");
     CHECK(Check(set, mother, Line("digits")) == "bad-text");
     CHECK(Check(set, mother, Line("two-lines")) == "bad-text");
+    CHECK(Check(set, mother, Line("control")) == "bad-text"); // a tab: the screen draws no control characters
     CHECK(Check(set, mother, std::string("M\xff\xfe tui t\xc3n L\xc3\xa0i")) == "bad-text"); // broken UTF-8
     CHECK(Check(set, mother, Line("too-short")) == "length");
     CHECK(Check(set, mother, Line("no-diacritics")) == "no-marks");

@@ -16,6 +16,7 @@ target_sources(
 )
 
 target_compile_features(UmbraTalkMind PUBLIC cxx_std_20)
+target_compile_definitions(UmbraTalkMind PUBLIC UMBRA_LASTCURTAIN_CAMPAIGN_DATA="${CMAKE_CURRENT_SOURCE_DIR}/../../assets/campaign")
 
 # The model's Vietnamese test (campaign plan 1). No model here: a model is any town::Mind
 # (the living town's interface); only UmbraTool's talk-mind links llama.cpp.
