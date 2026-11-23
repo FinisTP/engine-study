@@ -38,6 +38,22 @@ namespace
 
     void Write(const fs::path &file, const json &value) { std::ofstream(file) << value.dump(2); }
 
+    // A test line from tests/data/talk-lines.json (UTF-8 lives in data, not in C++ literals).
+    std::string Line(const char *name)
+    {
+        static const json lines = Read(fs::path(UMBRA_TALK_TEST_DATA) / "talk-lines.json");
+        return lines.at(name).get<std::string>();
+    }
+
+    const Situation &Find(const TestSet &set, const char *id)
+    {
+        for (const Situation &s : set.situations)
+            if (s.id == id)
+                return s;
+        FAIL("no situation " << id);
+        return set.situations[0];
+    }
+
     // Loads a broken copy: the first diagnostic as "file|field" ("" if it loaded).
     std::string Broken(const fs::path &dir)
     {
@@ -95,4 +111,46 @@ TEST_CASE("A broken test set names the file, the field and the fix", "[talk]")
     rules["version"] = 9;
     Write(dir / "model-test/rules.json", rules);
     CHECK(Broken(dir) == "rules.json|version");
+}
+
+TEST_CASE("Lower, Words and Tidy handle Vietnamese letters", "[talk]")
+{
+    CHECK(Lower(Line("upper-insult")) == Line("upper-insult-lower"));
+    CHECK(Lower("ABC xyz") == "abc xyz");
+    const std::vector<std::string> words = Words(Line("words-in"));
+    REQUIRE(words.size() == 3); // the two tokens are not words
+    CHECK(words[0] == Lower(Line("words-in")).substr(0, words[0].size()));
+    CHECK(Tidy(Line("quoted")) == Line("good"));
+    CHECK(Tidy("  \"plain\" ") == "plain");
+}
+
+TEST_CASE("The Vietnamese checks, in order: the first objection wins", "[talk]")
+{
+    const TestSet set = Set();
+    const Situation &mother = Find(set, "ti-visit1-mother");
+    CHECK(Check(set, mother, Line("good")).empty());
+    CHECK(Check(set, mother, "") == "empty");
+    CHECK(Check(set, mother, Line("decomposed")) == "bad-text");
+    CHECK(Check(set, mother, Line("digits")) == "bad-text");
+    CHECK(Check(set, mother, Line("two-lines")) == "bad-text");
+    CHECK(Check(set, mother, std::string("M\xff\xfe tui t\xc3n L\xc3\xa0i")) == "bad-text"); // broken UTF-8
+    CHECK(Check(set, mother, Line("too-short")) == "length");
+    CHECK(Check(set, mother, Line("no-diacritics")) == "no-marks");
+    CHECK(Check(set, mother, Line("english-mixed")) == "english");
+    CHECK(Check(set, mother, Line("english-letters")) == "english");
+    CHECK(Check(set, mother, Line("upper-insult")) == "never");
+    CHECK(Check(set, mother, Line("southern-ti")) == "dialect");
+    CHECK(Check(set, mother, Line("bad-token")) == "token");
+    CHECK(Check(set, mother, Line("no-mother")) == "missing-fact");
+    CHECK(Check(set, mother, Line("sand-too-early")) == "added-memory");
+}
+
+TEST_CASE("Every situation's authored line passes its own checks", "[talk]")
+{
+    const TestSet set = Set();
+    for (const Situation &s : set.situations)
+    {
+        INFO(s.id);
+        CHECK(Check(set, s, s.authored).empty());
+    }
 }

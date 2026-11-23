@@ -5,6 +5,7 @@ target_sources(
     UmbraTalkMind
     PRIVATE
         src/TalkData.cpp
+        src/TalkCheck.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include

@@ -52,4 +52,14 @@ namespace umbra::talk
 
     // Reads a campaign folder (voices/*.json, model-test/*). False with diagnostics naming file, field and fix.
     bool LoadTestSet(const std::filesystem::path &campaign, TestSet &set, std::vector<core::Diagnostic> &diagnostics);
+
+    // Lower case for Vietnamese: ASCII, Latin-1, the Latin Extended letters Vietnamese uses, U+1EA0-1EF9.
+    [[nodiscard]] std::string Lower(const std::string &utf8);
+    // The line's words, lower case: runs of letters, with {tokens} left out.
+    [[nodiscard]] std::vector<std::string> Words(const std::string &utf8);
+    // Trims spaces and wrapping quotes (straight or curly) a model likes to add.
+    [[nodiscard]] std::string Tidy(std::string line);
+    // "" = the line passes; else the first objection (TalkMind.md "The checks"): "empty", "bad-text",
+    // "length", "no-marks", "english", "never", "dialect", "token", "missing-fact", "added-memory".
+    [[nodiscard]] std::string Check(const TestSet &set, const Situation &situation, const std::string &line);
 }
