@@ -683,3 +683,63 @@ TEST_CASE("Each stage and each refill can be won by the party brain (campaign pl
         }
     }
 }
+
+#include <CampaignSoak.hpp>
+#include <MatchBots.hpp>
+
+TEST_CASE("The campaign soak counts wins, losses, falls, minutes and finds; bands hold or say why (campaign plan 4)")
+{
+    const match::MatchDef def = MatchData();
+    campaign::StageDef stage;
+    std::vector<core::Diagnostic> d;
+    REQUIRE(campaign::LoadStage(data / "stages" / "stage1.json", TheCast(), def, data / "scenes", stage, d));
+    const campaign::StageReport r = campaign::SoakStage(def, TheCast(), TheGrowth(), stage, 0, 1, 12);
+    CHECK(r.runs == 12);
+    CHECK(r.wins + r.trapped + r.otherLosses + r.draws == 12);
+    CHECK(r.rounds > 0.0);
+    CHECK(r.minutes > 0.0);
+    CHECK(r.playerFalls >= 0.0);
+    CHECK(r.playerFalls <= 1.0);
+    CHECK(r.found.contains("giay_gap_tu") == (r.found.contains("giay_gap_tu") && r.found.at("giay_gap_tu") > 0));
+    // 1. Same seed, same report.
+    const campaign::StageReport again = campaign::SoakStage(def, TheCast(), TheGrowth(), stage, 0, 1, 12);
+    CHECK(again.wins == r.wins);
+    CHECK(again.found == r.found);
+    // 2. Bands: a band the report misses names itself.
+    const nlohmann::json bands = {{"wins", {0.0, 0.0}}};
+    const std::vector<std::string> missed = campaign::Missed(r, bands);
+    CHECK(missed.empty() == (r.wins == 0));
+    CHECK(campaign::Missed(r, nlohmann::json{{"wins", {0.0, 1.0}}}).empty());
+    CHECK_FALSE(campaign::Text(stage, r).empty());
+}
+
+TEST_CASE("Every cast member made into a unit can answer in a battle (campaign plan 4)")
+{
+    const match::MatchDef def = MatchData();
+    const campaign::Cast cast = TheCast();
+    for (const char *who : {"player", "ti", "bao", "mai", "rat", "keeper", "ghost_attacker", "ghost_defender", "ghost_speedster", "ghost_supporter", "rat_specter", "thief_specter"})
+    {
+        INFO(who);
+        const match::Unit u = campaign::MakeUnit(def, cast, TheGrowth(), who, 3, 0, false);
+        CHECK(std::ranges::any_of(u.abilities, [&](int a) { return a >= 0 && def.abilities[static_cast<std::size_t>(a)].use == match::Use::Battle && def.abilities[static_cast<std::size_t>(a)].kind == match::AbilityClass::Strike; }));
+    }
+}
+
+
+TEST_CASE("Every stage and refill holds its bands in balance.json (campaign plan 4)", "[campaign-balance]")
+{
+    const match::MatchDef def = MatchData();
+    const nlohmann::json bands = nlohmann::json::parse(std::ifstream(data / "balance.json"));
+    for (const char *id : {"t1", "t3", "stage1", "sk_props", "sk_stairs", "sk_boxoffice"})
+    {
+        campaign::StageDef stage;
+        std::vector<core::Diagnostic> d;
+        REQUIRE(campaign::LoadStage(data / "stages" / (std::string(id) + ".json"), TheCast(), def, data / "scenes", stage, d));
+        for (int refill = 0; refill <= static_cast<int>(stage.twists.size()); ++refill)
+        {
+            const campaign::StageReport r = campaign::SoakStage(def, TheCast(), TheGrowth(), stage, refill, 1, 200);
+            INFO(campaign::Text(stage, r));
+            CHECK(campaign::Missed(r, bands[id]).empty());
+        }
+    }
+}

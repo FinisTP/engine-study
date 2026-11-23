@@ -1,0 +1,9 @@
+{
+  "note": "Bands for UmbraTool campaign-soak (Campaign.md \"The soak\"): shares of runs played by the party bot (Medium). Minutes and trapped losses are reported, not banded: the bot is careful with recruits and fast, so both need a person's play (the user's check). A key 'id/n' is a skirmish's refill n.",
+  "t1": {"playerFalls": [0.0, 0.05], "wins": [0.9, 1.0]},
+  "t3": {"wins": [0.6, 0.85]},
+  "stage1": {"wins": [0.45, 0.7]},
+  "sk_props": {"wins": [0.7, 0.9]},
+  "sk_stairs": {"wins": [0.7, 0.9]},
+  "sk_boxoffice": {"wins": [0.7, 0.9]}
+}

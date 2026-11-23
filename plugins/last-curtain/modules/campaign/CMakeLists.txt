@@ -10,13 +10,16 @@ target_sources(
         src/Units.cpp
         src/Stage.cpp
         src/Build.cpp
-        src/Brain.cpp src/Moments.cpp
+        src/Brain.cpp
+        src/Moments.cpp
+        src/Soak.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
         FILES
             include/Campaign.hpp
             include/Campaign.md
+            include/CampaignSoak.hpp
 )
 
 target_compile_features(UmbraCampaign PUBLIC cxx_std_20)
@@ -35,3 +38,4 @@ target_link_libraries(
         Umbra::Warnings
         Umbra::Sanitizers
 )
+target_compile_definitions(UmbraCampaign PUBLIC UMBRA_CAMPAIGN_DEFAULT_DATA="${CMAKE_CURRENT_SOURCE_DIR}/../../assets/campaign")

@@ -29,7 +29,7 @@ int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const
     std::vector<campaign::PartyMember> party;
     for (const char *who : {"player", "bao", "mai"})
         if (static_cast<int>(party.size()) < stage.partyCap)
-            party.push_back({who, stage.level, {}});
+            party.push_back({who, stage.level + refill, {}}); // a refill comes after a story stage
 
     // 2. The hooks: a fresh fight, the enemy brain, the scenes between beats.
     campaign::BuiltStage built;

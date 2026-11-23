@@ -69,7 +69,8 @@ target_compile_definitions(UmbraCampaignTests PRIVATE UMBRA_CAMPAIGN_DATA="${CMA
 target_compile_features(UmbraCampaignTests PRIVATE cxx_std_20)
 target_link_libraries(UmbraCampaignTests PRIVATE Umbra::Campaign Umbra::CampaignPlay Umbra::Warnings Umbra::Sanitizers Catch2::Catch2WithMain)
 umbra_copy_asan_runtime(UmbraCampaignTests)
-add_test(NAME Umbra.Campaign COMMAND UmbraCampaignTests)
+add_test(NAME Umbra.Campaign COMMAND UmbraCampaignTests "~[campaign-balance]")
+add_test(NAME Umbra.Campaign.Balance COMMAND UmbraCampaignTests "[campaign-balance]")
 # The dialog screens drawn with their sample data: no errors, no warnings (campaign plan 3).
 if(TARGET UmbraTool)
     add_test(NAME Umbra.Tool.DialogPreview

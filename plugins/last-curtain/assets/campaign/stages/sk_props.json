@@ -22,9 +22,10 @@
     "#########"
   ],
   "units": [
-    {"who": "ghost_attacker", "at": [7, 1], "side": 1, "level": 2, "flags": ["boss"]},
+    {"who": "ghost_attacker", "at": [7, 1], "side": 1, "level": 3, "flags": ["boss"]},
     {"who": "ghost_defender", "at": [7, 6], "side": 1, "level": 2, "flags": ["boss"]},
-    {"who": "ghost_speedster", "at": [4, 6], "side": 1, "level": 2, "flags": ["boss"]}
+    {"who": "ghost_speedster", "at": [4, 6], "side": 1, "level": 2, "flags": ["boss"]},
+    {"who": "ghost_attacker", "at": [6, 4], "side": 1, "level": 2, "flags": ["boss"]}
   ],
   "gimmicks": {"hazards": {"count": 2, "damage": 4}},
   "aims": {"start": "Hạ hết bóng ma. Tránh chỗ bao cát sắp rơi.", "recap": ""},

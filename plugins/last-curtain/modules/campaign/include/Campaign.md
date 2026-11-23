@@ -126,3 +126,26 @@ pauses the fight (`Pause`), plays the scenes on the dialog screen and resumes.
 (rooms from the map, doorways `D` between them); otherwise the faction bots (`ChooseAction`) play it.
 The app gives it to `MatchPlay::SetBrain` for a stage. Reinforcements are rules in the match
 (`Match.md` "Arrivals").
+
+## The soak (`CampaignSoak.hpp`, `UmbraTool campaign-soak <stage> [--seeds 200] [--refill n]`)
+
+Bots play both sides: the party with `PartyAction` (Medium), enemies with `EnemyAction`. The party is the
+player, Bảo and Bà Mai up to the cap, at the stage's level **plus the refill number** (a refill comes after
+a story stage). A run stops at round 40 (bots can circle a 1-HP foe for ever) and counts as unfinished.
+It reports wins, trapped losses, other losses, unfinished, average rounds, minutes (6 s per party turn and
+1 s per told line: a guess until the user's play times), how often the player fell, falls by cast id and
+items found. `assets/campaign/balance.json` holds the win bands (and T1's player falls); trapped losses and
+minutes are reported only: the bot never hits the Rat while Tí is strung and plays fast, so both need a
+person (the user's check). The `[campaign-balance]` test (ctest `Umbra.Campaign.Balance`, `build soak`)
+checks every stage and refill on 200 seeds.
+
+Tuning record (2026-11-24, 200 seeds from seed 1):
+
+| Stage | Wins | Notes |
+|---|---|---|
+| t1 | 100% | player never fell; about 5 rounds |
+| t3 | 78% | the Keeper's breath every 2 rounds, 6 damage |
+| stage1 | 45% (trapped 11%) | the Rat at level 2 (level 3 gave 24-42%); windows one at a time, every third round, level-1 rat specters; Gừng in about 29% of runs, the keepsake in 24% |
+| sk_props 0/1/2 | 76 / 76 / 88% | 4 ghosts (levels 2-3); hazards 2 a round, 4 damage |
+| sk_stairs 0/1/2 | 74 / 78 / 86% | 4 ghosts; "Tắt đèn" adds one passive level-1 specter (two level-2 bosses dropped wins to 12%) |
+| sk_boxoffice 0/1/2 | 85 / 88 / 87% | thief level 4, two ghosts; refill 2 adds a level-5 thief and ghost |

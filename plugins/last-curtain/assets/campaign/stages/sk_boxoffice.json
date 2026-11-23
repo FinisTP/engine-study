@@ -22,10 +22,11 @@
     "###########"
   ],
   "units": [
-    {"who": "thief_specter", "at": [6, 1], "side": 1, "level": 3, "flags": ["boss"]},
-    {"who": "ghost_attacker", "at": [8, 2], "side": 1, "level": 2, "flags": ["boss"]}
+    {"who": "thief_specter", "at": [6, 1], "side": 1, "level": 4, "flags": ["boss"]},
+    {"who": "ghost_attacker", "at": [8, 2], "side": 1, "level": 4, "flags": ["boss"]},
+    {"who": "ghost_defender", "at": [4, 2], "side": 1, "level": 3, "flags": ["boss"]}
   ],
-  "gimmicks": {"windows": {"spawn": "rat_specter", "level": 2, "max": 2, "pattern": [[0], [], [2], []],
+  "gimmicks": {"windows": {"spawn": "rat_specter", "level": 2, "max": 3, "pattern": [[0], [2], [1]],
                            "drops": [{"item": "gung", "percent": 30}]}},
   "aims": {"start": "Hạ hết bóng ma. Cửa bán vé nào sắp mở thì đã được đánh dấu.", "recap": ""},
   "twists": [
@@ -33,6 +34,7 @@
      "gimmicks": {"windows": {"spawn": "rat_specter", "level": 2, "max": 3, "pattern": [[0, 1, 2], [1]],
                               "drops": [{"item": "gung", "percent": 30}]}}},
     {"name": "Hai tên móc túi",
-     "units": [{"who": "thief_specter", "at": [5, 1], "side": 1, "level": 3, "flags": ["boss"]}]}
+     "units": [{"who": "thief_specter", "at": [5, 1], "side": 1, "level": 5, "flags": ["boss"]},
+               {"who": "ghost_attacker", "at": [9, 6], "side": 1, "level": 5, "flags": ["boss"]}]}
   ]
 }
