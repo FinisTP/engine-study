@@ -20,6 +20,20 @@
   ],
   "play": [
     {
+      "label": "The Last Curtain: campaign (title, new game or continue)",
+      "program": "LastCurtain",
+      "args": [
+        "--campaign"
+      ]
+    },
+    {
+      "label": "The Last Curtain: campaign cafe (a sample save after Stage 1)",
+      "program": "LastCurtain",
+      "args": [
+        "--campaign-cafe"
+      ]
+    },
+    {
       "label": "The Last Curtain: career (cafe, then a match)",
       "program": "LastCurtain",
       "args": []

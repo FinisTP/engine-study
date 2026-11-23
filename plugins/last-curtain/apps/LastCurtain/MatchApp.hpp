@@ -24,6 +24,7 @@ struct MatchHooks
     std::function<umbra::match::Action(const umbra::match::MatchState &)> brain;
     std::function<void(MatchPlay &)> beat;
     std::function<void(MatchPlay &)> setup; // after each start: names, the stage's title
+    std::function<bool()> done;              // true: the flow takes over (RunMatch returns 3)
 };
 // The same in a shared window, between café days: with a career, the player's side starts from it,
 // the end writes it back (money = score * moneyPerEssence) and returns 2 (back to the café); 0 is quit.

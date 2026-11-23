@@ -85,7 +85,23 @@
   "lineFreed": "{name} đã được tự do.",
   "riteConfirm": "Lễ cầu hồn chỉ làm được một lần trong cả trò chơi. Làm bây giờ?",
   "no": "Không",
-  "yes": "Có"
+  "yes": "Có",
+  "gameTitle": "Tấm Màn Cuối",
+  "continue": "Tiếp tục",
+  "newGame": "Trò chơi mới",
+  "settings": "Cài đặt",
+  "quit": "Thoát",
+  "yourName": "Tên của {anh/chị}:",
+  "namePlaceholder": "Linh",
+  "female": "Nữ",
+  "male": "Nam",
+  "start": "Bắt đầu",
+  "bigTextOn": "Cỡ chữ: lớn",
+  "bigTextOff": "Cỡ chữ: thường",
+  "crtOn": "Màn hình TV cũ: bật",
+  "crtOff": "Màn hình TV cũ: tắt",
+  "vhsOn": "Băng mòn: bật",
+  "vhsOff": "Băng mòn: tắt"
  },
  "hub": {
   "backdrop": "art/cafe/back_wall.jpg",
@@ -280,5 +296,15 @@
   "reasonText": "Linh đã ngã.",
   "rite": true,
   "notRetryOnly": true
+ },
+ "canContinue": true,
+ "female": true,
+ "analog": {
+  "bigText": false,
+  "bigTextOff": true,
+  "crt": true,
+  "crtOff": false,
+  "vhs": true,
+  "vhsOff": false
  }
 }

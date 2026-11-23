@@ -19,14 +19,19 @@
         "items": "{map.tickets}",
         "as": "t",
         "entry": {
-          "type": "button",
-          "style": "act",
+          "type": "stack",
           "at": "{t.at}",
-          "text": "{t.name}\n{t.markText}",
-          "action": "select",
-          "arg": "{t.id}",
-          "selected": "{t.selected}",
-          "disabled": "{t.closed}"
+          "children": [
+            {
+              "type": "button",
+              "style": "act",
+              "text": "{t.name}\n{t.markText}",
+              "action": "select",
+              "arg": "{t.id}",
+              "selected": "{t.selected}",
+              "disabled": "{t.closed}"
+            }
+          ]
         }
       },
       {

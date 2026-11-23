@@ -1091,3 +1091,23 @@ TEST_CASE("Around a stage: who may fight, the revive warning, the result's gains
     save.riteUsed = true;
     CHECK_FALSE(campaign::OverFor(save, stage("stage1"), s).rite);
 }
+
+TEST_CASE("The save goes into a fight: chosen versions replace the base abilities, boosts add HP (campaign plan 7)")
+{
+    const match::MatchDef def = MatchData();
+    const campaign::Recipes recipes = TheRecipes();
+    campaign::Save save;
+    save.roster = {{"player", 3, 0}, {"ti", 3, 0}};
+    save.versions = {{"dua_tin", "dua_tin_ve_kip"}};
+    save.boosts["ti"]["nuoc_gung"] = 2;
+    const std::vector<campaign::StageDef> stages = TheStages();
+    const campaign::StageDef &st = *std::ranges::find(stages, std::string("sk_props"), &campaign::StageDef::id);
+    campaign::BuiltStage b = campaign::BuildStage(def, TheCast(), TheGrowth(), st, campaign::PartyOf(save, {"player", "ti"}), 0, save.taken, 3);
+    const int before = b.state.units[1].maxHp;
+    campaign::ApplySave(def, recipes, save, b);
+    const auto id = [&](int a) { return a >= 0 ? def.abilities[static_cast<std::size_t>(a)].id : std::string(); };
+    CHECK(std::ranges::any_of(b.state.units[1].abilities, [&](int a) { return id(a) == "dua_tin_ve_kip"; }));
+    CHECK(std::ranges::none_of(b.state.units[1].abilities, [&](int a) { return id(a) == "dua_tin"; }));
+    CHECK(b.state.units[1].maxHp == before + 4);
+    CHECK(b.state.units[1].hp == b.state.units[1].maxHp);
+}

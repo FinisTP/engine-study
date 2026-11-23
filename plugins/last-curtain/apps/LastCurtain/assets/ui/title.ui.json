@@ -1,0 +1,59 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "root": {
+    "type": "panel",
+    "anchor": "fill",
+    "style": "layer",
+    "children": [
+      {
+        "type": "image",
+        "anchor": "fill",
+        "image": "art/backdrops/foyer_today.jpg",
+        "fit": "cover"
+      },
+      {
+        "type": "stack",
+        "anchor": "center",
+        "style": "panel",
+        "gap": 10,
+        "size": [
+          420,
+          0
+        ],
+        "children": [
+          {
+            "type": "text",
+            "style": "title",
+            "text": "{words.gameTitle}"
+          },
+          {
+            "type": "button",
+            "style": "act",
+            "text": "{words.continue}",
+            "action": "continue",
+            "visible": "{canContinue}"
+          },
+          {
+            "type": "button",
+            "style": "act",
+            "text": "{words.newGame}",
+            "action": "new"
+          },
+          {
+            "type": "button",
+            "style": "act",
+            "text": "{words.settings}",
+            "action": "settings"
+          },
+          {
+            "type": "button",
+            "style": "act",
+            "text": "{words.quit}",
+            "action": "quit"
+          }
+        ]
+      }
+    ]
+  }
+}

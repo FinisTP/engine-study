@@ -1,0 +1,72 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "back": "back",
+  "root": {
+    "type": "stack",
+    "anchor": "center",
+    "style": "panel",
+    "gap": 10,
+    "size": [
+      520,
+      0
+    ],
+    "children": [
+      {
+        "type": "text",
+        "style": "title",
+        "text": "{words.newGame}"
+      },
+      {
+        "type": "text",
+        "style": "small",
+        "text": "{words.yourName}"
+      },
+      {
+        "type": "field",
+        "id": "name",
+        "placeholder": "{words.namePlaceholder}",
+        "max": 16,
+        "size": [
+          440,
+          0
+        ]
+      },
+      {
+        "type": "stack",
+        "direction": "horizontal",
+        "gap": 8,
+        "children": [
+          {
+            "type": "button",
+            "style": "act",
+            "text": "{words.female}",
+            "action": "gender",
+            "arg": "female",
+            "selected": "{female}"
+          },
+          {
+            "type": "button",
+            "style": "act",
+            "text": "{words.male}",
+            "action": "gender",
+            "arg": "male",
+            "selected": "{male}"
+          }
+        ]
+      },
+      {
+        "type": "button",
+        "style": "act",
+        "text": "{words.start}",
+        "action": "start"
+      },
+      {
+        "type": "button",
+        "style": "act",
+        "text": "{words.back}",
+        "action": "back"
+      }
+    ]
+  }
+}

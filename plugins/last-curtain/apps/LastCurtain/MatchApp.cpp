@@ -241,6 +241,11 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
             if (!play->State().over && play->State().round != savedRound && !watch && !hooks)
                 WriteSave(*play), savedRound = play->State().round;
         }
+        if (hooks && hooks->done && hooks->done())
+        {
+            result = 3; // a campaign stage ended: back to the flow
+            break;
+        }
         table.Update(dt);
         nlohmann::json ui = play ? play->UiData() : nlohmann::json::object();
         if (play)

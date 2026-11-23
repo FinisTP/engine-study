@@ -53,4 +53,35 @@ namespace umbra::campaign
         o.rite = s.loss == match::Loss::PlayerFell && save.riteUnlocked && !save.riteUsed && !o.retryOnly;
         return o;
     }
+
+    std::vector<PartyMember> PartyOf(const Save &save, const std::vector<std::string> &who)
+    {
+        std::vector<PartyMember> out;
+        for (const std::string &id : who)
+        {
+            const auto m = std::ranges::find(save.roster, id, &Member::id);
+            out.push_back({id, m == save.roster.end() ? 1 : m->level, save.slots.contains(id) ? save.slots.at(id) : std::array<std::string, 4>{}});
+        }
+        return out;
+    }
+
+    void ApplySave(const match::MatchDef &def, const Recipes &recipes, const Save &save, BuiltStage &built)
+    {
+        const auto find = [&](const std::string &id) { return static_cast<int>(std::ranges::find(def.abilities, id, &match::AbilityDef::id) - def.abilities.begin()); };
+        for (std::size_t i = 0; i < built.state.units.size() && i < built.who.size(); ++i)
+        {
+            match::Unit &u = built.state.units[i];
+            if (u.faction != 0)
+                continue;
+            // 1. Versions in place of base abilities.
+            for (auto &a : u.abilities)
+                if (a >= 0)
+                    if (const std::string chosen = AbilityFor(save, def.abilities[static_cast<std::size_t>(a)].id); chosen != def.abilities[static_cast<std::size_t>(a)].id)
+                        a = static_cast<std::int8_t>(find(chosen));
+            // 2. Boosts.
+            const int hp = Boosted(save, recipes, built.who[i], "maxHp");
+            u.maxHp = static_cast<std::int16_t>(u.maxHp + hp), u.hp = static_cast<std::int16_t>(u.hp + hp);
+            u.attack = static_cast<std::int16_t>(u.attack + Boosted(save, recipes, built.who[i], "attack"));
+        }
+    }
 }

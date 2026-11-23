@@ -4,6 +4,7 @@
 #include "DialogApp.hpp"
 #include "StageApp.hpp"
 #include "CafeHubApp.hpp"
+#include "Flow.hpp"
 #include <CampaignCafe.hpp>
 #include "GameContext.hpp"
 #include "MatchApp.hpp"
@@ -65,6 +66,7 @@ namespace
         std::string scene, backdrop;   // --scene <id> [--backdrop <name>]: play one campaign scene (developers)
         std::string stage;             // --stage <id> [--refill n]: play one campaign stage (developers)
         int refill = 0;
+        bool campaign = false;         // --campaign: the campaign from its title (Flow.hpp)
         bool campaignCafe = false;     // --campaign-cafe: the campaign's cafe with a sample save (developers)
         umbra::campaign::Speaker speaker{"", "female"}; // --name <text> --gender male|female
     };
@@ -193,6 +195,15 @@ namespace
                 GameContext game;
                 umbra::campaign::Facts facts;
                 result = game.Open(assets) && RunScene(game, assets, options.scene, options.backdrop, options.speaker, facts, options.capture, options.frames) >= 0 ? 0 : 1;
+                platform.Shutdown();
+                return result;
+            }
+            if (options.campaign)
+            {
+                // The campaign: title, new game or continue, the café, the map, the stages (Flow.hpp).
+                GameContext game;
+                const std::filesystem::path prefs = umbra::platform::Platform::PreferencesFolder();
+                result = game.Open(assets) ? RunCampaign(game, assets, (prefs.empty() ? std::filesystem::path(".") : prefs / "last-curtain") / "campaign.json", options.capture, options.frames) : 1;
                 platform.Shutdown();
                 return result;
             }
@@ -606,6 +617,8 @@ int main(int argc, char **argv)
             options.zoom = static_cast<float>(std::atof(argv[++i]));
         else if (arg == "--scene" && more)
             options.scene = argv[++i];
+        else if (arg == "--campaign")
+            options.campaign = true;
         else if (arg == "--campaign-cafe")
             options.campaignCafe = true;
         else if (arg == "--stage" && more)

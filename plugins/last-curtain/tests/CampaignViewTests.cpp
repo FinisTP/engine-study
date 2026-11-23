@@ -188,3 +188,54 @@ TEST_CASE("The notebook: three tabs, unknowns as ?, slots edited only outside ba
     CHECK(save.slots["bao"][0] == "bandage");
     CHECK(book.Data()["readOnly"] == true);
 }
+
+TEST_CASE("A scripted walk through slice 1: three story wins, the cafe brings Ti in, skirmishes refill, the save is written (campaign plan 7)")
+{
+    HubData h;
+    campaign::Growth growth;
+    std::vector<core::Diagnostic> d;
+    REQUIRE(campaign::LoadGrowth(data / "growth.csv", growth, d));
+    std::vector<campaign::StageDef> stages;
+    for (const char *id : {"t1", "t3", "stage1", "sk_props", "sk_stairs", "sk_boxoffice"})
+    {
+        campaign::StageDef s;
+        REQUIRE(campaign::LoadStage(data / "stages" / (std::string(id) + ".json"), h.cast, h.def, data / "scenes", s, d));
+        stages.push_back(s);
+    }
+    const auto win = [&](campaign::Save &save, const char *id, std::vector<std::string> party) {
+        const campaign::StageDef &s = *std::ranges::find(stages, std::string(id), &campaign::StageDef::id);
+        campaign::BuiltStage b = campaign::BuildStage(h.def, h.cast, growth, s, campaign::PartyOf(save, party), save.rooms[id].refill, save.taken, 5);
+        b.state.over = true, b.state.winner = 0;
+        for (std::size_t i = 0; i < b.who.size(); ++i)
+            if (b.who[i] == "ti")
+                b.state.units[i].flags |= match::flag::Freed; // a stand-in fight: Ti cut free
+        campaign::WinStage(h.def, save, s, b, stages);
+    };
+    campaign::Save save;
+    save.player = {"Lan", "female"};
+    save.roster = {{"player", 1, 0}, {"bao", 2, 0}, {"mai", 2, 0}};
+    win(save, "t1", {"player"});
+    win(save, "t3", {"player", "bao", "mai"});
+    win(save, "sk_props", {"player", "bao", "mai"});
+    win(save, "stage1", {"player", "bao", "mai"});
+    CHECK(save.facts["freed:ti"] == "1");
+    CHECK(save.rooms["sk_props"].refill == 1); // refilled after Stage 1
+    CHECK(save.riteUnlocked);
+    // The cafe: Le Thanh's talks; Ti joins and the two recipes are known.
+    CafeHub hub(h.def, h.cast, h.recipes, h.memories, h.talks, stages, save, 3);
+    for (int i = 0; i < 4 && !save.joined.contains("ti"); ++i)
+    {
+        (void)hub.Talk("lethanh");
+        hub.SceneDone({{"ti.first", "hope"}});
+    }
+    CHECK(save.joined.contains("ti"));
+    CHECK(save.recipes.contains("mut_gung"));
+    // Written and read back.
+    const auto file = std::filesystem::temp_directory_path() / "umbra-walk" / "campaign.json";
+    std::string error;
+    REQUIRE(campaign::SaveCampaign(file, save, error));
+    campaign::Save back;
+    REQUIRE(campaign::LoadCampaign(file, back, error));
+    CHECK(back.joined.contains("ti"));
+    CHECK(back.rooms["sk_props"].refill == 1);
+}

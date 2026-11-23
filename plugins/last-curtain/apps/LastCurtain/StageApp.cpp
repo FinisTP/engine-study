@@ -4,12 +4,15 @@
 #include "MatchApp.hpp"
 #include "MatchPlay.hpp"
 
+#include <CampaignCafe.hpp>
+
 #include <Log.hpp>
 
 #include <chrono>
 
 int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const std::string &id, int refill, std::uint64_t seed,
-             const umbra::campaign::Speaker &player, const std::filesystem::path &capture, int frames)
+             const umbra::campaign::Speaker &player, const std::filesystem::path &capture, int frames,
+             const umbra::campaign::Save *save, const std::vector<std::string> &party, umbra::campaign::BuiltStage *out)
 {
     namespace campaign = umbra::campaign;
     // 1. The rules, the cast, the growth and the stage.
@@ -26,10 +29,16 @@ int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const
         umbra::diagnostics::Error(umbra::core::Format(e));
     if (!loaded)
         return 1;
-    std::vector<campaign::PartyMember> party;
+    std::vector<campaign::PartyMember> members;
     for (const char *who : {"player", "bao", "mai"})
-        if (static_cast<int>(party.size()) < stage.partyCap)
-            party.push_back({who, stage.level + refill, {}}); // a refill comes after a story stage
+        if (static_cast<int>(members.size()) < stage.partyCap)
+            members.push_back({who, stage.level + refill, {}}); // a refill comes after a story stage
+    campaign::Recipes recipes;
+    if (save)
+    {
+        members = campaign::PartyOf(*save, party);
+        (void)campaign::LoadRecipes(folder / "recipes.json", def, recipes, d);
+    }
 
     // 2. The hooks: a fresh fight, the enemy brain, the scenes between beats.
     campaign::BuiltStage built;
@@ -48,7 +57,9 @@ int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const
         return out;
     };
     hooks.start = [&] {
-        built = campaign::BuildStage(def, cast, growth, stage, party, refill, {}, tries++);
+        built = campaign::BuildStage(def, cast, growth, stage, members, refill, save ? save->taken : std::set<std::string>{}, tries++);
+        if (save)
+            campaign::ApplySave(def, recipes, *save, built);
         moments = {};
         return built.state;
     };
@@ -57,6 +68,8 @@ int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const
         campaign::Sync(built);
         return campaign::EnemyAction(def, built, s, def.options.bots);
     };
+    bool ended = false; // the fight is over and its last scene has played
+    hooks.done = [&] { return out != nullptr && ended; };
     hooks.beat = [&](MatchPlay &play) {
         if (!play.Quiet() || !capture.empty())
             return;
@@ -66,6 +79,8 @@ int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const
         for (const std::string &scene : campaign::StageMoments(stage, built, play.Told(), moments))
             if (RunScene(game, assets, scene, stage.backdrop, player, facts) == 0)
                 return;
+        if (out && play.State().over && play.Quiet())
+            *out = built, ended = true;
     };
     hooks.setup = [&](MatchPlay &play) { play.SetCast(names(), {}), play.SetHeights(built.height), play.SetStage(stage.title); };
     return RunMatch(game, assets, seed, false, capture, frames, 0.0F, nullptr, 0, {}, &hooks);

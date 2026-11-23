@@ -1,0 +1,70 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "back": "close",
+  "root": {
+    "type": "stack",
+    "anchor": "center",
+    "style": "panel",
+    "gap": 8,
+    "size": [
+      480,
+      0
+    ],
+    "children": [
+      {
+        "type": "text",
+        "style": "title",
+        "text": "{words.settings}"
+      },
+      {
+        "type": "button",
+        "style": "act",
+        "text": "{words.bigTextOn}",
+        "action": "bigtext",
+        "visible": "{analog.bigText}"
+      },
+      {
+        "type": "button",
+        "style": "act",
+        "text": "{words.bigTextOff}",
+        "action": "bigtext",
+        "visible": "{analog.bigTextOff}"
+      },
+      {
+        "type": "button",
+        "style": "act",
+        "text": "{words.crtOn}",
+        "action": "crt",
+        "visible": "{analog.crt}"
+      },
+      {
+        "type": "button",
+        "style": "act",
+        "text": "{words.crtOff}",
+        "action": "crt",
+        "visible": "{analog.crtOff}"
+      },
+      {
+        "type": "button",
+        "style": "act",
+        "text": "{words.vhsOn}",
+        "action": "vhs",
+        "visible": "{analog.vhs}"
+      },
+      {
+        "type": "button",
+        "style": "act",
+        "text": "{words.vhsOff}",
+        "action": "vhs",
+        "visible": "{analog.vhsOff}"
+      },
+      {
+        "type": "button",
+        "style": "act",
+        "text": "{words.close}",
+        "action": "close"
+      }
+    ]
+  }
+}

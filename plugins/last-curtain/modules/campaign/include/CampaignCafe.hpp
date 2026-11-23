@@ -175,4 +175,9 @@ namespace umbra::campaign
         bool rite = false, retryOnly = false;
     };
     Over OverFor(const Save &save, const StageDef &stage, const match::MatchState &s);
+
+    // The save into a fight: the party as BuildStage takes it (roster levels, slots), then ApplySave swaps
+    // chosen versions for base abilities and adds the drinks' boosts.
+    std::vector<PartyMember> PartyOf(const Save &save, const std::vector<std::string> &who);
+    void ApplySave(const match::MatchDef &def, const Recipes &recipes, const Save &save, BuiltStage &built);
 }
