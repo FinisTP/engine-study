@@ -15,6 +15,14 @@
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
 
+## Update 2026-11-23 (The Last Curtain, campaign plan 1: the Vietnamese model test, the voice test, the fonts, `#UMBRA-324`-`#UMBRA-330`)
+
+- **Fonts.** The Last Curtain's screens use Be Vietnam Pro and Playfair Display (Regular: the only weight with Vietnamese that may be shipped under its name), so every Vietnamese letter draws; a test checks every skin font.
+- **The model's Vietnamese test.** Voice sheets for Tí, Bảo, Bà Mai and Lệ Thanh and 20 café situations (drafted by Claude, for the user's review); ten line checks (no English, accent marks present, never-say, another dialect's words, tokens, no fact missing, no memory added); `UmbraTool talk-mind` writes one report per model and compares them.
+- **The voice test.** `tools/voice/vieneu_lines.py` voices the authored lines through the user's local VieNeu, Tí pitched up with formant correction.
+- **Verified (Linux).** GCC: the new `Umbra.TalkMind`, the font checks, the voice script's tests; the tool through real llama.cpp with a tiny random model.
+- **Open.** The user's checks (`testing/s44-vietnamese-model.md` §4): Arcee-VyLinh first, then the comparison and the pick; the Vietnamese review; listening.
+
 ## Update 2026-11-21 (The Last Curtain: plan 4, tiles, group battles, the told match, the café hub, `#UMBRA-291`-`#UMBRA-297`, branch `factions`)
 
 - **Rules.** The board is tiles (walls are tiles); two of a side share a tile; battles take in both groups, everyone picking in speed order at a chosen foe; ranges walk or go straight; heals skip the whole; board abilities teach. Saves version 3.
