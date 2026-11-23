@@ -114,6 +114,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
     const std::uint64_t first = seed ? seed : static_cast<std::uint64_t>(std::chrono::system_clock::now().time_since_epoch().count());
     std::uint64_t matches = 0;
     std::string shown;
+    const std::string hudName = hooks ? "campaign-hud" : "match-hud"; // a stage has the campaign's HUD (plan 5)
     int savedRound = -1;
     bool ended = false;  // the end scene has started
     bool hudOpen = false; // the HUD is open (closed while a fight is staged)
@@ -136,10 +137,13 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         play->SetWords(words);
         play->SetOptions(pace);
         play->SetWatch(watch);
+        play->SetKeyNames(game.keys.Name("hurry"), game.keys.Name("skip"));
+        if (hooks && hooks->setup)
+            hooks->setup(*play);
         if (career && !restored)
             play->StartFrom(*career); // the player's side as the career left it
         if (screens.Ready())
-            screens.Ui().Open("match-labels"), screens.Ui().Open("match-hud");
+            screens.Ui().Open("match-labels"), screens.Ui().Open(hudName);
         savedRound = -1, ended = false, hudOpen = true;
         if (!restored)
             table.StartScene("open", -1);
@@ -147,7 +151,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
     const auto backToPick = [&] {
         play.reset();
         if (screens.Ready())
-            screens.Ui().Close("match-hud"), screens.Ui().Close("match-labels");
+            screens.Ui().Close(hudName), screens.Ui().Close("match-labels");
         hudOpen = false;
         canContinue = ReadSave(saved);
     };
@@ -229,9 +233,9 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         if (const bool hud = play && !ui.contains("fight"); screens.Ready() && play && hud != hudOpen)
         {
             if (hud)
-                screens.Ui().Open("match-hud");
+                screens.Ui().Open(hudName);
             else
-                screens.Ui().Close("match-hud");
+                screens.Ui().Close(hudName);
             hudOpen = hud;
         }
 
@@ -241,6 +245,8 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         {
             nlohmann::json data = ui;
             data["words"] = words.value("screens", nlohmann::json::object()); // the screens' labels
+            if (play && hooks)
+                data["hud"] = play->HudData();
             data["career"] = career != nullptr; // the end screen leads back to the café
             data["single"] = career == nullptr;
             if (!play)
@@ -308,7 +314,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                 else if (play && a.action == "focus" && !a.arg.empty() && std::isdigit(static_cast<unsigned char>(a.arg[0]))) // an order portrait: the camera goes to that one
                     table.LookAt(play->State(), std::stoi(a.arg));
                 else if (play)
-                    (void)play->HandleUi(a.screen == "match-hud" ? "" : a.screen.substr(a.screen.starts_with("match-") ? 6 : 0), a.action, a.arg);
+                    (void)play->HandleUi(a.screen == hudName ? "" : a.screen.substr(a.screen.starts_with("match-") ? 6 : 0), a.action, a.arg);
             }
         }
         else
@@ -344,7 +350,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
     if (play && !play->State().over && !watch && !hooks)
         WriteSave(*play);
     if (screens.Ready())
-        for (const char *name : {"match-hud", "match-labels", "match-pick", "match-end", "match-battle", "match-level", "match-event", "match-treasure", "match-banner", "pause"})
+        for (const char *name : {"match-hud", "campaign-hud", "match-labels", "match-pick", "match-end", "match-battle", "match-level", "match-event", "match-treasure", "match-banner", "pause"})
             screens.Ui().Close(name);
     return result;
 }

@@ -1,0 +1,180 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "root": {
+    "type": "panel",
+    "anchor": "fill",
+    "style": "layer",
+    "children": [
+      {
+        "type": "stack",
+        "anchor": "top-left",
+        "offset": [
+          20,
+          14
+        ],
+        "style": "float",
+        "gap": 4,
+        "size": [
+          260,
+          0
+        ],
+        "children": [
+          {
+            "type": "text",
+            "style": "muted",
+            "text": "{hud.goals.title}"
+          },
+          {
+            "type": "list",
+            "items": "{hud.goals.lines}",
+            "as": "g",
+            "gap": 3,
+            "entry": {
+              "type": "stack",
+              "direction": "horizontal",
+              "gap": 6,
+              "children": [
+                {
+                  "type": "panel",
+                  "style": "tickOn",
+                  "size": [
+                    12,
+                    12
+                  ],
+                  "visible": "{g.done}"
+                },
+                {
+                  "type": "panel",
+                  "style": "tickOff",
+                  "size": [
+                    12,
+                    12
+                  ],
+                  "visible": "{g.open}"
+                },
+                {
+                  "type": "text",
+                  "style": "small",
+                  "text": "{g.text}"
+                }
+              ],
+              "align": "center"
+            }
+          },
+          {
+            "type": "text",
+            "style": "warning",
+            "text": "× {words.trapped}",
+            "visible": "{hud.goals.failed}"
+          }
+        ]
+      },
+      {
+        "type": "list",
+        "anchor": "top",
+        "offset": [
+          0,
+          10
+        ],
+        "style": "float",
+        "items": "{hud.strip}",
+        "as": "o",
+        "direction": "horizontal",
+        "gap": 6,
+        "entry": {
+          "type": "stack",
+          "style": "face",
+          "gap": 1,
+          "align": "center",
+          "selected": "{o.acting}",
+          "children": [
+            {
+              "type": "image",
+              "image": "{o.portrait}",
+              "fit": "top",
+              "size": [
+                44,
+                44
+              ],
+              "visible": "{o.portrait}"
+            },
+            {
+              "type": "text",
+              "style": "small",
+              "text": "{o.name}",
+              "visible": "{o.mine}"
+            },
+            {
+              "type": "text",
+              "style": "warning",
+              "text": "{o.name}",
+              "visible": "{o.theirs}"
+            }
+          ]
+        },
+        "action": "focus",
+        "arg": "{o.unit}"
+      },
+      {
+        "type": "stack",
+        "anchor": "bottom-left",
+        "offset": [
+          20,
+          -14
+        ],
+        "style": "float",
+        "gap": 3,
+        "size": [
+          620,
+          0
+        ],
+        "children": [
+          {
+            "type": "text",
+            "style": "small",
+            "text": "{hud.hint}"
+          },
+          {
+            "type": "text",
+            "style": "muted",
+            "text": "{hud.logLine}",
+            "visible": "{hud.logLine}"
+          }
+        ]
+      },
+      {
+        "type": "list",
+        "items": "{dock}",
+        "as": "d",
+        "entry": {
+          "type": "stack",
+          "style": "float",
+          "gap": 6,
+          "at": "{d.at}",
+          "children": [
+            {
+              "type": "list",
+              "items": "{actions}",
+              "as": "a",
+              "gap": 5,
+              "entry": {
+                "type": "button",
+                "style": "act",
+                "size": [
+                  230,
+                  0
+                ],
+                "text": "{a.label}   {a.note}",
+                "action": "act",
+                "arg": "{a.id}",
+                "disabled": "{a.off}",
+                "tip": "{a.why}"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

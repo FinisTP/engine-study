@@ -69,6 +69,8 @@ std::string MatchPlay::Name(int unit) const
 {
     if (unit < 0 || unit >= static_cast<int>(s_.units.size()))
         return Word("misc", "nobody");
+    if (U(unit) < names_.size() && !names_[U(unit)].empty())
+        return names_[U(unit)]; // a campaign stage: the cast's name
     const Unit &u = s_.units[U(unit)];
     if (u.kind != 0)
         return def_.monsters[U(u.def)].name;
@@ -397,8 +399,8 @@ nlohmann::json MatchPlay::UiData() const
         const Unit &unit = s_.units[U(u)];
         if (unit.kind == 1 && !Up(unit))
             return;
-        const std::string &sprite = unit.kind == 0 ? def_.characters[U(unit.def)].sprite : def_.monsters[U(unit.def)].sprite;
-        const std::string &full = unit.kind == 0 ? def_.characters[U(unit.def)].name : def_.monsters[U(unit.def)].name;
+        const std::string sprite = Sprite(u);
+        const std::string full = Name(u);
         const std::string tip = Fill(Word("misc", "orderTip"), {{"name", Name(u)}, {"level", std::to_string(unit.level)}, {"hp", std::to_string(U(u) < toldHp_.size() ? toldHp_[U(u)] : unit.hp)},
                                                                   {"maxHp", std::to_string(unit.maxHp)}, {"attack", std::to_string(unit.attack)}, {"defence", std::to_string(unit.defence)},
                                                                   {"essence", std::to_string(unit.essence)}});
@@ -421,7 +423,7 @@ nlohmann::json MatchPlay::UiData() const
     const Unit &u = s_.units[U(shown)];
     const CharacterDef &c = def_.characters[U(u.def)];
     static const char *roles[] = {"attacker", "defender", "supporter", "speedster", "allrounder"};
-    j["unit"] = {{"unit", shown}, {"name", c.name}, {"sprite", c.sprite}, {"portrait", Portrait(c.sprite)}, {"side", u.faction}, {"role", Word("roles", roles[static_cast<int>(c.role)])},
+    j["unit"] = {{"unit", shown}, {"name", Name(shown)}, {"sprite", Sprite(shown)}, {"portrait", Portrait(Sprite(shown))}, {"side", u.faction}, {"role", Word("roles", roles[static_cast<int>(c.role)])},
                  {"level", u.level}, {"hp", u.hp}, {"maxHp", u.maxHp}, {"essence", u.essence}};
     // 3. The player's turn: the move range (or an armed ability's range), the actions, the targets.
     if (PlayerTurn() && !s_.battle.on)
@@ -708,7 +710,7 @@ nlohmann::json MatchPlay::UnitNumbers(int unit) const
 {
     const Unit &u = s_.units[U(unit)];
     const int level = u.kind == 0 ? u.level : def_.monsters[U(u.def)].level;
-    const std::string sprite = u.kind == 0 ? def_.characters[U(u.def)].sprite : def_.monsters[U(u.def)].sprite;
+    const std::string sprite = Sprite(unit);
     return {{"unit", unit}, {"name", Name(unit)}, {"side", u.faction}, {"level", level}, {"portrait", Portrait(sprite)}, {"hp", U(unit) < toldHp_.size() ? toldHp_[U(unit)] : u.hp}, {"maxHp", u.maxHp},
             {"attack", u.attack}, {"defence", u.defence}, {"essence", u.essence}};
 }
@@ -760,12 +762,11 @@ nlohmann::json MatchPlay::Forecast() const
 
 nlohmann::json MatchPlay::Fighter(int unit, int place) const
 {
-    const Unit &u = s_.units[U(unit)];
     nlohmann::json f = UnitNumbers(unit);
     f["shield"] = s_.battle.on ? s_.battle.shield[U(place)] : 0;
     f["group"] = place / 2;
     f["picking"] = s_.battle.on && shown_ == s_.log.size() && Current(s_) == unit;
-    f["sprite"] = u.kind == 0 ? def_.characters[U(u.def)].sprite : def_.monsters[U(u.def)].sprite;
+    f["sprite"] = Sprite(unit);
     return f;
 }
 
@@ -935,4 +936,54 @@ void MatchPlay::StartFrom(const umbra::cafe::Career &career)
 {
     umbra::night::ApplyCareer(def_, s_, career);
     SyncHp();
+}
+
+std::string MatchPlay::Sprite(int unit) const
+{
+    if (U(unit) < sprites_.size() && !sprites_[U(unit)].empty())
+        return sprites_[U(unit)];
+    const Unit &u = s_.units[U(unit)];
+    return u.kind == 0 ? def_.characters[U(u.def)].sprite : def_.monsters[U(u.def)].sprite;
+}
+
+nlohmann::json MatchPlay::HudData() const
+{
+    nlohmann::json j;
+    // 1. Goals: each boss (one line when there are more than two), each recruit to free.
+    nlohmann::json lines = nlohmann::json::array();
+    std::vector<int> bosses, recruits;
+    for (int i = 0; i < static_cast<int>(s_.units.size()); ++i)
+    {
+        const Unit &u = s_.units[U(i)];
+        if (u.flags & flag::Boss)
+            bosses.push_back(i);
+        if ((u.flags & flag::Recruit) && s_.mode.mustFree)
+            recruits.push_back(i);
+    }
+    const auto down = [&](int i) { return !Up(s_.units[U(i)]) && std::ranges::none_of(s_.arrivals, [&](const Arrival &a) { return a.unit == i; }); };
+    if (bosses.size() > 2)
+        lines.push_back({{"text", Word("goals", "all")}, {"done", std::ranges::all_of(bosses, down)}, {"open", !std::ranges::all_of(bosses, down)}});
+    else
+        for (const int b : bosses)
+            lines.push_back({{"text", Fill(Word("goals", "down"), {{"name", Name(b)}})}, {"done", down(b)}, {"open", !down(b)}});
+    for (const int r : recruits)
+        lines.push_back({{"text", Fill(Word("goals", "free"), {{"name", Name(r)}})}, {"done", (s_.units[U(r)].flags & flag::Freed) != 0}, {"open", (s_.units[U(r)].flags & flag::Freed) == 0}});
+    j["goals"] = {{"title", stageTitle_}, {"lines", lines}, {"failed", s_.over && s_.loss == Loss::Trapped}};
+    // 2. This round's strip: from the one acting to the round's end, standing units only.
+    nlohmann::json strip = nlohmann::json::array();
+    for (int i = std::max(0, s_.turn); i < static_cast<int>(s_.order.size()); ++i)
+    {
+        const int u = s_.order[U(i)];
+        if (!Up(s_.units[U(u)]))
+            continue;
+        strip.push_back({{"unit", u}, {"name", Name(u)}, {"portrait", Portrait(Sprite(u))}, {"mine", s_.units[U(u)].faction == 0},
+                         {"theirs", s_.units[U(u)].faction != 0}, {"acting", u == Current(s_)}});
+    }
+    j["strip"] = strip;
+    // 3. The hint (whose turn, the keys) and the last told line.
+    const int now = Current(s_);
+    j["hint"] = now >= 0 && !Mine(now) && !s_.over ? Fill(Word("misc", "enemyTurn"), {{"name", Name(now)}, {"hurry", hurryKey_}, {"skip", skipKey_}})
+                                                   : UiData().value("hint", std::string());
+    j["logLine"] = log_.empty() ? std::string() : log_.back();
+    return j;
 }

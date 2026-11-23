@@ -5,6 +5,7 @@
     "text": "Còn {n} lượt"
   },
   "misc": {
+    "enemyTurn": "Lượt của {name} · Giữ {hurry} nhanh hơn · {skip} bỏ qua",
     "nextTurn": "lượt sau",
     "nobody": "nhà hát",
     "essence": "tinh hoa",
@@ -182,7 +183,13 @@
     "board": "Trên bàn",
     "battle": "Trong trận"
   },
+  "goals": {
+    "down": "Hạ {name}",
+    "all": "Hạ hết bóng ma",
+    "free": "Cắt dây cho {name}"
+  },
   "screens": {
+    "trapped": "Không kịp cắt dây",
     "backToCafe": "Về quán",
     "bots": "Máy",
     "chooseCard": "Chọn một lá.",

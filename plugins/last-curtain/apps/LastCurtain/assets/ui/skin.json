@@ -322,6 +322,15 @@
         "borderWidth": 2
       }
     },
+    "tickOn": {
+      "background": "#d8b25a",
+      "border": "#f3d98a",
+      "borderWidth": 1
+    },
+    "tickOff": {
+      "border": "#c9bfa8",
+      "borderWidth": 1
+    },
     "mine": {
       "base": "heading",
       "color": "#5b9bd5"

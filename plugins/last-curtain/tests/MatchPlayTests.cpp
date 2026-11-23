@@ -907,3 +907,68 @@ TEST_CASE("The fight's screens carry no typed words; both words files have the s
     CHECK(a == b);
     CHECK(en.contains("screens"));
 }
+
+TEST_CASE("A campaign fight shows cast names; the HUD has goals, this round's strip, a hint and the last log line (campaign plan 5)", "[match][play][hud]")
+{
+    const MatchDef def = Data();
+    MatchState s = NewMatch(def, 7, {MatchDef::Find(def.characters, "bao"), MatchDef::Find(def.characters, "khang"), MatchDef::Find(def.characters, "mai")});
+    std::vector<std::string> names;
+    for (std::size_t i = 0; i < s.units.size(); ++i)
+        names.push_back("Unit" + std::to_string(i));
+    // Unit 3 is the boss, unit 4 a strung recruit; the stage asks to free it.
+    const int boss = 3, recruit = 4;
+    s.units[boss].flags = flag::Boss;
+    s.units[recruit].flags = flag::Recruit | flag::Strung;
+    s.mode.mustFree = true;
+    MatchPlay p(def, s, BotLevel::Medium);
+    p.SetWords(Words());
+    p.SetOptions(Pace());
+    p.SetCast(names, {});
+    p.SetStage("Test room");
+    // 1. Names everywhere.
+    CHECK(p.UiData()["order"][0]["name"] == names[static_cast<std::size_t>(Current(p.State()))]);
+    // 2. Goals: down the boss, free the recruit.
+    nlohmann::json hud = p.HudData();
+    CHECK(hud["goals"]["title"] == "Test room");
+    REQUIRE(hud["goals"]["lines"].size() == 2);
+    CHECK(hud["goals"]["lines"][0]["text"] == "Defeat Unit3");
+    CHECK(hud["goals"]["lines"][0]["done"] == false);
+    CHECK(hud["goals"]["lines"][1]["text"] == "Cut Unit4 free");
+    // 3. The strip: this round from the one acting, the acting first and marked.
+    REQUIRE_FALSE(hud["strip"].empty());
+    CHECK(hud["strip"][0]["unit"] == Current(p.State()));
+    CHECK(hud["strip"][0]["acting"] == true);
+    CHECK(hud["strip"].size() <= p.State().order.size());
+    // 4. Hint and log line exist; an enemy's turn says whose.
+    CHECK_FALSE(hud["hint"].get<std::string>().empty());
+    CHECK(hud.contains("logLine"));
+    for (int i = 0; i < 400 && p.State().units[static_cast<std::size_t>(Current(p.State()))].faction == 0; ++i)
+        if (!p.PlayerTurn() || !p.Do({ActionKind::EndTurn}))
+            p.Update(0.5F);
+    CHECK(p.HudData()["hint"].get<std::string>().find(names[static_cast<std::size_t>(Current(p.State()))]) != std::string::npos);
+}
+
+TEST_CASE("Goals tick and fail: the boss down, the recruit freed, a trapped loss; many bosses are one line (campaign plan 5)", "[match][play][hud]")
+{
+    const MatchDef def = Data();
+    MatchState s = NewMatch(def, 7, {MatchDef::Find(def.characters, "bao"), MatchDef::Find(def.characters, "khang"), MatchDef::Find(def.characters, "mai")});
+    for (std::size_t i = 3; i < 6 && i < s.units.size(); ++i)
+        s.units[i].flags = flag::Boss;
+    MatchPlay many(def, s, BotLevel::Medium);
+    many.SetWords(Words());
+    REQUIRE(many.HudData()["goals"]["lines"].size() == 1);
+    CHECK(many.HudData()["goals"]["lines"][0]["text"] == "Defeat every enemy");
+
+    s.units[4].flags = flag::Recruit | flag::Freed;
+    s.units[5].flags = 0;
+    s.units[3].hp = 0;
+    s.mode.mustFree = true;
+    s.over = true, s.winner = 1, s.loss = Loss::Trapped;
+    MatchPlay done(def, s, BotLevel::Medium);
+    done.SetWords(Words());
+    const nlohmann::json lines = done.HudData()["goals"]["lines"];
+    REQUIRE(lines.size() == 2);
+    CHECK(lines[0]["done"] == true);
+    CHECK(lines[1]["done"] == true);
+    CHECK(done.HudData()["goals"]["failed"] == true);
+}

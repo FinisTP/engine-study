@@ -37,6 +37,16 @@ int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const
     campaign::Facts facts;
     std::uint64_t tries = seed ? seed : static_cast<std::uint64_t>(std::chrono::system_clock::now().time_since_epoch().count());
     MatchHooks hooks;
+    // 3. Names from the cast (the player's own, else the nameless default); spawned units get theirs too.
+    const auto names = [&] {
+        std::vector<std::string> out;
+        for (const std::string &who : built.who)
+        {
+            const campaign::CastMember *m = cast.Find(who == "player" && player.name.empty() ? "nameless" : who);
+            out.push_back(who == "player" && !player.name.empty() ? player.name : m ? m->name : who);
+        }
+        return out;
+    };
     hooks.start = [&] {
         built = campaign::BuildStage(def, cast, growth, stage, party, refill, {}, tries++);
         moments = {};
@@ -52,9 +62,11 @@ int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const
             return;
         built.state = play.State();
         campaign::Sync(built);
+        play.SetCast(names(), {});
         for (const std::string &scene : campaign::StageMoments(stage, built, play.Told(), moments))
             if (RunScene(game, assets, scene, stage.backdrop, player, facts) == 0)
                 return;
     };
+    hooks.setup = [&](MatchPlay &play) { play.SetCast(names(), {}), play.SetStage(stage.title); };
     return RunMatch(game, assets, seed, false, capture, frames, 0.0F, nullptr, 0, {}, &hooks);
 }

@@ -35,6 +35,13 @@ public:
     [[nodiscard]] bool Quiet() const;
     [[nodiscard]] std::size_t Told() const { return shown_; } // log entries the person has seen
 
+    // A campaign stage (campaign plan 5): each unit's shown name and sprite ("" keeps the match's), the
+    // stage's title; HudData is the campaign HUD's goals, this round's strip, the hint and the last log line.
+    void SetCast(std::vector<std::string> names, std::vector<std::string> sprites) { names_ = std::move(names), sprites_ = std::move(sprites); }
+    void SetStage(std::string title) { stageTitle_ = std::move(title); }
+    void SetKeyNames(std::string hurry, std::string skip) { hurryKey_ = std::move(hurry), skipKey_ = std::move(skip); }
+    [[nodiscard]] nlohmann::json HudData() const;
+
     bool Do(const umbra::match::Action &action); // the player's action; false unless it is theirs and legal
     void Update(float dt);
     [[nodiscard]] bool PlayerTurn() const;
@@ -66,6 +73,7 @@ private:
     [[nodiscard]] bool Mine(int unit) const;   // a character of the player's side
     [[nodiscard]] bool BannerDue() const;      // a new round not yet announced
     [[nodiscard]] std::string Name(int unit) const;
+    [[nodiscard]] std::string Sprite(int unit) const;
     [[nodiscard]] std::string Word(const std::string &group, const std::string &key) const;
     [[nodiscard]] int Key() const { return s_.round * 64 + s_.turn; } // one character's turn
     [[nodiscard]] bool Chose() const { return chosen_ == Key(); }      // walked or stayed: the actions show
@@ -97,6 +105,8 @@ private:
     bool bannerOn_ = false, logOpen_ = true;
     int hover_ = -1, chosen_ = -1, armedKey_ = -1;
     bool watch_ = false, paused_ = false;
+    std::vector<std::string> names_, sprites_;
+    std::string stageTitle_, hurryKey_ = "Space", skipKey_ = "F";
     std::string armed_; // "attack" or "ability:<slot>"
     std::string lastBlow_, eventResult_, treasureResult_; // the battle's last blow; the event's outcome; the card turned
     int eventCell_ = -1;

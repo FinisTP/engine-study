@@ -4,6 +4,7 @@
     "text": "{n} turns left"
   },
   "misc": {
+    "enemyTurn": "{name}'s turn · hold {hurry} to hurry · {skip} skips",
     "nextTurn": "next turn",
     "nobody": "the house",
     "essence": "essence",
@@ -181,7 +182,13 @@
     "board": "On the board",
     "battle": "In battle"
   },
+  "goals": {
+    "down": "Defeat {name}",
+    "all": "Defeat every enemy",
+    "free": "Cut {name} free"
+  },
   "screens": {
+    "trapped": "Trapped: the strings could not be cut",
     "backToCafe": "Back to the cafe",
     "bots": "Bots",
     "chooseCard": "Choose a card.",
