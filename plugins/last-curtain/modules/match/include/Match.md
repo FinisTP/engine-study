@@ -10,13 +10,13 @@ one copyable value, and only `Apply` changes it. Bots and the app send the same 
 | `options.csv` | `id,value`: rounds (the countdown), side (characters per side), autoEndTurn (0/1), bots (easy, medium, hard) |
 | `rules.json` | modes ("Modes"), board (size, lanes, one unit per square, den and event distances, counts per half), respawn (turns away), battle (rounds, minimum damage), levels (XP steps, HP per level, XP for a kill), spawn (`warn`: rounds a spawn square is marked first; `centre`: steps from the stage to each centre spawn square), carry, bot noise per level, the soak's balance bands |
 | `characters.csv` | id, name, role, the five stats (hp, attack, defence, speed, move), sprite, tint |
-| `abilities.csv` | id, name, use (battle, board, passive), class (strike, shield, heal, hit, firststrike), target (enemy, ally, self, monster, room, any: a strike aims at an enemy, a shield or battle heal at yourself, a board heal at your side, a hit at enemy, monster or any), hpCost, power, dice (`2d6` or none), range, animation (a `motions.json` name) |
+| `abilities.csv` | id, name, use (battle, board, passive), class (strike, shield, heal, hit, firststrike; revive, remove: "Falls"), target (enemy, ally, self, monster, room, any: a strike aims at an enemy, a shield or battle heal at yourself, a board heal at your side, a hit at enemy, monster or any), hpCost, power, dice (`2d6` or none), range, animation (a `motions.json` name) |
 | `jobs.csv` | role, level, ability, choice (a second ability to pick between, or none); level 1 = starting abilities |
 | `monsters.csv` | id, name, tier (weak, strong, great, guardian), behaviour (stay, flee, stage, guard, hunt), stats, essence, xp, level (shown to the player), size (1-3 squares a side), sight (steps a hunter sees; 1+ for hunt), abilities (`a;b`, the first is its strike), sprite, tint |
 | `spawns.csv` | zone (weak, strong, centre), from (first round), monster (never a guardian), every (rounds after its square empties; 0 = once); loaded sorted by zone, then from |
 | `treasure.csv` | id, kind (item, essence, xp, heal), item (or none), amount, weight: what an item room's face-down cards may hold |
 | `levelcards.csv` | id, kind (learn, stat, upgrade), what (hp, attack, defence, speed, move; power or cost for an upgrade), amount (a stat's), weight |
-| `items.csv` | id, name, text, sprite, class (heal, xp), amount |
+| `items.csv` | id, name, text, sprite, class (heal, xp, revive: "Falls"), amount |
 | `events.csv` | id, name, text, two choices: label, chance (percent), success, failure (`none`, `hp:-3`, `essence:2`, `xp:2`, `item:<id>`) |
 
 The loader refuses a role without a free (0 HP) level-1 Strike, so a fighter at 1 HP can always act.
@@ -77,6 +77,22 @@ unit that is not `Up` or whose `from` is later than this round: a unit placed mi
 revive, a return home) gets `from = round + 1` and acts from the next round. A downed faction
 character still counts down `back` at its own place. A monster acts by its behaviour at its place
 (`MonsterAct`) and the order goes on; a battle it starts waits for the picks.
+
+## Falls (campaign plan 2)
+
+With `fallsStay`, `Down` leaves a unit on its square at 0 HP, **fallen**: it loses its AP, is skipped
+in the order, covers no square (so it never blocks and doesn't count toward `squareCapacity`), and
+every attack, strike, hit, heal or give-AP refuses it (`Why::Fallen`). A battle ends when one group
+has no fighter `Up`. Range to a fallen unit is measured as usual (`Squares` is where a unit lies).
+
+- **Revive** (ability class `revive`, board, target `ally`, `power` = percent of max HP; item class
+  `revive`, `amount` = percent, used on a fallen one of your side beside you as `UseItem` with a
+  target): stands it up with at least 1 HP, AP 0, acting from the next round. It stands on its own
+  square if there is room for one more of its side, else on the nearest square with room (`Steps`),
+  ties nearest the reviver, then the lower cell index (`RevivePlace`); no square with room: `Blocked`.
+  Either side revives its own; a strung recruit stands up still strung.
+- **Remove** (class `remove`, board, target `enemy`): a fallen foe leaves the fight for good
+  (`cell` -1, `flag::Removed`); nothing can revive it (`Why::NotFallen`).
 
 ## Battles (`Battle.cpp`)
 

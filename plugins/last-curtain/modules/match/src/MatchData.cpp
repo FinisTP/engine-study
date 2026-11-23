@@ -265,7 +265,7 @@ namespace umbra::match
                 a.name = s.Text(r, "name");
                 a.animation = s.Text(r, "animation");
                 a.use = static_cast<Use>(s.Pick(r, "use", {"battle", "board", "passive"}));
-                a.kind = static_cast<AbilityClass>(s.Pick(r, "class", {"strike", "shield", "heal", "hit", "firststrike"}));
+                a.kind = static_cast<AbilityClass>(s.Pick(r, "class", {"strike", "shield", "heal", "hit", "firststrike", "revive", "remove"}));
                 a.target = static_cast<Target>(s.Pick(r, "target", {"enemy", "ally", "self", "monster", "room", "any"}));
                 a.hpCost = s.Int(r, "hpCost", 0, 99);
                 a.power = s.Int(r, "power", 0, 99);
@@ -273,8 +273,9 @@ namespace umbra::match
                 a.reach = static_cast<RangeBy>(s.Pick(r, "reach", {"walk", "straight"}));
                 a.dice = ParseDice(s, r);
                 // 1. Each class has its place: strike and shield in battle, hit on the board, first strike passive.
+                const bool board = a.kind == AbilityClass::Hit || a.kind == AbilityClass::Revive || a.kind == AbilityClass::Remove;
                 const bool fits = a.kind == AbilityClass::Heal ? a.use != Use::Passive
-                                : a.kind == AbilityClass::Hit  ? a.use == Use::Board
+                                : board ? a.use == Use::Board
                                 : a.kind == AbilityClass::FirstStrike ? a.use == Use::Passive
                                                                       : a.use == Use::Battle;
                 if (!fits)
@@ -283,6 +284,8 @@ namespace umbra::match
                 const Target t = a.target;
                 const bool aims = a.kind == AbilityClass::Hit ? t == Target::Enemy || t == Target::Monster || t == Target::Any
                                 : a.kind == AbilityClass::Heal && a.use == Use::Board ? t == Target::Ally || t == Target::Self
+                                : a.kind == AbilityClass::Revive ? t == Target::Ally
+                                : a.kind == AbilityClass::Remove ? t == Target::Enemy
                                 : a.kind == AbilityClass::Strike ? t == Target::Enemy
                                                                  : t == Target::Self;
                 if (s.ok && !aims)
@@ -384,7 +387,7 @@ namespace umbra::match
             for (int r = 0; r < s.Rows(); ++r)
             {
                 ItemDef i{s.Text(r, "id"), s.Text(r, "name"), s.Text(r, "text"), s.Text(r, "sprite")};
-                i.kind = static_cast<ItemClass>(s.Pick(r, "class", {"heal", "xp"}));
+                i.kind = static_cast<ItemClass>(s.Pick(r, "class", {"heal", "xp", "revive"}));
                 i.amount = s.Int(r, "amount", 0, 999);
                 def.items.push_back(i);
             }

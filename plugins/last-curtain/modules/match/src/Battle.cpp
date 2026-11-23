@@ -123,9 +123,13 @@ namespace umbra::match
         {
             if (s.now.acted)
                 return Why::AlreadyActed;
-            if (target < 0 || target >= static_cast<int>(s.units.size()) || s.units[U(target)].hp <= 0)
+            if (target < 0 || target >= static_cast<int>(s.units.size()))
                 return Why::NothingHere;
             const Unit &u = s.units[U(me)], &t = s.units[U(target)];
+            if (Fallen(t))
+                return Why::Fallen;
+            if (!Up(t))
+                return Why::NothingHere;
             if (!Beside(s.board, u, t))
                 return Why::OutOfRange;
             if (t.faction == u.faction)
@@ -256,7 +260,10 @@ namespace umbra::match
                 if (s.mode.respawn && ZoneOf(s.board, v.home) >= 0)
                     ScheduleSpawn(def, s, v.home);
             }
-            v.cell = -1;
+            // 2. Falls (Mode::fallsStay): it keeps its square and loses its action points; else it leaves the board.
+            v.ap = 0;
+            if (!s.mode.fallsStay)
+                v.cell = -1;
             if (s.battle.on && Place(s, victim) >= 0 && !GroupStanding(s, Place(s, victim) / 2)) // a whole group down: the battle is over
                 EndBattle(def, s);
         }

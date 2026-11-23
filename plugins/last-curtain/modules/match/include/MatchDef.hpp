@@ -17,12 +17,13 @@ namespace umbra::match
     enum class Role : std::uint8_t { Attacker, Defender, Supporter, Speedster, AllRounder };
     enum class Use : std::uint8_t { Battle, Board, Passive };
     // Strike, Shield: battle. Heal: battle or board. Hit: board. FirstStrike: passive.
-    enum class AbilityClass : std::uint8_t { Strike, Shield, Heal, Hit, FirstStrike };
+    // Revive (a fallen ally stands up), Remove (a fallen foe leaves the fight): board (Match.md "Falls").
+    enum class AbilityClass : std::uint8_t { Strike, Shield, Heal, Hit, FirstStrike, Revive, Remove };
     enum class Tier : std::uint8_t { Weak, Strong, Great, Guardian };
     enum class Behaviour : std::uint8_t { Stay, Flee, Stage, Guard, Hunt };
     // Who a board ability may aim at: the target symbol beside it on screen.
     enum class Target : std::uint8_t { Enemy, Ally, Self, Monster, Room, Any };
-    enum class ItemClass : std::uint8_t { HealItem, ExpGrant };
+    enum class ItemClass : std::uint8_t { HealItem, ExpGrant, Revive }; // Revive: amount = percent of max HP
     enum class TreasureKind : std::uint8_t { Item, Essence, Xp, Heal };
     enum class CardKind : std::uint8_t { Learn, Stat, Upgrade };
     enum class Stat : std::uint8_t { Hp, Attack, Defence, Speed, Move, Power, Cost }; // Power, Cost: what an upgrade raises or cuts

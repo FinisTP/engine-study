@@ -216,7 +216,7 @@ namespace umbra::match
         {
         case ActionKind::Attack: return CheckAttack(def, s, me, a.a);
         case ActionKind::BoardAbility: return CheckBoardAbility(def, s, me, a.a, a.b);
-        case ActionKind::UseItem: return CheckUseItem(def, s, me, a.a);
+        case ActionKind::UseItem: return CheckUseItem(def, s, me, a.a, a.b);
         case ActionKind::Answer: return CheckAnswer(def, s, me, a.a);
         case ActionKind::Perform: return CheckPerform(def, s, me);
         case ActionKind::Move: return CheckMove(def, s, u, a.a);
@@ -247,7 +247,11 @@ namespace umbra::match
                 all.push_back({ActionKind::BoardAbility, i8(slot), i8(u)});
         }
         for (int slot = 0; slot < maxItems; ++slot)
+        {
             all.push_back({ActionKind::UseItem, i8(slot)});
+            for (int u = 0; u < static_cast<int>(s.units.size()); ++u) // a revive item's targets
+                all.push_back({ActionKind::UseItem, i8(slot), i8(u)});
+        }
         for (int f = 0; f < static_cast<int>(s.floor.size()); ++f)
             all.push_back({ActionKind::PickUp, i8(f)});
         for (int c = 0; c < static_cast<int>(s.cards.size()); ++c)
@@ -305,7 +309,7 @@ namespace umbra::match
             Pick(def, s, me, a.a, a.b);
             break;
         case ActionKind::BoardAbility: BoardAbility(def, s, me, a.a, a.b); break;
-        case ActionKind::UseItem: UseItem(def, s, me, a.a); break;
+        case ActionKind::UseItem: UseItem(def, s, me, a.a, a.b); break;
         case ActionKind::Answer: Answer(def, s, me, a.a); break;
         case ActionKind::LevelUp: LevelUp(def, s, me, a.a); break;
         case ActionKind::Perform: Perform(def, s, me); break;

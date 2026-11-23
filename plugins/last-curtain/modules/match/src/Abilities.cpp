@@ -151,11 +151,16 @@ namespace umbra::match
             const AbilityDef &a = def.abilities[U(u.abilities[U(slot)])];
             if (a.use != Use::Board)
                 return Why::NothingHere;
-            if (target < 0 || target >= static_cast<int>(s.units.size()) || !Up(s.units[U(target)]))
+            if (target < 0 || target >= static_cast<int>(s.units.size()))
                 return Why::NothingHere;
             const Unit &t = s.units[U(target)];
-            // 1. Hit an enemy, heal your own side (yourself included), within range.
-            if ((a.kind == AbilityClass::Hit) == (t.faction == u.faction) || (a.kind == AbilityClass::Heal && t.kind != 0))
+            // 1. Revive and remove want a fallen target; everything else one standing (Match.md "Falls").
+            const bool onFallen = a.kind == AbilityClass::Revive || a.kind == AbilityClass::Remove;
+            if (onFallen != Fallen(t))
+                return onFallen ? Why::NotFallen : Fallen(t) ? Why::Fallen : Why::NothingHere;
+            // 2. Hit or remove an enemy, heal or revive your own side (yourself included), within range.
+            const bool foe = a.kind == AbilityClass::Hit || a.kind == AbilityClass::Remove;
+            if (foe == (t.faction == u.faction) || (a.kind == AbilityClass::Heal && t.kind != 0))
                 return Why::OwnSide;
             const int d = a.reach == RangeBy::Straight ? StraightTo(s.board, u.cell, t) : StepsTo(s.board, u.cell, t);
             if (d < 0 || d > a.range)
@@ -164,6 +169,8 @@ namespace umbra::match
                 return Why::FullHp;
             if (u.hp <= CostOf(def, u, slot))
                 return Why::TooCostly;
+            if (a.kind == AbilityClass::Revive && RevivePlace(def, s, target, me) < 0)
+                return Why::Blocked;
             return Why::Ok;
         }
 
@@ -174,7 +181,11 @@ namespace umbra::match
             const AbilityDef &a = def.abilities[U(ability)];
             u.hp = static_cast<std::int16_t>(u.hp - CostOf(def, u, slot));
             Unit &t = s.units[U(target)];
-            if (a.kind == AbilityClass::Heal)
+            if (a.kind == AbilityClass::Revive)
+                Revive(def, s, target, me, PowerOf(def, u, slot));
+            else if (a.kind == AbilityClass::Remove)
+                Remove(s, target, me);
+            else if (a.kind == AbilityClass::Heal)
             {
                 const int before = t.hp;
                 t.hp = static_cast<std::int16_t>(std::min<int>(t.maxHp, t.hp + PowerOf(def, u, slot)));
@@ -195,20 +206,36 @@ namespace umbra::match
             Acted(def, s);
         }
 
-        Why CheckUseItem(const MatchDef &, const MatchState &s, int me, int slot)
+        Why CheckUseItem(const MatchDef &def, const MatchState &s, int me, int slot, int target)
         {
             if (!Ready(s, me))
                 return Why::AlreadyActed;
-            return slot >= 0 && slot < maxItems && s.units[U(me)].items[U(slot)] >= 0 ? Why::Ok : Why::NothingHere;
+            if (slot < 0 || slot >= maxItems || s.units[U(me)].items[U(slot)] < 0)
+                return Why::NothingHere;
+            // A revive item stands up a fallen one of your side beside you; the others are for yourself (target -1).
+            if (def.items[U(s.units[U(me)].items[U(slot)])].kind != ItemClass::Revive)
+                return target == -1 ? Why::Ok : Why::NothingHere;
+            if (target < 0 || target >= static_cast<int>(s.units.size()))
+                return Why::NothingHere;
+            const Unit &u = s.units[U(me)], &t = s.units[U(target)];
+            if (!Fallen(t))
+                return Why::NotFallen;
+            if (t.faction != u.faction)
+                return Why::OwnSide;
+            if (!Beside(s.board, u, t))
+                return Why::OutOfRange;
+            return RevivePlace(def, s, target, me) < 0 ? Why::Blocked : Why::Ok;
         }
 
-        void UseItem(const MatchDef &def, MatchState &s, int me, int slot)
+        void UseItem(const MatchDef &def, MatchState &s, int me, int slot, int target)
         {
             Unit &u = s.units[U(me)];
             const ItemDef &item = def.items[U(u.items[U(slot)])];
             Log(s, LogKind::Item, me, u.items[U(slot)]); // b: the items.csv row, as when picked up
             u.items[U(slot)] = -1;
-            if (item.kind == ItemClass::HealItem)
+            if (item.kind == ItemClass::Revive)
+                Revive(def, s, target, me, item.amount);
+            else if (item.kind == ItemClass::HealItem)
                 u.hp = static_cast<std::int16_t>(std::min<int>(u.maxHp, u.hp + item.amount));
             else
                 GainXp(def, s, me, item.amount);

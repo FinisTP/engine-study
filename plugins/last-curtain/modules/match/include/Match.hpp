@@ -158,7 +158,8 @@ namespace umbra::match
         bool riteReady = false, riteUsed = false; // Le Thanh's rite: offered once in the whole game (plan 5 saves it)
     };
 
-    // A unit's squares: size x size from its cell, the top-left (Match.md "Large monsters").
+    // A unit's squares: size x size from its cell, the top-left (Match.md "Large monsters"), fallen or not.
+    // Covers: whether it stands on a square (a fallen unit covers none, so it doesn't block).
     std::vector<int> Squares(const Board &b, const Unit &u);
     bool Covers(const Board &b, const Unit &u, int cell);
 
@@ -181,7 +182,7 @@ namespace umbra::match
     enum class ActionKind : std::uint8_t { Move, Undo, Attack, BattleAbility, BoardAbility, UseItem, PickUp, Perform, Answer, LevelUp, EndTurn, Card };
 
     // Move: a = direction 0-3. Attack: a = unit. BattleAbility: a = ability slot. BoardAbility: a = slot,
-    // b = target unit. UseItem: a = item slot. PickUp: a = floor index. Answer: a = choice. LevelUp: a = 0 or 1.
+    // b = target unit. UseItem: a = item slot, b = the target of a revive item (else -1). PickUp: a = floor index. Answer: a = choice. LevelUp: a = 0 or 1.
     // Card: a = the dealt card.
     struct Action
     {
@@ -195,7 +196,9 @@ namespace umbra::match
     {
         Ok, NotYourTurn, NoMovesLeft, Blocked, AlreadyActed, OutOfRange, OwnSide, TooCostly,
         NotOnStage, NothingToPerform, NothingHere, BagFull, MustChoose, Over, FullHp,
-        Off // not in this fight's mode (Match.md "Modes")
+        Off,      // not in this fight's mode (Match.md "Modes")
+        Fallen,   // the target has fallen (Match.md "Falls")
+        NotFallen // revive and remove need a fallen target
     };
 
     int Current(const MatchState &s); // the unit that acts next, -1 when the match is over

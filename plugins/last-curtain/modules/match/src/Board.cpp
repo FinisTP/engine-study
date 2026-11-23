@@ -238,8 +238,9 @@ namespace umbra::match
 
     std::vector<int> Squares(const Board &b, const Unit &u)
     {
+        // Where it lies, fallen or not (range to a fallen unit counts); Covers is where it stands.
         std::vector<int> out;
-        if (u.cell < 0 || u.hp <= 0)
+        if (u.cell < 0)
             return out;
         const int x0 = u.cell % b.width, y0 = u.cell / b.width;
         for (int y = y0; y < y0 + u.size && y < b.height; ++y)

@@ -8,6 +8,7 @@ target_sources(
         src/Board.cpp
         src/Match.cpp
         src/Turn.cpp
+        src/Fight.cpp
         src/Battle.cpp
         src/Abilities.cpp
         src/Stage.cpp

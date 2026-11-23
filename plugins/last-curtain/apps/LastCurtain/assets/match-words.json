@@ -56,7 +56,9 @@
     "Over": "The match is over.",
     "NoTarget": "No one in reach to aim at.",
     "FullHp": "Already at full HP: the heal would be wasted.",
-    "Off": "Not in this fight."
+    "Off": "Not in this fight.",
+    "Fallen": "That one has fallen.",
+    "NotFallen": "Only for one who has fallen."
   },
   "actions": {
     "undo": "Undo move",

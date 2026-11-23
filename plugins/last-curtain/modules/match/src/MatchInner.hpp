@@ -66,11 +66,11 @@ namespace umbra::match::inner
     int CostOf(const MatchDef &def, const Unit &u, int slot);  // ... its HP cost, never below 0
     Why CheckLevelUp(const MatchDef &def, const MatchState &s, int me, int choice);
     Why CheckBoardAbility(const MatchDef &def, const MatchState &s, int me, int slot, int target);
-    Why CheckUseItem(const MatchDef &def, const MatchState &s, int me, int slot);
+    Why CheckUseItem(const MatchDef &def, const MatchState &s, int me, int slot, int target);
     Why CheckAnswer(const MatchDef &def, const MatchState &s, int me, int choice);
     void LevelUp(const MatchDef &def, MatchState &s, int me, int choice);
     void BoardAbility(const MatchDef &def, MatchState &s, int me, int slot, int target);
-    void UseItem(const MatchDef &def, MatchState &s, int me, int slot);
+    void UseItem(const MatchDef &def, MatchState &s, int me, int slot, int target);
     void Answer(const MatchDef &def, MatchState &s, int me, int choice);
 }
 
@@ -81,6 +81,16 @@ namespace umbra::match::inner
     void TakeCard(const MatchDef &def, MatchState &s, int me, int card);
     void RoomBack(const MatchDef &def, MatchState &s, int claimed, int kind); // a claimed room comes back later
     void RunRoomSpawns(const MatchDef &def, MatchState &s);                 // at the start of each round
+}
+
+namespace umbra::match::inner
+{
+    // Fight.cpp (Match.md "Falls", "Freeing and the end")
+    // Where a revived unit stands: its own square if there is room, else the nearest square with room,
+    // ties nearest the reviver, then the lower cell; -1 if none.
+    int RevivePlace(const MatchDef &def, const MatchState &s, int unit, int reviver);
+    void Revive(const MatchDef &def, MatchState &s, int unit, int reviver, int percent); // stands up with percent of max HP (at least 1)
+    void Remove(MatchState &s, int unit, int by); // a fallen unit leaves the fight for good
 }
 
 namespace umbra::match::inner
