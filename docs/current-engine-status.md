@@ -15,6 +15,10 @@
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
 
+## Update 2026-11-24, overnight (The Last Curtain, campaign plan 4: `#UMBRA-352`-`#UMBRA-364`)
+
+- **Fights you can play (plan 4).** The campaign's rule additions (Tí's Đưa tin and Chân sáo, the Rat's theft and darts, marks, drops, use flags, hazards, breath rows, windows), stage files built into fights, enemy behaviours, scenes at their moments, the slice's six fights (T1, T3, Stage 1, three skirmishes with three twists each) and a campaign soak whose bands hold. Play one with `build stage <id>`; the HUD is still the faction match's until plan 5. Drafts and the play check open (`testing/s48-campaign-stages.md` §4).
+
 ## Update 2026-11-23, late evening (The Last Curtain, campaign plans 2 and 3: `#UMBRA-334`-`#UMBRA-346`)
 
 - **Fight rules (plan 2).** One Speed order holds characters and monsters; a campaign mode adds falls and revive, biding and AP, cutting a strung recruit free (the gold knot), the bosses' win and the rite. The faction match is unchanged except for the one order; its soak holds (49.1% side 0, 26.5% comebacks). MSVC and the user's match check open (`testing/s46-campaign-rules.md` §4).
