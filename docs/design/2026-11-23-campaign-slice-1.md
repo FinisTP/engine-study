@@ -235,8 +235,22 @@ where the 2026-11-23 sprites are hooked in.
   never-say list, length, the speaker's dialect markers) and writes a report for the user to read.
   Pass: the user is satisfied with the lines and the automatic checks pass for most of them [call:
   90%].
+- **Model comparison (same tool):** it takes several model files and writes one report per model, side
+  by side, so Qwen3 4B is compared with Vietnamese-trained models of the same size [call: first
+  candidates Gemma-SEA-LION-v4-4B, Sailor-4B-Chat, Arcee-VyLinh 3B and SEA-LION v4.5 E2B; the user
+  downloads them]. A candidate must load in the pinned llama.cpp (the tool says so if it doesn't), fit
+  the card with the game (about 3 GB, measured by the tool), answer in under about 1.5 s a line, and
+  carry a licence that lets it ship inside the game; a newer llama.cpp is a separate, reviewed change.
+  The user picks the winner from the reports.
 - **If it fails** (the design's plan): every line is hand-written in Vietnamese, and the model only
   chooses among authored lines (or is left out).
+- **Voice test (alongside, outside the game):** ComfyUI's installed voice nodes are all paid cloud
+  services, so they are not used. The local test uses VieNeu-TTS v3 Turbo (Apache 2.0, runs on the
+  CPU, preset Northern, Central and Southern voices) on the same test lines, one script writing one
+  sound file per line, for the user to listen to [call: a Central voice for Tí and Bà Mai, a Southern
+  one for Bảo, the user picks Le Thanh's]. No voice cloning of real people. If voice is kept, only
+  **authored** lines are voiced, ahead of time, as Ogg files in the assets; model lines stay text, so
+  the game ships no second model [call]. Voicing itself is a later slice.
 - **Authored text:** Claude drafts the Vietnamese (lines, fragments, aims, menus); the user reviews it
   as a native speaker; the line guard gains Vietnamese checks.
 - **Screen text:** the game's own words files get a Vietnamese set, chosen by an option `language`,
@@ -270,8 +284,8 @@ where the 2026-11-23 sprites are hooked in.
 
 ## 8. Order of work [call]
 
-1. **The model's Vietnamese test** tool and test set, so the user can run it on the PC while the rest
-   is built; fonts.
+1. **The model's Vietnamese test** tool and test set, with the side-by-side model comparison, so the
+   user can run it on the PC while the rest is built; the voice test script; fonts.
 2. **Rules:** the switches, biding (both modes), falls, revive, game over, boss win, freeing; the
    faction match's tests and soak still pass.
 3. **Stages:** the stage file and cast sheet, the stage builder, T1, T3 and Stage 1 data, the Rat's
@@ -293,4 +307,4 @@ within the rules above.
 
 Stage 2's party (who of the player, Bảo, Bà Mai and Tí fights); Bảo and Mai's longer café roles and Mai's son; revive
 items' names and drops now money is gone; Le Thanh's twelve story pieces' words (piece 1 is needed
-now); the songs; whether the player can change class.
+now); the songs; voiced lines (after the voice test); whether the player can change class.
