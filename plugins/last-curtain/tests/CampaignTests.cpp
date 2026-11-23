@@ -743,3 +743,70 @@ TEST_CASE("Every stage and refill holds its bands in balance.json (campaign plan
         }
     }
 }
+
+#include <CampaignCafe.hpp>
+
+namespace
+{
+    campaign::Recipes TheRecipes()
+    {
+        campaign::Recipes r;
+        std::vector<core::Diagnostic> d;
+        REQUIRE(campaign::LoadRecipes(data / "recipes.json", MatchData(), r, d));
+        return r;
+    }
+
+    std::vector<campaign::StageDef> TheStages()
+    {
+        std::vector<campaign::StageDef> out;
+        for (const char *id : {"t1", "t3", "stage1", "sk_props", "sk_stairs", "sk_boxoffice"})
+        {
+            campaign::StageDef s;
+            std::vector<core::Diagnostic> d;
+            REQUIRE(campaign::LoadStage(data / "stages" / (std::string(id) + ".json"), TheCast(), MatchData(), data / "scenes", s, d));
+            out.push_back(s);
+        }
+        return out;
+    }
+}
+
+TEST_CASE("Recipes: what is missing and where it is found; brewing spends; cafe-only items never take a slot (campaign plan 6)")
+{
+    const match::MatchDef def = MatchData();
+    const campaign::Recipes recipes = TheRecipes();
+    const campaign::Recipe *jam = recipes.Find("mut_gung");
+    REQUIRE(jam);
+    CHECK(jam->kind == "memory");
+    CHECK(jam->forWho == "ti");
+    campaign::Save save;
+    // 1. Nothing in storage: both are missing, each with where it comes from.
+    std::vector<campaign::Missing> lacks = campaign::Lacks(save, *jam, TheStages());
+    REQUIRE(lacks.size() == 2);
+    CHECK(lacks[0].item == "duong");
+    CHECK(lacks[0].where == "Hành lang chân dung");
+    CHECK(lacks[1].item == "gung");
+    CHECK(lacks[1].where.find("Phòng vé") != std::string::npos);
+    CHECK_FALSE(campaign::Brew(save, *jam));
+    // 2. An unknown source is "?".
+    campaign::Recipe odd = *jam;
+    odd.needs = {{"programme", 1}};
+    CHECK(campaign::Lacks(save, odd, TheStages())[0].where == "?");
+    // 3. With both: it brews, spending them.
+    save.storage = {{"gung", 2}, {"duong", 1}};
+    CHECK(campaign::Lacks(save, *jam, TheStages()).empty());
+    CHECK(campaign::Brew(save, *jam));
+    CHECK(save.storage["gung"] == 1);
+    CHECK(save.storage["duong"] == 0);
+    CHECK_FALSE(campaign::Brew(save, *jam));
+    // 4. Slots: a bandage may be carried, ginger and the keepsake may not.
+    CHECK(campaign::SlotOk(def, "bandage"));
+    CHECK_FALSE(campaign::SlotOk(def, "gung"));
+    CHECK_FALSE(campaign::SlotOk(def, "giay_gap_tu"));
+    // 5. A broken recipe names its field.
+    std::vector<core::Diagnostic> d;
+    campaign::Recipes bad;
+    CHECK_FALSE(campaign::LoadRecipes(Write("recipes.json", R"({"format":"umbra.lc-recipes","version":1,"recipes":[{"id":"x","kind":"odd","needs":{"nothing":1}}]})"), def, bad, d));
+    REQUIRE(d.size() == 2);
+    CHECK(d[0].field == "recipes[0].kind");
+    CHECK(d[1].field == "recipes[0].needs.nothing");
+}

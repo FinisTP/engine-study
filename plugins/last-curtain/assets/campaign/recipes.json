@@ -1,0 +1,11 @@
+{
+  "format": "umbra.lc-recipes",
+  "version": 1,
+  "note": "Drinks brewed in the cafe (campaign plan 6). memory: brings back a recruit's memory; general: a capped boost.",
+  "recipes": [
+    {"id": "mut_gung", "name": "Mứt gừng", "kind": "memory", "for": "ti", "needs": {"gung": 1, "duong": 1},
+     "text": "Gừng sên đường, cay mà ngọt."},
+    {"id": "nuoc_gung", "name": "Nước gừng", "kind": "general", "needs": {"gung": 1}, "stat": "maxHp", "amount": 2,
+     "text": "Ấm bụng, ấm tay. Thêm 2 HP tối đa."}
+  ]
+}

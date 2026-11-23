@@ -13,6 +13,7 @@ target_sources(
         src/Brain.cpp
         src/Moments.cpp
         src/Soak.cpp
+        src/Cafe.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
@@ -20,6 +21,7 @@ target_sources(
             include/Campaign.hpp
             include/Campaign.md
             include/CampaignSoak.hpp
+            include/CampaignCafe.hpp
 )
 
 target_compile_features(UmbraCampaign PUBLIC cxx_std_20)
