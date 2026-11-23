@@ -1,10 +1,11 @@
 # The Last Curtain: the campaign's first slice — design (2026-11-23)
 
-**Status:** for the user's approval. Revised 2026-11-23 with the user's answers to two reviews and the
-evaluation (section 11), and the user's confirmation of the dialog scenes (7.11). "The user" marks the
-user's decisions; **[call]** marks Claude's proposals, which the user can still change. Builds on
+**Status:** for the user's approval. Revised 2026-11-23 with the user's answers to two reviews, the
+evaluation, the dialog scenes (7.11) and the holes (section 12). "The user" marks the user's
+decisions; "(accepted)" marks Claude's proposals the user accepted on 2026-11-23; **[call]** marks new
+proposals, which the user can still change; section 13 lists what is still vague. Builds on
 `design-changes-2026-11-22.md` (the new design), `campaign-content-2026-11-22.md` (recruits, zodiacs,
-stages), `cast-2-2026-11-22.md` (Bảo, Mai, the player, Le Thanh, ghosts) and the art made on
+stages), `cast-2-2026-11-22.md` (Bảo, Mai, the player, Lệ Thanh, ghosts) and the art made on
 2026-11-23 (`assets/art/README.md`).
 
 ## 1. Intent
@@ -24,7 +25,7 @@ remember, join) works.
 ## 2. Goals
 
 1. **The flow:** T1 *Khách lạ* → T2 *Quán cà phê* → T3 *Hành lang chân dung* → Stage 1 *Phòng vé*
-   (the Rat) → the café, where Le Thanh regains her first power (restoring memories) → two café visits
+   (the Rat) → the café, where Lệ Thanh regains her first power (restoring memories) → two café visits
    that restore Bé Tí → Tí joins.
 2. **One fight engine, switches set by data** (the user's choice, option A): campaign and faction
    match share the board, battles, abilities, items, monsters and bots; named rules turn on or off per
@@ -36,10 +37,11 @@ remember, join) works.
    stage, café, or quit); **win** by defeating the stage's zodiac (the user).
 6. **Stage files:** hand-shaped room maps with authored enemies, items, switches and aims.
 7. **The campaign save (v2):** progress, party, levels, who was freed and how, memories restored,
-   Le Thanh's unlocks. **No save in the middle of a stage**: a stage is only ever restarted from its
+   Lệ Thanh's unlocks. **No save in the middle of a stage**: a stage is only ever restarted from its
    beginning (the user). A developer-only mid-stage save exists for debugging and balancing.
-8. **The calm café** (the user): one walkable room, no timers, no failure; Le Thanh hosts and walks
-   among the guests; a drink in 1–2 steps, then a talk with choices that count.
+8. **The calm café** (the user): one walkable room, no timers, no failure; Lệ Thanh hosts and walks
+   among the guests; talks with choices that count (drink serving is off for now, the user); and the
+   place where abilities and items are assigned (taught in T2).
 9. **Vietnamese from the start** (the user): every word on screen in Vietnamese; fonts that carry it;
    the model's Vietnamese tested first, with hand-written lines ready if it fails.
 10. **Dialog scenes** (the user, 2026-11-23): one conversation system for the café, the start and end
@@ -52,9 +54,9 @@ remember, join) works.
 Stages 2–12 and the final stage; the quick match's 12-against-12 pick screen (but the one Speed order
 reaches the faction match now; biding there is for later, the user); boons, power cards, permanent
 boosts and auto-battle; heroes and boon givers in the café; the café growing props after each area (a
-ticket rack may be the first, if cheap [call]); zodiacs that adapt on retries through the learned
+ticket rack may be the first, if cheap (accepted)); zodiacs that adapt on retries through the learned
 policy; free-typed café answers; the storyteller choosing visitors; cutscene stills (not painted yet:
-scenes are dialog scenes over the room, the board or a backdrop); new sounds and music (reuse); Le
+scenes are dialog scenes over the room, the board or a backdrop); new sounds and music (reuse); Lệ
 Thanh's alternate forms in play.
 
 ## 4. Anti-goals (a failure even if it works)
@@ -103,7 +105,7 @@ gets today's behaviour plus the shared Speed order; a stage file sets its own.
 | `biding` | off (for later, the user) | **on** | See 7.2 |
 | `fallsStay` | off | on | 0 HP: the unit falls and stays on its square until revived |
 | `playerLoss` | off | on | The living player falling ends the stage in a game over |
-| `win` | score after 30 rounds | `boss` | `boss`: the stage is won when the unit marked `boss` is defeated; also lost if the whole side is down |
+| `win` | score after 30 rounds | `boss` | `boss`: the stage is won when the unit marked `boss` is defeated, plus any extra condition the stage sets (Stage 1: Tí freed, the user); also lost if the whole side is down |
 | `roundLimit` | 30 | 0 (none) | A stage may set a limit as its aim (a timed stage) |
 
 One campaign stage turns `perform` and `respawn` back on as its gimmick (the user; which stage is for
@@ -149,35 +151,37 @@ balance targets stay as they are.
 - **Fallen units don't block** (the user): others walk through and stand on their square, and a fallen
   unit doesn't count toward the tile's limit of 2.
 - **Revive:** a `revive` effect (a spell or an item; in Stage 1 a revive item on the map, and Bà Mai's
-  cold rice [call]) raises a fallen unit on its side with part of its HP. **If its square already holds
+  cold rice (accepted)) raises a fallen unit on its side with part of its HP. **If its square already holds
   2 units, it stands up on the nearest square it can stand on** (the user); ties go to the square
-  nearest the reviver, then a fixed order, so tests are repeatable [call]. **Enemies revive too** (the
+  nearest the reviver, then a fixed order, so tests are repeatable (accepted). **Enemies revive too** (the
   user): a monster with a revive ability can raise its own fallen.
 - **Removed for good** (the user): certain abilities (a `remove` effect) take a fallen unit off the
   stage; it can't be revived in this stage, but **returns in the next stage**. Players' allies too.
 - **The player falls → game over:** the fight stops at once; a screen offers **Thử lại** (retry: the
   stage from its beginning), **Về quán** (back to the café) or **Thoát** (quit) (the user). **Before the
   café is unlocked (T1), the only choice is Thử lại** (the user). The whole side down is the same
-  (it can't happen without the player falling).
-- **Le Thanh's rite of resurrection** (the user, 2026-11-23): an early power that **revives every unit
+  (it can't happen without the player falling). **Nobody on the Rat's side revives in Stage 1** (the
+  user), so Tí's freeing is never contested there; enemy revives come in later stages.
+- **Lệ Thanh's rite of resurrection** (the user, 2026-11-23): an early power that **revives every unit
   on the player's side to full HP, once in the whole game**, so a late game over doesn't have to cost
-  the whole stage. [call: it is unlocked after T3, where falls are taught; while unused it appears as a
+  the whole stage. (accepted: it is unlocked after T3, where falls are taught; while unused it appears as a
   choice on the game-over screen (*Lễ cầu hồn*), and the fight goes on where it stopped; its use is
-  written to the save at once, so losing the stage afterwards doesn't give it back.]
+  written to the save at once, so losing the stage afterwards doesn't give it back.)
 - **Strings and the gold knot** (the user, 2026-11-23). Red strings mark a zodiac's control; the gold
   knot marks a person to free (recruits and boon givers).
   1. **Freeing:** a gold-knot specter **falls at 0 HP** like anyone; it is freed when its strings are
      **cut** by the player standing next to it and spending an action. Until then its strings hang
      slack, and **its side can revive it** strung (a race against the zodiac's revives).
-  2. **Only the living player can cut** (with Le Thanh's fan), so freeing always puts the player, whose
+  2. **Only the living player can cut** (with Lệ Thanh's fan), so freeing always puts the player, whose
      fall is game over, at risk.
-  3. **Never cut, or removed for good** by a removal ability: it leaves this stage and **comes back
-     strung in a later stage** (the next stage fought, a replay included [call]); one never freed by
-     the end **fights for Le Thanh in the finale**.
+  3. **Never cut, or removed for good** by a removal ability: **it is gone for good** (the user,
+     2026-11-23): it doesn't come back in later stages. The only way to recruit it is to replay its
+     stage and free it there.
   4. **Freeing isn't needed to win:** the stage is won when the zodiac falls, but a specter still strung
-     then stays Le Thanh's (rule 3). **No exception, Stage 1 included** (the user, 2026-11-23): Tí acts
-     like every other character. Le Thanh says at the start of the stage that he must be cut free; a
-     player who misses it replays the stage to free him (rule 3).
+     then is gone (rule 3). **Stage 1 is the exception** (the user, 2026-11-23, replacing the earlier
+     "no exception"): **freeing Tí is part of winning it**, so the player has to reach Tí and cut him
+     free, which teaches the recruit mechanic. The stage is won when Tí is freed **and** the Rat is
+     defeated.
   5. **Ordinary red ghosts:** strings don't matter in this slice; they are simply defeated. Later,
      cutting a fallen one may send it to the café and shrink the finale's audience.
   6. **Zodiacs drawing power from their strings:** not in this slice; kept for later bosses (the user).
@@ -185,9 +189,8 @@ balance targets stay as they are.
      strings until cut; cutting plays a snap and the warm gold light.
   The freeing is logged with when, where and what happened, for the café to remember (only the player
   cuts, so "who" is always the player).
-- **Le Thanh's hint** (the user, 2026-11-23, simplified): she gives hints **only at the start of a
-  stage**, in the opening scene and the hint line (in Stage 1: Tí's gold knot must be cut before the
-  Rat falls). There are no warnings during the fight (an earlier list of in-fight warnings was dropped
+- **Lệ Thanh's hint** (the user, 2026-11-23, simplified): she gives hints **only at the start of a
+  stage**, in the opening scene and the hint line (in Stage 1: Tí must be cut free to win). There are no warnings during the fight (an earlier list of in-fight warnings was dropped
   to keep the plan simple). The hint is data (`aims` in the stage file). The recap after the fight
   names anyone left strung.
 
@@ -199,22 +202,29 @@ and the fix, and the stage doesn't start):
   level, the fight backdrop, the music.
 - `map`: the hand-shaped room as rows of text (one character per square: wall, floor, door, window,
   hazard…), read into the existing `Board`, so the board's drawing, paths and light rule work
-  unchanged. The mirror fairness check is off for campaign maps [call].
+  unchanged. **Campaign maps are not symmetric** (the user): they are shaped to challenge. The party
+  starts clustered in one place; monsters are spread around the map, so the player takes them on in
+  an order. The mirror fairness check is off for them.
 - `party`: who fights (`player`, ally ids such as `bao`, `mai`, recruit ids), start squares.
 - `units`: enemies and ghosts with their monster rows, squares, sides, nature (friendly, neutral,
-  aggressive), flags (`boss`, `recruit`), and a height scale [call: ordinary ghosts 0.8].
+  aggressive), flags (`boss`, `recruit`), a height scale (accepted: ordinary ghosts 0.8), and a
+  **behaviour** (the user):
+  - **aggressive after n rounds:** waits, then comes towards the party from round n;
+  - **passive:** attacks only what it can see;
+  - **reinforcement:** appears at round n, at a square the file names.
 - **Sides and turns:** the party is side 0; enemies are on side 1, hostile to side 0 only; friendly and
   neutral ghosts are on their own sides with their nature's behaviour. **Everyone acts in the one Speed
   order** (the user, 7.1).
 - `items`: what lies on which square (the bandage revive in Stage 1). **Items picked up are kept
-  between stages** in the party's bag (the user, 2026-11-23), so exploring a room pays off; a used item
-  is gone. **Each map item can be taken once** (the user): a replay offers only the items not yet
+  between stages** (the user), so exploring a room pays off; a used item is gone. **Items live in each
+  character's 4 item slots** (the user): there is no bigger bag, so the player has to manage capacity.
+  **Each map item can be taken once** (the user): a replay offers only the items not yet
   taken; one already taken doesn't come back. Items picked up in a lost attempt are lost with it (7.6).
 - `rules`: the switches of 7.1.
 - `gimmicks`: a small list of named gimmicks with numbers. Stage 1's is **ticket windows**: windows open
   and close each round and let out rat specters; items the Rat steals sit on a window until he is hit,
-  then drop on his square for anyone to pick up [call]. It reuses the existing spawn code.
-- `aims`: the stage-start hints (Le Thanh's voice), the teaching beats (what each tutorial
+  then drop on his square for anyone to pick up (accepted). It reuses the existing spawn code.
+- `aims`: the stage-start hints (Lệ Thanh's voice), the teaching beats (what each tutorial
   teaches, shown when it first matters), and the recap after the fight.
 - `scenes`: the dialog scenes (7.11) at the start and end, and the ones a moment in the fight sets
   off (a unit falls, a round begins, the boss drops below some HP, a freeing).
@@ -227,38 +237,42 @@ where the 2026-11-23 sprites are hooked in.
 
 | | Party | Enemies | Teaches | After |
 |---|---|---|---|---|
-| **T1 Khách lạ** | the player alone, level 1 | rat specters (aggressive ghosts) | moving, attacking | Le Thanh's rescue (scene) [call: game over still applies, but T1 is tuned so falling is unlikely] |
-| **T2 Quán cà phê** | — | — | café talk | meet Bảo and Bà Mai |
+| **T1 Khách lạ** | the player alone, level 1 | rat specters (aggressive ghosts) | moving, attacking | Lệ Thanh's rescue (scene) (accepted: game over still applies, but T1 is tuned so falling is unlikely) |
+| **T2 Quán cà phê** | — | — | café talk; **assigning abilities and items** (the user): Bảo and Bà Mai come with some unassigned abilities, and Lệ Thanh gives some basic items | meet Bảo and Bà Mai |
 | **T3 Hành lang chân dung** | player + Bảo + Bà Mai (they join for good at T2, the user), level 2 | specters, a mini-boss | biding, falls, reviving, game over | — |
-| **1 Phòng vé** | player + **Bảo + Bà Mai**, permanent allies from the second tutorial on (the user), level 3 | the Rat (40 HP; *Móc túi* steals an item from an adjacent unit, *Chạy làng* darts 3 tiles after a battle), rat specters from the ticket windows, **Bé Tí as a red specter with the gold knot** | items, stealing, the gold knot, the first revive item | Le Thanh's story, piece 1 (money); she regains her first power: **restoring memories** |
+| **1 Phòng vé** | player + **Bảo + Bà Mai**, permanent allies from the second tutorial on (the user), level 3 | the Rat (40 HP; *Móc túi* steals an item from an adjacent unit, *Chạy làng* darts 3 tiles after a battle), rat specters from the ticket windows, **Bé Tí as a red specter with the gold knot** | items, stealing, **the recruit mechanic** (freeing Tí is part of the win), the first revive item | Lệ Thanh's story, piece 1 (money); she regains her first power: **restoring memories** |
 
 - **Bảo and Bà Mai are permanent allies** from T2 on (the user, 2026-11-23, replacing "café characters
   who join only in T3"), so the allies are the ten recruits plus these two. **Bé Tí is freed in Stage
   1** (the user) and joins once his memories are restored.
 - **Bảo's and Mai's kits** for T3 and Stage 1 are as written in `cast-2` (scalpel, diagnosis, the death
-  paper; tend, mend, cold rice) [call: Mai's cold rice also revives, in T3 where reviving is taught
-  and in Stage 1, so a stolen bandage never leaves the party without a revive].
-- **Stats** follow the class lines; ordinary ghosts at about 60% [call]; the Rat as written; first
-  numbers, tuned by a campaign soak (7.10).
-- **Levels:** the cap rises to **15** with new XP steps in data; the slice reaches level 4 at most.
-  Characters sitting out still earn part of the XP [call] (no one sits out in this slice); **replays of a
+  paper; tend, mend, cold rice) (accepted: Mai's cold rice also revives, in T3 where reviving is taught
+  and in Stage 1, so a stolen bandage never leaves the party without a revive).
+- **Enemy stats** (the user): a ghost or a zodiac is built like a player character of a class at a
+  level, then scaled. A zodiac is **buffed** above that line (example: a level-3 attacker has 6
+  attack; the Rat as a fighter at that level gets 8); an ordinary ghost has **about 60%** (about 4).
+  Difficulty settings later change the buff. First numbers are tuned by a campaign soak (7.10).
+- **Levels:** the cap rises to **15** with new XP steps in data; the player gains about **one level a
+  stage** (the user); the slice reaches level 4 at most. **Recruits join at a fixed level** set in
+  data; **Tí joins at level 3** (the user).
+  Characters sitting out still earn part of the XP (accepted) (no one sits out in this slice); **replays of a
   cleared stage** give XP up to its cap (the user).
 
 ### 7.6 The campaign save (v2) and flow
 
 - One file, versioned 2, written whole: the player's typed **name** and **male or female**; the
   chapter reached; each character's level, XP, stats, abilities and upgrades (today's career fields);
-  the party and its bag of items; which map items have been taken; whether the rite has been used; who
-  was freed, in which stage, by whom and how (the fight facts); each recruit's fragments restored; Le
+  the party and each character's 4 item slots and assigned abilities; which map items have been taken; whether the rite has been used; who
+  was freed, in which stage, by whom and how (the fight facts); each recruit's fragments restored; Lệ
   Thanh's unlocks; café visits; talk answers that count.
-- The faction match's v1 career is **not migrated** (no players yet) [call]; the faction match keeps
+- The faction match's v1 career is **not migrated** (no players yet) (accepted); the faction match keeps
   working without a career, as quick match will.
 - **No save in the middle of a stage** (the user): quitting a stage loses it, and every retry starts the
   stage over. The campaign file is written only between stages and in the café. A **developer
   mid-stage save** (a tool command or debug option, off in a shipped game) stores the `MatchState` for
   debugging and balancing only (the user).
-- **What a lost stage keeps** [call]: nothing. A game over or a quit returns to the save from before
-  the stage, so XP and items from the failed attempt are gone (the user's "only full reset").
+- **A lost stage keeps nothing** (the user): a game over or a quit returns to the save from before
+  the stage, as if the stage was never started: XP, items and **the café's timeline** are as they were.
 - **The flow:** title → new game (name, male or female) → T1 → T2 → T3 → Stage 1 → café → (a fight) →
   café. Between stages the player picks from a short list: the next stage, a cleared stage to replay
   for XP, or the café.
@@ -267,19 +281,24 @@ where the 2026-11-23 sprites are hooked in.
 
 - **Removed:** the 150 s shift, patience timers, tips, wrong-drink failure, takings, money.
 - **The room:** the walkable 3D room as built, with the painted back wall (done, #312) and the guests
-  at tables. **Le Thanh doesn't dance in play** (the user): she walks around, appears at random places
+  at tables. **Lệ Thanh doesn't dance in play** (the user): she walks around, appears at random places
   in the room, and starts conversations like any other guest. **Her dancing lives in the words only**
   (the user): a line of description when you arrive or when she moves ("Lệ Thanh xoay một vòng giữa
   quán, tà áo đỏ lướt qua những chiếc ghế mây…"). The provisional `lethanh/dance` painting isn't used
-  in play [call].
-- **Guests:** spirits you met in fights, plus Bảo and Bà Mai. Zodiacs never appear (the user).
-- **A visit:** each guest asks for a drink made in 1–2 steps at the stations; serving it opens a talk.
-  A talk is a dialog scene (7.11) of a few lines and a few choices; serving the right drink counts as
-  a good answer [call]. No talk can be failed.
-- **Restoring Tí** (once Le Thanh has the power): Tí has four authored fragments (his mother's name,
-  the Tết promise, the message, the white sand). **Each visit restores two** [call], so two visits
-  restore him and he joins, glowing blue, cloth gone. **A new visit opens after any fight** (the next
-  stage, or a replay) [call]. In the slice this means a replay before Tí's second visit; how Tí's case
+  in play (accepted).
+- **Guests:** in the slice **only Bảo and Bà Mai** (the user), plus Tí once freed, for his restoring;
+  later, spirits you met in fights. Zodiacs never appear (the user).
+- **Drink serving is switched off for now** (the user): a visit is talking and answering only. The
+  stations stay in the room, unused.
+- **A visit:** talking to a guest opens a talk: a dialog scene (7.11) of a few lines and a few choices.
+  No talk can be failed.
+- **Assignment (taught in T2, the user):** in the café the player assigns abilities and items to the
+  characters. Bảo and Bà Mai arrive with some unassigned abilities; Lệ Thanh hands over some basic
+  items. More hub features come later, and T2 grows with them.
+- **Restoring Tí** (once Lệ Thanh has the power): Tí has four authored fragments (his mother's name,
+  the Tết promise, the message, the white sand). **Each visit restores two** (accepted), so two visits
+  restore him and he joins, glowing blue, cloth gone. **A new visit opens after a won fight** (the next
+  stage, or a won replay); **a lost fight doesn't move the café's timeline** (the user). In the slice this means a replay before Tí's second visit; how Tí's case
   is handled is left for later (the user, section 10).
 - **Memory:** Tí's lines may mention how he was freed (who cut his string, what happened), from the
   saved fight facts.
@@ -287,11 +306,11 @@ where the 2026-11-23 sprites are hooked in.
 ### 7.8 Words, Vietnamese and the model
 
 - **The model's Vietnamese test comes first** (the user's decision to start in Vietnamese makes it
-  gating). A tool command runs a model on the user's PC over a fixed test set: Tí, Bảo, Bà Mai and Le
+  gating). A tool command runs a model on the user's PC over a fixed test set: Tí, Bảo, Bà Mai and Lệ
   Thanh, each in a handful of café situations, from their voice sheets and fragments. It checks every
   line automatically (Vietnamese diacritics present, no English words, the never-say list, length, the
   speaker's dialect markers) and writes a report for the user to read. Pass: the user is satisfied with
-  the lines and the automatic checks pass for most of them [call: 90%].
+  the lines and the automatic checks pass for most of them (accepted: 90%).
 - **Arcee-VyLinh 3B is tested first** (the user, 2026-11-23; Q4_K_M, 1.9 GB, from
   `QuantFactory/Arcee-VyLinh-GGUF`). Its card says Apache 2.0, but it is merged with
   Qwen2.5-3B-Instruct, whose licence (qwen-research) forbids commercial use without Alibaba's
@@ -310,54 +329,59 @@ where the 2026-11-23 sprites are hooked in.
 - **Voice test (alongside, outside the game):** ComfyUI's installed voice nodes are all paid cloud
   services, so they are not used. The local test uses VieNeu-TTS v3 Turbo (Apache 2.0, runs on the
   CPU, preset Northern, Central and Southern voices) on the same test lines, one script writing one
-  sound file per line, for the user to listen to [call: a Central voice for Tí and Bà Mai, a Southern
-  one for Bảo, the user picks Le Thanh's]. No voice cloning of real people. **First samples**
+  sound file per line, for the user to listen to (accepted: a Central voice for Tí and Bà Mai, a Southern
+  one for Bảo, the user picks Lệ Thanh's). No voice cloning of real people. **First samples**
   (2026-11-23, the user's VieNeu on port 7860): six lines (Tí as Quang Sơn and as Ngọc Trân, Bà Mai as
-  Ngọc Trân, Bảo as Thái Sơn, Le Thanh as Ngọc Linh and as Thục Đoan) took 10–15 s each for 5–7 s of
+  Ngọc Trân, Bảo as Thái Sơn, Lệ Thanh as Ngọc Linh and as Thục Đoan) took 10–15 s each for 5–7 s of
   sound, fine for lines made ahead of time. **Tí's child voice** (the user): VieNeu has no child voice,
   so the script raises the pitch of a preset voice (a pitch shift with formant correction, so it
-  sounds younger rather than sped up [call: try +3 to +5 semitones; the user judges]). If voice is
+  sounds younger rather than sped up (accepted: try +3 to +5 semitones; the user judges)). If voice is
   kept, only **authored** lines are voiced, ahead of time, as Ogg files in the assets; model lines stay
-  text, so the game ships no second model [call]. Voicing itself is a later slice.
+  text, so the game ships no second model (accepted). Voicing itself is a later slice.
 - **Authored text:** Claude drafts the Vietnamese (lines, fragments, aims, menus); the user reviews it
-  as a native speaker; the line guard gains Vietnamese checks.
+  as a native speaker; the line guard gains Vietnamese checks. **Forms of address** (the user): lines
+  use tokens such as `{anh/chị}`, filled from the player's gender in the save, as well as `{player}`.
 - **Screen text:** the game's own words files get a Vietnamese set, chosen by an option `language`,
-  default `vi`; the English set stays for development and the later quick match [call]. Tests check
-  ids and structure, not wording, so they pass in either language [call].
+  default `vi`; the English set stays for development and the later quick match (accepted). Tests check
+  ids and structure, not wording, so they pass in either language (accepted).
 - **Fonts:** Poppins (body) and Abril Fatface (titles) lack letters such as ư, ả, ắ and ợ; Lora has
-  them all. Replace the two with OFL fonts that carry Vietnamese [call: Be Vietnam Pro for body text,
-  Playfair Display for titles], pinned and listed in the third-party notices. The engine already packs
+  them all. Replace the two with OFL fonts that carry Vietnamese (accepted: Be Vietnam Pro for body text,
+  Playfair Display for titles), pinned and listed in the third-party notices. The engine already packs
   the Vietnamese letter range (U+1EA0–1EF9).
 
 ### 7.9 On screen
 
 - **Forms the engine draws** (art list section 12): player solid; allies blue glow + name plate;
   recruit specters red tint, strings, gold knot; café ghosts pale glow; freeing and heroes warm gold
-  rim; ghosts green / blue-grey / red by nature; zodiacs strong red glow, thick strings; Le Thanh a
+  rim; ghosts green / blue-grey / red by nature; zodiacs strong red glow, thick strings; Lệ Thanh a
   faint warm glow. Tints, glows and opacities are data (`match-look.json`).
 - **Strings:** glowing lines from each sprite's `anchors.json` up out of view, swaying a little. The
   anchors are estimated from outlines; a fix-up tool or hand edits where they look wrong.
 - **Fight screens:** the stage's backdrop (`backdrops/foyer_today`, `portrait_corridor`, `box_office`).
 - **The order strip** now shows monsters too, in the one Speed order, with AP pips on each portrait
-  [call].
-- **Game over screen, stage list, title with name and gender**, in the existing data-driven UI
-  (`ui/*.ui.json`).
+  (accepted).
+- **Game over screen, stage list, title with name and gender, the assignment screen**, in the existing
+  data-driven UI (`ui/*.ui.json`). **The name is typed in a text field**, a new engine UI widget that
+  takes Vietnamese typing (Telex/Unikey through SDL's text input); an empty name becomes a default
+  (the user: built now, ahead of the plans).
 
 ### 7.10 Checks
 
 - Headless tests for every switch in both modes, the one Speed order (monsters included, units joining
   or revived mid-fight act next round), biding limits, AP lost on a fall and reset per stage, AP-cost
-  abilities, the rite of resurrection (once per game, kept used after a loss), items kept in the bag
+  abilities, the rite of resurrection (once per game, kept used after a loss), items kept in the 4 slots
   and each map item taken once, T1's retry-only game over, falls that don't block, revive onto the
   nearest free square, game over, boss win, freeing, the stage-start hint, stage file validation (good
   and broken files), dialog scenes (slots, enter and leave, skip stopping at a choice, choices setting
   facts, a moment's scene firing once and the fight resuming, broken scene files), save v2 round trip,
-  a corrupt or old save, no mid-stage save outside the developer option, and the café visit and
-  restoring flow.
+  a corrupt or old save, no mid-stage save outside the developer option, the café visit and
+  restoring flow, Stage 1 not won until Tí is freed, the three monster behaviours, a lost stage
+  leaving the café's timeline unchanged, ability and item assignment, `{anh/chị}` tokens, and the text
+  field.
 - **The faction match's soak** with the one Speed order (biding off); **a campaign soak** that plays each
   slice stage with bots on many seeds and reports wins, falls, turns, and **an estimate of play time**
   (turns × beat lengths), to tune the first numbers. A safety cap on rounds in the soak only, so two
-  biding bots can't stall it [call].
+  biding bots can't stall it (accepted).
 - Captures in the cloud (SwiftShader) of each stage and the café; **the Windows play check is the
   user's**, and the plan 4 Windows check still comes before relying on any of this.
 
@@ -387,7 +411,7 @@ written (2026-11-23), so its points are the user's decisions.
 - **Slots:** **0–2 characters on the left, 0–2 on the right.** A line can bring a character in, take
   one out or swap one. Portraits face the middle (the right side mirrored).
 - **Who speaks:** the **name tag** on the dialog box, on the speaker's side; the speaker's portrait is
-  lit, the others dimmed. A line without a speaker is narration (no tag). Le Thanh's dancing in the
+  lit, the others dimmed. A line without a speaker is narration (no tag). Lệ Thanh's dancing in the
   café is told in narration lines (7.7).
 - **Portraits:** made from each character's sprite (the body and a face: calm, talk, happy, angry,
   afraid, scheming, near-dead), so a line can set the face; drawn in the character's form (a strung
@@ -410,7 +434,7 @@ written (2026-11-23), so its points are the user's decisions.
   a data-driven UI screen (`ui/dialog.ui.json`) plus the portraits. The night game's camera-shot
   cutscenes stay as they are.
 
-## 8. Order of work [call]
+## 8. Order of work (accepted)
 
 1. **The model's Vietnamese test** tool and test set, run first with **Arcee-VyLinh** (the user), then
    the side-by-side comparison; the voice test script with the pitch shift for Tí; fonts.
@@ -421,8 +445,9 @@ written (2026-11-23), so its points are the user's decisions.
 4. **Stages:** the stage file and cast sheet, the stage builder, T1, T3 and Stage 1 data and their
    scenes, the Rat's kit and the ticket windows, the campaign soak.
 5. **Flow and save:** save v2, the stage list, the game over screen, retries, the developer mid-stage
-   save, name and gender.
-6. **The café:** the calm room, visits, talks, restoring Tí, Le Thanh's unlock, fight memory.
+   save, name and gender (the text field itself is built now, the user).
+6. **The café:** the calm room, visits, talks, assignment, restoring Tí, Lệ Thanh's unlock, fight
+   memory.
 7. **On screen:** the forms, strings, gold knot, name plates, backdrops, pips, Vietnamese words
    throughout.
 
@@ -430,7 +455,7 @@ Each becomes its own plan, built and checked before the next.
 
 ## 9. Left to the builder
 
-File and type names, the stage map's character set, the exact switch plumbing, the drink steps,
+File and type names, the stage map's character set, the exact switch plumbing,
 how many lines a talk has, the soak's seed counts, the scene file's field names, the text speed and
 portrait crop, and the look of the pips, the dialog box and the game-over screen, within the rules
 above.
@@ -438,7 +463,7 @@ above.
 ## 10. Still open (outside this slice, or for later)
 
 Stage 2's party (who of the player, Bảo, Bà Mai and Tí fights); Bảo and Mai's longer café roles and
-Mai's son; revive items' names and drops now money is gone; Le Thanh's twelve story pieces' words
+Mai's son; revive items' names and drops now money is gone; Lệ Thanh's twelve story pieces' words
 (piece 1 is needed now); **Tí's second café visit in the slice, which today needs a replay** (the
 user: handle later, without making the tutorial rules more complex); the songs; voiced lines (after
 the voice test); whether the player can change class.
@@ -449,11 +474,11 @@ the voice test); whether the player can change class.
 1. Every unit, monsters included, uses Speed in one turn order, no exception (7.1).
 2. Each extra action includes a move; an ability's AP is paid first from the same pool (7.2).
 3. Arcee-VyLinh is tested first (7.8).
-4. Le Thanh warns before important actions such as the final blow (7.3). *(Replaced by the
+4. Lệ Thanh warns before important actions such as the final blow (7.3). *(Replaced by the
    evaluation's answer 5.)*
 5. Fallen units don't block; a revived unit stands on the nearest free square if its own is full (7.3).
 6. No mid-stage save; only a full restart; a developer-only save for debugging and balancing (7.6).
-7. Le Thanh dances in the words only (7.7). Tí's voice comes from raising a preset's pitch (7.8). The
+7. Lệ Thanh dances in the words only (7.7). Tí's voice comes from raising a preset's pitch (7.8). The
    duplicate copy of this file was removed.
 
 **2026-11-23, the user's answers to the second review:**
@@ -469,38 +494,62 @@ the voice test); whether the player can change class.
 **2026-11-23, the user's answers to the evaluation (`slice-1-eval-2026-11-23.md`):**
 1. Tí's second visit needing a replay is left for later; the tutorial rules stay simple (7.7, 10).
 2. Each map item can be taken once; replays offer only the items not yet taken (7.4).
-3. Le Thanh's rite of resurrection: revives the whole side to full HP, once in the game (7.3).
+3. Lệ Thanh's rite of resurrection: revives the whole side to full HP, once in the game (7.3).
 4. Bosses' biding is the difficulty ramp; early bosses are passive and don't store AP (7.2).
-5. Tí acts like every other character. Le Thanh hints only at the start of a stage; a player who
+5. Tí acts like every other character. Lệ Thanh hints only at the start of a stage; a player who
    misses it replays the stage. This replaces the second review's "the Rat waits for Tí" and the
    in-fight warnings (7.3).
 
 **2026-11-23, the user's confirmation:** section 7.11 (dialog scenes) matches the user's intention
 exactly; its proposals became the user's decisions.
 
-## 12. Holes found on 2026-11-23 (for the user)
+## 12. Holes found on 2026-11-23, and the user's answers
 
-1. **Forms of address:** Vietnamese lines change with the player's gender ("Chị ơi" / "Anh ơi"), so
-   lines need gendered words, not only `{player}` [call: tokens such as `{anh/chị}` filled from the
-   save].
-2. **Typing the name:** the engine's UI has no text-entry box; the name screen needs one that takes
-   Vietnamese typing (Telex/Unikey through SDL's text input) [call: a small text-field widget, with a
-   default name if left empty].
-3. **Items in a fight:** today each unit carries 4 item slots (`BagFull`), but the design keeps items
-   in the party's bag between stages. Who carries what into a fight, and how big is the bag?
-4. **Stage 1's revive race:** rule 1 says Tí's side can revive him, but nothing on the Rat's side has a
-   revive, so once Tí falls, cutting him free is never contested. Intended, or does someone get one?
-5. **A café visit after a lost fight:** if a lost fight opens a visit ("any fight"), Tí's second visit
-   no longer needs a won replay. Does a loss count?
-6. **The café's guests and T2:** besides Bảo and Bà Mai, who sits in the café in the slice, and what
-   does T2 teach before Le Thanh can restore memories?
-7. **Teaching beats vs start-only hints:** the tutorials' teaching beats appear "when they first
-   matter" (during a fight), but Le Thanh hints only at the start of a stage. Are the tutorials the
-   exception (beats shown as dialog scenes mid-fight)?
-8. **Tí's level when he joins** (and later recruits') [call: the party's lowest level].
-9. **Play length:** the soak estimates play time, but there is no target [call: T1 about 5 minutes,
-   T3 about 10, Stage 1 about 15–20].
-10. **Le Thanh's name on screen:** the doc writes "Le Thanh" and "Lệ Thanh" [call: "Lệ Thanh" in all
-    Vietnamese text].
-11. **The `remove` effect** is built and tested, but no unit in the slice has it, so players won't see
-    it until a later stage (a note, not a question).
+1. Forms of address: tokens such as `{anh/chị}` (accepted).
+2. Typing the name: a text field in the engine's UI, **built now** (the user).
+3. Items: **each character's 4 slots are the only storage**; capacity is part of the game (the user).
+4. Stage 1: **nobody on the Rat's side revives** (the user).
+5. A lost fight **doesn't move the café's timeline**; it is as if the stage was never started (the
+   user).
+6. The café in the slice: **only Bảo and Bà Mai**; T2 teaches **assigning abilities and items** (the
+   user).
+7. Stage 1's exception: **Tí freed is part of the win** (the user).
+8. Recruits join at a **fixed level**; Tí at **level 3**; about one level a stage (the user).
+9. Play length: T1 about 5 minutes, T3 about 10, Stage 1 about 15–20 (accepted).
+10. **Lệ Thanh** everywhere (the user).
+11. The `remove` effect is built and tested but unseen in the slice (a note).
+
+The user also accepted every open proposal except four, which the user changed: a specter left strung
+is gone for good (7.3); campaign maps are asymmetric with monster behaviours (7.4); enemies are a
+class at a level, scaled (7.5); drink serving is off for now (7.7).
+
+## 13. Still vague (2026-11-23)
+
+To be answered before the plan that needs each one (the step of section 8 in brackets):
+
+1. **The rite vs "a loss keeps nothing"** (step 2): a loss now reverts everything, but the rite's use
+   was to stay spent after a loss. Which wins? **[call]**: the rite stays spent, the one thing a loss
+   doesn't undo; otherwise it becomes a free retry.
+2. **Stage 1 when the Rat falls first** (step 2): the stage isn't won yet. **[call]**: the Rat stays
+   down and the fight goes on until Tí is freed or the player falls.
+3. **Unassigned items and full slots** (steps 2 and 6): where do Lệ Thanh's gift items wait before they
+   are assigned, and what happens when a character with 4 full slots steps on an item? **[call]**: a
+   small café shelf holds unassigned items; in a fight a full character may swap, leaving the dropped
+   item on the square.
+4. **Ability slots** (step 6): how many abilities can a character have assigned at once, where do new
+   abilities come from, and where can assignment happen? **[call]**: as many slots as today's career;
+   new abilities from levels and the story; assignment in the café and on the screen before a stage.
+5. **Passive monsters' "sight"** (step 4). **[call]**: the board's existing light rule, same room, up to
+   4 squares. **Reinforcements' warning**: **[call]** the existing "spawns soon" marker one round ahead.
+6. **Enemy scaling** (step 4): the Rat's class and level, and whether the buff is one factor on every
+   stat. **[call]**: the Rat is a fighter at level 3; the zodiac buff multiplies attack and HP (about
+   +33%); other stats follow the class line.
+7. **Between stages** (step 5): does everyone start a stage at full HP, fallen allies included?
+   **[call]**: yes.
+8. **XP** (step 5): what gives XP, so the player gains about one level a stage? **[call]**: a fixed XP
+   reward per stage won, set in the stage file, shared by the party. Bảo and Bà Mai join at a fixed
+   level like recruits: **[call]** level 2, matching T3's party.
+9. **Tutorial teaching beats** (step 4): may T1 and T3 show their teaching beats as short dialog
+   scenes during the fight, an exception to "hints only at the start"? **[call]**: yes, tutorials only.
+10. **The finale** (a later slice): with strung specters gone for good, who fights for Lệ Thanh in the
+    finale?
