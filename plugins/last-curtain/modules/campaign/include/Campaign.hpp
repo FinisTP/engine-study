@@ -9,6 +9,7 @@
 #include <array>
 #include <cstdint>
 #include <map>
+#include <set>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -110,6 +111,27 @@ namespace umbra::campaign
     // Reads and checks a stage; scene ids must be files in `scenes`; item ids in the match's items.csv.
     bool LoadStage(const std::filesystem::path &file, const Cast &cast, const match::MatchDef &def, const std::filesystem::path &scenes,
                    StageDef &stage, std::vector<core::Diagnostic> &d);
+
+    // A party member as the save keeps it (plan 7): who, level, the 4 item slots (items.csv ids, "" empty).
+    struct PartyMember
+    {
+        std::string id;
+        int level = 1;
+        std::array<std::string, 4> items{};
+    };
+
+    // A fight ready to play, and for each unit its cast id and drawn height.
+    struct BuiltStage
+    {
+        match::MatchState state;
+        std::vector<std::string> who;
+        std::vector<float> height;
+    };
+
+    // The stage's fight: its map as the board, the party (up to its cap) on the starts, the player
+    // first, enemies (with the refill's twist), items not yet taken, reinforcements waiting.
+    BuiltStage BuildStage(const match::MatchDef &def, const Cast &cast, const Growth &growth, const StageDef &stage,
+                          const std::vector<PartyMember> &party, int refill, const std::set<std::string> &taken, std::uint64_t seed);
 
     enum class Side : std::uint8_t
     {

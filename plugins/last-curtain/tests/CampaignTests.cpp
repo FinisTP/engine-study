@@ -370,3 +370,78 @@ TEST_CASE("A broken stage names the file, the field and the fix (campaign plan 4
     CHECK(StageProblem("twist", [](json &j) { j["twists"][0]["units"][0]["who"] = "nobody"; }) == "twists[0].units[0].who");
     CHECK(StageProblem("boss", [](json &j) { j["units"][0]["flags"] = json::array(); }) == "units");
 }
+
+namespace
+{
+    campaign::StageDef TestStage()
+    {
+        campaign::StageDef stage;
+        std::vector<core::Diagnostic> d;
+        REQUIRE(campaign::LoadStage(tests / "stages" / "test.json", TheCast(), MatchData(), tests / "scenes", stage, d));
+        return stage;
+    }
+
+    campaign::Growth TheGrowth()
+    {
+        campaign::Growth g;
+        std::vector<core::Diagnostic> d;
+        REQUIRE(campaign::LoadGrowth(data / "growth.csv", g, d));
+        return g;
+    }
+
+    int Cell(const match::MatchState &s, int x, int y) { return y * s.board.width + x; }
+}
+
+TEST_CASE("A stage builds a fight: the map, the party on its starts, enemies, items not taken, reinforcements waiting (campaign plan 4)")
+{
+    const match::MatchDef def = MatchData();
+    const campaign::StageDef stage = TestStage();
+    const std::vector<campaign::PartyMember> party{{"player", 3, {"bandage", "", "", ""}}, {"bao", 3, {}}, {"mai", 3, {}}};
+    const campaign::BuiltStage b = campaign::BuildStage(def, TheCast(), TheGrowth(), stage, party, 0, {}, 7);
+    const match::MatchState &s = b.state;
+    // 1. The map: walls and open squares, doors between open neighbours.
+    CHECK(s.board.width == 9);
+    CHECK(s.board.cells[0].kind == match::CellKind::Wall);
+    CHECK(match::Neighbour(s.board, Cell(s, 1, 1), 1) == Cell(s, 2, 1));
+    CHECK(match::Neighbour(s.board, Cell(s, 1, 1), 0) == -1);
+    // 2. The party up to its cap, on the starts; the first is the player and carries its items.
+    REQUIRE(b.who.size() == 5); // 2 of the party, the rat, Ti, the reinforcement
+    CHECK(b.who[0] == "player");
+    CHECK(b.who[1] == "bao");
+    CHECK(s.units[0].cell == Cell(s, 1, 1));
+    CHECK(s.units[1].cell == Cell(s, 1, 2));
+    CHECK((s.units[0].flags & match::flag::Player) != 0);
+    CHECK(s.units[0].items[0] >= 0);
+    CHECK(s.units[0].faction == 0);
+    // 3. Enemies with their flags; the reinforcement off the board until its round.
+    CHECK(b.who[2] == "rat");
+    CHECK((s.units[2].flags & match::flag::Boss) != 0);
+    CHECK((s.units[3].flags & match::flag::Strung) != 0);
+    CHECK(s.units[3].faction == 1);
+    CHECK(s.units[4].cell == -1);
+    REQUIRE(s.arrivals.size() == 1);
+    CHECK(s.arrivals[0].unit == 4);
+    CHECK(s.arrivals[0].cell == Cell(s, 7, 3));
+    CHECK(s.arrivals[0].round == 2);
+    // 4. The rules: the campaign mode, the stage's overrides, drops, the item on its square.
+    CHECK(s.mode.mustFree);
+    CHECK(s.noRevive == 2); // side 1
+    REQUIRE(s.drops.size() == 1);
+    CHECK(s.drops[0].unit == 2);
+    CHECK(s.drops[0].percent == 30);
+    REQUIRE(s.floor.size() == 1);
+    CHECK(s.floor[0].cell == Cell(s, 3, 4));
+    CHECK(match::Current(s) >= 0);
+}
+
+TEST_CASE("A taken item stays taken; a refill brings its twist (campaign plan 4)")
+{
+    const match::MatchDef def = MatchData();
+    const campaign::StageDef stage = TestStage();
+    const std::vector<campaign::PartyMember> party{{"player", 3, {}}};
+    const campaign::BuiltStage taken = campaign::BuildStage(def, TheCast(), TheGrowth(), stage, party, 0, {"test-bandage"}, 7);
+    CHECK(taken.state.floor.empty());
+    const campaign::BuiltStage refill = campaign::BuildStage(def, TheCast(), TheGrowth(), stage, party, 1, {}, 7);
+    CHECK(refill.who.size() == taken.who.size() + 1);
+    CHECK(refill.who.back() == "ghost_attacker");
+}

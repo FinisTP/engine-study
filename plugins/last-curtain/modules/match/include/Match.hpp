@@ -86,6 +86,14 @@ namespace umbra::match
         std::int8_t unit = -1, item = -1, percent = 0;
     };
 
+    // A unit that waits off the board until `round`, then stands on `cell` (a stage's reinforcement).
+    struct Arrival
+    {
+        std::int8_t unit = -1;
+        std::int16_t cell = -1;
+        std::int16_t round = 0;
+    };
+
     // A three-round battle between two units (Battle.cpp).
     struct Battle
     {
@@ -165,6 +173,8 @@ namespace umbra::match
         bool riteReady = false, riteUsed = false; // Le Thanh's rite: offered once in the whole game (plan 5 saves it)
         std::vector<std::int8_t> found; // ingredients and keepsakes picked up or dropped: for the cafe's storage (Match.md "Found")
         std::vector<Drop> drops;        // what each unit may drop when it falls
+        std::vector<Arrival> arrivals;  // reinforcements still to come
+        std::uint8_t noRevive = 0;      // sides (bit 1 << side) that never revive
     };
 
     // A unit's squares: size x size from its cell, the top-left (Match.md "Large monsters"), fallen or not.

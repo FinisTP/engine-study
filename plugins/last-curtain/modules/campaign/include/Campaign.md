@@ -88,3 +88,12 @@ At level 3: the Rat (attacker) 8 attack and 32 HP; an ordinary ghost attacker 4 
 | `twists` | skirmishes: one per refill, each `name`, `units`, `gimmicks` |
 
 `LoadStage` checks each and names the file, the field and the fix.
+
+## Building a fight
+
+`BuildStage(def, cast, growth, stage, party, refill, taken, seed)`: the map becomes the match's board
+(every square but `#` open, doors between open neighbours); the party, up to `partyCap`, stands on the
+`S` squares in reading order, the first one flagged as the player and carrying its slots; then the
+stage's units and, for `refill` ≥ 1, that refill's twist (the last twist repeats); reinforcements wait off
+the board in `MatchState::arrivals`; items whose id is in `taken` stay away; then `BeginMatch`. It
+returns each unit's cast id and drawn height beside the state.
