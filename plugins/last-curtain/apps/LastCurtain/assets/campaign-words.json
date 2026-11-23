@@ -47,5 +47,13 @@
  "door": "Ra cửa",
  "lack": "Thiếu {item} ×{n} · {where}",
  "forWhom": "Cho ai uống?",
- "give": "Đưa kỷ vật:"
+ "give": "Đưa kỷ vật:",
+ "notebook": "Sổ tay",
+ "tabCharacters": "Nhân vật",
+ "tabIngredients": "Nguyên liệu",
+ "tabKeepsakes": "Kỷ vật",
+ "slot": "Ô:",
+ "count": "Đang có:",
+ "readOnly": "Đang trong trận: chỉ xem.",
+ "empty": "(trống)"
 }

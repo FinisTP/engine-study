@@ -2,6 +2,7 @@
 
 #include <Campaign.hpp>
 
+#include <array>
 #include <map>
 #include <set>
 #include <string>
@@ -18,6 +19,8 @@ namespace umbra::campaign
         Facts facts;
         std::map<std::string, std::string> versions;             // an upgrade's base ability -> the version chosen (final)
         std::map<std::string, std::map<std::string, int>> boosts; // character -> drink -> how many
+        std::map<std::string, std::array<std::string, 4>> slots;  // character -> its 4 battle slots (items.csv ids, "" empty)
+        std::vector<std::string> party;                           // who goes to the next fight ("Ra trận")
     };
 
     struct Recipe

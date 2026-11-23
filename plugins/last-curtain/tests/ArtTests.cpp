@@ -179,7 +179,7 @@ TEST_CASE("Every letter of the campaign's Vietnamese words and screens is in the
     // 1. The text: the Vietnamese fight words, the campaign words, the campaign HUD and dialog screens.
     const std::filesystem::path assets = UMBRA_LASTCURTAIN_ASSETS;
     std::string text;
-    for (const char *file : {"match-words.vi.json", "campaign-words.json", "ui/campaign-hud.ui.json", "ui/dialog.ui.json", "ui/cafe-hub.ui.json", "ui/brew.ui.json"})
+    for (const char *file : {"match-words.vi.json", "campaign-words.json", "ui/campaign-hud.ui.json", "ui/dialog.ui.json", "ui/cafe-hub.ui.json", "ui/brew.ui.json", "ui/notebook.ui.json"})
     {
         std::ifstream in(assets / file, std::ios::binary);
         text += std::string{std::istreambuf_iterator<char>(in), {}};

@@ -95,6 +95,16 @@
               300,
               0
             ],
+            "text": "{words.notebook}",
+            "action": "notebook"
+          },
+          {
+            "type": "button",
+            "style": "act",
+            "size": [
+              300,
+              0
+            ],
             "text": "{words.door}",
             "action": "leave"
           }

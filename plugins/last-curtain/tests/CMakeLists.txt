@@ -77,4 +77,9 @@ if(TARGET UmbraTool)
              COMMAND UmbraTool ui-preview dialog dialog-log --assets ${CMAKE_CURRENT_SOURCE_DIR}/../apps/LastCurtain/assets
                      --data ${CMAKE_CURRENT_SOURCE_DIR}/../apps/LastCurtain/assets/ui/dialog-sample.json --out ${CMAKE_CURRENT_BINARY_DIR}/dialog.png)
     set_tests_properties(Umbra.Tool.DialogPreview PROPERTIES PASS_REGULAR_EXPRESSION "0 error\\(s\\), 0 warning")
+    # The campaign cafe and the notebook (campaign plan 6).
+    add_test(NAME Umbra.Tool.CafePreview
+             COMMAND UmbraTool ui-preview cafe-hub brew notebook --assets ${CMAKE_CURRENT_SOURCE_DIR}/../apps/LastCurtain/assets
+                     --data ${CMAKE_CURRENT_SOURCE_DIR}/../apps/LastCurtain/assets/ui/cafe-campaign-sample.json --out ${CMAKE_CURRENT_BINARY_DIR}/cafe-campaign.png)
+    set_tests_properties(Umbra.Tool.CafePreview PROPERTIES PASS_REGULAR_EXPRESSION "0 error\\(s\\), 0 warning")
 endif()

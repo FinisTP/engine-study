@@ -18,7 +18,7 @@ target_compile_features(UmbraMatchPlay PUBLIC cxx_std_20)
 target_link_libraries(UmbraMatchPlay PUBLIC Umbra::Match Umbra::MatchBots Umbra::NightPlay Umbra::Cafe nlohmann_json::nlohmann_json PRIVATE Umbra::Warnings Umbra::Sanitizers)
 
 # The campaign's screens as data, without a window (DialogView.hpp).
-add_library(UmbraCampaignPlay STATIC DialogView.cpp DialogView.hpp CafeHub.cpp CafeHub.hpp)
+add_library(UmbraCampaignPlay STATIC DialogView.cpp DialogView.hpp CafeHub.cpp CafeHub.hpp NotebookView.cpp NotebookView.hpp)
 add_library(Umbra::CampaignPlay ALIAS UmbraCampaignPlay)
 target_include_directories(UmbraCampaignPlay PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_features(UmbraCampaignPlay PUBLIC cxx_std_20)

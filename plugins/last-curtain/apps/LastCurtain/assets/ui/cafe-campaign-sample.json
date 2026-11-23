@@ -1,0 +1,169 @@
+{
+ "words": {
+  "skip": "Bỏ qua",
+  "log": "Nhật ký",
+  "logTitle": "Nhật ký hội thoại",
+  "close": "Đóng",
+  "en": {
+   "skip": "Skip",
+   "log": "Log",
+   "logTitle": "Conversation log",
+   "close": "Close",
+   "abilities": {}
+  },
+  "abilities": {
+   "dao_mo": "Dao mổ",
+   "chan_doan": "Chẩn đoán",
+   "giay_chung_tu": "Giấy chứng tử",
+   "com_nguoi": "Cơm nguội",
+   "moc_tui": "Móc túi",
+   "chay_lang": "Chạy làng",
+   "speedkill": "Ra tay chớp nhoáng",
+   "na_cao_su": "Ná cao su",
+   "na_bao_dong": "Ná cao su · Báo động",
+   "na_ban_truoc": "Ná cao su · Bắn trước",
+   "dua_tin": "Đưa tin",
+   "dua_tin_ve_kip": "Đưa tin · Về kịp",
+   "dua_tin_phan_qua": "Đưa tin · Phần quà",
+   "chan_sao": "Chân sáo",
+   "chan_sao_gio_bien": "Chân sáo · Gió biển",
+   "chan_sao_dau_chan": "Chân sáo · Dấu chân"
+  },
+  "items": {
+   "bandage": "Băng gạc",
+   "programme": "Tờ chương trình cũ",
+   "gung": "Gừng",
+   "duong": "Đường",
+   "giay_gap_tu": "Mẩu giấy gấp tư"
+  },
+  "itemText": {
+   "gung": "Củ gừng già, cay nồng. Bóng chuột trong phòng vé hay tha theo.",
+   "duong": "Một gói đường cát nhỏ, giấy gói đã ngả vàng.",
+   "giay_gap_tu": "Gấp tư, mép sờn. Có người đã giữ nó rất kỹ."
+  },
+  "cafe": "Quán nước dưới hầm",
+  "cafeHint": "Bấm vào một người để trò chuyện. Ánh vàng: có chuyện mới.",
+  "canBrew": "Có thể pha chế",
+  "brew": "Pha chế",
+  "door": "Ra cửa",
+  "lack": "Thiếu {item} ×{n} · {where}",
+  "forWhom": "Cho ai uống?",
+  "give": "Đưa kỷ vật:",
+  "notebook": "Sổ tay",
+  "tabCharacters": "Nhân vật",
+  "tabIngredients": "Nguyên liệu",
+  "tabKeepsakes": "Kỷ vật",
+  "slot": "Ô:",
+  "count": "Đang có:",
+  "readOnly": "Đang trong trận: chỉ xem.",
+  "empty": "(trống)"
+ },
+ "hub": {
+  "backdrop": "art/cafe/back_wall.jpg",
+  "people": [
+   {
+    "who": "lethanh",
+    "name": "Lệ Thanh",
+    "talk": true
+   },
+   {
+    "who": "bao",
+    "name": "Bác sĩ Bảo",
+    "talk": false
+   },
+   {
+    "who": "ti",
+    "name": "Bé Tí",
+    "talk": true
+   }
+  ],
+  "canBrew": true,
+  "keepsakes": [
+   {
+    "item": "giay_gap_tu",
+    "name": "Mẩu giấy gấp tư",
+    "for": "ti"
+   }
+  ],
+  "recipes": [
+   {
+    "id": "mut_gung",
+    "name": "Mứt gừng",
+    "text": "Gừng sên đường, cay mà ngọt.",
+    "off": false,
+    "lacks": [],
+    "versions": [
+     {
+      "name": "Đưa tin · Về kịp"
+     },
+     {
+      "name": "Đưa tin · Phần quà"
+     }
+    ]
+   },
+   {
+    "id": "nuoc_gung",
+    "name": "Nước gừng",
+    "text": "Ấm bụng, ấm tay. Thêm 2 HP tối đa.",
+    "off": true,
+    "lacks": [
+     {
+      "label": "Thiếu Gừng ×1 · Phòng vé"
+     }
+    ],
+    "versions": []
+   }
+  ],
+  "forWhom": [],
+  "toasts": [
+   {
+    "text": "Lời hứa Tết"
+   }
+  ]
+ },
+ "book": {
+  "tab": "characters",
+  "selected": "ti",
+  "readOnly": false,
+  "entries": [
+   {
+    "id": "player",
+    "name": "Linh",
+    "selected": false
+   },
+   {
+    "id": "ti",
+    "name": "Bé Tí",
+    "selected": true
+   }
+  ],
+  "detail": {
+   "memories": [
+    {
+     "name": "Tên mẹ"
+    },
+    {
+     "name": "?"
+    }
+   ],
+   "slots": [
+    {
+     "slot": 0,
+     "label": "Băng gạc"
+    },
+    {
+     "slot": 1,
+     "label": "(trống)"
+    },
+    {
+     "slot": 2,
+     "label": "(trống)"
+    },
+    {
+     "slot": 3,
+     "label": "(trống)"
+    }
+   ]
+  }
+ }
+}

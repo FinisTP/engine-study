@@ -1,0 +1,138 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "dim": true,
+  "back": "close",
+  "root": {
+    "type": "stack",
+    "anchor": "center",
+    "style": "panel",
+    "size": [
+      860,
+      0
+    ],
+    "gap": 10,
+    "children": [
+      {
+        "type": "text",
+        "style": "title",
+        "text": "{words.notebook}"
+      },
+      {
+        "type": "stack",
+        "direction": "horizontal",
+        "gap": 8,
+        "children": [
+          {
+            "type": "button",
+            "style": "act",
+            "text": "{words.tabCharacters}",
+            "action": "tab",
+            "arg": "characters"
+          },
+          {
+            "type": "button",
+            "style": "act",
+            "text": "{words.tabIngredients}",
+            "action": "tab",
+            "arg": "ingredients"
+          },
+          {
+            "type": "button",
+            "style": "act",
+            "text": "{words.tabKeepsakes}",
+            "action": "tab",
+            "arg": "keepsakes"
+          }
+        ]
+      },
+      {
+        "type": "stack",
+        "direction": "horizontal",
+        "gap": 16,
+        "children": [
+          {
+            "type": "list",
+            "items": "{book.entries}",
+            "as": "e",
+            "gap": 4,
+            "entry": {
+              "type": "button",
+              "style": "act",
+              "size": [
+                260,
+                0
+              ],
+              "text": "{e.name}",
+              "action": "select",
+              "arg": "{e.id}",
+              "selected": "{e.selected}"
+            }
+          },
+          {
+            "type": "stack",
+            "gap": 5,
+            "size": [
+              520,
+              0
+            ],
+            "children": [
+              {
+                "type": "list",
+                "items": "{book.detail.memories}",
+                "as": "m",
+                "gap": 3,
+                "entry": {
+                  "type": "text",
+                  "style": "small",
+                  "text": "· {m.name}"
+                }
+              },
+              {
+                "type": "list",
+                "items": "{book.detail.slots}",
+                "as": "s",
+                "gap": 4,
+                "entry": {
+                  "type": "button",
+                  "style": "act",
+                  "size": [
+                    300,
+                    0
+                  ],
+                  "text": "{words.slot} {s.label}",
+                  "action": "slot",
+                  "arg": "{s.slot}",
+                  "disabled": "{book.readOnly}"
+                }
+              },
+              {
+                "type": "text",
+                "style": "small",
+                "text": "{words.count} {book.detail.count}",
+                "visible": "{book.detail.count}"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "style": "muted",
+        "text": "{words.readOnly}",
+        "visible": "{book.readOnly}"
+      },
+      {
+        "type": "button",
+        "style": "act",
+        "size": [
+          200,
+          0
+        ],
+        "text": "{words.close}",
+        "action": "close"
+      }
+    ]
+  }
+}

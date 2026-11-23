@@ -150,3 +150,41 @@ TEST_CASE("The cafe hub: who has something to say, brewing a memory and a boost,
         if (r["id"] == "mut_gung")
             CHECK(r["lacks"][0]["where"] != "");
 }
+
+#include <NotebookView.hpp>
+
+TEST_CASE("The notebook: three tabs, unknowns as ?, slots edited only outside battle and never with cafe-only items (campaign plan 6)")
+{
+    HubData h;
+    campaign::Save save;
+    save.storage = {{"gung", 1}, {"bandage", 2}};
+    Notebook book(h.def, h.cast, h.memories, save);
+    // 1. Characters: the party known, Ti a ? until he joins.
+    nlohmann::json d = book.Data();
+    CHECK(d["tab"] == "characters");
+    bool tiHidden = false;
+    for (const auto &e : d["entries"])
+        tiHidden |= e["id"] == "ti" && e["name"] == "?";
+    CHECK(tiHidden);
+    // 2. Ingredients: ginger known, sugar a ?.
+    book.Tab("ingredients");
+    d = book.Data();
+    std::map<std::string, std::string> names;
+    for (const auto &e : d["entries"])
+        names[e["id"]] = e["name"];
+    CHECK(names["gung"] != "?");
+    CHECK(names["duong"] == "?");
+    // 3. It reopens where it was left.
+    book.Select("gung");
+    Notebook again = book;
+    CHECK(again.Data()["tab"] == "ingredients");
+    CHECK(again.Data()["selected"] == "gung");
+    // 4. Slots: a bandage goes in; ginger never; in battle nothing changes.
+    CHECK(book.SetSlot("bao", 0, "bandage"));
+    CHECK(save.slots["bao"][0] == "bandage");
+    CHECK_FALSE(book.SetSlot("bao", 1, "gung"));
+    book.SetReadOnly(true);
+    CHECK_FALSE(book.SetSlot("bao", 0, ""));
+    CHECK(save.slots["bao"][0] == "bandage");
+    CHECK(book.Data()["readOnly"] == true);
+}

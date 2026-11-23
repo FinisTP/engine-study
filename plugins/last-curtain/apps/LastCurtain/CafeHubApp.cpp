@@ -4,6 +4,7 @@
 #include "CafeHub.hpp"
 #include "DialogApp.hpp"
 #include "GameContext.hpp"
+#include "NotebookView.hpp"
 
 #include <Log.hpp>
 #include <Options.hpp>
@@ -48,6 +49,7 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
 
     // 2. The loop: the hub, the brew screen over it, scenes between.
     CafeHub hub(def, cast, recipes, memories, talks, stages, save, static_cast<int>(options.boostCapPerStat));
+    Notebook book(def, cast, memories, save);
     screens.Ui().Open("cafe-hub");
     bool brewing = false;
     std::string picked; // a general drink waiting for whom
@@ -106,12 +108,38 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
         for (auto &k : data["hub"]["keepsakes"]) // item names in Vietnamese from campaign-words.json
             k["name"] = words.value("items", nlohmann::json::object()).value(k["item"].get<std::string>(), k["name"].get<std::string>());
         data["hub"]["forWhom"] = picked.empty() ? nlohmann::json::array() : data["hub"]["people"];
+        data["book"] = book.Data();
+        for (auto &slot : data["book"]["detail"]["slots"]) // a slot's item by its Vietnamese name
+            slot["label"] = slot["item"] == "" ? words.value("empty", std::string()) : words.value("items", nlohmann::json::object()).value(slot["item"].get<std::string>(), slot["item"].get<std::string>());
         data["words"] = words;
         for (const umbra::ui::UiAction &a : screens.Ui().Update(data, pixels, uiInput, drawList.ui))
         {
             game.sounds->Play("click");
             if (a.action == "talk")
                 play(hub.Talk(a.arg));
+            else if (a.action == "notebook" || (a.screen == "notebook" && a.action == "close"))
+            {
+                if (a.action == "notebook")
+                    screens.Ui().Open("notebook");
+                else
+                    screens.Ui().Close("notebook");
+            }
+            else if (a.action == "tab")
+                book.Tab(a.arg);
+            else if (a.action == "select")
+                book.Select(a.arg);
+            else if (a.action == "slot")
+            {
+                // The slot takes the next carriable item in storage, then empty.
+                const nlohmann::json now = book.Data()["detail"]["slots"][std::stoi(a.arg)]["item"];
+                std::vector<std::string> choices{""};
+                for (const auto &[item, count] : save.storage)
+                    if (count > 0 && campaign::SlotOk(def, item))
+                        choices.push_back(item);
+                const auto at = std::ranges::find(choices, now.get<std::string>());
+                const std::string next = at == choices.end() || at + 1 == choices.end() ? choices.front() : *(at + 1);
+                (void)book.SetSlot(book.Data()["selected"], std::stoi(a.arg), next);
+            }
             else if (a.action == "give")
                 play(hub.Give(a.arg));
             else if (a.action == "brew")
@@ -144,6 +172,6 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
         std::this_thread::sleep_for(std::chrono::milliseconds{1});
     }
     (void)brewing;
-    screens.Ui().Close("brew"), screens.Ui().Close("cafe-hub");
+    screens.Ui().Close("brew"), screens.Ui().Close("notebook"), screens.Ui().Close("cafe-hub");
     return result;
 }
