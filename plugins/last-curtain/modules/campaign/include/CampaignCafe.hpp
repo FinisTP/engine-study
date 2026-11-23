@@ -130,4 +130,26 @@ namespace umbra::campaign
     void WinStage(const match::MatchDef &def, Save &save, const StageDef &stage, const BuiltStage &fight, const std::vector<StageDef> &stages);
     // A lost stage: the save from before it, except that the rite stays used.
     Save LoseStage(const Save &before, const BuiltStage &fight);
+
+    // The theatre map (map.json): tickets on the floor plan; a story or skirmish stage opens after another is won.
+    struct Ticket
+    {
+        std::string id, name, kind, stage, opensAfter, lock; // kind story, skirmish or unknown
+        float x = 0.0F, y = 0.0F;                             // 0..1 across and down the plan
+    };
+    struct TheatreMap
+    {
+        std::string plan;
+        std::vector<Ticket> tickets;
+    };
+    bool LoadMap(const std::filesystem::path &file, const std::vector<StageDef> &stages, TheatreMap &out, std::vector<core::Diagnostic> &d);
+    struct TicketView
+    {
+        std::string id, name, mark, detail; // mark: cleared, next, skirmish, locked, unknown; detail: a twist or a lock line
+        float x = 0.0F, y = 0.0F;
+        bool open = false;
+    };
+    std::vector<TicketView> MapView(const TheatreMap &map, const Save &save, const std::vector<StageDef> &stages);
+    // The ticket nearest `from` in a direction (u, d, l, r), "" none.
+    std::string Nearest(const TheatreMap &map, const std::string &from, char direction);
 }

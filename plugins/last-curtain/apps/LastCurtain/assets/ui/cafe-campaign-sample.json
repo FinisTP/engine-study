@@ -56,7 +56,16 @@
   "slot": "Ô:",
   "count": "Đang có:",
   "readOnly": "Đang trong trận: chỉ xem.",
-  "empty": "(trống)"
+  "empty": "(trống)",
+  "mapTitle": "Nhà hát",
+  "backCafe": "Về quán",
+  "enter": "Vào phòng",
+  "markCleared": "đã qua",
+  "markNext": "tiếp theo",
+  "markSkirmish": "giao tranh",
+  "markLocked": "?",
+  "markUnknown": "?",
+  "levelLine": "Cấp đề nghị {n}"
  },
  "hub": {
   "backdrop": "art/cafe/back_wall.jpg",
@@ -165,5 +174,51 @@
     }
    ]
   }
+ },
+ "map": {
+  "plan": "",
+  "tickets": [
+   {
+    "id": "t1",
+    "name": "Tiền sảnh",
+    "markText": "đã qua",
+    "at": [
+     600,
+     580
+    ],
+    "selected": false,
+    "closed": false
+   },
+   {
+    "id": "t3",
+    "name": "Hành lang chân dung",
+    "markText": "tiếp theo",
+    "at": [
+     280,
+     450
+    ],
+    "selected": true,
+    "closed": false
+   },
+   {
+    "id": "makeup",
+    "name": "?",
+    "markText": "?",
+    "at": [
+     760,
+     260
+    ],
+    "selected": false,
+    "closed": true
+   }
+  ],
+  "panel": {
+   "id": "t3",
+   "name": "Hành lang chân dung",
+   "detail": "Đọc trước đòn của Người giữ tranh.",
+   "level": "Cấp đề nghị 2",
+   "open": true
+  },
+  "news": "Bé Tí có chuyện muốn kể."
  }
 }

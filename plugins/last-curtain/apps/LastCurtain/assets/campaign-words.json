@@ -55,5 +55,14 @@
  "slot": "Ô:",
  "count": "Đang có:",
  "readOnly": "Đang trong trận: chỉ xem.",
- "empty": "(trống)"
+ "empty": "(trống)",
+ "mapTitle": "Nhà hát",
+ "backCafe": "Về quán",
+ "enter": "Vào phòng",
+ "markCleared": "đã qua",
+ "markNext": "tiếp theo",
+ "markSkirmish": "giao tranh",
+ "markLocked": "?",
+ "markUnknown": "?",
+ "levelLine": "Cấp đề nghị {n}"
 }

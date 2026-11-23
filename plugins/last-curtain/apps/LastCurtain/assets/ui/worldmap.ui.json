@@ -1,0 +1,103 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "back": "cafe",
+  "root": {
+    "type": "panel",
+    "anchor": "fill",
+    "style": "layer",
+    "children": [
+      {
+        "type": "image",
+        "anchor": "fill",
+        "image": "{map.plan}",
+        "fit": "contain",
+        "visible": "{map.plan}"
+      },
+      {
+        "type": "list",
+        "items": "{map.tickets}",
+        "as": "t",
+        "entry": {
+          "type": "button",
+          "style": "act",
+          "at": "{t.at}",
+          "text": "{t.name}\n{t.markText}",
+          "action": "select",
+          "arg": "{t.id}",
+          "selected": "{t.selected}",
+          "disabled": "{t.closed}"
+        }
+      },
+      {
+        "type": "stack",
+        "anchor": "bottom-right",
+        "offset": [
+          -20,
+          -20
+        ],
+        "style": "float",
+        "gap": 6,
+        "size": [
+          360,
+          0
+        ],
+        "visible": "{map.panel}",
+        "children": [
+          {
+            "type": "text",
+            "style": "heading",
+            "text": "{map.panel.name}"
+          },
+          {
+            "type": "text",
+            "style": "small",
+            "text": "{map.panel.detail}"
+          },
+          {
+            "type": "text",
+            "style": "muted",
+            "text": "{map.panel.level}"
+          },
+          {
+            "type": "button",
+            "style": "act",
+            "text": "{words.enter}",
+            "action": "enter",
+            "arg": "{map.panel.id}",
+            "visible": "{map.panel.open}"
+          }
+        ]
+      },
+      {
+        "type": "stack",
+        "anchor": "top-left",
+        "offset": [
+          20,
+          14
+        ],
+        "style": "float",
+        "gap": 4,
+        "children": [
+          {
+            "type": "text",
+            "style": "heading",
+            "text": "{words.mapTitle}"
+          },
+          {
+            "type": "button",
+            "style": "act",
+            "text": "{words.backCafe}",
+            "action": "cafe"
+          },
+          {
+            "type": "text",
+            "style": "muted",
+            "text": "{map.news}",
+            "visible": "{map.news}"
+          }
+        ]
+      }
+    ]
+  }
+}

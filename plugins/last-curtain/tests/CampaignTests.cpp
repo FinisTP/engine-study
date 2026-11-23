@@ -999,3 +999,50 @@ TEST_CASE("Progress: a win shares XP (capped in skirmishes), keeps finds and ref
     CHECK(after.roster[0].xp == before.roster[0].xp);
     CHECK(after.riteUsed);
 }
+
+TEST_CASE("The theatre map: tickets open in order with marks, the cursor reaches every ticket, panels per kind (campaign plan 7)")
+{
+    campaign::TheatreMap map;
+    std::vector<core::Diagnostic> d;
+    REQUIRE(campaign::LoadMap(data / "map.json", TheStages(), map, d));
+    CHECK(d.empty());
+    campaign::Save save;
+    const auto mark = [&](const std::string &id) {
+        for (const auto &t : campaign::MapView(map, save, TheStages()))
+            if (t.id == id)
+                return t.mark;
+        return std::string("none");
+    };
+    // 1. A new game: T1 is next, T3 locked (?), the box office unseen.
+    CHECK(mark("t1") == "next");
+    CHECK(mark("t3") == "locked");
+    CHECK(mark("makeup") == "unknown");
+    // 2. After T1 and T3: T3 cleared, the skirmishes open, Stage 1 next.
+    save.facts = {{"won:t1", "1"}, {"won:t3", "1"}};
+    save.rooms["t1"].cleared = save.rooms["t3"].cleared = true;
+    CHECK(mark("t3") == "cleared");
+    CHECK(mark("sk_props") == "skirmish");
+    CHECK(mark("stage1") == "next");
+    CHECK(mark("sk_boxoffice") == "locked");
+    // 3. The cursor: from T1, arrows reach every ticket.
+    std::set<std::string> seen{"t1"};
+    std::vector<std::string> todo{"t1"};
+    while (!todo.empty())
+    {
+        const std::string at = todo.back();
+        todo.pop_back();
+        for (const char dir : {'u', 'd', 'l', 'r'})
+            if (const std::string n = campaign::Nearest(map, at, dir); !n.empty() && seen.insert(n).second)
+                todo.push_back(n);
+    }
+    CHECK(seen.size() == map.tickets.size());
+    // 4. A skirmish's panel names its twist; a locked one says what opens it.
+    save.rooms["sk_props"].refill = 1;
+    for (const auto &t : campaign::MapView(map, save, TheStages()))
+    {
+        if (t.id == "sk_props")
+            CHECK(t.detail == "Chuột trong tường");
+        if (t.id == "makeup")
+            CHECK(t.detail == "Mở sau Phòng vé.");
+    }
+}

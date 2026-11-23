@@ -1,0 +1,20 @@
+{
+  "format": "umbra.lc-map",
+  "version": 1,
+  "note": "The theatre map of slice 1 (campaign plan 7): tickets on the floor plan (at: 0-1 across and down), what opens each. Rooms to come show as ? with what opens them.",
+  "plan": "art/map/floor_plan.png",
+  "tickets": [
+    {"id": "t1", "name": "Tiền sảnh", "at": [0.50, 0.86], "kind": "story", "stage": "t1"},
+    {"id": "t3", "name": "Hành lang chân dung", "at": [0.24, 0.66], "kind": "story", "stage": "t3", "opensAfter": "t1"},
+    {"id": "sk_props", "name": "Kho đạo cụ", "at": [0.12, 0.42], "kind": "skirmish", "stage": "sk_props", "opensAfter": "t3"},
+    {"id": "sk_stairs", "name": "Cầu thang phụ", "at": [0.36, 0.40], "kind": "skirmish", "stage": "sk_stairs", "opensAfter": "t3"},
+    {"id": "stage1", "name": "Phòng vé", "at": [0.74, 0.70], "kind": "story", "stage": "stage1", "opensAfter": "t3"},
+    {"id": "sk_boxoffice", "name": "Phòng vé (lần nữa)", "at": [0.86, 0.52], "kind": "skirmish", "stage": "sk_boxoffice", "opensAfter": "stage1"},
+    {"id": "makeup", "name": "Phòng hóa trang", "at": [0.62, 0.40], "kind": "unknown", "lock": "Mở sau Phòng vé."},
+    {"id": "under", "name": "Hầm sân khấu", "at": [0.50, 0.22], "kind": "unknown", "lock": "Mở sau Phòng hóa trang."},
+    {"id": "balcony", "name": "Ban công", "at": [0.18, 0.16], "kind": "unknown", "lock": "Chưa ai lên tới đó."},
+    {"id": "music", "name": "Phòng nhạc", "at": [0.82, 0.24], "kind": "unknown", "lock": "Có tiếng đàn sau cửa."},
+    {"id": "attic", "name": "Gác thượng", "at": [0.36, 0.08], "kind": "unknown", "lock": "Cầu thang đã sập."},
+    {"id": "stage", "name": "Sân khấu chính", "at": [0.66, 0.08], "kind": "unknown", "lock": "Nơi màn cuối hạ."}
+  ]
+}

@@ -15,6 +15,7 @@ target_sources(
         src/Soak.cpp
         src/Cafe.cpp
         src/Progress.cpp
+        src/Map.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
