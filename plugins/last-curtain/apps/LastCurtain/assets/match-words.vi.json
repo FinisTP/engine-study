@@ -74,6 +74,9 @@
     "NotHere": "Chỉ dùng được ở quán."
   },
   "actions": {
+    "preview": "{min}–{max}",
+    "previewCounter": "{min}–{max} · trả {cmin}–{cmax}",
+    "warnFaster": "nhanh hơn: ×2",
     "move": "Di chuyển",
     "stay": "Đứng yên",
     "skills": "Kỹ năng",
@@ -195,6 +198,11 @@
     "free": "Cắt dây cho {name}"
   },
   "screens": {
+    "level": "Cấp",
+    "atk": "Công",
+    "def": "Thủ",
+    "spd": "Tốc",
+    "pinned": "Đã ghim (I để bỏ)",
     "trapped": "Không kịp cắt dây",
     "backToCafe": "Về quán",
     "bots": "Máy",

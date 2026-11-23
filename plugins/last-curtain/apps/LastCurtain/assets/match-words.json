@@ -73,6 +73,9 @@
     "NotHere": "This can only be used in the café."
   },
   "actions": {
+    "preview": "{min}-{max}",
+    "previewCounter": "{min}-{max} · back {cmin}-{cmax}",
+    "warnFaster": "faster: x2",
     "move": "Move",
     "stay": "Stay",
     "skills": "Skills",
@@ -194,6 +197,11 @@
     "free": "Cut {name} free"
   },
   "screens": {
+    "level": "Lv",
+    "atk": "ATK",
+    "def": "DEF",
+    "spd": "SPD",
+    "pinned": "Pinned (I to let go)",
     "trapped": "Trapped: the strings could not be cut",
     "backToCafe": "Back to the cafe",
     "bots": "Bots",

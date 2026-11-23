@@ -1052,3 +1052,54 @@ TEST_CASE("Armed: the menu lists the targets with keys; Back disarms (campaign p
     REQUIRE(p.MenuKey(1));
     CHECK(p.State().log.size() > lines); // the attack happened
 }
+
+TEST_CASE("Target preview equals the rules' damage; the card shows the hovered unit and can be pinned (campaign plan 5)", "[match][play][preview]")
+{
+    const MatchDef def = Data();
+    int foe = -1;
+    MatchPlay p = AtPlayer(def, [&](MatchState &s) {
+        const int me = Current(s);
+        for (std::size_t i = 0; i < s.units.size() && foe < 0; ++i)
+            if (s.units[i].faction != s.units[static_cast<std::size_t>(me)].faction && Up(s.units[i]))
+                for (int d = 0; d < 4 && foe < 0; ++d)
+                    if (const int n = Neighbour(s.board, s.units[static_cast<std::size_t>(me)].cell, d); n >= 0)
+                        s.units[i].cell = static_cast<std::int16_t>(n), foe = static_cast<int>(i);
+    });
+    const MatchState &s = p.State();
+    const int me = Current(s);
+    // 1. The attack's preview: the best battle strike each way, as the rules' Damage gives it.
+    const nlohmann::json f = p.PreviewFor({ActionKind::Attack, static_cast<std::int8_t>(foe)});
+    int best = 0, counter = 0;
+    for (int slot = 0; slot < maxAbilities; ++slot)
+    {
+        const int a = s.units[static_cast<std::size_t>(me)].abilities[static_cast<std::size_t>(slot)];
+        if (a >= 0 && def.abilities[static_cast<std::size_t>(a)].use == Use::Battle && def.abilities[static_cast<std::size_t>(a)].kind == AbilityClass::Strike)
+            best = std::max(best, Damage(def, s, a, me, foe, def.abilities[static_cast<std::size_t>(a)].dice.count * def.abilities[static_cast<std::size_t>(a)].dice.sides));
+        const int b = s.units[static_cast<std::size_t>(foe)].abilities[static_cast<std::size_t>(slot)];
+        if (b >= 0 && def.abilities[static_cast<std::size_t>(b)].use == Use::Battle && def.abilities[static_cast<std::size_t>(b)].kind == AbilityClass::Strike)
+            counter = std::max(counter, Damage(def, s, b, foe, me, def.abilities[static_cast<std::size_t>(b)].dice.count * def.abilities[static_cast<std::size_t>(b)].dice.sides));
+    }
+    CHECK(f["max"] == best);
+    CHECK(f["counterMax"] == counter);
+    CHECK(f["min"].get<int>() <= f["max"].get<int>());
+    // 2. Armed, the target row carries the preview in its note.
+    REQUIRE(p.MenuKey(1));
+    const nlohmann::json main = p.Menu()["rows"];
+    for (std::size_t i = 0; i < main.size(); ++i)
+        if (main[i]["id"] == "attack")
+            REQUIRE(p.MenuKey(static_cast<int>(i) + 1));
+    const nlohmann::json rows = p.Menu()["rows"];
+    REQUIRE_FALSE(rows.empty());
+    CHECK(rows[0]["note"].get<std::string>().find(std::to_string(best)) != std::string::npos);
+    // 3. The card: the hovered unit's numbers; pinned, it stays when the mouse leaves.
+    p.Hover(s.units[static_cast<std::size_t>(foe)].cell);
+    nlohmann::json card = p.HudData()["card"];
+    CHECK(card["unit"] == foe);
+    CHECK(card["maxHp"] == s.units[static_cast<std::size_t>(foe)].maxHp);
+    CHECK(card.contains("speed"));
+    CHECK(p.Pin());
+    p.Hover(-1);
+    CHECK(p.HudData()["card"]["unit"] == foe);
+    CHECK(p.Pin()); // unpinned
+    CHECK(p.HudData()["card"].is_null());
+}

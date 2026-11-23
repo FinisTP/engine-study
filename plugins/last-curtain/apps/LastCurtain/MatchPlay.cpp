@@ -987,6 +987,22 @@ nlohmann::json MatchPlay::HudData() const
     j["hint"] = now >= 0 && !Mine(now) && !s_.over ? Fill(Word("misc", "enemyTurn"), {{"name", Name(now)}, {"hurry", hurryKey_}, {"skip", skipKey_}})
                                                    : UiData().value("hint", std::string());
     j["logLine"] = log_.empty() ? std::string() : log_.back();
+    // 4. The card: the pinned unit, else the one under the mouse.
+    int card = pinned_;
+    for (int i = 0; card < 0 && i < static_cast<int>(s_.units.size()) && hover_ >= 0; ++i)
+        if (Up(s_.units[U(i)]) && Covers(s_.board, s_.units[U(i)], hover_))
+            card = i;
+    j["card"] = nullptr;
+    if (card >= 0)
+    {
+        static const char *roles[] = {"attacker", "defender", "supporter", "speedster", "allrounder"};
+        const Unit &u = s_.units[U(card)];
+        nlohmann::json c = UnitNumbers(card);
+        c["speed"] = u.speed;
+        c["role"] = u.kind == 0 ? Word("roles", roles[static_cast<int>(def_.characters[U(u.def)].role)]) : std::string();
+        c["pinned"] = card == pinned_;
+        j["card"] = c;
+    }
     return j;
 }
 
@@ -1008,7 +1024,15 @@ nlohmann::json MatchPlay::Menu() const
         title = Word("actions", "target");
         int k = 0;
         for (const Action &a : ArmedActions())
-            row("target:" + std::to_string(k++), Name(a.kind == ActionKind::Attack ? a.a : a.b), "", false, "", false);
+        {
+            const nlohmann::json f = PreviewFor(a);
+            const std::string note = f.is_null() ? std::string()
+                                                 : Fill(Word("actions", f["counterMax"].get<int>() > 0 ? "previewCounter" : "preview"),
+                                                        {{"min", std::to_string(f["min"].get<int>())}, {"max", std::to_string(f["max"].get<int>())},
+                                                         {"cmin", std::to_string(f["counterMin"].get<int>())}, {"cmax", std::to_string(f["counterMax"].get<int>())}}) +
+                                                       (f["warn"].get<std::string>().empty() ? "" : "  " + f["warn"].get<std::string>());
+            row("target:" + std::to_string(k++), Name(a.kind == ActionKind::Attack ? a.a : a.b), note, false, "", false);
+        }
     }
     else if (!Chose())
     {
@@ -1095,4 +1119,53 @@ bool MatchPlay::Back()
     if (Chose() && !s_.now.acted)
         return HandleUi("", "act", "undo");
     return false;
+}
+
+nlohmann::json MatchPlay::PreviewFor(const Action &action) const
+{
+    const int me = Current(s_);
+    const int target = action.kind == ActionKind::Attack ? action.a : action.b;
+    if (me < 0 || target < 0 || target >= static_cast<int>(s_.units.size()))
+        return nullptr;
+    // 1. The best battle strike from one unit to another, low and high roll.
+    const auto strike = [&](int from, int to) {
+        std::pair<int, int> best{0, 0};
+        for (const int a : s_.units[U(from)].abilities)
+            if (a >= 0 && def_.abilities[U(a)].use == Use::Battle && def_.abilities[U(a)].kind == AbilityClass::Strike)
+            {
+                const Dice &d = def_.abilities[U(a)].dice;
+                const int high = Damage(def_, s_, a, from, to, d.count * d.sides);
+                if (high > best.second)
+                    best = {Damage(def_, s_, a, from, to, d.count), high};
+            }
+        return best;
+    };
+    std::pair<int, int> dealt{0, 0};
+    if (action.kind == ActionKind::Attack)
+        dealt = strike(me, target);
+    else
+    {
+        const umbra::match::Forecast f = Preview(def_, s_, action);
+        dealt = {f.dealtMin, f.dealtMax};
+    }
+    const auto counter = action.kind == ActionKind::Attack ? strike(target, me) : std::pair<int, int>{0, 0};
+    // 2. One warning word: the target is faster and doubles its blows on the slower (speedkill).
+    const Unit &u = s_.units[U(me)], &t = s_.units[U(target)];
+    bool speedkill = false;
+    for (const int a : t.abilities)
+        speedkill |= a >= 0 && def_.abilities[U(a)].effect == AbilityEffect::Speedkill;
+    return {{"min", dealt.first}, {"max", dealt.second}, {"counterMin", counter.first}, {"counterMax", counter.second}, {"hp", t.hp},
+            {"warn", speedkill && t.speed > u.speed ? Word("actions", "warnFaster") : std::string()}};
+}
+
+bool MatchPlay::Pin()
+{
+    int unit = -1;
+    for (int i = 0; unit < 0 && i < static_cast<int>(s_.units.size()) && hover_ >= 0; ++i)
+        if (Up(s_.units[U(i)]) && Covers(s_.board, s_.units[U(i)], hover_))
+            unit = i;
+    if (pinned_ >= 0)
+        return pinned_ = -1, true;
+    pinned_ = unit;
+    return unit >= 0;
 }

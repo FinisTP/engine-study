@@ -47,6 +47,10 @@ public:
     bool MenuKey(int n);                // number key n (1-based) picks row n when it is on
     bool MenuPick(const std::string &id);
     bool Back();                        // one level back: targets, sub-menu, the walk; false at the top
+    // What an action would do (campaign plan 5): {min, max, counterMin, counterMax, hp, warn}; an attack
+    // uses the best battle strike each way, a board ability the rules' Preview.
+    [[nodiscard]] nlohmann::json PreviewFor(const umbra::match::Action &action) const;
+    bool Pin(); // the card stays on the hovered unit (I); again unpins
 
     bool Do(const umbra::match::Action &action); // the player's action; false unless it is theirs and legal
     void Update(float dt);
@@ -113,6 +117,7 @@ private:
     bool watch_ = false, paused_ = false;
     std::vector<std::string> names_, sprites_;
     std::string submenu_; // "", "skills" or "items"
+    int pinned_ = -1;     // the unit whose card is pinned
     std::string stageTitle_, hurryKey_ = "Space", skipKey_ = "F";
     std::string armed_; // "attack" or "ability:<slot>"
     std::string lastBlow_, eventResult_, treasureResult_; // the battle's last blow; the event's outcome; the card turned

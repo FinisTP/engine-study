@@ -193,9 +193,12 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         for (int n = 1; n <= 6 && play && hooks && !paused; ++n)
             if (game.keys.Pressed(input, "menu" + std::to_string(n)))
                 (void)play->MenuKey(n);
-        if (play && hooks && !paused && game.keys.Pressed(input, "endTurn") && play->PlayerTurn())
+        const bool ours = play && play->PlayerTurn(); // F ends our turn, or skips theirs: never both in one press
+        if (play && hooks && !paused && game.keys.Pressed(input, "endTurn") && ours)
             (void)play->MenuPick("end");
-        else if (play && hooks && !paused && game.keys.Pressed(input, "skip") && !play->PlayerTurn())
+        if (play && hooks && !paused && game.keys.Pressed(input, "pin"))
+            (void)play->Pin(); // I: the hovered unit's card stays
+        if (play && hooks && !paused && game.keys.Pressed(input, "skip") && !ours && !play->State().over)
             (void)play->HandleUi("", "skip", ""); // their turn: F skips (P16)
 
         // 5. The match: bots and monsters play on beats; the board follows the mouse.

@@ -180,6 +180,59 @@
             }
           ]
         }
+      },
+      {
+        "type": "stack",
+        "anchor": "top-right",
+        "offset": [
+          -20,
+          96
+        ],
+        "style": "float",
+        "gap": 4,
+        "size": [
+          260,
+          0
+        ],
+        "visible": "{hud.card}",
+        "children": [
+          {
+            "type": "text",
+            "style": "heading",
+            "text": "{hud.card.name}"
+          },
+          {
+            "type": "text",
+            "style": "muted",
+            "text": "{hud.card.role}  {words.level} {hud.card.level}"
+          },
+          {
+            "type": "bar",
+            "style": "hp",
+            "size": [
+              230,
+              8
+            ],
+            "value": "{hud.card.hp}",
+            "max": "{hud.card.maxHp}"
+          },
+          {
+            "type": "text",
+            "style": "small",
+            "text": "HP {hud.card.hp}/{hud.card.maxHp}"
+          },
+          {
+            "type": "text",
+            "style": "small",
+            "text": "{words.atk} {hud.card.attack}   {words.def} {hud.card.defence}   {words.spd} {hud.card.speed}"
+          },
+          {
+            "type": "text",
+            "style": "muted",
+            "text": "{words.pinned}",
+            "visible": "{hud.card.pinned}"
+          }
+        ]
       }
     ]
   }
