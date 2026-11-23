@@ -18,7 +18,7 @@
 - Lệ Thanh: appears after T1's rescue; walks between the counter, the door and the window; talks unlock by facts (`lethanh.first`, `t3.rite`, `stage1.money`). She never says her full story in the slice.
 - Fight memories: a fight sets facts (`fell:<unit>`, `rite:<stage>`, `ratStole:<item>`), and talks can depend on them (Bà Mai teases the one who fell most; Bảo comments on the rite).
 - Model: optional. Missing model → authored lines, no message. A model line is shown only after the guard passes; its result is **stored in the save** so a reload shows the same line.
-- Commits from **#364**.
+- Commits from **#365**.
 
 ## Content (the slice's talks; drafted in Vietnamese for review)
 
@@ -36,26 +36,26 @@
 
 ---
 
-### Task 1: Talk files and the visit (#364)
+### Task 1: Talk files and the visit (#365)
 
 `talks/*.json` loader (who, `opens` conditions: facts all/none, chapter ≥, `after` stage; `scene`; `sets`; `repeat`). `CafeVisit(save, talks) -> {newTalks ≤ 3, oldTalks}`. Tests: conditions; the cap of 3 (ordered by file order); once-only. Commit.
 
-### Task 2: The shelf and slots (#365)
+### Task 2: The shelf and slots (#366)
 
 `MoveItem(save, from, to)` between a unit's 4 slots and the shelf; refuse to a full slot list; items stack only if the item def says so. Tests. Commit.
 
-### Task 3: Restoring Tí (#366)
+### Task 3: Restoring Tí (#367)
 
 `fragments.json` (hint line, wanted item, scene, the ability unlocked at 3 and 6). `OfferItem(save, fragment, item) -> Right/Wrong`; two open after each won fight; the ability unlocks join Tí's kit. Tests: right and wrong; opening two per won fight; unlocks at 3 and 6; never more than 6. Commit.
 
-### Task 4: The campaign café screen (#367)
+### Task 4: The campaign café screen (#368)
 
 The café room with the party's figures and Lệ Thanh walking (her path from the room's points), `cafe-campaign.ui.json` (talk list with lanterns, the shelf, Tí's fragments, "Ra bản đồ"), wired into `CampaignApp` in place of plan 5's stub. Tests: a capture; the flow test from plan 5 now visits the café. Commit.
 
-### Task 5: The model, optional (#368)
+### Task 5: The model, optional (#369)
 
 `Reword(line, voice, situation) -> optional<string>` through `TalkMind` when a model file is present; guard failure or a timeout (from the options) → none. Stored in `save.lines[talkId:lineIndex]`. Tests with the stand-in model: a passing line shown and stored; a failing line falls back; a reload shows the stored line; no model → no call. Commit.
 
-### Task 6: Content and records (#369)
+### Task 6: Content and records (#370)
 
 The talks and fragments above, in Vietnamese with `{player}` and `{anh/chị}`; `docs/testing/s50-campaign-cafe.md` (§4: a visit on Windows with and without the model file; Tí's six fragments), ROADMAP, status. Ship.

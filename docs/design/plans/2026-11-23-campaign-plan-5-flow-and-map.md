@@ -20,7 +20,7 @@
 - XP: a stage's `xp` on a win; skirmish XP **stops at the next story stage's recommended level**; a party member levels at fixed thresholds from `growth.csv`.
 - No timer pressure on the map; walking is a short slide between rooms (≤ 0.6 s a corridor, skippable).
 - Language: `vi` default, `en` from the pause menu, saved in prefs (not the campaign save).
-- Commits from **#357**.
+- Commits from **#358**.
 
 ## The theatre map (content)
 
@@ -42,30 +42,30 @@ The figure: the player's form-coloured silhouette; walking follows corridors (th
 
 ---
 
-### Task 1: The save (#357)
+### Task 1: The save (#358)
 
 `CampaignSave` (`version`, `seed`, `player{name, form}`, `party[]{id, level, xp, hp, items[4]}`, `shelf[]`, `rooms{id → state, refill, itemsTaken[]}`, `chapter`, `facts[]`, `riteUnlocked`, `riteUsedIn[]`, `tiFragments`, `here` (the room the figure stands in)). `SaveCampaign(path, save)` (temp + rename) and `LoadCampaign(path) -> optional<CampaignSave> + error`. Tests: round trip; a wrong version refused; a corrupt file refused and left on disk; an interrupted write (temp left) does not replace the good file. Commit.
 
-### Task 2: The map's file and rules (#358)
+### Task 2: The map's file and rules (#359)
 
 `assets/campaign/map.json` (rooms with `id`, names vi/en, `kind`, `stage` or `skirmish` id, `at` (x,y on the painting, 0–1), `opensAfter` (a fact or room id), `lockLine`; corridors as pairs). `LoadTheatreMap` validates (unknown stage, unreachable room, a corridor to nowhere). `Unlocked(map, save) -> set`, `PathBetween(map, a, b) -> rooms`. Tests: the slice's openings in order; a path along corridors; validation errors name file and field. Commit.
 
-### Task 3: Progress (#359)
+### Task 3: Progress (#360)
 
 `WinStage(save, stage, result)` (XP with the skirmish cap, the fight's HP kept or restored per stage file, items picked up go to slots then shelf, the room marked done, facts set, chapter advanced on a story win), `LoseStage`, `RefillSkirmishes(save, map)` (after each story win: each skirmish room's `refill`+1 picks its next twist from its stage file; taken items come back), `XpFor(save, stage)` (0 once at the next story stage's level). Tests: a skirmish gives XP up to level 3 before Stage 1 and 0 after; a refill after Stage 1 changes the twist and restores items; the rite use is saved at once. Commit.
 
-### Task 4: The title (#360)
+### Task 4: The title (#361)
 
 `title.ui.json` (Tiếp tục / Chơi mới / Tùy chọn / Thoát; Tiếp tục hidden without a save), `newgame.ui.json` (name field, anh/chị switch, a sample line that fills in as you type: "Chào {anh/chị} {player}."). The engine UI gains a text field if it has none (check `engine/ui` first; else a small one: typing, backspace, Vietnamese input through SDL text events). Tests: the name rule; the sample line; a `ui-preview` capture. Commit.
 
-### Task 5: The map screen (#361)
+### Task 5: The map screen (#362)
 
 `map.ui.json` (the painting, room spots placed from `at`, the figure, the room card), `MapView` (states drawn as tints and marks; the figure's slide along `PathBetween`; keyboard and mouse: arrows move between neighbouring rooms, Enter opens the card). Until the painting exists, a placeholder: dark paper with lines from the corridors. An art request for the painting goes in `docs/design/art-requests.md` (dark oil pastel, top-down opera-house plan, no text, 1920×1080, rooms as soft empty spots). Tests: the card's reward line; the figure's path; the capture. Commit.
 
-### Task 6: The one flow (#362)
+### Task 6: The one flow (#363)
 
 `CampaignApp`: title → (new: the prologue scene) → map → room: story (scene `start`, fight, scene `end`, back to map), skirmish (fight), café (plan 6; until then a stub that says so), game over screen (`gameover.ui.json`), the pause menu's language switch. Developer flags: `--stage <id>`, `--save <file>`, and **mid-stage save for developers only** (`--dev`), not offered to players. Tests: a scripted walk through the slice with stand-in fights (the flow test wins each stage by setting the result) ends with Tí in the party, the skirmishes refilled and the save written. Commit.
 
-### Task 7: Records (#363)
+### Task 7: Records (#364)
 
 `docs/testing/s49-campaign-flow.md` (§4 on Windows: a new campaign with a Vietnamese name, walk the map, win T1, quit, continue, lose a fight and see each game-over choice, a skirmish after the cap gives no XP, the refill after Stage 1), ROADMAP, status, CLAUDE.md. Ship.

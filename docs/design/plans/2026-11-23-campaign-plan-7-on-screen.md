@@ -19,31 +19,31 @@
 - Telegraphs (the Keeper's breath, windows, sandbags, reinforcements): marks drawn **a round ahead**, the same red-orange as the order strip's "spawns soon".
 - Every word on screen from `campaign-words.json` / `match-words.json`, `vi` and `en`; `ui::MissingGlyphs` finds none in the slice's screens.
 - Keep `Scene.hlsl` / `Post.hlsl` and the WGSL in `umbra_render.js` in step if any shader changes (aim: none).
-- Commits from **#370**.
+- Commits from **#371**.
 
 ---
 
-### Task 1: Forms and tints (#370)
+### Task 1: Forms and tints (#371)
 
 The player's figure takes the chosen form (two guest meshes exist; pick by `form`), tints from `cast.csv` (`tint` column) for party and enemies; ordinary ghosts at height 0.8 and a cold tint. Tests: the draw list's mesh and tint per unit. Capture. Commit.
 
-### Task 2: Strings, knots and the gold lift (#371)
+### Task 2: Strings, knots and the gold lift (#372)
 
 `Strings(state, anchors) -> lines` (strung units only); the snap and lift as a short animation driven by the `Freed` log entry (0.8 s), the unit removed from the drawn board after it. Tests: only strung units; a freed unit's line gone and its lift queued. Capture. Commit.
 
-### Task 3: Plates, falls and AP (#372)
+### Task 3: Plates, falls and AP (#373)
 
 `Plates(state)` (name, HP bar, boss mask, recruit knot, AP pips), fallen pose and dim; plates stay readable over the analog screen (test the contrast on a capture). Tests per field. Commit.
 
-### Task 4: Telegraph marks (#373)
+### Task 4: Telegraph marks (#374)
 
 `Marks(state, stage)` for the next round's breath lane, opening windows, falling sandbags, reinforcement squares; a short legend line on first sight (from the stage's teaching beats). Tests per gimmick. Capture. Commit.
 
-### Task 5: Backdrops and the order strip's faces (#374)
+### Task 5: Backdrops and the order strip's faces (#375)
 
 Stage backdrops from the stage file (placeholders until the art exists; requests in `art-requests.md`: foyer, portrait corridor, box office, prop store, back stairs, the theatre map); enemy portraits for named enemies (the Rat, the Keeper) once drawn, the name-only fallback kept. Commit.
 
-### Task 6: Words and records (#375)
+### Task 6: Words and records (#376)
 
 Every new screen string through the word files; `MissingGlyphs` over all campaign screens in a test; `docs/testing/s51-campaign-on-screen.md` (§4: play Stage 1 on Windows with the analog screen on and off and judge readability), ROADMAP, status. Ship.
 

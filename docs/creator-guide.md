@@ -6,41 +6,44 @@ commands are for Windows (Developer PowerShell or a plain `cmd` window). The ref
 content is in `projects/reference/assets`; the folder layout is in
 `projects/README.md`.
 
-## 0. One-time setup
+## 0. One-time setup, and the two ways to play
 
 You need Visual Studio 2022 (C++ desktop workload), the Vulkan SDK and vcpkg (`VCPKG_ROOT` set).
-Then build once:
+Everything else goes through **`build.bat`** in the repository folder: double-click it, or type
+`build <word>` in a `cmd` window there. It finds Visual Studio by itself (no Developer PowerShell
+needed), configures the first time, builds Release, and starts what you asked for:
 
-```text
-cmake --preset windows-msvc
-scripts\build-and-run.bat
-```
-
-`build-and-run.bat` does four things:
-
-1. Builds the Release configuration.
-2. Runs the tests.
-3. Copies a fully passing build to `out\known-good`.
-4. Starts the game.
-
-**From Visual Studio instead** (File > Open > Folder on the repository): pick a build preset in
-the toolbar's second box and press **Ctrl+Shift+B**; **F5** starts the game.
-
-| Preset | Does |
+| Command | Does |
 |---|---|
-| `windows-msvc-release` | builds everything in Release |
-| `windows-msvc-release-j4` | the same with 4 compilers at once: use it when the build stops with `CreateProcess: Access is denied` |
-| `windows-msvc-check` | what the .bat does: build, run the tests, and if they pass update `out\known-good` |
+| `build` | builds, starts The Last Curtain (the café, then a match) |
+| `build editor` | builds the editor and the games, starts the editor |
+| `build match` | builds, starts a faction match at once |
+| `build scene prologue` | builds, plays one campaign scene |
+| `build game --flags` | builds, starts The Last Curtain with these flags (its `README.md`) |
+| `build test` | builds everything, runs the tests except the long balance soaks |
+| `build soak` | builds everything, runs the balance soaks only (about 25 minutes) |
+| `build only` | builds everything, starts nothing |
 
-Tests alone: **Test > Run CTests for Umbra**.
+A failed build stops with the error in the window. If Windows blocks the compiler
+(`Access is denied`, LNK1104), run `set UMBRA_JOBS=4` first, or run it as administrator.
 
-The log is in `out\build-and-run.log`. The first build downloads and compiles the libraries, so
-it takes a while; later builds take seconds.
+**In the editor:** the menu bar's **Play (F5)** starts whatever the box next to it says. The
+choices come from `projects/<project>/project.json` `"play"` (a label, a program, its arguments;
+`{scene}` is the open scene) and the editor remembers the last one. Building the editor builds the
+programs it can start.
+
+**From Visual Studio** (File > Open > Folder on the repository): pick the `windows-msvc-release`
+build preset, then the start item in the toolbar: *Umbra Editor*, *The Last Curtain*, *... faction
+match* or *... scene prologue* (`launch.vs.json`); **F5** builds and starts it.
+
+`scripts\build-and-run.bat` (the old Umbra RPG: build, every test, `out\known-good`, then the game)
+and `scripts\editor.bat` still work.
 
 | Program | Path |
 |---|---|
-| Game | `out\build\windows-msvc\apps\umbra\Release\Umbra.exe [scene]` |
-| Editor | `scripts\editor.bat [scene]` |
+| The Last Curtain | `out\build\windows-msvc\plugins\last-curtain\apps\LastCurtain\Release\LastCurtain.exe` |
+| Editor | `out\build\windows-msvc\apps\editor\Release\UmbraEditor.exe [scene]` |
+| The Umbra RPG | `out\build\windows-msvc\apps\umbra\Release\Umbra.exe [scene]` |
 | Command-line checks | `out\build\windows-msvc\tools\umbratool\Release\UmbraTool.exe` |
 
 ## 1. Where things are

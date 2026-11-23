@@ -29,5 +29,8 @@
     "Umbra::Cafe",
     "Umbra::TalkMind",
     "Umbra::Campaign"
+  ],
+  "programs": [
+    "LastCurtain"
   ]
 }

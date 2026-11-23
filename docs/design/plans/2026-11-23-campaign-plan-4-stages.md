@@ -20,7 +20,7 @@
 - Play length targets for the soak: **T1 ~5 min, T3 ~10, Stage 1 15–20**. No round limit except as a stage's aim; the soak alone caps rounds.
 - XP per **stage won**, set in the stage file, about one level a stage; recruits join at a fixed level (**Tí 3; Bảo and Bà Mai 2**).
 - Content design rule (the user, 2026-11-23 evening): **every fight teaches or twists exactly one new thing and recombines the old ones**; no two fights in a row ask the same question.
-- Commits from **#347**.
+- Commits from **#348**.
 
 ## The slice's fights (content; Vietnamese drafted in the stage files for the user's review)
 
@@ -38,42 +38,42 @@ Skirmish rewards: XP until the party reaches the **next story stage's recommende
 
 ---
 
-### Task 1: The cast sheet's stats and enemy scaling (#347)
+### Task 1: The cast sheet's stats and enemy scaling (#348)
 
 Files: `assets/campaign/cast.csv` (+ `role,level,hpPct,attackPct` columns, `kit` = ability ids), `assets/campaign/growth.csv` (`role,level,hp,attack,defence,speed,move`: the class line at each level 1–15), `modules/campaign` (`EnemyUnit(def, cast, id, level) -> match::Unit` with the scaling above). Tests: the Rat at level 3 has 8 attack and ~40 HP; a level-3 ghost attacker ~4 attack; a level-1 player matches the All-Rounder line. Commit.
 
-### Task 2: Stage files (#348)
+### Task 2: Stage files (#349)
 
 `StageDef` (id; `title` vi and `titleEn`; level; backdrop; music; xp; `map` rows; `party` and start squares; `units` (who, square, side, nature, flags `boss`/`recruit`, height, behaviour with its numbers); `items` on squares; `mode` name plus overrides (e.g. `mustFree`); `gimmicks` with numbers; `aims` (start hint, teaching beats, recap); `scenes` (moment → scene id: `start`, `end`, `firstAttacked:<unit>`, `falls:<unit>`, `round:<n>`, `bossBelow:<pct>`, `freed:<unit>`)). Map characters: `#` wall, `.` floor, `~` hazard square, `W` window, `R` rope post (a spawn point), `S` party start; doors are open between neighbouring floor squares. Validation names file, field and fix (unknown cast id, a unit on a wall, two units over capacity, a scene id with no file, a window gimmick without `W` squares…). Tests per rule. Commit.
 
-### Task 3: Building a fight (#349)
+### Task 3: Building a fight (#350)
 
 `BuildStage(...) -> match::MatchState`: the map into `Board` (cells, doors from neighbours; `Fair` not asked), the party from the save's characters (plan 5 passes them; here a test party), enemies by `EnemyUnit`, flags, items as `Floor`, mode with overrides, `BeginMatch`. Reinforcements are pre-made units off the board with their round. Tests: T1's file builds; units where the file says; the mode campaign with `mustFree` in Stage 1. Commit.
 
-### Task 4: Behaviours and the enemy brain (#350)
+### Task 4: Behaviours and the enemy brain (#351)
 
 Side 1 acts through `matchbots::ChooseAction`, filtered by the unit's behaviour: **passive** — `EndTurn` unless a party unit is in the same room within 4 squares (or it was attacked); **aggressive after n** — holds until round n, then the bot plays; **reinforcement** — placed at round n on its square if free (else the nearest free), `SpawnSoon` logged a round ahead, joins the order next round. A `bides` flag lets a unit bide when the bot has nothing worth doing (the Rat's is off). `MatchPlay` asks the brain for side 1 as it does for the faction match's rival side. Tests: each behaviour; the Rat never bides; nobody on his side revives (the stage's `noRevive` side flag). Commit.
 
-### Task 5: New effects and the Rat's kit (#351)
+### Task 5: New effects and the Rat's kit (#352)
 
 `abilities.csv` gains `effect` (`none`, `mark`, `steal`, `dart`, `speedkill`, `deathpaper`, `riceRevive`) and the campaign kits: Bảo (*Dao mổ*, *Chẩn đoán* mark +1 damage taken until the target's next turn, *Giấy chứng tử* heal 2 when a foe falls to him), Bà Mai (*tend*, *mend*, *Cơm nguội*: heals 5 and cleanses one status, or revives a fallen ally at 30%), the player's All-Rounder kit with Lệ Thanh's fan, the Rat (*Móc túi*, *Chạy làng*, *Speedkill*), Tí's (*Ná cao su*, *Đưa tin* give-AP, *Chân sáo* +3 move after a bide; used once he joins, plan 6). Names in `campaign-words.json` (vi, en). Tests per effect (mark expires; steal parks on the nearest open window, drops when the Rat is hit; dart moves away up to 3; speedkill doubles only against a slower attacker; death paper heals on a kill; cold rice heals or revives). Commit.
 
-### Task 6: Gimmicks (#352)
+### Task 6: Gimmicks (#353)
 
 `windows` (Stage 1: a pattern of which windows open each round, marked a round ahead; an open window spawns a rat specter if its square is free, at most n alive), `hazards` (skirmish: k marked squares each round fall next round for x damage), `ropes` (T1: reinforcement posts), `breath` (T3: the Keeper's telegraphed lane strike every other round, its mark shown a round ahead). Each is a small function in `match` called at the round's start, with data from the stage file. Tests per gimmick. Commit.
 
-### Task 7: Scenes inside a fight (#353)
+### Task 7: Scenes inside a fight (#354)
 
 `StageMoments(state, log since last check) -> scene ids` (each moment once per attempt); `MatchPlay` queues a scene, waits for the current beat to finish, pauses the fight, shows `DialogView`, resumes where it was. Tests: a moment fires once; the fight state is unchanged by the scene; a scene during a battle waits for the battle's beat. Commit.
 
-### Task 8: The slice's content (#354)
+### Task 8: The slice's content (#355)
 
 `stages/t1.json`, `t3.json`, `stage1.json`, `skirmish-props.json`, `skirmish-stairs.json` with their twists by chapter; scenes `t1-start`, `t1-rescue`, `t3-start`, `t3-keeper-breath`, `t3-end-rite`, `stage1-start`, `stage1-rat-first-hit`, `stage1-ti-falls`, `stage1-freed`, `stage1-end` (Lệ Thanh's story piece 1, money), `stage1-trapped`; all Vietnamese, drafted for review, with `{player}` and `{anh/chị}`. Tests: every file loads; each stage can be won by a scripted line of actions (a test plays it). Commit.
 
-### Task 9: The campaign soak (#355)
+### Task 9: The campaign soak (#356)
 
 `UmbraTool campaign-soak <stage> [--seeds 200]`: bots play the party too; report wins, falls per unit, rite uses, turns and an estimated play time (turns × seconds a turn from options), rounds capped in the soak only. Bands in `assets/campaign/balance.json` (T1 player falls ≤ 5%; T3 wins 60–85% without the rite; Stage 1 wins 45–70%, trapped losses 10–25% so the tension is real; play times near the targets). Tune the stage data until the bands hold; record the tuning in `Campaign.md`. Commit.
 
-### Task 10: Records (#356)
+### Task 10: Records (#357)
 
 `docs/testing/s48-stages.md` (§4: play T1, T3 and Stage 1 on Windows — once plan 5's flow exists, or through `LastCurtain --stage <id>`), ROADMAP, status. Ship.

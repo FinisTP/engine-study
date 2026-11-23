@@ -13,7 +13,9 @@ CMakeUserPresets.json
 # vcpkg manifest installation
 vcpkg_installed/
 
-# Editors
+# Editors (the Umbra Editor keeps its layout and its Play choice where it runs)
+umbra-editor.ini
+umbra-editor-play.txt
 .vscode/
 .idea/
 

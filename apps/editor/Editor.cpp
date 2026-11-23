@@ -32,12 +32,7 @@ using widgets::Vec3;
 
 namespace
 {
-    // Paths as UTF-8 text and back. std::string paths would use the Windows code page (roadmap T37).
-    std::string Utf8(const std::filesystem::path &path)
-    {
-        const std::u8string text = path.generic_u8string();
-        return {text.begin(), text.end()};
-    }
+    // Paths from UTF-8 text. std::string paths would use the Windows code page (roadmap T37).
     std::filesystem::path FromUtf8(const std::string &text) { return std::u8string(text.begin(), text.end()); }
 
     glm::quat Rotation(const Json &entity)
@@ -95,9 +90,21 @@ umbra::core::Camera OrbitCamera::ToCamera() const
     return camera;
 }
 
-Editor::Editor(ModelLibrary &models, umbra::assets::AssetFolders assetRoot, std::filesystem::path gameExecutable)
-    : models_(models), assetRoot_(std::move(assetRoot)), gameExecutable_(std::move(gameExecutable))
+Editor::Editor(ModelLibrary &models, umbra::assets::AssetFolders assetRoot, const std::filesystem::path &projectFile, std::filesystem::path programsFile)
+    : models_(models), assetRoot_(std::move(assetRoot)), programsFile_(std::move(programsFile))
 {
+    // Play's starts from project.json, and the one chosen last time.
+    std::vector<umbra::core::Diagnostic> playProblems;
+    std::ifstream project(projectFile);
+    starts_ = umbra::authoring::LoadPlayStarts(project ? Json::parse(project, nullptr, false) : Json(), playProblems);
+    if (!playProblems.empty())
+        Report(playProblems, "project.json \"play\"");
+    std::string last;
+    if (std::ifstream chosen("umbra-editor-play.txt"); std::getline(chosen, last))
+        for (std::size_t i = 0; i < starts_.size(); ++i)
+            if (starts_[i].label == last)
+                playStart_ = static_cast<int>(i);
+
     // The RPG content is open the whole time: forms edit it, scene pickers read its ids.
     rpg_ = std::make_unique<authoring::Document>(assetRoot_ / "rpg/reference.rpg.json", authoring::RpgValidator());
     std::vector<umbra::core::Diagnostic> diagnostics;
@@ -190,16 +197,29 @@ void Editor::Redo()
 
 void Editor::Play()
 {
-    // The game plays the scene as it is on disk, so save first.
-    if (!scene_)
+    // 1. A start that plays the open scene saves it first: the game reads it from disk.
+    const umbra::authoring::PlayStart &start = starts_[static_cast<std::size_t>(playStart_)];
+    const bool usesScene = std::ranges::find(start.args, std::string{"{scene}"}) != start.args.end();
+    if (usesScene && !scene_)
         return;
-    if (scene_->IsDirty() || rpg_->IsDirty())
+    if (usesScene && (scene_->IsDirty() || rpg_->IsDirty()))
         Save();
-    if (scene_->IsDirty())
+    if (usesScene && scene_->IsDirty())
         return;
-    const std::string game = Utf8(gameExecutable_);
-    const char *arguments[] = {game.c_str(), scenePath_.c_str(), nullptr};
-    SDL_Process *process = SDL_CreateProcess(arguments, false);
+    // 2. The program this build made, with the start's arguments.
+    std::ifstream file(programsFile_);
+    const std::vector<std::string> command = umbra::authoring::PlayCommand(start, file ? Json::parse(file, nullptr, false) : Json(), scenePath_);
+    if (command.empty())
+    {
+        message_ = start.program + " is not built yet: run build.bat";
+        messageSeconds_ = 5.0F;
+        return;
+    }
+    std::vector<const char *> arguments;
+    for (const std::string &a : command)
+        arguments.push_back(a.c_str());
+    arguments.push_back(nullptr);
+    SDL_Process *process = SDL_CreateProcess(arguments.data(), false);
     if (process == nullptr)
     {
         message_ = std::string{"Cannot start the game: "} + SDL_GetError();
@@ -207,7 +227,7 @@ void Editor::Play()
         return;
     }
     SDL_DestroyProcess(process); // only our handle; the game keeps running
-    message_ = "Playing " + scenePath_;
+    message_ = "Playing: " + start.label;
     messageSeconds_ = 3.0F;
 }
 
@@ -690,6 +710,18 @@ void Editor::MenuBar()
     ImGui::Separator();
     if (ImGui::Button("Play (F5)"))
         Play();
+    // What Play starts (project.json "play"); the choice is kept for next time.
+    ImGui::SetNextItemWidth(320.0F);
+    if (ImGui::BeginCombo("##play", starts_[static_cast<std::size_t>(playStart_)].label.c_str()))
+    {
+        for (std::size_t i = 0; i < starts_.size(); ++i)
+            if (ImGui::Selectable(starts_[i].label.c_str(), static_cast<int>(i) == playStart_))
+            {
+                playStart_ = static_cast<int>(i);
+                std::ofstream("umbra-editor-play.txt") << starts_[i].label << '\n';
+            }
+        ImGui::EndCombo();
+    }
     if (ImGui::Button("Code"))
         showCode_ = true;
     for (const auto &panel : panels_)

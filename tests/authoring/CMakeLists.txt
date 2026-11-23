@@ -2,9 +2,10 @@ find_package(Catch2 3 CONFIG REQUIRED)
 
 # Shared content edits (editor, tool), headless.
 add_executable(UmbraAuthoringTests)
-target_sources(UmbraAuthoringTests PRIVATE DocumentTests.cpp ModelToolsTests.cpp PackageTests.cpp ValidateTests.cpp WebPackTests.cpp)
+target_sources(UmbraAuthoringTests PRIVATE DocumentTests.cpp ModelToolsTests.cpp PackageTests.cpp ValidateTests.cpp WebPackTests.cpp PlayTests.cpp)
 target_include_directories(UmbraAuthoringTests PRIVATE ${PROJECT_SOURCE_DIR}/tests)
-target_compile_definitions(UmbraAuthoringTests PRIVATE UMBRA_TEST_ASSET_DIRECTORY="${UMBRA_REFERENCE_ASSETS}" UMBRA_TEST_DATA_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/data")
+target_compile_definitions(UmbraAuthoringTests PRIVATE UMBRA_TEST_ASSET_DIRECTORY="${UMBRA_REFERENCE_ASSETS}" UMBRA_TEST_DATA_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/data"
+                                                        UMBRA_TEST_PROJECT_FILE="${UMBRA_PROJECT_DIR}/project.json" UMBRA_TEST_PROGRAMS_FILE="${UMBRA_PROGRAMS_FILE}")
 target_compile_features(UmbraAuthoringTests PRIVATE cxx_std_20)
 target_link_libraries(
     UmbraAuthoringTests

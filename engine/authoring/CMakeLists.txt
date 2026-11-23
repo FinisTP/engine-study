@@ -12,6 +12,7 @@ target_sources(
         src/ModelTools.cpp
         src/SceneEdits.cpp
         src/Validate.cpp
+        src/Play.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
@@ -22,6 +23,7 @@ target_sources(
             include/ModelTools.hpp
             include/SceneEdits.hpp
             include/Validate.hpp
+            include/Play.hpp
 )
 
 target_compile_features(UmbraAuthoring PUBLIC cxx_std_20)

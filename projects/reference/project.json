@@ -17,5 +17,43 @@
     "ai-authoring",
     "web-export",
     "android-export"
+  ],
+  "play": [
+    {
+      "label": "The Last Curtain: career (cafe, then a match)",
+      "program": "LastCurtain",
+      "args": []
+    },
+    {
+      "label": "The Last Curtain: faction match",
+      "program": "LastCurtain",
+      "args": [
+        "--match"
+      ]
+    },
+    {
+      "label": "The Last Curtain: scene 'prologue'",
+      "program": "LastCurtain",
+      "args": [
+        "--scene",
+        "prologue",
+        "--backdrop",
+        "foyer_today"
+      ]
+    },
+    {
+      "label": "The Last Curtain: the old night",
+      "program": "LastCurtain",
+      "args": [
+        "--night"
+      ]
+    },
+    {
+      "label": "Umbra RPG: this scene",
+      "program": "Umbra",
+      "args": [
+        "{scene}"
+      ]
+    }
   ]
 }

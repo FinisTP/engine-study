@@ -72,3 +72,16 @@ keys are wired in `DialogApp.cpp` but not driven by a test).
    (`options.csv` `lettersPerSecond`)?
 
 Result: **not run**.
+
+## 5. Later the same day: one way to build and play (`#UMBRA-347`, the user's request)
+
+`build.bat` at the repository root (build Release, then start: the game, `editor`, `match`,
+`scene <id>`, `game <flags>`; `test` without the soaks, `soak`, `only`); the editor's Play (F5)
+starts a choice from `project.json` `"play"` through the build's programs file; `LastCurtain
+--match`; Visual Studio start items in `launch.vs.json`; `.gitattributes` keeps `.bat` files CRLF.
+Linux: `Umbra.Authoring` gains three Play tests (the starts, the command, every reference start
+names a built program); `ctest -E Umbra.Match.Balance -j4`: 59/60, `Umbra.Night` failed once in
+"Line seeds come from the night (T135)", a timing test with a worker thread, under the parallel
+load; alone it passes (221 cases). Pre-existing, not touched here. **Not run:** `build.bat` and the
+editor's Play on Windows (no Windows here): the user's first `build`, `build editor` + F5, `build
+test` are the check.

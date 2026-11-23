@@ -57,6 +57,7 @@ namespace
         int frames = 0;                // frames to run (0 = until closed; 3 with --capture)
         bool night = false;            // the old night (--night); else the faction match
         bool cafe = false;             // --cafe: a capture of the café
+        bool match = false;            // --match: a faction match at once (no café first)
         float zoom = 0.0F;             // the match: wheel steps at the start (--zoom N)
         std::string scene, backdrop;   // --scene <id> [--backdrop <name>]: play one campaign scene (developers)
         umbra::campaign::Speaker speaker{"", "female"}; // --name <text> --gender male|female
@@ -189,7 +190,7 @@ namespace
                 platform.Shutdown();
                 return result;
             }
-            if (!options.night && (options.watch || (!options.capture.empty() && !options.cafe)))
+            if (!options.night && (options.watch || options.match || (!options.capture.empty() && !options.cafe)))
             {
                 result = RunMatch(assets, options.seed, options.watch, options.capture, options.frames, options.zoom);
                 platform.Shutdown();
@@ -573,6 +574,8 @@ int main(int argc, char **argv)
             options.night = true;
         else if (arg == "--cafe")
             options.cafe = true;
+        else if (arg == "--match")
+            options.match = true;
         else if (arg == "--zoom" && more)
             options.zoom = static_cast<float>(std::atof(argv[++i]));
         else if (arg == "--scene" && more)

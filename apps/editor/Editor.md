@@ -36,7 +36,7 @@ program; the game (`Umbra`) links none of it (`Umbra.GameExcludesEditor` checks 
 | Ctrl+Z / Ctrl+Y | Undo / redo. Undo follows the document you edited last. |
 | Ctrl+S | Save the scene and the RPG content |
 | Ctrl+D / Del | Duplicate / delete (with children) |
-| F5 | Play: saves, then starts `Umbra <scene>` |
+| F5 | Play: starts what the box beside the Play button names (`project.json` `"play"`); a start with `{scene}` saves the scene first |
 
 A whole gizmo drag, or a whole drag on a number field, is **one** undo step. The first change of a
 drag starts a step; later changes merge into it (`Document::Apply(..., merge)`).

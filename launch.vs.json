@@ -6,8 +6,41 @@
       "type": "default",
       "project": "CMakeLists.txt",
       "projectTarget": "UmbraEditor.exe (apps\\editor\\Release\\UmbraEditor.exe)",
-      "name": "Umbra Editor (settlement)",
-      "args": [ "scenes/settlement.scene.json" ],
+      "name": "Umbra Editor (Play / F5 starts the game)",
+      "args": [
+        "scenes/settlement.scene.json"
+      ],
+      "currentDir": "${workspaceRoot}"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "LastCurtain.exe (plugins\\last-curtain\\apps\\LastCurtain\\Release\\LastCurtain.exe)",
+      "name": "The Last Curtain (cafe, then a match)",
+      "args": [],
+      "currentDir": "${workspaceRoot}"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "LastCurtain.exe (plugins\\last-curtain\\apps\\LastCurtain\\Release\\LastCurtain.exe)",
+      "name": "The Last Curtain: faction match",
+      "args": [
+        "--match"
+      ],
+      "currentDir": "${workspaceRoot}"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "LastCurtain.exe (plugins\\last-curtain\\apps\\LastCurtain\\Release\\LastCurtain.exe)",
+      "name": "The Last Curtain: scene prologue",
+      "args": [
+        "--scene",
+        "prologue",
+        "--backdrop",
+        "foyer_today"
+      ],
       "currentDir": "${workspaceRoot}"
     },
     {
@@ -15,7 +48,9 @@
       "project": "CMakeLists.txt",
       "projectTarget": "UmbraEditor.exe (apps\\editor\\Release\\UmbraEditor.exe)",
       "name": "Umbra Editor (dungeon)",
-      "args": [ "scenes/dungeon.scene.json" ],
+      "args": [
+        "scenes/dungeon.scene.json"
+      ],
       "currentDir": "${workspaceRoot}"
     },
     {
@@ -23,7 +58,9 @@
       "project": "CMakeLists.txt",
       "projectTarget": "UmbraEditor.exe (apps\\editor\\Debug\\UmbraEditor.exe)",
       "name": "Umbra Editor (settlement, Debug build)",
-      "args": [ "scenes/settlement.scene.json" ],
+      "args": [
+        "scenes/settlement.scene.json"
+      ],
       "currentDir": "${workspaceRoot}"
     }
   ]

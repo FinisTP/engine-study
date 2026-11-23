@@ -1,5 +1,6 @@
 # Source plugins (docs/adr/0005-plugins.md). A plugin is a folder plugins/<name>/ with
-#   plugin.json  name, label, description, kind (game|tool), requires, requiresAny, modules, links
+#   plugin.json  name, label, description, kind (game|tool), requires, requiresAny, modules, links,
+#                programs (its executables, e.g. LastCurtain: the editor's Play can start them)
 #   modules/<m>/ static libraries (each its own CMakeLists.txt)
 #   game/ editor/ tool/  C++ compiled straight into the game, the editor or UmbraTool
 #   assets/      content the project's assets may override
@@ -8,7 +9,8 @@
 
 # Reads projects/<name>/project.json and every plugin.json; sets in the caller's scope:
 #   UMBRA_PLUGINS          enabled plugin names (requirements added)
-#   UMBRA_PLUGIN_DIR_<n>   its folder;  UMBRA_PLUGIN_KIND_<n>, UMBRA_PLUGIN_MODULES_<n>, UMBRA_PLUGIN_LINKS_<n>
+#   UMBRA_PLUGIN_DIR_<n>   its folder;  UMBRA_PLUGIN_KIND_<n>, UMBRA_PLUGIN_MODULES_<n>, UMBRA_PLUGIN_LINKS_<n>,
+#   UMBRA_PLUGIN_PROGRAMS_<n> (may be empty)
 # and defines UMBRA_PLUGIN_<NAME>=1 for all code (e.g. UMBRA_PLUGIN_TURN_COMBAT).
 macro(umbra_load_plugins)
     # 1. What the project asks for (no project.json: every plugin).
@@ -88,9 +90,9 @@ macro(umbra_load_plugins)
             endforeach()
         endif()
         string(JSON UMBRA_PLUGIN_KIND_${_p} GET "${_json}" kind)
-        foreach(_field modules links)
+        foreach(_field modules links programs)
             set(_list)
-            string(JSON _n LENGTH "${_json}" ${_field})
+            string(JSON _n ERROR_VARIABLE _none LENGTH "${_json}" ${_field})
             if(_n GREATER 0)
                 math(EXPR _last "${_n} - 1")
                 foreach(_i RANGE ${_last})

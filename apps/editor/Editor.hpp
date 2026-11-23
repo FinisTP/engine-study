@@ -5,6 +5,7 @@
 #include <ComponentSchema.hpp>
 #include <Document.hpp>
 #include <ModelTools.hpp>
+#include <Play.hpp>
 #include <DrawList.hpp>
 #include <AudioDevice.hpp>
 #include <Mixer.hpp>
@@ -35,7 +36,7 @@ struct OrbitCamera final
 class Editor final : public umbra::editor::EditorHost
 {
 public:
-    Editor(ModelLibrary &models, umbra::assets::AssetFolders assetRoot, std::filesystem::path gameExecutable);
+    Editor(ModelLibrary &models, umbra::assets::AssetFolders assetRoot, const std::filesystem::path &projectFile, std::filesystem::path programsFile);
     ~Editor();
     Editor(const Editor &) = delete;
     Editor &operator=(const Editor &) = delete;
@@ -129,7 +130,9 @@ private:
 
     ModelLibrary &models_;
     umbra::assets::AssetFolders assetRoot_; // the project's assets, then its plugins'
-    std::filesystem::path gameExecutable_;
+    std::filesystem::path programsFile_;             // where this build put each program (CMake writes it)
+    std::vector<umbra::authoring::PlayStart> starts_; // project.json "play": what Play (F5) can start
+    int playStart_ = 0;                               // the one chosen in the menu bar, kept in umbra-editor-play.txt
 
     std::unique_ptr<umbra::authoring::Document> scene_;
     std::string scenePath_; // relative to the asset folder

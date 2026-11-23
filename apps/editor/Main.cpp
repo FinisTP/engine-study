@@ -61,7 +61,7 @@ namespace
             assets.AddPlugins(UMBRA_PLUGIN_ASSET_DIRS);
             ModelLibrary models(renderer, assets, UMBRA_CACHE_DIRECTORY);
             {
-                Editor editor(models, assets, UMBRA_GAME_EXECUTABLE);
+                Editor editor(models, assets, std::filesystem::path(UMBRA_PROJECT_DIRECTORY) / "project.json", UMBRA_PROGRAMS_FILE);
                 editor.OpenScene(scenePath);
                 umbra::platform::Input input;
                 umbra::platform::ApplicationEvents app;

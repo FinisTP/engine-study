@@ -69,6 +69,8 @@ ctest --preset windows-msvc-debug
 & ".\out\build\windows-msvc\apps\umbra\Debug\Umbra.exe"
 ```
 
+For the user, one entry point (2026-11-23): `build.bat` at the root (`build`, `build editor`, `build match`, `build scene <id>`, `build test`, `build soak`; `docs/creator-guide.md` §0); the editor's Play (F5) starts a choice from `project.json` `"play"`. Give the user `build ...` commands, not PowerShell.
+
 Presets in `CMakePresets.json` (re-check before use): configure `windows-msvc`, `windows-clang`, `windows-msvc-asan`; build `windows-msvc-debug`, `windows-msvc-release`, `windows-clang-debug`, `windows-msvc-asan-debug`; test `windows-msvc-debug`, `windows-clang-debug`, `windows-msvc-asan-debug`. `scripts/verify-phase1.ps1` runs the preset matrix. Use `cmake --fresh` only for an intentional clean-configuration check. Proposed CLI capabilities in the roadmap are not existing commands.
 
 **Where Claude can verify (checked 2026-11-01):**

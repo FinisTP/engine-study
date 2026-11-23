@@ -68,3 +68,17 @@ All loader codes (scene `entity.*`, RPG `ref.*`, etc.) come through unchanged.
 ## Package check (P9)
 
 `CheckPackage` (`Package.hpp`) is the release-gate check of a packaged game folder; rules in `Package.md`.
+
+## Play
+
+`Play.hpp`: what the editor's Play (F5) can start. `projects/<project>/project.json` lists the starts:
+
+```json
+"play": [ { "label": "The Last Curtain: faction match", "program": "LastCurtain", "args": ["--match"] },
+          { "label": "Umbra RPG: this scene", "program": "Umbra", "args": ["{scene}"] } ]
+```
+
+`program` is a name in the build's programs file (`out/build/<preset>/programs-<config>.json`, written
+by `apps/editor/CMakeLists.txt` from `Umbra` and every plugin's `plugin.json` `"programs"`).
+`PlayCommand` turns a start into the program's path and its arguments, `{scene}` filled. No starts:
+the game on the open scene.
