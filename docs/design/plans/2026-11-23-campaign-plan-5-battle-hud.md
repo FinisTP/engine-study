@@ -32,59 +32,59 @@ functions in `modules/board` (`Strings`, `Plates`, `Marks`, `MenuFor`, `PreviewF
 - `language = vi` shows no English; `ui::MissingGlyphs` finds nothing in the campaign's screens.
 - Large text: body 16 → 20 px, labels 12 → 15, menus 15 → 19; panels grow, the board does not.
 - Plain colours (the mockups' values in `skin.json`) until the art agent's set is approved.
-- Commits from **#362**.
+- Commits from **#363**.
 
 ---
 
-### Task 1: Words out of the screens (#362)
+### Task 1: Words out of the screens (#363)
 
 Every label typed into today's match and fight screens moves to `match-words.json` / `campaign-words.json`
 (vi default, en for development); a test walks the campaign screens' text bindings and finds no literal
 English. Commit.
 
-### Task 2: The large-text skin (#363)
+### Task 2: The large-text skin (#364)
 
 `skin-large.json` (or a `scale` block in `skin.json`), swapped at once by `UiSystem` (engine: re-measure
 open screens on a skin change); a settings value in prefs. Tests: the swap re-lays an open screen; ui-preview
 of the campaign HUD at both sizes without overlap at 1280×720. Commit.
 
-### Task 3: Keys in a key file (#364)
+### Task 3: Keys in a key file (#365)
 
 `keys-keyboard.json` (meaning → key), read by `MatchPlay`, the dialog and the café; prompts show the key's
 name. Tests: a remapped key works; an unknown meaning is refused with its row. Commit.
 
-### Task 4: Goals card, order strip, hint and log line (#365)
+### Task 4: Goals card, order strip, hint and log line (#366)
 
 `campaign-hud.ui.json`; goals from the stage's aims with ☐/☑ and the trapped ✗; the strip with faces this
 round, side rings (round ally, square enemy), the acting gold ring; hint line with keys; the last log
 line and L for the log. Tests on `HudData`. Capture. Commit.
 
-### Task 5: The command menu and back stack (#366)
+### Task 5: The command menu and back stack (#367)
 
 `MenuFor(state, unit)` (rows, enabled, why, number keys), `command.ui.json` with the Kỹ năng and Vật phẩm
 sub-menus (name, HP cost, a one-line note), placed beside the unit; P2 back stack (target → sub-menu →
 menu → board; a move undone with Back while nothing else was done). Tests: rows per situation (Cắt dây
 only beside a fallen strung specter); back stack order; keyboard-only and mouse-only scripted turns. Commit.
 
-### Task 6: Target preview and unit cards (#367)
+### Task 6: Target preview and unit cards (#368)
 
 `PreviewFor(state, action)` from the rules' `Preview`; the shaded bar and bubble; the hover card, pinned
 with I. Tests: preview equals the rules; card fields. Capture. Commit.
 
-### Task 7: Units on the board (#368)
+### Task 7: Units on the board (#369)
 
 `Strings`, `Plates` (HP bar in the side's colour, tag rule), fallen pose and dim, the snap-and-lift of a
 freed unit (0.8 s, from the `Freed` log entry), telegraph `Marks` (breath lane, opening windows, sandbags,
 reinforcements, a round ahead), forms and tints from `cast.csv`. Tests on the draw lists. Captures with the
 analog screen on. Commit.
 
-### Task 8: Toasts and the enemy turn (#369)
+### Task 8: Toasts and the enemy turn (#370)
 
 A toast queue in game code (found items, ingredients, keepsakes, freed, level), repeated later on the stage
 result; the enemy turn's hint ("Lượt của {name} · Giữ Space nhanh hơn · F bỏ qua"); P10: the notebook key
 pauses beats (the notebook itself is plan 6; here a stub overlay). Tests. Commit.
 
-### Task 9: Records (#370)
+### Task 9: Records (#371)
 
 `docs/testing/s49-battle-hud.md` (§4 on Windows: play Stage 1 with the mouse only, then the keyboard only;
 large text; analog screen on and off), ROADMAP, status. Ship.

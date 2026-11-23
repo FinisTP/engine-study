@@ -30,7 +30,7 @@ memory 1, a talk with no item.
 - The local model may reword an authored talk line only when a model file is present and the guard
   passes (plan 1's TalkMind); the result is stored in the save.
 - Tí's lines and the memories as `ti-content` §4–6, with the user's corrections when they come.
-- Commits from **#371**.
+- Commits from **#372**.
 
 ## Content (slice 1)
 
@@ -47,30 +47,30 @@ memory 1, a talk with no item.
 
 ---
 
-### Task 1: Storage, item flags and recipes (#371)
+### Task 1: Storage, item flags and recipes (#372)
 
 Save fields used: storage (ingredients, keepsakes, items), recipes known. `recipes.json` (id, makes,
 needs, kind memory/general, for whom). `CanBrew`, `Brew` (spends, records). Tests: missing ingredients
 say what and where (from stage drop data, "?" when unknown); a café-only item can't enter a slot. Commit.
 
-### Task 2: Memories and upgrade versions (#372)
+### Task 2: Memories and upgrade versions (#373)
 
 `memories.json` per recruit (memory id, source talk/recipe/keepsake, scene id, the upgrade and which
 choice gives which version). After a memory scene, the choice's fact picks the version; the confirm is
 the app's. Tests: memory 1 joins Tí; memory 2 with each answer gives each version; a version is final;
 memory 4 locked. Commit.
 
-### Task 3: General drinks and the cap (#373)
+### Task 3: General drinks and the cap (#374)
 
 `Boost(save, drink, character)`: refused at the cap; tests: 3 then refused; the cap from `options.csv`.
 Commit.
 
-### Task 4: Talks (#374)
+### Task 4: Talks (#375)
 
 `talks/*.json` loader (who, opens: facts all/none, chapter, after stage; scene; sets; repeat), ≤ 3 new a
 visit; the stage result's facts (`fell:<unit>`, `rite:<stage>`, `ratStole:<item>`). Tests. Commit.
 
-### Task 5: The campaign café screen (#375)
+### Task 5: The campaign café screen (#376)
 
 `cafe-hub.ui.json`: the room, name plates within 3 m (gold line "Có thể pha chế" when a brew waits), the
 narration line, one prompt (E), the door (to the world map; plan 7), Tab for the notebook. `brew.ui.json`:
@@ -78,18 +78,18 @@ recipes column (memory drinks first, then general), the preview (a hint line, th
 side, ingredients), brew → the memory scene → choose the version (confirm) → toast. Tests on the data;
 captures. Commit.
 
-### Task 6: The notebook (#376)
+### Task 6: The notebook (#377)
 
 `notebook.ui.json` with three tabs, the list, the detail, the side panel; read-only in battle (wired into
 plan 5's stub, the fight paused); slots and Ra trận editable outside. Tests: read-only refuses edits;
 reopens on the last tab and entry; unknowns are "?". Capture both text sizes. Commit.
 
-### Task 7: The model, optional (#377)
+### Task 7: The model, optional (#378)
 
 `Reword(line, voice, situation)` through TalkMind when a model file is present; guard or timeout → the
 authored line; stored in the save. Tests with the stand-in model. Commit.
 
-### Task 8: Content and records (#378)
+### Task 8: Content and records (#379)
 
 Tí's memory scenes 1–4, idle lines, talks, recipes and descriptions in Vietnamese (from `ti-content`, with
 the user's corrections); `docs/testing/s50-cafe-hub.md` (§4: a visit on Windows, brew Mứt gừng, pick a

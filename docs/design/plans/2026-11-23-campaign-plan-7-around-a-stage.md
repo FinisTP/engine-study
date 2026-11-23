@@ -35,7 +35,7 @@ game**, kept used win or lose; no save in a stage (a developer-only save behind 
 - Pause: no Save; in a stage Bỏ cuộc (confirm); elsewhere Về màn hình chính, Thoát game. Settings: full
   screen, Cỡ chữ, Màn hình TV cũ, Băng mòn (moved from pause), music and effects volume, text speed,
   enemy speed, language. Changes apply at once and save.
-- Mouse and keyboard complete; gamepad later (plan 8). Commits from **#379**.
+- Mouse and keyboard complete; gamepad later (plan 8). Commits from **#380**.
 
 ## Content: the theatre map (slice 1)
 
@@ -46,7 +46,7 @@ nhạc, Gác thượng, Sân khấu chính), each known-but-locked one with what
 
 ---
 
-### Task 1: The save (#379)
+### Task 1: The save (#380)
 
 `CampaignSave` v2: player (name, gender); party (id, level, xp, slots, chosen abilities and versions,
 boosts used); storage; recipes; memories; facts; rooms (cleared, items taken, refill index); chapter;
@@ -54,31 +54,31 @@ boosts used); storage; recipes; memories; facts; rooms (cleared, items taken, re
 load with a temp file and rename. Tests: round trip; wrong version refused; corrupt kept; interrupted write
 doesn't replace the good file. Commit.
 
-### Task 2: Progress (#380)
+### Task 2: Progress (#381)
 
 `WinStage` (xp with the skirmish cap, found things to storage, items to slots then storage, room cleared,
 facts, chapter, recruits freed), `LoseStage` (nothing kept but the rite's use), `RefillSkirmishes` (after
 each story win: refill index +1, taken drops come back), `XpFor`, `Unlocked`. Tests: the cap; a refill
 changes the twist; a lost stage keeps nothing; the rite stays used after a loss. Commit.
 
-### Task 3: The world map (#381)
+### Task 3: The world map (#382)
 
 `map.json` (tickets, `at` on the plan, kind, stage or skirmish id, opensAfter, lock line); `TheatreMap`
 validation; `worldmap.ui.json` (tickets, the panel, Về quán with the café's news line); the cursor's
 nearest-ticket move; new-room fade and the skirmish pulse with toasts. Tests: openings in order; every
 ticket reachable with the arrows; panels per kind; acceptance criteria of `world-map.md`. Capture. Commit.
 
-### Task 4: Pre-stage, stage result, game over (#382)
+### Task 4: Pre-stage, stage result, game over (#383)
 
 Three screens and their data; the revive warning rule; the reason lines; the rite's box rules. Tests per
 acceptance criterion in `stage-flow.md`. Captures. Commit.
 
-### Task 5: Title, new game, pause, settings (#383)
+### Task 5: Title, new game, pause, settings (#384)
 
 Screens per `menus.md`; the name field (the engine's `field` exists); settings in prefs; the analog switches
 move from the old pause to Settings (the career's pause keeps its own). Tests. Captures. Commit.
 
-### Task 6: The one flow (#384)
+### Task 6: The one flow (#385)
 
 `CampaignApp`: title → (new: the prologue) → café hub → map → pre-stage → fight (scenes inside) → result
 → café or map; game over choices; `project.json` `"play"`: "Campaign: continue" and "Campaign: new game".
@@ -86,7 +86,7 @@ Developer flags `--stage`, `--save`, `--dev` (mid-stage save). Tests: a scripted
 stand-in fights ends with Tí in the party, memories 1–3 possible, the skirmishes refilled, the save written.
 Commit.
 
-### Task 7: Records (#385)
+### Task 7: Records (#386)
 
 `docs/testing/s51-campaign-flow.md` (§4 on Windows: new game with a Vietnamese name, the whole slice,
 quit and continue, each game-over choice, the rite once, a skirmish after the cap gives no XP, the refill

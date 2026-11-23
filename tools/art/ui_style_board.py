@@ -1,5 +1,5 @@
 # Paints the campaign UI style board's pictures with the user's ComfyUI (ui-art-requests section 0).
-#   python tools/art/ui_style_board.py [--host 127.0.0.1:8188] [--out Temp/art-ui/raw] [--only name]
+#   python tools/art/ui_style_board.py [--host 127.0.0.1:8000] [--out Temp/art-ui/raw] [--only name]
 # Each job x seed -> <out>/<name>_<seed>.png; pictures already there are skipped, so it can be
 # stopped and started again. Needs only Python 3 (no packages); ComfyUI must be running.
 import argparse, json, os, sys, time, urllib.parse, urllib.request
@@ -45,12 +45,23 @@ def paint(host, graph, target):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--host', default='127.0.0.1:8188')
+    parser.add_argument('--host', default='')
     parser.add_argument('--out', default=os.path.join('Temp', 'art-ui', 'raw'))
     parser.add_argument('--only', default='')
     args = parser.parse_args()
     spec = json.load(open(os.path.join(os.path.dirname(__file__), 'ui_style_board.json'), encoding='utf-8'))
     os.makedirs(args.out, exist_ok=True)
+    # 1. ComfyUI Desktop listens on 8000, the portable one on 8188: take the first that answers.
+    for host in ([args.host] if args.host else ['127.0.0.1:8000', '127.0.0.1:8188']):
+        try:
+            call(host, '/system_stats')
+            args.host = host
+            break
+        except Exception:
+            continue
+    else:
+        sys.exit('ComfyUI did not answer on %s. Is it running?' % (args.host or '127.0.0.1:8000 or 8188'))
+    print('ComfyUI at ' + args.host, flush=True)
     todo = [(j, s) for j in spec['jobs'] for s in j['seeds'] if not args.only or j['name'] == args.only]
     for n, (job, seed) in enumerate(todo, 1):
         target = os.path.join(args.out, '%s_%d.png' % (job['name'], seed))

@@ -48,7 +48,7 @@ behaviour. New effects and gimmicks are small named rules in `match`; numbers ar
 - Behaviours: **aggressive after n rounds**; **passive** (acts only on a party unit in its room within 4
   squares, or once attacked); **reinforcement** (appears at round n on a named square, marked a round ahead).
 - Content rule (the user): **every fight teaches or twists one new thing and recombines the old ones.**
-- Play length targets for the soak: T1 ~5 min, T3 ~10, Stage 1 15–20. Commits from **#351**.
+- Play length targets for the soak: T1 ~5 min, T3 ~10, Stage 1 15–20. Commits from **#352**.
 
 ## The slice's fights
 
@@ -66,7 +66,7 @@ once, falls strung, cut free.
 
 ---
 
-### Task 1: Rule additions (#351)
+### Task 1: Rule additions (#352)
 
 `rules.json` campaign `biding: false`; ability effect `hasten` (target an ally within range, not self;
 the ally is put next in the order for one extra full turn, keeps its own; once per user turn); Tí's
@@ -79,14 +79,14 @@ passive's move only on the next turn after hasten; use flags refuse a café item
 bypass slots; drops are the same for the same seed and roughly the percent over 2,000 falls. Faction soak
 unchanged (its mode has none of these). Commit.
 
-### Task 2: Cast stats and enemy scaling (#352)
+### Task 2: Cast stats and enemy scaling (#353)
 
 `cast.csv` gains `role,level,kit`; `growth.csv` (`role,level,hp,attack,defence,speed,move`, levels 1–15);
 `EnemyUnit(def, cast, id, level)` with the scaling. Tí's row as `ti-content` §1 (Speedster, HP 16, Atk 4,
 Def 2, Spd 6, Move 12 at level 3). Tests: the Rat at level 3 has 8 attack; a level-3 ghost about 4; Tí's
 numbers. Commit.
 
-### Task 3: Stage files (#353)
+### Task 3: Stage files (#354)
 
 `StageDef`: id, titles (vi/en), recommended level, party cap, backdrop, music, xp; `map` rows (`#` wall,
 `.` floor, `~` hazard, `W` window, `R` rope post, `S` party start, `D` a door between rooms); `units`
@@ -97,20 +97,20 @@ freed:<unit>); for skirmishes `twists` (one entry per refill: overrides of units
 Validation names file, field and fix (unknown cast id, a unit on a wall, a window gimmick without `W`,
 a scene with no file, more party starts than the cap…). Commit.
 
-### Task 4: Building a fight (#354)
+### Task 4: Building a fight (#355)
 
 `BuildStage(def, cast, stage, party, refill, seed)`: the map, doors from `D` and neighbours, the party
 up to the cap, enemies by `EnemyUnit`, items not yet taken (the save's list, passed in), the twist for
 `refill`, mode overrides, `BeginMatch`. Tests: T1 builds as written; Stage 1 has `mustFree`; a taken
 item is absent; refill 2 of a skirmish has its twist. Commit.
 
-### Task 5: Behaviours and the enemy brain (#355)
+### Task 5: Behaviours and the enemy brain (#356)
 
 Side 1 acts through `matchbots::ChooseAction`, filtered by behaviour (passive, aggressive after n,
 reinforcement with its mark a round ahead). The stage's `noRevive` side flag (nobody on the Rat's side
 revives). `MatchPlay` asks the brain for side 1. Tests per behaviour. Commit.
 
-### Task 6: Effects, kits and upgrade versions (#356)
+### Task 6: Effects, kits and upgrade versions (#357)
 
 `abilities.csv` `effect`: `mark` (+1 damage taken until the target's next turn), `steal`, `dart`,
 `speedkill`, `deathpaper` (heal 2 on a kill), `riceRevive` (heal 5 and cleanse, or revive at 30%),
@@ -122,19 +122,19 @@ round); Đưa tin **Về kịp** (the ally also +2 move) / **Phần quà** (the 
 him get +1 move next turn). A unit's chosen version comes from the party passed to `BuildStage`. Names in
 `campaign-words.json`. Tests per effect and version. Commit.
 
-### Task 7: Gimmicks (#357)
+### Task 7: Gimmicks (#358)
 
 `windows` (pattern, marked a round ahead, spawns, stolen items parked), `hazards`, `ropes`, `breath` (the
 Keeper's lane strike every other round, marked a round ahead), `dark` (sight radius for passive
 enemies). Small functions in `match` at the round's start. Tests per gimmick. Commit.
 
-### Task 8: Scenes inside a fight (#358)
+### Task 8: Scenes inside a fight (#359)
 
 `StageMoments(state, log since last check) -> scene ids`, each once per attempt; `MatchPlay` waits for
 the beat, pauses, shows `DialogView`, resumes. Tests: once only; the state is unchanged by a scene; a
 scene during a battle waits. Commit.
 
-### Task 9: The slice's content (#359)
+### Task 9: The slice's content (#360)
 
 Stage files above; scenes `t1-start`, `t1-rescue`, `t3-start`, `t3-breath`, `t3-end-rite`, `stage1-start`,
 `stage1-rat-first-hit`, `stage1-ti-*` (Tí's four lines), `stage1-freed`, `stage1-end` (story piece 1),
@@ -142,14 +142,14 @@ Stage files above; scenes `t1-start`, `t1-rescue`, `t3-start`, `t3-breath`, `t3-
 gains a start per stage; `build.bat stage <id>`. Tests: every file loads; each stage can be won by a
 scripted line of actions. Commit.
 
-### Task 10: The campaign soak (#360)
+### Task 10: The campaign soak (#361)
 
 `UmbraTool campaign-soak <stage> [--seeds 200] [--refill n]`: bots play both sides; wins, falls per unit,
 trapped losses, turns, estimated minutes, Gừng found. Bands in `assets/campaign/balance.json` (T1 player
 falls ≤ 5%; T3 wins 60–85%; Stage 1 wins 45–70% with trapped losses 10–25%; skirmishes 70–90%). Tune the
 data; record it in `Campaign.md`. Commit.
 
-### Task 11: Records (#361)
+### Task 11: Records (#362)
 
 `docs/testing/s48-fights.md` (§4: play T1, T3, Stage 1 and a skirmish on Windows from the editor's Play
 or `build stage <id>`), ROADMAP, status. Ship.
