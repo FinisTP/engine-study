@@ -1,0 +1,9 @@
+{
+  "format": "umbra.lc-talk",
+  "version": 1,
+  "id": "lethanh-ti",
+  "who": "lethanh",
+  "scene": "ti-memory-1",
+  "after": "stage1",
+  "memory": "ti_1"
+}

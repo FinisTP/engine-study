@@ -864,3 +864,43 @@ TEST_CASE("General drinks: one at a time on one character, refused at the cap; t
     // A memory drink is not a boost.
     CHECK_FALSE(campaign::Boost(save, recipes, *recipes.Find("mut_gung"), "ti", 3));
 }
+
+TEST_CASE("Talks open by stage and facts, at most three new a visit; a fight leaves its facts (campaign plan 6)")
+{
+    campaign::Talks talks;
+    std::vector<core::Diagnostic> d;
+    REQUIRE(campaign::LoadTalks(data / "talks", data / "scenes", TheCast(), talks, d));
+    CHECK(d.empty());
+    campaign::Save save;
+    // 1. The first visit: only Le Thanh's first talk.
+    std::vector<const campaign::Talk *> open = campaign::OpenTalks(talks, save, 3);
+    REQUIRE(open.size() == 1);
+    CHECK(open[0]->id == "lethanh-first");
+    campaign::Talked(save, *open[0]);
+    CHECK(campaign::OpenTalks(talks, save, 3).empty());
+    // 2. After T1, two more; a fall in the fight opens Ba Mai's worry.
+    match::MatchState s;
+    s.units.resize(2);
+    s.units[0].faction = 0;
+    s.units[1].faction = 1;
+    s.over = true, s.winner = 0;
+    s.log.push_back({match::LogKind::Down, 0, 1, 0});
+    campaign::RecordFight(MatchData(), save, "t1", s, {"player", "rat_specter"});
+    CHECK(save.facts["won:t1"] == "1");
+    CHECK(save.facts["fell:player"] == "1");
+    open = campaign::OpenTalks(talks, save, 3);
+    CHECK(open.size() == 3);
+    // 3. At most `limit`; a talk's facts are set when talked.
+    CHECK(campaign::OpenTalks(talks, save, 2).size() == 2);
+    save.facts["won:t3"] = "1";
+    for (const campaign::Talk *t : campaign::OpenTalks(talks, save, 10))
+        if (t->id == "bao-t3")
+            campaign::Talked(save, *t);
+    CHECK(save.facts["bao.keeper"] == "known");
+    // 4. A talk that brings back a memory says so.
+    save.facts["won:stage1"] = "1";
+    bool memory = false;
+    for (const campaign::Talk *t : campaign::OpenTalks(talks, save, 10))
+        memory |= t->memory == "ti_1";
+    CHECK(memory);
+}

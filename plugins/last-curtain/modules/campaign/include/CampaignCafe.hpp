@@ -73,4 +73,25 @@ namespace umbra::campaign
     // stat; Boosted is what the drinks add to a stat (maxHp, attack...).
     bool Boost(Save &save, const Recipes &recipes, const Recipe &drink, const std::string &character, int cap);
     int Boosted(const Save &save, const Recipes &recipes, const std::string &character, const std::string &stat);
+
+    // A talk in the cafe (talks/<id>.json): who, its scene, when it opens (a won stage, facts all/none),
+    // facts it sets, a memory it brings back, and whether it repeats.
+    struct Talk
+    {
+        std::string id, who, scene, after, memory;
+        std::vector<std::string> all, none; // facts "key" (any value) or "key=value"
+        Facts sets;
+        bool repeat = false;
+    };
+
+    struct Talks
+    {
+        std::vector<Talk> list; // by file name
+    };
+
+    bool LoadTalks(const std::filesystem::path &folder, const std::filesystem::path &scenes, const Cast &cast, Talks &out, std::vector<core::Diagnostic> &d);
+    std::vector<const Talk *> OpenTalks(const Talks &talks, const Save &save, int limit); // new talks first, at most `limit`
+    void Talked(Save &save, const Talk &talk);
+    // What a fight leaves in the save's facts: won:<stage>, fell:<cast id>, ratStole:<item> (who: each unit's cast id).
+    void RecordFight(const match::MatchDef &def, Save &save, const std::string &stage, const match::MatchState &s, const std::vector<std::string> &who);
 }

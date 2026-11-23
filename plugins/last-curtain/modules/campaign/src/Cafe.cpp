@@ -172,4 +172,78 @@ namespace umbra::campaign
                     total += count * r->amount;
         return total;
     }
+
+    bool LoadTalks(const std::filesystem::path &folder, const std::filesystem::path &scenes, const Cast &cast, Talks &out, std::vector<core::Diagnostic> &d)
+    {
+        const std::size_t before = d.size();
+        std::vector<std::filesystem::path> files;
+        for (const auto &f : std::filesystem::directory_iterator(folder))
+            if (f.path().extension() == ".json")
+                files.push_back(f.path());
+        std::ranges::sort(files);
+        for (const auto &file : files)
+        {
+            const auto error = [&](const std::string &field, const std::string &message) { d.push_back({core::Severity::Error, "campaign.talk", file.string(), field, message}); };
+            std::ifstream in(file);
+            const nlohmann::json j = nlohmann::json::parse(in, nullptr, false);
+            if (!j.is_object() || j.value("format", "") != "umbra.lc-talk" || j.value("version", 0) != 1)
+            {
+                error("format", "expected format umbra.lc-talk, version 1");
+                continue;
+            }
+            Talk t{j.value("id", ""), j.value("who", ""), j.value("scene", ""), j.value("after", ""), j.value("memory", ""), {}, {}, {}, j.value("repeat", false)};
+            const nlohmann::json opens = j.value("opens", nlohmann::json::object());
+            t.all = opens.value("all", std::vector<std::string>{}), t.none = opens.value("none", std::vector<std::string>{});
+            t.sets = j.value("sets", Facts{});
+            if (!cast.Find(t.who))
+                error("who", "\"" + t.who + "\" is not in cast.csv");
+            if (!std::filesystem::exists(scenes / (t.scene + ".json")))
+                error("scene", "no scene file " + t.scene + ".json");
+            out.list.push_back(t);
+        }
+        return d.size() == before;
+    }
+
+    namespace
+    {
+        // "key" holds when set; "key=value" when it has that value.
+        bool Holds(const Facts &facts, const std::string &fact)
+        {
+            const std::size_t eq = fact.find('=');
+            const auto it = facts.find(fact.substr(0, eq));
+            return it != facts.end() && (eq == std::string::npos || it->second == fact.substr(eq + 1));
+        }
+    }
+
+    std::vector<const Talk *> OpenTalks(const Talks &talks, const Save &save, int limit)
+    {
+        std::vector<const Talk *> out;
+        for (const Talk &t : talks.list)
+        {
+            const bool open = (t.after.empty() || Holds(save.facts, "won:" + t.after)) && std::ranges::all_of(t.all, [&](const std::string &f) { return Holds(save.facts, f); }) &&
+                              std::ranges::none_of(t.none, [&](const std::string &f) { return Holds(save.facts, f); }) && (t.repeat || !save.talks.contains(t.id));
+            if (open && static_cast<int>(out.size()) < limit)
+                out.push_back(&t);
+        }
+        return out;
+    }
+
+    void Talked(Save &save, const Talk &talk)
+    {
+        save.talks.insert(talk.id);
+        for (const auto &[key, value] : talk.sets)
+            save.facts[key] = value;
+    }
+
+    void RecordFight(const match::MatchDef &def, Save &save, const std::string &stage, const match::MatchState &s, const std::vector<std::string> &who)
+    {
+        const auto name = [&](int unit) { return unit >= 0 && static_cast<std::size_t>(unit) < who.size() ? who[static_cast<std::size_t>(unit)] : std::string(); };
+        if (s.over && s.winner == 0)
+            save.facts["won:" + stage] = "1";
+        for (const match::LogEntry &e : s.log)
+            if (e.kind == match::LogKind::Down && e.a >= 0 && s.units[static_cast<std::size_t>(e.a)].faction == 0)
+                save.facts["fell:" + name(e.a)] = "1";
+        for (const match::Stolen &st : s.stash)
+            save.facts["ratStole:" + def.items[static_cast<std::size_t>(st.item)].id] = "1";
+    }
 }

@@ -1,0 +1,11 @@
+{
+  "format": "umbra.lc-talk",
+  "version": 1,
+  "id": "bao-t3",
+  "who": "bao",
+  "scene": "talk-bao-t3",
+  "after": "t3",
+  "sets": {
+    "bao.keeper": "known"
+  }
+}

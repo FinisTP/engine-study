@@ -1,0 +1,32 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "talk-mai-fell",
+  "note": "Draft for the user's review (2026-11-24). Opens when the player fell in a fight.",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Bà Mai lấy khăn lau vết bụi trên vai {player}.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "mai",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "text": "Hồi nãy con ngã, bà thót cả tim. Lần sau đứng sau lưng bà mà đánh.",
+      "speaker": "mai",
+      "face": "afraid"
+    }
+  ]
+}

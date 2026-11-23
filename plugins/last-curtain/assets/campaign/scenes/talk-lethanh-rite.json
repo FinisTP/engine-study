@@ -1,0 +1,44 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "talk-lethanh-rite",
+  "note": "Draft for the user's review (2026-11-24). ",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Lệ Thanh lau cái ly đã sạch từ lâu.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "lethanh",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "text": "Lễ tiễn không làm cho họ mất đi. Nó làm cho họ được nhớ.",
+      "speaker": "lethanh",
+      "face": "talk"
+    },
+    {
+      "id": "c",
+      "text": "Còn cô? Ai tiễn cô?",
+      "speaker": "player",
+      "face": "calm"
+    },
+    {
+      "id": "d",
+      "text": "...Uống nước đi, kẻo nguội.",
+      "speaker": "lethanh",
+      "face": "calm"
+    }
+  ]
+}

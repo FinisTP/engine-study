@@ -1,0 +1,44 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "talk-bao-t1",
+  "note": "Draft for the user's review (2026-11-24). ",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Bác sĩ Bảo ngồi một mình, cây bút máy kẹp giữa hai ngón tay.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "bao",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "text": "{Anh/Chị} đứng vững được qua đêm đầu. Hồi đó tôi run tới mức ký sai cả tên mình.",
+      "speaker": "bao",
+      "face": "talk"
+    },
+    {
+      "id": "c",
+      "text": "Ký cái gì vậy bác?",
+      "speaker": "player",
+      "face": "calm"
+    },
+    {
+      "id": "d",
+      "text": "Giấy tờ. Toàn là giấy tờ.",
+      "speaker": "bao",
+      "face": "calm"
+    }
+  ]
+}

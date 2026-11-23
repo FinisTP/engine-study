@@ -1,0 +1,8 @@
+{
+  "format": "umbra.lc-talk",
+  "version": 1,
+  "id": "mai-t1",
+  "who": "mai",
+  "scene": "talk-mai-t1",
+  "after": "t1"
+}

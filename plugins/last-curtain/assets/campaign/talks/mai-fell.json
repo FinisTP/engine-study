@@ -1,0 +1,12 @@
+{
+  "format": "umbra.lc-talk",
+  "version": 1,
+  "id": "mai-fell",
+  "who": "mai",
+  "scene": "talk-mai-fell",
+  "opens": {
+    "all": [
+      "fell:player"
+    ]
+  }
+}

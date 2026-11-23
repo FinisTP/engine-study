@@ -1,0 +1,44 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "talk-bao-t3",
+  "note": "Draft for the user's review (2026-11-24). ",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Bảo gấp cuốn sổ lại khi {player} tới gần.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "bao",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "text": "Cái người giữ tranh đó... tôi nhớ mặt ông ta. Ông ta treo tranh cho nhà hát từ hồi tôi còn trẻ.",
+      "speaker": "bao",
+      "face": "talk"
+    },
+    {
+      "id": "c",
+      "text": "Bác biết nhiều người ở đây quá.",
+      "speaker": "player",
+      "face": "calm"
+    },
+    {
+      "id": "d",
+      "text": "Biết nhiều quá cũng là một cái tội.",
+      "speaker": "bao",
+      "face": "calm"
+    }
+  ]
+}

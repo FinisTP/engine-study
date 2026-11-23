@@ -1,0 +1,44 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "talk-lethanh-first",
+  "note": "Draft for the user's review (2026-11-24). ",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Quán nhỏ dưới tầng hầm. Đèn dầu, mùi cà phê rang, tiếng mưa đâu đó rất xa.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "lethanh",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "text": "Ở đây không ai đòi tiền {anh/chị} hết. Ngồi đi.",
+      "speaker": "lethanh",
+      "face": "calm"
+    },
+    {
+      "id": "c",
+      "text": "Mấy người kia là ai vậy cô?",
+      "speaker": "player",
+      "face": "calm"
+    },
+    {
+      "id": "d",
+      "text": "Khách quen. Ai rồi cũng thành khách quen.",
+      "speaker": "lethanh",
+      "face": "scheming"
+    }
+  ]
+}

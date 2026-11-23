@@ -1,0 +1,44 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "talk-mai-t1",
+  "note": "Draft for the user's review (2026-11-24). ",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Bà Mai múc cho {player} một chén cơm còn bốc khói.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "mai",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "text": "Ăn đi con. Đánh nhau với ma thì phải no bụng.",
+      "speaker": "mai",
+      "face": "happy"
+    },
+    {
+      "id": "c",
+      "text": "Bà ở đây lâu chưa?",
+      "speaker": "player",
+      "face": "calm"
+    },
+    {
+      "id": "d",
+      "text": "Lâu tới mức quên đếm. Bà còn đợi thằng con trai.",
+      "speaker": "mai",
+      "face": "calm"
+    }
+  ]
+}
