@@ -972,3 +972,83 @@ TEST_CASE("Goals tick and fail: the boss down, the recruit freed, a trapped loss
     CHECK(lines[1]["done"] == true);
     CHECK(done.HudData()["goals"]["failed"] == true);
 }
+
+namespace
+{
+    std::vector<std::string> RowIds(const MatchPlay &p)
+    {
+        std::vector<std::string> ids;
+        const nlohmann::json menu = p.Menu(); // kept: the loop must not outlive it
+        for (const auto &r : menu["rows"])
+            ids.push_back(r["id"]);
+        return ids;
+    }
+}
+
+TEST_CASE("The command menu: rows by situation, number keys, sub-menus and the back stack (campaign plan 5)", "[match][play][menu]")
+{
+    const MatchDef def = Data();
+    MatchPlay p = AtPlayer(def, [](MatchState &) {});
+    const int me = Current(p.State()), from = p.State().units[static_cast<std::size_t>(me)].cell;
+    // 1. Walking: stay or end; key 1 stays.
+    CHECK(RowIds(p) == std::vector<std::string>{"stay", "end"});
+    CHECK(p.Menu()["rows"][0]["key"] == "1");
+    REQUIRE(p.MenuKey(1));
+    // 2. The main menu: move, attack, skills, items, end (cut only beside a fallen strung one).
+    std::vector<std::string> ids = RowIds(p);
+    CHECK(ids.front() == "undo");
+    CHECK(std::ranges::find(ids, "attack") != ids.end());
+    CHECK(std::ranges::find(ids, "skills") != ids.end());
+    CHECK(std::ranges::find(ids, "cut") == ids.end());
+    CHECK(ids.back() == "end");
+    // 3. Skills opens a sub-menu; Back closes it, then Back returns to walking.
+    const int skills = static_cast<int>(std::ranges::find(ids, "skills") - ids.begin()) + 1;
+    if (!p.Menu()["rows"][skills - 1]["off"].get<bool>())
+    {
+        REQUIRE(p.MenuKey(skills));
+        CHECK(p.Menu()["title"] != "");
+        CHECK(p.Back());
+        CHECK(RowIds(p).front() == "undo");
+    }
+    CHECK(p.Back());
+    CHECK(RowIds(p) == std::vector<std::string>{"stay", "end"});
+    CHECK(p.State().units[static_cast<std::size_t>(me)].cell == from);
+    // 4. Keyboard only: stay, then end with its key; the turn passes.
+    REQUIRE(p.MenuKey(1));
+    REQUIRE(p.MenuKey(static_cast<int>(RowIds(p).size())));
+    CHECK(Current(p.State()) != me);
+}
+
+TEST_CASE("Armed: the menu lists the targets with keys; Back disarms (campaign plan 5)", "[match][play][menu]")
+{
+    const MatchDef def = Data();
+    MatchPlay p = AtPlayer(def, [](MatchState &s) {
+        // A foe right beside the one about to act.
+        const int me = Current(s);
+        for (std::size_t i = 0; i < s.units.size(); ++i)
+            if (s.units[i].faction != s.units[static_cast<std::size_t>(me)].faction && Up(s.units[i]))
+            {
+                for (int d = 0; d < 4; ++d)
+                    if (const int n = Neighbour(s.board, s.units[static_cast<std::size_t>(me)].cell, d); n >= 0)
+                    {
+                        s.units[i].cell = static_cast<std::int16_t>(n);
+                        break;
+                    }
+                break;
+            }
+    });
+    REQUIRE(p.MenuKey(1)); // stay
+    const std::vector<std::string> ids = RowIds(p);
+    const int attack = static_cast<int>(std::ranges::find(ids, "attack") - ids.begin()) + 1;
+    INFO(p.Menu().dump());
+    REQUIRE(p.MenuKey(attack));
+    const nlohmann::json rows = p.Menu()["rows"];
+    REQUIRE_FALSE(rows.empty());
+    CHECK(rows[0]["id"].get<std::string>().starts_with("target:"));
+    CHECK(p.Back());
+    CHECK(RowIds(p) == ids);
+    REQUIRE(p.MenuKey(attack));
+    const std::size_t lines = p.State().log.size();
+    REQUIRE(p.MenuKey(1));
+    CHECK(p.State().log.size() > lines); // the attack happened
+}

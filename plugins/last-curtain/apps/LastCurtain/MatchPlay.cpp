@@ -318,6 +318,8 @@ bool MatchPlay::HandleUi(const std::string &screen, const std::string &action, c
             }
         return true;
     }
+    if (screen.empty() && action == "menu")
+        return MenuPick(arg); // the campaign's command menu (campaign plan 5)
     if (screen.empty() && action == "act" && PlayerTurn() && Chose())
     {
         // 1. Undo the walk (or go back to the range), arm a target choice, or act at once.
@@ -986,4 +988,111 @@ nlohmann::json MatchPlay::HudData() const
                                                    : UiData().value("hint", std::string());
     j["logLine"] = log_.empty() ? std::string() : log_.back();
     return j;
+}
+
+nlohmann::json MatchPlay::Menu() const
+{
+    nlohmann::json rows = nlohmann::json::array();
+    std::string title;
+    if (!PlayerTurn() || s_.battle.on || s_.over)
+        return {{"title", ""}, {"rows", rows}};
+    const auto row = [&](const std::string &id, const std::string &label, const std::string &note, bool off, const std::string &why, bool sub) {
+        rows.push_back({{"id", id}, {"label", label + (sub ? "  \u00bb" : "")}, {"note", note}, {"off", off}, {"on", !off}, {"why", why},
+                        {"key", std::to_string(rows.size() + 1)}});
+    };
+    const nlohmann::json actions = Chose() ? Actions() : nlohmann::json::array();
+    const auto starts = [](const nlohmann::json &a, const char *prefix) { return a["id"].get<std::string>().starts_with(prefix); };
+    if (Armed())
+    {
+        // 1. Armed: each target, by name.
+        title = Word("actions", "target");
+        int k = 0;
+        for (const Action &a : ArmedActions())
+            row("target:" + std::to_string(k++), Name(a.kind == ActionKind::Attack ? a.a : a.b), "", false, "", false);
+    }
+    else if (!Chose())
+    {
+        // 2. Walking: click a lit square, or stay; or end at once.
+        row("stay", Word("actions", "stay"), "", false, "", false);
+        row("end", Word("actions", "end"), "", false, "", false);
+    }
+    else if (!submenu_.empty())
+    {
+        // 3. A sub-menu: abilities or items, each with its note and why.
+        title = Word("actions", submenu_);
+        for (const auto &a : actions)
+            if (starts(a, submenu_ == "skills" ? "ability:" : "item:"))
+                row(a["id"], a["label"], a["note"], a["off"], a["why"], false);
+    }
+    else
+    {
+        // 4. The main menu.
+        const int me = Current(s_);
+        bool anySkill = false, anyItem = false;
+        for (const auto &a : actions)
+            anySkill |= starts(a, "ability:") && !a["off"].get<bool>(), anyItem |= starts(a, "item:") && !a["off"].get<bool>();
+        for (const auto &a : actions)
+            if (a["id"] == "undo")
+                row("undo", Word("actions", "move"), "", a["off"], a["why"], false);
+            else if (a["id"] == "attack")
+                row("attack", a["label"], "", a["off"], a["why"], false);
+        row("skills", Word("actions", "skills"), "", !anySkill, anySkill ? "" : Word("why", "NoTarget"), true);
+        row("items", Word("actions", "items"), "", !anyItem, anyItem ? "" : Word("why", "NothingHere"), true);
+        for (int t = 0; t < static_cast<int>(s_.units.size()); ++t)
+            if (Check(def_, s_, {ActionKind::Cut, static_cast<std::int8_t>(t)}) == Why::Ok)
+            {
+                row("cut:" + std::to_string(t), Word("actions", "cut"), Name(t), false, "", false);
+                break;
+            }
+        for (const auto &a : actions)
+            if (a["id"] == "pickup" || a["id"] == "answer" || a["id"] == "perform")
+                row(a["id"], a["label"], a["note"], a["off"], a["why"], false);
+        row("end", Word("actions", "end"), "", false, "", false);
+        (void)me;
+    }
+    return {{"title", title}, {"rows", rows}};
+}
+
+bool MatchPlay::MenuKey(int n)
+{
+    const nlohmann::json rows = Menu()["rows"];
+    if (n < 1 || n > static_cast<int>(rows.size()) || rows[U(n - 1)]["off"].get<bool>())
+        return false;
+    return MenuPick(rows[U(n - 1)]["id"]);
+}
+
+bool MatchPlay::MenuPick(const std::string &id)
+{
+    if (!PlayerTurn() || s_.battle.on)
+        return false;
+    if (id == "skills" || id == "items")
+        return submenu_ = id, true;
+    submenu_.clear();
+    if (id == "stay")
+        return chosen_ = Key(), true;
+    if (id == "end" && !Chose())
+        return Do({ActionKind::EndTurn});
+    if (id.starts_with("target:"))
+    {
+        const std::vector<Action> targets = ArmedActions();
+        const std::size_t k = static_cast<std::size_t>(std::stoi(id.substr(7)));
+        armed_.clear();
+        return k < targets.size() && Do(targets[k]);
+    }
+    if (id.starts_with("cut:"))
+        return Do({ActionKind::Cut, static_cast<std::int8_t>(std::stoi(id.substr(4)))});
+    return HandleUi("", "act", id);
+}
+
+bool MatchPlay::Back()
+{
+    if (!PlayerTurn() || s_.battle.on)
+        return false;
+    if (Armed())
+        return armed_.clear(), true;
+    if (!submenu_.empty())
+        return submenu_.clear(), true;
+    if (Chose() && !s_.now.acted)
+        return HandleUi("", "act", "undo");
+    return false;
 }

@@ -184,8 +184,19 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         umbra::ui::UiInput uiInput = Screens::MapInput(input, {static_cast<float>(window.GetWidth()), static_cast<float>(window.GetHeight())}, pixels);
         drawList.Clear();
         drawList.hud.diagnosticsWindow = false;
-        if (game.keys.Pressed(input, "back") && play)
-            paused = !paused, uiInput.back = false;
+        // Back (Esc, right-click) steps back one level in a stage's menu first, else pauses (P2).
+        const bool back = game.keys.Pressed(input, "back") || (hooks && input.IsMouseButtonPressed(2));
+        if (back && play && (paused || !hooks || !play->Back()))
+            paused = !paused;
+        if (back)
+            uiInput.back = false;
+        for (int n = 1; n <= 6 && play && hooks && !paused; ++n)
+            if (game.keys.Pressed(input, "menu" + std::to_string(n)))
+                (void)play->MenuKey(n);
+        if (play && hooks && !paused && game.keys.Pressed(input, "endTurn") && play->PlayerTurn())
+            (void)play->MenuPick("end");
+        else if (play && hooks && !paused && game.keys.Pressed(input, "skip") && !play->PlayerTurn())
+            (void)play->HandleUi("", "skip", ""); // their turn: F skips (P16)
 
         // 5. The match: bots and monsters play on beats; the board follows the mouse.
         int hover = -1;
@@ -246,7 +257,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
             nlohmann::json data = ui;
             data["words"] = words.value("screens", nlohmann::json::object()); // the screens' labels
             if (play && hooks)
-                data["hud"] = play->HudData();
+                data["hud"] = play->HudData(), data["menu"] = play->Menu();
             data["career"] = career != nullptr; // the end screen leads back to the café
             data["single"] = career == nullptr;
             if (!play)
@@ -256,7 +267,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                 // Spoken lines ride on their speaker's card as a bubble.
                 data["labels"] = table.Labels(play->State(), pixels);
                 // The actions dock beside the one acting (to the right of its head).
-                if (ui.contains("actions"))
+                if (ui.contains("actions") || (hooks && !data["menu"]["rows"].empty()))
                     if (const auto at = table.HeadOnScreen(play->State(), Current(play->State()), pixels))
                         data["dock"] = {{{"at", {at->x + 190.0F, at->y + 150.0F}}}};
                 for (auto &l : data["labels"])

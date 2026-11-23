@@ -154,22 +154,28 @@
           "at": "{d.at}",
           "children": [
             {
+              "type": "text",
+              "style": "muted",
+              "text": "{menu.title}",
+              "visible": "{menu.title}"
+            },
+            {
               "type": "list",
-              "items": "{actions}",
-              "as": "a",
+              "items": "{menu.rows}",
+              "as": "r",
               "gap": 5,
               "entry": {
                 "type": "button",
                 "style": "act",
                 "size": [
-                  230,
+                  250,
                   0
                 ],
-                "text": "{a.label}   {a.note}",
-                "action": "act",
-                "arg": "{a.id}",
-                "disabled": "{a.off}",
-                "tip": "{a.why}"
+                "text": "{r.key}   {r.label}   {r.note}",
+                "action": "menu",
+                "arg": "{r.id}",
+                "disabled": "{r.off}",
+                "tip": "{r.why}"
               }
             }
           ]

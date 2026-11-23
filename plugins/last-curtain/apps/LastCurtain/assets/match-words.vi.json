@@ -74,6 +74,12 @@
     "NotHere": "Chỉ dùng được ở quán."
   },
   "actions": {
+    "move": "Di chuyển",
+    "stay": "Đứng yên",
+    "skills": "Kỹ năng",
+    "items": "Vật phẩm",
+    "cut": "Cắt dây",
+    "target": "Chọn mục tiêu",
     "undo": "Đi lại",
     "back": "Quay lại",
     "attack": "Tấn công",

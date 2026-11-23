@@ -41,6 +41,12 @@ public:
     void SetStage(std::string title) { stageTitle_ = std::move(title); }
     void SetKeyNames(std::string hurry, std::string skip) { hurryKey_ = std::move(hurry), skipKey_ = std::move(skip); }
     [[nodiscard]] nlohmann::json HudData() const;
+    // The command menu (campaign plan 5, P2): {title, rows: [{id, label, note, key, off, why, sub}]} for the
+    // player's turn: walking (stay, end), the main menu, a sub-menu (skills, items) or the armed targets.
+    [[nodiscard]] nlohmann::json Menu() const;
+    bool MenuKey(int n);                // number key n (1-based) picks row n when it is on
+    bool MenuPick(const std::string &id);
+    bool Back();                        // one level back: targets, sub-menu, the walk; false at the top
 
     bool Do(const umbra::match::Action &action); // the player's action; false unless it is theirs and legal
     void Update(float dt);
@@ -106,6 +112,7 @@ private:
     int hover_ = -1, chosen_ = -1, armedKey_ = -1;
     bool watch_ = false, paused_ = false;
     std::vector<std::string> names_, sprites_;
+    std::string submenu_; // "", "skills" or "items"
     std::string stageTitle_, hurryKey_ = "Space", skipKey_ = "F";
     std::string armed_; // "attack" or "ability:<slot>"
     std::string lastBlow_, eventResult_, treasureResult_; // the battle's last blow; the event's outcome; the card turned

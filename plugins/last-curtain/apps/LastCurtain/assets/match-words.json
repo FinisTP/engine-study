@@ -73,6 +73,12 @@
     "NotHere": "This can only be used in the café."
   },
   "actions": {
+    "move": "Move",
+    "stay": "Stay",
+    "skills": "Skills",
+    "items": "Items",
+    "cut": "Cut the strings",
+    "target": "Choose a target",
     "undo": "Undo move",
     "back": "Back",
     "attack": "Attack",
