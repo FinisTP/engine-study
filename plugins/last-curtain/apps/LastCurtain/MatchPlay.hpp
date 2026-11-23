@@ -56,6 +56,9 @@ public:
     bool Pin(); // the card stays on the hovered unit (I); again unpins
     // What the board marks a round ahead (campaign plan 5): [{cell, kind}], kind hazard, breath, window, arrival.
     static nlohmann::json Telegraphs(const umbra::match::MatchState &s);
+    // Toasts (P12): a told find, freeing or level shows top right for 3 s, at most 3 at once.
+    [[nodiscard]] std::string ToastText(const umbra::match::LogEntry &e) const; // "" when not a toast
+    void Toast(std::string text);
 
     bool Do(const umbra::match::Action &action); // the player's action; false unless it is theirs and legal
     void Update(float dt);
@@ -124,6 +127,12 @@ private:
     std::vector<float> heights_;
     std::string submenu_; // "", "skills" or "items"
     int pinned_ = -1;     // the unit whose card is pinned
+    struct Toasted
+    {
+        std::string text;
+        float left = 3.0F;
+    };
+    std::vector<Toasted> toasts_;
     std::string stageTitle_, hurryKey_ = "Space", skipKey_ = "F";
     std::string armed_; // "attack" or "ability:<slot>"
     std::string lastBlow_, eventResult_, treasureResult_; // the battle's last blow; the event's outcome; the card turned

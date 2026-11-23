@@ -196,6 +196,8 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         const bool ours = play && play->PlayerTurn(); // F ends our turn, or skips theirs: never both in one press
         if (play && hooks && !paused && game.keys.Pressed(input, "endTurn") && ours)
             (void)play->MenuPick("end");
+        if (play && hooks && game.keys.Pressed(input, "notebook"))
+            paused = !paused; // the notebook stops the beats (its pages come with the café, plan 6)
         if (play && hooks && !paused && game.keys.Pressed(input, "pin"))
             (void)play->Pin(); // I: the hovered unit's card stays
         if (play && hooks && !paused && game.keys.Pressed(input, "skip") && !ours && !play->State().over)
@@ -205,8 +207,8 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         int hover = -1;
         if (play)
         {
-            if (!paused)
-                play->Update(dt);
+            if (!paused) // hold Space on their turn to hurry the beats (P16)
+                play->Update(hooks && !play->PlayerTurn() && game.keys.Held(input, "hurry") ? dt * 3.0F : dt);
             if (hooks && hooks->beat && !paused)
                 hooks->beat(*play); // a stage's scenes, between beats
             // What was just told: figures move, sounds play.

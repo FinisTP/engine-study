@@ -141,6 +141,8 @@ bool MatchPlay::Reveal()
     for (const auto &m : Moves(e))
         moves_.push_back(m);
     Speak(e, shown_ - 1);
+    if (const std::string toast = ToastText(e); !toast.empty())
+        Toast(toast);
     if (const std::string cue = Sound(e); !cue.empty())
         sounds_.push_back(cue);
     // 1b. The cards follow the told lines.
@@ -235,6 +237,9 @@ void MatchPlay::Update(float dt)
 {
     if (dt <= 0.0F || paused_)
         return;
+    for (Toasted &t : toasts_)
+        t.left -= dt;
+    std::erase_if(toasts_, [](const Toasted &t) { return t.left <= 0.0F; });
     diceLeft_ = std::max(0.0F, diceLeft_ - dt);
     if ((focusLeft_ -= dt) <= 0.0F)
         focus_.clear();
@@ -988,6 +993,9 @@ nlohmann::json MatchPlay::HudData() const
     j["hint"] = now >= 0 && !Mine(now) && !s_.over ? Fill(Word("misc", "enemyTurn"), {{"name", Name(now)}, {"hurry", hurryKey_}, {"skip", skipKey_}})
                                                    : UiData().value("hint", std::string());
     j["logLine"] = log_.empty() ? std::string() : log_.back();
+    j["toasts"] = nlohmann::json::array();
+    for (const Toasted &t : toasts_)
+        j["toasts"].push_back({{"text", t.text}});
     // 4. The card: the pinned unit, else the one under the mouse.
     int card = pinned_;
     for (int i = 0; card < 0 && i < static_cast<int>(s_.units.size()) && hover_ >= 0; ++i)
@@ -1181,4 +1189,16 @@ nlohmann::json MatchPlay::Telegraphs(const MatchState &s)
         if (a.round <= s.round + 1)
             out.push_back({{"cell", a.cell}, {"kind", "arrival"}});
     return out;
+}
+
+std::string MatchPlay::ToastText(const LogEntry &e) const
+{
+    return e.kind == LogKind::Item || e.kind == LogKind::Freed || e.kind == LogKind::Level ? Caption(e) : std::string();
+}
+
+void MatchPlay::Toast(std::string text)
+{
+    toasts_.push_back({std::move(text), 3.0F});
+    if (toasts_.size() > 3)
+        toasts_.erase(toasts_.begin());
 }

@@ -1119,3 +1119,21 @@ TEST_CASE("Telegraphs: hazards, breath rows, opening windows and arrivals marked
     CHECK(t[3]["cell"] == 20);
     CHECK(t[3]["kind"] == "arrival");
 }
+
+TEST_CASE("Toasts: finds, freeing and levels; at most three, each for three seconds (campaign plan 5)", "[match][play][toasts]")
+{
+    const MatchDef def = Data();
+    MatchPlay p = Make(def);
+    CHECK(p.ToastText({LogKind::Moved, 0}).empty());
+    CHECK_FALSE(p.ToastText({LogKind::Freed, 0, 1, 0}).empty());
+    CHECK_FALSE(p.ToastText({LogKind::Level, 0, -1, 3}).empty());
+    for (const char *t : {"a", "b", "c", "d"})
+        p.Toast(t);
+    nlohmann::json toasts = p.HudData()["toasts"];
+    REQUIRE(toasts.size() == 3);
+    CHECK(toasts[0]["text"] == "b"); // the oldest gave way
+    p.Update(1.5F);
+    CHECK(p.HudData()["toasts"].size() == 3);
+    p.Update(2.0F);
+    CHECK(p.HudData()["toasts"].empty());
+}

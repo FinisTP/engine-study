@@ -233,6 +233,22 @@
             "visible": "{hud.card.pinned}"
           }
         ]
+      },
+      {
+        "type": "list",
+        "anchor": "top-right",
+        "offset": [
+          -20,
+          14
+        ],
+        "items": "{hud.toasts}",
+        "as": "t",
+        "gap": 4,
+        "entry": {
+          "type": "text",
+          "style": "float",
+          "text": "{t.text}"
+        }
       }
     ]
   }
