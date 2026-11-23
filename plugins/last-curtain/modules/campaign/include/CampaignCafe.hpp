@@ -46,4 +46,26 @@ namespace umbra::campaign
     bool Brew(Save &save, const Recipe &recipe); // spends the needs; false (and nothing spent) when lacking
     // A battle slot takes only items the fight or the board can use (never ingredients or keepsakes).
     bool SlotOk(const match::MatchDef &def, const std::string &item);
+
+    struct Memory
+    {
+        std::string recruit, id, name, source, from, scene, upgrade, fact; // source talk, recipe or keepsake; from: its recipe or item id
+        std::map<std::string, std::string> versions;           // the answer's value (fact) -> the version's ability id
+        bool joins = false, locked = false;
+    };
+
+    struct Memories
+    {
+        std::map<std::string, std::vector<Memory>> byRecruit; // in order
+    };
+
+    bool LoadMemories(const std::filesystem::path &file, const std::filesystem::path &scenes, const Recipes &recipes, const match::MatchDef &def,
+                      Memories &out, std::vector<core::Diagnostic> &d);
+    // The recruit's first memory not yet back that `source`/`from` brings (a talk needs no from); null if none.
+    const Memory *NextMemory(const Memories &m, const Save &save, const std::string &recruit, const std::string &source, const std::string &from);
+    // After its scene: the memory is back, a joining memory adds the recruit, the answer (facts[fact]) picks
+    // the upgrade's version once and for good. False when locked or already back.
+    bool Remember(Save &save, const Memory &memory, const Facts &facts);
+    // The ability a kit's base ability has become (its chosen version), else the base.
+    std::string AbilityFor(const Save &save, const std::string &base);
 }

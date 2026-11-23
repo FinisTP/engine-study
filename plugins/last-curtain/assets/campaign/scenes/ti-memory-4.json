@@ -1,0 +1,70 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "ti-memory-4",
+  "note": "From ti-content 4.2-4.5 (draft for the user's review, 2026-11-24). After the slice (Stage 2's coconut). The choice picks the Chan sao version: a = Gio bien, b = Dau chan.",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Tí uống một hơi hết trái dừa, rồi ngồi nhìn ra cửa rất lâu.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "ti",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "text": "Cát ngoài bãi trắng lắm, trưa nóng rát chân. Tui hay chạy trên đó cho lẹ.",
+      "speaker": "ti",
+      "face": "talk"
+    },
+    {
+      "id": "c",
+      "text": "Sáng hôm đó tui nằm xuống trên cát, nghe sóng. Tui không sợ mô.",
+      "speaker": "ti",
+      "face": "calm"
+    },
+    {
+      "id": "d",
+      "text": "Tui chỉ tiếc chưa được ăn mứt mạ sên.",
+      "speaker": "ti",
+      "face": "calm",
+      "choices": [
+        {
+          "text": "Giờ em chạy đâu cũng được rồi.",
+          "fact": "ti.memory4",
+          "value": "a",
+          "jump": "e"
+        },
+        {
+          "text": "Em chạy trước, tụi {anh/chị} theo sau.",
+          "fact": "ti.memory4",
+          "value": "b",
+          "jump": "e"
+        }
+      ]
+    },
+    {
+      "id": "e",
+      "text": "Lệ Thanh đứng sau quầy, không nói gì. Lần đầu tiên, chị quay mặt đi.",
+      "enter": [
+        {
+          "who": "lethanh",
+          "side": "right",
+          "slot": 1,
+          "face": "calm"
+        }
+      ]
+    }
+  ]
+}

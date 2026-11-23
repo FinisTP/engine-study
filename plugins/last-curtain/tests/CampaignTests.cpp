@@ -810,3 +810,40 @@ TEST_CASE("Recipes: what is missing and where it is found; brewing spends; cafe-
     CHECK(d[0].field == "recipes[0].kind");
     CHECK(d[1].field == "recipes[0].needs.nothing");
 }
+
+TEST_CASE("Memories: what each brings back, joining, a version chosen by the answer and final, the locked one (campaign plan 6)")
+{
+    const match::MatchDef def = MatchData();
+    campaign::Memories memories;
+    std::vector<core::Diagnostic> d;
+    REQUIRE(campaign::LoadMemories(data / "memories.json", data / "scenes", TheRecipes(), def, memories, d));
+    CHECK(d.empty());
+    campaign::Save save;
+    // 1. A talk brings back memory 1: Ti joins.
+    const campaign::Memory *first = campaign::NextMemory(memories, save, "ti", "talk", "");
+    REQUIRE(first);
+    CHECK(first->id == "ti_1");
+    CHECK(campaign::Remember(save, *first, {}));
+    CHECK(save.joined.contains("ti"));
+    CHECK_FALSE(campaign::Remember(save, *first, {})); // once
+    CHECK(campaign::NextMemory(memories, save, "ti", "talk", "") == nullptr);
+    // 2. Ginger jam brings back memory 2; the answer picks the version, for good.
+    const campaign::Memory *jam = campaign::NextMemory(memories, save, "ti", "recipe", "mut_gung");
+    REQUIRE(jam);
+    campaign::Save other = save;
+    CHECK(campaign::Remember(save, *jam, {{"ti.memory2", "a"}}));
+    CHECK(save.versions["dua_tin"] == "dua_tin_ve_kip");
+    CHECK(campaign::AbilityFor(save, "dua_tin") == "dua_tin_ve_kip");
+    CHECK(campaign::Remember(other, *jam, {{"ti.memory2", "b"}}));
+    CHECK(other.versions["dua_tin"] == "dua_tin_phan_qua");
+    save.memories.erase("ti_2");
+    CHECK(campaign::Remember(save, *jam, {{"ti.memory2", "b"}}));
+    CHECK(save.versions["dua_tin"] == "dua_tin_ve_kip"); // final
+    // 3. The keepsake brings back memory 3; memory 4 stays locked in the slice.
+    REQUIRE(campaign::NextMemory(memories, save, "ti", "keepsake", "giay_gap_tu"));
+    CHECK(campaign::NextMemory(memories, save, "ti", "keepsake", "giay_gap_tu")->id == "ti_3");
+    for (const campaign::Memory &m : memories.byRecruit.at("ti"))
+        if (m.id == "ti_4")
+            CHECK_FALSE(campaign::Remember(save, m, {{"ti.memory4", "a"}}));
+    CHECK(campaign::AbilityFor(save, "chan_sao") == "chan_sao");
+}

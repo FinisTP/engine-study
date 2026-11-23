@@ -1,0 +1,68 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "ti-memory-3",
+  "note": "From ti-content 4.2-4.5 (draft for the user's review, 2026-11-24). The choice picks the Na cao su version: a = Bao dong, b = Ban truoc.",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Mẩu giấy ố vàng, gấp tư, mép đã sờn.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "ti",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "text": "Cái ni… của tui! Tui giắt sau tai mà.",
+      "speaker": "ti",
+      "face": "afraid"
+    },
+    {
+      "id": "c",
+      "text": "Chú dặn đưa tận tay, không được đọc. Mà tui biết trong đó ghi: 'Sáng mai chúng tới.'",
+      "speaker": "ti",
+      "face": "talk"
+    },
+    {
+      "id": "d",
+      "text": "Tui chạy suốt đêm. Tui có kịp không, {anh/chị}?",
+      "speaker": "ti",
+      "face": "afraid",
+      "choices": [
+        {
+          "text": "Em đưa tới nơi rồi, Tí.",
+          "fact": "ti.memory3",
+          "value": "a",
+          "jump": "e"
+        },
+        {
+          "text": "Em đã chạy hết sức rồi.",
+          "fact": "ti.memory3",
+          "value": "b",
+          "jump": "e"
+        }
+      ]
+    },
+    {
+      "id": "e",
+      "text": "Rứa thì được rồi.",
+      "speaker": "ti",
+      "face": "calm"
+    },
+    {
+      "id": "f",
+      "text": "Tí gấp mẩu giấy lại, cất vào túi áo."
+    }
+  ]
+}

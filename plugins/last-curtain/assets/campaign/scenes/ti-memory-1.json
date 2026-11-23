@@ -1,0 +1,78 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "ti-memory-1",
+  "note": "From ti-content 4.2-4.5 (draft for the user's review, 2026-11-24). Ti joins; the choice sets ti.first (hope/fed) for idle lines.",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Lệ Thanh dắt một đứa nhỏ chân đất vào quán, đặt nó ngồi xuống bên bàn gần cửa sổ.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "ti",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "lethanh",
+          "side": "right",
+          "slot": 1,
+          "face": "calm"
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "text": "Chị ơi, tui đói. Mà tui không nhớ nhà tui ở mô.",
+      "speaker": "ti",
+      "face": "afraid"
+    },
+    {
+      "id": "c",
+      "text": "Từ từ thôi em. Nhớ từ điều gần nhất.",
+      "speaker": "lethanh",
+      "face": "calm"
+    },
+    {
+      "id": "d",
+      "text": "Lệ Thanh đặt tay lên tấm khăn tang trên mắt Tí. Nút khăn lỏng ra."
+    },
+    {
+      "id": "e",
+      "text": "Mạ… mạ tui tên Lụa. Chiều mô mạ cũng đứng đầu ngõ kêu tui về ăn cơm.",
+      "speaker": "ti",
+      "face": "talk",
+      "choices": [
+        {
+          "text": "Mạ Lụa chắc đang chờ em đó.",
+          "fact": "ti.first",
+          "value": "hope",
+          "jump": "f"
+        },
+        {
+          "text": "Đói thì ăn cái đã, Tí.",
+          "fact": "ti.first",
+          "value": "fed",
+          "jump": "f"
+        }
+      ]
+    },
+    {
+      "id": "f",
+      "text": "{Anh/Chị} cho tui đi theo với nghe. Tui chạy lẹ lắm, không ai đuổi kịp mô!",
+      "speaker": "ti",
+      "face": "happy"
+    },
+    {
+      "id": "g",
+      "text": "Tấm khăn rơi xuống. Quanh Tí ánh lên một màu xanh nhạt."
+    }
+  ]
+}

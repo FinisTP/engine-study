@@ -1,0 +1,56 @@
+{
+  "format": "umbra.lc-memories",
+  "version": 1,
+  "note": "Each recruit's memories (campaign plan 6, ti-content 2): what brings each back, its scene, the upgrade and which answer gives which version.",
+  "recruits": {
+    "ti": [
+      {
+        "id": "ti_1",
+        "name": "Tên mẹ",
+        "source": "talk",
+        "scene": "ti-memory-1",
+        "joins": true
+      },
+      {
+        "id": "ti_2",
+        "name": "Lời hứa Tết",
+        "source": "recipe",
+        "from": "mut_gung",
+        "scene": "ti-memory-2",
+        "upgrade": "dua_tin",
+        "fact": "ti.memory2",
+        "versions": {
+          "a": "dua_tin_ve_kip",
+          "b": "dua_tin_phan_qua"
+        }
+      },
+      {
+        "id": "ti_3",
+        "name": "Lời nhắn",
+        "source": "keepsake",
+        "from": "giay_gap_tu",
+        "scene": "ti-memory-3",
+        "upgrade": "na_cao_su",
+        "fact": "ti.memory3",
+        "versions": {
+          "a": "na_bao_dong",
+          "b": "na_ban_truoc"
+        }
+      },
+      {
+        "id": "ti_4",
+        "name": "Bãi cát trắng",
+        "source": "recipe",
+        "from": "nuoc_dua",
+        "scene": "ti-memory-4",
+        "upgrade": "chan_sao",
+        "fact": "ti.memory4",
+        "versions": {
+          "a": "chan_sao_gio_bien",
+          "b": "chan_sao_dau_chan"
+        },
+        "locked": true
+      }
+    ]
+  }
+}
