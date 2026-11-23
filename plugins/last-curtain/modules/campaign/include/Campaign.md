@@ -50,3 +50,11 @@ who left is the writer's to avoid.
 
 `FillTokens` fills `{player}` (the typed name, or the cast's `nameless` row when empty), `{anh/chị}`
 and `{Anh/Chị}` (`anh` for "male", `chị` otherwise).
+
+## The prologue
+
+`scenes/prologue.json` is the game's first minutes (draft for the user's review): today's night tour of
+the restored opera house; the guide's torch dies; Lệ Thanh in a red bridal áo dài on the stairs already
+knows the player's name; the house is "full tonight" in front of empty seats; she is gone and a red
+string creaks down (into T1). Its one choice sets `lethanh.first` to `kind` or `wary`, which colours one
+café line later (plan 6).

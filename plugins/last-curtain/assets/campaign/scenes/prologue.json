@@ -1,0 +1,28 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "prologue",
+  "note": "Draft for the user's review (2026-11-23). The hook: today's night tour; the guide's torch dies; Le Thanh already knows the player's name. Fact lethanh.first (kind/wary) colours one cafe line.",
+  "lines": [
+    {"id": "a", "text": "Sài Gòn, đêm nay. Đoàn tham quan đêm đi qua Nhà hát Thành phố vừa trùng tu, mùi sơn mới còn hăng."},
+    {"id": "b", "text": "Cô hướng dẫn viên rọi đèn pin lên trần: \"Ngày xưa, ở đây có một đêm diễn không bao giờ hạ màn...\""},
+    {"id": "c", "text": "Đèn pin chớp hai lần rồi tắt. Khi mắt {player} quen với bóng tối, đoàn người đã không còn ở đó.",
+     "enter": [{"who": "player", "side": "left", "slot": 0, "face": "afraid"}]},
+    {"id": "d", "speaker": "player", "face": "afraid", "text": "Có ai không? ...Chị hướng dẫn ơi?"},
+    {"id": "e", "text": "Trên bậc cầu thang đôi, một người phụ nữ mặc áo dài cưới đỏ đứng im. Im quá mức.",
+     "enter": [{"who": "lethanh", "side": "right", "slot": 0, "face": "calm"}]},
+    {"id": "f", "speaker": "lethanh", "face": "calm", "text": "{player}. Tên đẹp lắm.", "model": true},
+    {"id": "g", "speaker": "player", "face": "afraid", "text": "Sao... sao cô biết tên tôi?"},
+    {"id": "h", "speaker": "lethanh", "face": "talk", "text": "Đêm nay nhà hát kín chỗ. Ai cũng đến để xem buổi diễn cuối cùng."},
+    {"id": "i", "text": "Hàng ghế nhung đỏ trống trơn. Chỉ có tiếng cào khe khẽ trong tường."},
+    {"id": "j", "speaker": "lethanh", "face": "scheming", "text": "Mời {anh/chị} ở lại. Họ không thích khách bỏ về giữa chừng.",
+     "choices": [
+       {"text": "Cảm ơn cô. Tôi sẽ ở lại.", "fact": "lethanh.first", "value": "kind", "jump": "k1"},
+       {"text": "Cô là ai? Tôi phải đi.", "fact": "lethanh.first", "value": "wary", "jump": "k2"}]},
+    {"id": "k1", "speaker": "lethanh", "face": "happy", "text": "Lâu lắm rồi mới có người nói cảm ơn với tôi.", "jump": "l"},
+    {"id": "k2", "speaker": "lethanh", "face": "calm", "text": "Ai cũng hỏi vậy. Rồi ai cũng ở lại."},
+    {"id": "l", "text": "Cô ấy quay đi. Khi {player} chớp mắt, cầu thang đã trống.", "leave": ["lethanh"]},
+    {"id": "m", "text": "Từ trên trần, một sợi chỉ đỏ kẽo kẹt căng ra. Có thứ gì đó đang được thả xuống."},
+    {"id": "n", "speaker": "player", "face": "afraid", "text": "...Ai đó?"}
+  ]
+}

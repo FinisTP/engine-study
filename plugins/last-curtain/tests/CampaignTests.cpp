@@ -228,3 +228,28 @@ TEST_CASE("Tokens: the name and the form of address; a nameless player gets the 
     CHECK(p.Shown() == "Ch\xc3\xa0o anh Nam.");
     CHECK(p.TakeSound().empty());
 }
+
+TEST_CASE("The prologue loads and plays to the end both ways through its choice")
+{
+    const campaign::Cast cast = TheCast();
+    campaign::Scene scene;
+    std::vector<core::Diagnostic> d;
+    REQUIRE(campaign::LoadScene(data / "scenes" / "prologue.json", cast, scene, d));
+    for (int pick = 0; pick < 2; ++pick)
+    {
+        campaign::Facts facts;
+        campaign::ScenePlayer p(scene, cast, {"Lan", "female"}, facts);
+        int steps = 0;
+        while (!p.Done() && ++steps < 200)
+        {
+            p.Skip();
+            if (!p.Done())
+                REQUIRE(p.Choose(pick));
+        }
+        CHECK(p.Done());
+        CHECK(facts["lethanh.first"] == (pick == 0 ? "kind" : "wary"));
+        // No token is left unfilled.
+        for (const auto &[name, text] : p.Log())
+            CHECK(text.find('{') == std::string::npos);
+    }
+}

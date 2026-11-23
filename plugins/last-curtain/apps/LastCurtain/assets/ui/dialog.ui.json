@@ -157,10 +157,10 @@
    },
    {
     "type": "list",
-    "anchor": "center",
+    "anchor": "bottom",
     "offset": [
      0,
-     -60
+     -206
     ],
     "items": "{dialog.choices}",
     "as": "c",
@@ -193,8 +193,8 @@
     "type": "stack",
     "anchor": "bottom-right",
     "offset": [
-     -24,
-     -200
+     -60,
+     -30
     ],
     "direction": "horizontal",
     "gap": 8,
