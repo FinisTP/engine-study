@@ -3,6 +3,8 @@
 #include "CafeApp.hpp"
 #include "DialogApp.hpp"
 #include "StageApp.hpp"
+#include "CafeHubApp.hpp"
+#include <CampaignCafe.hpp>
 #include "GameContext.hpp"
 #include "MatchApp.hpp"
 #include "Play.hpp"
@@ -63,6 +65,7 @@ namespace
         std::string scene, backdrop;   // --scene <id> [--backdrop <name>]: play one campaign scene (developers)
         std::string stage;             // --stage <id> [--refill n]: play one campaign stage (developers)
         int refill = 0;
+        bool campaignCafe = false;     // --campaign-cafe: the campaign's cafe with a sample save (developers)
         umbra::campaign::Speaker speaker{"", "female"}; // --name <text> --gender male|female
     };
 
@@ -190,6 +193,18 @@ namespace
                 GameContext game;
                 umbra::campaign::Facts facts;
                 result = game.Open(assets) && RunScene(game, assets, options.scene, options.backdrop, options.speaker, facts, options.capture, options.frames) >= 0 ? 0 : 1;
+                platform.Shutdown();
+                return result;
+            }
+            if (options.campaignCafe)
+            {
+                // The campaign cafe after Stage 1 (CafeHubApp.hpp): recipes known, ginger, sugar and the note in storage.
+                GameContext game;
+                umbra::campaign::Save save;
+                save.facts["won:t1"] = save.facts["won:t3"] = save.facts["won:stage1"] = "1";
+                save.recipes = {"mut_gung", "nuoc_gung"};
+                save.storage = {{"gung", 2}, {"duong", 1}, {"giay_gap_tu", 1}};
+                result = game.Open(assets) && RunCafeHub(game, assets, save, options.speaker, options.capture, options.frames) >= 0 ? 0 : 1;
                 platform.Shutdown();
                 return result;
             }
@@ -591,6 +606,8 @@ int main(int argc, char **argv)
             options.zoom = static_cast<float>(std::atof(argv[++i]));
         else if (arg == "--scene" && more)
             options.scene = argv[++i];
+        else if (arg == "--campaign-cafe")
+            options.campaignCafe = true;
         else if (arg == "--stage" && more)
             options.stage = argv[++i];
         else if (arg == "--refill" && more)

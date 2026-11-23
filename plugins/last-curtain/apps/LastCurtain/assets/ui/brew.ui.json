@@ -1,0 +1,96 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "dim": true,
+  "back": "close",
+  "root": {
+    "type": "stack",
+    "anchor": "center",
+    "style": "panel",
+    "gap": 8,
+    "size": [
+      760,
+      0
+    ],
+    "children": [
+      {
+        "type": "text",
+        "style": "heading",
+        "text": "{words.brew}"
+      },
+      {
+        "type": "list",
+        "items": "{hub.recipes}",
+        "as": "r",
+        "gap": 6,
+        "entry": {
+          "type": "stack",
+          "gap": 3,
+          "children": [
+            {
+              "type": "button",
+              "style": "act",
+              "size": [
+                700,
+                0
+              ],
+              "text": "{r.name}   {r.text}",
+              "action": "pick",
+              "arg": "{r.id}",
+              "disabled": "{r.off}"
+            },
+            {
+              "type": "list",
+              "items": "{r.lacks}",
+              "as": "l",
+              "direction": "horizontal",
+              "gap": 10,
+              "entry": {
+                "type": "text",
+                "style": "warning",
+                "text": "{l.label}"
+              }
+            },
+            {
+              "type": "list",
+              "items": "{r.versions}",
+              "as": "v",
+              "direction": "horizontal",
+              "gap": 10,
+              "entry": {
+                "type": "text",
+                "style": "small",
+                "text": "{v.name}"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "list",
+        "items": "{hub.forWhom}",
+        "as": "f",
+        "direction": "horizontal",
+        "gap": 8,
+        "entry": {
+          "type": "button",
+          "style": "act",
+          "text": "{f.name}",
+          "action": "for",
+          "arg": "{f.who}"
+        }
+      },
+      {
+        "type": "button",
+        "style": "act",
+        "size": [
+          200,
+          0
+        ],
+        "text": "{words.close}",
+        "action": "close"
+      }
+    ]
+  }
+}

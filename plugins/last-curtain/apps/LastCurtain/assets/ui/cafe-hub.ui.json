@@ -1,0 +1,121 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "root": {
+    "type": "panel",
+    "anchor": "fill",
+    "style": "layer",
+    "children": [
+      {
+        "type": "image",
+        "anchor": "fill",
+        "image": "{hub.backdrop}",
+        "fit": "cover",
+        "visible": "{hub.backdrop}"
+      },
+      {
+        "type": "stack",
+        "anchor": "top-left",
+        "offset": [
+          24,
+          20
+        ],
+        "style": "float",
+        "gap": 6,
+        "size": [
+          340,
+          0
+        ],
+        "children": [
+          {
+            "type": "text",
+            "style": "heading",
+            "text": "{words.cafe}"
+          },
+          {
+            "type": "text",
+            "style": "muted",
+            "text": "{words.cafeHint}"
+          },
+          {
+            "type": "list",
+            "items": "{hub.people}",
+            "as": "p",
+            "gap": 5,
+            "entry": {
+              "type": "button",
+              "style": "act",
+              "size": [
+                300,
+                0
+              ],
+              "text": "{p.name}",
+              "action": "talk",
+              "arg": "{p.who}",
+              "selected": "{p.talk}"
+            }
+          },
+          {
+            "type": "list",
+            "items": "{hub.keepsakes}",
+            "as": "k",
+            "gap": 5,
+            "entry": {
+              "type": "button",
+              "style": "act",
+              "size": [
+                300,
+                0
+              ],
+              "text": "{words.give} {k.name}",
+              "action": "give",
+              "arg": "{k.item}"
+            }
+          },
+          {
+            "type": "text",
+            "style": "mine",
+            "text": "{words.canBrew}",
+            "visible": "{hub.canBrew}"
+          },
+          {
+            "type": "button",
+            "style": "act",
+            "size": [
+              300,
+              0
+            ],
+            "text": "{words.brew}",
+            "action": "brew"
+          },
+          {
+            "type": "button",
+            "style": "act",
+            "size": [
+              300,
+              0
+            ],
+            "text": "{words.door}",
+            "action": "leave"
+          }
+        ]
+      },
+      {
+        "type": "list",
+        "anchor": "top-right",
+        "offset": [
+          -20,
+          14
+        ],
+        "items": "{hub.toasts}",
+        "as": "t",
+        "gap": 4,
+        "entry": {
+          "type": "text",
+          "style": "float",
+          "text": "{t.text}"
+        }
+      }
+    ]
+  }
+}

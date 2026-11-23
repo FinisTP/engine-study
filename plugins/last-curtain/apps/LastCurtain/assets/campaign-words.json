@@ -39,5 +39,13 @@
   "gung": "Củ gừng già, cay nồng. Bóng chuột trong phòng vé hay tha theo.",
   "duong": "Một gói đường cát nhỏ, giấy gói đã ngả vàng.",
   "giay_gap_tu": "Gấp tư, mép sờn. Có người đã giữ nó rất kỹ."
- }
+ },
+ "cafe": "Quán nước dưới hầm",
+ "cafeHint": "Bấm vào một người để trò chuyện. Ánh vàng: có chuyện mới.",
+ "canBrew": "Có thể pha chế",
+ "brew": "Pha chế",
+ "door": "Ra cửa",
+ "lack": "Thiếu {item} ×{n} · {where}",
+ "forWhom": "Cho ai uống?",
+ "give": "Đưa kỷ vật:"
 }
