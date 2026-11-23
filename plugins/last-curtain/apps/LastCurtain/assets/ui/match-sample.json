@@ -1,4 +1,5 @@
 {
+  "words": {"backToCafe": "Back to the cafe", "bots": "Bots", "chooseCard": "Choose a card.", "chooseOne": "Choose one.", "chosen": "Chosen", "continue": "Continue", "easy": "Easy", "forecast": "Forecast", "hard": "Hard", "hide": "hide", "log": "Log", "medium": "Medium", "nextTurn": "next turn", "playAgain": "Play again", "quit": "Quit", "skip": "Skip", "start": "Start", "theirSide": "Their side", "title": "The Last Curtain", "treasure": "Treasure", "yourSide": "Your side"},
  "actions": [
   {
    "enabled": true,

@@ -3,7 +3,10 @@
 #include <CareerMatch.hpp>
 #include <MatchPlay.hpp>
 
+#include <algorithm>
+#include <cctype>
 #include <fstream>
+#include <set>
 
 using namespace umbra::match;
 
@@ -849,4 +852,58 @@ TEST_CASE("A paused fight stands still; it is quiet only between told beats (cam
         p.Update(0.5F);
     CHECK(p.Quiet());
     (void)sawBattle;
+}
+
+namespace
+{
+    // Every "text" in a screen file, walked through its children.
+    void Texts(const nlohmann::json &node, std::vector<std::string> &out)
+    {
+        if (node.is_object())
+        {
+            if (node.contains("text") && node["text"].is_string())
+                out.push_back(node["text"].get<std::string>());
+            for (const auto &[key, v] : node.items())
+                Texts(v, out);
+        }
+        else if (node.is_array())
+            for (const auto &v : node)
+                Texts(v, out);
+    }
+
+    std::set<std::string> Keys(const nlohmann::json &j, const std::string &at = "")
+    {
+        std::set<std::string> out;
+        for (const auto &[key, v] : j.items())
+        {
+            out.insert(at + key);
+            if (v.is_object())
+                out.merge(Keys(v, at + key + "."));
+        }
+        return out;
+    }
+}
+
+TEST_CASE("The fight's screens carry no typed words; both words files have the same keys (campaign plan 5)", "[match][play][words]")
+{
+    const std::filesystem::path ui = std::filesystem::path(UMBRA_LASTCURTAIN_ASSETS) / "ui";
+    for (const auto &file : std::filesystem::directory_iterator(ui))
+    {
+        const std::string name = file.path().filename().string();
+        if (!name.ends_with(".ui.json") || !(name.starts_with("match-") || name.starts_with("dialog") || name.starts_with("campaign-")))
+            continue;
+        std::vector<std::string> texts;
+        Texts(nlohmann::json::parse(std::ifstream(file.path())), texts);
+        for (const std::string &t : texts)
+        {
+            INFO(name << ": " << t);
+            const bool letters = std::ranges::any_of(t, [](char c) { return std::isalpha(static_cast<unsigned char>(c)) != 0; });
+            CHECK((!letters || t.find('{') != std::string::npos));
+        }
+    }
+    const nlohmann::json en = Words(), vi = nlohmann::json::parse(std::ifstream(std::filesystem::path(UMBRA_LASTCURTAIN_ASSETS) / "match-words.vi.json"));
+    std::set<std::string> a = Keys(en), b = Keys(vi);
+    b.erase("note");
+    CHECK(a == b);
+    CHECK(en.contains("screens"));
 }

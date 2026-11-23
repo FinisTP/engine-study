@@ -27,12 +27,12 @@
           {
             "type": "text",
             "style": "heading",
-            "text": "Your side"
+            "text": "{words.yourSide}"
           },
           {
             "type": "text",
             "style": "heading",
-            "text": "Their side"
+            "text": "{words.theirSide}"
           }
         ]
       },
@@ -88,7 +88,7 @@
               200,
               44
             ],
-            "text": "Play again",
+            "text": "{words.playAgain}",
             "action": "again",
             "visible": "{single}"
           },
@@ -99,7 +99,7 @@
               240,
               44
             ],
-            "text": "Back to the cafe",
+            "text": "{words.backToCafe}",
             "action": "again",
             "visible": "{career}"
           },
@@ -110,7 +110,7 @@
               200,
               44
             ],
-            "text": "Quit",
+            "text": "{words.quit}",
             "action": "quit"
           }
         ]

@@ -78,8 +78,8 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
     MatchDef def;
     std::vector<umbra::core::Diagnostic> diagnostics;
     const bool loaded = LoadMatch(assets.RootOf("match/rules.json") / "match", def, diagnostics);
-    nlohmann::json words;
-    if (std::ifstream in(assets / "match-words.json"); in)
+    nlohmann::json words; // a campaign stage speaks Vietnamese (match-words.vi.json), the career English
+    if (std::ifstream in(assets / (hooks ? "match-words.vi.json" : "match-words.json")); in)
         words = nlohmann::json::parse(in, nullptr, false);
     umbra::night::GameOptions pace;
     if (!umbra::night::LoadOptions(assets / "options.csv", pace, diagnostics))
@@ -240,6 +240,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         if (screens.Ready())
         {
             nlohmann::json data = ui;
+            data["words"] = words.value("screens", nlohmann::json::object()); // the screens' labels
             data["career"] = career != nullptr; // the end screen leads back to the café
             data["single"] = career == nullptr;
             if (!play)

@@ -21,7 +21,7 @@
           {
             "type": "text",
             "style": "mine",
-            "text": "Your side"
+            "text": "{words.yourSide}"
           },
           {
             "type": "text",
@@ -41,7 +41,7 @@
           {
             "type": "text",
             "style": "theirs",
-            "text": "Their side"
+            "text": "{words.theirSide}"
           }
         ]
       },
@@ -90,7 +90,7 @@
             {
               "type": "text",
               "style": "warning",
-              "text": "next turn",
+              "text": "{words.nextTurn}",
               "visible": "{o.marker}"
             }
           ],
@@ -288,7 +288,7 @@
           {
             "type": "text",
             "style": "muted",
-            "text": "Forecast"
+            "text": "{words.forecast}"
           },
           {
             "type": "text",
@@ -436,12 +436,12 @@
               {
                 "type": "text",
                 "style": "muted",
-                "text": "Log"
+                "text": "{words.log}"
               },
               {
                 "type": "button",
                 "style": "entry",
-                "text": "hide",
+                "text": "{words.hide}",
                 "action": "log"
               }
             ]
@@ -472,7 +472,7 @@
           -20,
           -20
         ],
-        "text": "Log",
+        "text": "{words.log}",
         "action": "log",
         "visible": "{logClosed}"
       },
@@ -484,7 +484,7 @@
           -340,
           -20
         ],
-        "text": "Skip",
+        "text": "{words.skip}",
         "action": "skip",
         "visible": "{canSkip}"
       },

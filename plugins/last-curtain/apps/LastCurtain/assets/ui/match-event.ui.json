@@ -17,6 +17,6 @@
       { "type": "text", "style": "small", "text": "need {event.dice.target} or more" }
     ] },
     { "type": "text", "style": "heading", "text": "{event.result}", "visible": "{event.result}", "wrap": true, "size": [580, 0] },
-    { "type": "button", "style": "act", "size": [200, 44], "text": "Continue", "action": "close", "visible": "{event.result}" }
+    { "type": "button", "style": "act", "size": [200, 44], "text": "{words.continue}", "action": "close", "visible": "{event.result}" }
   ] }
 }

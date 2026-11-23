@@ -28,7 +28,7 @@
           {
             "type": "text",
             "style": "title",
-            "text": "The Last Curtain"
+            "text": "{words.title}"
           },
           {
             "type": "text",
@@ -62,7 +62,7 @@
                 {
                   "type": "text",
                   "style": "chosen",
-                  "text": "Chosen",
+                  "text": "{words.chosen}",
                   "visible": "{c.picked}"
                 },
                 {
@@ -111,7 +111,7 @@
               {
                 "type": "text",
                 "style": "small",
-                "text": "Bots"
+                "text": "{words.bots}"
               },
               {
                 "type": "button",
@@ -120,7 +120,7 @@
                   110,
                   40
                 ],
-                "text": "Easy",
+                "text": "{words.easy}",
                 "action": "level",
                 "arg": "easy",
                 "selected": "{pick.easy}"
@@ -132,7 +132,7 @@
                   110,
                   40
                 ],
-                "text": "Medium",
+                "text": "{words.medium}",
                 "action": "level",
                 "arg": "medium",
                 "selected": "{pick.medium}"
@@ -144,7 +144,7 @@
                   110,
                   40
                 ],
-                "text": "Hard",
+                "text": "{words.hard}",
                 "action": "level",
                 "arg": "hard",
                 "selected": "{pick.hard}"
@@ -163,7 +163,7 @@
                   200,
                   44
                 ],
-                "text": "Start",
+                "text": "{words.start}",
                 "action": "start",
                 "visible": "{pick.canStart}"
               },
@@ -174,7 +174,7 @@
                   200,
                   44
                 ],
-                "text": "Start",
+                "text": "{words.start}",
                 "action": "start",
                 "disabled": "{pick.cannotStart}",
                 "visible": "{pick.cannotStart}",
@@ -187,7 +187,7 @@
                   200,
                   44
                 ],
-                "text": "Continue",
+                "text": "{words.continue}",
                 "action": "continue",
                 "visible": "{pick.canContinue}"
               },
@@ -198,7 +198,7 @@
                   200,
                   44
                 ],
-                "text": "Quit",
+                "text": "{words.quit}",
                 "action": "quit",
                 "visible": "{single}"
               },
@@ -209,7 +209,7 @@
                   240,
                   44
                 ],
-                "text": "Back to the cafe",
+                "text": "{words.backToCafe}",
                 "action": "cafe",
                 "visible": "{career}"
               }

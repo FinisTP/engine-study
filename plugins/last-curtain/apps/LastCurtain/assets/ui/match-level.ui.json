@@ -5,7 +5,7 @@
   "dim": true,
   "root": { "type": "stack", "anchor": "center", "style": "float", "gap": 14, "align": "center", "size": [980, 0], "children": [
     { "type": "text", "style": "title", "text": "{level.name} reaches level {level.level}" },
-    { "type": "text", "style": "small", "text": "Choose one." },
+    { "type": "text", "style": "small", "text": "{words.chooseOne}" },
     { "type": "list", "items": "{level.choices}", "as": "c", "direction": "horizontal", "gap": 16, "action": "pick", "arg": "{c.index}",
       "entry": { "type": "stack", "style": "cardArt", "size": [260, 230], "gap": 8, "align": "center", "children": [
         { "type": "image", "style": "iconGold", "image": "{c.icon}", "size": [64, 64], "fit": "contain" },
