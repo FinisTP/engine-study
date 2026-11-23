@@ -15,6 +15,12 @@
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
 
+## Update 2026-11-23, late evening (The Last Curtain, campaign plans 2 and 3: `#UMBRA-334`-`#UMBRA-346`)
+
+- **Fight rules (plan 2).** One Speed order holds characters and monsters; a campaign mode adds falls and revive, biding and AP, cutting a strung recruit free (the gold knot), the bosses' win and the rite. The faction match is unchanged except for the one order; its soak holds (49.1% side 0, 26.5% comebacks). MSVC and the user's match check open (`testing/s46-campaign-rules.md` §4).
+- **Dialog scenes (plan 3).** A new headless `campaign` module reads the cast sheet and scene files and plays them (typewriter, portraits, choices, skip, log); the dialog screen draws them over a backdrop through the analog screen; `LastCurtain --scene prologue` plays the game's first scene, drafted in Vietnamese for the user's review (`testing/s47-dialog-scenes.md` §4).
+- **Plans 4–7 written** for the user's review: stages and the slice's fights, the flow with the painted theatre map and its refilling skirmish rooms, the café between fights, and the campaign on screen.
+
 ## Update 2026-11-23, evening (the analog screen `#UMBRA-333`; Arcee-VyLinh's first run `#UMBRA-331`, `#UMBRA-332`)
 
 - **The analog screen.** An optional last pass makes the whole screen look like an old TV playing a worn tape (CRT: curve, scanlines, fringe; VHS: jitter, tracking band, colour bleed, grain), menus and text included. The Last Curtain has it on by default; "Old TV screen" and "Worn tape" switches in the pause menu are saved. Pictures under SwiftShader; Windows check open (`testing/s45-analog-screen.md` §4).
