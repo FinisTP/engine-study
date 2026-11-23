@@ -37,7 +37,9 @@ remember, join) works.
    a drink in 1–2 steps, then a talk with choices that count.
 8. **Vietnamese from the start** (the user): every word on screen in Vietnamese; fonts that carry it;
    the model's Vietnamese tested first, with hand-written lines ready if it fails.
-9. **The new art on screen:** the sprites, backdrops and café wall from 2026-11-23, and the forms the
+9. **Dialog scenes** (the user, 2026-11-23): one conversation system for the café, the start and end
+   of a battle and moments inside it: up to two characters on each side, a name tag, a dialog box.
+10. **The new art on screen:** the sprites, backdrops and café wall from 2026-11-23, and the forms the
    engine draws (tints, glow, strings, the gold knot, the ally blue with a name plate).
 
 ## 3. Non-goals (later slices)
@@ -46,7 +48,7 @@ Stages 2–12 and the final stage; the quick match's 12-against-12 pick screen (
 faction match now); boons, power cards, permanent boosts and auto-battle; heroes and boon givers in
 the café; the café growing props after each area (a ticket rack may be the first, if cheap [call]);
 zodiacs that adapt on retries through the learned policy; free-typed café answers; the storyteller
-choosing visitors; cutscene stills (not painted yet: scenes use the backdrops and text cards);
+choosing visitors; cutscene stills (not painted yet: scenes are dialog scenes over the room, the board or a backdrop);
 new sounds and music (reuse); Le Thanh's alternate forms in play.
 
 ## 4. Anti-goals (a failure even if it works)
@@ -170,7 +172,8 @@ and the fix, and the stage doesn't start):
   It reuses the existing spawn code.
 - `aims`: the hint lines (Le Thanh's voice), the teaching beats (what each tutorial teaches, shown
   when it first matters), and the recap after the fight.
-- `scenes`: the scene before and after, by id (`cutscenes` data, text cards over backdrops).
+- `scenes`: the dialog scenes (7.11) at the start and end, and the ones a moment in the fight sets
+  off (a unit falls, a round begins, the boss drops below some HP, a freeing).
 
 **The cast sheet** (`assets/campaign/cast.csv`) links every campaign character to its stats row, its
 sprite folders (`<id>` and `<id>_bound`), its form, its voice sheet and its memory fragments. This is
@@ -217,7 +220,7 @@ where the 2026-11-23 sprites are hooked in.
   room, and starts conversations like any other guest.
 - **Guests:** spirits you met in fights, plus Bảo and Bà Mai. Zodiacs never appear (the user).
 - **A visit:** each guest asks for a drink made in 1–2 steps at the stations; serving it opens a talk.
-  A talk is a few lines and a few choices; serving the right drink counts as a good answer [call].
+  A talk is a dialog scene (7.11) of a few lines and a few choices; serving the right drink counts as a good answer [call].
   No talk can be failed.
 - **Restoring Tí** (once Le Thanh has the power): Tí has four authored fragments (his mother's name,
   the Tết promise, the message, the white sand). **Each visit restores two** [call], so two visits
@@ -281,12 +284,61 @@ where the 2026-11-23 sprites are hooked in.
 ### 7.10 Checks
 
 - Headless tests for every switch in both modes, biding limits, falls and revive, game over,
-  boss win, freeing, stage file validation (good and broken files), save v2 round trip, a corrupt or
+  boss win, freeing, dialog scenes (slots, enter and leave, skip stopping at a choice, choices setting
+  facts, a moment's scene firing once and the fight resuming, broken scene files), stage file validation (good and broken files), save v2 round trip, a corrupt or
   old save, and the café visit and restoring flow.
 - **The faction match's soak** with biding on; **a campaign soak** that plays each slice stage with
   bots on many seeds and reports wins, falls and turns, to tune the first numbers.
 - Captures in the cloud (SwiftShader) of each stage and the café; **the Windows play check is the
   user's**, and the plan 4 Windows check still comes before relying on any of this.
+
+### 7.11 Dialog scenes (the user, 2026-11-23)
+
+A generic RPG conversation: portraits on the left and right, a name tag, a dialog box. The same player
+runs in the café, before and after a fight, and inside one.
+
+```
+ ┌───────────────────────────────────────────────────────────────┐
+ │   (the café room, the board, or a backdrop, dimmed behind)     │
+ │  ┌──────┐┌──────┐                          ┌──────┐┌──────┐    │
+ │  │ Tí   ││ Mai  │                          │ Rat  ││      │    │
+ │  │(lit) ││(dim) │                          │(dim) ││      │    │
+ │  └──────┘└──────┘                          └──────┘└──────┘    │
+ │ ┌─[ Bé Tí ]─────────────────────────────────────────────────┐ │
+ │ │ Chị ơi, con nhớ ra rồi! Mạ con hứa Tết ni…                  ▼│ │
+ │ └────────────────────────────────────────────────────────────┘ │
+ │                                          [Nhật ký] [Bỏ qua]   │
+ └───────────────────────────────────────────────────────────────┘
+```
+
+- **Places** (the user): the café, the start of a battle, inside a battle, the end of a battle. Behind
+  the portraits: whatever was on screen, dimmed (the café room or the board), or a backdrop picture the
+  scene names.
+- **Slots** (the user): **0–2 characters on the left, 0–2 on the right.** A line can bring a character
+  in, take one out or swap one. Portraits face the middle (the right side mirrored) [call].
+- **Who speaks:** the **name tag** on the dialog box, on the speaker's side; the speaker's portrait is
+  lit, the others dimmed [call]. A line without a speaker is narration (no tag) [call].
+- **Portraits** [call]: made from each character's sprite (the body and a face: calm, talk, happy,
+  angry, afraid, scheming, near-dead), so a line can set the face; drawn in the character's form (a
+  strung specter red with strings, an ally's blue, a ghost's pale glow). The player's portrait and name
+  come from the save (male or female, the typed name, `{player}` in lines).
+- **The box:** the text appears letter by letter; a click (or Space) shows the whole line, the next
+  click goes on. **Bỏ qua** (skip) jumps to the scene's end but **stops at a choice**; **Nhật ký** (log)
+  shows the lines so far [call]. Auto-advance is later.
+- **Choices:** a line may end in 2–4 choices; a choice sets a fact (saved, as café answers are) and may
+  jump to another part of the scene. Café talks use this; most battle scenes don't [call].
+- **Inside a fight:** a scene set off by a moment waits until the current action has finished, then
+  pauses the fight; the fight goes on where it was [call]. Each moment's scene plays once per attempt
+  [call].
+- **Words:** scene lines are **authored** (Vietnamese, the user reviewing). In café talks a line may be
+  worded by the model from authored facts, with the authored line as its fallback; the box doesn't care
+  which [call].
+- **Voice:** a line may name a sound file; it plays if present (voicing is a later slice).
+- **Data:** one file per scene, `assets/campaign/scenes/<id>.json`, versioned and validated (an unknown
+  character, a third portrait on a side or a jump to a missing line names the file, the line and the
+  fix). The scene player is headless (which line, who is where, the choices, the facts set); drawing is
+  a data-driven UI screen (`ui/dialog.ui.json`) plus the portraits. The night game's camera-shot
+  cutscenes stay as they are.
 
 ## 8. Order of work [call]
 
@@ -294,19 +346,22 @@ where the 2026-11-23 sprites are hooked in.
    user can run it on the PC while the rest is built; the voice test script; fonts.
 2. **Rules:** the switches, biding (both modes), falls, revive, game over, boss win, freeing; the
    faction match's tests and soak still pass.
-3. **Stages:** the stage file and cast sheet, the stage builder, T1, T3 and Stage 1 data, the Rat's
-   kit and the ticket windows, the campaign soak.
-4. **Flow and save:** save v2, the stage list, the game over screen, retries, the mid-stage save,
+3. **Dialog scenes:** the scene file, the headless player, the dialog screen and portraits, so the
+   stages and the café can use them.
+4. **Stages:** the stage file and cast sheet, the stage builder, T1, T3 and Stage 1 data and their
+   scenes, the Rat's kit and the ticket windows, the campaign soak.
+5. **Flow and save:** save v2, the stage list, the game over screen, retries, the mid-stage save,
    name and gender.
-5. **The café:** the calm room, visits, talks, restoring Tí, Le Thanh's unlock, fight memory.
-6. **On screen:** the forms, strings, gold knot, name plates, backdrops, Vietnamese words throughout.
+6. **The café:** the calm room, visits, talks, restoring Tí, Le Thanh's unlock, fight memory.
+7. **On screen:** the forms, strings, gold knot, name plates, backdrops, Vietnamese words throughout.
 
 Each becomes its own plan, built and checked before the next.
 
 ## 9. Left to the builder
 
 File and type names, the stage map's character set, the exact switch plumbing, the drink steps,
-how many lines a talk has, the soak's seed counts, and the look of the pips and the game-over screen,
+how many lines a talk has, the soak's seed counts, the scene file's field names, the text speed and
+portrait crop, and the look of the pips, the dialog box and the game-over screen,
 within the rules above.
 
 ## 10. Still open (outside this slice, or for later)
