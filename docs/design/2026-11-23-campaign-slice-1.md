@@ -32,8 +32,8 @@ remember, join) works.
    stage, café, or quit); **win** by defeating the stage's zodiac (the user).
 5. **Stage files:** hand-shaped room maps with authored enemies, items, switches and aims.
 6. **The campaign save (v2):** progress, party, levels, who was freed and how, memories restored,
-   Le Thanh's unlocks; and a save in the middle of a stage [call].
-7. **The calm café** (the user): one walkable room, no timers, no failure; Le Thanh hosts and dances;
+   Le Thanh's unlocks; and a save in the middle of a stage (the user).
+7. **The calm café** (the user): one walkable room, no timers, no failure; Le Thanh hosts and walks among the guests;
    a drink in 1–2 steps, then a talk with choices that count.
 8. **Vietnamese from the start** (the user): every word on screen in Vietnamese; fonts that carry it;
    the model's Vietnamese tested first, with hand-written lines ready if it fails.
@@ -128,9 +128,25 @@ the later slice; the content doc lists Perform under Stage 8, the Monkey).
 - **The player falls → game over:** the fight stops at once; a screen offers **Thử lại** (retry: the
   stage from its beginning), **Về quán** (back to the café) or **Thoát** (quit) (the user). The whole
   side down is the same.
-- **Recruit specters and the gold knot: to decide** (the user asked for the string and knot rules to
-  be organised first). Whatever is chosen, the freeing is logged with who cut the string and how, for
-  the café to remember.
+- **Strings and the gold knot** (the user, 2026-11-23). Red strings mark a zodiac's control; the gold
+  knot marks a person to free (recruits and boon givers).
+  1. **Freeing:** a gold-knot specter **falls at 0 HP** like anyone; it is freed when its strings are
+     **cut** by the player standing next to it and spending an action. Until then its strings hang slack, and **its side
+     can revive it** strung (a race against the zodiac's revives).
+  2. **Only the living player can cut** (with Le Thanh's fan), so freeing always puts the player, whose
+     fall is game over, at risk.
+  3. **Never cut, or removed for good** by a removal ability: it leaves this stage and **comes back
+     strung in a later stage** (the next stage fought, a replay included [call]); one never freed by
+     the end **fights for Le Thanh in the finale**.
+  4. **Freeing isn't needed to win:** the stage is won when the zodiac falls, but a specter still strung
+     then stays Le Thanh's (rule 3).
+  5. **Ordinary red ghosts:** strings don't matter in this slice; they are simply defeated. Later,
+     cutting a fallen one may send it to the café and shrink the finale's audience.
+  6. **Zodiacs drawing power from their strings:** not in this slice; kept for later bosses (the user).
+  7. **On screen:** the knot sits on the strings above the head; a fallen strung specter keeps slack
+     strings until cut; cutting plays a snap and the warm gold light.
+  The freeing is logged with when, where and what happened, for the café to remember (only the player
+  cuts, so "who" is always the player).
 
 ### 7.4 Stage files (`campaign` module, `assets/campaign/stages/*.json`)
 
@@ -141,7 +157,7 @@ and the fix, and the stage doesn't start):
 - `map`: the hand-shaped room as rows of text (one character per square: wall, floor, door, window,
   hazard…), read into the existing `Board`, so the board's drawing, paths and light rule work
   unchanged.
-- `party`: who fights (`player`, recruit ids, `bao`, `mai` as **temporary** members), start squares.
+- `party`: who fights (`player`, ally ids such as `bao`, `mai`, recruit ids), start squares.
 - `units`: enemies and ghosts with their monster rows, squares, sides, nature (friendly, neutral,
   aggressive), flags (`boss`, `recruit`), and a height scale [call: ordinary ghosts 0.8].
 - **Sides and turns** [call]: the party is side 0 and acts by Speed as today; enemies are monsters on
@@ -166,9 +182,12 @@ where the 2026-11-23 sprites are hooked in.
 |---|---|---|---|---|
 | **T1 Khách lạ** | the player alone, level 1 | rat specters (aggressive ghosts) | moving, attacking | Le Thanh's rescue (scene) [call: game over still applies, but T1 is tuned so falling is unlikely] |
 | **T2 Quán cà phê** | — | — | café talk | meet Bảo and Bà Mai |
-| **T3 Hành lang chân dung** | player + Bảo + Bà Mai (temporary), level 2 | specters, a mini-boss | biding, falls, reviving, game over | — |
-| **1 Phòng vé** | player + **Bé Tí + Bà Mai**, permanent allies from after the second tutorial (the user); where Tí is freed is being settled, level 3 | the Rat (40 HP; *Móc túi* steals an item from an adjacent unit, *Chạy làng* darts 3 tiles after a battle), rat specters from the ticket windows, **Bé Tí as a red specter with the gold knot** | items, stealing, the gold knot, the first revive item | Le Thanh's story, piece 1 (money); she regains her first power: **restoring memories** |
+| **T3 Hành lang chân dung** | player + Bảo + Bà Mai (they join for good at T2, the user), level 2 | specters, a mini-boss | biding, falls, reviving, game over | — |
+| **1 Phòng vé** | player + **Bảo + Bà Mai**, permanent allies from the second tutorial on (the user), level 3 | the Rat (40 HP; *Móc túi* steals an item from an adjacent unit, *Chạy làng* darts 3 tiles after a battle), rat specters from the ticket windows, **Bé Tí as a red specter with the gold knot** | items, stealing, the gold knot, the first revive item | Le Thanh's story, piece 1 (money); she regains her first power: **restoring memories** |
 
+- **Bảo and Bà Mai are permanent allies** from T2 on (the user, 2026-11-23, replacing "café characters
+  who join only in T3"), so the allies are the ten recruits plus these two. **Bé Tí is freed in Stage
+  1** (the user) and joins once his memories are restored.
 - **Bảo's and Mai's kits** for T3 and Stage 1 are as written in `cast-2` (scalpel, diagnosis, the death
   paper; tend, mend, cold rice) [call: Mai's cold rice also revives in T3, where reviving is taught].
 - **Stats** follow the class lines; ordinary ghosts at about 60% [call]; the Rat as written; first
@@ -272,6 +291,6 @@ within the rules above.
 
 ## 10. Still open (outside this slice, or for later)
 
-Stage 2's party (who fights with you and Tí); Bảo and Mai's longer café roles and Mai's son; revive
+Stage 2's party (who of the player, Bảo, Bà Mai and Tí fights); Bảo and Mai's longer café roles and Mai's son; revive
 items' names and drops now money is gone; Le Thanh's twelve story pieces' words (piece 1 is needed
 now); the songs; whether the player can change class.
