@@ -55,7 +55,8 @@
     "MustChoose": "Choose first.",
     "Over": "The match is over.",
     "NoTarget": "No one in reach to aim at.",
-    "FullHp": "Already at full HP: the heal would be wasted."
+    "FullHp": "Already at full HP: the heal would be wasted.",
+    "Off": "Not in this fight."
   },
   "actions": {
     "undo": "Undo move",

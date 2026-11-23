@@ -174,7 +174,7 @@ namespace umbra::match
     MatchState NewMatch(const MatchDef &def, std::uint64_t seed, const std::vector<int> &picks);
     // No role twice; Defender, Supporter, All-Rounder and Attacker first, then the rest.
     std::vector<int> RiggedPick(const MatchDef &def, std::uint64_t seed, int count);
-    int TurnsLeft(const MatchDef &def, const MatchState &s);
+    int TurnsLeft(const MatchDef &def, const MatchState &s); // rounds left, -1 with no round limit
 
     // ---- Actions (Turn.cpp) ----
 
@@ -194,7 +194,8 @@ namespace umbra::match
     enum class Why : std::uint8_t
     {
         Ok, NotYourTurn, NoMovesLeft, Blocked, AlreadyActed, OutOfRange, OwnSide, TooCostly,
-        NotOnStage, NothingToPerform, NothingHere, BagFull, MustChoose, Over, FullHp
+        NotOnStage, NothingToPerform, NothingHere, BagFull, MustChoose, Over, FullHp,
+        Off // not in this fight's mode (Match.md "Modes")
     };
 
     int Current(const MatchState &s); // the unit that acts next, -1 when the match is over

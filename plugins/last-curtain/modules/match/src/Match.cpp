@@ -185,5 +185,5 @@ namespace umbra::match
         }
     }
 
-    int TurnsLeft(const MatchDef &def, const MatchState &s) { return std::max(0, def.options.rounds - s.round + 1); }
+    int TurnsLeft(const MatchDef &, const MatchState &s) { return s.mode.roundLimit > 0 ? std::max(0, s.mode.roundLimit - s.round + 1) : -1; }
 }

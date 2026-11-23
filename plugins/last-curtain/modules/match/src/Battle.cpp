@@ -235,15 +235,15 @@ namespace umbra::match
             const bool byCharacter = k && k->kind == 0;
             v.hp = 0;
             Log(s, LogKind::Down, victim, killer, v.essence);
-            // 1. Essence: to the character who downed it, else dropped where it fell.
-            if (byCharacter)
+            // 1. Essence: to the character who downed it, else dropped where it fell (Mode::essence).
+            if (s.mode.essence && byCharacter)
                 k->essence += v.essence;
-            else if (v.kind == 0 && v.essence > 0)
+            else if (s.mode.essence && v.kind == 0 && v.essence > 0)
                 s.floor.push_back({v.cell, -1, v.essence});
             if (v.kind == 0)
             {
                 v.essence = 0;
-                v.back = static_cast<std::int8_t>(def.rules.respawn.turns);
+                v.back = static_cast<std::int8_t>(s.mode.respawn ? def.rules.respawn.turns : 0);
                 if (byCharacter)
                     ++k->kills, GainXp(def, s, killer, def.rules.levels.killXp);
             }
@@ -253,7 +253,7 @@ namespace umbra::match
                 if (byCharacter)
                     GainXp(def, s, killer, m.xp);
                 v.essence = 0;
-                if (ZoneOf(s.board, v.home) >= 0)
+                if (s.mode.respawn && ZoneOf(s.board, v.home) >= 0)
                     ScheduleSpawn(def, s, v.home);
             }
             v.cell = -1;

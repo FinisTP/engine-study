@@ -29,7 +29,7 @@ add_test(NAME Umbra.Night COMMAND UmbraNightTests)
 
 # The faction match, headless (docs/design/2026-11-19-factions.md).
 add_executable(UmbraMatchTests)
-target_sources(UmbraMatchTests PRIVATE MatchDataTests.cpp MatchBoardTests.cpp MatchSetupTests.cpp MatchTurnTests.cpp MatchBattleTests.cpp MatchAbilityTests.cpp MatchStageTests.cpp MatchMonsterTests.cpp MatchBotTests.cpp MatchSaveTests.cpp MatchSpawnTests.cpp MatchPlayTests.cpp MatchTreasureTests.cpp CafePlayTests.cpp)
+target_sources(UmbraMatchTests PRIVATE MatchDataTests.cpp MatchBoardTests.cpp MatchSetupTests.cpp MatchTurnTests.cpp MatchBattleTests.cpp MatchAbilityTests.cpp MatchStageTests.cpp MatchMonsterTests.cpp MatchBotTests.cpp MatchSaveTests.cpp MatchSpawnTests.cpp MatchPlayTests.cpp MatchTreasureTests.cpp CafePlayTests.cpp MatchFightTests.cpp)
 target_compile_definitions(UmbraMatchTests PRIVATE UMBRA_MATCH_DATA="${CMAKE_CURRENT_SOURCE_DIR}/../assets/match"
                                                    UMBRA_LASTCURTAIN_ASSETS="${CMAKE_CURRENT_SOURCE_DIR}/../apps/LastCurtain/assets"
                                                    UMBRA_CAFE_DATA="${CMAKE_CURRENT_SOURCE_DIR}/../assets/cafe")

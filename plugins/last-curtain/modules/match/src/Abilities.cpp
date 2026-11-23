@@ -29,7 +29,7 @@ namespace umbra::match
                 if (u.hp == 0)
                     Down(def, s, me, -1);
                 break;
-            case Effect::Essence: u.essence = std::max(0, u.essence + o.amount); break;
+            case Effect::Essence: u.essence = s.mode.essence ? std::max(0, u.essence + o.amount) : u.essence; break;
             case Effect::Xp: GainXp(def, s, me, o.amount); break;
             case Effect::Item:
                 if (auto free = std::ranges::find(u.items, std::int8_t(-1)); free != u.items.end() && free - u.items.begin() < def.rules.carry)
@@ -93,6 +93,8 @@ namespace umbra::match
 
         void GainXp(const MatchDef &def, MatchState &s, int unit, int amount)
         {
+            if (!s.mode.fightXp)
+                return; // the campaign pays XP per stage won (Match.md "Modes")
             Unit &u = s.units[U(unit)];
             if (u.kind != 0)
                 return;

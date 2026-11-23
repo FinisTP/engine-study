@@ -11,6 +11,8 @@ namespace umbra::match
     {
         Why CheckPerform(const MatchDef &, const MatchState &s, int me)
         {
+            if (!s.mode.perform)
+                return Why::Off;
             const Unit &u = s.units[U(me)];
             if (s.now.acted)
                 return Why::AlreadyActed;

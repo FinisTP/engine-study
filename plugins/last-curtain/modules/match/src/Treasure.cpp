@@ -40,9 +40,9 @@ namespace umbra::match::inner
             if (space != u.items.end() && carried < def.rules.carry)
                 *space = static_cast<std::int8_t>(t.item);
             else
-                u.essence += def.rules.treasure.fullEssence;
+                u.essence += s.mode.essence ? def.rules.treasure.fullEssence : 0;
             break;
-        case TreasureKind::Essence: u.essence += t.amount; break;
+        case TreasureKind::Essence: u.essence += s.mode.essence ? t.amount : 0; break;
         case TreasureKind::Xp: GainXp(def, s, me, t.amount); break;
         case TreasureKind::Heal: u.hp = static_cast<std::int16_t>(std::min<int>(u.maxHp, u.hp + t.amount)); break;
         }

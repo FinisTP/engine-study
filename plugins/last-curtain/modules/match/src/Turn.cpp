@@ -50,7 +50,7 @@ namespace umbra::match
             if (s.turn < 0 || s.turn >= static_cast<int>(s.order.size()))
                 return;
             Unit &u = s.units[U(s.order[U(s.turn)])];
-            if (u.kind == 0 && Up(u) && u.cell == u.home)
+            if (s.mode.respawn && u.kind == 0 && Up(u) && u.cell == u.home)
                 u.hp = u.maxHp;
         }
 
