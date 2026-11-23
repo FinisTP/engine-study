@@ -1,0 +1,286 @@
+{
+  "format": "umbra.lc-model-test",
+  "version": 1,
+  "situations": [
+    {
+      "id": "ti-greet",
+      "speaker": "ti",
+      "task": "Tí chào {anh/chị} lần đầu ở quán, còn bỡ ngỡ, chưa nhớ ra gì.",
+      "facts": [
+        "Tí vừa được {anh/chị} cắt dây đỏ ở Phòng vé."
+      ],
+      "must": [],
+      "forbid": [
+        "Lài",
+        "rạng đông",
+        "cát trắng"
+      ],
+      "authored": "{Anh/Chị} ơi, đây là chỗ mô rứa? Tui chẳng nhớ chi cả."
+    },
+    {
+      "id": "ti-visit1-mother",
+      "speaker": "ti",
+      "task": "Tí vừa nhớ ra tên mạ, vui mừng kể cho {anh/chị} nghe.",
+      "facts": [
+        "Mạ của Tí tên là Lài, mạ bán bánh xèo ngoài chợ."
+      ],
+      "must": [
+        "Lài"
+      ],
+      "forbid": [
+        "rạng đông",
+        "cát trắng"
+      ],
+      "authored": "{Anh/Chị} ơi, tui nhớ ra rồi! Mạ tui tên Lài, mạ bán bánh xèo ngoài chợ."
+    },
+    {
+      "id": "ti-visit1-tet",
+      "speaker": "ti",
+      "task": "Tí nhớ ra lời hứa về ăn Tết và thắc mắc vì sao mình ở đây.",
+      "facts": [
+        "Tí hứa với mạ là Tết ni sẽ về nhà gói bánh tét với mạ."
+      ],
+      "must": [
+        "Tết",
+        "mạ"
+      ],
+      "forbid": [
+        "rạng đông",
+        "cát trắng"
+      ],
+      "authored": "Tui hứa với mạ là Tết ni tui về gói bánh tét với mạ. Răng tui lại ở đây hè?"
+    },
+    {
+      "id": "ti-visit1-freed",
+      "speaker": "ti",
+      "task": "Tí nhắc lại lúc {anh/chị} cắt dây cho mình trong trận.",
+      "facts": [
+        "{Anh/Chị} cắt dây đỏ cho Tí ngay cạnh quầy vé, lúc con Chuột vừa chạy làng."
+      ],
+      "must": [
+        "dây"
+      ],
+      "forbid": [
+        "rạng đông",
+        "cát trắng"
+      ],
+      "authored": "Khi nãy {anh/chị} cắt dây cho tui ngay cạnh quầy vé, nhanh ghê!"
+    },
+    {
+      "id": "ti-visit2-message",
+      "speaker": "ti",
+      "task": "Tí nhớ ra nội dung lá thư mình chưa kịp đưa.",
+      "facts": [
+        "Lá thư sau tai Tí ghi: tụi nó tới lúc rạng đông.",
+        "Tí chưa kịp đưa lá thư."
+      ],
+      "must": [
+        "rạng đông"
+      ],
+      "forbid": [],
+      "authored": "Tui nhớ rồi, lá thư sau tai tui ghi: tụi nó tới lúc rạng đông. Tui chưa kịp đưa."
+    },
+    {
+      "id": "bao-greet",
+      "speaker": "bao",
+      "task": "Bảo chào {anh/chị} {player}, người sống hiếm hoi ghé quán.",
+      "facts": [
+        "{player} là người sống duy nhất trong nhà hát."
+      ],
+      "must": [
+        "{player}"
+      ],
+      "forbid": [],
+      "authored": "Chào {anh/chị} {player}. Ngồi xuống đây, khách còn sống hiếm lắm, để tôi bắt mạch thử nghen."
+    },
+    {
+      "id": "bao-1944",
+      "speaker": "bao",
+      "task": "Bảo né câu hỏi về đêm cháy năm 1944 bằng một câu đùa khô, rồi đổi chuyện.",
+      "facts": [
+        "Bảo không muốn nói về đêm cháy năm 1944."
+      ],
+      "must": [],
+      "forbid": [
+        "không kích",
+        "giấy chứng tử"
+      ],
+      "authored": "Đêm đó hả? Bác sĩ cũng có quyền quên vài ca bệnh chớ. Uống trà đi {anh/chị}."
+    },
+    {
+      "id": "bao-revive",
+      "speaker": "bao",
+      "task": "Bảo dặn {anh/chị} rằng người ngã xuống trong trận vẫn còn cứu được.",
+      "facts": [
+        "Trong trận, người ngã xuống vẫn nằm đó.",
+        "Cơm nguội của bà Mai đỡ người ngã dậy được."
+      ],
+      "must": [
+        "bà Mai"
+      ],
+      "forbid": [],
+      "authored": "Ngã thì nằm đó, nhưng chưa phải hết. Cơm nguội của bà Mai đỡ người ta dậy được, {anh/chị} nhớ nghen."
+    },
+    {
+      "id": "bao-lethanh",
+      "speaker": "bao",
+      "task": "Bảo trả lời lấp lửng khi được hỏi vì sao ông ở gần Lệ Thanh.",
+      "facts": [
+        "Bảo ở gần Lệ Thanh vì một điều ông giấu."
+      ],
+      "must": [
+        "Lệ Thanh"
+      ],
+      "forbid": [
+        "không kích",
+        "giấy chứng tử"
+      ],
+      "authored": "Cô Lệ Thanh hả? Tôi ở đây lâu rồi, có những chuyện bác sĩ không nói ra được."
+    },
+    {
+      "id": "bao-ti",
+      "speaker": "bao",
+      "task": "Bảo nói về việc Tí vừa nhớ ra tên mẹ.",
+      "facts": [
+        "Tí vừa nhớ ra tên mẹ."
+      ],
+      "must": [
+        "Tí"
+      ],
+      "forbid": [],
+      "authored": "Thằng Tí nhớ ra tên mẹ nó rồi. Vậy đó, ký ức về là người ta tỉnh lại."
+    },
+    {
+      "id": "mai-greet",
+      "speaker": "mai",
+      "task": "Bà Mai đón {player} vào quán, đã để phần cơm.",
+      "facts": [
+        "Bà Mai để phần cơm cho {player}."
+      ],
+      "must": [
+        "cơm"
+      ],
+      "forbid": [],
+      "authored": "Con tới rồi hỉ? Ngồi xuống, bà để phần cơm cho con đó."
+    },
+    {
+      "id": "mai-scold",
+      "speaker": "mai",
+      "task": "Bà Mai rầy {player} vì đánh nhau mà không biết giữ mình.",
+      "facts": [
+        "{player} vừa thắng ở Phòng vé nhưng bị thương."
+      ],
+      "must": [],
+      "forbid": [],
+      "authored": "Trời đất, con đi đánh nhau về mà không biết giữ mình. Lần sau đứng sau lưng bà, nghe chưa?"
+    },
+    {
+      "id": "mai-rice",
+      "speaker": "mai",
+      "task": "Bà Mai kể chuyện để chén cơm cho đứa con trai.",
+      "facts": [
+        "Bà Mai để chén cơm cạnh cửa sập dưới sân khấu cho con trai.",
+        "Bà không biết con mình là hồn ma nào."
+      ],
+      "must": [
+        "cơm"
+      ],
+      "forbid": [],
+      "authored": "Bà còn để chén cơm dưới cửa sập sân khấu. Thằng con bà chắc đói lắm rồi."
+    },
+    {
+      "id": "mai-ti",
+      "speaker": "mai",
+      "task": "Bà Mai nhờ {player} chơi với Tí cho nó vui.",
+      "facts": [
+        "Tí nhớ mạ, nhớ Tết."
+      ],
+      "must": [
+        "Tí"
+      ],
+      "forbid": [],
+      "authored": "Thằng Tí nó nhớ mạ nó lắm. Con ráng chơi với nó một chút nghe con."
+    },
+    {
+      "id": "mai-house",
+      "speaker": "mai",
+      "task": "Bà Mai kể bà đã giữ nhà hát bao lâu.",
+      "facts": [
+        "Bà Mai giữ nhà hát này bốn mươi năm."
+      ],
+      "must": [
+        "nhà hát"
+      ],
+      "forbid": [],
+      "authored": "Bà giữ cái nhà hát ni bốn chục năm rồi, chìa khóa nào bà cũng thuộc."
+    },
+    {
+      "id": "lethanh-welcome",
+      "speaker": "lethanh",
+      "task": "Lệ Thanh mời {anh/chị} {player} vào quán lần đầu.",
+      "facts": [
+        "Quán của Lệ Thanh dành cho người đã khuất."
+      ],
+      "must": [
+        "{player}"
+      ],
+      "forbid": [],
+      "authored": "Mời {anh/chị} {player} vào. Quán nhỏ, nhưng ở đây không ai phải vội."
+    },
+    {
+      "id": "lethanh-power",
+      "speaker": "lethanh",
+      "task": "Lệ Thanh vừa lấy lại quyền năng trả ký ức cho người đã khuất.",
+      "facts": [
+        "Lệ Thanh vừa lấy lại quyền năng trả lại ký ức cho người đã khuất."
+      ],
+      "must": [
+        "nhớ"
+      ],
+      "forbid": [],
+      "authored": "Tôi nhớ lại được rồi... tôi có thể trả cho họ những gì họ đã quên."
+    },
+    {
+      "id": "lethanh-dance",
+      "speaker": "lethanh",
+      "task": "Lời kể (không phải lời thoại): Lệ Thanh múa giữa quán cho các hồn ma xem.",
+      "facts": [
+        "Lệ Thanh múa giữa quán.",
+        "Các hồn ma ngồi nhìn."
+      ],
+      "must": [
+        "Lệ Thanh"
+      ],
+      "forbid": [],
+      "authored": "Lệ Thanh xoay nhẹ giữa quán, tà áo đỏ lướt qua những chiếc bàn, các hồn ma ngồi im lặng nhìn theo."
+    },
+    {
+      "id": "lethanh-money",
+      "speaker": "lethanh",
+      "task": "Lệ Thanh nhắc chuyện con Chuột đòi tiền nhưng chưa muốn kể lý do.",
+      "facts": [
+        "Con Chuột từng đòi tiền Lệ Thanh.",
+        "Lệ Thanh chưa kể vì sao."
+      ],
+      "must": [
+        "Chuột",
+        "tiền"
+      ],
+      "forbid": [],
+      "authored": "Con Chuột đòi tiền tôi suốt bao năm. Chuyện vì sao thì để hôm khác, {anh/chị} nhé."
+    },
+    {
+      "id": "lethanh-rite",
+      "speaker": "lethanh",
+      "task": "Lệ Thanh dặn rằng Lễ cầu hồn chỉ làm được một lần.",
+      "facts": [
+        "Lễ cầu hồn chỉ làm được một lần trong cả chuyến đi."
+      ],
+      "must": [
+        "một lần"
+      ],
+      "forbid": [],
+      "authored": "Lễ cầu hồn tôi chỉ làm được một lần thôi. Xin {anh/chị} đừng để phải dùng tới."
+    }
+  ]
+}

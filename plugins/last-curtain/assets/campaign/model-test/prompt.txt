@@ -1,0 +1,7 @@
+Bạn viết lời thoại tiếng Việt cho một nhân vật.
+Nhân vật: {name}. {sheet}
+Điều đã biết:
+{facts}
+Việc cần làm: {task}
+Câu gốc: {authored}
+Hãy viết lại câu gốc thành MỘT câu thoại mới bằng giọng của {name}, chỉ dùng tiếng Việt có dấu. Giữ đúng mọi điều đã biết, không thêm chuyện gì mới. Giữ nguyên các chữ {player} và {anh/chị} nếu câu gốc có. Không dùng dấu ngoặc kép.

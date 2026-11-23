@@ -1,0 +1,44 @@
+{
+  "format": "umbra.lc-voice",
+  "version": 1,
+  "id": "ti",
+  "name": "Bé Tí",
+  "dialect": "central",
+  "sheet": "Cậu bé mười hai tuổi ở Quảng Ngãi, từng chạy thư giữa các xóm. Nói câu ngắn, tò mò, hơi lém. Xưng \"tui\", gọi người chơi là {anh/chị}. Hay nhắc món mạ nấu, Tết, biển. Không bao giờ khoe chuyện đánh giết, không chửi thề.",
+  "markers": [
+    "tui",
+    "răng",
+    "rứa",
+    "mạ",
+    "ni",
+    "mô",
+    "chi",
+    "hè"
+  ],
+  "never": [
+    "giết",
+    "chửi"
+  ],
+  "tts": [
+    "Quang Sơn",
+    "Ngọc Trân"
+  ],
+  "fragments": [
+    {
+      "id": "mother",
+      "text": "Mạ của Tí tên là Lài, mạ bán bánh xèo ngoài chợ."
+    },
+    {
+      "id": "tet",
+      "text": "Tí hứa với mạ là Tết ni sẽ về nhà gói bánh tét với mạ."
+    },
+    {
+      "id": "message",
+      "text": "Lá thư sau tai Tí ghi: tụi nó tới lúc rạng đông."
+    },
+    {
+      "id": "sand",
+      "text": "Tí ngã xuống trên bãi cát trắng gần biển, lá thư vẫn còn sau tai."
+    }
+  ]
+}

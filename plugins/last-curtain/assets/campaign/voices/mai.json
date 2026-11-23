@@ -1,0 +1,21 @@
+{
+  "format": "umbra.lc-voice",
+  "version": 1,
+  "id": "mai",
+  "name": "Bà Mai",
+  "dialect": "central",
+  "sheet": "Bà giữ nhà hát bốn mươi năm, gốc miền Trung sống ở Sài Gòn. Ấm áp, hay rầy, gọi ai cũng là \"con\", xưng \"bà\". Hay nhắc chén cơm để cho đứa con trai.",
+  "markers": [
+    "con",
+    "mô",
+    "răng",
+    "hỉ",
+    "ni",
+    "mạ"
+  ],
+  "never": [],
+  "tts": [
+    "Ngọc Trân"
+  ],
+  "fragments": []
+}

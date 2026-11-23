@@ -48,3 +48,13 @@ target_compile_features(UmbraCafeTests PRIVATE cxx_std_20)
 target_link_libraries(UmbraCafeTests PRIVATE Umbra::Cafe Umbra::Warnings Umbra::Sanitizers Catch2::Catch2WithMain)
 umbra_copy_asan_runtime(UmbraCafeTests)
 add_test(NAME Umbra.Cafe COMMAND UmbraCafeTests)
+
+# The model's Vietnamese test (campaign plan 1, modules/talkmind/include/TalkMind.md), headless.
+add_executable(UmbraTalkMindTests)
+target_sources(UmbraTalkMindTests PRIVATE TalkMindTests.cpp)
+target_compile_definitions(UmbraTalkMindTests PRIVATE UMBRA_CAMPAIGN_DATA="${CMAKE_CURRENT_SOURCE_DIR}/../assets/campaign"
+                                                      UMBRA_TALK_TEST_DATA="${CMAKE_CURRENT_SOURCE_DIR}/data")
+target_compile_features(UmbraTalkMindTests PRIVATE cxx_std_20)
+target_link_libraries(UmbraTalkMindTests PRIVATE Umbra::TalkMind Umbra::Warnings Umbra::Sanitizers Catch2::Catch2WithMain)
+umbra_copy_asan_runtime(UmbraTalkMindTests)
+add_test(NAME Umbra.TalkMind COMMAND UmbraTalkMindTests)

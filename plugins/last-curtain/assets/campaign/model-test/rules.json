@@ -1,0 +1,71 @@
+{
+  "format": "umbra.lc-model-rules",
+  "version": 1,
+  "minLength": 8,
+  "maxLength": 160,
+  "markedShare": 0.33,
+  "passShare": 0.9,
+  "maxMs": 1500,
+  "maxVideoMb": 3072,
+  "seeds": 3,
+  "maxTokens": 64,
+  "never": [
+    "trò chơi",
+    "người chơi",
+    "máu",
+    "đồ ngốc",
+    "đồ khốn",
+    "chết tiệt"
+  ],
+  "english": [
+    "the",
+    "and",
+    "you",
+    "your",
+    "is",
+    "are",
+    "was",
+    "what",
+    "this",
+    "that",
+    "with",
+    "have",
+    "please",
+    "sorry",
+    "thank",
+    "thanks",
+    "yes",
+    "hello",
+    "okay",
+    "ok",
+    "my",
+    "me",
+    "it",
+    "of"
+  ],
+  "dialects": {
+    "central": [
+      "răng",
+      "rứa",
+      "mô",
+      "tê",
+      "ni",
+      "chi",
+      "mạ",
+      "hỉ",
+      "hè"
+    ],
+    "southern": [
+      "nghen",
+      "hông",
+      "nè",
+      "dzậy",
+      "ổng",
+      "bả"
+    ],
+    "northern": [
+      "thế",
+      "nhỉ"
+    ]
+  }
+}

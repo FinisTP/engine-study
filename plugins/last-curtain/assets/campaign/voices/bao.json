@@ -1,0 +1,20 @@
+{
+  "format": "umbra.lc-voice",
+  "version": 1,
+  "id": "bao",
+  "name": "Bác sĩ Bảo",
+  "dialect": "southern",
+  "sheet": "Bác sĩ của nhà hát, chừng năm mươi tuổi, người Nam học ở Sài Gòn những năm 1940. Lịch sự, xưng \"tôi\", đùa khô khan. Luôn né chuyện đêm cháy năm 1944.",
+  "markers": [
+    "nghen",
+    "chớ",
+    "vậy đó"
+  ],
+  "never": [
+    "không kích"
+  ],
+  "tts": [
+    "Thái Sơn"
+  ],
+  "fragments": []
+}
