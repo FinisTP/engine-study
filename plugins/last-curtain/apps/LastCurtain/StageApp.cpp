@@ -62,11 +62,11 @@ int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const
             return;
         built.state = play.State();
         campaign::Sync(built);
-        play.SetCast(names(), {});
+        play.SetCast(names(), {}), play.SetHeights(built.height);
         for (const std::string &scene : campaign::StageMoments(stage, built, play.Told(), moments))
             if (RunScene(game, assets, scene, stage.backdrop, player, facts) == 0)
                 return;
     };
-    hooks.setup = [&](MatchPlay &play) { play.SetCast(names(), {}), play.SetStage(stage.title); };
+    hooks.setup = [&](MatchPlay &play) { play.SetCast(names(), {}), play.SetHeights(built.height), play.SetStage(stage.title); };
     return RunMatch(game, assets, seed, false, capture, frames, 0.0F, nullptr, 0, {}, &hooks);
 }

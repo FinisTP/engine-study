@@ -39,6 +39,9 @@ public:
     // stage's title; HudData is the campaign HUD's goals, this round's strip, the hint and the last log line.
     void SetCast(std::vector<std::string> names, std::vector<std::string> sprites) { names_ = std::move(names), sprites_ = std::move(sprites); }
     void SetStage(std::string title) { stageTitle_ = std::move(title); }
+    void SetHeights(std::vector<float> heights) { heights_ = std::move(heights); }
+    [[nodiscard]] const std::vector<std::string> &Names() const { return names_; }
+    [[nodiscard]] const std::vector<float> &Heights() const { return heights_; }
     void SetKeyNames(std::string hurry, std::string skip) { hurryKey_ = std::move(hurry), skipKey_ = std::move(skip); }
     [[nodiscard]] nlohmann::json HudData() const;
     // The command menu (campaign plan 5, P2): {title, rows: [{id, label, note, key, off, why, sub}]} for the
@@ -51,6 +54,8 @@ public:
     // uses the best battle strike each way, a board ability the rules' Preview.
     [[nodiscard]] nlohmann::json PreviewFor(const umbra::match::Action &action) const;
     bool Pin(); // the card stays on the hovered unit (I); again unpins
+    // What the board marks a round ahead (campaign plan 5): [{cell, kind}], kind hazard, breath, window, arrival.
+    static nlohmann::json Telegraphs(const umbra::match::MatchState &s);
 
     bool Do(const umbra::match::Action &action); // the player's action; false unless it is theirs and legal
     void Update(float dt);
@@ -116,6 +121,7 @@ private:
     int hover_ = -1, chosen_ = -1, armedKey_ = -1;
     bool watch_ = false, paused_ = false;
     std::vector<std::string> names_, sprites_;
+    std::vector<float> heights_;
     std::string submenu_; // "", "skills" or "items"
     int pinned_ = -1;     // the unit whose card is pinned
     std::string stageTitle_, hurryKey_ = "Space", skipKey_ = "F";

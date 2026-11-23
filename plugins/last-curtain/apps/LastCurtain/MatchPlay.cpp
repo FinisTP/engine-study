@@ -418,6 +418,7 @@ nlohmann::json MatchPlay::UiData() const
     for (int k = 0; static_cast<float>(order.size()) < options_.orderLength + 1.0F && n > 0 && k < n * 4; ++k)
         entry(k % n, true);
     j["order"] = order;
+    j["telegraphs"] = Telegraphs(s_); // marked a round ahead (campaign plan 5)
     // 2. The panel: the acting character, else the player's first one standing.
     int shown = Current(s_);
     for (int k = 0; (shown < 0 || s_.units[U(shown)].kind != 0) && k < n; ++k) // a monster's turn: the next character
@@ -1168,4 +1169,16 @@ bool MatchPlay::Pin()
         return pinned_ = -1, true;
     pinned_ = unit;
     return unit >= 0;
+}
+
+nlohmann::json MatchPlay::Telegraphs(const MatchState &s)
+{
+    nlohmann::json out = nlohmann::json::array();
+    static const char *kinds[] = {"hazard", "breath", "window"};
+    for (const Mark &m : s.gimmicks.marks)
+        out.push_back({{"cell", m.cell}, {"kind", kinds[std::clamp<int>(m.kind, 0, 2)]}});
+    for (const Arrival &a : s.arrivals)
+        if (a.round <= s.round + 1)
+            out.push_back({{"cell", a.cell}, {"kind", "arrival"}});
+    return out;
 }

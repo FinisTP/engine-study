@@ -143,7 +143,7 @@ float MatchTable::Height(const Unit &u, int index) const
     const float e = fightT_ * fightT_ * (3.0F - 2.0F * fightT_);
     const float scale = Fighter(index) >= 0 ? FigureScale() + (Look("battle", "figureScale", 0.0F, 0.7F) - FigureScale()) * e : FigureScale();
     if (u.kind == 0)
-        return 3.0F * scale * figureMetres;
+        return 3.0F * scale * figureMetres * (index >= 0 && U(index) < heights_.size() ? heights_[U(index)] : 1.0F);
     static const float byTier[] = {1.5F, 2.2F, 2.6F, 2.6F}; // weak, strong, great, guardian
     return byTier[static_cast<int>(def_.monsters[U(u.def)].tier)] * std::min(static_cast<float>(u.size), 1.8F) * scale * figureMetres;
 }
@@ -447,7 +447,7 @@ void MatchTable::Sprite(int index, const Unit &u, glm::vec3 feet, umbra::core::D
     const glm::vec3 tint = tinted ? glm::vec3(pose.tint) : glm::vec3(Hex(own));
     const float amount = tinted ? pose.tint.a : (u.kind == 0 ? 0.0F : 0.45F);
     out.items.push_back({facing < 0.0F ? mirrorQuad_ : quad_, art->second, umbra::night::SpriteModel(pose, feet, right, h, aspect, facing, clock_, up),
-                         glm::vec4(tint, pose.alpha), 0.0F, std::floor(pose.dissolve * 99.0F) + std::clamp(amount, 0.0F, 1.0F) * 0.99F});
+                         glm::vec4(tint, pose.alpha * (u.hp <= 0 ? 0.5F : 1.0F)), 0.0F, std::floor(pose.dissolve * 99.0F) + std::clamp(amount, 0.0F, 1.0F) * 0.99F});
     out.items.back().surface = out.SurfaceIndex("sprite");
 }
 
@@ -634,6 +634,12 @@ void MatchTable::Draw(const MatchState &s, const nlohmann::json &ui, int hover, 
 
     // 2. Squares by kind; the stage glows gold; walls stay dark under the table. The marks: reach cyan, an armed range orange, targets red.
     std::map<int, glm::vec4> marks;
+    // Telegraphs first (campaign plan 5): a hazard amber, a breath row crimson, a window violet, an arrival pale.
+    for (const auto &t : ui.value("telegraphs", nlohmann::json::array()))
+    {
+        const std::string kind = t.value("kind", "");
+        marks[t.value("cell", -1)] = Hex(kind == "hazard" ? 0xD9A441 : kind == "breath" ? 0xB0303A : kind == "window" ? 0x8E6BD9 : 0xC9C9E0);
+    }
     for (int c : Cells(ui.value("reach", nlohmann::json::array())))
         marks[c] = ui.contains("armed") ? Hex(0xE08A3C) : Hex(0x3FD0E0);
     for (int c : Cells(ui.value("targets", nlohmann::json::array())))
@@ -726,6 +732,8 @@ void MatchTable::Draw(const MatchState &s, const nlohmann::json &ui, int hover, 
         if (u.faction >= 0)
             Outline(out, box_, feet - glm::vec3{0, 0.1F, 0}, tile * 0.7F * static_cast<float>(u.size), u.faction == 0 ? Hex(0x5b9bd5) : Hex(0xe08a3c), 0.5F);
         Sprite(i, u, feet, out);
+        if (u.flags & flag::Strung) // the red string from its head up into the dark (slack when fallen)
+            Box(out, box_, Head(s, i) + glm::vec3{0.0F, 1.5F * FigureScale(), 0.0F}, {0.03F, 3.0F * FigureScale(), 0.03F}, Hex(0xC0262D), u.hp > 0 ? 0.8F : 0.2F);
         if (i == Current(s) && !s.battle.on) // the one whose turn it is: a gold arrow bobbing over its head
             Arrow(Head(s, i) + glm::vec3{0.0F, 0.35F * FigureScale() + 0.12F * FigureScale() * std::sin(clock_ * 4.0F), 0.0F}, 0.45F * FigureScale(), out);
     }
@@ -760,7 +768,7 @@ nlohmann::json MatchTable::Labels(const MatchState &s, glm::vec2 pixels) const
             continue;
         const bool character = u.kind == 0;
         const std::string sprite = character ? def_.characters[U(u.def)].sprite : def_.monsters[U(u.def)].sprite;
-        const std::string &name = character ? def_.characters[U(u.def)].name : def_.monsters[U(u.def)].name;
+        const std::string name = U(i) < names_.size() && !names_[U(i)].empty() ? names_[U(i)] : character ? def_.characters[U(u.def)].name : def_.monsters[U(u.def)].name;
         labels.push_back({{"unit", i}, {"at", {at->x, at->y}}, {"name", name.substr(name.rfind(' ') + 1)}, {"level", character ? u.level : def_.monsters[U(u.def)].level},
                           {"hp", U(i) < toldHp_.size() ? toldHp_[U(i)] : u.hp}, {"maxHp", u.maxHp}, {"portrait", "art/sprites/" + sprite + "/face_calm.png"}, {"acting", i == acting},
                           {"essence", character && u.essence > 0 ? std::to_string(u.essence) : ""}, {"side", u.faction},

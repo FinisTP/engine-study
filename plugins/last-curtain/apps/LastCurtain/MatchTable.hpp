@@ -54,6 +54,8 @@ public:
     void SetTold(std::vector<int> standing, std::vector<int> hp) { standing_ = std::move(standing), toldHp_ = std::move(hp); }
     // Whom the told line is about (MatchPlay "focus"): the camera frames them all.
     void SetFocus(std::vector<int> units) { focus_ = std::move(units); }
+    // A campaign stage: each unit's shown name and height (1 a person, 0.8 a ghost); empty keeps the match's.
+    void SetCast(std::vector<std::string> names, std::vector<float> heights) { names_ = std::move(names), heights_ = std::move(heights); }
 
 private:
     [[nodiscard]] glm::vec3 Centre(const umbra::match::Board &b, int cell) const;          // a square's middle on the table
@@ -68,6 +70,8 @@ private:
     int picking_ = -1, stageCell_ = -1;
     glm::vec3 stageMiddle_{0.0F}; // where the stage stands: fixed when the fight begins
     std::vector<int> standing_, toldHp_;
+    std::vector<std::string> names_;
+    std::vector<float> heights_;
     float fightT_ = 0.0F, focusT_ = 0.0F;
     std::vector<int> focus_, framed_; // asked for; framed (kept while the camera eases back)
     [[nodiscard]] glm::vec3 FightNear() const; // how far toward the camera the fighters stand on their stage

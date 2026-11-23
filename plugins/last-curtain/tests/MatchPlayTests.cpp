@@ -1103,3 +1103,19 @@ TEST_CASE("Target preview equals the rules' damage; the card shows the hovered u
     CHECK(p.Pin()); // unpinned
     CHECK(p.HudData()["card"].is_null());
 }
+
+TEST_CASE("Telegraphs: hazards, breath rows, opening windows and arrivals marked a round ahead (campaign plan 5)", "[match][play][marks]")
+{
+    MatchState s;
+    s.round = 3;
+    s.gimmicks.marks = {{Mark::Kind::Hazard, 5}, {Mark::Kind::Breath, 9}, {Mark::Kind::Window, 12}};
+    s.arrivals = {{0, 20, 4}, {1, 21, 7}};
+    const nlohmann::json t = MatchPlay::Telegraphs(s);
+    REQUIRE(t.size() == 4); // the arrival at round 7 is not shown yet
+    CHECK(t[0]["cell"] == 5);
+    CHECK(t[0]["kind"] == "hazard");
+    CHECK(t[1]["kind"] == "breath");
+    CHECK(t[2]["kind"] == "window");
+    CHECK(t[3]["cell"] == 20);
+    CHECK(t[3]["kind"] == "arrival");
+}

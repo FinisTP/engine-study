@@ -220,6 +220,8 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                 table.SetTold(told.value("standing", std::vector<int>{}), told.value("hp", std::vector<int>{}));
             }
             table.SetFocus(play->UiData().value("focus", std::vector<int>{}));
+            if (hooks)
+                table.SetCast(play->Names(), play->Heights()); // a stage's cast names and ghost heights
             table.Animate(play->State(), dt);
             // A screen over the board (level, treasure, event, battle) takes the mouse: nothing falls through to the board.
             hover = play->Screen().empty() && !paused ? table.Pick(play->State().board, uiInput.mouse, pixels) : -1;
