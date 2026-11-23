@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Diagnostic.hpp>
+
+#include <nlohmann/json.hpp>
 #include <Match.hpp>
 #include <MatchDef.hpp>
 
@@ -54,6 +56,60 @@ namespace umbra::campaign
     // A fighting unit for a cast member at a level: its class line, its own changes, and for an
     // enemy the form's scaling (zodiac attack and HP x1.33, ordinary ghost x0.6).
     match::Unit MakeUnit(const match::MatchDef &def, const Cast &cast, const Growth &growth, const std::string &id, int level, int faction, bool enemy);
+
+    // ---- Stages (Campaign.md "Stages") ----
+
+    enum class Behaviour : std::uint8_t
+    {
+        None,          // the bots play it from the start
+        Aggressive,    // holds until round `after`, then plays
+        Passive,       // acts only on a party unit in its room within 4 squares, or once attacked
+        Reinforcement  // appears at round `round` on its square
+    };
+
+    struct StageUnit
+    {
+        std::string who;
+        int x = 0, y = 0, side = 1, level = 1;
+        bool boss = false, recruit = false, strung = false;
+        float height = 1.0F;
+        Behaviour behaviour = Behaviour::None;
+        int after = 0, round = 0;
+        std::vector<std::pair<std::string, int>> drops; // item id, percent
+    };
+
+    struct StageItem
+    {
+        std::string id, item; // id: take-once, kept in the save; item: an items.csv id
+        int x = 0, y = 0;
+    };
+
+    struct Twist
+    {
+        std::string name;
+        std::vector<StageUnit> units;
+        nlohmann::json gimmicks;
+    };
+
+    struct StageDef
+    {
+        std::string id, kind = "story", title, titleEn, backdrop, music;
+        int level = 1, partyCap = 1, xp = 0, width = 0, height = 0;
+        std::vector<std::string> map; // '#' wall, '.' floor, '~' hazard, 'W' window, 'R' rope post, 'S' party start, 'D' doorway
+        std::vector<StageUnit> units;
+        std::vector<StageItem> items;
+        bool mustFree = false;
+        std::vector<int> noRevive; // sides that never revive
+        nlohmann::json gimmicks = nlohmann::json::object();
+        std::string aimStart, aimRecap;
+        std::map<std::string, std::string> scenes; // moment -> scene id
+        std::vector<Twist> twists;                 // skirmishes: one per refill
+        char At(int x, int y) const { return x >= 0 && y >= 0 && x < width && y < height ? map[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] : '#'; }
+    };
+
+    // Reads and checks a stage; scene ids must be files in `scenes`; item ids in the match's items.csv.
+    bool LoadStage(const std::filesystem::path &file, const Cast &cast, const match::MatchDef &def, const std::filesystem::path &scenes,
+                   StageDef &stage, std::vector<core::Diagnostic> &d);
 
     enum class Side : std::uint8_t
     {

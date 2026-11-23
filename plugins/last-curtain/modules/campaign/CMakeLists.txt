@@ -8,6 +8,7 @@ target_sources(
         src/Scene.cpp
         src/ScenePlayer.cpp
         src/Units.cpp
+        src/Stage.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include

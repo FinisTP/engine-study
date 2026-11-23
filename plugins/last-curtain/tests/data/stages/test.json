@@ -1,0 +1,32 @@
+{
+  "format": "umbra.lc-stage",
+  "version": 1,
+  "id": "test",
+  "kind": "story",
+  "title": "Phòng thử",
+  "titleEn": "Test room",
+  "level": 3,
+  "partyCap": 2,
+  "backdrop": "foyer_today",
+  "xp": 100,
+  "map": [
+    "#########",
+    "#S.....W#",
+    "#S..#...#",
+    "#...D..R#",
+    "#~..#...#",
+    "#########"
+  ],
+  "units": [
+    {"who": "rat", "at": [6, 1], "side": 1, "level": 3, "flags": ["boss"], "behaviour": {"kind": "aggressive", "after": 2},
+     "drops": [{"item": "bandage", "percent": 30}]},
+    {"who": "ti", "at": [7, 2], "side": 1, "level": 3, "flags": ["recruit", "strung"]},
+    {"who": "ghost_attacker", "at": [7, 3], "side": 1, "level": 2, "behaviour": {"kind": "reinforcement", "round": 2}}
+  ],
+  "items": [{"id": "test-bandage", "item": "bandage", "at": [3, 4]}],
+  "mustFree": true,
+  "noRevive": [1],
+  "aims": {"start": "Cắt dây cho bé Tí.", "recap": ""},
+  "scenes": {"start": "test", "firstAttacked:rat": "test"},
+  "twists": [{"name": "Hai con", "units": [{"who": "ghost_attacker", "at": [3, 1], "side": 1, "level": 2}]}]
+}

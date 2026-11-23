@@ -299,3 +299,74 @@ TEST_CASE("Class lines by level, and units made from the cast with their adjustm
     campaign::Growth bad;
     CHECK_FALSE(campaign::LoadGrowth(Write("growth.csv", "role,level,hp,attack,defence,speed,move\nwizard,1,1,1,1,1,1\n"), bad, d));
 }
+
+namespace
+{
+    // Loads the test stage changed by edit; returns the first problem's field ("" when it loads).
+    std::string StageProblem(const std::string &name, const std::function<void(json &)> &edit)
+    {
+        json j = json::parse(std::ifstream(tests / "stages" / "test.json"));
+        edit(j);
+        campaign::StageDef stage;
+        std::vector<core::Diagnostic> d;
+        const bool ok = campaign::LoadStage(Write(name + ".json", j.dump()), TheCast(), MatchData(), tests / "scenes", stage, d);
+        if (ok)
+            return "";
+        REQUIRE_FALSE(d.empty());
+        CHECK_FALSE(d.front().message.empty());
+        return d.front().field;
+    }
+}
+
+TEST_CASE("A stage file loads: map, units, items, scenes, twists (campaign plan 4)")
+{
+    campaign::StageDef stage;
+    std::vector<core::Diagnostic> d;
+    REQUIRE(campaign::LoadStage(tests / "stages" / "test.json", TheCast(), MatchData(), tests / "scenes", stage, d));
+    CHECK(stage.id == "test");
+    CHECK(stage.level == 3);
+    CHECK(stage.partyCap == 2);
+    CHECK(stage.width == 9);
+    CHECK(stage.height == 6);
+    CHECK(stage.At(1, 1) == 'S');
+    CHECK(stage.At(4, 3) == 'D');
+    REQUIRE(stage.units.size() == 3);
+    CHECK(stage.units[0].who == "rat");
+    CHECK(stage.units[0].boss);
+    CHECK(stage.units[0].behaviour == campaign::Behaviour::Aggressive);
+    CHECK(stage.units[0].after == 2);
+    REQUIRE(stage.units[0].drops.size() == 1);
+    CHECK(stage.units[0].drops[0].second == 30);
+    CHECK(stage.units[1].recruit);
+    CHECK(stage.units[1].strung);
+    CHECK(stage.units[2].behaviour == campaign::Behaviour::Reinforcement);
+    CHECK(stage.units[2].round == 2);
+    REQUIRE(stage.items.size() == 1);
+    CHECK(stage.items[0].id == "test-bandage");
+    CHECK(stage.mustFree);
+    CHECK(stage.noRevive == std::vector<int>{1});
+    CHECK(stage.scenes.at("firstAttacked:rat") == "test");
+    REQUIRE(stage.twists.size() == 1);
+    CHECK(stage.twists[0].units.size() == 1);
+}
+
+TEST_CASE("A broken stage names the file, the field and the fix (campaign plan 4)")
+{
+    CHECK(StageProblem("ok", [](json &) {}).empty());
+    CHECK(StageProblem("format", [](json &j) { j["format"] = "x"; }) == "format");
+    CHECK(StageProblem("rows", [](json &j) { j["map"][2] = "#S"; }) == "map[2]");
+    CHECK(StageProblem("char", [](json &j) { j["map"][2] = "#S..#..?#"; }) == "map[2]");
+    CHECK(StageProblem("starts", [](json &j) { j["partyCap"] = 3; }) == "partyCap");
+    CHECK(StageProblem("who", [](json &j) { j["units"][0]["who"] = "nobody"; }) == "units[0].who");
+    CHECK(StageProblem("wall", [](json &j) { j["units"][0]["at"] = json::array({0, 0}); }) == "units[0].at");
+    CHECK(StageProblem("outside", [](json &j) { j["units"][0]["at"] = json::array({40, 1}); }) == "units[0].at");
+    CHECK(StageProblem("flag", [](json &j) { j["units"][0]["flags"] = json::array({"king"}); }) == "units[0].flags");
+    CHECK(StageProblem("behaviour", [](json &j) { j["units"][0]["behaviour"]["kind"] = "dance"; }) == "units[0].behaviour.kind");
+    CHECK(StageProblem("drop", [](json &j) { j["units"][0]["drops"][0]["item"] = "cake"; }) == "units[0].drops[0].item");
+    CHECK(StageProblem("item", [](json &j) { j["items"][0]["item"] = "cake"; }) == "items[0].item");
+    CHECK(StageProblem("itemid", [](json &j) { j["items"][0].erase("id"); }) == "items[0].id");
+    CHECK(StageProblem("scene", [](json &j) { j["scenes"]["start"] = "missing"; }) == "scenes.start");
+    CHECK(StageProblem("moment", [](json &j) { j["scenes"]["whenever"] = "test"; }) == "scenes.whenever");
+    CHECK(StageProblem("twist", [](json &j) { j["twists"][0]["units"][0]["who"] = "nobody"; }) == "twists[0].units[0].who");
+    CHECK(StageProblem("boss", [](json &j) { j["units"][0]["flags"] = json::array(); }) == "units");
+}

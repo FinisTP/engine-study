@@ -71,3 +71,20 @@ its level, from `jobs.csv`).
 its form: a **zodiac's attack and HP ×1.33**, an **ordinary ghost's ×0.6** (rounded). Allies never are.
 At level 3: the Rat (attacker) 8 attack and 32 HP; an ordinary ghost attacker 4 attack and 14 HP; Tí
 (speedster, HP −2, Move +2) 20 HP and 12 move.
+
+## Stages
+
+`assets/campaign/stages/<id>.json`, `"format": "umbra.lc-stage"`, `"version": 1`:
+
+| Field | Meaning |
+|---|---|
+| `kind` | `story` (needs a unit with the `boss` flag) or `skirmish` |
+| `title`, `titleEn`, `level` (recommended), `partyCap`, `backdrop`, `music`, `xp` | |
+| `map` | equal rows: `#` wall, `.` floor, `~` hazard, `W` window, `R` rope post, `S` party start (at least `partyCap`), `D` doorway between rooms |
+| `units` | `who` (cast id), `at` [x, y], `side`, `level`, `flags` (boss, recruit, strung), `height`, `behaviour` {`kind`: none, aggressive + `after`, passive, reinforcement + `round`}, `drops` [{`item`, `percent`}] |
+| `items` | `id` (take-once, kept in the save), `item` (an `items.csv` id), `at` |
+| `mustFree`, `noRevive` (sides that never revive), `gimmicks`, `aims` {`start`, `recap`} | |
+| `scenes` | moment → scene id: `start`, `end`, `round:<n>`, `firstAttacked:<cast id>`, `falls:<cast id>`, `freed:<cast id>` |
+| `twists` | skirmishes: one per refill, each `name`, `units`, `gimmicks` |
+
+`LoadStage` checks each and names the file, the field and the fix.
