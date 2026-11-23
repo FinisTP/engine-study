@@ -103,12 +103,14 @@ the later slice; the content doc lists Perform under Stage 8, the Monkey).
 
 ### 7.2 Biding (both modes, the user)
 
-- On its turn a character may **bide** instead of moving and acting: the whole turn passes, it gains
-  **1 AP**, and it takes **+1 Defence until its next turn** [call].
+- On its turn a character may **bide** instead of moving and acting: the whole turn passes and it
+  gains **1 AP**. **No Defence bonus** (the user): biding is a high-risk, high-reward choice.
 - It stores **at most 2 AP** and spends **at most 2 in a turn**, so **at most 3 actions** in one turn;
   no borrowing (the user).
 - Spending 1 AP buys one more action (an attack, an ability or an item) after the first, on the same
   turn; moves don't cost AP.
+- **Some abilities cost AP** (the user): an ability's cost has an HP part and an **AP part**
+  (`abilities.csv` gains an `ap` column), so costs are designed with both.
 - Monsters can bide too (bosses mostly) [call]; stored AP shows as **pips** under a unit.
 - New action: `Bide`. New ability effect: `give-ap` (Tí's *Đưa tin*), so the AP rules sit in the
   shared code from the start.
@@ -116,17 +118,19 @@ the later slice; the content doc lists Perform under Stage 8, the Monkey).
 
 ### 7.3 Falls, reviving and game over
 
-- With `fallsStay`, a unit at 0 HP **falls**: it stays on its square (it blocks nothing and can't be
-  hit [call]), is skipped in the turn order, and shows as fallen.
-- **Revive:** a `revive` effect (an item on the map in Stage 1 per the content doc, and Bà Mai's
-  board ability in T3 [call]) raises an adjacent fallen ally with part of its HP.
+- With `fallsStay`, a unit at 0 HP **falls**: it stays on its square, **can't be hit** (the user), is
+  skipped in the turn order, and shows as fallen.
+- **Revive:** a `revive` effect (a spell or an item; in Stage 1 a revive item on the map, and Bà Mai's
+  cold rice [call]) raises a fallen unit on its side with part of its HP. **Enemies revive too** (the
+  user): a monster with a revive ability can raise its own fallen.
+- **Removed for good** (the user): certain abilities (a `remove` effect) take a fallen unit off the
+  stage; it can't be revived in this stage, but **returns in the next stage**. Players' allies too.
 - **The player falls → game over:** the fight stops at once; a screen offers **Thử lại** (retry: the
   stage from its beginning), **Về quán** (back to the café) or **Thoát** (quit) (the user). The whole
   side down is the same.
-- **Recruit specters** (marked `recruit`, drawn with the gold knot) are **freed, never killed**: at 0
-  HP their strings are cut, a warm gold moment plays, and they leave the board. When the zodiac
-  falls, every remaining specter's strings are cut, so **a recruit is always freed** [call] (the story
-  needs Tí in every run). The freeing is logged with who cut the string, for the café to remember.
+- **Recruit specters and the gold knot: to decide** (the user asked for the string and knot rules to
+  be organised first). Whatever is chosen, the freeing is logged with who cut the string and how, for
+  the café to remember.
 
 ### 7.4 Stage files (`campaign` module, `assets/campaign/stages/*.json`)
 
@@ -163,7 +167,7 @@ where the 2026-11-23 sprites are hooked in.
 | **T1 Khách lạ** | the player alone, level 1 | rat specters (aggressive ghosts) | moving, attacking | Le Thanh's rescue (scene) [call: game over still applies, but T1 is tuned so falling is unlikely] |
 | **T2 Quán cà phê** | — | — | café talk | meet Bảo and Bà Mai |
 | **T3 Hành lang chân dung** | player + Bảo + Bà Mai (temporary), level 2 | specters, a mini-boss | biding, falls, reviving, game over | — |
-| **1 Phòng vé** | player + Bảo + Bà Mai [call: they stay one more stage, as proposed], level 3 | the Rat (40 HP; *Móc túi* steals an item from an adjacent unit, *Chạy làng* darts 3 tiles after a battle), rat specters from the ticket windows, **Bé Tí as a red specter with the gold knot** | items, stealing, the gold knot, the first revive item | Le Thanh's story, piece 1 (money); she regains her first power: **restoring memories** |
+| **1 Phòng vé** | player + **Bé Tí + Bà Mai**, permanent allies from after the second tutorial (the user); where Tí is freed is being settled, level 3 | the Rat (40 HP; *Móc túi* steals an item from an adjacent unit, *Chạy làng* darts 3 tiles after a battle), rat specters from the ticket windows, **Bé Tí as a red specter with the gold knot** | items, stealing, the gold knot, the first revive item | Le Thanh's story, piece 1 (money); she regains her first power: **restoring memories** |
 
 - **Bảo's and Mai's kits** for T3 and Stage 1 are as written in `cast-2` (scalpel, diagnosis, the death
   paper; tend, mend, cold rice) [call: Mai's cold rice also revives in T3, where reviving is taught].
@@ -180,8 +184,8 @@ where the 2026-11-23 sprites are hooked in.
   fragments restored; Le Thanh's unlocks; café visits; talk answers that count.
 - The faction match's v1 career is **not migrated** (no players yet) [call]; the faction match keeps
   working without a career, as quick match will.
-- **A save in the middle of a stage** stores the `MatchState` beside the campaign file, so quitting and
-  coming back resumes the fight [call]; a game-over retry always starts the stage over (the user).
+- **A save in the middle of a stage** (the user) stores the `MatchState` beside the campaign file, so
+  quitting and coming back resumes the fight; a game-over retry always starts the stage over (the user).
 - **The flow:** title → new game (name, male or female) → T1 → T2 → T3 → Stage 1 → café → (a fight) →
   café. Between stages the player picks from a short list: the next stage, a cleared stage to replay
   for XP, or the café.
@@ -189,9 +193,9 @@ where the 2026-11-23 sprites are hooked in.
 ### 7.7 The café (calm, the user)
 
 - **Removed:** the 150 s shift, patience timers, tips, wrong-drink failure, takings, money.
-- **The room:** the walkable 3D room as built, with the painted back wall (done, #312), Le Thanh on a
-  low platform in front of its painted stage, dancing [call: a looping bob and turn of her hostess
-  sprite until a dance animation exists], and the guests at tables.
+- **The room:** the walkable 3D room as built, with the painted back wall (done, #312) and the guests
+  at tables. **Le Thanh doesn't dance** (the user): she walks around, appears at random places in the
+  room, and starts conversations like any other guest.
 - **Guests:** spirits you met in fights, plus Bảo and Bà Mai. Zodiacs never appear (the user).
 - **A visit:** each guest asks for a drink made in 1–2 steps at the stations; serving it opens a talk.
   A talk is a few lines and a few choices; serving the right drink counts as a good answer [call].
