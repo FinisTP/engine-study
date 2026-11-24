@@ -33,6 +33,12 @@
         ]
       },
       {
+        "type": "button",
+        "style": "lcButton",
+        "text": "{words.keyboard}",
+        "action": "keyboard"
+      },
+      {
         "type": "stack",
         "direction": "horizontal",
         "gap": 8,

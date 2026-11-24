@@ -294,3 +294,27 @@ TEST_CASE("The campaign cafe is a room: walk, talk with E, brew at the counter, 
         room.Update(0.02F);
     CHECK(glm::length(room.Position() - glm::vec2{8.0F, 6.0F}) < 0.2F);
 }
+
+#include <Typing.hpp>
+
+TEST_CASE("The on-screen keyboard puts a tone mark where Vietnamese puts it (plan 8, P17)", "[campaign][typing]")
+{
+    const Typing t = Typing::Load(data / "../../apps/LastCurtain/assets/typing.json");
+    REQUIRE(t.Ok());
+    // Tones: 1 sac, 2 huyen, 3 hoi, 4 nga, 5 nang, 0 none. Expected words written in the data file's letters.
+    const auto row = [&](int r, int tone) { return t.Letter(r, tone); }; // vowel row r with a tone
+    CHECK(t.AddTone("Lan", 1) == "L" + row(0, 1) + "n");                 // one vowel
+    CHECK(t.AddTone("Mai", 2) == "M" + row(0, 2) + "i");                 // two, open: the first
+    CHECK(t.AddTone("Quy", 1) == "Qu" + row(11, 1));                     // qu: the u is a consonant
+    CHECK(t.AddTone("Gia", 2) == "Gi" + row(0, 2));                      // gi: the i too
+    CHECK(t.AddTone("Toan", 2) == "To" + row(0, 2) + "n");               // closed: the last
+    const std::string huong = "H" + row(10, 0) + row(8, 0) + "ng";       // Huong with its horns
+    CHECK(t.AddTone(huong, 2) == "H" + row(10, 0) + row(8, 2) + "ng");   // the hatted vowel, the last of them
+    CHECK(t.AddTone(t.AddTone("Lan", 1), 3) == "L" + row(0, 3) + "n");   // a new tone replaces the old
+    CHECK(t.AddTone(t.AddTone("Lan", 1), 0) == "Lan");                   // none takes it off
+    CHECK(t.AddTone("Nam Pht", 1) == "Nam Pht");                          // no vowel in the last word: unchanged
+    CHECK(t.AddTone("", 1).empty());
+    CHECK(t.Backspace("L" + row(0, 1)) == "L");                           // a whole letter, not a byte
+    CHECK(t.Upper(row(10, 2)) == row(22, 2));                             // a vowel keeps its tone in capitals
+    CHECK(t.Upper("n") == "N");
+}

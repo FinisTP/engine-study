@@ -96,6 +96,18 @@
   "continue": "Tiếp tục",
   "newGame": "Trò chơi mới",
   "settings": "Cài đặt",
+  "keyboard": "Bàn phím",
+  "kbDone": "Xong",
+  "kbSpace": "Cách",
+  "kbBack": "Xóa",
+  "tones": [
+   "Bỏ dấu",
+   "Sắc",
+   "Huyền",
+   "Hỏi",
+   "Ngã",
+   "Nặng"
+  ],
   "opened": "Mở: {name}",
   "newSkirmishes": "Có {n} trận giao tranh mới",
   "groupDisplay": "Hiển thị",
@@ -493,5 +505,151 @@
    "name": "Đi (quán)",
    "key": "WASD"
   }
- ]
+ ],
+ "kb": {
+  "text": "Hường",
+  "rows": [
+   {
+    "keys": [
+     {
+      "label": "q"
+     },
+     {
+      "label": "w"
+     },
+     {
+      "label": "e"
+     },
+     {
+      "label": "r"
+     },
+     {
+      "label": "t"
+     },
+     {
+      "label": "y"
+     },
+     {
+      "label": "u"
+     },
+     {
+      "label": "i"
+     },
+     {
+      "label": "o"
+     },
+     {
+      "label": "p"
+     }
+    ]
+   },
+   {
+    "keys": [
+     {
+      "label": "a"
+     },
+     {
+      "label": "s"
+     },
+     {
+      "label": "d"
+     },
+     {
+      "label": "f"
+     },
+     {
+      "label": "g"
+     },
+     {
+      "label": "h"
+     },
+     {
+      "label": "j"
+     },
+     {
+      "label": "k"
+     },
+     {
+      "label": "l"
+     }
+    ]
+   },
+   {
+    "keys": [
+     {
+      "label": "z"
+     },
+     {
+      "label": "x"
+     },
+     {
+      "label": "c"
+     },
+     {
+      "label": "v"
+     },
+     {
+      "label": "b"
+     },
+     {
+      "label": "n"
+     },
+     {
+      "label": "m"
+     }
+    ]
+   },
+   {
+    "keys": [
+     {
+      "label": "ă"
+     },
+     {
+      "label": "â"
+     },
+     {
+      "label": "đ"
+     },
+     {
+      "label": "ê"
+     },
+     {
+      "label": "ô"
+     },
+     {
+      "label": "ơ"
+     },
+     {
+      "label": "ư"
+     }
+    ]
+   }
+  ],
+  "tones": [
+   {
+    "name": "Bỏ dấu",
+    "n": "0"
+   },
+   {
+    "name": "Sắc",
+    "n": "1"
+   },
+   {
+    "name": "Huyền",
+    "n": "2"
+   },
+   {
+    "name": "Hỏi",
+    "n": "3"
+   },
+   {
+    "name": "Ngã",
+    "n": "4"
+   },
+   {
+    "name": "Nặng",
+    "n": "5"
+   }
+  ]
+ }
 }

@@ -5,6 +5,7 @@
 #include "DialogApp.hpp"
 #include "GameContext.hpp"
 #include "StageApp.hpp"
+#include "Typing.hpp"
 
 #include <CampaignCafe.hpp>
 #include <Log.hpp>
@@ -84,6 +85,45 @@ namespace
                 text.replace(at, key.size() + 2, value);
         return text;
     }
+}
+
+std::string RunKeyboard(GameContext &game, const umbra::assets::AssetFolders &assets, const nlohmann::json &words, std::string text)
+{
+    // 1. The letters (typing.json); the first letter of each word comes in capitals.
+    const Typing typing = Typing::Load(assets / "typing.json");
+    if (!typing.Ok())
+        return text;
+    nlohmann::json kb{{"rows", nlohmann::json::array()}, {"tones", nlohmann::json::array()}};
+    for (const std::vector<std::string> &row : typing.Keys())
+    {
+        nlohmann::json keys = nlohmann::json::array();
+        for (const std::string &k : row)
+            keys.push_back({{"label", k}});
+        kb["rows"].push_back({{"keys", keys}});
+    }
+    const nlohmann::json tones = words.value("tones", nlohmann::json::array());
+    for (std::size_t n = 0; n < tones.size(); ++n)
+        kb["tones"].push_back({{"name", tones[n]}, {"n", std::to_string(n)}});
+    kb["text"] = text;
+    // 2. Each key adds its letter, a tone mark goes on the word's vowel; Done (or Back) keeps the text.
+    (void)RunScreen(game, "keyboard", {{"words", words}, {"kb", kb}}, [&](const std::string &a, const std::string &arg, nlohmann::json &data) {
+        const bool first = text.empty() || text.back() == ' ';
+        if (a == "key" && text.size() < 48)
+            text += first ? typing.Upper(arg) : arg;
+        else if (a == "tone")
+            text = typing.AddTone(text, std::atoi(arg.c_str()));
+        else if (a == "space" && !first)
+            text += ' ';
+        else if (a == "erase")
+            text = Typing::Backspace(text);
+        else if (a == "key" || a == "space")
+            ;
+        else
+            return false;
+        data["kb"]["text"] = text;
+        return true;
+    });
+    return text;
 }
 
 umbra::night::AnalogScreen RunSettings(GameContext &game, const nlohmann::json &words)
@@ -169,6 +209,8 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
             // A name and a form of address, then the prologue and the first fight.
             std::string gender = "female";
             const auto [made, unused] = RunScreen(game, "newgame", {{"words", words}, {"female", true}}, [&](const std::string &a, const std::string &g, nlohmann::json &data) {
+                if (a == "keyboard") // a gamepad's way to type the name (P17)
+                    return game.screens->Ui().SetFieldText("newgame", "name", RunKeyboard(game, assets, words, game.screens->Ui().FieldText("newgame", "name"))), true;
                 if (a != "gender")
                     return false;
                 gender = g, data["female"] = g == "female", data["male"] = g == "male";

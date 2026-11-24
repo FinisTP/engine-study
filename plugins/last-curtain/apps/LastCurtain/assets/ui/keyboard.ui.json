@@ -1,0 +1,95 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "root": {
+    "type": "stack",
+    "anchor": "center",
+    "style": "lcPanel",
+    "gap": 8,
+    "align": "center",
+    "children": [
+      {
+        "type": "text",
+        "style": "heading",
+        "text": "{words.keyboard}"
+      },
+      {
+        "type": "text",
+        "style": "title",
+        "text": "{kb.text}_",
+        "size": [
+          520,
+          0
+        ],
+        "textAlign": "center"
+      },
+      {
+        "type": "list",
+        "items": "{kb.rows}",
+        "as": "row",
+        "gap": 4,
+        "entry": {
+          "type": "list",
+          "items": "{row.keys}",
+          "as": "k",
+          "direction": "horizontal",
+          "gap": 4,
+          "entry": {
+            "type": "button",
+            "style": "lcButton",
+            "text": "{k.label}",
+            "action": "key",
+            "arg": "{k.label}",
+            "size": [
+              44,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "type": "list",
+        "items": "{kb.tones}",
+        "as": "t",
+        "direction": "horizontal",
+        "gap": 4,
+        "entry": {
+          "type": "button",
+          "style": "lcButton",
+          "text": "{t.name}",
+          "action": "tone",
+          "arg": "{t.n}"
+        }
+      },
+      {
+        "type": "stack",
+        "direction": "horizontal",
+        "gap": 6,
+        "children": [
+          {
+            "type": "button",
+            "style": "lcButton",
+            "text": "{words.kbSpace}",
+            "action": "space",
+            "size": [
+              160,
+              0
+            ]
+          },
+          {
+            "type": "button",
+            "style": "lcButton",
+            "text": "{words.kbBack}",
+            "action": "erase"
+          },
+          {
+            "type": "button",
+            "style": "lcButton",
+            "text": "{words.kbDone}",
+            "action": "done"
+          }
+        ]
+      }
+    ]
+  }
+}

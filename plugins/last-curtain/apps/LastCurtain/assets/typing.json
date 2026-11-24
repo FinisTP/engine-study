@@ -1,0 +1,78 @@
+{
+ "format": "umbra.lc-typing",
+ "version": 1,
+ "note": "The on-screen keyboard (P17, Typing.hpp): each vowel row is the plain letter, then with sắc, huyền, hỏi, ngã, nặng. 'hats': the vowels whose mark wins in a word (ă â ê ô ơ ư). 'keys': the keyboard's rows; 'upper': capitals the vowel rows don't give.",
+ "vowels": [
+  "aáàảãạ",
+  "ăắằẳẵặ",
+  "âấầẩẫậ",
+  "eéèẻẽẹ",
+  "êếềểễệ",
+  "iíìỉĩị",
+  "oóòỏõọ",
+  "ôốồổỗộ",
+  "ơớờởỡợ",
+  "uúùủũụ",
+  "ưứừửữự",
+  "yýỳỷỹỵ",
+  "AÁÀẢÃẠ",
+  "ĂẮẰẲẴẶ",
+  "ÂẤẦẨẪẬ",
+  "EÉÈẺẼẸ",
+  "ÊẾỀỂỄỆ",
+  "IÍÌỈĨỊ",
+  "OÓÒỎÕỌ",
+  "ÔỐỒỔỖỘ",
+  "ƠỚỜỞỠỢ",
+  "UÚÙỦŨỤ",
+  "ƯỨỪỬỮỰ",
+  "YÝỲỶỸỴ"
+ ],
+ "hats": "ăâêôơưĂÂÊÔƠƯ",
+ "keys": [
+  [
+   "q",
+   "w",
+   "e",
+   "r",
+   "t",
+   "y",
+   "u",
+   "i",
+   "o",
+   "p"
+  ],
+  [
+   "a",
+   "s",
+   "d",
+   "f",
+   "g",
+   "h",
+   "j",
+   "k",
+   "l"
+  ],
+  [
+   "z",
+   "x",
+   "c",
+   "v",
+   "b",
+   "n",
+   "m"
+  ],
+  [
+   "ă",
+   "â",
+   "đ",
+   "ê",
+   "ô",
+   "ơ",
+   "ư"
+  ]
+ ],
+ "upper": {
+  "đ": "Đ"
+ }
+}
