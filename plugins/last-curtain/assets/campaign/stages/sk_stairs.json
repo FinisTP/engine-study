@@ -24,9 +24,9 @@
     "#####"
   ],
   "units": [
-    {"who": "ghost_attacker", "at": [2, 1], "side": 1, "level": 2, "flags": ["boss"]},
+    {"who": "ghost_attacker", "at": [2, 1], "side": 1, "level": 3, "flags": ["boss"]},
     {"who": "ghost_speedster", "at": [2, 9], "side": 1, "level": 3, "flags": ["boss"]},
-    {"who": "ghost_attacker", "at": [1, 9], "side": 1, "level": 2, "flags": ["boss"]},
+    {"who": "ghost_attacker", "at": [1, 9], "side": 1, "level": 1, "flags": ["boss"]},
     {"who": "ghost_attacker", "at": [1, 1], "side": 1, "level": 2, "flags": ["boss"]}
   ],
   "aims": {"start": "Hạ hết bóng ma ở cả hai đầu cầu thang.", "recap": ""},

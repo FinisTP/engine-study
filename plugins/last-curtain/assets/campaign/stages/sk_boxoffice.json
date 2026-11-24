@@ -23,7 +23,7 @@
   ],
   "units": [
     {"who": "thief_specter", "at": [6, 1], "side": 1, "level": 4, "flags": ["boss"]},
-    {"who": "ghost_attacker", "at": [8, 2], "side": 1, "level": 4, "flags": ["boss"]},
+    {"who": "ghost_attacker", "at": [8, 2], "side": 1, "level": 3, "flags": ["boss"]},
     {"who": "ghost_defender", "at": [4, 2], "side": 1, "level": 3, "flags": ["boss"]}
   ],
   "gimmicks": {"windows": {"spawn": "rat_specter", "level": 2, "max": 3, "pattern": [[0], [2], [1]],

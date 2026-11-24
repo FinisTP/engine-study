@@ -279,14 +279,14 @@ TEST_CASE("Class lines by level, and units made from the cast with their adjustm
     const match::Unit p = campaign::MakeUnit(def, cast, growth, "player", 1, 0, false);
     CHECK(p.maxHp == 24);
     CHECK(p.attack == 4);
-    CHECK(p.move == 8);
-    // 2. Ti at level 3: the Speedster line, HP -2 and Move +2.
+    CHECK(p.move == 4); // moves are 2-4 squares (feedback 2026-11-24 15:10, note 3)
+    // 2. Ti at level 3: the Speedster line, HP -2 (his Move bonus is 0 since note 3).
     const match::Unit ti = campaign::MakeUnit(def, cast, growth, "ti", 3, 0, false);
     CHECK(ti.maxHp == 20);
     CHECK(ti.attack == 4);
     CHECK(ti.defence == 2);
     CHECK(ti.speed == 6);
-    CHECK(ti.move == 12);
+    CHECK(ti.move == 4);
     // 3. Enemies: a zodiac's attack and HP x1.33, an ordinary ghost's x0.6 (rounded).
     const match::Unit rat = campaign::MakeUnit(def, cast, growth, "rat", 3, 1, true);
     CHECK(rat.attack == 7); // (6 - 1 of its own) x 1.33
