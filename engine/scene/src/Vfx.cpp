@@ -72,6 +72,27 @@ namespace umbra::scene
         out.additive = root.value("blend", json("add")) != "alpha";
         out.burst = static_cast<int>(burst);
         out.max = static_cast<int>(max);
+        // Pictures (Particles.md "Pictures"): a texture sheet, angles, a stretch, a line.
+        if (root.contains("texture"))
+        {
+            if (root["texture"].is_string() && !root["texture"].get<std::string>().empty())
+                out.textured = true, out.texture = root["texture"].get<std::string>();
+            else
+                bad("texture", "the picture's asset path, e.g. \"art/vfx/dab_ink.png\"");
+        }
+        glm::vec2 cells{1.0F};
+        list("cells", 2, 1.0F, 8.0F, &cells.x);
+        out.cells = glm::ivec2(cells);
+        list("rotation", 2, -3600.0F, 3600.0F, &out.rotation.x);
+        list("spin", 2, -3600.0F, 3600.0F, &out.spin.x);
+        number("stretch", 0.0F, 10.0F, out.stretch);
+        if (out.rotation.x > out.rotation.y)
+            bad("rotation", "the smaller angle comes first");
+        if (out.spin.x > out.spin.y)
+            bad("spin", "the slower turn comes first");
+        if (root.contains("shape") && root["shape"] != "ball" && root["shape"] != "line")
+            bad("shape", "\"ball\" (around the emitter) or \"line\" (from the emitter to its end)");
+        out.line = root.value("shape", json("ball")) == "line";
         if (out.lifetime.x > out.lifetime.y)
             bad("lifetime", "the shortest life comes first");
         // An effect that never ends and never makes a particle is a mistake; so is an endless burst-only one.

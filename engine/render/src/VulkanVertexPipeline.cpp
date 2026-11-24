@@ -273,7 +273,8 @@ namespace umbra::render
         const VkVertexInputBindingDescription particleBinding{0, sizeof(core::ParticleInstance), VK_VERTEX_INPUT_RATE_INSTANCE};
         const std::array particleAttributes{VkVertexInputAttributeDescription{0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
                                             VkVertexInputAttributeDescription{1, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 16},
-                                            VkVertexInputAttributeDescription{2, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 32}};
+                                            VkVertexInputAttributeDescription{2, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 32},
+                                            VkVertexInputAttributeDescription{3, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 48}};
         VkPipelineVertexInputStateCreateInfo particleInput{VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
         particleInput.vertexBindingDescriptionCount = 1;
         particleInput.pVertexBindingDescriptions = &particleBinding;

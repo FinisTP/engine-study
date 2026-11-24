@@ -147,12 +147,26 @@ namespace
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
         DrawItems(commandBuffer, pipeline, resources, drawList, fallbackTexture, false);
         // Particles last: they blend over the solid scene (6 vertices per instance, Particles.md).
+        // A run of particles per picture (set 1); none listed means all soft dots.
         if (const std::size_t particles = std::min(drawList.particles.size(), umbra::core::ParticleSystem::maxDrawn); particles > 0)
         {
             constexpr VkDeviceSize start = 0;
             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetParticlePipeline());
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, &particleBuffer, &start);
-            vkCmdDraw(commandBuffer, 6, static_cast<std::uint32_t>(particles), 0, 0);
+            std::vector<umbra::core::ParticleBatch> batches = drawList.particleBatches;
+            if (batches.empty())
+                batches.push_back({0, particles, {}});
+            for (const umbra::core::ParticleBatch &batch : batches)
+            {
+                const auto *texture = batch.texture ? resources.GetTexture(batch.texture) : nullptr;
+                if (texture == nullptr)
+                    texture = resources.GetTexture(fallbackTexture);
+                const std::size_t count = std::min(batch.count, particles - std::min(batch.first, particles));
+                if (texture == nullptr || count == 0)
+                    continue;
+                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(), 1, 1, &texture->descriptorSet, 0, nullptr);
+                vkCmdDraw(commandBuffer, 6, static_cast<std::uint32_t>(count), 0, static_cast<std::uint32_t>(batch.first));
+            }
         }
         vkCmdEndRenderPass(commandBuffer);
 

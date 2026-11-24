@@ -98,31 +98,48 @@ fn sunShadow(p: vec3f, n: vec3f) -> f32 {
 }
 // Sun shadow map: depth only, seen from the sun.
 // Particles (Particles.md, Particles.hlsl): one camera-facing square per instance.
-struct ParticleOut { @builtin(position) position: vec4f, @location(0) corner: vec2f, @location(1) color: vec4f, @location(2) shape: vec2f };
+struct ParticleOut { @builtin(position) position: vec4f, @location(0) corner: vec2f, @location(1) color: vec4f, @location(2) shape: vec2f, @location(3) picture: vec3f };
 fn unproject(ndc: vec2f) -> vec3f {
   let p = frame.inverseViewProjection * vec4f(ndc, 0.5, 1.0);
   return p.xyz / p.w;
 }
-@vertex fn particleVs(@builtin(vertex_index) id: u32, @location(0) positionSize: vec4f, @location(1) color: vec4f, @location(2) shape: vec4f) -> ParticleOut {
+@vertex fn particleVs(@builtin(vertex_index) id: u32, @location(0) positionSize: vec4f, @location(1) color: vec4f, @location(2) shape: vec4f,
+                      @location(3) stretchCell: vec4f) -> ParticleOut {
   let index = select(6u - id, id, id < 3u); // 0 1 2 3 2 1 -> corners 0..3
   let corner = vec2f(f32(index & 1u), f32(index >> 1u)) * 2.0 - 1.0;
   let right = normalize(unproject(vec2f(1.0, 0.0)) - unproject(vec2f(-1.0, 0.0)));
   let up = normalize(unproject(vec2f(0.0, 1.0)) - unproject(vec2f(0.0, -1.0)));
-  let world = positionSize.xyz + (right * corner.x + up * corner.y) * positionSize.w * 0.5;
+  // Turned by its angle; a stretched one lies along its stretch (Particles.md "Pictures").
+  let s = sin(shape.z); let c = cos(shape.z);
+  var across = right * c + up * s; var along = up * c - right * s; var extra = 0.0;
+  let facing = cross(right, up);
+  let stretch = stretchCell.xyz - dot(stretchCell.xyz, facing) * facing;
+  if (dot(stretch, stretch) > 1e-8) { across = normalize(stretch); along = normalize(cross(facing, across)); extra = length(stretchCell.xyz); }
+  let half = positionSize.w * 0.5;
+  let world = positionSize.xyz + across * corner.x * (half + extra * 0.5) + along * corner.y * half;
   let fade = exp(-frame.fogColor.w * distance(world, frame.cameraPosition.xyz));
+  let columns = max(shape.w % 16.0, 1.0); let rows = max(floor(shape.w / 16.0), 1.0);
+  let cell = stretchCell.w;
+  let uv = (vec2f(cell % columns, floor(cell / columns)) + (corner * vec2f(1.0, -1.0) + 1.0) * 0.5) / vec2f(columns, rows);
   var o: ParticleOut;
   o.position = frame.viewProjection * vec4f(world, 1.0);
   o.corner = corner;
   o.color = vec4f(color.rgb, color.a * fade);
   o.shape = shape.xy;
+  o.picture = vec3f(uv, select(0.0, 1.0, shape.w > 0.0));
   return o;
 }
+@group(1) @binding(0) var particleSampler: sampler;
+@group(1) @binding(1) var particleTexture: texture_2d<f32>;
 @fragment fn particleFs(i: ParticleOut) -> @location(0) vec4f {
   let d = length(i.corner);
   let soft = saturate(1.0 - d);
   let ring = saturate((1.0 - d) * 6.0) * smoothstep(i.shape.x * 0.6, i.shape.x, d);
-  let alpha = i.color.a * select(soft * soft, ring, i.shape.x > 0.0);
-  return vec4f(i.color.rgb * alpha, select(alpha, 0.0, i.shape.y > 0.5)); // premultiplied: alpha 0 adds light
+  let picture = textureSample(particleTexture, particleSampler, i.picture.xy);
+  var alpha = i.color.a * select(soft * soft, ring, i.shape.x > 0.0);
+  var rgb = i.color.rgb;
+  if (i.picture.z > 0.5) { alpha = i.color.a * picture.a; rgb = rgb * picture.rgb; }
+  return vec4f(rgb * alpha, select(alpha, 0.0, i.shape.y > 0.5)); // premultiplied: alpha 0 adds light
 }
 @vertex fn shadowVs(@location(0) position: vec3f) -> @builtin(position) vec4f {
   return frame.shadowMatrix * draw.model * vec4f(position, 1.0);
@@ -402,12 +419,12 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
       UG.shadowView = UG.shadowMap.createView();
       UG.shadowSampler = device.createSampler({ compare: 'less-equal', magFilter: 'linear', minFilter: 'linear' });
       UG.shadowLayout = shadowLayout;
-      // Particles: instances of 48 bytes (core::ParticleInstance), no depth writes, premultiplied blending.
+      // Particles: instances of 64 bytes (core::ParticleInstance), no depth writes, premultiplied blending.
       UG.particlePipeline = device.createRenderPipeline({
-        layout: device.createPipelineLayout({ bindGroupLayouts: [frameLayout] }),
-        vertex: { module: module, entryPoint: 'particleVs', buffers: [{ arrayStride: 48, stepMode: 'instance', attributes: [
+        layout: device.createPipelineLayout({ bindGroupLayouts: [frameLayout, textureLayout] }),
+        vertex: { module: module, entryPoint: 'particleVs', buffers: [{ arrayStride: 64, stepMode: 'instance', attributes: [
           { shaderLocation: 0, offset: 0, format: 'float32x4' }, { shaderLocation: 1, offset: 16, format: 'float32x4' },
-          { shaderLocation: 2, offset: 32, format: 'float32x4' }] }] },
+          { shaderLocation: 2, offset: 32, format: 'float32x4' }, { shaderLocation: 3, offset: 48, format: 'float32x4' }] }] },
         fragment: { module: module, entryPoint: 'particleFs', targets: [{ format: 'rgba16float', blend: {
           color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' }, alpha: { srcFactor: 'zero', dstFactor: 'one' } } }] },
         primitive: { topology: 'triangle-list', cullMode: 'none' },
@@ -522,15 +539,20 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
     if (UG.textures[id]) { UG.textures[id].destroy(); UG.textures[id] = null; UG.groups[id] = null; }
   },
 
-  // This frame's particles (48 bytes each), sent before umbra_gpu_frame draws them.
+  // This frame's particles (64 bytes each) and their runs by picture (first, count, texture id;
+  // -1 = soft dots), sent before umbra_gpu_frame draws them.
   umbra_gpu_particles__deps: ['$UG'],
-  umbra_gpu_particles: function (particles, count) {
+  umbra_gpu_particles: function (particles, count, batches, batchCount) {
+    UG.particleBatches = [];
+    for (var b = 0; b < batchCount; ++b)
+      UG.particleBatches.push([HEAP32[(batches >> 2) + b * 3], HEAP32[(batches >> 2) + b * 3 + 1], HEAP32[(batches >> 2) + b * 3 + 2]]);
+    if (batchCount === 0) UG.particleBatches.push([0, count, -1]);
     if (count > UG.particleCapacity) {
       if (UG.particleBuffer) UG.particleBuffer.destroy();
       UG.particleCapacity = Math.max(256, count * 2);
-      UG.particleBuffer = UG.device.createBuffer({ size: UG.particleCapacity * 48, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
+      UG.particleBuffer = UG.device.createBuffer({ size: UG.particleCapacity * 64, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
     }
-    if (count > 0) UG.device.queue.writeBuffer(UG.particleBuffer, 0, HEAPF32.buffer, particles, count * 48);
+    if (count > 0) UG.device.queue.writeBuffer(UG.particleBuffer, 0, HEAPF32.buffer, particles, count * 64);
     UG.particleCount = count;
   },
   umbra_gpu_frame__deps: ['$UG'],
@@ -618,7 +640,12 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
       pass.setPipeline(UG.particlePipeline);
       pass.setBindGroup(0, UG.frameGroup, [0]);
       pass.setVertexBuffer(0, UG.particleBuffer);
-      pass.draw(6, UG.particleCount);
+      for (var b = 0; b < UG.particleBatches.length; ++b) {
+        var run = UG.particleBatches[b], count = Math.min(run[1], UG.particleCount - run[0]);
+        if (count <= 0) continue;
+        pass.setBindGroup(1, (run[2] > 0 && UG.groups[run[2]]) || UG.whiteGroup);
+        pass.draw(6, count, 0, run[0]);
+      }
     }
     pass.end();
     // 5. Bloom down then up, then the composite onto the canvas (Post.md); debug lines on top.

@@ -9,7 +9,7 @@
 namespace umbra::core
 {
     ParticleEmitter::ParticleEmitter(std::shared_ptr<const VfxEffect> effect, glm::vec3 position, std::uint32_t seed)
-        : effect_(std::move(effect)), position_(position), random_(seed == 0 ? 1 : seed)
+        : effect_(std::move(effect)), position_(position), end_(position), random_(seed == 0 ? 1 : seed)
     {
     }
 
@@ -33,10 +33,16 @@ namespace umbra::core
         glm::vec3 offset{signedRandom(), signedRandom(), signedRandom()};
         if (glm::dot(offset, offset) > 1.0F)
             offset = glm::normalize(offset);
-        p.position = position_ + offset * e.radius;
+        p.position = (e.line ? position_ + (end_ - position_) * Random() : position_) + offset * e.radius;
         // 2. The start velocity, a little different each time; how long it lives.
         p.velocity = e.velocity + e.spread * glm::vec3{signedRandom(), signedRandom(), signedRandom()};
         p.life = std::max(e.lifetime.x + (e.lifetime.y - e.lifetime.x) * Random(), 0.01F);
+        // 3. Pictures: a start angle, a turning speed, one cell of the sheet (Particles.md "Pictures").
+        constexpr float radians = 3.14159265F / 180.0F;
+        p.angle = (e.rotation.x + (e.rotation.y - e.rotation.x) * Random()) * radians;
+        p.spin = (e.spin.x + (e.spin.y - e.spin.x) * Random()) * radians;
+        const int cells = std::max(e.cells.x * e.cells.y, 1);
+        p.cell = static_cast<float>(std::min(static_cast<int>(Random() * static_cast<float>(cells)), cells - 1));
         particles_.push_back(p);
     }
 
@@ -49,6 +55,7 @@ namespace umbra::core
             p.velocity.y += e.gravity * seconds;
             p.velocity *= std::max(1.0F - e.drag * seconds, 0.0F);
             p.position += p.velocity * seconds;
+            p.angle += p.spin * seconds;
             p.age += seconds;
         }
         std::erase_if(particles_, [](const Particle &p) { return p.age >= p.life; });
@@ -79,6 +86,10 @@ namespace umbra::core
             instance.color = e.colorStart + (e.colorEnd - e.colorStart) * t;
             instance.ring = e.ring;
             instance.additive = e.additive ? 1.0F : 0.0F;
+            instance.angle = p.angle;
+            instance.sheet = e.textured && e.image ? static_cast<float>(e.cells.x + 16 * e.cells.y) : 0.0F;
+            instance.stretch = p.velocity * e.stretch;
+            instance.cell = p.cell;
             out.push_back(instance);
         }
     }
@@ -148,19 +159,37 @@ namespace umbra::core
 
     void ParticleSystem::Extract(DrawList &drawList) const
     {
-        std::vector<ParticleInstance> &out = drawList.particles;
-        const std::size_t first = out.size();
+        // 1. Every particle with its emitter's picture.
+        std::vector<std::pair<ParticleInstance, TextureHandle>> all;
+        std::vector<ParticleInstance> some;
+        const auto take = [&](const ParticleEmitter &emitter) {
+            some.clear();
+            emitter.Extract(some);
+            for (const ParticleInstance &p : some)
+                all.emplace_back(p, p.sheet > 0.0F ? emitter.Effect().image : TextureHandle{});
+        };
         for (const auto &[key, attached] : attached_)
-            attached.emitter.Extract(out);
+            take(attached.emitter);
         for (const ParticleEmitter &emitter : loose_)
-            emitter.Extract(out);
-        // Far to near, so covering (non-additive) particles hide what is behind them; if there are
-        // too many, the farthest go.
+            take(emitter);
+        // 2. Far to near, so covering (non-additive) particles hide what is behind them; if there are
+        //    too many, the farthest go.
         const glm::vec3 eye = drawList.camera.position;
         const auto distance = [&](const ParticleInstance &p) { return glm::dot(p.position - eye, p.position - eye); };
-        std::sort(out.begin() + static_cast<std::ptrdiff_t>(first), out.end(),
-                  [&](const ParticleInstance &a, const ParticleInstance &b) { return distance(a) > distance(b); });
-        if (out.size() > maxDrawn)
-            out.erase(out.begin(), out.end() - static_cast<std::ptrdiff_t>(maxDrawn));
+        std::sort(all.begin(), all.end(), [&](const auto &a, const auto &b) { return distance(a.first) > distance(b.first); });
+        std::vector<ParticleInstance> &out = drawList.particles;
+        const std::size_t room = maxDrawn - std::min(out.size(), maxDrawn);
+        if (all.size() > room)
+            all.erase(all.begin(), all.end() - static_cast<std::ptrdiff_t>(room));
+        // 3. Into the draw list; a new batch wherever the picture changes (earlier particles: soft dots).
+        if (drawList.particleBatches.empty() && !out.empty())
+            drawList.particleBatches.push_back({0, out.size(), {}});
+        for (const auto &[p, image] : all)
+        {
+            if (drawList.particleBatches.empty() || !(drawList.particleBatches.back().texture == image))
+                drawList.particleBatches.push_back({out.size(), 0, image});
+            out.push_back(p);
+            ++drawList.particleBatches.back().count;
+        }
     }
 }

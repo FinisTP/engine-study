@@ -42,6 +42,17 @@ game, the editor and `UmbraTool validate` alike.
 | `ring` | 0 = soft dot; towards 0.95 = hollow ring (bubbles) | 0 |
 | `max` | most particles alive at once | 256 |
 
+Pictures and motion (VFX library, 2026-11-24):
+
+| Field | Meaning | Default |
+|---|---|---|
+| `texture` | a picture (asset path, white on clear: the colour tints it) instead of the soft dot | none |
+| `cells` | `[across, down]`: the picture is a sheet of that many; each particle takes one at random | 1, 1 |
+| `rotation` | `[least, most]` start angle on screen, degrees | 0, 0 |
+| `spin` | `[least, most]` turning speed, degrees per second | 0, 0 |
+| `stretch` | seconds of travel added to its length along its velocity (streaks, trails) | 0 |
+| `shape` | `"ball"`: born around the emitter; `"line"`: born on the line from it to its end | ball |
+
 Colours may go above 1: the scene is drawn in HDR, so a colour of 4 is bright enough to bloom
 (`Post.md`). A one-shot (sparks, a fireball's burst) has a `burst` and a short `duration` and
 removes itself; an endless one (torch fire) has only a `rate`.
@@ -89,8 +100,8 @@ world (ADR 0011) repeatable. Nothing here uses the clock or `rand()`.
 
 ## Drawing
 
-A particle is 48 bytes sent to the GPU as one *instance*: position and size, colour, ring and
-blend. The vertex shader makes the square's four corners itself:
+A particle is 64 bytes sent to the GPU as one *instance*: position and size, colour, ring, blend,
+angle and picture, stretch and cell ("Pictures"). The vertex shader makes the square's four corners itself:
 
 ```
 corner = (-1 or 1, -1 or 1)
@@ -113,6 +124,22 @@ So fire and bubbles go through the same pipeline in one draw call. Particles are
 scene pass: they are hidden by walls in front of them (depth test) but never hide each other by
 depth (no depth write). They are sorted far to near on the CPU so covering ones look right. Fog
 fades them like everything else, and since they are in the HDR scene, bloom and tone mapping apply.
+
+## Pictures
+
+A textured particle samples one cell of its sheet. The cell's corner in the sheet is
+`(cell mod across, floor(cell / across)) / (across, down)` and the square's corner adds a whole cell.
+The square is turned by its angle (`angle += spin * dt`): its sides are
+`right * cos(a) + up * sin(a)` and `up * cos(a) - right * sin(a)`.
+
+A stretched particle ignores its angle: its long side lies along the part of `velocity * stretch` that
+crosses the screen (the part pointing at the camera is removed), and it is longer by that vector's
+length. A spark moving fast is a long streak; slowing down (drag) it shrinks back to a dot.
+
+The renderers draw one run of particles per picture (`DrawList::particleBatches`, made after the
+far-to-near sort, so the order is kept). A particle whose picture did not load (`image` empty) is a
+soft dot. The instance is 64 bytes: position and size, colour, (ring, additive, angle, sheet), and
+(stretch vector, cell); `sheet` is `across + 16 * down`, 0 for a soft dot.
 
 ## Limits
 

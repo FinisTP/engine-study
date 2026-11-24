@@ -5,6 +5,7 @@
 #include <Particles.hpp>
 
 #include <cstring>
+#include <set>
 
 using namespace umbra::core;
 using Catch::Approx;
@@ -42,7 +43,7 @@ TEST_CASE("The same seed and steps give the same particles; another seed differs
     CHECK(std::memcmp(a.data(), b.data(), a.size() * sizeof(ParticleInstance)) == 0);
     REQUIRE(c.size() == a.size());
     CHECK(std::memcmp(a.data(), c.data(), a.size() * sizeof(ParticleInstance)) != 0);
-    CHECK(sizeof(ParticleInstance) == 48); // the renderers' instance layout
+    CHECK(sizeof(ParticleInstance) == 64); // the renderers' instance layout
 }
 
 TEST_CASE("Particles stay under the effect's limit, fade over life and die (T89)", "[particles]")
@@ -115,4 +116,71 @@ TEST_CASE("One-shots end by themselves; attached effects live until detached (T8
     for (int i = 0; i < 30; ++i)
         particles.Update(0.05F);
     CHECK(particles.Count() == 0);
+}
+
+TEST_CASE("Textured particles: a start angle and spin, a cell of a sheet, a stretch along the velocity (VFX library)", "[particles]")
+{
+    VfxEffect e;
+    e.burst = 12, e.rate = 0.0F, e.duration = 1.0F, e.lifetime = {2.0F, 2.0F};
+    e.velocity = {1.0F, 0.0F, 0.0F}, e.spread = glm::vec3{0.0F};
+    e.textured = true, e.image = TextureHandle{1, 1}, e.cells = {2, 2}, e.rotation = {0.0F, 0.0F}, e.spin = {90.0F, 90.0F}, e.stretch = 0.5F;
+    ParticleEmitter emitter(std::make_shared<const VfxEffect>(e), {0, 0, 0}, 3);
+    emitter.Update(0.0F);
+    emitter.Update(1.0F);
+    std::vector<ParticleInstance> out;
+    emitter.Extract(out);
+    REQUIRE(out.size() == 12);
+    std::set<int> cells;
+    for (const ParticleInstance &p : out)
+    {
+        CHECK(p.sheet == 2.0F + 16.0F * 2.0F); // 2 across, 2 down
+        CHECK(p.angle == Approx(90.0F * 3.14159265F / 180.0F).margin(1e-4)); // a second at 90 degrees a second
+        CHECK(p.stretch.x == Approx(0.5F)); // velocity (1, 0, 0) times the stretch
+        CHECK(p.cell >= 0.0F);
+        CHECK(p.cell < 4.0F);
+        cells.insert(static_cast<int>(p.cell));
+    }
+    CHECK(cells.size() > 1); // each particle picks its own cell
+}
+
+TEST_CASE("A line emitter spawns between its two ends (VFX library)", "[particles]")
+{
+    VfxEffect e;
+    e.burst = 40, e.rate = 0.0F, e.duration = 0.1F, e.lifetime = {1.0F, 1.0F}, e.radius = 0.0F;
+    e.velocity = glm::vec3{0.0F}, e.spread = glm::vec3{0.0F}, e.line = true;
+    ParticleEmitter emitter(std::make_shared<const VfxEffect>(e), {0, 0, 0}, 5);
+    emitter.LineTo({10, 0, 0});
+    emitter.Update(0.0F);
+    std::vector<ParticleInstance> out;
+    emitter.Extract(out);
+    REQUIRE(out.size() == 40);
+    float lo = 99.0F, hi = -99.0F;
+    for (const ParticleInstance &p : out)
+        lo = std::min(lo, p.position.x), hi = std::max(hi, p.position.x);
+    CHECK(lo >= 0.0F);
+    CHECK(hi <= 10.0F);
+    CHECK(hi - lo > 5.0F);
+}
+
+TEST_CASE("Particles batch by texture for the renderers, in draw order (VFX library)", "[particles]")
+{
+    VfxEffect a, b;
+    a.burst = b.burst = 3, a.rate = b.rate = 0.0F, a.duration = b.duration = 0.1F;
+    a.image = TextureHandle{1, 1}, b.image = TextureHandle{2, 1};
+    a.textured = b.textured = true;
+    ParticleSystem system;
+    system.Spawn(std::make_shared<const VfxEffect>(a), {0, 0, -5});
+    system.Spawn(std::make_shared<const VfxEffect>(b), {0, 0, -1});
+    system.Update(0.0F);
+    DrawList list;
+    system.Extract(list);
+    REQUIRE(list.particles.size() == 6);
+    std::size_t covered = 0;
+    for (const ParticleBatch &batch : list.particleBatches)
+    {
+        CHECK(batch.first == covered);
+        covered += batch.count;
+    }
+    CHECK(covered == 6);
+    CHECK(list.particleBatches.size() == 2);
 }

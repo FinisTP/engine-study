@@ -114,6 +114,7 @@ namespace umbra::core
         std::vector<std::string> surfaces{""}; // custom surface shader names used this frame; [0] = plain
         std::vector<glm::mat4> joints;         // skinning matrices of every animated item (S8)
         std::vector<ParticleInstance> particles; // effects, far ones first (S9, Particles.md)
+        std::vector<ParticleBatch> particleBatches; // runs of particles sharing a picture (none: all soft dots)
         std::vector<DebugLine> lines;
         Hud hud;
         UiDrawList ui; // the game's own UI; drawn under the diagnostics window
@@ -134,6 +135,7 @@ namespace umbra::core
             surfaces.assign(1, "");
             joints.clear();
             particles.clear();
+            particleBatches.clear();
             lights.clear();
             lines.clear();
             hud = {};

@@ -63,6 +63,22 @@ TEST_CASE("The shipped effects load; mistakes are named by field (T89)", "[vfx]"
     CHECK(Has(Parse(R"(, "blend": "multiply")"), "vfx.blend"));
     CHECK(Has(Parse(R"(, "max": 100000)"), "vfx.max"));
     CHECK(Has(Parse(R"(, "ring": 1)"), "vfx.ring"));
+    // Pictures (VFX library): a texture sheet, angles, stretch, a line.
+    core::VfxEffect pic;
+    std::vector<core::Diagnostic> picked;
+    REQUIRE(scene::ParseVfx(R"({"format": "umbra.vfx", "version": 1, "burst": 4, "texture": "art/vfx/dab_ink.png", "cells": [2, 2],
+                               "rotation": [0, 360], "spin": [-90, 90], "stretch": 0.2, "shape": "line"})", "p", pic, picked));
+    CHECK(pic.textured);
+    CHECK(pic.texture == "art/vfx/dab_ink.png");
+    CHECK(pic.cells == glm::ivec2{2, 2});
+    CHECK(pic.rotation.y == 360.0F);
+    CHECK(pic.spin.x == -90.0F);
+    CHECK(pic.stretch == 0.2F);
+    CHECK(pic.line);
+    CHECK(Has(Parse(R"(, "texture": 3)"), "vfx.texture"));
+    CHECK(Has(Parse(R"(, "cells": [0, 2])"), "vfx.cells"));
+    CHECK(Has(Parse(R"(, "shape": "cone")"), "vfx.shape"));
+    CHECK(Has(Parse(R"(, "rotation": [10, 0])"), "vfx.rotation"));
     CHECK(scene::LoadVfx(assetDir / "vfx/none.vfx.json", "vfx/none.vfx.json", diagnostics) == nullptr);
     CHECK(Has(diagnostics, "vfx.read"));
 }

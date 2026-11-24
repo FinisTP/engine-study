@@ -1,12 +1,16 @@
 #pragma once
 
+#include <Handles.hpp>
+
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+#include <glm/ext/vector_int2.hpp>
 
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <string>
 #include <vector>
 
 // Particle effects (S9): fire, sparks, bubbles, dust. Math and file format in Particles.md.
@@ -32,9 +36,18 @@ namespace umbra::core
         bool additive = true;               // adds light (fire, sparks) or covers (smoke, bubbles)
         float ring = 0.0F;                  // 0 = soft dot; towards 1 = hollow ring (bubbles)
         int max = 256;                      // particles alive at once
+        // Pictures (VFX library): a texture sheet of cells x rows pictures, each particle one of them.
+        bool textured = false;              // "texture" was given (drawn as soft dots if it can't load)
+        std::string texture;                // asset path, as written
+        TextureHandle image{};              // set by whoever loads the picture; none -> soft dots
+        glm::ivec2 cells{1, 1};             // pictures across and down the sheet
+        glm::vec2 rotation{0.0F, 0.0F};     // start angle range, degrees
+        glm::vec2 spin{0.0F, 0.0F};         // turning speed range, degrees per second
+        float stretch = 0.0F;               // longer along the velocity: seconds of travel added to its length
+        bool line = false;                  // born along the line from the emitter to its end (LineTo)
     };
 
-    // One particle as the renderers draw it: a camera-facing square (48 bytes, three float4).
+    // One particle as the renderers draw it: a camera-facing square (64 bytes, four float4).
     struct ParticleInstance final
     {
         glm::vec3 position{0.0F};
@@ -42,7 +55,17 @@ namespace umbra::core
         glm::vec4 color{1.0F};
         float ring = 0.0F;
         float additive = 1.0F;
-        float pad[2]{};
+        float angle = 0.0F;    // radians, turning the picture on screen
+        float sheet = 0.0F;    // 0: a soft dot; else the batch's texture, cells across + 16 * cells down
+        glm::vec3 stretch{0.0F}; // world vector the square is lengthened along (velocity * stretch)
+        float cell = 0.0F;       // which picture of the sheet
+    };
+
+    // Particles drawn with one texture: instances [first, first + count) of DrawList::particles.
+    struct ParticleBatch final
+    {
+        std::size_t first = 0, count = 0;
+        TextureHandle texture{}; // none: soft dots
     };
 
     // One running copy of an effect at a place. The same seed and the same steps give the same
@@ -53,10 +76,12 @@ namespace umbra::core
         ParticleEmitter(std::shared_ptr<const VfxEffect> effect, glm::vec3 position, std::uint32_t seed);
 
         void MoveTo(glm::vec3 position) { position_ = position; }
+        void LineTo(glm::vec3 end) { end_ = end; } // a line effect is born between the position and here
         void Stop() { stopped_ = true; } // no new particles; the living ones finish
         void Update(float seconds);
         [[nodiscard]] bool Done() const { return (stopped_ || Expired()) && particles_.empty(); }
         [[nodiscard]] std::size_t Count() const { return particles_.size(); }
+        [[nodiscard]] const VfxEffect &Effect() const { return *effect_; }
         void Extract(std::vector<ParticleInstance> &out) const;
 
     private:
@@ -66,13 +91,15 @@ namespace umbra::core
             glm::vec3 velocity{0.0F};
             float age = 0.0F;
             float life = 1.0F;
+            float angle = 0.0F, spin = 0.0F; // radians, radians per second
+            float cell = 0.0F;
         };
         [[nodiscard]] bool Expired() const { return effect_->duration > 0.0F && age_ >= effect_->duration; }
         [[nodiscard]] float Random(); // 0..1
         void Spawn();
 
         std::shared_ptr<const VfxEffect> effect_;
-        glm::vec3 position_;
+        glm::vec3 position_, end_;
         std::uint32_t random_;
         std::vector<Particle> particles_;
         float age_ = 0.0F;

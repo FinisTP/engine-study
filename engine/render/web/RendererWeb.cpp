@@ -33,7 +33,7 @@ extern "C"
     void umbra_gpu_destroy_texture(int id);
     // `frame`: viewProjection, shadowMatrix, inverseViewProjection (16 floats each), then core::LightingBlock (160 floats).
     // `post`: core::PostBlock::exposure (4 floats).
-    void umbra_gpu_particles(const void *particles, int count); // core::ParticleInstance each
+    void umbra_gpu_particles(const void *particles, int count, const int *batches, int batchCount); // core::ParticleInstance each; first, count, texture id per run
     void umbra_gpu_frame(const float *frame, const float *post, const float *draws, int drawCount, const float *lines, int lineCount, const char *hud,
                          const float *joints, int jointCount);
     void umbra_gpu_lut(const unsigned char *strip); // the post color table (256x16 RGBA)
@@ -101,6 +101,7 @@ namespace umbra::render
         core::SlotMap<WebMesh, core::MeshTag> meshes;
         core::SlotMap<int, core::TextureTag> textures;
         std::vector<float> draws, lines;
+        std::vector<int> particleBatches; // first, count, texture id per run of particles
         float seconds = 0; // drives torch flicker
         std::map<std::string, int> surfaces; // custom surface shader name -> pipeline id (CustomShaders.md)
         core::PostSettings grade;                         // the color table now on the GPU (Post.md)
@@ -267,7 +268,14 @@ namespace umbra::render
         const core::PostBlock postBlock = core::PackPost(post, 1, 1);
         const bool analog = core::AnalogOn(post); // the frame and the UI into the screen picture, then CRT/VHS (Post.md "6")
         umbra_gpu_screen(analog ? 1 : 0);
-        umbra_gpu_particles(drawList.particles.data(), static_cast<int>(std::min(drawList.particles.size(), core::ParticleSystem::maxDrawn)));
+        i.particleBatches.clear();
+        for (const core::ParticleBatch &batch : drawList.particleBatches)
+        {
+            const int *texture = batch.texture ? i.textures.Get(batch.texture) : nullptr;
+            i.particleBatches.insert(i.particleBatches.end(), {static_cast<int>(batch.first), static_cast<int>(batch.count), texture ? *texture : -1});
+        }
+        umbra_gpu_particles(drawList.particles.data(), static_cast<int>(std::min(drawList.particles.size(), core::ParticleSystem::maxDrawn)),
+                            i.particleBatches.data(), static_cast<int>(i.particleBatches.size() / 3));
         umbra_gpu_frame(glm::value_ptr(frame.viewProjection), glm::value_ptr(postBlock.exposure), i.draws.data(), static_cast<int>(i.draws.size() / drawFloats), i.lines.data(),
                         static_cast<int>(i.lines.size() / 10), hud.c_str(), drawList.joints.empty() ? nullptr : glm::value_ptr(drawList.joints[0]),
                         static_cast<int>(std::min(drawList.joints.size(), maxFrameJoints)));
