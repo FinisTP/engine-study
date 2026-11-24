@@ -220,6 +220,7 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
         data["room"]["prompt"] = near.empty() ? "" : words.value("press", std::string()) + " " +
                                                       (near.starts_with("talk:") ? words.value("talkTo", std::string()) : words.value(near, std::string()));
         bool uiTook = false;
+        game.Keep(drawList); // the place, for a screen opened from it (settings, the result)
         for (const umbra::ui::UiAction &a : screens.Ui().Update(data, pixels, uiInput, drawList.ui))
         {
             game.sounds->Play("click");

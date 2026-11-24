@@ -1,6 +1,8 @@
 {
   "format": "umbra.ui",
   "version": 1,
+  "dim": true,
+  "modal": true,
   "root": {
     "type": "stack",
     "anchor": "center",

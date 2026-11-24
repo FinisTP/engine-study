@@ -355,6 +355,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
             data["tip"] = screens.Ui().Tip();
             data["analog"] = analog.Data();
             window.SetTextInput(screens.Ui().WantsText()); // typed text only while a text field has the focus
+            game.Keep(drawList); // the place, for a screen opened from it (settings, the result)
             for (const umbra::ui::UiAction &a : screens.Ui().Update(data, pixels, uiInput, drawList.ui))
             {
                 uiTook = true;

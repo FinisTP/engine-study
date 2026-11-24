@@ -46,6 +46,8 @@ std::pair<std::string, std::string> RunScreen(GameContext &game, const std::stri
             game.window.UpdateSizeFromEvent(game.events.GetWindowWidth(), game.events.GetWindowHeight()), game.renderer.RequestResize();
         game.clock.Tick();
         drawList.Clear();
+        if (game.hasStill)
+            drawList = game.still; // the place it was opened from stays behind it
         drawList.hud.diagnosticsWindow = false;
         const auto [width, height] = game.renderer.Extent();
         const glm::vec2 pixels{static_cast<float>(width), static_cast<float>(height)};

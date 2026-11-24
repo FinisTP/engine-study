@@ -29,6 +29,14 @@ struct GameContext
     std::unique_ptr<Screens> screens;
     std::unique_ptr<Sounds> sounds;
     umbra::night::Keys keys; // assets/keys-keyboard.json (Keys.hpp); defaults when missing or broken
+    // The place as last drawn (a fight, the cafe), without its UI: a screen opened from there (settings,
+    // the result) draws over it instead of an empty sky (feedback 2026-11-24 15:10, note 19).
+    umbra::core::DrawList still;
+    bool hasStill = false;
+    void Keep(const umbra::core::DrawList &scene)
+    {
+        still = scene, still.ui.Clear(), still.hud = {}, still.hud.diagnosticsWindow = false, hasStill = true;
+    }
 
     bool Open(const umbra::assets::AssetFolders &assets, int width = 1280, int height = 720)
     {
