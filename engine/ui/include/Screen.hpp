@@ -20,6 +20,8 @@ namespace umbra::ui
         std::string anchor = "top-left";  // top-left, top, top-right, left, center, right, bottom-left, bottom, bottom-right, fill
         glm::vec2 offset{0.0F};           // pixels from the anchor (fill: margins)
         glm::vec2 size{0.0F};             // pixels; 0 = from the content
+        std::string sizeBind;             // "size": "{map.planSize}" = [w, h] from the data instead (each frame)
+        bool clip = false;                // panel, stack: children drawn outside its box are cut off
         std::string style;                // skin style ("" = the type's default)
         std::string direction = "vertical"; // stack, list
         std::string align = "start";      // children across a stack: start, center, end, stretch

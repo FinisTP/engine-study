@@ -67,6 +67,25 @@ TEST_CASE("Fonts are packed into one atlas with a white block; text is measured 
     CHECK(core::HasErrors(bad));
 }
 
+TEST_CASE("A full atlas grows instead of dropping Vietnamese letters")
+{
+    // 1. Add Lora faces one by one so some count fills the first atlas halfway through the Vietnamese range.
+    assets::AssetFolders plugin(UMBRA_RPG_UI_ASSETS);
+    std::ifstream in(plugin / "ui/fonts/Lora.ttf", std::ios::binary);
+    const std::vector<unsigned char> lora{std::istreambuf_iterator<char>(in), {}};
+    std::vector<ui::FontSource> faces;
+    for (int n = 1; n <= 40; ++n)
+    {
+        faces.push_back({"f" + std::to_string(n), lora, 14.0F + static_cast<float>(n % 7) * 3.0F});
+        ui::FontAtlas atlas;
+        std::vector<core::Diagnostic> diagnostics;
+        REQUIRE(atlas.Build(faces, diagnostics));
+        // 2. Every face keeps the last Vietnamese letters (o-circumflex-hook, y-tilde).
+        for (const ui::FontSource &face : faces)
+            CHECK(atlas.Find(face.name)->glyphs.count(U'\u1ED5') + atlas.Find(face.name)->glyphs.count(U'\u1EF9') == 2);
+    }
+}
+
 TEST_CASE("MissingGlyphs names the letters a font lacks (campaign plan 1)")
 {
     assets::AssetFolders plugin(UMBRA_RPG_UI_ASSETS);
@@ -618,4 +637,23 @@ TEST_CASE("A design height scales every screen with the window; text stays sharp
     CHECK(bottom <= 300.0F);
     CHECK(left < 600.0F);
     CHECK(right > 600.0F);
+}
+
+TEST_CASE("A size can come from the data, and a clipped box keeps what is inside it inside (UI.md \"Bound size and clip\")")
+{
+    const json screen{{"format", "umbra.ui"}, {"version", 1},
+                      {"root", {{"type", "panel"}, {"anchor", "top-left"}, {"offset", {10, 10}}, {"size", {100, 80}}, {"clip", true},
+                                {"children", {{{"type", "text"}, {"text", "Wide"}, {"anchor", "top-left"}, {"size", "{big}"}}}}}}};
+    ui::UiSystem ui;
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(ui.Load(TestProject("bound", {{"clipped", screen}}), diagnostics));
+    CHECK(diagnostics.empty());
+    REQUIRE(ui.Open("clipped"));
+    core::UiDrawList out;
+    (void)ui.Update({{"big", {300, 200}}}, {1280.0F, 720.0F}, {}, out);
+    // The batches drawn inside the panel are clipped to its 100 x 80 box at (10, 10).
+    bool clipped = false;
+    for (const core::UiBatch &b : out.batches)
+        clipped |= b.clip == glm::vec4{10.0F, 10.0F, 110.0F, 90.0F};
+    CHECK(clipped);
 }

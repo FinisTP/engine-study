@@ -96,7 +96,7 @@ namespace umbra::ui
                     std::vector<stbtt_packedchar> chars(static_cast<std::size_t>(last - first + 1));
                     stbtt_pack_range range{source.size, first, nullptr, last - first + 1, chars.data(), 0, 0};
                     if (!stbtt_PackFontRanges(&pack, source.ttf.data(), 0, &range, 1))
-                        fits = fits && first != 0x20; // missing optional ranges are fine; ASCII must fit
+                        fits = fits && first != 0x20 && side == 4096; // a full atlas grows; only the largest may drop optional letters
                     for (int c = first; c <= last; ++c)
                     {
                         const stbtt_packedchar &p = chars[static_cast<std::size_t>(c - first)];

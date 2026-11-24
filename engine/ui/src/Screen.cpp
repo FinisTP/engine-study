@@ -9,7 +9,7 @@ namespace umbra::ui
     {
         const std::set<std::string> types{"panel", "stack", "text", "bar", "image", "button", "list", "spacer", "field"};
         const std::set<std::string> anchors{"top-left", "top", "top-right", "left", "center", "right", "bottom-left", "bottom", "bottom-right", "fill"};
-        const std::set<std::string> known{"type", "id", "anchor", "offset", "size", "style", "direction", "align", "gap", "columns", "text", "textAlign", "wrap",
+        const std::set<std::string> known{"type", "id", "anchor", "offset", "size", "clip", "style", "direction", "align", "gap", "columns", "text", "textAlign", "wrap",
                                           "visible", "disabled", "selected", "tip", "fit", "value", "max", "image", "action", "arg", "items", "as", "entry", "children", "at", "placeholder", "flip", "tint"};
 
         struct Reader final
@@ -64,7 +64,11 @@ namespace umbra::ui
                 if (!anchors.contains(node.anchor))
                     Error(where + ".anchor", "expected top-left, top, top-right, left, center, right, bottom-left, bottom, bottom-right or fill");
                 node.offset = Pair(j, "offset", where);
-                node.size = Pair(j, "size", where);
+                if (j.contains("size") && j["size"].is_string())
+                    node.sizeBind = j["size"].get<std::string>(); // a binding: the size comes from the data
+                else
+                    node.size = Pair(j, "size", where);
+                node.clip = j.value("clip", false);
                 node.style = Text(j, "style", where);
                 node.direction = Text(j, "direction", where, node.direction);
                 if (node.direction != "vertical" && node.direction != "horizontal")

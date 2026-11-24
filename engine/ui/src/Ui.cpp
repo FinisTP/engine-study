@@ -358,10 +358,14 @@ namespace umbra::ui
                        cell.y * static_cast<float>(rows) + node.gap * static_cast<float>(rows > 0 ? rows - 1 : 0)};
         }
         glm::vec2 size = content + pad;
-        if (node.size.x > 0.0F)
-            size.x = node.size.x;
-        if (node.size.y > 0.0F)
-            size.y = node.size.y;
+        glm::vec2 fixed = node.size;
+        if (!node.sizeBind.empty()) // a bound size: [w, h] from the data
+            if (const json v = c.Value(node.sizeBind); v.is_array() && v.size() == 2 && v[0].is_number() && v[1].is_number())
+                fixed = {v[0].get<float>(), v[1].get<float>()};
+        if (fixed.x > 0.0F)
+            size.x = fixed.x;
+        if (fixed.y > 0.0F)
+            size.y = fixed.y;
         return size;
     }
 
@@ -477,8 +481,12 @@ namespace umbra::ui
         }
         else if (node.type == "panel")
         {
+            if (node.clip)
+                c.painter.PushClip(rect);
             for (const Node &child : node.children)
                 Place(child, AnchorRect(inner, Measure(child, c, inner.w), child.anchor, child.offset), c);
+            if (node.clip)
+                c.painter.PopClip();
         }
         else if (node.type == "stack")
         {
