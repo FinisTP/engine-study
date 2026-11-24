@@ -81,8 +81,11 @@ TEST_CASE("Bad match data names its file and field (T275)", "[match][data]")
 TEST_CASE("Every role starts with a free battle ability (T276)", "[match][data]")
 {
     const auto dir = DataCopy("umbra-match-t276");
-    // The Defender's free Strike is its first jobs.csv row.
+    // The Defender's free Strike is its first jobs.csv row; the free Basic attack stands in for it.
     DropRow(dir / "jobs.csv", RowOf(dir / "jobs.csv", "role", "defender"));
+    CHECK(FirstError(dir).empty());
+    // Without the Basic attack too, the role has no free strike.
+    DropRow(dir / "abilities.csv", RowOf(dir / "abilities.csv", "id", "basic"));
     std::string code;
     CHECK_FALSE(FirstError(dir, &code).empty());
     CHECK(code == "match.jobs");

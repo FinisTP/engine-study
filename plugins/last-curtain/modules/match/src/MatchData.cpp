@@ -317,7 +317,7 @@ namespace umbra::match
                     const AbilityDef &a = def.abilities[static_cast<std::size_t>(j.ability)];
                     return a.use == Use::Battle && a.kind == AbilityClass::Strike && a.hpCost == 0;
                 });
-                if (s.ok && !free)
+                if (s.ok && !free && BasicStrike(def) < 0) // without one, a free "basic" ability stands in (FromCharacter)
                     s.Bad("jobs.csv", std::string("the role ") + roles.begin()[role] + " has no free level-1 Strike");
             }
         }

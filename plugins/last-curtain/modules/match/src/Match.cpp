@@ -10,6 +10,15 @@ namespace umbra::match
 {
     using namespace inner;
 
+    int BasicStrike(const MatchDef &def)
+    {
+        // The ability "basic", when it is a free battle strike.
+        for (std::size_t i = 0; i < def.abilities.size(); ++i)
+            if (const AbilityDef &a = def.abilities[i]; a.id == "basic" && a.use == Use::Battle && a.kind == AbilityClass::Strike && a.hpCost == 0)
+                return static_cast<int>(i);
+        return -1;
+    }
+
     Unit FromCharacter(const MatchDef &def, int c, int faction, int home)
     {
         const CharacterDef &d = def.characters[U(c)];
@@ -23,8 +32,15 @@ namespace umbra::match
         u.defence = static_cast<std::int16_t>(d.defence);
         u.speed = static_cast<std::int16_t>(d.speed);
         u.move = static_cast<std::int16_t>(d.move);
-        // 1. The job's level-1 abilities, in jobs.csv order.
+        // 1. A role with no free level-1 strike starts with the free basic attack, then the job's level-1
+        //    abilities in jobs.csv order.
         std::size_t slot = 0;
+        const bool free = std::ranges::any_of(def.jobs, [&](const JobLevel &j) {
+            return j.role == d.role && j.level == 1 && j.ability >= 0 && def.abilities[U(j.ability)].use == Use::Battle &&
+                   def.abilities[U(j.ability)].kind == AbilityClass::Strike && def.abilities[U(j.ability)].hpCost == 0;
+        });
+        if (!free && BasicStrike(def) >= 0)
+            u.abilities[slot++] = static_cast<std::int8_t>(BasicStrike(def));
         for (const JobLevel &j : def.jobs)
             if (j.role == d.role && j.level == 1 && slot < u.abilities.size())
                 u.abilities[slot++] = static_cast<std::int8_t>(j.ability);

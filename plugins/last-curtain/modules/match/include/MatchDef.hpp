@@ -204,4 +204,6 @@ namespace umbra::match
 
     // Loads and checks every file of the folder. Diagnostics: code "match.<file>", field "<file>:<row>:<column>".
     bool LoadMatch(const std::filesystem::path &folder, MatchDef &out, std::vector<core::Diagnostic> &diagnostics);
+    // The ability "basic" when it is a free battle strike, else -1: every character can fight with it at 1 HP.
+    int BasicStrike(const MatchDef &def);
 }

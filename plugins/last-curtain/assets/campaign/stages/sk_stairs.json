@@ -24,8 +24,8 @@
     "#####"
   ],
   "units": [
-    {"who": "ghost_attacker", "at": [2, 1], "side": 1, "level": 3, "flags": ["boss"]},
-    {"who": "ghost_speedster", "at": [2, 9], "side": 1, "level": 3, "flags": ["boss"]},
+    {"who": "ghost_attacker", "at": [2, 1], "side": 1, "level": 2, "flags": ["boss"]},
+    {"who": "ghost_speedster", "at": [2, 9], "side": 1, "level": 2, "flags": ["boss"]},
     {"who": "ghost_attacker", "at": [1, 9], "side": 1, "level": 1, "flags": ["boss"]},
     {"who": "ghost_attacker", "at": [1, 1], "side": 1, "level": 2, "flags": ["boss"]}
   ],
@@ -35,6 +35,6 @@
      "units": [{"who": "ghost_speedster", "at": [3, 2], "side": 1, "level": 1, "behaviour": {"kind": "passive"}}],
      "gimmicks": {"dark": {"sight": 2}}},
     {"name": "Kẻ canh trên chiếu nghỉ",
-     "units": [{"who": "keeper", "at": [3, 1], "side": 1, "level": 3, "flags": ["boss"]}]}
+     "units": [{"who": "keeper", "at": [3, 1], "side": 1, "level": 7, "flags": ["boss"]}]}
   ]
 }

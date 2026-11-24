@@ -1041,3 +1041,16 @@ TEST_CASE("A battle heal mends the ally it names, else the most hurt one of its 
         REQUIRE(healed);
     }
 }
+
+TEST_CASE("A role whose level-1 strikes all cost HP starts with the free basic attack (feedback 2026-11-24 16:57, note 13)", "[match][fight][costs]")
+{
+    const MatchDef def = Data(); // loads: the all-rounder's Slash costs HP, the basic attack stands in for a free strike
+    const int allrounder = static_cast<int>(std::ranges::find(def.characters, Role::AllRounder, &CharacterDef::role) - def.characters.begin());
+    const Unit u = FromCharacter(def, allrounder, 0, -1);
+    REQUIRE(u.abilities[0] >= 0);
+    CHECK(def.abilities[U(u.abilities[0])].id == "basic");
+    CHECK(def.abilities[U(u.abilities[0])].hpCost == 0);
+    // Strong strikes cost HP now: Slash, the slingshot and the scalpel.
+    for (const char *id : {"slash", "na_cao_su", "dao_mo"})
+        CHECK(std::ranges::find(def.abilities, std::string(id), &AbilityDef::id)->hpCost > 0);
+}
