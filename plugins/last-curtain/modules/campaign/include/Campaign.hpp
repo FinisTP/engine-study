@@ -92,6 +92,14 @@ namespace umbra::campaign
         nlohmann::json gimmicks;
     };
 
+    // A tutorial's guided step (Campaign.md "Guided steps"): whose turn, where to walk (a square [x, y],
+    // "with:<cast id>", "toward" the target, "safe" off the marked squares), what to do, at whom, its tip.
+    struct GuideDef
+    {
+        std::string unit, move, act, target, pick, when, tip;
+        int round = 0, x = -1, y = -1;
+    };
+
     struct StageDef
     {
         std::string id, kind = "story", title, titleEn, backdrop, music;
@@ -102,6 +110,7 @@ namespace umbra::campaign
         bool mustFree = false;
         std::vector<int> noRevive; // sides that never revive
         std::map<std::string, int> startHp; // the party starts hurt: HP by cast id (a tutorial)
+        std::vector<GuideDef> guide;        // a tutorial's guided steps, in order
         nlohmann::json gimmicks = nlohmann::json::object();
         std::string aimStart, aimRecap;
         std::map<std::string, std::string> scenes; // moment -> scene id

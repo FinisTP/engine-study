@@ -1,6 +1,7 @@
 #include "StageApp.hpp"
 #include "CampaignText.hpp"
 #include "Localization.hpp"
+#include "StageGuide.hpp"
 
 #include <fstream>
 
@@ -113,6 +114,6 @@ int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const
         if (out && play.State().over && play.Quiet())
             *out = built, ended = true;
     };
-    hooks.setup = [&](MatchPlay &play) { play.SetCast(names(), sprites()), play.SetHeights(built.height), play.SetStage(stage.title); };
+    hooks.setup = [&](MatchPlay &play) { play.SetCast(names(), sprites()), play.SetHeights(built.height), play.SetStage(stage.title), play.SetGuide(GuideFor(stage, built)); };
     return RunMatch(game, assets, seed, false, capture, frames, zoom, nullptr, 0, {}, &hooks);
 }

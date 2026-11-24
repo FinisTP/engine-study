@@ -108,6 +108,21 @@ public:
         float seconds = 0.0F, shake = 0.0F;
     };
     std::vector<Fx> TakeEffects() { return std::exchange(fx_, {}); }
+    // A tutorial's guided steps (MatchPlay.md "Guided steps"): on its unit's turn a step allows one
+    // square, one action, one target, one battle pick, with its tip; done, the next waits its turn.
+    struct GuideStep
+    {
+        int unit = -1, round = 0;   // whose turn; 0: its first turn from now
+        std::string when;           // "" or "breath": only while a breath row is marked
+        int cell = -1, with = -1;   // the square to walk to, or the square of this unit
+        bool toward = false, safe = false; // beside the target; or off every marked square
+        std::string act;            // "", attack, ability:<id>, end
+        int target = -1;            // a unit, or -1 any (toward: the nearest foe)
+        std::string pick;           // in the battle: this ability only
+        std::string tip;            // match words "guide.<tip>"
+        bool done = false;
+    };
+    void SetGuide(std::vector<GuideStep> steps) { guide_ = std::move(steps); }
     std::vector<int> TakeSnaps() { return std::exchange(snaps_, {}); } // units put straight back (an undone walk)
     // The 2d6 total to reach whose odds are nearest an event's percent chance (13: never, 2: always).
     static int DiceTarget(int chance);
@@ -200,6 +215,13 @@ private:
     std::vector<int> snaps_;
     // The sequence playing for the last told line (Sequences.md "Playing").
     const Sequences *sequences_ = nullptr;
+    std::vector<GuideStep> guide_;
+    [[nodiscard]] const GuideStep *Guided() const;              // the step for this turn, if any
+    [[nodiscard]] std::vector<int> GuideCells() const;          // the squares it lets you walk to (empty: any)
+    [[nodiscard]] bool GuideAllows(const std::string &row) const; // a menu row it leaves on
+    [[nodiscard]] bool GuideAllows(const umbra::match::Action &a) const;
+    [[nodiscard]] bool GuidePossible() const;                   // its action can be taken now
+    void GuideDone(const umbra::match::Action &a, int me);      // marks the step done when its action is taken
     std::map<std::size_t, std::string> abilityOf_; // log entry -> the ability id that wrote it
     struct Playing
     {

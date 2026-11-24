@@ -156,6 +156,16 @@ namespace umbra::campaign
         out.mustFree = j.value("mustFree", false);
         out.noRevive = j.value("noRevive", std::vector<int>{});
         out.startHp = j.value("startHp", std::map<std::string, int>{});
+        for (const json &g : j.value("guide", json::array()))
+        {
+            GuideDef step{g.value("unit", ""), g.contains("move") && g["move"].is_string() ? g["move"].get<std::string>() : "", g.value("do", ""),
+                          g.value("target", ""), g.value("pick", ""), g.value("when", ""), g.value("tip", ""), g.value("round", 0)};
+            if (g.contains("move") && g["move"].is_array() && g["move"].size() == 2)
+                step.x = g["move"][0].get<int>(), step.y = g["move"][1].get<int>();
+            if (!cast.Find(step.unit))
+                r.Error("guide.unit", "\"" + step.unit + "\" is not in cast.csv");
+            out.guide.push_back(step);
+        }
         out.gimmicks = j.value("gimmicks", json::object());
         out.aimStart = j.value("aims", json::object()).value("start", "");
         out.aimRecap = j.value("aims", json::object()).value("recap", "");

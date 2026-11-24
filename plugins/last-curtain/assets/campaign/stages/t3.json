@@ -78,5 +78,13 @@
     "start": "t3-start",
     "round:2": "t3-breath",
     "end": "t3-end-rite"
-  }
+  },
+  "guide": [
+    {
+      "unit": "player",
+      "when": "breath",
+      "move": "safe",
+      "tip": "t3Safe"
+    }
+  ]
 }

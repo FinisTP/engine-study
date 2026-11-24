@@ -1071,7 +1071,6 @@ TEST_CASE("Armed: the menu lists the targets with keys; Back disarms (campaign p
     REQUIRE(p.MenuKey(2)); // stay
     const std::vector<std::string> ids = RowIds(p);
     const int attack = static_cast<int>(std::ranges::find(ids, "attack") - ids.begin()) + 1;
-    INFO(p.Menu().dump());
     REQUIRE(p.MenuKey(attack));
     // Armed: no panel over the board (feedback 2026-11-24 15:10, note 6); the red squares are the targets.
     CHECK(p.Menu()["rows"].empty());
@@ -1503,4 +1502,64 @@ TEST_CASE("Unease: a tear on an enemy's turn that fades, the lamps stutter now a
     soft.Update(0.0F, true, false, true, 5);
     CHECK(soft.tear < u.tear + 0.3F);
     CHECK(soft.tear < 0.3F);
+}
+
+TEST_CASE("A guided step: one lit square, only its action, only its target, its tip; then free play (the user, 2026-11-24 19:05, point 1)", "[match][play][guide]")
+{
+    const MatchDef def = Data();
+    int enemy = -1;
+    MatchPlay p = AtPlayer(def, [&](MatchState &s) {
+        const int me = Current(s);
+        for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
+            if (s.units[static_cast<std::size_t>(i)].kind == 0 && s.units[static_cast<std::size_t>(i)].faction == 1)
+                enemy = i;
+        // The enemy beside the player; the guided square is another one beside it.
+        s.units[static_cast<std::size_t>(enemy)].cell = static_cast<std::int16_t>(FreeBeside(s, s.units[static_cast<std::size_t>(me)].cell));
+        s.units[static_cast<std::size_t>(me)].hp = s.units[static_cast<std::size_t>(enemy)].hp = 90;
+        s.units[static_cast<std::size_t>(me)].maxHp = s.units[static_cast<std::size_t>(enemy)].maxHp = 90;
+    });
+    const int me = Current(p.State());
+    // Walk to a square beside the enemy (any lit one the rules allow), attack it.
+    int goal = -1;
+    p.MenuKey(1); // move: the range lights
+    for (const int c : p.UiData()["reach"].get<std::vector<int>>())
+        for (int d = 0; d < 4; ++d)
+            if (Neighbour(p.State().board, c, d) == p.State().units[static_cast<std::size_t>(enemy)].cell)
+                goal = c;
+    p.Back();
+    REQUIRE(goal >= 0);
+    MatchPlay::GuideStep step;
+    step.unit = me, step.cell = goal, step.act = "attack", step.target = enemy, step.tip = "move";
+    p.SetGuide({step});
+    // 1. Before moving: only Move; its range is the one square.
+    const auto on = [&] {
+        std::vector<std::string> ids;
+        const nlohmann::json menu = p.Menu(); // kept: iterating a temporary's member dangles
+        for (const auto &r : menu["rows"])
+            if (r["on"].get<bool>())
+                ids.push_back(r["id"]);
+        return ids;
+    };
+    CHECK(on() == std::vector<std::string>{"move"});
+    CHECK_FALSE(p.MenuPick("end"));
+    REQUIRE(p.UiData().contains("guide"));
+    CHECK(p.UiData()["guide"]["cells"].get<std::vector<int>>() == std::vector<int>{goal});
+    REQUIRE(p.MenuKey(1));
+    CHECK(p.UiData()["reach"].get<std::vector<int>>() == std::vector<int>{goal});
+    // 2. Another square does nothing; the lit one walks there; then only Attack, only at its target.
+    const int from = p.State().units[static_cast<std::size_t>(me)].cell;
+    for (const int c : {from - 1, from + 1})
+        if (c != goal && c >= 0)
+            p.Click(c);
+    CHECK(p.State().units[static_cast<std::size_t>(me)].cell == from);
+    p.Click(goal);
+    REQUIRE(p.State().units[static_cast<std::size_t>(me)].cell == goal);
+    for (int i = 0; i < 20 && on().empty(); ++i) // the menu comes back once the walk is told
+        p.Update(0.1F);
+    CHECK(on() == std::vector<std::string>{"attack"});
+    REQUIRE(p.HandleUi("", "act", "attack"));
+    p.Click(p.State().units[static_cast<std::size_t>(enemy)].cell);
+    CHECK(p.State().battle.on);
+    // 3. Done: the guide lets go.
+    CHECK_FALSE(p.UiData().contains("guide"));
 }

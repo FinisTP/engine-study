@@ -256,6 +256,7 @@ bool MatchPlay::Reveal()
 
 void MatchPlay::Act(const Action &action)
 {
+    GuideDone(action, Current(s_));
     // The ability the actor uses, for its bubble: the attack is its first (the basic attack), an ability its slot.
     const int me = Current(s_);
     if (me >= 0)
@@ -318,7 +319,7 @@ void MatchPlay::RevealAll()
 
 bool MatchPlay::Do(const Action &action)
 {
-    if (!PlayerTurn() || Check(def_, s_, action) != Why::Ok)
+    if (!PlayerTurn() || Check(def_, s_, action) != Why::Ok || !GuideAllows(action))
         return false;
     SyncHp();
     Act(action);
@@ -388,7 +389,11 @@ void MatchPlay::Update(float dt)
     if (now < 0 || Mine(now) || (fight_[0] >= 0 && !s_.battle.on)) // a finished fight keeps its stage a moment
         return;
     SyncHp();
-    Act(brain_ ? brain_(s_) : ChooseAction(def_, s_, level_));
+    // A guided enemy step (a tutorial's scripted turn): its attack when the rules allow it, else the brain's choice.
+    Action next = brain_ ? brain_(s_) : ChooseAction(def_, s_, level_);
+    if (const GuideStep *g = Guided(); g && g->act == "attack" && g->target >= 0 && Check(def_, s_, {ActionKind::Attack, static_cast<std::int8_t>(g->target)}) == Why::Ok)
+        next = {ActionKind::Attack, static_cast<std::int8_t>(g->target)};
+    Act(next);
     Queue();
     Reveal();
 }
@@ -553,6 +558,9 @@ nlohmann::json MatchPlay::UiData() const
     static const char *roles[] = {"attacker", "defender", "supporter", "speedster", "allrounder"};
     j["unit"] = {{"unit", shown}, {"name", Name(shown)}, {"sprite", Sprite(shown)}, {"portrait", Portrait(Sprite(shown))}, {"side", u.faction}, {"role", Word("roles", roles[static_cast<int>(c.role)])},
                  {"level", u.level}, {"hp", u.hp}, {"maxHp", u.maxHp}, {"essence", u.essence}};
+    // 2b. A guided step: its tip (match words "guide") and the squares it lets you walk to.
+    if (const GuideStep *g = Guided(); g && PlayerTurn())
+        j["guide"] = {{"tip", Word("guide", g->tip)}, {"cells", GuideCells()}};
     // 3. The player's turn: the move range (or an armed ability's range), the actions, the targets.
     if (PlayerTurn() && !s_.battle.on)
     {
@@ -560,8 +568,10 @@ nlohmann::json MatchPlay::UiData() const
         {
             nlohmann::json reach = nlohmann::json::array(), path = nlohmann::json::array();
             const auto r = Reach();
+            const std::vector<int> only = GuideCells();
             for (std::size_t i = 1; i < r.size(); ++i)
-                reach.push_back(r[i].first);
+                if (!Guided() || std::ranges::find(only, r[i].first) != only.end())
+                    reach.push_back(r[i].first);
             for (int c = hover_; c >= 0 && c != r[0].first;)
             {
                 const auto it = std::ranges::find(r, c, &std::pair<int, int>::first);
@@ -692,6 +702,133 @@ nlohmann::json MatchPlay::UiData() const
     return j;
 }
 
+const MatchPlay::GuideStep *MatchPlay::Guided() const
+{
+    // The first step not done whose unit is acting now (in its round, and its moment if it names one).
+    const int me = Current(s_);
+    for (const GuideStep &g : guide_)
+        if (!g.done && g.unit == me && (g.round == 0 || g.round == s_.round))
+        {
+            if (g.when == "breath" && Telegraphs(s_, shown_).empty())
+                return nullptr;
+            return &g;
+        }
+    return nullptr;
+}
+
+std::vector<int> MatchPlay::GuideCells() const
+{
+    const GuideStep *g = Guided();
+    if (!g || Chose())
+        return {};
+    std::vector<int> out;
+    const auto r = Reach();
+    const int target = g->target >= 0 ? g->target : [&] { // the nearest foe standing
+        int best = -1, far = 1 << 20;
+        const int me = Current(s_);
+        for (int t = 0; t < static_cast<int>(s_.units.size()); ++t)
+            if (Up(s_.units[U(t)]) && s_.units[U(t)].faction != s_.units[U(me)].faction && s_.units[U(t)].faction >= 0)
+                if (const int d = std::abs(s_.units[U(t)].cell % s_.board.width - s_.units[U(me)].cell % s_.board.width) +
+                                  std::abs(s_.units[U(t)].cell / s_.board.width - s_.units[U(me)].cell / s_.board.width); d < far)
+                    best = t, far = d;
+        return best;
+    }();
+    const nlohmann::json marks = Telegraphs(s_, shown_);
+    for (std::size_t i = 1; i < r.size(); ++i)
+    {
+        const int c = r[i].first;
+        bool ok = c == g->cell || (g->with >= 0 && c == s_.units[U(g->with)].cell);
+        for (int d = 0; g->toward && target >= 0 && d < 4; ++d)
+            ok |= Neighbour(s_.board, c, d) == s_.units[U(target)].cell;
+        if (g->safe)
+            ok = std::ranges::none_of(marks, [&](const nlohmann::json &m) { return m.value("cell", -1) == c; });
+        if (ok)
+            out.push_back(c);
+    }
+    return out;
+}
+
+bool MatchPlay::GuideAllows(const std::string &row) const
+{
+    const GuideStep *g = Guided();
+    if (!g)
+        return true;
+    // 1. Before moving: walk if there is somewhere to go, else act from here.
+    if (!Chose())
+        return (g->cell >= 0 || g->with >= 0 || g->toward || g->safe) && !GuideCells().empty() ? row == "move" : row == "stay";
+    // 2. Moved: only the step's action (an ability through Ky nang); none named: anything. When the action
+    //    can't be taken from here (no one in reach), ending the turn is the way out (never stuck).
+    if (g->act.empty())
+        return true;
+    if (row == "end")
+        return !GuidePossible();
+    if (g->act == "attack")
+        return row == "attack" || row.starts_with("target:");
+    if (g->act.starts_with("ability:"))
+        return row == "skills" || row.starts_with("target:") || (row.starts_with("ability:") && [&] {
+                   const Unit &u = s_.units[U(Current(s_))];
+                   const int slot = std::stoi(row.substr(8));
+                   return slot < static_cast<int>(u.abilities.size()) && u.abilities[U(slot)] >= 0 && def_.abilities[U(u.abilities[U(slot)])].id == g->act.substr(8);
+               }());
+    return row == "end";
+}
+
+bool MatchPlay::GuidePossible() const
+{
+    // Whether the step's action can be taken now, at its target if it names one.
+    const GuideStep *g = Guided();
+    const int me = Current(s_);
+    if (!g || me < 0)
+        return false;
+    const Unit &u = s_.units[U(me)];
+    for (int t = 0; t < static_cast<int>(s_.units.size()); ++t)
+    {
+        if (g->target >= 0 && t != g->target)
+            continue;
+        if (g->act == "attack" && Check(def_, s_, {ActionKind::Attack, static_cast<std::int8_t>(t)}) == Why::Ok)
+            return true;
+        for (int slot = 0; g->act.starts_with("ability:") && slot < static_cast<int>(u.abilities.size()); ++slot)
+            if (u.abilities[U(slot)] >= 0 && def_.abilities[U(u.abilities[U(slot)])].id == g->act.substr(8) &&
+                Check(def_, s_, {ActionKind::BoardAbility, static_cast<std::int8_t>(slot), static_cast<std::int8_t>(t)}) == Why::Ok)
+                return true;
+    }
+    return false;
+}
+
+bool MatchPlay::GuideAllows(const Action &a) const
+{
+    const GuideStep *g = Guided();
+    if (!g)
+        return true;
+    const int target = a.kind == ActionKind::Attack ? a.a : a.b;
+    switch (a.kind)
+    {
+    case ActionKind::Attack: return g->act == "attack" && (g->target < 0 || target == g->target);
+    case ActionKind::BoardAbility: return GuideAllows("ability:" + std::to_string(a.a)) && (g->target < 0 || target == g->target);
+    case ActionKind::EndTurn: return g->act.empty() || g->act == "end" || !GuidePossible();
+    case ActionKind::Undo: return false;
+    case ActionKind::BattleAbility: {
+        const Unit &u = s_.units[U(Current(s_))];
+        return g->pick.empty() || (a.a >= 0 && a.a < static_cast<int>(u.abilities.size()) && u.abilities[U(a.a)] >= 0 && def_.abilities[U(u.abilities[U(a.a)])].id == g->pick);
+    }
+    default: return true;
+    }
+}
+
+void MatchPlay::GuideDone(const Action &a, int me)
+{
+    // The step ends with its action (a battle pick, an attack or ability, or the turn's end).
+    for (GuideStep &g : guide_)
+        if (!g.done && g.unit == me)
+        {
+            const bool picked = a.kind == ActionKind::BattleAbility && !g.pick.empty();
+            const bool acted = g.pick.empty() && (a.kind == ActionKind::Attack || a.kind == ActionKind::BoardAbility);
+            if (picked || acted || a.kind == ActionKind::EndTurn)
+                g.done = true;
+            return;
+        }
+}
+
 std::vector<std::pair<int, int>> MatchPlay::Reach() const
 {
     // 1. Breadth first from the unit, asking Check for each step as if the unit stood there.
@@ -773,6 +910,8 @@ void MatchPlay::Click(int cell)
     }
     if (!moving_)
         return; // a square is walked to only after Di chuyen
+    if (const std::vector<int> only = GuideCells(); Guided() && std::ranges::find(only, cell) == only.end())
+        return; // a guided step: only its square
     const auto reach = Reach();
     std::vector<int> path;
     for (int c = cell; c != from;)
@@ -1186,8 +1325,10 @@ nlohmann::json MatchPlay::Menu() const
     };
     const auto row = [&](const std::string &id, const std::string &label, const std::string &note, bool off, const std::string &why, bool sub,
                          const std::string &tip = "") {
-        // The tip on hover: why it is off, else what it does.
-        rows.push_back({{"id", id}, {"label", label + (sub ? "  \u00bb" : "")}, {"note", note}, {"off", off}, {"on", !off}, {"why", why},
+        // The tip on hover: why it is off, else what it does. A guided step leaves only its row on, lit.
+        const bool guided = Guided() && GuideAllows(id) && !off;
+        off |= !GuideAllows(id);
+        rows.push_back({{"id", id}, {"label", label + (sub ? "  \u00bb" : "")}, {"note", note}, {"off", off}, {"on", !off}, {"why", why}, {"guided", guided},
                         {"tip", off && !why.empty() ? why : tip}, {"key", std::to_string(rows.size() + 1)}, {"icon", icon(id)}});
     };
     const nlohmann::json actions = Chose() ? Actions() : nlohmann::json::array();
@@ -1250,7 +1391,7 @@ bool MatchPlay::MenuKey(int n)
 
 bool MatchPlay::MenuPick(const std::string &id)
 {
-    if (!PlayerTurn() || s_.battle.on)
+    if (!PlayerTurn() || s_.battle.on || !GuideAllows(id))
         return false;
     if (id == "skills" || id == "items")
         return submenu_ = id, true;

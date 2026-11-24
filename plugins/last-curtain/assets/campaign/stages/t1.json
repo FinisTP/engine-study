@@ -74,5 +74,19 @@
   "scenes": {
     "start": "t1-start",
     "end": "t1-rescue"
-  }
+  },
+  "guide": [
+    {
+      "unit": "player",
+      "round": 1,
+      "move": [
+        4,
+        4
+      ],
+      "do": "attack",
+      "target": "rat_specter",
+      "pick": "basic",
+      "tip": "t1"
+    }
+  ]
 }

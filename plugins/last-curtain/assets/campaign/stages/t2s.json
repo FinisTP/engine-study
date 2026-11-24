@@ -75,5 +75,14 @@
   "scenes": {
     "start": "t2s-start",
     "end": "t2s-end"
-  }
+  },
+  "guide": [
+    {
+      "unit": "bao",
+      "move": "toward",
+      "do": "attack",
+      "pick": "dao_mo",
+      "tip": "t2sScalpel"
+    }
+  ]
 }

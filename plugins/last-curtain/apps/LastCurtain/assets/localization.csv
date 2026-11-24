@@ -273,6 +273,11 @@ match.end.score,Điểm,Score
 match.goals.all,Hạ hết bóng ma,Defeat every enemy
 match.goals.down,Hạ {name},Defeat {name}
 match.goals.free,Cắt dây cho {name},Cut {name} free
+match.guide.t1,"Bấm Di chuyển, rồi bấm ô sáng ngay trước con chuột. Đứng đó, chọn Đánh, rồi chọn Đánh thường.","Press Move, then the lit square right before the rat. From there choose Attack, then Basic attack."
+match.guide.t2Share,"Bấm Di chuyển, rồi bấm ô của bà Mai. Hai người chung một ô sẽ đánh chung một trận. Rồi kết thúc lượt.","Press Move, then Ba Mai's square. Two on one square fight one battle together. Then end the turn."
+match.guide.t2Tend,"Lượt bà Mai: mở Kỹ năng, chọn Chăm sóc, rồi chọn chính bạn. Vết thương đang ăn sâu.","Ba Mai's turn: open Skills, choose Tend, then choose yourself. The wound is eating deeper."
+match.guide.t2sScalpel,"Đưa bác sĩ Bảo tới sát một cái bóng, chọn Đánh, rồi chọn Dao mổ. Nó mạnh hơn, và lấy của ông 1 HP.","Bring Doctor Bao beside a shadow, choose Attack, then Scalpel. It hits harder, and takes 1 HP from him."
+match.guide.t3Safe,"Hàng gạch đỏ sắp bị thổi. Bấm Di chuyển, rồi bước ra một ô không đỏ.","The red row is about to be breathed on. Press Move, then step onto a square that is not red."
 match.hints.act,"Chọn việc: tấn công, kỹ năng, vật phẩm, hoặc Kết thúc lượt.","Choose an action: attack, an ability, an item, or End turn."
 match.hints.battle,Tới lượt chọn: chọn đòn (và đánh ai).,Your pick: choose a blow (and whom to strike).
 match.hints.event,Chọn cách làm; xúc xắc quyết định kết quả.,Choose what to do; the dice decide how it goes.

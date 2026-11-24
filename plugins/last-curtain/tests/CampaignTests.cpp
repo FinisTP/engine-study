@@ -1320,3 +1320,27 @@ TEST_CASE("Every stage, ticket, cast member, skill, recipe and memory has its te
     text.Fill(t1);
     CHECK(t1.title == "The Stranger");
 }
+
+#include <StageGuide.hpp>
+
+TEST_CASE("Tutorials guide each lesson's first use: T1 walks to the lit square before the rat and attacks it with the basic attack (the user, 2026-11-24 19:05, point 1)")
+{
+    const match::MatchDef def = MatchData();
+    for (const campaign::StageDef &st : TheStages())
+    {
+        INFO(st.id);
+        const bool tutorial = st.id == "t1" || st.id == "t2" || st.id == "t2s" || st.id == "t3";
+        CHECK(st.guide.empty() != tutorial);
+        const campaign::BuiltStage b = campaign::BuildStage(def, TheCast(), TheGrowth(), st, {{"player", st.level, {}}, {"mai", st.level, {}}, {"bao", st.level, {}}}, 0, {}, 3);
+        for (const MatchPlay::GuideStep &g : GuideFor(st, b))
+            CHECK(g.unit >= 0); // every step names someone in the fight
+    }
+    const campaign::StageDef t1 = TheStages().front();
+    const campaign::BuiltStage b = campaign::BuildStage(def, TheCast(), TheGrowth(), t1, {{"player", 1, {}}}, 0, {}, 3);
+    const std::vector<MatchPlay::GuideStep> steps = GuideFor(t1, b);
+    REQUIRE(steps.size() == 1);
+    CHECK(steps[0].cell == 4 * t1.width + 4);
+    CHECK(steps[0].act == "attack");
+    CHECK(b.who[static_cast<std::size_t>(steps[0].target)] == "rat_specter");
+    CHECK(steps[0].pick == "basic");
+}

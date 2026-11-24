@@ -197,6 +197,7 @@
                     "action": "menu",
                     "arg": "{r.id}",
                     "disabled": "{r.off}",
+                    "selected": "{r.guided}",
                     "tip": "{r.tip}"
                   }
                 ]

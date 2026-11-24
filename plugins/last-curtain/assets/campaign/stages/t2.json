@@ -57,5 +57,21 @@
   "scenes": {
     "start": "t2-start",
     "end": "t2-end"
-  }
+  },
+  "guide": [
+    {
+      "unit": "mai",
+      "round": 1,
+      "do": "ability:tend",
+      "target": "player",
+      "tip": "t2Tend"
+    },
+    {
+      "unit": "player",
+      "round": 1,
+      "move": "with:mai",
+      "do": "end",
+      "tip": "t2Share"
+    }
+  ]
 }
