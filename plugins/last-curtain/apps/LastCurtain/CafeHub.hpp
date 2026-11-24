@@ -22,9 +22,9 @@ public:
     std::string Give(const std::string &keepsake);                          // a keepsake from storage: its memory's scene
     void SceneDone(const umbra::campaign::Facts &chosen);                   // the scene's facts: a memory comes back, a version is picked
     void Update(float dt);
+    void Toast(std::string text); // a line in the corner for three seconds
 
 private:
-    void Toast(std::string text);
     const umbra::match::MatchDef &def_;
     const umbra::campaign::Cast &cast_;
     const umbra::campaign::Recipes &recipes_;

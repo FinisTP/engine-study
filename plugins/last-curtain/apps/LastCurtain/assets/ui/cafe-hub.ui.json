@@ -7,11 +7,25 @@
     "style": "layer",
     "children": [
       {
-        "type": "image",
-        "anchor": "fill",
-        "image": "{hub.backdrop}",
-        "fit": "cover",
-        "visible": "{hub.backdrop}"
+        "type": "list",
+        "items": "{room.labels}",
+        "as": "l",
+        "entry": {
+          "type": "stack",
+          "style": "plain",
+          "align": "center",
+          "at": "{l.at}",
+          "children": [
+            {
+              "type": "button",
+              "style": "act",
+              "text": "{l.name}",
+              "action": "talk",
+              "arg": "{l.who}",
+              "selected": "{l.talk}"
+            }
+          ]
+        }
       },
       {
         "type": "stack",
@@ -23,7 +37,7 @@
         "style": "float",
         "gap": 6,
         "size": [
-          340,
+          380,
           0
         ],
         "children": [
@@ -35,25 +49,27 @@
           {
             "type": "text",
             "style": "muted",
-            "text": "{words.cafeHint}"
+            "text": "{words.cafeHint}",
+            "wrap": true,
+            "size": [
+              340,
+              0
+            ]
           },
           {
-            "type": "list",
-            "items": "{hub.people}",
-            "as": "p",
-            "gap": 5,
-            "entry": {
-              "type": "button",
-              "style": "act",
-              "size": [
-                300,
-                0
-              ],
-              "text": "{p.name}",
-              "action": "talk",
-              "arg": "{p.who}",
-              "selected": "{p.talk}"
-            }
+            "type": "text",
+            "style": "mine",
+            "text": "{words.walking} {room.who}"
+          },
+          {
+            "type": "button",
+            "style": "act",
+            "size": [
+              300,
+              0
+            ],
+            "text": "{words.switch}",
+            "action": "switch"
           },
           {
             "type": "list",
@@ -125,6 +141,17 @@
           "style": "float",
           "text": "{t.text}"
         }
+      },
+      {
+        "type": "text",
+        "anchor": "bottom",
+        "offset": [
+          0,
+          -28
+        ],
+        "style": "float",
+        "text": "{room.prompt}",
+        "visible": "{room.prompt}"
       }
     ]
   }

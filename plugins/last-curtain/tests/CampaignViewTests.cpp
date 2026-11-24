@@ -239,3 +239,58 @@ TEST_CASE("A scripted walk through slice 1: three story wins, the cafe brings Ti
     CHECK(back.joined.contains("ti"));
     CHECK(back.rooms["sk_props"].refill == 1);
 }
+
+#include <CampaignRoom.hpp>
+
+#include <fstream>
+#include <glm/geometric.hpp>
+
+namespace
+{
+    nlohmann::json CafeRoomFile()
+    {
+        nlohmann::json room = nlohmann::json::parse(std::ifstream(data / "../cafe/room.json"));
+        room["campaign"] = nlohmann::json::parse(std::ifstream(data / "cafe-room.json"));
+        return room;
+    }
+}
+
+TEST_CASE("The campaign cafe is a room: walk, talk with E, brew at the counter, switch who walks (the user, 2026-11-24)")
+{
+    CampaignRoom room(CafeRoomFile(), {"player", "bao", "mai"}, {"lethanh"});
+    CHECK(room.Active() == "player");
+    // 1. Everyone stands somewhere; the active one walks, the others wait at their places.
+    REQUIRE(room.People().size() == 3); // Le Thanh, Bao, Ba Mai (the player walks)
+    // 2. Walk up to Le Thanh behind the counter: E talks to her. The counter stops the walk.
+    for (int i = 0; i < 400 && room.Interact() != "talk:lethanh"; ++i)
+    {
+        const glm::vec2 to = glm::vec2{6.0F, 1.5F} - room.Position();
+        room.Move(glm::length(to) > 0.01F ? glm::normalize(to) : glm::vec2{0.0F}, 0.02F);
+    }
+    CHECK(room.Interact() == "talk:lethanh");
+    CHECK(room.Position().y > 1.0F); // stopped at the counter
+    // 3. Switch: Bao walks now from where the player stood; the player waits at Bao's... own place.
+    const glm::vec2 where = room.Position();
+    room.Switch();
+    CHECK(room.Active() == "bao");
+    CHECK(glm::length(room.Position() - where) < 0.01F);
+    bool playerStands = false;
+    for (const auto &p : room.People())
+        playerStands |= p.who == "player";
+    CHECK(playerStands);
+    room.Switch(), room.Switch();
+    CHECK(room.Active() == "player");
+    // 4. The door and the brew spot.
+    room.Place({11.2F, 7.3F});
+    CHECK(room.Interact() == "door");
+    room.Place({2.8F, 1.6F});
+    CHECK(room.Interact() == "brew");
+    room.Place({0.9F, 6.3F});
+    CHECK(room.Interact() == "notebook");
+    // 5. A click walks there on its own.
+    room.Place({6.0F, 6.0F});
+    room.WalkTo({8.0F, 6.0F});
+    for (int i = 0; i < 200; ++i)
+        room.Update(0.02F);
+    CHECK(glm::length(room.Position() - glm::vec2{8.0F, 6.0F}) < 0.2F);
+}

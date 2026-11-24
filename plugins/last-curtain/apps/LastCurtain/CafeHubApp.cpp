@@ -2,6 +2,8 @@
 
 #include "Analog.hpp"
 #include "CafeHub.hpp"
+#include "CafeRoom.hpp"
+#include "CampaignRoom.hpp"
 #include "DialogApp.hpp"
 #include "GameContext.hpp"
 #include "NotebookView.hpp"
@@ -13,6 +15,8 @@
 #include <chrono>
 #include <fstream>
 #include <thread>
+
+using umbra::platform::InputKey;
 
 int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umbra::campaign::Save &save, const umbra::campaign::Speaker &player,
                const std::filesystem::path &capture, int frames)
@@ -33,23 +37,45 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
     for (const auto &f : std::filesystem::directory_iterator(folder / "stages"))
         if (campaign::StageDef s; loaded && campaign::LoadStage(f.path(), cast, def, folder / "scenes", s, d))
             stages.push_back(s);
-    nlohmann::json words;
+    nlohmann::json words, room, spots;
     if (std::ifstream in(assets / "campaign-words.json"); in)
         words = nlohmann::json::parse(in, nullptr, false);
+    if (std::ifstream in(assets.RootOf("cafe/room.json") / "cafe/room.json"); in)
+        room = nlohmann::json::parse(in, nullptr, false);
+    if (std::ifstream in(folder / "cafe-room.json"); in)
+        spots = nlohmann::json::parse(in, nullptr, false);
     umbra::night::GameOptions options;
     if (!umbra::night::LoadOptions(assets / "options.csv", options, d))
         options = {};
     for (const umbra::core::Diagnostic &e : d)
         umbra::diagnostics::Error(umbra::core::Format(e));
     Screens &screens = *game.screens;
-    if (!loaded || words.is_discarded() || !screens.Ready())
+    if (!loaded || words.is_discarded() || room.is_discarded() || spots.is_discarded() || !screens.Ready())
         return 0;
     const umbra::night::AnalogScreen analog = umbra::night::LoadAnalog(umbra::night::AnalogPath(), options);
     screens.SetTextScale(analog.TextScale());
 
-    // 2. The loop: the hub, the brew screen over it, scenes between.
+    // 2. The room: the player and the allies walk (Tab), Le Thanh keeps the counter; each by its cast sprite.
     CafeHub hub(def, cast, recipes, memories, talks, stages, save, static_cast<int>(options.boostCapPerStat));
     Notebook book(def, cast, memories, save);
+    std::vector<std::string> party{"player"};
+    std::map<std::string, std::string> sprites{{"player", player.gender == "male" ? "player_male" : "player_female"}};
+    const nlohmann::json people = hub.Data()["people"]; // kept: a temporary's items would dangle
+    for (const nlohmann::json &p : people)
+    {
+        const std::string who = p["who"];
+        if (who != "lethanh")
+            party.push_back(who);
+        if (const campaign::CastMember *m = cast.Find(who); m && !m->sprite.empty())
+            sprites[who] = m->sprite;
+    }
+    room["campaign"] = spots;
+    CampaignRoom walk(room, party, {"lethanh"});
+    const umbra::cafe::CafeDef noGuests; // the campaign's café has no ghost guests
+    CafeRoom view(game.renderer, assets, noGuests, def);
+    for (const auto &[who, sprite] : sprites)
+        view.Load(sprite);
+    const glm::vec2 roomSize{room["size"][0].get<float>(), room["size"][1].get<float>()};
     screens.Ui().Open("cafe-hub");
     bool brewing = false;
     std::string picked; // a general drink waiting for whom
@@ -87,6 +113,25 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
         const glm::vec2 pixels{static_cast<float>(width), static_cast<float>(height)};
         const umbra::ui::UiInput uiInput = Screens::MapInput(game.input, {static_cast<float>(game.window.GetWidth()), static_cast<float>(game.window.GetHeight())}, pixels);
 
+        // 3. Walking (WASD, the arrows, a click on the floor), E and Tab, while no screen is over the room.
+        const bool free = !brewing && !screens.Ui().IsOpen("notebook");
+        std::string act; // what E (or the HUD's button) asks for this frame
+        if (free)
+        {
+            const auto held = [&](InputKey a, InputKey b) { return game.input.IsKeyHeld(a) || game.input.IsKeyHeld(b); };
+            walk.Move({(held(InputKey::D, InputKey::Right) ? 1.0F : 0.0F) - (held(InputKey::A, InputKey::Left) ? 1.0F : 0.0F),
+                       (held(InputKey::S, InputKey::Down) ? 1.0F : 0.0F) - (held(InputKey::W, InputKey::Up) ? 1.0F : 0.0F)},
+                      dt);
+            if (game.input.IsKeyPressed(InputKey::E) || game.input.IsKeyPressed(InputKey::Space))
+                act = "use";
+            if (game.input.IsKeyPressed(InputKey::Tab))
+                act = "switch";
+        }
+        walk.Update(dt);
+        view.Follow(walk.Position(), roomSize, dt);
+        const std::string near = walk.Interact();
+        view.DrawCampaign(walk, sprites, near, drawList);
+
         // 3. The screens' data: lack lines in words, who a general drink can go to.
         nlohmann::json data;
         data["hub"] = hub.Data();
@@ -112,10 +157,23 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
         for (auto &slot : data["book"]["detail"]["slots"]) // a slot's item by its Vietnamese name
             slot["label"] = slot["item"] == "" ? words.value("empty", std::string()) : words.value("items", nlohmann::json::object()).value(slot["item"].get<std::string>(), slot["item"].get<std::string>());
         data["words"] = words;
+        data["room"]["who"] = walk.Active() == "player" ? campaign::FillTokens("{player}", player, cast) : cast.Find(walk.Active()) ? cast.Find(walk.Active())->name : walk.Active();
+        data["room"]["labels"] = nlohmann::json::array();
+        for (const nlohmann::json &p : data["hub"]["people"])
+            for (const CampaignRoom::Person &person : walk.People())
+                if (person.who == p["who"].get<std::string>())
+                    if (const auto at = view.Above(person.at, 2.05F, pixels))
+                        data["room"]["labels"].push_back({{"at", {at->x, at->y}}, {"who", person.who}, {"name", p["name"]}, {"talk", p["talk"]}, {"near", near == "talk:" + person.who}});
+        data["room"]["prompt"] = near.empty() ? "" : words.value("press", std::string()) + " " +
+                                                      (near.starts_with("talk:") ? words.value("talkTo", std::string()) : words.value(near, std::string()));
+        bool uiTook = false;
         for (const umbra::ui::UiAction &a : screens.Ui().Update(data, pixels, uiInput, drawList.ui))
         {
             game.sounds->Play("click");
-            if (a.action == "talk")
+            uiTook = true;
+            if (a.action == "switch")
+                act = "switch";
+            else if (a.action == "talk")
                 play(hub.Talk(a.arg));
             else if (a.action == "notebook" || (a.screen == "notebook" && a.action == "close"))
             {
@@ -158,6 +216,26 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
             else if (a.action == "leave")
                 result = 1, done = true;
         }
+        // 4. E at a person talks (a toast when they have nothing new), at the counter brews, at the board
+        // opens the notebook, at the door leaves; Tab hands the walk to the next ally.
+        if (act == "switch")
+            walk.Switch(), game.sounds->Play("click");
+        else if (act == "use" && near.starts_with("talk:"))
+        {
+            const std::string who = near.substr(5), scene = hub.Talk(who);
+            if (scene.empty())
+                hub.Toast((cast.Find(who) ? cast.Find(who)->name : who) + " " + words.value("noTalk", std::string()));
+            play(scene);
+        }
+        else if (act == "use" && near == "brew")
+            brewing = true, screens.Ui().Open("brew");
+        else if (act == "use" && near == "notebook")
+            screens.Ui().Open("notebook");
+        else if (act == "use" && near == "door")
+            result = 1, done = true;
+        if (uiInput.click && !uiTook && free)
+            if (const auto at = view.Floor(uiInput.mouse, pixels, roomSize))
+                walk.WalkTo(*at);
         if (++frame == lastFrame && !capture.empty())
             game.renderer.CaptureNextFrame([&](const umbra::core::TextureData &picture) {
                 std::vector<std::uint8_t> png;
@@ -171,7 +249,6 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
             break;
         std::this_thread::sleep_for(std::chrono::milliseconds{1});
     }
-    (void)brewing;
     screens.Ui().Close("brew"), screens.Ui().Close("notebook"), screens.Ui().Close("cafe-hub");
     return result;
 }

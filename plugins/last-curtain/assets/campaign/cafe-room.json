@@ -1,0 +1,17 @@
+{
+  "format": "umbra.lc-cafe-room",
+  "version": 1,
+  "note": "The campaign's cafe (CampaignRoom.hpp): the career cafe's room (assets/cafe/room.json) with where each person stands and the three spots. at: metres, x across, y deep.",
+  "people": {
+    "lethanh": [6.0, 1.5],
+    "bao": [4.8, 4.6],
+    "mai": [7.2, 4.6],
+    "ti": [9.8, 4.6],
+    "player": [3.6, 5.2]
+  },
+  "spots": [
+    {"kind": "brew", "at": [2.8, 1.5]},
+    {"kind": "notebook", "at": [0.8, 6.4]},
+    {"kind": "door", "at": [11.2, 7.4]}
+  ]
+}

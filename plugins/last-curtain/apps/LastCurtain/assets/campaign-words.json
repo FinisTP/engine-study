@@ -42,7 +42,12 @@
   "giay_gap_tu": "Gấp tư, mép sờn. Có người đã giữ nó rất kỹ."
  },
  "cafe": "Quán nước dưới hầm",
- "cafeHint": "Bấm vào một người để trò chuyện. Ánh vàng: có chuyện mới.",
+ "cafeHint": "WASD hoặc bấm sàn để đi · E: nói chuyện, pha chế, sổ tay, ra cửa · Tab: đổi người. Tên vàng: có chuyện mới.",
+ "switch": "Đổi người (Tab)",
+ "walking": "Đang đi:",
+ "press": "[E]",
+ "talkTo": "Trò chuyện",
+ "noTalk": "chưa có chuyện gì mới.",
  "canBrew": "Có thể pha chế",
  "brew": "Pha chế",
  "door": "Ra cửa",

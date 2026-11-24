@@ -1,5 +1,7 @@
 #include "CafeRoom.hpp"
 
+#include "CampaignRoom.hpp"
+
 #include <Lighting.hpp>
 #include <MatchDef.hpp>
 #include <MeshData.hpp>
@@ -108,9 +110,13 @@ umbra::core::Camera CafeRoom::Camera() const
 
 void CafeRoom::Update(const umbra::night::CafePlay &play, float dt)
 {
+    Follow(play.Position(), {play.Room()["size"][0].get<float>(), play.Room()["size"][1].get<float>()}, dt);
+}
+
+void CafeRoom::Follow(glm::vec2 at, glm::vec2 size, float dt)
+{
     // 1. The camera eases after the walker across the room; the walker faces the way it goes.
     clock_ += dt;
-    const glm::vec2 at = play.Position(), size{play.Room()["size"][0].get<float>(), play.Room()["size"][1].get<float>()};
     const glm::vec3 want{std::clamp(at.x, 3.5F, size.x - 3.5F), 0.0F, std::clamp(at.y, 3.0F, size.y - 2.0F)};
     look_ += (want - look_) * std::min(1.0F, dt * 3.0F);
     if (std::abs(at.x - last_.x) > 0.001F)
@@ -131,9 +137,8 @@ void CafeRoom::Figure(const std::string &sprite, glm::vec3 feet, float height, f
     out.items.back().surface = out.SurfaceIndex("sprite");
 }
 
-void CafeRoom::Draw(const umbra::night::CafePlay &play, umbra::core::DrawList &out) const
+void CafeRoom::DrawShell(const nlohmann::json &room, umbra::core::DrawList &out) const
 {
-    const nlohmann::json &room = play.Room();
     const glm::vec2 size{room["size"][0].get<float>(), room["size"][1].get<float>()};
     // 1. Light: indoors and warm; a lamp over each table and two over the counter.
     umbra::core::EnvironmentSettings settings;
@@ -161,6 +166,13 @@ void CafeRoom::Draw(const umbra::night::CafePlay &play, umbra::core::DrawList &o
         Box(out, box_, World((lo + hi) * 0.5F, h * 0.5F), {hi.x - lo.x, h, hi.y - lo.y}, Hex(counter ? 0x3b2418 : 0x5a3a26));
         Box(out, box_, World((lo + hi) * 0.5F, h + 0.02F), {hi.x - lo.x + 0.06F, 0.04F, hi.y - lo.y + 0.06F}, Hex(counter ? 0x8a6a3a : 0x7a5434)); // the top
     }
+}
+
+void CafeRoom::Draw(const umbra::night::CafePlay &play, umbra::core::DrawList &out) const
+{
+    const nlohmann::json &room = play.Room();
+    const glm::vec2 size{room["size"][0].get<float>(), room["size"][1].get<float>()};
+    DrawShell(room, out);
     // 3. The spots: stations on the counter, the sign, the bucket, the board, the door; the one in reach glows.
     const int near = play.Near();
     for (int i = 0; i < static_cast<int>(room["spots"].size()); ++i)
@@ -254,4 +266,38 @@ nlohmann::json CafeRoom::Labels(const umbra::night::CafePlay &play, glm::vec2 pi
             labels.push_back({{"at", {at->x, at->y - (b["seat"].get<int>() >= 0 ? 48.0F : 0.0F)}}, {"say", b["text"]}});
     }
     return labels;
+}
+
+void CafeRoom::DrawCampaign(const CampaignRoom &room, const std::map<std::string, std::string> &sprites, const std::string &near, umbra::core::DrawList &out) const
+{
+    const nlohmann::json &r = room.Room();
+    const glm::vec2 size{r["size"][0].get<float>(), r["size"][1].get<float>()};
+    DrawShell(r, out);
+    // 1. The spots: the brewing on the counter, the notice board, the door; the one E would use glows.
+    for (const nlohmann::json &spot : r["campaign"]["spots"])
+    {
+        const std::string kind = spot["kind"];
+        const glm::vec2 p = At(spot);
+        const float glow = kind == near ? 0.6F + 0.3F * std::sin(clock_ * 5.0F) : 0.0F;
+        if (kind == "brew")
+            Box(out, box_, World({p.x, 0.5F}, 1.2F), {0.8F, 0.4F, 0.5F}, Hex(0x6b4a2a), glow + 0.1F);
+        else if (kind == "notebook")
+            Box(out, box_, World({0.05F, p.y}, 1.5F), {0.08F, 1.2F, 1.6F}, Hex(0xc9b48a), glow + 0.1F);
+        else if (kind == "door")
+            Box(out, box_, World({size.x - 0.02F, p.y - 0.4F}, 1.2F), {0.1F, 2.4F, 1.1F}, Hex(0x5a1a1a), glow + 0.1F);
+    }
+    // 2. Everyone standing at their place (a gold ring under the one E would talk to), then the walker.
+    const auto sprite = [&](const std::string &who) { return sprites.contains(who) ? sprites.at(who) : std::string("specter"); };
+    for (const CampaignRoom::Person &p : room.People())
+    {
+        if (near == "talk:" + p.who)
+            Box(out, box_, World(p.at, 0.01F), {0.9F, 0.02F, 0.6F}, Hex(0xd8b25a), 0.6F + 0.3F * std::sin(clock_ * 5.0F));
+        Figure(sprite(p.who), World(p.at, 0.02F + 0.02F * std::sin(clock_ * 1.5F + p.at.x)), 1.75F, p.at.x < size.x * 0.5F ? 1.0F : -1.0F, out);
+    }
+    Figure(sprite(room.Active()), World(room.Position(), 0.02F + (walk_ > 0.0F ? 0.04F * std::abs(std::sin(walk_ * 9.0F)) : 0.0F)), 1.8F, facing_, out);
+}
+
+std::optional<glm::vec2> CafeRoom::Above(glm::vec2 floor, float height, glm::vec2 pixels) const
+{
+    return ScreenPoint(World(floor, height), pixels);
 }
