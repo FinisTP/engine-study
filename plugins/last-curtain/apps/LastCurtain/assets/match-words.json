@@ -1,7 +1,8 @@
 {
   "banner": {
     "title": "Turn {n}",
-    "text": "{n} turns left"
+    "text": "{n} turns left",
+    "first": "The fight begins"
   },
   "misc": {
     "enemyTurn": "{name}'s turn · hold {hurry} to hurry · {skip} skips",
@@ -89,8 +90,10 @@
     "answer": "Look into the room",
     "perform": "Perform",
     "end": "End turn",
-    "hpNote": "{n} HP",
-    "essenceNote": "{n} essence"
+    "hpNote": "-{n} HP",
+    "essenceNote": "{n} essence",
+    "aim": "Deals {d}",
+    "aimCounter": "Deals {d} · takes {c} back"
   },
   "tiles": {
     "stage": "The stage: one at a time. Perform here to score what you carry.",
@@ -112,7 +115,8 @@
     "level": "Level up: choose one of the cards.",
     "treasure": "Turn one card over, then take what it gives.",
     "event": "Choose what to do; the dice decide how it goes.",
-    "watch": "Their turn: watch, or press Skip to hurry it."
+    "watch": "Their turn: watch, or press Skip to hurry it.",
+    "start": "Your turn: Move to walk, Stay to act from here."
   },
   "end": {
     "score": "Score",
@@ -181,15 +185,16 @@
     "costIcon": "art/ui/match/icons/essence.png"
   },
   "abilityText": {
-    "strike": "In battle: a blow of {power} plus your Attack. Costs {cost} HP.",
-    "shield": "In battle: blocks {power} of every blow for the rest of it. Costs {cost} HP.",
-    "heal": "{where}: heals {power} HP, an ally up to {range} tiles away ({reach}). Costs {cost} HP.",
-    "hit": "On the board: strikes a foe up to {range} tiles away ({reach}) for {power} plus your Attack. Costs {cost} HP.",
+    "strike": "In battle: a blow of {power} plus your Attack.",
+    "shield": "In battle: blocks {power} of every blow for the rest of it.",
+    "heal": "{where}: heals {power} HP, an ally up to {range} tiles away ({reach}).",
+    "hit": "On the board: strikes a foe up to {range} tiles away ({reach}) for {power} plus your Attack.",
     "firststrike": "Always: you pick first in every round of a battle.",
     "straight": "counted straight, through walls",
     "walk": "walking through doors",
     "board": "On the board",
-    "battle": "In battle"
+    "battle": "In battle",
+    "cost": "Costs {cost} HP."
   },
   "goals": {
     "down": "Defeat {name}",
@@ -237,5 +242,9 @@
     "title": "The Last Curtain",
     "treasure": "Treasure",
     "yourSide": "Your side"
+  },
+  "outcome": {
+    "won": "Victory",
+    "lost": "Defeat"
   }
 }

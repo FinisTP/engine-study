@@ -108,7 +108,8 @@
     "wallLow": 0.45,
     "wallArt": "art/ui/match/wall.jpg",
     "wallRepeat": 0.8,
-    "wallShade": 0.55
+    "wallShade": 0.55,
+    "lift": 1.4
   },
   "walk": {
     "note": "Figures walk square by square to where the rules put them (display only).",
@@ -144,11 +145,30 @@
     "light": 25,
     "near": 2.0,
     "pairGap": 1.2,
-    "pairDepth": 0.8
+    "pairDepth": 0.8,
+    "lift": 1.1
   },
   "reach": {
     "note": "The player's reach and targets wash the tile half over in their colour, blinking.",
     "wash": 0.5,
     "glow": 0.35
+  },
+  "moves": {
+    "note": "A move's camera (feedback 2026-11-24 15:10, note 10): by motion, a push-in to nearer x the distance and a turn of yaw degrees toward the side the mover faces, rising and falling over seconds.",
+    "attack": {
+      "seconds": 0.6,
+      "nearer": 0.82,
+      "yaw": 10
+    },
+    "power": {
+      "seconds": 0.8,
+      "nearer": 0.9,
+      "yaw": -6
+    },
+    "down": {
+      "seconds": 1.0,
+      "nearer": 0.8,
+      "yaw": 0
+    }
   }
 }

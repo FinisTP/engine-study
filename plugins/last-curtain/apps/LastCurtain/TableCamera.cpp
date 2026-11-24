@@ -61,6 +61,7 @@ umbra::core::Camera TableCamera::Camera() const
     {
         // A scene's shot: the seat at its tilt, turned yaw degrees around the target.
         const float t = glm::radians(shotTilt_), y = glm::radians(shotYaw_);
+        camera.target.y += shotLift_;
         camera.position = camera.target + shotDistance_ * glm::vec3{std::cos(t) * std::sin(y), std::sin(t), std::cos(t) * std::cos(y)};
         camera.farPlane = std::max(camera.farPlane, 2.0F * shotDistance_ + 60.0F);
         return camera;
@@ -73,7 +74,7 @@ umbra::core::Camera TableCamera::Camera() const
     //    seat glides from the table's (scaled, so the rooms first appear where the tiles were).
     const float e = roomT_ * roomT_ * (3.0F - 2.0F * roomT_);
     const glm::vec3 target = camera.target * roomScale;
-    camera.target = target + glm::vec3{0.0F, 0.7F * e, 0.0F};
+    camera.target = target + glm::vec3{0.0F, roomLift_ * e, 0.0F};
     camera.position = glm::mix(target + up * (distance_ * roomScale), camera.target + glm::normalize(glm::vec3{5.2F, 5.1F, 7.5F}) * roomDistance_, e);
     camera.farPlane = std::max(camera.farPlane, 400.0F);
     return camera;

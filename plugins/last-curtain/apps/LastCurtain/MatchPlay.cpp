@@ -257,7 +257,7 @@ bool MatchPlay::Do(const Action &action)
 
 bool MatchPlay::Quiet() const
 {
-    return shown_ == s_.log.size() && !s_.battle.on && fight_[0] < 0 && !bannerOn_;
+    return shown_ == s_.log.size() && !s_.battle.on && fight_[0] < 0 && !bannerOn_ && !OutcomeDue();
 }
 
 void MatchPlay::Update(float dt)
@@ -275,6 +275,15 @@ void MatchPlay::Update(float dt)
     for (Bubble &b : bubbles_)
         b.left -= dt;
     std::erase_if(bubbles_, [](const Bubble &b) { return b.left <= 0.0F; });
+    // 0. A stage's outcome: once the last blow is told and the fight's view has gone, the banner holds a moment.
+    if (OutcomeDue() && fight_[0] < 0)
+    {
+        if (outcomeLeft_ < 0.0F)
+            outcomeLeft_ = options_.turnBannerSeconds * 1.5F, sounds_.push_back("turn");
+        if ((outcomeLeft_ -= dt) <= 0.0F)
+            outcomeDone_ = true;
+        return;
+    }
     // 1. A new round's banner, once everything before it has been told.
     if (BannerDue())
     {
@@ -360,8 +369,8 @@ bool MatchPlay::HandleUi(const std::string &screen, const std::string &action, c
         if (arg == "undo")
         {
             armed_.clear();
-            if (u.cell != s_.now.origin)
-                Do({ActionKind::Undo});
+            if (u.cell != s_.now.origin && Do({ActionKind::Undo}))
+                snaps_.push_back(me); // the figure jumps back, no walk
             chosen_ = -1;
             return true;
         }
@@ -405,7 +414,7 @@ bool MatchPlay::HandleUi(const std::string &screen, const std::string &action, c
 std::string MatchPlay::Screen() const
 {
     if (s_.over && shown_ == s_.log.size())
-        return "end";
+        return !Campaign() ? "end" : OutcomeDue() && fight_[0] < 0 ? "banner" : ""; // a stage: its outcome, then its scenes
     if (BannerDue())
         return "banner";
     if (eventCell_ >= 0)
@@ -463,7 +472,7 @@ nlohmann::json MatchPlay::UiData() const
     // 3. The player's turn: the move range (or an armed ability's range), the actions, the targets.
     if (PlayerTurn() && !s_.battle.on)
     {
-        if (!Chose())
+        if (!Chose() && moving_) // the squares light only after Di chuyen
         {
             nlohmann::json reach = nlohmann::json::array(), path = nlohmann::json::array();
             const auto r = Reach();
@@ -481,8 +490,10 @@ nlohmann::json MatchPlay::UiData() const
             j["path"] = path;
             j["hint"] = Word("hints", "move");
         }
-        else
+        else if (Chose())
             j["actions"] = Actions(), j["hint"] = Word("hints", "act");
+        else
+            j["hint"] = Word("hints", "start"); // the turn's first choice: walk or act from here
         if (Armed())
         {
             nlohmann::json targets = nlohmann::json::array(), range = nlohmann::json::array();
@@ -588,7 +599,8 @@ nlohmann::json MatchPlay::UiData() const
     j["logTail"] = std::vector<std::string>(log_.end() - std::min<std::ptrdiff_t>(6, static_cast<std::ptrdiff_t>(log_.size())), log_.end());
     j["logOpen"] = logOpen_;
     j["logClosed"] = !logOpen_;
-    j["banner"] = {{"title", Fill(Word("banner", "title"), {{"n", std::to_string(s_.round)}})},
+    j["banner"] = {{"title", OutcomeDue() ? Word("outcome", s_.winner == 0 ? "won" : "lost")
+                             : Campaign() && s_.round == 1 ? Word("banner", "first") : Fill(Word("banner", "title"), {{"n", std::to_string(s_.round)}})},
                    {"text", TurnsLeft(def_, s_) < 0 ? std::string() : Fill(Word("banner", "text"), {{"n", std::to_string(TurnsLeft(def_, s_))}})}}; // no limit: no count
     return j;
 }
@@ -672,6 +684,8 @@ void MatchPlay::Click(int cell)
         chosen_ = key, moving_ = false;
         return;
     }
+    if (!moving_)
+        return; // a square is walked to only after Di chuyen
     const auto reach = Reach();
     std::vector<int> path;
     for (int c = cell; c != from;)
@@ -724,12 +738,18 @@ nlohmann::json MatchPlay::Actions() const
             Why w = any([&](int t) { return Action{ActionKind::BoardAbility, static_cast<std::int8_t>(slot), static_cast<std::int8_t>(t)}; });
             if (w != Why::Ok && !s_.now.acted && u.hp <= a.hpCost)
                 w = Why::TooCostly;
-            list.push_back({{"id", "ability:" + std::to_string(slot)}, {"label", a.name}, {"note", hp(a.hpCost)}, {"target", static_cast<int>(a.target)},
+            // What it does: its story first when the stage knows one ("lore"), then its numbers in words.
+            const std::string lore = Word("lore", a.id), text = AbilityText(id);
+            list.push_back({{"id", "ability:" + std::to_string(slot)}, {"label", a.name}, {"note", a.hpCost > 0 ? hp(a.hpCost) : ""}, {"target", static_cast<int>(a.target)},
+                            {"tip", lore.empty() ? text : lore + "\n" + text},
                             {"enabled", w == Why::Ok}, {"off", w != Why::Ok}, {"why", w == Why::Ok ? "" : w == Why::NothingHere ? Word("why", "NoTarget") : WhyText(w)}});
         }
     for (int slot = 0; slot < maxItems; ++slot)
         if (u.items[U(slot)] >= 0)
+        {
             add("item:" + std::to_string(slot), def_.items[U(u.items[U(slot)])].name, "", Check(def_, s_, {ActionKind::UseItem, static_cast<std::int8_t>(slot)}));
+            list.back()["tip"] = def_.items[U(u.items[U(slot)])].text;
+        }
     for (int f = 0; f < static_cast<int>(s_.floor.size()); ++f)
         if (s_.floor[U(f)].cell == u.cell)
             add("pickup", Word("actions", "pickup"), "", Check(def_, s_, {ActionKind::PickUp, static_cast<std::int8_t>(f)}));
@@ -763,19 +783,23 @@ nlohmann::json MatchPlay::Forecast() const
             continue;
         nlohmann::json f = UnitNumbers(t);
         f["kind"] = "target";
+        // The same numbers as PreviewFor (the best strike each way); shown as one number when the roll cannot vary.
+        const nlohmann::json v = PreviewFor(a);
+        const auto range = [](int lo, int hi) { return lo == hi ? std::to_string(hi) : std::to_string(lo) + "\u2013" + std::to_string(hi); };
+        f["dealtMin"] = v["min"], f["dealtMax"] = v["max"], f["counterMin"] = v["counterMin"], f["counterMax"] = v["counterMax"];
+        f["dealtText"] = range(v["min"].get<int>(), v["max"].get<int>());
+        f["counterText"] = v["counterMax"].get<int>() > 0 ? range(v["counterMin"].get<int>(), v["counterMax"].get<int>()) : std::string();
+        f["warn"] = v["warn"];
+        f["line"] = Fill(Word("actions", f["counterText"] == "" ? "aim" : "aimCounter"), {{"d", f["dealtText"]}, {"c", f["counterText"]}}) +
+                    (v["warn"] == "" ? "" : "  " + v["warn"].get<std::string>());
         if (a.kind == ActionKind::Attack)
-        {
-            const int strike = s_.units[U(me)].abilities[0];
-            const Dice &d = def_.abilities[U(strike)].dice;
-            f["dealtMin"] = Damage(def_, s_, strike, me, t, d.count);
-            f["dealtMax"] = Damage(def_, s_, strike, me, t, d.count * d.sides);
             f["healed"] = 0, f["cost"] = 0;
-        }
         else
         {
             const umbra::match::Forecast p = Preview(def_, s_, a);
-            f["dealtMin"] = p.dealtMin, f["dealtMax"] = p.dealtMax, f["healed"] = p.healed, f["cost"] = p.cost;
+            f["healed"] = p.healed, f["cost"] = p.cost;
         }
+        (void)me;
         return f;
     }
     // 2. The stage, an announced spawn, a unit, else the square's kind.
@@ -839,8 +863,14 @@ nlohmann::json MatchPlay::BattleData() const
                     const Why w = Check(def_, s_, a);
                     const umbra::match::Forecast f = Preview(def_, s_, a);
                     const std::string label = def_.abilities[U(id)].name + (foe >= 0 ? ": " + Name(foe) : "");
+                    // One number when the roll cannot vary; the cost only when there is one; what it does as the tip.
+                    const int lo = f.healed > 0 ? f.healed : f.dealtMin, hi = f.healed > 0 ? f.healed : f.dealtMax;
+                    const std::string amount = hi <= 0 ? "" : lo == hi ? std::to_string(hi) : std::to_string(lo) + "\u2013" + std::to_string(hi);
                     picks.push_back({{"slot", foe >= 0 ? std::to_string(slot) + ":" + std::to_string(foe) : std::to_string(slot)}, {"label", label},
                                      {"dealtMin", f.dealtMin}, {"dealtMax", f.dealtMax}, {"healed", f.healed}, {"cost", f.cost},
+                                     {"dealtText", amount}, {"costText", f.cost > 0 ? "-" + std::to_string(f.cost) + " HP" : ""},
+                                     {"icon", std::string("art/ui/campaign/icon/") + (f.healed > 0 ? "cmd_items.png" : strike ? "cmd_attack.png" : "cmd_skills.png")},
+                                     {"tip", w == Why::Ok ? AbilityText(id) : WhyText(w)},
                                      {"enabled", w == Why::Ok}, {"off", w != Why::Ok}, {"why", w == Why::Ok ? "" : WhyText(w)}});
                 }
             }
@@ -855,9 +885,10 @@ std::string MatchPlay::AbilityText(int ability) const
     const AbilityDef &a = def_.abilities[U(ability)];
     static const char *classes[] = {"strike", "shield", "heal", "hit", "firststrike"};
     const std::string dice = a.dice.count > 0 ? std::to_string(a.dice.count) + "d" + std::to_string(a.dice.sides) : std::to_string(a.power);
-    return Fill(Word("abilityText", classes[static_cast<int>(a.kind)]),
-                {{"power", dice}, {"cost", std::to_string(a.hpCost)}, {"range", std::to_string(a.range)},
-                 {"reach", Word("abilityText", a.reach == RangeBy::Straight ? "straight" : "walk")}, {"where", Word("abilityText", a.use == Use::Board ? "board" : "battle")}});
+    const std::string text = Fill(Word("abilityText", classes[static_cast<int>(a.kind)]),
+                                  {{"power", dice}, {"range", std::to_string(a.range)},
+                                   {"reach", Word("abilityText", a.reach == RangeBy::Straight ? "straight" : "walk")}, {"where", Word("abilityText", a.use == Use::Board ? "board" : "battle")}});
+    return a.hpCost > 0 ? text + " " + Fill(Word("abilityText", "cost"), {{"cost", std::to_string(a.hpCost)}}) : text; // no cost, no words for it
 }
 
 nlohmann::json MatchPlay::EndData() const
@@ -1056,28 +1087,16 @@ nlohmann::json MatchPlay::Menu() const
         const std::string cmd = id == "undo" ? "move" : id == "stay" ? "attack" : id.starts_with("cut:") ? "cut" : id.starts_with("ability:") ? "skills" : id;
         return cmd == "move" || cmd == "attack" || cmd == "skills" || cmd == "items" || cmd == "end" || cmd == "cut" ? dir + "icon/cmd_" + cmd + ".png" : "";
     };
-    const auto row = [&](const std::string &id, const std::string &label, const std::string &note, bool off, const std::string &why, bool sub) {
+    const auto row = [&](const std::string &id, const std::string &label, const std::string &note, bool off, const std::string &why, bool sub,
+                         const std::string &tip = "") {
+        // The tip on hover: why it is off, else what it does.
         rows.push_back({{"id", id}, {"label", label + (sub ? "  \u00bb" : "")}, {"note", note}, {"off", off}, {"on", !off}, {"why", why},
-                        {"key", std::to_string(rows.size() + 1)}, {"icon", icon(id)}});
+                        {"tip", off && !why.empty() ? why : tip}, {"key", std::to_string(rows.size() + 1)}, {"icon", icon(id)}});
     };
     const nlohmann::json actions = Chose() ? Actions() : nlohmann::json::array();
     const auto starts = [](const nlohmann::json &a, const char *prefix) { return a["id"].get<std::string>().starts_with(prefix); };
     if (Armed())
-    {
-        // 1. Armed: each target, by name.
-        title = Word("actions", "target");
-        int k = 0;
-        for (const Action &a : ArmedActions())
-        {
-            const nlohmann::json f = PreviewFor(a);
-            const std::string note = f.is_null() ? std::string()
-                                                 : Fill(Word("actions", f["counterMax"].get<int>() > 0 ? "previewCounter" : "preview"),
-                                                        {{"min", std::to_string(f["min"].get<int>())}, {"max", std::to_string(f["max"].get<int>())},
-                                                         {"cmin", std::to_string(f["counterMin"].get<int>())}, {"cmax", std::to_string(f["counterMax"].get<int>())}}) +
-                                                       (f["warn"].get<std::string>().empty() ? "" : "  " + f["warn"].get<std::string>());
-            row("target:" + std::to_string(k++), Name(a.kind == ActionKind::Attack ? a.a : a.b), note, false, "", false);
-        }
-    }
+        return {{"title", ""}, {"rows", rows}}; // 1. Armed: the target is picked on the board (red squares), no panel
     else if (moving_ && !Chose())
         return {{"title", ""}, {"rows", rows}}; // 2. Choosing a square: no menu over the board
     else if (!Chose())
@@ -1093,7 +1112,7 @@ nlohmann::json MatchPlay::Menu() const
         title = Word("actions", submenu_);
         for (const auto &a : actions)
             if (starts(a, submenu_ == "skills" ? "ability:" : "item:"))
-                row(a["id"], a["label"], a["note"], a["off"], a["why"], false);
+                row(a["id"], a["label"], a["note"], a["off"], a["why"], false, a.value("tip", std::string()));
     }
     else
     {

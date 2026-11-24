@@ -91,6 +91,14 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         umbra::diagnostics::Error(umbra::core::Format(d));
     if (!loaded || words.is_discarded())
         return 1;
+    // A stage: ability names in Vietnamese and each one's story (campaign-words.json "abilities", "abilityLore").
+    if (hooks && !analog.english && settingsWords.is_object())
+    {
+        for (umbra::match::AbilityDef &a : def.abilities)
+            if (settingsWords.contains("abilities") && settingsWords["abilities"].contains(a.id))
+                a.name = settingsWords["abilities"][a.id].get<std::string>();
+        words["lore"] = settingsWords.value("abilityLore", nlohmann::json::object());
+    }
 
     // 2. The shared window, renderer, screens and sounds; the table.
     umbra::core::FrameClock &clock = game.clock;
@@ -214,14 +222,20 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         int hover = -1;
         if (play)
         {
-            if (!paused) // hold Space on their turn to hurry the beats (P16)
+            // A stage's board first finishes its opening shot: nothing plays, no scene starts, until it has (note 4).
+            const bool opening = hooks && table.InScene();
+            if (!paused && !opening) // hold Space on their turn to hurry the beats (P16)
                 play->Update(hooks && !play->PlayerTurn() ? dt * analog.EnemyScale() * (game.keys.Held(input, "hurry") ? 3.0F : 1.0F) : dt);
-            if (hooks && hooks->beat && !paused)
+            if (hooks && hooks->beat && !paused && !opening)
             {
-                // A stage's scenes, between beats, over the board: the camera close on whoever speaks.
+                // A stage's scenes, between beats, over the board: the camera close on whoever speaks; a narrated
+                // line keeps the last speaker in view.
+                std::string last;
                 const SceneBehind board = [&](umbra::core::DrawList &out, float sdt, const std::string &speaker) {
                     const auto &names = play->Names();
-                    if (const auto it = std::ranges::find(names, speaker); it != names.end())
+                    if (!speaker.empty())
+                        last = speaker;
+                    if (const auto it = std::ranges::find(names, last); !last.empty() && it != names.end())
                         table.LookAt(play->State(), static_cast<int>(it - names.begin())), table.CloseUp(true);
                     table.Update(sdt);
                     table.Draw(play->State(), nlohmann::json::object(), -1, out);
@@ -234,6 +248,8 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                 table.Play(unit, motion);
             for (const std::string &cue : play->TakeSounds())
                 sounds.Play(cue);
+            for (const int unit : play->TakeSnaps())
+                table.Snap(unit); // an undone walk jumps back
             {
                 const nlohmann::json told = play->UiData();
                 table.SetFight(told.value("fight", std::vector<int>{}), told.value("picking", -1));
@@ -284,11 +300,12 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         nlohmann::json ui = play ? play->UiData() : nlohmann::json::object();
         if (play)
             table.Draw(play->State(), ui, hover, drawList);
-        const std::string screen = paused ? (hooks ? "campaign-pause" : "pause") : play ? (play->Screen().empty() ? "" : "match-" + play->Screen()) : "match-pick";
+        const bool opening = hooks && play && table.InScene(); // the board's opening shot: no screen, no HUD yet
+        const std::string screen = paused ? (hooks ? "campaign-pause" : "pause") : opening ? "" : play ? (play->Screen().empty() ? "" : "match-" + play->Screen()) : "match-pick";
         show(screen);
         // A staged fight has the screen to itself: the HUD steps away (the user, 2026-11-20).
         // A campaign stage that is over: the HUD and labels go at once, before its end scene and the result.
-        if (const bool hud = play && !ui.contains("fight") && !(hooks && play->State().over); screens.Ready() && play && hud != hudOpen)
+        if (const bool hud = play && !opening && !ui.contains("fight") && !(hooks && play->State().over); screens.Ready() && play && hud != hudOpen)
         {
             if (hud)
                 screens.Ui().Open(hudName);
@@ -313,10 +330,23 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
             {
                 // Spoken lines ride on their speaker's card as a bubble.
                 data["labels"] = table.Labels(play->State(), pixels);
+                // Armed: the card at the hovered target says what the action would do (no menu while aiming).
+                if (hooks && ui.contains("forecast") && ui["forecast"].is_object() && ui["forecast"].value("kind", "") == "target")
+                    if (const auto at = table.HeadOnScreen(play->State(), ui["forecast"].value("unit", -1), pixels))
+                        data["aim"] = {{{"at", {at->x, at->y - 24.0F * screens.Ui().UiScale()}}, {"name", ui["forecast"].value("name", "")}, {"line", ui["forecast"]["line"]}}};
                 // The actions dock beside the one acting (to the right of its head).
-                if (ui.contains("actions") || (hooks && !data["menu"]["rows"].empty()))
-                    if (const auto at = table.HeadOnScreen(play->State(), Current(play->State()), pixels))
-                        data["dock"] = {{{"at", {at->x + 190.0F, at->y + 150.0F}}}};
+                // The menu waits until the walk has arrived, then stands clear of the figure: its near edge a
+                // little right of the head (left when that would leave the screen), in the UI's own scale.
+                const int actor = Current(play->State());
+                const float k = screens.Ui().UiScale(), half = 150.0F * k, gap = 70.0F * k;
+                if ((ui.contains("actions") || (hooks && !data["menu"]["rows"].empty())) && !table.Walking(actor))
+                    if (const auto at = table.HeadOnScreen(play->State(), actor, pixels))
+                    {
+                        const float right = at->x + gap + half, left = at->x - gap - half;
+                        data["dock"] = {{{"at", {right + half < pixels.x ? right : left, at->y + 190.0F * k}}}};
+                    }
+                if (hooks && table.Walking(actor))
+                    data["menu"]["rows"] = nlohmann::json::array();
                 for (auto &l : data["labels"])
                     for (const auto &b : ui["bubbles"])
                         if (b["unit"] == l["unit"])

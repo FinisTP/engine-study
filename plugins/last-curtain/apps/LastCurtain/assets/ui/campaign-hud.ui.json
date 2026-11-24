@@ -196,10 +196,34 @@
                     "action": "menu",
                     "arg": "{r.id}",
                     "disabled": "{r.off}",
-                    "tip": "{r.why}"
+                    "tip": "{r.tip}"
                   }
                 ]
               }
+            }
+          ]
+        }
+      },
+      {
+        "type": "list",
+        "items": "{aim}",
+        "as": "a",
+        "entry": {
+          "type": "stack",
+          "style": "lcPanel",
+          "gap": 4,
+          "at": "{a.at}",
+          "align": "center",
+          "children": [
+            {
+              "type": "text",
+              "style": "heading",
+              "text": "{a.name}"
+            },
+            {
+              "type": "text",
+              "style": "text",
+              "text": "{a.line}"
             }
           ]
         }

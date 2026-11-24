@@ -97,6 +97,7 @@ public:
     static std::string Sound(const umbra::match::LogEntry &e);
     std::vector<std::pair<int, std::string>> TakeMoves() { return std::exchange(moves_, {}); }
     std::vector<std::string> TakeSounds() { return std::exchange(sounds_, {}); }
+    std::vector<int> TakeSnaps() { return std::exchange(snaps_, {}); } // units put straight back (an undone walk)
     // The 2d6 total to reach whose odds are nearest an event's percent chance (13: never, 2: always).
     static int DiceTarget(int chance);
     static const char *LogName(umbra::match::LogKind kind);
@@ -175,6 +176,12 @@ private:
     std::vector<Bubble> bubbles_;
     void Speak(const umbra::match::LogEntry &e, std::size_t index); // a written line beside its speaker
     std::vector<std::pair<int, std::string>> moves_;
-    std::vector<std::string> sounds_;                 // the room whose event card is open, -1 none
+    std::vector<std::string> sounds_;
+    std::vector<int> snaps_;
+    // A campaign stage's outcome banner (Chien thang / That bai): shown once the end is told, before its scenes.
+    [[nodiscard]] bool Campaign() const { return !names_.empty(); }
+    [[nodiscard]] bool OutcomeDue() const { return Campaign() && s_.over && shown_ == s_.log.size() && !outcomeDone_; }
+    float outcomeLeft_ = -1.0F;
+    bool outcomeDone_ = false;                 // the room whose event card is open, -1 none
     std::function<umbra::match::Action(const umbra::match::MatchState &)> brain_;
 };

@@ -238,6 +238,25 @@ glm::vec3 MatchTable::Shown(const MatchState &s, int unit) const
     return glm::mix(walked(unit), stand, e);
 }
 
+float MatchTable::Kick() const
+{
+    if (kickT_ < 0.0F || kickT_ >= kickSeconds_ || kickSeconds_ <= 0.0F)
+        return 0.0F;
+    return std::sin(3.14159265F * kickT_ / kickSeconds_);
+}
+
+bool MatchTable::Walking(int unit) const { return unit >= 0 && U(unit) < route_.size() && !route_[U(unit)].empty(); }
+
+void MatchTable::Snap(int unit)
+{
+    // Forget where it was: Walk then puts it straight on its square (as for a respawn).
+    if (unit < 0 || U(unit) >= lastCell_.size())
+        return;
+    lastCell_[U(unit)] = -1, route_[U(unit)].clear();
+    if (U(unit) < states_.size())
+        states_[U(unit)].Base("idle");
+}
+
 void MatchTable::Walk(const MatchState &s, float dt)
 {
     const Board &b = s.board;
@@ -322,6 +341,12 @@ void MatchTable::Play(int unit, const std::string &motion)
     if (static_cast<std::size_t>(unit) >= states_.size())
         states_.resize(U(unit) + 1);
     umbra::night::SpriteState &st = states_[U(unit)];
+    // The move's camera, when match-look.json gives one: it swings toward the side the mover faces.
+    if (const auto moves = look_.find("moves"); moves != look_.end() && moves->contains(motion))
+    {
+        const nlohmann::json &m = (*moves)[motion];
+        kickT_ = 0.0F, kickSeconds_ = m.value("seconds", 0.7F), kickNear_ = m.value("nearer", 0.85F), kickYaw_ = m.value("yaw", 8.0F) * st.facing;
+    }
     if (motion == "down")
         st.Hold("down");
     else if (motion == "revive")
@@ -380,11 +405,17 @@ void MatchTable::Animate(const MatchState &s, float dt)
     {
         const float e = fightT_ * fightT_ * (3.0F - 2.0F * fightT_), q = focusT_ * focusT_ * (3.0F - 2.0F * focusT_);
         const float far = spread * Look("follow", "fit", 0.0F, 2.4F) + Look("follow", "margin", 0.0F, 6.0F);
+        // A move's kick: nearer and turned a little, on top of whatever shot this is.
+        kickT_ = kickT_ < 0.0F ? kickT_ : kickT_ + dt;
+        const float k = Kick(), near = 1.0F - (1.0F - kickNear_) * k, yaw = kickYaw_ * k;
+        view_.SetShotLift(Look("battle", "lift", 0.0F, 0.0F) * e); // the battle view looks up a little: heads clear of the top
         if (e > 0.0F)
-            view_.SetShot(true, view_.Distance() + (Look("battle", "distance", 0.0F, 7.0F) - view_.Distance()) * e, 0.0F,
+            view_.SetShot(true, (view_.Distance() + (Look("battle", "distance", 0.0F, 7.0F) - view_.Distance()) * e) * near, yaw,
                           view_.Tilt() + (Look("battle", "tilt", 0.0F, 30.0F) - view_.Tilt()) * e);
         else if (q > 0.0F && far > view_.Distance())
-            view_.SetShot(true, view_.Distance() + (far - view_.Distance()) * q, 0.0F, view_.Tilt());
+            view_.SetShot(true, (view_.Distance() + (far - view_.Distance()) * q) * near, yaw, view_.Tilt());
+        else if (k > 0.0F)
+            view_.SetShot(true, view_.Distance() * near, yaw, view_.Tilt());
         else
             view_.SetShot(false, 0.0F, 0.0F, 50.0F);
     }
@@ -501,6 +532,7 @@ void MatchTable::Sprite(int index, const Unit &u, glm::vec3 feet, umbra::core::D
 void MatchTable::SetLook(nlohmann::json look)
 {
     look_ = std::move(look);
+    view_.SetRoomLift(Look("rooms", "lift", 0.0F, 0.7F));
     // 1. The fight's backdrops by square kind, then the painted floors each kind may take; a missing picture is skipped.
     backdrops_.clear();
     if (look_.contains("battle") && look_["battle"].contains("backdrops"))
@@ -845,8 +877,9 @@ int MatchTable::Pick(const Board &b, glm::vec2 mouse, glm::vec2 pixels) const
 
 void MatchTable::CloseUp(bool on)
 {
+    // Both seats come nearer: the table's and the room view's (a stage is usually in the room view).
     if (on && before_ < 0.0F)
-        before_ = view_.Distance(), view_.SetDistance(view_.Distance() * 0.55F);
+        before_ = view_.Distance(), roomBefore_ = view_.RoomDistance(), view_.SetDistance(before_ * 0.55F), view_.SetRoomDistance(roomBefore_ * 0.5F);
     else if (!on && before_ >= 0.0F)
-        view_.SetDistance(before_), before_ = -1.0F;
+        view_.SetDistance(before_), view_.SetRoomDistance(roomBefore_), before_ = roomBefore_ = -1.0F;
 }

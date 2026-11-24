@@ -189,6 +189,7 @@ TEST_CASE("The move range and path match the rules; staying is a click on onesel
     const MatchDef def = Data();
     MatchPlay p = AtPlayer(def, [](MatchState &) {});
     const int me = Current(p.State()), from = p.State().units[static_cast<std::size_t>(me)].cell;
+    REQUIRE(p.MenuKey(1)); // Di chuyen: the squares light
     const nlohmann::json reach = p.UiData()["reach"];
     REQUIRE_FALSE(reach.empty());
     CHECK_FALSE(p.UiData().contains("actions"));
@@ -328,6 +329,17 @@ TEST_CASE("The battle screen follows the rules' battle, a hunter's included (T32
     CHECK(b["round"] == 1);
     REQUIRE_FALSE(b["picks"].empty());
     CHECK(b["picks"][0]["dealtMin"].get<int>() >= 1);
+    // 1b. Each pick reads as one number (or a range when the roll varies), its cost only when it costs (note 9),
+    //     and what it does as its tip (note 14).
+    for (const auto &k : b["picks"])
+    {
+        const int lo = k["dealtMin"], hi = k["dealtMax"], cost = k["cost"];
+        CHECK(k["dealtText"] == (lo == hi ? std::to_string(hi) : std::to_string(lo) + "\u2013" + std::to_string(hi)));
+        CHECK(k["costText"] == (cost > 0 ? "-" + std::to_string(cost) + " HP" : ""));
+        CHECK_FALSE(k["label"].get<std::string>().find("cost") != std::string::npos);
+        if (!k["off"].get<bool>())
+            CHECK_FALSE(k["tip"].get<std::string>().empty());
+    }
     REQUIRE(p.HandleUi("battle", "pick", "0"));
     // 2. The bot answers on a beat; the blow's line shows.
     CHECK_FALSE(p.PlayerTurn());
@@ -1047,15 +1059,106 @@ TEST_CASE("Armed: the menu lists the targets with keys; Back disarms (campaign p
     const int attack = static_cast<int>(std::ranges::find(ids, "attack") - ids.begin()) + 1;
     INFO(p.Menu().dump());
     REQUIRE(p.MenuKey(attack));
-    const nlohmann::json rows = p.Menu()["rows"];
-    REQUIRE_FALSE(rows.empty());
-    CHECK(rows[0]["id"].get<std::string>().starts_with("target:"));
+    // Armed: no panel over the board (feedback 2026-11-24 15:10, note 6); the red squares are the targets.
+    CHECK(p.Menu()["rows"].empty());
+    const nlohmann::json targets = p.UiData()["targets"];
+    REQUIRE_FALSE(targets.empty());
     CHECK(p.Back());
     CHECK(RowIds(p) == ids);
     REQUIRE(p.MenuKey(attack));
     const std::size_t lines = p.State().log.size();
-    REQUIRE(p.MenuKey(1));
+    p.Click(targets[0].get<int>());
     CHECK(p.State().log.size() > lines); // the attack happened
+}
+
+TEST_CASE("Skill and item rows: no cost note when free, what it does as the tip, its story first when known (feedback 2026-11-24 15:10, notes 9 and 14)", "[match][play][menu]")
+{
+    const MatchDef def = Data();
+    // Two board skills in the acting unit's slots: one free, one that costs HP (when the data has them).
+    int free = -1, costly = -1;
+    for (int a = 0; a < static_cast<int>(def.abilities.size()); ++a)
+        if (def.abilities[static_cast<std::size_t>(a)].use == Use::Board)
+            (def.abilities[static_cast<std::size_t>(a)].hpCost > 0 ? costly : free) = a;
+    REQUIRE(free >= 0);
+    MatchPlay p = AtPlayer(def, [&](MatchState &s) {
+        Unit &me = s.units[static_cast<std::size_t>(Current(s))];
+        me.abilities[1] = static_cast<std::int8_t>(free), me.abilities[2] = static_cast<std::int8_t>(costly >= 0 ? costly : free);
+    });
+    nlohmann::json words = Words();
+    const Unit &u = p.State().units[static_cast<std::size_t>(Current(p.State()))];
+    int board = -1;
+    for (const int a : u.abilities)
+        if (a >= 0 && def.abilities[static_cast<std::size_t>(a)].use == Use::Board && board < 0)
+            board = a;
+    if (board >= 0)
+        words["lore"][def.abilities[static_cast<std::size_t>(board)].id] = "A line of story.";
+    p.SetWords(words);
+    REQUIRE(p.MenuKey(2)); // stay
+    REQUIRE(p.MenuPick("skills"));
+    const nlohmann::json menu = p.Menu(); // kept: the loop must not outlive it
+    REQUIRE_FALSE(menu["rows"].empty());
+    for (const auto &r : menu["rows"])
+    {
+        const AbilityDef &a = def.abilities[static_cast<std::size_t>(u.abilities[static_cast<std::size_t>(std::stoi(r["id"].get<std::string>().substr(8)))])];
+        CHECK(r["note"] == (a.hpCost > 0 ? "-" + std::to_string(a.hpCost) + " HP" : ""));
+        REQUIRE(r.contains("tip"));
+        CHECK_FALSE(r["tip"].get<std::string>().empty());
+        if (r["off"].get<bool>())
+            CHECK(r["tip"] == r["why"]); // off: the tip says why
+        else if (&a == &def.abilities[static_cast<std::size_t>(board)])
+            CHECK(r["tip"].get<std::string>().starts_with("A line of story."));
+    }
+}
+
+TEST_CASE("No lit squares and no walking before Di chuyen; undo jumps back (feedback 2026-11-24 15:10, notes 2 and 7)", "[match][play][menu]")
+{
+    const MatchDef def = Data();
+    MatchPlay p = AtPlayer(def, [](MatchState &) {});
+    const int me = Current(p.State()), from = p.State().units[static_cast<std::size_t>(me)].cell;
+    // 1. Before Di chuyen: nothing lit; a click on a square it could reach does nothing; the hint says what to pick.
+    CHECK(p.UiData().value("reach", nlohmann::json::array()).empty());
+    CHECK(p.UiData()["hint"] == Words()["hints"]["start"]);
+    REQUIRE(p.MenuKey(1)); // Di chuyen
+    const nlohmann::json reach = p.UiData()["reach"];
+    REQUIRE_FALSE(reach.empty());
+    const int to = reach[0].get<int>();
+    CHECK(p.Back());
+    p.Click(to);
+    CHECK(p.State().units[static_cast<std::size_t>(me)].cell == from);
+    // 2. After it, the click walks; undo puts the figure straight back (a snap, not a walk).
+    REQUIRE(p.MenuKey(1));
+    p.Click(to);
+    CHECK(p.State().units[static_cast<std::size_t>(me)].cell == to);
+    (void)p.TakeSnaps();
+    REQUIRE(p.MenuPick("undo"));
+    CHECK(p.State().units[static_cast<std::size_t>(me)].cell == from);
+    CHECK(p.TakeSnaps() == std::vector<int>{me});
+}
+
+TEST_CASE("A campaign stage opens with a start banner and ends with its outcome before anything else (feedback 2026-11-24 15:10, notes 5 and 11)", "[match][play][flow]")
+{
+    const MatchDef def = Data();
+    MatchState s = NewMatch(def, 7, {MatchDef::Find(def.characters, "bao"), MatchDef::Find(def.characters, "khang"), MatchDef::Find(def.characters, "mai")});
+    const nlohmann::json words = Words();
+    // 1. Round 1 in a stage: the banner says the fight begins, not a turn number.
+    MatchPlay start(def, s, BotLevel::Medium);
+    start.SetWords(words), start.SetOptions(Pace()), start.SetCast(std::vector<std::string>(s.units.size(), "x"), {});
+    CHECK(start.Screen() == "banner");
+    CHECK(start.UiData()["banner"]["title"] == words["banner"]["first"]);
+    // 2. Over: the outcome banner first (not quiet, so no scene starts), then nothing: no end screen in a stage.
+    s.over = true, s.winner = 0;
+    MatchPlay end(def, s, BotLevel::Medium);
+    end.SetWords(words), end.SetOptions(Pace()), end.SetCast(std::vector<std::string>(s.units.size(), "x"), {});
+    CHECK(end.Screen() == "banner");
+    CHECK(end.UiData()["banner"]["title"] == words["outcome"]["won"]);
+    CHECK_FALSE(end.Quiet());
+    end.Update(5.0F);
+    CHECK(end.Screen().empty());
+    CHECK(end.Quiet());
+    // 3. A plain match keeps its end screen.
+    MatchPlay plain(def, s, BotLevel::Medium);
+    plain.SetWords(words), plain.SetOptions(Pace());
+    CHECK(plain.Screen() == "end");
 }
 
 TEST_CASE("Target preview equals the rules' damage; the card shows the hovered unit and can be pinned (campaign plan 5)", "[match][play][preview]")
@@ -1087,15 +1190,18 @@ TEST_CASE("Target preview equals the rules' damage; the card shows the hovered u
     CHECK(f["max"] == best);
     CHECK(f["counterMax"] == counter);
     CHECK(f["min"].get<int>() <= f["max"].get<int>());
-    // 2. Armed, the target row carries the preview in its note.
+    // 2. Armed, hovering the target's square shows the same numbers on its card, one number when the roll cannot vary.
     REQUIRE(p.MenuKey(2)); // stay
     const nlohmann::json main = p.Menu()["rows"];
     for (std::size_t i = 0; i < main.size(); ++i)
         if (main[i]["id"] == "attack")
             REQUIRE(p.MenuKey(static_cast<int>(i) + 1));
-    const nlohmann::json rows = p.Menu()["rows"];
-    REQUIRE_FALSE(rows.empty());
-    CHECK(rows[0]["note"].get<std::string>().find(std::to_string(best)) != std::string::npos);
+    p.Hover(s.units[static_cast<std::size_t>(foe)].cell);
+    const nlohmann::json aimed = p.UiData()["forecast"];
+    REQUIRE(aimed["kind"] == "target");
+    CHECK(aimed["dealtMax"] == best);
+    CHECK(aimed["counterMax"] == counter);
+    CHECK(aimed["dealtText"] == (f["min"] == f["max"] ? std::to_string(best) : std::to_string(f["min"].get<int>()) + "\u2013" + std::to_string(best)));
     // 3. The card: the hovered unit's numbers; pinned, it stays when the mouse leaves.
     p.Hover(s.units[static_cast<std::size_t>(foe)].cell);
     nlohmann::json card = p.HudData()["card"];

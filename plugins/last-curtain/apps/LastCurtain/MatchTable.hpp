@@ -49,6 +49,8 @@ public:
     [[nodiscard]] bool InScene() const { return !scene_.empty(); }
     void StopFollow() { follow_ = false; } // a drag frees the camera until the next turn
     void LookAt(const umbra::match::MatchState &s, int unit); // the camera glides to it (frees it from following)
+    [[nodiscard]] bool Walking(int unit) const; // still on its way to its square
+    void Snap(int unit);                        // its next square is taken at once, no walk (an undone move)
     void CloseUp(bool on); // a scene's camera: down close; off goes back to the distance before
     [[nodiscard]] std::optional<glm::vec2> HeadOnScreen(const umbra::match::MatchState &s, int unit, glm::vec2 pixels) const;
     // The battle view (MatchTable.md): the two fighters stand apart, facing, the camera comes down into their room.
@@ -116,7 +118,10 @@ private:
     std::vector<int> lastCell_;
     nlohmann::json look_;
     TableCamera view_;
-    float before_ = -1.0F; // the seat's distance before a close-up
+    // A move's camera (match-look.json "moves"): a short swing and push-in, sin-shaped over its seconds.
+    float kickT_ = -1.0F, kickSeconds_ = 0.0F, kickYaw_ = 0.0F, kickNear_ = 1.0F;
+    [[nodiscard]] float Kick() const; // 0..1..0 while it plays
+    float before_ = -1.0F, roomBefore_ = -1.0F; // the seats' distances before a close-up (table, room view)
     float clock_ = 0.0F;
     int acting_ = -1, ringUnit_ = -1;
     float ringT_ = 1.0F, sceneT_ = 0.0F;

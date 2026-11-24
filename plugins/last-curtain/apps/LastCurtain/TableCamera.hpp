@@ -28,6 +28,10 @@ public:
         distance_ = distance, minDistance_ = minDistance, maxDistance_ = maxDistance, tilt_ = tilt;
     }
     void SetDistance(float d) { distance_ = d; } // a close-up may go nearer than the wheel can
+    void SetRoomDistance(float d) { roomDistance_ = d; } // the room view's seat, the same way
+    [[nodiscard]] float RoomDistance() const { return roomDistance_; }
+    void SetRoomLift(float metres) { roomLift_ = metres; } // the room view looks this high above the floor
+    void SetShotLift(float metres) { shotLift_ = metres; } // a shot (the battle view) too
     [[nodiscard]] float RoomT() const { return roomT_; } // 0 the table, 1 the room view
     [[nodiscard]] float Distance() const { return distance_; } // the seat's, without a shot
     [[nodiscard]] float Tilt() const { return tilt_; }
@@ -40,6 +44,8 @@ private:
     float seconds_ = 0.0F, elapsed_ = 0.0F;
     float distance_ = 11.0F, minDistance_ = 5.0F, maxDistance_ = 22.0F, tilt_ = 50.0F;
     float roomDistance_ = 11.0F; // metres, in room space
+    float roomLift_ = 0.7F;      // metres above the floor the room view looks at
+    float shotLift_ = 0.0F;
     float roomT_ = 0.0F;
     bool wantRoom_ = false;
     bool bounded_ = false;

@@ -2,7 +2,8 @@
   "note": "Vietnamese words for a campaign fight (draft for the user's review, 2026-11-24). Same keys as match-words.json.",
   "banner": {
     "title": "Lượt {n}",
-    "text": "Còn {n} lượt"
+    "text": "Còn {n} lượt",
+    "first": "Trận đấu bắt đầu"
   },
   "misc": {
     "enemyTurn": "Lượt của {name} · Giữ {hurry} nhanh hơn · {skip} bỏ qua",
@@ -90,8 +91,10 @@
     "answer": "Nhìn vào phòng",
     "perform": "Diễn",
     "end": "Kết thúc lượt",
-    "hpNote": "{n} HP",
-    "essenceNote": "{n} tinh hoa"
+    "hpNote": "-{n} HP",
+    "essenceNote": "{n} tinh hoa",
+    "aim": "Gây {d}",
+    "aimCounter": "Gây {d} · bị trả {c}"
   },
   "tiles": {
     "stage": "Sân khấu: mỗi lần một người.",
@@ -113,7 +116,8 @@
     "level": "Lên cấp: chọn một lá.",
     "treasure": "Lật một lá, rồi nhận thứ nó cho.",
     "event": "Chọn cách làm; xúc xắc quyết định kết quả.",
-    "watch": "Lượt của phe kia: xem, hoặc bấm Bỏ qua cho nhanh."
+    "watch": "Lượt của phe kia: xem, hoặc bấm Bỏ qua cho nhanh.",
+    "start": "Lượt của bạn: Di chuyển để đi, Đứng yên để hành động tại chỗ."
   },
   "end": {
     "score": "Điểm",
@@ -182,15 +186,16 @@
     "costIcon": "art/ui/match/icons/essence.png"
   },
   "abilityText": {
-    "strike": "Trong trận: một đòn {power} cộng Công. Tốn {cost} HP.",
-    "shield": "Trong trận: chặn {power} mỗi đòn tới hết trận. Tốn {cost} HP.",
-    "heal": "{where}: hồi {power} HP cho một đồng đội cách tối đa {range} ô ({reach}). Tốn {cost} HP.",
-    "hit": "Trên bàn: đánh một kẻ địch cách tối đa {range} ô ({reach}), {power} cộng Công. Tốn {cost} HP.",
+    "strike": "Trong trận: một đòn {power} cộng Công.",
+    "shield": "Trong trận: chặn {power} mỗi đòn tới hết trận.",
+    "heal": "{where}: hồi {power} HP cho một đồng đội cách tối đa {range} ô ({reach}).",
+    "hit": "Trên bàn: đánh một kẻ địch cách tối đa {range} ô ({reach}), {power} cộng Công.",
     "firststrike": "Luôn luôn: được chọn trước mỗi hiệp.",
     "straight": "tính thẳng, xuyên tường",
     "walk": "đi qua cửa",
     "board": "Trên bàn",
-    "battle": "Trong trận"
+    "battle": "Trong trận",
+    "cost": "Tốn {cost} HP."
   },
   "goals": {
     "down": "Hạ {name}",
@@ -238,5 +243,9 @@
     "title": "Tấm Màn Cuối",
     "treasure": "Kho báu",
     "yourSide": "Phe mình"
+  },
+  "outcome": {
+    "won": "Chiến thắng",
+    "lost": "Thất bại"
   }
 }

@@ -212,17 +212,39 @@
             "direction": "horizontal",
             "gap": 8,
             "entry": {
-              "type": "button",
-              "style": "act",
-              "size": [
-                0,
-                0
-              ],
-              "text": "{p.label}   {p.dealtMin}-{p.dealtMax}   cost {p.cost} HP",
-              "action": "pick",
-              "arg": "{p.slot}",
-              "disabled": "{p.off}",
-              "tip": "{p.why}"
+              "type": "stack",
+              "direction": "horizontal",
+              "gap": 6,
+              "align": "center",
+              "children": [
+                {
+                  "type": "image",
+                  "image": "{p.icon}",
+                  "size": [
+                    28,
+                    28
+                  ]
+                },
+                {
+                  "type": "button",
+                  "style": "act",
+                  "size": [
+                    0,
+                    0
+                  ],
+                  "text": "{p.label}   {p.dealtText}",
+                  "action": "pick",
+                  "arg": "{p.slot}",
+                  "disabled": "{p.off}",
+                  "tip": "{p.tip}"
+                },
+                {
+                  "type": "text",
+                  "style": "bad",
+                  "text": "{p.costText}",
+                  "visible": "{p.costText}"
+                }
+              ]
             }
           },
           {
