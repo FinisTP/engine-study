@@ -2,15 +2,18 @@
 #   python tools/art/face_edit.py <sprite> <from face> <to face> '<settings json>' [--tag a] [--host 127.0.0.1:8000]
 # Reads art/sprites/<sprite>/face_<from>.png, writes Temp/art-faces/<sprite>_<to>_<tag>.png with the
 # original's cut-out (its alpha) put back, since the pose barely moves. Needs Python 3 only.
-import argparse, io, json, os, struct, sys, time, urllib.parse, urllib.request, uuid, zlib
+import argparse, io, json, os, struct, sys, time, urllib.error, urllib.parse, urllib.request, uuid, zlib
 
 SPRITES = os.path.join('plugins', 'last-curtain', 'apps', 'LastCurtain', 'assets', 'art', 'sprites')
 
 
 def call(host, path, body=None, headers=None):
     request = urllib.request.Request('http://' + host + path, data=body, headers=headers or {})
-    with urllib.request.urlopen(request, timeout=120) as r:
-        return r.read()
+    try:
+        with urllib.request.urlopen(request, timeout=120) as r:
+            return r.read()
+    except urllib.error.HTTPError as e:
+        sys.exit('ComfyUI said %d: %s' % (e.code, e.read().decode('utf-8', 'replace')[:2000]))
 
 
 def upload(host, file):
