@@ -197,6 +197,15 @@
     "free": "Cut {name} free"
   },
   "screens": {
+    "settings": "Settings",
+    "paused": "Paused",
+    "resume": "Resume",
+    "crtOn": "Old TV screen: on",
+    "crtOff": "Old TV screen: off",
+    "vhsOn": "Worn tape: on",
+    "vhsOff": "Worn tape: off",
+    "bigTextOn": "Large text: on",
+    "bigTextOff": "Large text: off",
     "retreat": "Retreat",
     "retreatAsk": "Back to the map. Everything from this room is lost: levels, finds, freed ones.",
     "no": "No",

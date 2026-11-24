@@ -26,7 +26,7 @@ std::pair<std::string, std::string> RunScreen(GameContext &game, const std::stri
     std::vector<umbra::core::Diagnostic> ignored;
     umbra::night::GameOptions options;
     (void)umbra::night::LoadOptions({}, options, ignored);
-    const umbra::night::AnalogScreen analog = umbra::night::LoadAnalog(umbra::night::AnalogPath(), options);
+    umbra::night::AnalogScreen analog = umbra::night::LoadAnalog(umbra::night::AnalogPath(), options);
     const int lastFrame = frames > 0 ? frames : (capture.empty() ? 0 : 3);
     bool captured = false, done = false;
     for (int frame = 0; !done;)
@@ -52,6 +52,8 @@ std::pair<std::string, std::string> RunScreen(GameContext &game, const std::stri
             game.sounds->Play("click");
             if (!handle || !handle(a.action, a.arg, data))
                 picked = {a.action, a.arg}, done = true;
+            else // a kept action may have changed the settings (the CRT switch, say)
+                analog = umbra::night::LoadAnalog(umbra::night::AnalogPath(), options);
         }
         if (++frame == lastFrame && !capture.empty())
             game.renderer.CaptureNextFrame([&](const umbra::core::TextureData &picture) {
@@ -81,6 +83,40 @@ namespace
                 text.replace(at, key.size() + 2, value);
         return text;
     }
+}
+
+umbra::night::AnalogScreen RunSettings(GameContext &game, const nlohmann::json &words)
+{
+    // 1. The settings as saved, and the keys as the player has them (read-only, remapping later).
+    umbra::night::GameOptions options;
+    std::vector<umbra::core::Diagnostic> ignored;
+    (void)umbra::night::LoadOptions({}, options, ignored);
+    umbra::night::AnalogScreen analog = umbra::night::LoadAnalog(umbra::night::AnalogPath(), options);
+    nlohmann::json keys = nlohmann::json::array();
+    const nlohmann::json names = words.value("keyNames", nlohmann::json::object());
+    for (const char *meaning : {"confirm", "back", "next", "endTurn", "skip", "hurry", "log", "pin", "notebook"})
+        keys.push_back({{"name", names.value(meaning, std::string(meaning))}, {"key", game.keys.Name(meaning)}});
+    keys.push_back({{"name", names.value("menu", std::string("menu"))}, {"key", "1-6"}});
+    keys.push_back({{"name", names.value("walk", std::string("walk"))}, {"key", "WASD"}});
+    keys.push_back({{"name", names.value("use", std::string("use"))}, {"key", "E"}});
+    keys.push_back({{"name", names.value("switch", std::string("switch"))}, {"key", "Tab"}});
+    // 2. The screens under it step aside (they would read this screen's data) and come back after.
+    const std::vector<std::string> under = game.screens->Ui().OpenScreens();
+    for (const std::string &name : under)
+        game.screens->Ui().Close(name);
+    // 3. Each change applies at once (Apply) and is saved (Toggle); Close or Back leaves.
+    (void)RunScreen(game, "settings", {{"words", words}, {"analog", analog.Data()}, {"keys", keys}},
+                    [&](const std::string &action, const std::string &, nlohmann::json &data) {
+                        if (!analog.Toggle(action, umbra::night::AnalogPath()))
+                            return false;
+                        game.Apply(analog);
+                        data["analog"] = analog.Data();
+                        return true;
+                    });
+    game.screens->Ui().Close("settings");
+    for (const std::string &name : under)
+        game.screens->Ui().Open(name);
+    return analog;
 }
 
 int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, const std::filesystem::path &saveFile, const std::filesystem::path &capture, int frames)
@@ -117,21 +153,14 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
         umbra::diagnostics::Error(error);
     umbra::night::GameOptions options;
     (void)umbra::night::LoadOptions(assets / "options.csv", options, d);
-    umbra::night::AnalogScreen analog = umbra::night::LoadAnalog(umbra::night::AnalogPath(), options);
-    const auto settings = [&](const std::string &action, const std::string &, nlohmann::json &data) {
-        if (!analog.Toggle(action, umbra::night::AnalogPath()))
-            return false;
-        game.screens->SetTextScale(analog.TextScale());
-        data["analog"] = analog.Data();
-        return true; // a switch: the screen stays
-    };
+    game.Apply(umbra::night::LoadAnalog(umbra::night::AnalogPath(), options)); // full screen, volume, text size as left
     for (bool started = false; !started;)
     {
         const auto [action, arg] = RunScreen(game, "title", {{"words", words}, {"canContinue", has}}, {}, capture, frames);
         if (action == "quit" || !capture.empty())
             return 0;
         if (action == "settings")
-            (void)RunScreen(game, "settings", {{"words", words}, {"analog", analog.Data()}}, settings);
+            (void)RunSettings(game, words);
         else if (action == "continue" && has)
             started = true;
         else if (action == "new")
@@ -236,6 +265,8 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
             data["map"]["plan"] = std::filesystem::exists(assets.RootOf(map.plan) / map.plan) ? map.plan : "";
             view(data);
             const auto [action, arg] = RunScreen(game, "worldmap", data, [&](const std::string &a, const std::string &id, nlohmann::json &shown) {
+                if (a == "settings")
+                    return (void)RunSettings(game, words), true;
                 if (a != "select")
                     return false;
                 selected = id;

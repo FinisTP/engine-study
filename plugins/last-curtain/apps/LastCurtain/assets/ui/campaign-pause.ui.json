@@ -1,0 +1,52 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "root": {
+    "type": "stack",
+    "anchor": "center",
+    "style": "lcPanel",
+    "size": [
+      380,
+      0
+    ],
+    "align": "stretch",
+    "gap": 8,
+    "children": [
+      {
+        "type": "text",
+        "style": "title",
+        "text": "{words.paused}"
+      },
+      {
+        "type": "button",
+        "style": "lcButton",
+        "size": [
+          320,
+          0
+        ],
+        "text": "{words.resume}",
+        "action": "resume"
+      },
+      {
+        "type": "button",
+        "style": "lcButton",
+        "size": [
+          320,
+          0
+        ],
+        "text": "{words.settings}",
+        "action": "settings"
+      },
+      {
+        "type": "button",
+        "style": "lcButton",
+        "size": [
+          320,
+          0
+        ],
+        "text": "{words.retreat}",
+        "action": "retreat"
+      }
+    ]
+  }
+}

@@ -79,3 +79,47 @@ TEST_CASE("The analog screen: strengths from options.csv, the player's two switc
     CHECK(LoadAnalog(file, options).TextScale() == 1.25F);
     CHECK(big.Data()["bigText"] == true);
 }
+
+TEST_CASE("Settings (menus.md D): full screen, effects volume, text speed, enemy speed, language; saved and read back", "[night][options]")
+{
+    GameOptions options;
+    const std::filesystem::path file = std::filesystem::temp_directory_path() / "umbra-settings-test" / "screen.json";
+    std::filesystem::remove_all(file.parent_path());
+    AnalogScreen s = LoadAnalog(file, options);
+    // 1. The defaults: a window, full volume, normal letters and beats, Vietnamese.
+    CHECK_FALSE(s.fullScreen);
+    CHECK(s.effects == 100);
+    CHECK(s.textSpeed == 1);
+    CHECK(s.LetterScale() == 1.0F);
+    CHECK(s.EnemyScale() == 1.0F);
+    CHECK_FALSE(s.english);
+    // 2. Each action changes one thing; volume moves by 10 and stays in 0..100; speeds cycle.
+    CHECK(s.Toggle("full", file));
+    CHECK(s.Toggle("fx-", file));
+    CHECK(s.effects == 90);
+    for (int i = 0; i < 12; ++i)
+        (void)s.Toggle("fx+", file);
+    CHECK(s.effects == 100);
+    CHECK(s.Toggle("textspeed", file));
+    CHECK(s.textSpeed == 2);
+    CHECK(s.LetterScale() == 2.0F);
+    (void)s.Toggle("textspeed", file);
+    CHECK(s.LetterScale() > 100.0F); // Ngay: the whole line at once
+    (void)s.Toggle("textspeed", file);
+    CHECK(s.textSpeed == 0);
+    CHECK(s.Toggle("enemyspeed", file));
+    CHECK(s.EnemyScale() == 2.0F);
+    CHECK(s.Toggle("language", file));
+    // 3. All of it read back after a restart; the screen's data names each state.
+    const AnalogScreen again = LoadAnalog(file, options);
+    CHECK(again.fullScreen);
+    CHECK(again.textSpeed == 0);
+    CHECK(again.EnemyScale() == 2.0F);
+    CHECK(again.english);
+    CHECK(again.Data()["full"] == true);
+    CHECK(again.Data()["effects"] == 100);
+    CHECK(again.Data()["textSpeed0"] == true);
+    CHECK(again.Data()["textSpeed1"] == false);
+    CHECK(again.Data()["enemyFast"] == true);
+    CHECK(again.Data()["english"] == true);
+}

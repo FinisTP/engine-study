@@ -15,6 +15,7 @@ class Sounds final
 public:
     explicit Sounds(const umbra::assets::AssetFolders &assets);
     void Play(const std::string &cue);
+    void SetVolume(float volume) { volume_ = volume; } // the player's effects volume, 0..1, times each cue's
 
 private:
     struct Cue
@@ -26,4 +27,5 @@ private:
     umbra::audio::SoundBank bank_;
     umbra::platform::AudioDevice device_;
     std::map<std::string, Cue> cues_;
+    float volume_ = 1.0F;
 };

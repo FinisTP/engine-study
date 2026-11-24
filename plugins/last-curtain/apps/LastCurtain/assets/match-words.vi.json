@@ -198,6 +198,15 @@
     "free": "Cắt dây cho {name}"
   },
   "screens": {
+    "settings": "Cài đặt",
+    "paused": "Tạm dừng",
+    "resume": "Tiếp tục",
+    "crtOn": "Màn hình TV cũ: bật",
+    "crtOff": "Màn hình TV cũ: tắt",
+    "vhsOn": "Băng mòn: bật",
+    "vhsOff": "Băng mòn: tắt",
+    "bigTextOn": "Chữ lớn: bật",
+    "bigTextOff": "Chữ lớn: tắt",
     "retreat": "Rút lui",
     "retreatAsk": "Về bản đồ. Mọi thứ trong phòng này sẽ mất: cấp, đồ nhặt, người được cứu.",
     "no": "Không",

@@ -108,6 +108,12 @@
             "action": "cafe"
           },
           {
+            "type": "button",
+            "style": "lcButton",
+            "text": "{words.settings}",
+            "action": "settings"
+          },
+          {
             "type": "text",
             "style": "muted",
             "text": "{map.news}",

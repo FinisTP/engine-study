@@ -26,9 +26,9 @@ Sounds::Sounds(const umbra::assets::AssetFolders &assets) : bank_(assets)
 void Sounds::Play(const std::string &cue)
 {
     const auto it = cues_.find(cue);
-    if (it == cues_.end() || !device_.IsOpen())
+    if (it == cues_.end() || !device_.IsOpen() || volume_ <= 0.0F)
         return;
-    mixer_.Play(bank_.Get(it->second.file), it->second.volume);
+    mixer_.Play(bank_.Get(it->second.file), it->second.volume * volume_);
     for (const umbra::core::Diagnostic &problem : bank_.TakeDiagnostics()) // once per missing file
         umbra::diagnostics::Error(umbra::core::Format(problem));
 }

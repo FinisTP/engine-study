@@ -108,6 +108,12 @@ namespace umbra::platform
         }
     }
 
+    void Window::SetFullScreen(bool on) noexcept
+    {
+        if (window_ != nullptr)
+            SDL_SetWindowFullscreen(window_, on);
+    }
+
     void Window::SetTextInput(bool on) noexcept
     {
         // 1. Only on a change: starting text input again would reset an IME's half-typed word.

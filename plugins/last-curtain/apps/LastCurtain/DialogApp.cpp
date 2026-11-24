@@ -69,7 +69,7 @@ int RunScene(GameContext &game, const umbra::assets::AssetFolders &assets, const
         const umbra::ui::UiInput uiInput = Screens::MapInput(game.input, {static_cast<float>(game.window.GetWidth()), static_cast<float>(game.window.GetHeight())}, pixels);
 
         // 3. Keys (keys-keyboard.json): next advances, menu1-4 choose (the screen's clicks are its actions below).
-        play.Update(dt, options.lettersPerSecond);
+        play.Update(dt, options.lettersPerSecond * analog.LetterScale()); // the player's text speed (Settings)
         if (!logOpen && game.keys.Pressed(game.input, "next"))
             play.Advance();
         for (int i = 0; i < 4 && !logOpen; ++i)

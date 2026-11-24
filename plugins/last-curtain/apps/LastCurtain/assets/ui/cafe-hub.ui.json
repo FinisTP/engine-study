@@ -121,6 +121,16 @@
               300,
               0
             ],
+            "text": "{words.settings}",
+            "action": "settings"
+          },
+          {
+            "type": "button",
+            "style": "lcButton",
+            "size": [
+              300,
+              0
+            ],
             "text": "{words.door}",
             "action": "leave"
           }

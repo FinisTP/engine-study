@@ -25,6 +25,8 @@ namespace umbra::platform
         // Text input on: SDL sends typed text (Input::Text), keyboard layouts and IMEs such as
         // Vietnamese Telex included; phones show their keyboard. Off when no text field has focus.
         void SetTextInput(bool on) noexcept;
+        // Full screen on the window's display (borderless, the desktop's size), or back to the window.
+        void SetFullScreen(bool on) noexcept;
 
         [[nodiscard]] int GetWidth() const noexcept { return width_; }
         [[nodiscard]] int GetHeight() const noexcept { return height_; }

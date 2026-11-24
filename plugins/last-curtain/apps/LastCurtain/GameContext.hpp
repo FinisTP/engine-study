@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Analog.hpp"
 #include "Keys.hpp"
 #include "Screens.hpp"
 #include "Sounds.hpp"
@@ -42,4 +43,16 @@ struct GameContext
             umbra::diagnostics::Error(umbra::core::Format(e));
         return true;
     }
+
+    // The player's settings that live outside any one screen: text size, full screen, effects volume.
+    void Apply(const umbra::night::AnalogScreen &settings)
+    {
+        if (screens)
+            screens->SetTextScale(settings.TextScale());
+        if (sounds)
+            sounds->SetVolume(static_cast<float>(settings.effects) / 100.0F);
+        if (settings.fullScreen != fullScreen)
+            window.SetFullScreen(settings.fullScreen), fullScreen = settings.fullScreen;
+    }
+    bool fullScreen = false;
 };

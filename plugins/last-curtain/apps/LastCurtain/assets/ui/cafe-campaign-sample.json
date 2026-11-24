@@ -12,6 +12,7 @@
    "abilities": {}
   },
   "abilities": {
+   "basic": "Đánh thường",
    "dao_mo": "Dao mổ",
    "chan_doan": "Chẩn đoán",
    "giay_chung_tu": "Giấy chứng tử",
@@ -42,7 +43,12 @@
    "giay_gap_tu": "Gấp tư, mép sờn. Có người đã giữ nó rất kỹ."
   },
   "cafe": "Quán nước dưới hầm",
-  "cafeHint": "Bấm vào một người để trò chuyện. Ánh vàng: có chuyện mới.",
+  "cafeHint": "WASD hoặc bấm sàn để đi · E: nói chuyện, pha chế, sổ tay, ra cửa · Tab: đổi người. Tên vàng: có chuyện mới.",
+  "switch": "Đổi người (Tab)",
+  "walking": "Đang đi:",
+  "press": "[E]",
+  "talkTo": "Trò chuyện",
+  "noTalk": "chưa có chuyện gì mới.",
   "canBrew": "Có thể pha chế",
   "brew": "Pha chế",
   "door": "Ra cửa",
@@ -90,6 +96,36 @@
   "continue": "Tiếp tục",
   "newGame": "Trò chơi mới",
   "settings": "Cài đặt",
+  "groupDisplay": "Hiển thị",
+  "groupSound": "Âm thanh",
+  "groupGame": "Trò chơi",
+  "groupKeys": "Phím điều khiển",
+  "fullOn": "Toàn màn hình: bật",
+  "fullOff": "Toàn màn hình: tắt",
+  "effects": "Hiệu ứng",
+  "speed0": "Tốc độ chữ: chậm",
+  "speed1": "Tốc độ chữ: vừa",
+  "speed2": "Tốc độ chữ: nhanh",
+  "speed3": "Tốc độ chữ: hiện ngay",
+  "enemyNormal": "Lượt địch: thường",
+  "enemyFast": "Lượt địch: nhanh",
+  "langVi": "Ngôn ngữ trận: Tiếng Việt",
+  "langEn": "Ngôn ngữ trận: English (thử)",
+  "keyNames": {
+   "back": "Quay lại / tạm dừng",
+   "confirm": "Chọn",
+   "next": "Câu tiếp",
+   "hurry": "Giữ: lượt địch nhanh",
+   "endTurn": "Kết thúc lượt",
+   "skip": "Bỏ qua lượt địch",
+   "log": "Nhật ký",
+   "pin": "Ghim thẻ",
+   "notebook": "Sổ tay",
+   "walk": "Đi (quán)",
+   "use": "Dùng (quán)",
+   "switch": "Đổi người (quán)",
+   "menu": "Chọn dòng 1–6"
+  },
   "quit": "Thoát",
   "yourName": "Tên của {anh/chị}:",
   "namePlaceholder": "Linh",
@@ -417,6 +453,35 @@
   "crt": true,
   "crtOff": false,
   "vhs": true,
-  "vhsOff": false
- }
+  "vhsOff": false,
+  "full": false,
+  "fullOff": true,
+  "effects": 100,
+  "enemyFast": false,
+  "enemyNormal": true,
+  "english": false,
+  "vietnamese": true,
+  "textSpeed0": false,
+  "textSpeed1": true,
+  "textSpeed2": false,
+  "textSpeed3": false
+ },
+ "keys": [
+  {
+   "name": "Chọn",
+   "key": "Enter"
+  },
+  {
+   "name": "Quay lại / tạm dừng",
+   "key": "Esc"
+  },
+  {
+   "name": "Kết thúc lượt",
+   "key": "F"
+  },
+  {
+   "name": "Đi (quán)",
+   "key": "WASD"
+  }
+ ]
 }

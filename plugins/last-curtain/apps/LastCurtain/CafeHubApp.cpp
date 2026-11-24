@@ -5,6 +5,7 @@
 #include "CafeRoom.hpp"
 #include "CampaignRoom.hpp"
 #include "DialogApp.hpp"
+#include "Flow.hpp"
 #include "GameContext.hpp"
 #include "NotebookView.hpp"
 
@@ -52,8 +53,8 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
     Screens &screens = *game.screens;
     if (!loaded || words.is_discarded() || room.is_discarded() || spots.is_discarded() || !screens.Ready())
         return 0;
-    const umbra::night::AnalogScreen analog = umbra::night::LoadAnalog(umbra::night::AnalogPath(), options);
-    screens.SetTextScale(analog.TextScale());
+    umbra::night::AnalogScreen analog = umbra::night::LoadAnalog(umbra::night::AnalogPath(), options);
+    game.Apply(analog);
 
     // 2. The room: the player and the allies walk (Tab), Le Thanh keeps the counter; each by its cast sprite.
     CafeHub hub(def, cast, recipes, memories, talks, stages, save, static_cast<int>(options.boostCapPerStat));
@@ -173,6 +174,8 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
             uiTook = true;
             if (a.action == "switch")
                 act = "switch";
+            else if (a.action == "settings")
+                analog = RunSettings(game, words);
             else if (a.action == "talk")
                 play(hub.Talk(a.arg));
             else if (a.action == "notebook" || (a.screen == "notebook" && a.action == "close"))

@@ -6,6 +6,7 @@
 #include "MatchPlay.hpp"
 #include "MatchTable.hpp"
 #include "Analog.hpp"
+#include "Flow.hpp"
 #include "Screens.hpp"
 #include "Sounds.hpp"
 
@@ -77,13 +78,15 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
     MatchDef def;
     std::vector<umbra::core::Diagnostic> diagnostics;
     const bool loaded = LoadMatch(assets.RootOf("match/rules.json") / "match", def, diagnostics);
-    nlohmann::json words; // a campaign stage speaks Vietnamese (match-words.vi.json), the career English
-    if (std::ifstream in(assets / (hooks ? "match-words.vi.json" : "match-words.json")); in)
-        words = nlohmann::json::parse(in, nullptr, false);
     umbra::night::GameOptions pace;
     if (!umbra::night::LoadOptions(assets / "options.csv", pace, diagnostics))
         pace = {};
-    umbra::night::AnalogScreen analog = umbra::night::LoadAnalog(umbra::night::AnalogPath(), pace); // CRT and VHS (Analog.hpp)
+    umbra::night::AnalogScreen analog = umbra::night::LoadAnalog(umbra::night::AnalogPath(), pace); // CRT, VHS and the settings (Analog.hpp)
+    nlohmann::json words, settingsWords; // a campaign stage speaks Vietnamese (match-words.vi.json) unless set to English; the career English
+    if (std::ifstream in(assets / (hooks && !analog.english ? "match-words.vi.json" : "match-words.json")); in)
+        words = nlohmann::json::parse(in, nullptr, false);
+    if (std::ifstream in(assets / "campaign-words.json"); in && hooks)
+        settingsWords = nlohmann::json::parse(in, nullptr, false);
     for (const umbra::core::Diagnostic &d : diagnostics)
         umbra::diagnostics::Error(umbra::core::Format(d));
     if (!loaded || words.is_discarded())
@@ -208,7 +211,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         if (play)
         {
             if (!paused) // hold Space on their turn to hurry the beats (P16)
-                play->Update(hooks && !play->PlayerTurn() && game.keys.Held(input, "hurry") ? dt * 3.0F : dt);
+                play->Update(hooks && !play->PlayerTurn() ? dt * analog.EnemyScale() * (game.keys.Held(input, "hurry") ? 3.0F : 1.0F) : dt);
             if (hooks && hooks->beat && !paused)
                 hooks->beat(*play); // a stage's scenes, between beats
             // What was just told: figures move, sounds play.
@@ -250,7 +253,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         nlohmann::json ui = play ? play->UiData() : nlohmann::json::object();
         if (play)
             table.Draw(play->State(), ui, hover, drawList);
-        const std::string screen = paused ? "pause" : play ? (play->Screen().empty() ? "" : "match-" + play->Screen()) : "match-pick";
+        const std::string screen = paused ? (hooks ? "campaign-pause" : "pause") : play ? (play->Screen().empty() ? "" : "match-" + play->Screen()) : "match-pick";
         show(screen);
         // A staged fight has the screen to itself: the HUD steps away (the user, 2026-11-20).
         if (const bool hud = play && !ui.contains("fight"); screens.Ready() && play && hud != hudOpen)
@@ -294,7 +297,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
             {
                 uiTook = true;
                 sounds.Play("click");
-                if (a.screen == "pause" && analog.Toggle(a.action, umbra::night::AnalogPath()))
+                if ((a.screen == "pause" || a.screen == "campaign-pause") && analog.Toggle(a.action, umbra::night::AnalogPath()))
                 {
                     screens.SetTextScale(analog.TextScale());
                     continue; // the pause menu's screen switches
@@ -324,13 +327,15 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                     result = 2, quit = true; // back to the café without playing
                 else if (a.screen == "match-end" && a.action == "again")
                     hooks ? begin(nullptr) : backToPick();
-                else if (a.screen == "pause" && a.action == "resume")
+                else if (a.screen == "campaign-pause" && a.action == "settings")
+                    analog = RunSettings(game, settingsWords); // over the paused fight; applies at once
+                else if ((a.screen == "pause" || a.screen == "campaign-pause") && a.action == "resume")
                     paused = false;
                 else if (hooks && (a.action == "retreat" || (a.screen == "pause" && a.action == "savequit")))
                     screens.Ui().Open("retreat"), paused = true; // a stage has no save: leaving is a retreat (asked first)
                 else if (hooks && a.screen == "retreat")
                 {
-                    screens.Ui().Close("retreat"), screens.Ui().Close("pause"), paused = false;
+                    screens.Ui().Close("retreat"), screens.Ui().Close("campaign-pause"), paused = false;
                     if (a.action == "yes")
                         result = 4, quit = true; // back to the map; the flow drops all the stage's progress
                 }
@@ -379,7 +384,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
     if (play && !play->State().over && !watch && !hooks)
         WriteSave(*play);
     if (screens.Ready())
-        for (const char *name : {"match-hud", "campaign-hud", "retreat", "match-labels", "match-pick", "match-end", "match-battle", "match-level", "match-event", "match-treasure", "match-banner", "pause"})
+        for (const char *name : {"match-hud", "campaign-hud", "retreat", "match-labels", "match-pick", "match-end", "match-battle", "match-level", "match-event", "match-treasure", "match-banner", "pause", "campaign-pause"})
             screens.Ui().Close(name);
     return result;
 }
