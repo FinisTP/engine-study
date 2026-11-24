@@ -13,6 +13,7 @@
 
 #include <chrono>
 #include <fstream>
+#include <set>
 #include <thread>
 
 std::pair<std::string, std::string> RunScreen(GameContext &game, const std::string &screen, nlohmann::json data,
@@ -228,6 +229,8 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
     };
     std::string where = save.facts.contains("won:t1") ? "cafe" : "t1";
     std::string selected;
+    std::set<std::string> seenOpen; // tickets open when the map was last shown (world-map.md 6: new ones get a toast)
+    bool mapSeen = false;
     while (where != "quit")
     {
         // Recruits who joined in the café enter the roster; Bao and Ba Mai come before T3 at level 2.
@@ -262,6 +265,22 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
                 }
             };
             nlohmann::json data{{"words", words}};
+            // New since the map was last shown: a toast for each opened room, one for the new skirmishes; focus the first.
+            data["map"]["toasts"] = nlohmann::json::array();
+            int newSkirmishes = 0;
+            for (const campaign::TicketView &t : campaign::MapView(map, save, stages))
+                if (t.open && seenOpen.insert(t.id).second && mapSeen)
+                {
+                    if (t.mark == "skirmish")
+                        ++newSkirmishes;
+                    else
+                        data["map"]["toasts"].push_back({{"text", Fill(words.value("opened", ""), {{"name", t.name}})}});
+                    if (selected.empty() || t.mark == "next")
+                        selected = t.id;
+                }
+            if (newSkirmishes > 0)
+                data["map"]["toasts"].push_back({{"text", Fill(words.value("newSkirmishes", ""), {{"n", std::to_string(newSkirmishes)}})}});
+            mapSeen = true;
             data["map"]["plan"] = std::filesystem::exists(assets.RootOf(map.plan) / map.plan) ? map.plan : "";
             view(data);
             const auto [action, arg] = RunScreen(game, "worldmap", data, [&](const std::string &a, const std::string &id, nlohmann::json &shown) {

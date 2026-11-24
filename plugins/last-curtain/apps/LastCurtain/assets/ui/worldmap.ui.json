@@ -120,6 +120,22 @@
             "visible": "{map.news}"
           }
         ]
+      },
+      {
+        "type": "list",
+        "anchor": "bottom",
+        "offset": [
+          -160,
+          -18
+        ],
+        "items": "{map.toasts}",
+        "as": "t",
+        "gap": 4,
+        "entry": {
+          "type": "text",
+          "style": "lcToast",
+          "text": "{t.text}"
+        }
       }
     ]
   }

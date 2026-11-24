@@ -95,6 +95,8 @@
  "continue": "Tiếp tục",
  "newGame": "Trò chơi mới",
  "settings": "Cài đặt",
+ "opened": "Mở: {name}",
+ "newSkirmishes": "Có {n} trận giao tranh mới",
  "groupDisplay": "Hiển thị",
  "groupSound": "Âm thanh",
  "groupGame": "Trò chơi",
