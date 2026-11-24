@@ -1,0 +1,1 @@
+{"format": "umbra.vfx", "version": 1, "rate": 70, "lifetime": [0.2, 0.35], "radius": 0.03, "velocity": [0, 0, 0], "spread": [0.2, 0.2, 0.2], "size": [0.16, 0.04], "color": [[1.6, 1.2, 0.7, 0.8], [0.4, 0.3, 0.2, 0]], "texture": "art/vfx/ember.png", "cells": [2, 2], "max": 40}

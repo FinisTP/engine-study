@@ -113,6 +113,9 @@ TEST_CASE("Settings (menus.md D): full screen, effects volume, text speed, enemy
     CHECK(s.Toggle("mu-", file));
     CHECK(s.music == 60);
     CHECK(s.Toggle("language", file));
+    CHECK_FALSE(s.reducedFx); // visual effects start full (VFX library)
+    CHECK(s.Toggle("vfx", file));
+    CHECK(s.reducedFx);
     // 3. All of it read back after a restart; the screen's data names each state.
     const AnalogScreen again = LoadAnalog(file, options);
     CHECK(again.fullScreen);
@@ -126,4 +129,7 @@ TEST_CASE("Settings (menus.md D): full screen, effects volume, text speed, enemy
     CHECK(again.Data()["enemyFast"] == true);
     CHECK(again.Data()["music"] == 60);
     CHECK(again.Data()["english"] == true);
+    CHECK(again.reducedFx);
+    CHECK(again.Data()["vfxReduced"] == true);
+    CHECK(again.Data()["vfxFull"] == false);
 }

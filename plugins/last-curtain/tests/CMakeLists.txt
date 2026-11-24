@@ -34,7 +34,7 @@ target_compile_definitions(UmbraMatchTests PRIVATE UMBRA_MATCH_DATA="${CMAKE_CUR
                                                    UMBRA_LASTCURTAIN_ASSETS="${CMAKE_CURRENT_SOURCE_DIR}/../apps/LastCurtain/assets"
                                                    UMBRA_CAFE_DATA="${CMAKE_CURRENT_SOURCE_DIR}/../assets/cafe")
 target_compile_features(UmbraMatchTests PRIVATE cxx_std_20)
-target_link_libraries(UmbraMatchTests PRIVATE Umbra::Match Umbra::MatchBots Umbra::MatchPlay Umbra::Night Umbra::Warnings Umbra::Sanitizers Catch2::Catch2WithMain)
+target_link_libraries(UmbraMatchTests PRIVATE Umbra::Match Umbra::MatchBots Umbra::MatchPlay Umbra::Night Umbra::Scene Umbra::Warnings Umbra::Sanitizers Catch2::Catch2WithMain)
 umbra_copy_asan_runtime(UmbraMatchTests)
 add_test(NAME Umbra.Match COMMAND UmbraMatchTests "~[match-balance]")
 add_test(NAME Umbra.Match.Balance COMMAND UmbraMatchTests "[match-balance]")

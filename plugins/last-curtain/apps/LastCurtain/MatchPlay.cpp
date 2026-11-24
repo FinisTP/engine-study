@@ -128,11 +128,73 @@ bool MatchPlay::PlayerTurn() const
 
 void MatchPlay::Queue() { queued_ = s_.log.size(); }
 
+void MatchPlay::Tell(const LogEntry &e)
+{
+    // 1. The amount rises over the one it reached.
+    if ((e.kind == LogKind::Blow || e.kind == LogKind::Healed) && e.b >= 0)
+        pops_.push_back({e.b, (e.kind == LogKind::Blow ? "-" : "+") + std::to_string(e.c), e.kind == LogKind::Blow, popSeconds});
+    // 2. The cards follow the told lines.
+    if (e.kind == LogKind::Blow && U(e.b) < toldHp_.size())
+        toldHp_[U(e.b)] = std::max(0, toldHp_[U(e.b)] - e.c);
+    else if (e.kind == LogKind::Healed && U(e.b) < toldHp_.size())
+        toldHp_[U(e.b)] = std::min<int>(s_.units[U(e.b)].maxHp, toldHp_[U(e.b)] + e.c);
+    else if (e.kind == LogKind::Down && U(e.a) < toldHp_.size())
+        toldHp_[U(e.a)] = 0;
+}
+
+void MatchPlay::Play(float dt)
+{
+    // Every cue due by now, in time order (Sequences.md "Playing"); user = the one acting, target = the one reached.
+    if (!playing_.sequence)
+        return;
+    playing_.time += dt;
+    const Sequence &seq = *playing_.sequence;
+    const LogEntry &e = s_.log[playing_.entry];
+    const auto who = [&](const std::string &side) { return side == "target" && e.b >= 0 ? static_cast<int>(e.b) : static_cast<int>(e.a); };
+    for (; playing_.next < seq.cues.size() && seq.cues[playing_.next].at <= playing_.time; ++playing_.next)
+    {
+        const Cue &c = seq.cues[playing_.next];
+        if (c.what == "camera" && who(c.on) >= 0)
+            focus_ = {who(c.on)}, focusNext_ = -1, focusLeft_ = seq.length - c.at + options_.beatSeconds * 0.5F;
+        else if (c.what == "effect")
+            fx_.push_back({c.effect, who(c.on)});
+        else if (c.what == "projectile")
+            fx_.push_back({c.effect, who(c.on), who(c.to.empty() ? "target" : c.to), c.seconds});
+        else if (c.what == "shake")
+            fx_.push_back({"", -1, -1, 0.0F, c.amount});
+        else if (c.what == "sound")
+            sounds_.push_back(c.sound);
+        else if (c.what == "bubble")
+            Speak(e, playing_.entry);
+        else if (c.what == "hit")
+            Tell(e);
+    }
+    if (playing_.next >= seq.cues.size())
+        playing_.sequence = nullptr;
+}
+
+void MatchPlay::Finish()
+{
+    // The hit (and the bubble) of a line cut short still happen; its effects never do.
+    if (!playing_.sequence)
+        return;
+    const Sequence &seq = *playing_.sequence;
+    const LogEntry &e = s_.log[playing_.entry];
+    for (; playing_.next < seq.cues.size(); ++playing_.next)
+        if (seq.cues[playing_.next].what == "hit")
+            Tell(e);
+    playing_.sequence = nullptr;
+}
+
 bool MatchPlay::Reveal()
 {
     if (shown_ >= queued_)
         return false;
+    Finish(); // a line still playing ends before the next
     const LogEntry &e = s_.log[shown_++];
+    const auto ability = abilityOf_.find(shown_ - 1);
+    const Sequence *sequence = sequences_ && !skipping_ ? sequences_->For(LogName(e.kind), ability == abilityOf_.end() ? "" : ability->second) : nullptr;
+    playing_ = {sequence, shown_ - 1, 0, 0.0F};
     // 1. A unit's steps share one line; anything else starts a new one.
     const std::string line = Caption(e);
     if (e.kind == LogKind::Moved && e.a == lastMover_ && !log_.empty())
@@ -142,21 +204,14 @@ bool MatchPlay::Reveal()
     lastMover_ = e.kind == LogKind::Moved ? e.a : -1;
     for (const auto &m : Moves(e))
         moves_.push_back(m);
-    Speak(e, shown_ - 1);
+    if (!sequence || !sequence->Has("bubble"))
+        Speak(e, shown_ - 1);
     if (const std::string toast = ToastText(e); !toast.empty())
         Toast(toast);
     if (const std::string cue = Sound(e); !cue.empty())
         sounds_.push_back(cue);
-    // 1a. The amount rises over the one it reached.
-    if ((e.kind == LogKind::Blow || e.kind == LogKind::Healed) && e.b >= 0)
-        pops_.push_back({e.b, (e.kind == LogKind::Blow ? "-" : "+") + std::to_string(e.c), e.kind == LogKind::Blow, popSeconds});
-    // 1b. The cards follow the told lines.
-    if (e.kind == LogKind::Blow && U(e.b) < toldHp_.size())
-        toldHp_[U(e.b)] = std::max(0, toldHp_[U(e.b)] - e.c);
-    else if (e.kind == LogKind::Healed && U(e.b) < toldHp_.size())
-        toldHp_[U(e.b)] = std::min<int>(s_.units[U(e.b)].maxHp, toldHp_[U(e.b)] + e.c);
-    else if (e.kind == LogKind::Down && U(e.a) < toldHp_.size())
-        toldHp_[U(e.a)] = 0;
+    if (!sequence || !sequence->Has("hit"))
+        Tell(e);
     if (e.kind == LogKind::Blow)
         lastBlow_ = line;
     else if (e.kind == LogKind::Battle)
@@ -171,6 +226,13 @@ bool MatchPlay::Reveal()
     if (e.kind == LogKind::Battle || e.kind == LogKind::Blow || e.kind == LogKind::Down)
         fightHold_ = options_.beatSeconds;
     wait_ = e.kind == LogKind::Moved ? options_.plainBeatSeconds : e.kind == LogKind::Blow || e.kind == LogKind::Battle ? options_.blowSeconds : options_.beatSeconds;
+    if (sequence) // the sequence's cues move the camera and hold the line its length
+    {
+        wait_ = sequence->length, fightHold_ = std::max(fightHold_, sequence->length);
+        if (sequence->Has("camera"))
+            return focus_.clear(), focusNext_ = -1, Play(0.0F), true;
+        Play(0.0F);
+    }
     // 2. Whom it is about: the camera frames them while the line stays.
     switch (e.kind)
     {
@@ -202,6 +264,14 @@ void MatchPlay::Act(const Action &action)
         const int slot = action.kind == ActionKind::Attack ? 0 : action.kind == ActionKind::BattleAbility || action.kind == ActionKind::BoardAbility ? action.a : -1;
         if (slot >= 0 && slot < static_cast<int>(u.abilities.size()) && u.abilities[U(slot)] >= 0)
             used_[me] = def_.abilities[U(u.abilities[U(slot)])].name;
+        // Which ability wrote the blows and heals this action adds (its sequence, Sequences.md).
+        const std::size_t before = s_.log.size();
+        const std::string id = slot >= 0 && slot < static_cast<int>(u.abilities.size()) && u.abilities[U(slot)] >= 0 ? def_.abilities[U(u.abilities[U(slot)])].id : "";
+        Apply(def_, s_, action);
+        for (std::size_t i = before; i < s_.log.size() && !id.empty(); ++i)
+            if (s_.log[i].a == me)
+                abilityOf_[i] = id;
+        return;
     }
     Apply(def_, s_, action);
 }
@@ -238,7 +308,10 @@ void MatchPlay::Speak(const LogEntry &e, std::size_t index)
 void MatchPlay::RevealAll()
 {
     Queue();
+    skipping_ = true;
     while (Reveal()) {}
+    Finish();
+    skipping_ = false;
     if (focus_.empty() || focusLeft_ <= 0.0F)
         wait_ = 0.0F; // nothing to look at: go on at once
 }
@@ -273,6 +346,7 @@ void MatchPlay::Update(float dt)
         t.left -= dt;
     std::erase_if(toasts_, [](const Toasted &t) { return t.left <= 0.0F; });
     diceLeft_ = std::max(0.0F, diceLeft_ - dt);
+    Play(dt);
     if ((focusLeft_ -= dt) <= 0.0F)
         focus_.clear(), focusNext_ = -1;
     else if (focusNext_ >= 0 && focusLeft_ < options_.beatSeconds * 0.5F) // half a beat on: the camera moves to the receiver

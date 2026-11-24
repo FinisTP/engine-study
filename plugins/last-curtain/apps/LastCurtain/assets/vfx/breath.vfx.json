@@ -1,0 +1,1 @@
+{"format": "umbra.vfx", "version": 1, "burst": 10, "rate": 0, "duration": 0.05, "lifetime": [0.8, 1.2], "radius": 0.3, "velocity": [0, 0.3, 0], "spread": [0.5, 0.2, 0.5], "drag": 1, "size": [0.4, 0.8], "color": [[0.25, 0.28, 0.32, 0.5], [0.2, 0.22, 0.25, 0]], "blend": "alpha", "texture": "art/vfx/smoke_incense.png", "cells": [2, 2], "rotation": [0, 360], "max": 14}

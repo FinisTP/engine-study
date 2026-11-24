@@ -225,7 +225,7 @@ namespace
             {
                 // One campaign stage with its scenes (StageApp.hpp), for designers and the soak's checks.
                 GameContext game;
-                result = game.Open(assets, options.width, options.height) ? RunStage(game, assets, options.stage, options.refill, options.seed, options.speaker, options.capture, options.frames) : 1;
+                result = game.Open(assets, options.width, options.height) ? RunStage(game, assets, options.stage, options.refill, options.seed, options.speaker, options.capture, options.frames, nullptr, {}, nullptr, options.zoom) : 1;
                 platform.Shutdown();
                 return result;
             }

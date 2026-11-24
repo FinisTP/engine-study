@@ -1,0 +1,1 @@
+{"format": "umbra.vfx", "version": 1, "burst": 16, "rate": 0, "duration": 0.05, "lifetime": [0.8, 1.2], "radius": 0.3, "velocity": [0, 1.2, 0], "spread": [0.2, 0.4, 0.2], "drag": 0.8, "size": [0.14, 0.05], "color": [[1.8, 1.5, 0.6, 1], [1.0, 0.8, 0.3, 0]], "texture": "art/vfx/fleck_gold.png", "cells": [2, 2], "spin": [-180, 180], "max": 20}

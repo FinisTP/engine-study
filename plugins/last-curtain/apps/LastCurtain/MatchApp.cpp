@@ -5,6 +5,7 @@
 
 #include "MatchPlay.hpp"
 #include "MatchTable.hpp"
+#include "Effects.hpp"
 #include "Analog.hpp"
 #include "Flow.hpp"
 #include "Screens.hpp"
@@ -115,6 +116,15 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         table.SetLook(nlohmann::json::parse(in, nullptr, false));
     table.SetCamera(pace.matchCameraDistance, pace.matchCameraDistance * 0.3F, pace.matchCameraDistance * 1.6F, pace.matchCameraTilt); // the wheel zooms down into the rooms
     umbra::core::DrawList drawList;
+    // Effects and how told lines play out (Sequences.md): looks only; "Giam" halves the particles.
+    Effects effects;
+    effects.Load(assets, renderer, analog.reducedFx);
+    bool effectsReduced = analog.reducedFx;
+    Sequences sequences;
+    if (std::ifstream in(assets / "vfx" / "sequences.json"); in)
+        if (std::vector<std::string> errors; !LoadSequences(nlohmann::json::parse(in, nullptr, false), sequences, errors))
+            for (const std::string &e : errors)
+                umbra::diagnostics::Error("vfx/sequences.json: " + e);
 
     // 3. A match starts (or continues); the pick screen shows when none is running.
     std::optional<MatchPlay> play;
@@ -224,8 +234,11 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         {
             // A stage's board first finishes its opening shot: nothing plays, no scene starts, until it has (note 4).
             const bool opening = hooks && table.InScene();
-            if (!paused && !opening) // hold Space on their turn to hurry the beats (P16)
-                play->Update(hooks && !play->PlayerTurn() ? dt * analog.EnemyScale() * (game.keys.Held(input, "hurry") ? 3.0F : 1.0F) : dt);
+            // Hold Space on their turn to hurry the beats (P16); effects keep the same pace.
+            const float pdt = paused || opening ? 0.0F : hooks && !play->PlayerTurn() ? dt * analog.EnemyScale() * (game.keys.Held(input, "hurry") ? 3.0F : 1.0F) : dt;
+            play->SetSequences(&sequences);
+            if (pdt > 0.0F)
+                play->Update(pdt);
             if (hooks && hooks->beat && !paused && !opening)
             {
                 // A stage's scenes, between beats, over the board: the camera close on whoever speaks; a narrated
@@ -261,6 +274,26 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                 sounds.Play(cue);
             for (const int unit : play->TakeSnaps())
                 table.Snap(unit); // an undone walk jumps back
+            // The sequences' effects at whoever they name; a shake only when effects are full.
+            const MatchState &st = play->State();
+            const auto on = [&](int unit) { return unit >= 0 && unit < static_cast<int>(st.units.size()); };
+            for (const MatchPlay::Fx &fx : play->TakeEffects())
+                if (fx.shake > 0.0F)
+                    analog.reducedFx ? void() : table.Shake(fx.shake);
+                else if (on(fx.unit) && on(fx.to))
+                    effects.Fly(fx.effect, table.Body(st, fx.unit), table.Body(st, fx.to), fx.seconds);
+                else if (on(fx.unit))
+                    effects.Burst(fx.effect, table.Body(st, fx.unit));
+            // Dread (note 18): dark smoke at a ghost's feet and a red glint at its eyes, while it stands.
+            for (int u = 0; hooks && u < static_cast<int>(st.units.size()); ++u)
+                if (st.units[static_cast<std::size_t>(u)].faction == 1 && umbra::match::Up(st.units[static_cast<std::size_t>(u)]))
+                {
+                    effects.Follow(static_cast<std::uint64_t>(u) + 1, "dread", table.FeetShown(st, u));
+                    if (!analog.reducedFx)
+                        effects.Follow(static_cast<std::uint64_t>(u) + 1 + (1ULL << 20), "eye_glint", glm::mix(table.FeetShown(st, u), table.Head(st, u), 0.88F));
+                }
+            effects.EndFrame();
+            effects.Update(pdt);
             {
                 const nlohmann::json told = play->UiData();
                 table.SetFight(told.value("fight", std::vector<int>{}), told.value("picking", -1));
@@ -310,7 +343,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         table.Update(dt);
         nlohmann::json ui = play ? play->UiData() : nlohmann::json::object();
         if (play)
-            table.Draw(play->State(), ui, hover, drawList);
+            table.Draw(play->State(), ui, hover, drawList), effects.Extract(drawList);
         const bool opening = hooks && play && table.InScene(); // the board's opening shot: no screen, no HUD yet
         const std::string screen = paused ? (hooks ? "campaign-pause" : "pause") : opening ? "" : play ? (play->Screen().empty() ? "" : "match-" + play->Screen()) : "match-pick";
         show(screen);
@@ -412,6 +445,8 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                     hooks ? begin(nullptr) : backToPick();
                 else if (a.screen == "campaign-pause" && a.action == "settings")
                     analog = RunSettings(game, settingsWords); // over the paused fight; applies at once
+                    if (std::exchange(effectsReduced, analog.reducedFx) != analog.reducedFx)
+                        effects.Clear(), effects.Load(assets, renderer, analog.reducedFx);
                 else if ((a.screen == "pause" || a.screen == "campaign-pause") && a.action == "resume")
                     paused = false;
                 else if (hooks && (a.action == "retreat" || (a.screen == "pause" && a.action == "savequit")))

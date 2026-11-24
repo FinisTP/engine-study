@@ -17,4 +17,5 @@ struct GameContext;
 namespace umbra::campaign { struct Save; }
 int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const std::string &id, int refill, std::uint64_t seed,
              const umbra::campaign::Speaker &player, const std::filesystem::path &capture, int frames,
-             const umbra::campaign::Save *save = nullptr, const std::vector<std::string> &party = {}, umbra::campaign::BuiltStage *out = nullptr);
+             const umbra::campaign::Save *save = nullptr, const std::vector<std::string> &party = {}, umbra::campaign::BuiltStage *out = nullptr,
+             float zoom = 0.0F); // wheel steps at the start (a capture's close look)

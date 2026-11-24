@@ -20,6 +20,7 @@ namespace umbra::night
         bool crtOn = true, vhsOn = true; // the player's switches (on until turned off, the user)
         bool bigText = false;            // large text (campaign plan 5): fonts x1.25
         bool fullScreen = false, enemyFast = false, english = false;
+        bool reducedFx = false; // "Hieu ung hinh anh: Giam": half the particles, no shake, softer horror
         int effects = 100;  // sound effects volume, 0..100 by 10
         int music = 70;     // music volume, the same way
         int textSpeed = 1;  // 0 slow, 1 normal, 2 fast, 3 at once

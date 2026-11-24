@@ -1,0 +1,398 @@
+{
+ "format": "lastcurtain.sequences",
+ "version": 1,
+ "note": "How each told line plays out on screen (Sequences.md). byAbility first, then byKind; a line with neither is told the plain way. Times in seconds after the line is told; every use plays in full (the user, 2026-11-24 19:05); hurry speeds it up, skip tells the hits with no effects.",
+ "byKind": {
+  "Blow": "blow",
+  "Healed": "heal",
+  "Down": "fall",
+  "Back": "revive",
+  "Spawned": "spawn",
+  "Arrived": "arrive",
+  "Level": "levelup",
+  "Freed": "freed",
+  "Hazard": "hazard",
+  "Breath": "breath",
+  "Bided": "bide",
+  "Item": "item"
+ },
+ "byAbility": {
+  "dao_mo": "dao_mo",
+  "tend": "tend",
+  "na_cao_su": "na_cao_su"
+ },
+ "sequences": {
+  "blow": {
+   "length": 0.9,
+   "cues": [
+    {
+     "at": 0,
+     "do": "camera",
+     "on": "user"
+    },
+    {
+     "at": 0.15,
+     "do": "hit",
+     "on": "target"
+    },
+    {
+     "at": 0.15,
+     "do": "effect",
+     "effect": "hit_ink",
+     "on": "target"
+    },
+    {
+     "at": 0.15,
+     "do": "sound",
+     "sound": "hit"
+    },
+    {
+     "at": 0.45,
+     "do": "camera",
+     "on": "target"
+    }
+   ]
+  },
+  "heal": {
+   "length": 1.0,
+   "cues": [
+    {
+     "at": 0,
+     "do": "camera",
+     "on": "target"
+    },
+    {
+     "at": 0.1,
+     "do": "effect",
+     "effect": "heal_lamp",
+     "on": "target"
+    },
+    {
+     "at": 0.3,
+     "do": "hit",
+     "on": "target"
+    }
+   ]
+  },
+  "fall": {
+   "length": 1.1,
+   "cues": [
+    {
+     "at": 0,
+     "do": "camera",
+     "on": "user"
+    },
+    {
+     "at": 0.05,
+     "do": "effect",
+     "effect": "fall",
+     "on": "user"
+    },
+    {
+     "at": 0.05,
+     "do": "shake",
+     "amount": 0.25
+    }
+   ]
+  },
+  "revive": {
+   "length": 1.0,
+   "cues": [
+    {
+     "at": 0,
+     "do": "camera",
+     "on": "user"
+    },
+    {
+     "at": 0.05,
+     "do": "effect",
+     "effect": "revive",
+     "on": "user"
+    }
+   ]
+  },
+  "spawn": {
+   "length": 0.9,
+   "cues": [
+    {
+     "at": 0,
+     "do": "camera",
+     "on": "target"
+    },
+    {
+     "at": 0,
+     "do": "effect",
+     "effect": "spawn_ticket",
+     "on": "target"
+    }
+   ]
+  },
+  "arrive": {
+   "length": 0.9,
+   "cues": [
+    {
+     "at": 0,
+     "do": "camera",
+     "on": "user"
+    },
+    {
+     "at": 0,
+     "do": "effect",
+     "effect": "spawn_ticket",
+     "on": "user"
+    }
+   ]
+  },
+  "levelup": {
+   "length": 1.0,
+   "cues": [
+    {
+     "at": 0,
+     "do": "camera",
+     "on": "user"
+    },
+    {
+     "at": 0.05,
+     "do": "effect",
+     "effect": "levelup",
+     "on": "user"
+    }
+   ]
+  },
+  "freed": {
+   "length": 1.4,
+   "cues": [
+    {
+     "at": 0,
+     "do": "camera",
+     "on": "target"
+    },
+    {
+     "at": 0.1,
+     "do": "effect",
+     "effect": "strings_snap",
+     "on": "target"
+    },
+    {
+     "at": 0.1,
+     "do": "effect",
+     "effect": "strings_ember",
+     "on": "target"
+    },
+    {
+     "at": 0.1,
+     "do": "shake",
+     "amount": 0.15
+    }
+   ]
+  },
+  "hazard": {
+   "length": 1.0,
+   "cues": [
+    {
+     "at": 0,
+     "do": "camera",
+     "on": "user"
+    },
+    {
+     "at": 0.1,
+     "do": "effect",
+     "effect": "hit_heavy",
+     "on": "user"
+    },
+    {
+     "at": 0.1,
+     "do": "shake",
+     "amount": 0.35
+    },
+    {
+     "at": 0.1,
+     "do": "hit",
+     "on": "user"
+    }
+   ]
+  },
+  "breath": {
+   "length": 1.0,
+   "cues": [
+    {
+     "at": 0,
+     "do": "camera",
+     "on": "user"
+    },
+    {
+     "at": 0.1,
+     "do": "effect",
+     "effect": "breath",
+     "on": "user"
+    }
+   ]
+  },
+  "bide": {
+   "length": 0.7,
+   "cues": [
+    {
+     "at": 0,
+     "do": "effect",
+     "effect": "ap_bead",
+     "on": "user"
+    }
+   ]
+  },
+  "item": {
+   "length": 0.8,
+   "cues": [
+    {
+     "at": 0,
+     "do": "camera",
+     "on": "user"
+    },
+    {
+     "at": 0.05,
+     "do": "effect",
+     "effect": "buff",
+     "on": "user"
+    }
+   ]
+  },
+  "dao_mo": {
+   "length": 1.6,
+   "cues": [
+    {
+     "at": 0,
+     "do": "camera",
+     "on": "user"
+    },
+    {
+     "at": 0.1,
+     "do": "bubble"
+    },
+    {
+     "at": 0.3,
+     "do": "effect",
+     "effect": "buff",
+     "on": "user"
+    },
+    {
+     "at": 0.7,
+     "do": "camera",
+     "on": "target"
+    },
+    {
+     "at": 0.8,
+     "do": "effect",
+     "effect": "slash_streak",
+     "on": "target"
+    },
+    {
+     "at": 0.85,
+     "do": "hit",
+     "on": "target"
+    },
+    {
+     "at": 0.85,
+     "do": "effect",
+     "effect": "hit_ink",
+     "on": "target"
+    },
+    {
+     "at": 0.85,
+     "do": "shake",
+     "amount": 0.2
+    },
+    {
+     "at": 0.85,
+     "do": "sound",
+     "sound": "hit"
+    }
+   ]
+  },
+  "tend": {
+   "length": 1.6,
+   "cues": [
+    {
+     "at": 0,
+     "do": "camera",
+     "on": "user"
+    },
+    {
+     "at": 0.1,
+     "do": "bubble"
+    },
+    {
+     "at": 0.3,
+     "do": "projectile",
+     "effect": "lamp_mote",
+     "on": "user",
+     "to": "target",
+     "seconds": 0.5
+    },
+    {
+     "at": 0.8,
+     "do": "camera",
+     "on": "target"
+    },
+    {
+     "at": 0.8,
+     "do": "effect",
+     "effect": "heal_lamp",
+     "on": "target"
+    },
+    {
+     "at": 0.9,
+     "do": "hit",
+     "on": "target"
+    }
+   ]
+  },
+  "na_cao_su": {
+   "length": 1.5,
+   "cues": [
+    {
+     "at": 0,
+     "do": "camera",
+     "on": "user"
+    },
+    {
+     "at": 0.1,
+     "do": "bubble"
+    },
+    {
+     "at": 0.3,
+     "do": "projectile",
+     "effect": "shot_trail",
+     "on": "user",
+     "to": "target",
+     "seconds": 0.4
+    },
+    {
+     "at": 0.7,
+     "do": "camera",
+     "on": "target"
+    },
+    {
+     "at": 0.7,
+     "do": "effect",
+     "effect": "shot_land",
+     "on": "target"
+    },
+    {
+     "at": 0.7,
+     "do": "hit",
+     "on": "target"
+    },
+    {
+     "at": 0.7,
+     "do": "effect",
+     "effect": "hit_ink",
+     "on": "target"
+    },
+    {
+     "at": 0.7,
+     "do": "sound",
+     "sound": "hit"
+    }
+   ]
+  }
+ }
+}

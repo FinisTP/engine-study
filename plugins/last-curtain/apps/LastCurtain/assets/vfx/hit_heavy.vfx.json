@@ -1,0 +1,1 @@
+{"format": "umbra.vfx", "version": 1, "burst": 16, "rate": 0, "duration": 0.05, "lifetime": [0.4, 0.7], "radius": 0.15, "velocity": [0, 0.8, 0], "spread": [2.2, 1.2, 2.2], "drag": 3, "size": [0.6, 0.25], "color": [[0.04, 0.03, 0.04, 0.95], [0.1, 0.08, 0.1, 0]], "blend": "alpha", "texture": "art/vfx/splash_ink.png", "cells": [2, 2], "rotation": [0, 360], "max": 32}

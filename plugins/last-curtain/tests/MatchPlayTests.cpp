@@ -1331,3 +1331,142 @@ TEST_CASE("Walks go around enemies, never through their squares (feedback 2026-1
         CHECK(std::ranges::find(path, nlohmann::json(blocked)) == path.end());
     }
 }
+
+#include <Sequences.hpp>
+
+namespace
+{
+    const char *sequenceText = R"({"format": "lastcurtain.sequences", "version": 1,
+        "byKind": {"Blow": "blow"}, "byAbility": {"slash": "slash"},
+        "sequences": {
+          "blow": {"length": 0.6, "cues": [{"at": 0.0, "do": "camera", "on": "user"}, {"at": 0.2, "do": "hit", "on": "target"},
+                                           {"at": 0.2, "do": "effect", "effect": "hit_ink", "on": "target"}, {"at": 0.3, "do": "camera", "on": "target"}]},
+          "slash": {"length": 1.2, "cues": [{"at": 0.0, "do": "camera", "on": "user"}, {"at": 0.1, "do": "effect", "effect": "buff", "on": "user"},
+                                            {"at": 0.3, "do": "projectile", "effect": "shot_trail", "on": "user", "to": "target", "seconds": 0.4},
+                                            {"at": 0.7, "do": "hit", "on": "target"}, {"at": 0.7, "do": "shake", "amount": 0.3},
+                                            {"at": 0.8, "do": "camera", "on": "target"}]}}})";
+}
+
+TEST_CASE("Sequences load: cues in time order, a default by kind, an ability's own; mistakes are named (the user, 2026-11-24 19:05, point 3)", "[match][play][sequences]")
+{
+    Sequences seq;
+    std::vector<std::string> errors;
+    REQUIRE(LoadSequences(nlohmann::json::parse(sequenceText), seq, errors));
+    CHECK(errors.empty());
+    REQUIRE(seq.For("Blow", "") != nullptr);
+    CHECK(seq.For("Blow", "")->length == 0.6F);
+    CHECK(seq.For("Blow", "slash")->length == 1.2F); // the ability's own first
+    CHECK(seq.For("Blow", "jab")->length == 0.6F);   // else the kind's
+    CHECK(seq.For("Moved", "") == nullptr);           // none: told the old way
+    const Sequence &slash = *seq.For("Blow", "slash");
+    CHECK(std::ranges::is_sorted(slash.cues, {}, &Cue::at));
+    CHECK(slash.cues[2].what == "projectile");
+    CHECK(slash.cues[2].seconds == 0.4F);
+    // Mistakes: an unknown cue, a cue after the end, a missing sequence.
+    const auto bad = [&](const char *text) {
+        Sequences s;
+        std::vector<std::string> e;
+        return !LoadSequences(nlohmann::json::parse(text), s, e) && !e.empty();
+    };
+    CHECK(bad(R"({"format": "lastcurtain.sequences", "version": 1, "sequences": {"a": {"length": 1, "cues": [{"at": 0, "do": "dance"}]}}})"));
+    CHECK(bad(R"({"format": "lastcurtain.sequences", "version": 1, "sequences": {"a": {"length": 1, "cues": [{"at": 2, "do": "hit"}]}}})"));
+    CHECK(bad(R"({"format": "lastcurtain.sequences", "version": 1, "byKind": {"Blow": "none"}, "sequences": {}})"));
+    CHECK(bad(R"({"format": "other", "version": 1})"));
+}
+
+TEST_CASE("A blow plays its ability's sequence: the camera, then effects in time, the hit when its cue comes, never before (point 3)", "[match][play][sequences]")
+{
+    const MatchDef def = Data();
+    Sequences seq;
+    std::vector<std::string> errors;
+    REQUIRE(LoadSequences(nlohmann::json::parse(sequenceText), seq, errors));
+    int enemy = -1;
+    MatchPlay p = AtPlayer(def, [&](MatchState &s) {
+        const int me = Current(s);
+        for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
+            if (s.units[static_cast<std::size_t>(i)].kind == 0 && s.units[static_cast<std::size_t>(i)].faction == 1)
+                enemy = i;
+        s.units[static_cast<std::size_t>(enemy)].cell = static_cast<std::int16_t>(FreeBeside(s, s.units[static_cast<std::size_t>(me)].cell));
+        s.units[static_cast<std::size_t>(me)].hp = s.units[static_cast<std::size_t>(enemy)].hp = 90;
+        s.units[static_cast<std::size_t>(me)].maxHp = s.units[static_cast<std::size_t>(enemy)].maxHp = 90;
+    });
+    p.SetSequences(&seq);
+    const int me = Current(p.State());
+    p.Click(p.State().units[static_cast<std::size_t>(me)].cell);
+    REQUIRE(p.HandleUi("", "act", "attack"));
+    p.Click(p.State().units[static_cast<std::size_t>(enemy)].cell);
+    for (int i = 0; i < 40 && !p.PlayerTurn(); ++i)
+        p.Update(0.25F);
+    (void)p.TakeEffects();
+    REQUIRE(p.HandleUi("battle", "pick", "0"));
+    // 1. Until the blow is told, nothing; once told, its default sequence starts on the striker.
+    for (int i = 0; i < 40 && p.UiData()["log"].size() < 2; ++i)
+        p.Update(0.05F);
+    REQUIRE(p.UiData()["log"].size() == 2);
+    CHECK(p.UiData()["focus"].get<std::vector<int>>() == std::vector<int>{me});
+    CHECK(p.UiData().value("pops", nlohmann::json::array()).empty()); // the hit waits for its cue
+    // 2. At 0.2 s the hit lands: the number rises, the ink effect goes on the one struck.
+    p.Update(0.25F);
+    REQUIRE(p.UiData().value("pops", nlohmann::json::array()).size() == 1);
+    const std::vector<MatchPlay::Fx> fx = p.TakeEffects();
+    REQUIRE(fx.size() == 1);
+    CHECK(fx[0].effect == "hit_ink");
+    CHECK(fx[0].unit == enemy);
+    // 3. At 0.3 s the camera goes to the one struck.
+    p.Update(0.1F);
+    CHECK(p.UiData()["focus"].get<std::vector<int>>() == std::vector<int>{enemy});
+}
+
+TEST_CASE("Skipping tells every hit at once and spawns no effects (point 3)", "[match][play][sequences]")
+{
+    const MatchDef def = Data();
+    Sequences seq;
+    std::vector<std::string> errors;
+    REQUIRE(LoadSequences(nlohmann::json::parse(sequenceText), seq, errors));
+    MatchPlay p = AtPlayer(def, [](MatchState &) {});
+    p.SetSequences(&seq);
+    MatchPlay plain = AtPlayer(def, [](MatchState &) {});
+    // Bots play a round each way; the log and the told HP agree with no sequences at all.
+    for (MatchPlay *q : {&p, &plain})
+    {
+        REQUIRE(q->MenuKey(3)); // end the turn
+        (void)q->HandleUi("", "skip", "");
+    }
+    CHECK(p.State().log.size() == plain.State().log.size());
+    CHECK(p.TakeEffects().empty());
+    CHECK(p.UiData().value("hp", nlohmann::json::array()) == plain.UiData().value("hp", nlohmann::json::array()));
+    CHECK(p.UiData().value("standing", nlohmann::json::array()) == plain.UiData().value("standing", nlohmann::json::array()));
+}
+
+#include <Vfx.hpp>
+
+TEST_CASE("The game's sequences and effects load; every effect a cue names is a file (VFX library)", "[match][play][sequences]")
+{
+    const std::filesystem::path assets = std::filesystem::path(UMBRA_LASTCURTAIN_ASSETS);
+    Sequences seq;
+    std::vector<std::string> errors;
+    REQUIRE(LoadSequences(nlohmann::json::parse(std::ifstream(assets / "vfx" / "sequences.json")), seq, errors));
+    CHECK(errors.empty());
+    for (const std::string &name : seq.Effects())
+    {
+        INFO(name);
+        std::vector<umbra::core::Diagnostic> d;
+        CHECK(umbra::scene::LoadVfx(assets / "vfx" / (name + ".vfx.json"), name, d) != nullptr);
+        CHECK(d.empty());
+    }
+    for (const auto &file : std::filesystem::directory_iterator(assets / "vfx"))
+        if (file.path().string().ends_with(".vfx.json"))
+        {
+            INFO(file.path().string());
+            std::vector<umbra::core::Diagnostic> d;
+            CHECK(umbra::scene::LoadVfx(file.path(), file.path().filename().string(), d) != nullptr);
+        }
+    // The abilities named have sequences of their own; the kinds name real log kinds.
+    for (const auto &[kind, name] : seq.byKind)
+    {
+        bool known = false;
+        for (int k = 0; k <= static_cast<int>(umbra::match::LogKind::Breath); ++k)
+            known |= kind == MatchPlay::LogName(static_cast<umbra::match::LogKind>(k));
+        CHECK(known);
+    }
+}

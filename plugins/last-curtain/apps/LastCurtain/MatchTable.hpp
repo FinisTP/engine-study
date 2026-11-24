@@ -3,6 +3,7 @@
 #include "Motion.hpp"
 #include "TableCamera.hpp"
 
+#include <algorithm>
 #include <array>
 #include <Match.hpp>
 
@@ -38,7 +39,8 @@ public:
     void SetCamera(float distance, float minDistance, float maxDistance, float tilt) { view_.Set(distance, minDistance, maxDistance, tilt); }
     void Pan(glm::vec2 pixels) { view_.Pan(pixels); }
     void Zoom(float steps) { view_.Zoom(steps); }
-    void Update(float dt) { clock_ += dt, view_.Update(dt); }
+    void Update(float dt) { clock_ += dt, view_.Update(dt), shake_ = std::max(0.0F, shake_ - dt * 2.5F); }
+    void Shake(float amount) { shake_ = std::max(shake_, amount); } // a blow's jolt (Sequences.md), fading over 0.4 s at most
     void SetLook(nlohmann::json look); // assets/match-look.json: the grade, shadows, scenes, painted floors
     // Motions (motions.json): a unit plays one (down holds until revive), then rests in idle.
     void Play(int unit, const std::string &motion);
@@ -63,6 +65,10 @@ public:
     // A campaign stage: each unit's shown name and height (1 a person, 0.8 a ghost); empty keeps the match's.
     // A stage's cast: names, ghost heights and each unit's own figure ("" keeps its class's), loaded on first use.
     void SetCast(std::vector<std::string> names, std::vector<float> heights, std::vector<std::string> figures = {});
+    // Where a figure is drawn now (on the board or on the fight's stage).
+    [[nodiscard]] glm::vec3 Head(const umbra::match::MatchState &s, int unit) const; // the top of its figure, as drawn
+    [[nodiscard]] glm::vec3 Body(const umbra::match::MatchState &s, int unit) const; // its middle, where effects land
+    [[nodiscard]] glm::vec3 FeetShown(const umbra::match::MatchState &s, int unit) const; // its feet, as drawn
 
 private:
     [[nodiscard]] glm::vec3 Centre(const umbra::match::Board &b, int cell) const;          // a square's middle on the table
@@ -71,7 +77,6 @@ private:
     [[nodiscard]] int Fighter(int unit) const; // its place on the stage, -1 none
     [[nodiscard]] bool Staged() const { return staged_[0] >= 0 && staged_[2] >= 0; }
     [[nodiscard]] bool Present(const umbra::match::MatchState &s, int unit) const; // on the board, or fallen but not yet told
-    [[nodiscard]] glm::vec3 Head(const umbra::match::MatchState &s, int unit) const; // the top of its figure, as drawn
     [[nodiscard]] glm::vec3 SpriteUp() const;
     std::array<int, 4> fight_{-1, -1, -1, -1}, staged_{-1, -1, -1, -1}; // asked for; being staged (kept while the view eases out)
     int picking_ = -1, stageCell_ = -1;
@@ -123,7 +128,7 @@ private:
     float kickT_ = -1.0F, kickSeconds_ = 0.0F, kickYaw_ = 0.0F, kickNear_ = 1.0F;
     [[nodiscard]] float Kick() const; // 0..1..0 while it plays
     float before_ = -1.0F, roomBefore_ = -1.0F; // the seats' distances before a close-up (table, room view)
-    float clock_ = 0.0F;
+    float clock_ = 0.0F, shake_ = 0.0F;
     int acting_ = -1, ringUnit_ = -1;
     float ringT_ = 1.0F, sceneT_ = 0.0F;
     bool follow_ = true;

@@ -218,6 +218,16 @@ glm::vec3 MatchTable::Head(const MatchState &s, int unit) const
     return feet + SpriteUp() * Height(s.units[U(unit)], unit);
 }
 
+glm::vec3 MatchTable::FeetShown(const MatchState &s, int unit) const
+{
+    return Shown(s, unit) + (fightT_ >= 0.5F && Fighter(unit) >= 0 ? FightNear() : glm::vec3{0.0F});
+}
+
+glm::vec3 MatchTable::Body(const MatchState &s, int unit) const
+{
+    return glm::mix(FeetShown(s, unit), Head(s, unit), 0.55F);
+}
+
 glm::vec3 MatchTable::Shown(const MatchState &s, int unit) const
 {
     const auto walked = [&](int i) {
@@ -718,6 +728,11 @@ void MatchTable::Draw(const MatchState &s, const nlohmann::json &ui, int hover, 
     const float lamp = 1.0F - Look("flicker", "x", t, 0.0F) * stutter;
     out.lights.push_back({{0.0F, 9.0F, 4.0F}, {1.0F, 0.88F, 0.72F}, 140.0F * lamp, 70.0F, 0.0F});
     out.camera = view_.Camera();
+    if (shake_ > 0.0F) // a jolt: the eye and its target trembles together, a few centimetres
+    {
+        const glm::vec3 jolt{std::sin(clock_ * 61.0F), std::sin(clock_ * 47.0F + 1.3F), std::sin(clock_ * 53.0F + 2.1F)};
+        out.camera.position += jolt * shake_ * 0.08F, out.camera.target += jolt * shake_ * 0.08F;
+    }
     // 1b. The battle view: the screen dips to dark halfway, and past it the fight has its own stage (DrawFight).
     const float fe = fightT_ * fightT_ * (3.0F - 2.0F * fightT_);
     out.post.exposure -= Look("battle", "fade", 0.0F, 3.0F) * std::max(0.0F, 1.0F - std::abs(2.0F * fe - 1.0F));

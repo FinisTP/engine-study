@@ -4,6 +4,7 @@
 #include <Match.hpp>
 #include <MatchBots.hpp>
 #include <Options.hpp>
+#include <Sequences.hpp>
 
 #include <glm/vec2.hpp>
 #include <nlohmann/json.hpp>
@@ -98,6 +99,15 @@ public:
     static std::string Sound(const umbra::match::LogEntry &e);
     std::vector<std::pair<int, std::string>> TakeMoves() { return std::exchange(moves_, {}); }
     std::vector<std::string> TakeSounds() { return std::exchange(sounds_, {}); }
+    // Sequences (Sequences.md): how told lines play out over time; none: the plain way.
+    void SetSequences(const Sequences *sequences) { sequences_ = sequences; }
+    struct Fx // an effect a sequence asks for: at a unit, flying from it to another, or a shake
+    {
+        std::string effect;
+        int unit = -1, to = -1;
+        float seconds = 0.0F, shake = 0.0F;
+    };
+    std::vector<Fx> TakeEffects() { return std::exchange(fx_, {}); }
     std::vector<int> TakeSnaps() { return std::exchange(snaps_, {}); } // units put straight back (an undone walk)
     // The 2d6 total to reach whose odds are nearest an event's percent chance (13: never, 2: always).
     static int DiceTarget(int chance);
@@ -188,6 +198,20 @@ private:
     std::vector<std::pair<int, std::string>> moves_;
     std::vector<std::string> sounds_;
     std::vector<int> snaps_;
+    // The sequence playing for the last told line (Sequences.md "Playing").
+    const Sequences *sequences_ = nullptr;
+    std::map<std::size_t, std::string> abilityOf_; // log entry -> the ability id that wrote it
+    struct Playing
+    {
+        const Sequence *sequence = nullptr;
+        std::size_t entry = 0, next = 0; // the told line; its next cue
+        float time = 0.0F;
+    } playing_;
+    std::vector<Fx> fx_;
+    bool skipping_ = false;
+    void Tell(const umbra::match::LogEntry &e);        // the hit: the number rises, the cards follow
+    void Play(float dt);                               // fires the cues due by now
+    void Finish();                                     // the rest of the cues' hits at once, no effects
     // A campaign stage's outcome banner (Chien thang / That bai): shown once the end is told, before its scenes.
     [[nodiscard]] bool Campaign() const { return !names_.empty(); }
     [[nodiscard]] bool OutcomeDue() const { return Campaign() && s_.over && shown_ == s_.log.size() && !outcomeDone_; }

@@ -1,0 +1,1 @@
+{"format": "umbra.vfx", "version": 1, "burst": 6, "rate": 0, "duration": 0.05, "lifetime": [0.4, 0.7], "radius": 0.1, "velocity": [0, 0.3, 0], "spread": [0.6, 0.2, 0.6], "drag": 2, "size": [0.3, 0.5], "color": [[0.45, 0.42, 0.38, 0.6], [0.4, 0.38, 0.35, 0]], "blend": "alpha", "texture": "art/vfx/puff_dust.png", "cells": [2, 2], "rotation": [0, 360], "max": 10}

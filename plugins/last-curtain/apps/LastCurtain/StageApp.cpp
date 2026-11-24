@@ -14,7 +14,7 @@
 
 int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const std::string &id, int refill, std::uint64_t seed,
              const umbra::campaign::Speaker &player, const std::filesystem::path &capture, int frames,
-             const umbra::campaign::Save *save, const std::vector<std::string> &party, umbra::campaign::BuiltStage *out)
+             const umbra::campaign::Save *save, const std::vector<std::string> &party, umbra::campaign::BuiltStage *out, float zoom)
 {
     namespace campaign = umbra::campaign;
     // 1. The rules, the cast, the growth and the stage.
@@ -109,5 +109,5 @@ int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const
             *out = built, ended = true;
     };
     hooks.setup = [&](MatchPlay &play) { play.SetCast(names(), sprites()), play.SetHeights(built.height), play.SetStage(stage.title); };
-    return RunMatch(game, assets, seed, false, capture, frames, 0.0F, nullptr, 0, {}, &hooks);
+    return RunMatch(game, assets, seed, false, capture, frames, zoom, nullptr, 0, {}, &hooks);
 }

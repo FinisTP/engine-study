@@ -273,6 +273,28 @@
                   300,
                   0
                 ],
+                "text": "{words.vfxFull}",
+                "action": "vfx",
+                "visible": "{analog.vfxFull}"
+              },
+              {
+                "type": "button",
+                "style": "lcButton",
+                "size": [
+                  300,
+                  0
+                ],
+                "text": "{words.vfxReduced}",
+                "action": "vfx",
+                "visible": "{analog.vfxReduced}"
+              },
+              {
+                "type": "button",
+                "style": "lcButton",
+                "size": [
+                  300,
+                  0
+                ],
                 "text": "{words.langVi}",
                 "action": "language",
                 "visible": "{analog.vietnamese}"
