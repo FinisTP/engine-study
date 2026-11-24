@@ -316,6 +316,12 @@ void MatchTable::Play(int unit, const std::string &motion)
 
 void MatchTable::Animate(const MatchState &s, float dt)
 {
+    // 0. A drag never leaves the board: the target stays between its corner squares.
+    if (s.board.width > 0 && s.board.height > 0)
+    {
+        const glm::vec3 a = Centre(s.board, 0), b = Centre(s.board, s.board.width * s.board.height - 1);
+        view_.SetBounds({std::min(a.x, b.x), std::min(a.z, b.z)}, {std::max(a.x, b.x), std::max(a.z, b.z)});
+    }
     // 1. A new turn: the ring grows under the one whose turn it is, it nods, and the camera eases halfway to it.
     const int now = s.battle.on ? s.battle.attacker : Current(s);
     if (now >= 0 && now != acting_)
@@ -419,7 +425,11 @@ void MatchTable::Load(const std::string &sprite)
         std::string error;
         const std::string key = sprite + "/" + face;
         if (!sprites_.contains(key) && umbra::assets::LoadImageFile(assets_ / ("art/sprites/" + sprite + "/body_" + face + ".png"), data, error))
+        {
             sprites_[key] = renderer_.CreateTexture(data), aspects_[sprite] = static_cast<float>(data.width) / static_cast<float>(std::max(1u, data.height));
+            if (!feet_.contains(sprite))
+                feet_[sprite] = umbra::night::FootCentre(data);
+        }
     }
 }
 
@@ -457,6 +467,9 @@ void MatchTable::Sprite(int index, const Unit &u, glm::vec3 feet, umbra::core::D
         return Box(out, box_, feet + glm::vec3{0, h * 0.5F, 0}, {h * aspect, h, h * aspect}, Hex(0x8a8178));
     // 2. The sprite surface: colour = tint and opacity, emissive = how much tint (a monster's colour, or the motion's).
     const float facing = pose.flip ? -st.facing : st.facing;
+    // The feet drawn off the picture's middle go to the square's middle (mirrored when facing left).
+    const std::string folder = art->first.substr(0, art->first.find('/'));
+    feet += right * ((0.5F - (feet_.contains(folder) ? feet_.at(folder) : 0.5F)) * aspect * h * (facing < 0.0F ? -1.0F : 1.0F));
     const std::uint32_t own = u.kind == 0 ? 0xFFFFFF : def_.monsters[U(u.def)].tint;
     const bool tinted = pose.tint.a > 0.001F;
     const glm::vec3 tint = tinted ? glm::vec3(pose.tint) : glm::vec3(Hex(own));
@@ -784,7 +797,7 @@ nlohmann::json MatchTable::Labels(const MatchState &s, glm::vec2 pixels) const
         const bool character = u.kind == 0;
         const std::string sprite = character ? def_.characters[U(u.def)].sprite : def_.monsters[U(u.def)].sprite;
         const std::string name = U(i) < names_.size() && !names_[U(i)].empty() ? names_[U(i)] : character ? def_.characters[U(u.def)].name : def_.monsters[U(u.def)].name;
-        labels.push_back({{"unit", i}, {"at", {at->x, at->y}}, {"name", name.substr(name.rfind(' ') + 1)}, {"level", character ? u.level : def_.monsters[U(u.def)].level},
+        labels.push_back({{"unit", i}, {"at", {at->x, at->y}}, {"name", names_.empty() ? name.substr(name.rfind(' ') + 1) : name}, {"level", character ? u.level : def_.monsters[U(u.def)].level},
                           {"hp", U(i) < toldHp_.size() ? toldHp_[U(i)] : u.hp}, {"maxHp", u.maxHp}, {"portrait", "art/sprites/" + sprite + "/face_calm.png"}, {"acting", i == acting},
                           {"essence", character && u.essence > 0 ? std::to_string(u.essence) : ""}, {"side", u.faction},
                           {"mine", u.faction == 0}, {"theirs", u.faction == 1}, {"wild", u.faction < 0}, {"foe", u.faction != 0}, {"plate", fightT_ <= 0.3F}});

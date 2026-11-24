@@ -10,6 +10,7 @@
 
 #include <functional>
 
+#include <map>
 #include <string>
 #include <utility>
 #include <vector>
@@ -151,6 +152,9 @@ private:
     std::vector<Toasted> toasts_;
     std::string stageTitle_, hurryKey_ = "Space", skipKey_ = "F";
     std::string armed_; // "attack" or "ability:<slot>"
+    std::map<int, std::string> used_; // the ability each unit used last (its bubble in a campaign stage)
+    void Act(const umbra::match::Action &action); // Apply, noting the ability used
+    bool moving_ = false; // Di chuyen picked: the menu steps aside while a square is chosen
     std::string lastBlow_, eventResult_, treasureResult_; // the battle's last blow; the event's outcome; the card turned
     int eventCell_ = -1;
     nlohmann::json eventDice_;  // the event's two dice, as shown (display only: the rules' roll decides)

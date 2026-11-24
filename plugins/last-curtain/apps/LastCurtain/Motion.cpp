@@ -193,6 +193,21 @@ namespace umbra::night
         return shot_.empty() ? motions.Sample(base_, baseT_ - back) : motions.Sample(shot_, std::max(shotT_ - back, 0.0F));
     }
 
+    float FootCentre(const core::TextureData &picture)
+    {
+        // 1. The leftmost and rightmost opaque columns among the bottom quarter's rows.
+        int lo = -1, hi = -1;
+        const auto w = static_cast<int>(picture.width), h = static_cast<int>(picture.height);
+        if (picture.rgba.size() < static_cast<std::size_t>(w) * static_cast<std::size_t>(h) * 4)
+            return 0.5F;
+        for (int y = h - std::max(1, h / 4); y < h; ++y)
+            for (int x = 0; x < w; ++x)
+                if (picture.rgba[(static_cast<std::size_t>(y) * static_cast<std::size_t>(w) + static_cast<std::size_t>(x)) * 4 + 3] > 64)
+                    lo = lo < 0 ? x : std::min(lo, x), hi = std::max(hi, x);
+        // 2. Their middle, as a share of the width (the far edge of the last column counts).
+        return lo < 0 ? 0.5F : (static_cast<float>(lo) + static_cast<float>(hi) + 1.0F) * 0.5F / static_cast<float>(w);
+    }
+
     glm::mat4 SpriteModel(const MotionPose &pose, glm::vec3 feet, glm::vec3 right, float height, float aspect, float facing, float time, glm::vec3 up)
     {
         // 1. Quad (-0.5..0.5) -> feet-local metres, y up: the picture's bottom middle at the origin.

@@ -3,6 +3,7 @@
 // Sprite motions (Motions.md): flat pictures moved by short keyed motions from assets/motions.json.
 // Display only: the night's rules never read this.
 
+#include <MeshData.hpp>
 #include <Night.hpp>
 
 #include <glm/glm.hpp>
@@ -78,6 +79,9 @@ namespace umbra::night
     // The model matrix of the 1 m quad (centred, facing +Z, v down) for a sprite whose feet stand at
     // `feet`, upright, its picture `height` metres tall and `aspect` wide per tall (Motions.md "The transform").
     // `up`: the picture's up (the world's by default; the match's figures use the camera's, Motions.md).
+    // Where a sprite's feet are across its picture (0 left, 1 right): the middle of the opaque pixels in its
+    // bottom quarter; 0.5 when there are none. A figure painted off centre stands on its square by this.
+    [[nodiscard]] float FootCentre(const core::TextureData &picture);
     [[nodiscard]] glm::mat4 SpriteModel(const MotionPose &pose, glm::vec3 feet, glm::vec3 right, float height, float aspect, float facing, float time,
                                         glm::vec3 up = {0.0F, 1.0F, 0.0F});
 

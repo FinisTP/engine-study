@@ -26,6 +26,8 @@ void TableCamera::Pan(glm::vec2 pixels)
     const glm::vec3 forward = glm::normalize(glm::mix(glm::vec3{0.0F, 0.0F, -1.0F}, corner, e));
     const glm::vec3 right{-forward.z, 0.0F, forward.x};
     from_ = to_ = Target() - (right * pixels.x - forward * pixels.y) * (metres / 700.0F);
+    if (bounded_) // never off the board
+        to_.x = std::clamp(to_.x, min_.x, max_.x), to_.z = std::clamp(to_.z, min_.y, max_.y), from_ = to_;
     elapsed_ = seconds_;
 }
 

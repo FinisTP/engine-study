@@ -92,6 +92,7 @@ private:
     void Load(const std::string &sprite);
     umbra::night::Motions motions_;
     std::vector<umbra::night::SpriteState> states_; // by unit
+    std::map<std::string, float> feet_;                         // where its feet are across the picture (FootCentre)
     std::map<std::string, float> aspects_;                      // ... its width per height
     [[nodiscard]] float Look(const char *group, const char *key, float t, float fallback) const; // start..end at t
     void Shadow(glm::vec3 feet, float width, umbra::core::DrawList &out) const;

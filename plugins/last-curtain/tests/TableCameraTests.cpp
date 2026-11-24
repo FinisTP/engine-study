@@ -52,3 +52,20 @@ TEST_CASE("In the room view a sideways drag moves along the screen, slanted like
     CHECK(std::abs(glm::dot(glm::normalize(moved), forward)) < 1e-3F); // across the view, not into it
     CHECK(std::abs(moved.z) > 0.01F);                                   // slanted: not only along x
 }
+
+TEST_CASE("A drag stops at the board's edge (SetBounds); without bounds it is free", "[table][camera]")
+{
+    TableCamera cam;
+    cam.SetBounds({-2.0F, -3.0F}, {2.0F, 3.0F}); // x and z on the table
+    for (int i = 0; i < 100; ++i)
+        cam.Pan({200.0F, 200.0F});
+    const glm::vec3 t = cam.Target();
+    CHECK(t.x >= -2.0F);
+    CHECK(t.x <= 2.0F);
+    CHECK(t.z >= -3.0F);
+    CHECK(t.z <= 3.0F);
+    TableCamera free;
+    for (int i = 0; i < 100; ++i)
+        free.Pan({200.0F, 0.0F});
+    CHECK(std::abs(free.Target().x) > 10.0F);
+}

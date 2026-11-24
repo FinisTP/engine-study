@@ -990,10 +990,15 @@ TEST_CASE("The command menu: rows by situation, number keys, sub-menus and the b
     const MatchDef def = Data();
     MatchPlay p = AtPlayer(def, [](MatchState &) {});
     const int me = Current(p.State()), from = p.State().units[static_cast<std::size_t>(me)].cell;
-    // 1. Walking: stay or end; key 1 stays.
-    CHECK(RowIds(p) == std::vector<std::string>{"stay", "end"});
+    // 1. Before moving: move, stay or end. Move hides the menu (the squares under it can be clicked); Back
+    //    brings it back; key 2 stays.
+    CHECK(RowIds(p) == std::vector<std::string>{"move", "stay", "end"});
     CHECK(p.Menu()["rows"][0]["key"] == "1");
     REQUIRE(p.MenuKey(1));
+    CHECK(RowIds(p).empty());
+    CHECK(p.Back());
+    CHECK(RowIds(p) == std::vector<std::string>{"move", "stay", "end"});
+    REQUIRE(p.MenuKey(2));
     // 2. The main menu: move, attack, skills, items, end (cut only beside a fallen strung one).
     std::vector<std::string> ids = RowIds(p);
     CHECK(ids.front() == "undo");
@@ -1011,10 +1016,10 @@ TEST_CASE("The command menu: rows by situation, number keys, sub-menus and the b
         CHECK(RowIds(p).front() == "undo");
     }
     CHECK(p.Back());
-    CHECK(RowIds(p) == std::vector<std::string>{"stay", "end"});
+    CHECK(RowIds(p) == std::vector<std::string>{"move", "stay", "end"});
     CHECK(p.State().units[static_cast<std::size_t>(me)].cell == from);
     // 4. Keyboard only: stay, then end with its key; the turn passes.
-    REQUIRE(p.MenuKey(1));
+    REQUIRE(p.MenuKey(2));
     REQUIRE(p.MenuKey(static_cast<int>(RowIds(p).size())));
     CHECK(Current(p.State()) != me);
 }
@@ -1037,7 +1042,7 @@ TEST_CASE("Armed: the menu lists the targets with keys; Back disarms (campaign p
                 break;
             }
     });
-    REQUIRE(p.MenuKey(1)); // stay
+    REQUIRE(p.MenuKey(2)); // stay
     const std::vector<std::string> ids = RowIds(p);
     const int attack = static_cast<int>(std::ranges::find(ids, "attack") - ids.begin()) + 1;
     INFO(p.Menu().dump());
@@ -1083,7 +1088,7 @@ TEST_CASE("Target preview equals the rules' damage; the card shows the hovered u
     CHECK(f["counterMax"] == counter);
     CHECK(f["min"].get<int>() <= f["max"].get<int>());
     // 2. Armed, the target row carries the preview in its note.
-    REQUIRE(p.MenuKey(1));
+    REQUIRE(p.MenuKey(2)); // stay
     const nlohmann::json main = p.Menu()["rows"];
     for (std::size_t i = 0; i < main.size(); ++i)
         if (main[i]["id"] == "attack")

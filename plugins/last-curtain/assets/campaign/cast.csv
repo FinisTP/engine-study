@@ -10,6 +10,6 @@ ghost_attacker,Bóng ma,ghost_attacker,,ghost,,attacker,0,0,0,
 ghost_defender,Bóng ma,ghost_defender,,ghost,,defender,0,0,0,
 ghost_speedster,Bóng ma,ghost_speedster,,ghost,,speedster,0,0,0,
 ghost_supporter,Bóng ma,ghost_supporter,,ghost,,supporter,0,0,0,
-rat_specter,Bóng chuột,specter,,ghost,,speedster,0,0,0,claw
+rat_specter,Bóng chuột,rat_shadow,,ghost,,speedster,0,0,0,claw
 nameless,Linh,,,player,,allrounder,0,0,0,
-thief_specter,Bóng chuột móc túi,specter,,ghost,,speedster,0,0,0,claw;moc_tui
+thief_specter,Bóng chuột móc túi,rat_shadow,,ghost,,speedster,0,0,0,claw;moc_tui

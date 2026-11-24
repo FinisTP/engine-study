@@ -256,8 +256,8 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                 dragging = true;
             if (held && dragging)
                 table.Pan(uiInput.mouse - lastMouse), table.StopFollow();
-            if (play->State().over && !ended)
-                ended = true, table.StartScene("end", play->State().board.hub[static_cast<std::size_t>(std::max(0, play->State().winner))]);
+            if (play->State().over && !ended) // a campaign stage leaves for its result instead of the turning shot
+                ended = true, hooks ? void() : table.StartScene("end", play->State().board.hub[static_cast<std::size_t>(std::max(0, play->State().winner))]);
             table.Zoom(input.Wheel() + std::exchange(zoom, 0.0F));
             if (!play->State().over && play->State().round != savedRound && !watch && !hooks)
                 WriteSave(*play), savedRound = play->State().round;
@@ -274,7 +274,8 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         const std::string screen = paused ? (hooks ? "campaign-pause" : "pause") : play ? (play->Screen().empty() ? "" : "match-" + play->Screen()) : "match-pick";
         show(screen);
         // A staged fight has the screen to itself: the HUD steps away (the user, 2026-11-20).
-        if (const bool hud = play && !ui.contains("fight"); screens.Ready() && play && hud != hudOpen)
+        // A campaign stage that is over: the HUD and labels go at once, before its end scene and the result.
+        if (const bool hud = play && !ui.contains("fight") && !(hooks && play->State().over); screens.Ready() && play && hud != hudOpen)
         {
             if (hud)
                 screens.Ui().Open(hudName);

@@ -1,5 +1,7 @@
 #include "StageApp.hpp"
 
+#include <fstream>
+
 #include "DialogApp.hpp"
 #include "MatchApp.hpp"
 #include "MatchPlay.hpp"
@@ -29,6 +31,12 @@ int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const
         umbra::diagnostics::Error(umbra::core::Format(e));
     if (!loaded)
         return 1;
+    // Ability names in Vietnamese (campaign-words.json "abilities"), everywhere the fight shows them.
+    if (std::ifstream in(assets / "campaign-words.json"); in)
+        if (const nlohmann::json w = nlohmann::json::parse(in, nullptr, false); w.is_object())
+            for (umbra::match::AbilityDef &a : def.abilities)
+                if (w.contains("abilities") && w["abilities"].contains(a.id))
+                    a.name = w["abilities"][a.id].get<std::string>();
     std::vector<campaign::PartyMember> members;
     for (const char *who : {"player", "bao", "mai"})
         if (static_cast<int>(members.size()) < stage.partyCap)

@@ -187,8 +187,35 @@ bool MatchPlay::Reveal()
     return true;
 }
 
+void MatchPlay::Act(const Action &action)
+{
+    // The ability the actor uses, for its bubble: the attack is its first (the basic attack), an ability its slot.
+    const int me = Current(s_);
+    if (me >= 0)
+    {
+        const Unit &u = s_.units[U(me)];
+        const int slot = action.kind == ActionKind::Attack ? 0 : action.kind == ActionKind::BattleAbility || action.kind == ActionKind::BoardAbility ? action.a : -1;
+        if (slot >= 0 && slot < static_cast<int>(u.abilities.size()) && u.abilities[U(slot)] >= 0)
+            used_[me] = def_.abilities[U(u.abilities[U(slot)])].name;
+    }
+    Apply(def_, s_, action);
+}
+
 void MatchPlay::Speak(const LogEntry &e, std::size_t index)
 {
+    // 0. A campaign stage (a cast was set): the bubble names the ability used, for anyone; nothing else.
+    if (!names_.empty())
+    {
+        if ((e.kind != LogKind::Blow && e.kind != LogKind::Healed) || e.a < 0)
+            return;
+        const Unit &u = s_.units[U(e.a)];
+        std::string text = used_.contains(e.a) ? used_[e.a] : u.abilities.empty() || u.abilities[0] < 0 ? "" : def_.abilities[U(u.abilities[0])].name;
+        if (text.empty())
+            return;
+        std::erase_if(bubbles_, [&](const Bubble &b) { return b.unit == e.a; });
+        bubbles_.push_back({e.a, text, options_.beatSeconds * 2.0F});
+        return;
+    }
     // 1. Who speaks: the striker, the fallen, the performer, whoever levels; characters only.
     const int who = e.kind == LogKind::Blow || e.kind == LogKind::Down || e.kind == LogKind::Performed || e.kind == LogKind::Level ? e.a : -1;
     if (who < 0 || s_.units[U(who)].kind != 0)
@@ -216,7 +243,7 @@ bool MatchPlay::Do(const Action &action)
     if (!PlayerTurn() || Check(def_, s_, action) != Why::Ok)
         return false;
     SyncHp();
-    Apply(def_, s_, action);
+    Act(action);
     Queue();
     // 1. A blow, a heal or a fight is told beat by beat, the player's too; anything else shows at once while it stays their turn.
     const bool told = action.kind == ActionKind::Attack || action.kind == ActionKind::BattleAbility || action.kind == ActionKind::BoardAbility;
@@ -268,7 +295,7 @@ void MatchPlay::Update(float dt)
     if (now < 0 || Mine(now) || (fight_[0] >= 0 && !s_.battle.on)) // a finished fight keeps its stage a moment
         return;
     SyncHp();
-    Apply(def_, s_, brain_ ? brain_(s_) : ChooseAction(def_, s_, level_));
+    Act(brain_ ? brain_(s_) : ChooseAction(def_, s_, level_));
     Queue();
     Reveal();
 }
@@ -365,7 +392,7 @@ bool MatchPlay::HandleUi(const std::string &screen, const std::string &action, c
         RevealAll();
         for (int guard = 0; guard < 100000 && !s_.over && !Mine(Current(s_)); ++guard)
         {
-            Apply(def_, s_, brain_ ? brain_(s_) : ChooseAction(def_, s_, level_));
+            Act(brain_ ? brain_(s_) : ChooseAction(def_, s_, level_));
             RevealAll();
         }
         if (bannerOn_)
@@ -562,7 +589,7 @@ nlohmann::json MatchPlay::UiData() const
     j["logOpen"] = logOpen_;
     j["logClosed"] = !logOpen_;
     j["banner"] = {{"title", Fill(Word("banner", "title"), {{"n", std::to_string(s_.round)}})},
-                   {"text", Fill(Word("banner", "text"), {{"n", std::to_string(TurnsLeft(def_, s_))}})}};
+                   {"text", TurnsLeft(def_, s_) < 0 ? std::string() : Fill(Word("banner", "text"), {{"n", std::to_string(TurnsLeft(def_, s_))}})}}; // no limit: no count
     return j;
 }
 
@@ -642,7 +669,7 @@ void MatchPlay::Click(int cell)
     const int from = s_.units[U(me)].cell, key = Key();
     if (cell == from)
     {
-        chosen_ = key;
+        chosen_ = key, moving_ = false;
         return;
     }
     const auto reach = Reach();
@@ -662,7 +689,7 @@ void MatchPlay::Click(int cell)
                 Do({ActionKind::Move, static_cast<std::int8_t>(d)});
                 break;
             }
-    chosen_ = key;
+    chosen_ = key, moving_ = false;
 }
 
 nlohmann::json MatchPlay::Actions() const
@@ -1026,7 +1053,7 @@ nlohmann::json MatchPlay::Menu() const
         const std::string dir = "art/ui/campaign/";
         if (id.starts_with("item:"))
             return dir + "item/" + id.substr(5) + ".png";
-        const std::string cmd = id == "undo" || id == "stay" ? "move" : id.starts_with("cut:") ? "cut" : id.starts_with("ability:") ? "skills" : id;
+        const std::string cmd = id == "undo" ? "move" : id == "stay" ? "attack" : id.starts_with("cut:") ? "cut" : id.starts_with("ability:") ? "skills" : id;
         return cmd == "move" || cmd == "attack" || cmd == "skills" || cmd == "items" || cmd == "end" || cmd == "cut" ? dir + "icon/cmd_" + cmd + ".png" : "";
     };
     const auto row = [&](const std::string &id, const std::string &label, const std::string &note, bool off, const std::string &why, bool sub) {
@@ -1051,9 +1078,12 @@ nlohmann::json MatchPlay::Menu() const
             row("target:" + std::to_string(k++), Name(a.kind == ActionKind::Attack ? a.a : a.b), note, false, "", false);
         }
     }
+    else if (moving_ && !Chose())
+        return {{"title", ""}, {"rows", rows}}; // 2. Choosing a square: no menu over the board
     else if (!Chose())
     {
-        // 2. Walking: click a lit square, or stay; or end at once.
+        // 3. Before moving: move (then a lit square), act from here, or end at once.
+        row("move", Word("actions", "move"), "", false, "", false);
         row("stay", Word("actions", "stay"), "", false, "", false);
         row("end", Word("actions", "end"), "", false, "", false);
     }
@@ -1074,7 +1104,7 @@ nlohmann::json MatchPlay::Menu() const
             anySkill |= starts(a, "ability:") && !a["off"].get<bool>(), anyItem |= starts(a, "item:") && !a["off"].get<bool>();
         for (const auto &a : actions)
             if (a["id"] == "undo")
-                row("undo", Word("actions", "move"), "", a["off"], a["why"], false);
+                row("undo", Word("actions", "undo"), "", a["off"], a["why"], false);
             else if (a["id"] == "attack")
                 row("attack", a["label"], "", a["off"], a["why"], false);
         row("skills", Word("actions", "skills"), "", !anySkill, anySkill ? "" : Word("why", "NoTarget"), true);
@@ -1109,6 +1139,8 @@ bool MatchPlay::MenuPick(const std::string &id)
     if (id == "skills" || id == "items")
         return submenu_ = id, true;
     submenu_.clear();
+    if (id == "move" && !Chose())
+        return moving_ = true, true;
     if (id == "stay")
         return chosen_ = Key(), true;
     if (id == "end" && !Chose())
@@ -1133,6 +1165,8 @@ bool MatchPlay::Back()
         return armed_.clear(), true;
     if (!submenu_.empty())
         return submenu_.clear(), true;
+    if (moving_ && !Chose())
+        return moving_ = false, true;
     if (Chose() && !s_.now.acted)
         return HandleUi("", "act", "undo");
     return false;

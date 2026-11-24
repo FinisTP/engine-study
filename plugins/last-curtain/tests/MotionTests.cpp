@@ -163,3 +163,18 @@ TEST_CASE("A guest's player: one-shots over a base loop, then back (T273)", "[ni
     s.Release();
     CHECK(s.Motion() == "spin");
 }
+
+TEST_CASE("A sprite stands where its feet are drawn: the middle of the opaque pixels near the bottom", "[motion][sprite]")
+{
+    // 1. A 10 x 10 picture whose figure stands in columns 6..8 (the top half wider, which must not count).
+    umbra::core::TextureData t;
+    t.width = 10, t.height = 10, t.rgba.assign(400, 0);
+    for (std::uint32_t y = 0; y < 10; ++y)
+        for (std::uint32_t x = y < 5 ? 2 : 6; x <= 8; ++x)
+            t.rgba[(y * 10 + x) * 4 + 3] = 255;
+    CHECK(umbra::night::FootCentre(t) == Catch::Approx(0.75F)); // columns 6..8: their middle 7.5 of 10
+    // 2. Nothing opaque, or no picture: the middle.
+    std::fill(t.rgba.begin(), t.rgba.end(), 0);
+    CHECK(umbra::night::FootCentre(t) == Catch::Approx(0.5F));
+    CHECK(umbra::night::FootCentre({}) == Catch::Approx(0.5F));
+}
