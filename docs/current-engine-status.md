@@ -15,6 +15,14 @@
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
 
+## Update 2026-11-24, afternoon (The Last Curtain, the user's 25 notes: `#UMBRA-401`-`#UMBRA-412`)
+
+- **Fight board:** Di chuyển first, a bounded drag, the ability's name in the bubble, sprites on their feet, the Rat's shadows, no end spin.
+- **Screens:** the UI is laid out at 720 rows and scaled to the window (bigger text); dialogue plays over the board or café with the camera on the speaker; the notebook and world map (pan, zoom) follow the mockups; who fights says so per row; retry returns to that roster.
+- **Sound:** music for title, café, map, fight, result and game over, and a typing key (made on the PC); plan in `design/sound-design.md`.
+- **Fixes:** the fight table and café room return their textures (the renderer's 256 ran out: the retry sprite loss); a full font atlas grows instead of dropping Vietnamese letters.
+- **Open:** the male player's portrait has the eyes shut in every face. Windows play check: `testing/s53-campaign-feedback-2.md` §4.
+
 ## Update 2026-11-24, day (The Last Curtain, the user's requests and plan 8: `#UMBRA-389`-`#UMBRA-399`)
 
 - **The café is a room again** (walk, switch with Tab, E to talk, brew, notebook, door); **everyone has Đánh thường**; **Rút lui** leaves a fight for the map with nothing kept; the **floor plan is painted**.
