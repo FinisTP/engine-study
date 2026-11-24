@@ -565,19 +565,21 @@ void MatchTable::SetLook(nlohmann::json look)
         {
             umbra::core::TextureData data;
             std::string error;
-            if (umbra::assets::LoadImageFile(assets_ / ("art/rooms/" + name.get<std::string>() + ".jpg"), data, error))
+            // A bare name is a room painting; a path is a floor tile (art/floors/).
+            const std::string file = name.get<std::string>();
+            if (umbra::assets::LoadImageFile(assets_ / (file.find('/') != std::string::npos ? file : "art/rooms/" + file + ".jpg"), data, error))
                 floors_[kind].push_back(renderer_.CreateTexture(data));
         }
 }
 
 umbra::core::TextureHandle MatchTable::FloorArt(const Board &b, int cell, bool stage) const
 {
-    // A square and its mirror share a picture, picked by the nearer of the two's index.
+    // One floor per kind of square on a board (a room has one floor), picked by the board's size.
     static const char *kinds[] = {"", "hall", "room", "centre", "hub"};
     const auto it = floors_.find(stage ? "stage" : kinds[static_cast<int>(b.cells[U(cell)].kind)]);
     if (it == floors_.end() || it->second.empty())
         return {};
-    const int key = std::min(cell, Mirror(b, cell));
+    const int key = static_cast<int>(b.cells.size());
     return it->second[U((key * 7 + 3) % static_cast<int>(it->second.size()))];
 }
 

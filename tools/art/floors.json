@@ -1,0 +1,87 @@
+{
+ "note": "Board floors, painted (feedback 2026-11-24 16:57, note 20): one seamless texture per kind of square; the room's painting stays as the backdrop only.",
+ "style": "oil pastel on toned paper, muted colours, low contrast, painterly, dim",
+ "negative": "text, letters, watermark, logo, frame, border, perspective, walls, furniture, person, figure, face, shadow of a person, blood, skull, vignette, horizon",
+ "jobs": [
+  {
+   "name": "floor_parquet",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    11,
+    12
+   ],
+   "prompt": "worn old wooden parquet floor of a 1940s theatre corridor, herringbone pattern, dark honey wood, scuffed varnish, seamless tileable texture, flat top-down view straight from above, even soft light, no perspective, fills the whole frame edge to edge"
+  },
+  {
+   "name": "floor_boards",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    11,
+    12
+   ],
+   "prompt": "old dark wooden stage floorboards, long planks with nail holes and chalk marks, dusty, seamless tileable texture, flat top-down view straight from above, even soft light, no perspective, fills the whole frame edge to edge"
+  },
+  {
+   "name": "floor_carpet",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    11,
+    12
+   ],
+   "prompt": "faded deep red theatre carpet with a small gold diamond motif, worn paths, dust, seamless tileable texture, flat top-down view straight from above, even soft light, no perspective, fills the whole frame edge to edge"
+  },
+  {
+   "name": "floor_marble",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    11,
+    12
+   ],
+   "prompt": "old cream and grey marble lobby floor tiles, square tiles, cracked, polished worn, seamless tileable texture, flat top-down view straight from above, even soft light, no perspective, fills the whole frame edge to edge"
+  },
+  {
+   "name": "floor_cement",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    11,
+    12
+   ],
+   "prompt": "encaustic cement floor tiles, Vietnamese colonial pattern, faded teal and ochre, worn and chipped, seamless tileable texture, flat top-down view straight from above, even soft light, no perspective, fills the whole frame edge to edge"
+  },
+  {
+   "name": "floor_backstage",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    11,
+    12
+   ],
+   "prompt": "bare concrete backstage floor with paint drips and taped marks, dusty, grey, seamless tileable texture, flat top-down view straight from above, even soft light, no perspective, fills the whole frame edge to edge"
+  },
+  {
+   "name": "item_bandage",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    21,
+    22
+   ],
+   "prompt": "a single rolled cotton bandage with a loose end, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+  },
+  {
+   "name": "item_programme",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    21,
+    22
+   ],
+   "prompt": "a single folded old paper theatre programme, yellowed, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+  }
+ ]
+}

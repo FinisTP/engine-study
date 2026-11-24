@@ -54,53 +54,25 @@
     "tilt": 40
   },
   "rooms": {
-    "note": "Painted floors by square kind (art/rooms/<name>.jpg); a square and its mirror get the same one. Walls rise as the camera comes within roomDistance.",
+    "note": "Floor tiles by square kind (a path, art/floors/*.jpg) or room paintings (a bare name, art/rooms/<name>.jpg); one per kind on a board, picked by the board's size. Walls rise as the camera comes within roomDistance.",
     "hall": [
-      "corridor",
-      "hallway",
-      "passage",
-      "sidecorridor",
-      "landing",
-      "stairwell"
+      "art/floors/boards.jpg",
+      "art/floors/marble.jpg"
     ],
     "room": [
-      "archive",
-      "armoury",
-      "balletroom",
-      "bar",
-      "boxes",
-      "cloakroom",
-      "composer",
-      "costumes",
-      "dressing",
-      "green",
-      "infirmary",
-      "lostfound",
-      "maskcabinet",
-      "mirrors",
-      "office",
-      "paintshop",
-      "pantry",
-      "props",
-      "rehearsal",
-      "sewing",
-      "storeroom",
-      "vault",
-      "waitingroom",
-      "wigroom"
+      "art/floors/parquet.jpg",
+      "art/floors/carpet.jpg",
+      "art/floors/boards.jpg"
     ],
     "centre": [
-      "auditorium",
-      "pit",
-      "orchestraroom",
-      "royalbox"
+      "art/floors/carpet.jpg"
     ],
     "hub": [
-      "foyer",
-      "ticketlobby"
+      "art/floors/cement.jpg",
+      "art/floors/marble.jpg"
     ],
     "stage": [
-      "understage"
+      "art/floors/backstage.jpg"
     ],
     "boardDistance": 19,
     "roomDistance": 7,
