@@ -96,10 +96,10 @@
             }
           },
           {
-            "type": "stack",
+            "type": "scroll",
             "size": [
               440,
-              0
+              540
             ],
             "gap": 10,
             "visible": "{book.detail.portrait}",
@@ -320,13 +320,14 @@
                   ]
                 }
               }
-            ]
+            ],
+            "id": "bookMiddle"
           },
           {
-            "type": "stack",
+            "type": "scroll",
             "size": [
               440,
-              0
+              540
             ],
             "gap": 8,
             "visible": "{book.detail.portrait}",
@@ -505,7 +506,8 @@
                   ]
                 }
               }
-            ]
+            ],
+            "id": "bookRight"
           },
           {
             "type": "stack",

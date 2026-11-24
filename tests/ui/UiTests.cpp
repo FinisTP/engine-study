@@ -698,3 +698,39 @@ TEST_CASE("A size can come from the data, and a clipped box keeps what is inside
         clipped |= b.clip == glm::vec4{10.0F, 10.0F, 110.0F, 90.0F};
     CHECK(clipped);
 }
+
+TEST_CASE("A scroll box shows part of a tall column; the wheel over it moves it, within its ends (UI.md \"Scroll\")")
+{
+    json rows = json::array();
+    for (int i = 0; i < 20; ++i)
+        rows.push_back({{"type", "button"}, {"text", "Row"}, {"action", "row"}, {"arg", std::to_string(i)}, {"size", {100, 40}}});
+    const json screen{{"format", "umbra.ui"}, {"version", 1}, {"modal", true},
+                      {"root", {{"type", "scroll"}, {"id", "list"}, {"anchor", "top-left"}, {"size", {120, 200}}, {"children", rows}}}};
+    ui::UiSystem ui;
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(ui.Load(TestProject("scroll", {{"list", screen}}), diagnostics));
+    CHECK(diagnostics.empty());
+    REQUIRE(ui.Open("list"));
+    core::UiDrawList out;
+    const auto clickAt = [&](float y) {
+        ui::UiInput in;
+        in.mouse = {50.0F, y}, in.click = true;
+        out = {};
+        const auto acts = ui.Update({}, {1280.0F, 720.0F}, in, out);
+        return acts.empty() ? std::string() : acts.front().arg;
+    };
+    (void)ui.Update({}, {1280.0F, 720.0F}, {}, out);
+    CHECK(clickAt(20.0F) == "0");
+    // 1. The wheel down moves the column up: the first row out of the box.
+    ui::UiInput wheel;
+    wheel.mouse = {50.0F, 100.0F}, wheel.wheel = -2.0F;
+    (void)ui.Update({}, {1280.0F, 720.0F}, wheel, out);
+    (void)ui.Update({}, {1280.0F, 720.0F}, {}, out);
+    CHECK(clickAt(20.0F) != "0");
+    // 2. Far down it stops at the last row; a click below the box hits nothing.
+    wheel.wheel = -100.0F;
+    (void)ui.Update({}, {1280.0F, 720.0F}, wheel, out);
+    (void)ui.Update({}, {1280.0F, 720.0F}, {}, out);
+    CHECK(clickAt(190.0F) == "19");
+    CHECK(clickAt(260.0F).empty());
+}

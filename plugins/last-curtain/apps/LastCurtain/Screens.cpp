@@ -86,5 +86,6 @@ umbra::ui::UiInput Screens::MapInput(const umbra::platform::Input &input, glm::v
     ui.confirm = pressed({InputKey::Enter, InputKey::PadA});
     ui.back = pressed({InputKey::Escape, InputKey::PadB});
     ui.text = input.Text(); // for a focused text field (UI.md "Text fields")
+    ui.wheel = input.Wheel(); // a scroll box under the mouse (UI.md "Scroll")
     return ui;
 }

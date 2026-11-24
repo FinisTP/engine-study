@@ -192,3 +192,11 @@ person can check a screen file's layout without starting the game.
 
 Add the type name to `ParseScreen` (`Screen.cpp`), how big it is to `UiSystem::Measure` and how
 it draws to `UiSystem::Place` (`Ui.cpp`), and a line to the table above.
+
+## Scroll
+
+A `scroll` node (it needs an `id`) is a box of its `size` that shows its children as one column. A
+taller column is cut at the box's edges and moved by the mouse wheel over it (40 units a step),
+never past its top or its end. Only the part of a button seen in the box can be clicked. The offset
+is kept per screen and id while the game runs.
+

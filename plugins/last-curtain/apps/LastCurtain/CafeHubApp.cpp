@@ -1,4 +1,5 @@
 #include "CafeHubApp.hpp"
+#include "ItemArt.hpp"
 #include "CampaignText.hpp"
 #include "Localization.hpp"
 
@@ -208,12 +209,12 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
         for (auto &g : data["book"]["detail"]["gear"]) // worn gear by its Vietnamese name and picture (note 30)
         {
             g["label"] = g["item"] == "" ? words.value("empty", std::string()) : words.value("items", nlohmann::json::object()).value(g["item"].get<std::string>(), g["item"].get<std::string>());
-            g["icon"] = g["item"] == "" ? "" : Icon("art/ui/campaign/item/" + g["item"].get<std::string>() + ".png");
+            g["icon"] = g["item"] == "" ? "" : Icon(ItemPicture(def, g["item"].get<std::string>()));
         }
         for (auto &slot : data["book"]["detail"]["slots"]) // a slot's item by its Vietnamese name
         {
             slot["label"] = slot["item"] == "" ? words.value("empty", std::string()) : words.value("items", nlohmann::json::object()).value(slot["item"].get<std::string>(), slot["item"].get<std::string>());
-            slot["icon"] = slot["item"] == "" ? "" : Icon("art/ui/campaign/item/" + slot["item"].get<std::string>() + ".png");
+            slot["icon"] = slot["item"] == "" ? "" : Icon(ItemPicture(def, slot["item"].get<std::string>()));
         }
         // Storage and the card: items by their Vietnamese names, icons and texts.
         const nlohmann::json itemNames = words.value("items", nlohmann::json::object()), itemTexts = words.value("itemText", nlohmann::json::object());
@@ -221,7 +222,7 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
         {
             for (auto &it : page["store"])
                 it["name"] = itemNames.value(it["id"].get<std::string>(), it["id"].get<std::string>()) + "  \xC3\x97" + std::to_string(it["count"].get<int>()),
-                it["icon"] = Icon("art/ui/campaign/item/" + it["id"].get<std::string>() + ".png");
+                it["icon"] = Icon(ItemPicture(def, it["id"].get<std::string>()));
             if (page.contains("card") && page["card"].value("kind", "") == "item")
             {
                 const std::string id = page["card"]["id"];

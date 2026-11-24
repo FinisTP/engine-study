@@ -277,8 +277,8 @@ match.actions.warnFaster,nhanh hơn: ×2,faster: x2
 match.banner.first,Màn mở. Có ai đó đang xem.,The curtain rises. Someone is watching.
 match.banner.text,Còn {n} lượt,{n} turns left
 match.banner.title,Lượt {n},Turn {n}
-match.battle.withdraw,Rút khỏi trận,Leave the fight
-match.battle.withdrawTip,"Thôi đánh, lùi về bàn. Không ai bị thương thêm; lượt của bạn vẫn tính là đã đánh.","Stop fighting and step back to the board. No one is hurt further; your turn still counts as having attacked."
+match.screens.withdraw,Rút khỏi trận,Leave the fight
+match.screens.withdrawTip,"Thôi đánh, lùi về bàn. Không ai bị thương thêm; lượt của bạn vẫn tính là đã đánh.","Stop fighting and step back to the board. No one is hurt further; your turn still counts as having attacked."
 match.battle.title,Hiệp {r}/{n},Round {r} of {n}
 match.cards.essence,{n} tinh hoa,{n} essence
 match.cards.heal,hồi {n} HP,{n} HP back
@@ -578,3 +578,9 @@ campaign.abilities.chia_khoa,Chùm chìa khóa,Ring of keys
 lore.chia_khoa,Bà Mai rung chùm chìa khóa: cửa nào trong nhà hát cũng nghe lời bà. Một kẻ địch cách 3 ô bị chậm lại 2 Tốc tới lượt sau.,Bà Mai shakes her ring of keys: every door in the theatre obeys her. A foe up to 3 tiles away loses 2 Speed until its next turn.
 timeline.bao.5,"Đường phố còn khói. Ông mở cửa sau nhà hát làm trạm cứu thương, khâu cho những người không ai đến nhận.",The streets still smoke. He opens the theatre's back door as an aid post and stitches up those nobody comes to claim.
 timeline.mai.5,"Nhà hát thôi diễn. Người ta dọn đi hết, chỉ để lại cho bà chùm chìa khóa và lệnh khóa cửa. Bà không khóa cửa sập.","The theatre stops playing. Everyone moves out, leaving her only the keys and an order to lock up. She never locks the trapdoor."
+campaign.level,Cấp,Level
+campaign.party,Người đã đánh,Who fought
+campaign.spoils,Chiến lợi phẩm,Spoils
+campaign.spoilXp,+{n} XP cho mỗi người đã đánh,+{n} XP for each who fought
+campaign.gainXp,+{n} XP,+{n} XP
+campaign.levelUp,Lên cấp {n},Level {n} reached

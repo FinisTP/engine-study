@@ -103,3 +103,30 @@
 10. Ký ức in the notebook: years, with "???" where the skill is closed.
 11. Read the new T1–T3 lines and mark what to change.
 12. Run `tools\audio\campaign-audio.bat` (ffmpeg on PATH), then listen in T1, a skirmish and Stage 1, on the board and in the battle view.
+
+## 2026-11-25 02:39 notes (`#UMBRA-442`)
+
+Changed: figures one size (75%, no growth with zoom); the battle camera aimed at its stage (not
+pushed in from the board's edge), its distance counting the fighters' step forward, milder
+close-ups, 1.0 s in and out; the scene close-up nearer only to 80% and looking at the body; the
+notebook's middle and right columns scroll (engine `scroll` node, mouse wheel); one Bà Mai in the
+notebook; Mai joins carrying Đánh thường and Chăm sóc only; the quest line in its own panel at the
+top of the café; the result shows the spoils with pictures and who fought with XP bars; items use
+four shared pictures (weapon, armour, accessory, item) from `items.csv` `sprite`; the Rút khỏi
+trận button has its words. The battle view logs when a stage has no `_battle` music (that was why
+the music did not change: the battle cuts were never made, the run stopped).
+
+Cloud checks: `UmbraUiTests` (21 cases, the scroll test), `UmbraCampaignTests`, `UmbraCafeTests`
+pass; captures of the café (quest panel) and the result screen (`ui-preview`). Not run: a battle
+capture (the tutorial waits for input), anything on Windows.
+
+Windows check:
+1. T1: figures smaller; zoom out with the wheel and they look smaller.
+2. A battle: both sides on screen at about a quarter in; the way in is followable; close-ups stay
+   wide enough; the camera turns to whoever acts.
+3. A stage's opening lines: the speaker's head is in the picture.
+4. T2: one Bà Mai; her detail column scrolls with the wheel; she carries two abilities.
+5. The café: the quest panel at the top, apart from the menu.
+6. Win a stage: the result shows the spoils and the XP bars.
+7. Music: once `tools\audio\battle-music.bat` has made the five candidates
+   (`Temp\music-candidates\audio\music\cand_*_battle.ogg` and `_board.ogg`), listen and pick one.

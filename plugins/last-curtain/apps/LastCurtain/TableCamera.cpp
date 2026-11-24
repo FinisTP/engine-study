@@ -66,6 +66,7 @@ umbra::core::Camera TableCamera::Camera() const
         camera.farPlane = std::max(camera.farPlane, 2.0F * shotDistance_ + 60.0F);
         return camera;
     }
+    camera.target.y += lookLift_;
     const glm::vec3 up{0.0F, std::sin(glm::radians(tilt_)), std::cos(glm::radians(tilt_))};
     camera.position = camera.target + distance_ * up;
     if (roomT_ <= 0.0F)

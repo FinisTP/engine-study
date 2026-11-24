@@ -165,17 +165,34 @@
             ],
             "text": "{words.door}",
             "action": "leave"
-          },
+          }
+        ]
+      },
+      {
+        "type": "stack",
+        "anchor": "top",
+        "offset": [
+          0,
+          14
+        ],
+        "style": "lcPanel",
+        "size": [
+          440,
+          0
+        ],
+        "align": "stretch",
+        "gap": 6,
+        "visible": "{hub.quest}",
+        "children": [
           {
             "type": "text",
             "style": "warning",
             "text": "{words.questLabel}: {hub.quest}",
             "wrap": true,
             "size": [
-              350,
+              400,
               0
-            ],
-            "visible": "{hub.quest}"
+            ]
           }
         ]
       },

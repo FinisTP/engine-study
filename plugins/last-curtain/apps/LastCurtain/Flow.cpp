@@ -6,6 +6,7 @@
 #include "CafeHubApp.hpp"
 #include "DialogApp.hpp"
 #include "GameContext.hpp"
+#include "ItemArt.hpp"
 #include "StageApp.hpp"
 #include "Typing.hpp"
 
@@ -263,17 +264,28 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
         {
             campaign::WinStage(def, save, stage, out, stages);
             (void)campaign::SaveCampaign(saveFile, save, error);
+            // The result (the user, 2026-11-25 note 5): the spoils with their pictures, then who fought with their XP bars.
             const campaign::Result r = campaign::ResultOf(before, save);
-            nlohmann::json lines = nlohmann::json::array();
-            for (const auto &[who, n] : r.xp)
-                lines.push_back({{"text", Fill(words.value("lineXp", ""), {{"name", who == "player" ? save.player.name : name(who)}, {"n", std::to_string(n)}})}});
-            for (const std::string &who : r.levels)
-                lines.push_back({{"text", Fill(words.value("lineLevel", ""), {{"name", who == "player" ? save.player.name : name(who)}, {"n", std::to_string(std::ranges::find(save.roster, who, &campaign::Member::id)->level)}})}});
+            nlohmann::json spoils = nlohmann::json::array(), party = nlohmann::json::array();
+            if (!r.xp.empty())
+                spoils.push_back({{"icon", ""}, {"text", Fill(words.value("spoilXp", ""), {{"n", std::to_string(r.xp.begin()->second)}})}});
             for (const auto &[item, n] : r.found)
-                lines.push_back({{"text", Fill(words.value("lineFound", ""), {{"item", words["items"].value(item, item)}, {"n", std::to_string(n)}})}});
+                spoils.push_back({{"icon", ItemPicture(def, item)}, {"text", Fill(words.value("lineFound", ""), {{"item", words["items"].value(item, item)}, {"n", std::to_string(n)}})}});
             for (const std::string &who : r.freed)
-                lines.push_back({{"text", Fill(words.value("lineFreed", ""), {{"name", name(who)}})}});
-            const auto [next, unused] = RunScreen(game, "result", {{"words", words}, {"result", {{"title", Fill(words.value("won", ""), {{"name", stage.title}})}, {"lines", lines}}}});
+                spoils.push_back({{"icon", ""}, {"text", Fill(words.value("lineFreed", ""), {{"name", name(who)}})}});
+            for (const std::string &who : out.who)
+                if (const auto m = std::ranges::find(save.roster, who, &campaign::Member::id); m != save.roster.end())
+                {
+                    const campaign::CastMember *c = cast.Find(who);
+                    const std::string sprite = who == "player" ? (save.player.gender == "male" ? "player_male" : "player_female") : c ? c->sprite : who;
+                    const int gained = r.xp.contains(who) ? r.xp.at(who) : 0;
+                    party.push_back({{"portrait", "art/sprites/" + sprite + "/face_calm.png"}, {"name", who == "player" ? save.player.name : name(who)},
+                                     {"level", m->level}, {"xp", m->xp}, {"xpMax", campaign::xpPerLevel},
+                                     {"gain", gained > 0 ? Fill(words.value("gainXp", ""), {{"n", std::to_string(gained)}}) : ""},
+                                     {"up", std::ranges::find(r.levels, who) != r.levels.end() ? Fill(words.value("levelUp", ""), {{"n", std::to_string(m->level)}}) : ""}});
+                }
+            const auto [next, unused] = RunScreen(game, "result", {{"words", words}, {"result", {{"title", Fill(words.value("won", ""), {{"name", stage.title}})},
+                                                                                              {"spoils", spoils}, {"hasSpoils", !spoils.empty()}, {"party", party}}}});
             return next == "quit" ? "quit" : next == "map" ? "map" : "cafe";
         }
         save = campaign::LoseStage(before, out);

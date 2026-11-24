@@ -36,7 +36,7 @@ public:
     // One card per unit on the board, at its screen point above the figure (match-labels.ui.json).
     [[nodiscard]] nlohmann::json Labels(const umbra::match::MatchState &s, glm::vec2 pixels) const;
     [[nodiscard]] int Pick(const umbra::match::Board &b, glm::vec2 mouse, glm::vec2 pixels) const; // the square under the mouse, -1 none
-    void SetCamera(float distance, float minDistance, float maxDistance, float tilt) { view_.Set(distance, minDistance, maxDistance, tilt), refDistance_ = distance; }
+    void SetCamera(float distance, float minDistance, float maxDistance, float tilt) { view_.Set(distance, minDistance, maxDistance, tilt); }
     [[nodiscard]] float DistanceAcross(float tiles) const; // the seat's distance that shows this many tiles across (16:9)
     void Pan(glm::vec2 pixels) { view_.Pan(pixels); }
     void Zoom(float steps) { view_.Zoom(steps); }
@@ -84,7 +84,6 @@ private:
     int picking_ = -1, stageCell_ = -1;
     glm::vec3 stageMiddle_{0.0F}; // where the stage stands: fixed when the fight begins
     std::vector<int> standing_, toldHp_;
-    float refDistance_ = 19.0F; // the default seat: figures keep their size nearer than this (note 5)
     std::vector<std::string> names_;
     std::vector<float> heights_;
     float fightT_ = 0.0F, focusT_ = 0.0F;
@@ -141,3 +140,4 @@ private:
     std::string scene_;
     int sceneCell_ = -1;
 };
+

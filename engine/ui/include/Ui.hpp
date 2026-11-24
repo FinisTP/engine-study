@@ -28,6 +28,7 @@ namespace umbra::ui
         bool up = false, down = false, left = false, right = false; // focus moves
         bool confirm = false, back = false;                          // Enter / A, Esc / B
         std::string text; // typed this frame (UTF-8) for a focused text field; '\b' erases a letter
+        float wheel = 0.0F; // wheel steps this frame (positive: away from the user); a scroll box under the mouse moves
     };
 
     // What the player chose: a button's or list entry's action, with its argument.
@@ -117,5 +118,8 @@ namespace umbra::ui
         std::string tip_;
         std::map<std::string, std::string> fields_; // "screen#id" -> a text field's text
         std::map<std::string, float> scales_; // "screen#choice" -> its drawn scale, eased each Update
+        std::map<std::string, float> scroll_; // "screen#id" -> a scroll box's offset (UI.md "Scroll")
+        struct ScrollBox final { std::string key; Rect rect; float max = 0.0F; };
+        std::map<std::string, std::vector<ScrollBox>> scrollBoxes_; // last frame's, per screen
     };
 }

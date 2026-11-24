@@ -337,7 +337,7 @@ nlohmann::json Notebook::Data() const
             if (met(who))
                 entry(who, cast_.Find(who) ? campaign::FillTokens(cast_.Find(who)->name, save_.player, cast_) : who, true); // the player by name
         for (const auto &[recruit, list] : memories_.byRecruit)
-            if (met(recruit))
+            if (met(recruit) && std::ranges::none_of(d["entries"], [&](const nlohmann::json &e) { return e["id"] == recruit; })) // once (Mai has memories too)
                 entry(recruit, cast_.Find(recruit) ? cast_.Find(recruit)->name : recruit, true);
         if (!selected_.empty())
         {

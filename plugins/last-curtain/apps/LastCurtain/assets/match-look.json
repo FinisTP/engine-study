@@ -89,14 +89,13 @@
     "shareApart": 0.22
   },
   "figures": {
-    "note": "A figure is 'base' tall (times 3 x 0.625 m) at the default seat; farther out it grows to keep its size on screen, nearer it keeps its height, so zooming in never shrinks it (the user, note 5).",
-    "maxScale": 3.0,
+    "note": "A figure is 'base' tall (times 3 x 0.625 m) and keeps that size: zooming out makes it look smaller (the user, 2026-11-25 note 1).",
     "lean": 0.5,
-    "base": 0.8
+    "base": 0.6
   },
   "battle": {
-    "note": "The battle view: the camera comes down to distance/tilt over seconds, the two fighters stand gap squares either side of their middle at figureScale. 'across': the tiles the battle view shows (the sides stand 'gap' = a quarter of it from the middle, so at 25% and 75% of the screen; the user, notes 5-6); a sequence's camera on one fighter comes to focusNear of the distance and focusPull of the way to it (note 4).",
-    "seconds": 0.6,
+    "note": "The battle view: the camera comes down to distance/tilt over seconds, the two fighters stand gap squares either side of their middle at figureScale. 'across': the tiles the battle view shows (the sides stand 'gap' = a quarter of it from the middle, so at 25% and 75% of the screen; the user, notes 5-6); a sequence's camera on one fighter comes to focusNear of the distance and focusPull of the way to it (note 4). The camera stands 'near' farther back, since the fighters stand that much nearer it; seconds is the way in and out, follow the pan between fighters (2026-11-25 notes 2-3).",
+    "seconds": 1.0,
     "distance": 7,
     "tilt": 14,
     "gap": 2.5,
@@ -120,8 +119,9 @@
     "pairDepth": 0.8,
     "lift": 1.1,
     "across": 10,
-    "focusNear": 0.75,
-    "focusPull": 0.6
+    "focusNear": 0.9,
+    "focusPull": 0.25,
+    "follow": 0.4
   },
   "reach": {
     "note": "The player's reach and targets wash the tile half over in their colour, blinking.",
@@ -145,5 +145,11 @@
       "nearer": 0.8,
       "yaw": 0
     }
+  },
+  "talk": {
+    "note": "A stage scene's close-up on its speaker: the seat comes to near (table) or roomNear (room view) of its distance and looks lift x the figure's size above the feet, so heads stay in (2026-11-25 note 3).",
+    "near": 0.8,
+    "roomNear": 0.8,
+    "lift": 0.5
   }
 }

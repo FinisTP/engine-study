@@ -1,6 +1,7 @@
 #include <MatchPlay.hpp>
 
 #include "CareerMatch.hpp"
+#include "ItemArt.hpp"
 #include <MatchSave.hpp>
 
 #include <algorithm>
@@ -1431,11 +1432,15 @@ nlohmann::json MatchPlay::Menu() const
     std::string title;
     if (!PlayerTurn() || s_.battle.on || s_.over || menuHidden_ || !choices_.empty())
         return {{"title", ""}, {"rows", rows}};
-    const auto icon = [](const std::string &id) -> std::string {
-        // The row's picture (art/ui/campaign): a command, or an item by its id; none for targets.
+    const auto icon = [&](const std::string &id) -> std::string {
+        // The row's picture (art/ui/campaign): a command, or the item in that slot (its shared picture); none for targets.
         const std::string dir = "art/ui/campaign/";
-        if (id.starts_with("item:"))
-            return dir + "item/" + id.substr(5) + ".png";
+        if (id.starts_with("item:") && std::isdigit(static_cast<unsigned char>(id[5])))
+        {
+            const int slot = std::stoi(id.substr(5)), me = Current(s_);
+            const int item = me >= 0 && slot < umbra::match::maxItems ? s_.units[U(me)].items[U(slot)] : -1;
+            return item >= 0 ? ItemPicture(def_, def_.items[U(item)].id) : "";
+        }
         const std::string cmd = id == "undo" ? "move" : id == "stay" ? "attack" : id.starts_with("cut:") ? "cut" : id.starts_with("ability:") ? "skills" : id;
         return cmd == "move" || cmd == "attack" || cmd == "skills" || cmd == "items" || cmd == "end" || cmd == "cut" ? dir + "icon/cmd_" + cmd + ".png" : "";
     };

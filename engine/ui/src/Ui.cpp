@@ -28,6 +28,8 @@ namespace umbra::ui
         std::string tip;                 // the last tipped widget placed under the mouse
         bool held = false;               // the mouse button is down: what is under it looks pressed
         std::string screen;              // whose choices these are (scales_ keys)
+        std::optional<Rect> view;        // inside a scroll box: what can be seen (choices outside it can't be clicked)
+        std::vector<ScrollBox> scrolls;  // the scroll boxes placed this frame
 
         // "hero.health" -> the value: list entry names first, then the data; nullptr if missing.
         const json *Lookup(const std::string &path) const
@@ -392,17 +394,22 @@ namespace umbra::ui
         State state = entryState.value_or(!node.selected.empty() && c.Truthy(node.selected) ? State::Selected : c.inherited);
         const bool choice = (node.type == "button" || node.type == "field") && !disabled;
         const bool focused = choice && c.input && static_cast<int>(c.choices.size()) == c.focus;
+        const Rect hit = !c.view ? rect : [&] { // only the part seen inside a scroll box can be clicked
+            const float x0 = std::max(rect.x, c.view->x), y0 = std::max(rect.y, c.view->y);
+            const float x1 = std::min(rect.x + rect.w, c.view->x + c.view->w), y1 = std::min(rect.y + rect.h, c.view->y + c.view->h);
+            return Rect{x0, y0, std::max(0.0F, x1 - x0), std::max(0.0F, y1 - y0)};
+        }();
         if (choice)
         {
             if (focused || rect.Contains(c.mouse))
                 state = rect.Contains(c.mouse) && c.held ? State::Pressed : State::Hover; // focused, or under the pointer
             if (node.type == "field")
-                c.choices.push_back({rect, c.Text(node.action), "", node.id});
+                c.choices.push_back({hit, c.Text(node.action), "", node.id});
             else
-                c.choices.push_back({rect, c.Text(node.action), c.Text(node.arg)});
+                c.choices.push_back({hit, c.Text(node.action), c.Text(node.arg)});
         }
         if ((node.type == "panel" || node.type == "stack") && !node.action.empty() && !disabled)
-            c.boxes.push_back({rect, c.Text(node.action), c.Text(node.arg)});
+            c.boxes.push_back({hit, c.Text(node.action), c.Text(node.arg)});
         if (state == State::Hover && !node.selected.empty() && c.Truthy(node.selected))
             state = State::Selected; // chosen stays lit under the pointer (its scale still answers below)
         if (disabled)
@@ -490,6 +497,32 @@ namespace umbra::ui
                 Place(child, AnchorRect(inner, Measure(child, c, inner.w), child.anchor, child.offset), c);
             if (node.clip)
                 c.painter.PopClip();
+        }
+        else if (node.type == "scroll")
+        {
+            // A column seen through its box: moved up by the wheel's offset, kept between its ends (UI.md "Scroll").
+            float height = 0.0F;
+            for (const Node &child : node.children)
+                if (const glm::vec2 s = Measure(child, c, inner.w); s.y > 0.0F)
+                    height += s.y + node.gap;
+            const std::string key = c.screen + "#" + node.id;
+            const float max = std::max(0.0F, height - node.gap - inner.h);
+            float &offset = scroll_[key];
+            offset = std::clamp(offset, 0.0F, max);
+            c.scrolls.push_back({key, rect, max});
+            const std::optional<Rect> outer = std::exchange(c.view, inner);
+            c.painter.PushClip(inner);
+            float along = -offset;
+            for (const Node &child : node.children)
+            {
+                const glm::vec2 s = Measure(child, c, inner.w);
+                if (s.x <= 0.0F && s.y <= 0.0F)
+                    continue;
+                Place(child, {inner.x + child.offset.x, inner.y + along + child.offset.y, child.size.x > 0.0F ? s.x : inner.w, s.y}, c);
+                along += s.y + node.gap;
+            }
+            c.painter.PopClip();
+            c.view = outer;
         }
         else if (node.type == "stack")
         {
@@ -580,6 +613,19 @@ namespace umbra::ui
         UiInput input = windowInput;
         input.mouse /= uiScale_;
         const std::size_t firstVertex = out.vertices.size(), firstBatch = out.batches.size();
+        // 0b. The wheel moves the topmost scroll box under the mouse (last frame's boxes), 40 units a step.
+        if (input.wheel != 0.0F)
+            for (auto it = stack_.rbegin(); it != stack_.rend(); ++it)
+                if (const auto &boxes = scrollBoxes_[*it]; std::ranges::any_of(boxes, [&](const ScrollBox &b) { return b.rect.Contains(input.mouse); }))
+                {
+                    for (auto b = boxes.rbegin(); b != boxes.rend(); ++b)
+                        if (b->rect.Contains(input.mouse))
+                        {
+                            scroll_[b->key] = std::clamp(scroll_[b->key] - input.wheel * 40.0F, 0.0F, b->max);
+                            break;
+                        }
+                    break;
+                }
         std::vector<UiAction> actions;
         // 1. Input goes to the top modal screen, using last frame's layout of its choices.
         std::string target;
@@ -670,6 +716,7 @@ namespace umbra::ui
             Place(screen.root, AnchorRect(view, Measure(screen.root, c, view.w), screen.root.anchor, screen.root.offset), c);
             choices_[name] = std::move(c.choices);
             boxes_[name] = std::move(c.boxes);
+            scrollBoxes_[name] = std::move(c.scrolls);
             covers_[name] = std::move(c.covers);
             if (!c.tip.empty())
                 tip_ = std::move(c.tip);

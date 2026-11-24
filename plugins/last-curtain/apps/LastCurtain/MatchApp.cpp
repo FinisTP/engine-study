@@ -145,6 +145,8 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
     // A stage's theme on the board, its bass-heavy cut in the battle view (note 17); the fight's when not made yet.
     const std::string boardMusic = hooks ? game.sounds->MusicOr(hooks->music, "fight") : "";
     const std::string battleMusic = hooks ? game.sounds->MusicOr(hooks->music + "_battle", boardMusic) : "";
+    if (hooks && battleMusic == boardMusic) // no battle cut yet: the battle view keeps the board's music
+        umbra::diagnostics::Info("no audio/music/" + hooks->music + "_battle.ogg: the battle view plays " + boardMusic);
     if (hooks)
         game.sounds->Music(boardMusic);
     int savedRound = -1;

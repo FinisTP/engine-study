@@ -7,7 +7,7 @@ namespace umbra::ui
 {
     namespace
     {
-        const std::set<std::string> types{"panel", "stack", "text", "bar", "image", "button", "list", "spacer", "field"};
+        const std::set<std::string> types{"panel", "stack", "scroll", "text", "bar", "image", "button", "list", "spacer", "field"};
         const std::set<std::string> anchors{"top-left", "top", "top-right", "left", "center", "right", "bottom-left", "bottom", "bottom-right", "fill"};
         const std::set<std::string> known{"type", "id", "anchor", "offset", "size", "clip", "style", "direction", "align", "gap", "columns", "text", "textAlign", "wrap",
                                           "visible", "disabled", "selected", "tip", "fit", "value", "max", "image", "action", "arg", "items", "as", "entry", "children", "at", "placeholder", "flip", "tint"};
@@ -108,6 +108,8 @@ namespace umbra::ui
                     if (!j.contains("entry"))
                         Error(where + ".entry", "a list needs \"entry\": the widget drawn for each item");
                 }
+                if (node.type == "scroll" && node.id.empty())
+                    Error(where + ".id", "a scroll box needs \"id\": it keeps its offset by it");
                 if (node.type == "field" && node.id.empty())
                     Error(where + ".id", "a field needs \"id\": the game reads its text by it (UiSystem::FieldText)");
                 if (node.type == "bar" && node.value.empty())

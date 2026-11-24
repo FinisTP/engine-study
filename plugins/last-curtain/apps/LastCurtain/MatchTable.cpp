@@ -1,4 +1,5 @@
 #include "MatchTable.hpp"
+#include "ItemArt.hpp"
 
 #include <Lighting.hpp>
 #include <MeshData.hpp>
@@ -162,11 +163,8 @@ float MatchTable::Height(const Unit &u, int index) const
 
 float MatchTable::FigureScale() const
 {
-    // At the default seat a figure is `base` tall; farther out it grows to keep its size on screen,
-    // nearer it keeps its height, so zooming in makes it bigger, never smaller (the user, note 5).
-    const umbra::core::Camera c = view_.Camera();
-    const float distance = glm::length(c.position - c.target), ref = std::max(0.1F, refDistance_);
-    return std::min(Look("figures", "base", 0.0F, 0.8F) * std::max(distance, ref) / ref, Look("figures", "maxScale", 0.0F, 3.0F));
+    // A figure keeps its size on the table: zooming out makes it look smaller (the user, 2026-11-25 note 1).
+    return Look("figures", "base", 0.0F, 0.6F);
 }
 
 float MatchTable::DistanceAcross(float tiles) const
@@ -446,7 +444,7 @@ void MatchTable::Animate(const MatchState &s, float dt)
         view_.SetShotLift(Look("battle", "lift", 0.0F, 0.0F) * e); // the battle view looks up a little: heads clear of the top
         // The battle view shows `across` tiles (the two sides at a quarter in from each edge); a sequence's
         // camera on one fighter comes nearer (focusNear), then pulls back out (note 4).
-        const float across = Look("battle", "across", 0.0F, 0.0F), battle = across > 0.0F ? DistanceAcross(across) : Look("battle", "distance", 0.0F, 7.0F);
+        const float across = Look("battle", "across", 0.0F, 0.0F), battle = across > 0.0F ? DistanceAcross(across) + Look("battle", "near", 0.0F, 2.5F) : Look("battle", "distance", 0.0F, 7.0F);
         const bool closeUp = Staged() && framed_.size() == 1 && Fighter(framed_[0]) >= 0;
         const float nearer = closeUp ? 1.0F - (1.0F - Look("battle", "focusNear", 0.0F, 0.75F)) * q : 1.0F;
         if (e > 0.0F)
@@ -475,9 +473,10 @@ void MatchTable::Animate(const MatchState &s, float dt)
         // The figure in the middle, but the board stays on screen: the farther out, the nearer the board's middle it may go.
         const float pull = Look("follow", "pull", 0.0F, 1.0F), keep = Look("follow", "edge", 0.0F, 0.45F) + (1.0F - Look("follow", "edge", 0.0F, 0.45F)) * RoomT();
         const glm::vec2 half{static_cast<float>(s.board.height) * tile * 0.5F * keep, static_cast<float>(s.board.width) * tile * 0.5F * keep};
-        const glm::vec3 target{std::clamp(at.x * pull, -half.x, half.x), 0.0F, std::clamp(at.z * pull, -half.y, half.y)};
+        // A battle is framed on its stage, never pushed in from the board's edge (else a side leaves the screen).
+        const glm::vec3 target = Staged() ? glm::vec3{at.x, 0.0F, at.z} : glm::vec3{std::clamp(at.x * pull, -half.x, half.x), 0.0F, std::clamp(at.z * pull, -half.y, half.y)};
         if (glm::length(target - view_.Target()) > 0.05F)
-            view_.Aim(target, Look("follow", "seconds", 0.0F, 0.6F));
+            view_.Aim(target, Staged() ? Look("battle", "follow", 0.0F, 0.4F) : Look("follow", "seconds", 0.0F, 0.6F));
     }
     // 2. A scene: its shot moves with its clock, then hands the camera back.
     if (!scene_.empty())
@@ -647,7 +646,7 @@ umbra::core::TextureHandle MatchTable::ItemIcon(int item) const
     umbra::core::TextureData data;
     std::string error;
     umbra::core::TextureHandle handle{};
-    if (umbra::assets::LoadImageFile(assets_ / ("art/ui/campaign/item/" + id + ".png"), data, error))
+    if (umbra::assets::LoadImageFile(assets_ / ItemPicture(def_, id), data, error))
         handle = renderer_.CreateTexture(data);
     return itemIcons_[id] = handle;
 }
@@ -969,7 +968,8 @@ void MatchTable::CloseUp(bool on)
 {
     // Both seats come nearer: the table's and the room view's (a stage is usually in the room view).
     if (on && before_ < 0.0F)
-        before_ = view_.Distance(), roomBefore_ = view_.RoomDistance(), view_.SetDistance(before_ * 0.55F), view_.SetRoomDistance(roomBefore_ * 0.5F);
+        before_ = view_.Distance(), roomBefore_ = view_.RoomDistance(), view_.SetDistance(before_ * Look("talk", "near", 0.0F, 0.8F)),
+        view_.SetRoomDistance(roomBefore_ * Look("talk", "roomNear", 0.0F, 0.8F)), view_.SetLookLift(Look("talk", "lift", 0.0F, 0.5F) * FigureScale());
     else if (!on && before_ >= 0.0F)
-        view_.SetDistance(before_), view_.SetRoomDistance(roomBefore_), before_ = roomBefore_ = -1.0F;
+        view_.SetDistance(before_), view_.SetRoomDistance(roomBefore_), view_.SetLookLift(0.0F), before_ = roomBefore_ = -1.0F;
 }

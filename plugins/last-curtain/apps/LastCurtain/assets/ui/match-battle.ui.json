@@ -251,9 +251,9 @@
           {
             "type": "button",
             "style": "lcButton",
-            "text": "{words.battle.withdraw}",
+            "text": "{words.withdraw}",
             "action": "withdraw",
-            "tip": "{words.battle.withdrawTip}"
+            "tip": "{words.withdrawTip}"
           }
         ]
       },

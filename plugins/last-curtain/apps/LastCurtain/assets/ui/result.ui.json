@@ -8,39 +8,47 @@
     "type": "stack",
     "anchor": "center",
     "style": "lcPanel",
-    "size": [
-      700,
-      0
-    ],
-    "gap": 10,
+    "size": [760, 0],
+    "align": "stretch",
+    "gap": 12,
     "children": [
+      { "type": "text", "style": "title", "text": "{result.title}" },
+      { "type": "text", "style": "heading", "text": "{words.spoils}", "visible": "{result.hasSpoils}" },
       {
-        "type": "text",
-        "style": "title",
-        "text": "{result.title}"
-      },
-      {
-        "type": "list",
-        "items": "{result.lines}",
-        "as": "l",
-        "gap": 3,
+        "type": "list", "items": "{result.spoils}", "as": "s", "gap": 4,
         "entry": {
-          "type": "text",
-          "style": "small",
-          "text": "{l.text}"
+          "type": "stack", "direction": "horizontal", "gap": 8, "align": "center",
+          "children": [
+            { "type": "image", "image": "{s.icon}", "size": [40, 40], "visible": "{s.icon}" },
+            { "type": "text", "style": "small", "text": "{s.text}" }
+          ]
+        }
+      },
+      { "type": "text", "style": "heading", "text": "{words.party}" },
+      {
+        "type": "list", "items": "{result.party}", "as": "p", "gap": 8,
+        "entry": {
+          "type": "stack", "direction": "horizontal", "gap": 12, "align": "center",
+          "children": [
+            { "type": "image", "image": "{p.portrait}", "size": [64, 64], "fit": "top" },
+            {
+              "type": "stack", "gap": 3,
+              "children": [
+                { "type": "text", "style": "heading", "text": "{p.name}  {words.level} {p.level}" },
+                { "type": "bar", "style": "xp", "size": [360, 8], "value": "{p.xp}", "max": "{p.xpMax}" },
+                { "type": "text", "style": "small", "text": "XP {p.xp}/{p.xpMax}   {p.gain}" },
+                { "type": "text", "style": "warning", "text": "{p.up}", "visible": "{p.up}" }
+              ]
+            }
+          ]
         }
       },
       {
-        "type": "button",
-        "style": "lcButton",
-        "text": "{words.toCafe}",
-        "action": "cafe"
-      },
-      {
-        "type": "button",
-        "style": "lcButton",
-        "text": "{words.toMap}",
-        "action": "map"
+        "type": "stack", "direction": "horizontal", "gap": 12,
+        "children": [
+          { "type": "button", "style": "lcButton", "size": [300, 0], "text": "{words.toCafe}", "action": "cafe" },
+          { "type": "button", "style": "lcButton", "size": [300, 0], "text": "{words.toMap}", "action": "map" }
+        ]
       }
     ]
   }
