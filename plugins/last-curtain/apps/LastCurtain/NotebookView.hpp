@@ -25,6 +25,13 @@ public:
     void SetWords(nlohmann::json words) { words_ = std::move(words); }
     void Skill(const std::string &ability) { skill_ = ability; } // the skill shown on the right
     bool ToggleFight(const std::string &character);           // in or out of the next fight; the player always fights
+    // Pick then place (feedback 2026-11-24 15:10, notes 16, 17): pick a slot ("skill:<i>", "bag:<i>") or something in
+    // stock ("learned:<id>", "locked:<id>", "store:<item>"); its card says what it is; Take carries the picked stock
+    // (into the empty slot picked before it, else the first empty one), Drop puts a picked slot's back.
+    void SetSkills(const umbra::campaign::Skills *skills) { skills_ = skills; }
+    void Pick(const std::string &what);
+    bool Take();
+    bool Drop();
 
 private:
     const umbra::match::MatchDef &def_;
@@ -33,6 +40,15 @@ private:
     umbra::campaign::Save &save_;
     std::string tab_ = "characters", selected_, skill_;
     const umbra::campaign::Growth *growth_ = nullptr;
+    const umbra::campaign::Skills *skills_ = nullptr;
+    std::string picked_;    // what the card shows
+    int bagTarget_ = -1, skillTarget_ = -1; // an empty slot picked first: where the next Take goes
+    [[nodiscard]] int Level(const std::string &who) const;
+    [[nodiscard]] std::vector<std::string> Known() const;   // the selected one's abilities by id, kit order
+    [[nodiscard]] std::vector<std::string> Carried() const; // its loadout (all it knows without skills.json)
+    [[nodiscard]] int Free(const std::string &item) const;  // in storage and not yet in anyone's slot
+    [[nodiscard]] std::string SkillText(const umbra::match::AbilityDef &a) const; // where, power, reach, cost in words
+    [[nodiscard]] std::string Word(const std::string &key, const std::string &fallback) const { return words_.value(key, fallback); }
     nlohmann::json words_ = nlohmann::json::object();
     [[nodiscard]] nlohmann::json Page() const; // the selected character's page
     bool readOnly_ = false;

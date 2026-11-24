@@ -64,8 +64,12 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
 
     // 2. The room: the player and the allies walk (Tab), Le Thanh keeps the counter; each by its cast sprite.
     CafeHub hub(def, cast, recipes, memories, talks, stages, save, static_cast<int>(options.boostCapPerStat));
+    // A picture's path, or "" when it is not painted yet (the screen then shows the name alone).
+    const auto Icon = [&](const std::string &file) { return std::filesystem::exists(assets.RootOf(file) / file) ? file : std::string(); };
     Notebook book(def, cast, memories, save);
-    book.SetGrowth(&growth), book.SetWords(words);
+    campaign::Skills skills;
+    const bool haveSkills = campaign::LoadSkills(folder / "skills.json", def, skills, d);
+    book.SetGrowth(&growth), book.SetWords(words), book.SetSkills(haveSkills ? &skills : nullptr);
     std::vector<std::string> party{"player"};
     std::map<std::string, std::string> sprites{{"player", player.gender == "male" ? "player_male" : "player_female"}};
     const nlohmann::json people = hub.Data()["people"]; // kept: a temporary's items would dangle
@@ -194,7 +198,25 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
         for (auto &slot : data["book"]["detail"]["slots"]) // a slot's item by its Vietnamese name
         {
             slot["label"] = slot["item"] == "" ? words.value("empty", std::string()) : words.value("items", nlohmann::json::object()).value(slot["item"].get<std::string>(), slot["item"].get<std::string>());
-            slot["icon"] = slot["item"] == "" ? "" : "art/ui/campaign/item/" + slot["item"].get<std::string>() + ".png";
+            slot["icon"] = slot["item"] == "" ? "" : Icon("art/ui/campaign/item/" + slot["item"].get<std::string>() + ".png");
+        }
+        // Storage and the card: items by their Vietnamese names, icons and texts.
+        const nlohmann::json itemNames = words.value("items", nlohmann::json::object()), itemTexts = words.value("itemText", nlohmann::json::object());
+        if (nlohmann::json &page = data["book"]["detail"]; page.is_object())
+        {
+            for (auto &it : page["store"])
+                it["name"] = itemNames.value(it["id"].get<std::string>(), it["id"].get<std::string>()) + "  \u00d7" + std::to_string(it["count"].get<int>()),
+                it["icon"] = Icon("art/ui/campaign/item/" + it["id"].get<std::string>() + ".png");
+            if (page.contains("card") && page["card"].value("kind", "") == "item")
+            {
+                const std::string id = page["card"]["id"];
+                page["card"]["name"] = itemNames.value(id, page["card"]["name"].get<std::string>());
+                page["card"]["text"] = itemTexts.value(id, page["card"]["text"].get<std::string>());
+            }
+            std::string title = words.value("carried", std::string());
+            if (const auto at = title.find("{n}"); at != std::string::npos)
+                title.replace(at, 3, std::to_string(std::ranges::count_if(page["loadout"], [](const nlohmann::json &x) { return !x["empty"].get<bool>(); })));
+            page["carriedTitle"] = title;
         }
         data["book"]["lesson"] = lesson ? words.value("slotLesson", std::string()) : "";
         if (nlohmann::json &page = data["book"]["detail"]; page.contains("stats")) // the page's lines in words
@@ -246,18 +268,12 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
                 book.Skill(a.arg);
             else if (a.action == "fight")
                 (void)book.ToggleFight(book.Data()["selected"].get<std::string>());
-            else if (a.action == "slot")
-            {
-                // The slot takes the next carriable item in storage, then empty.
-                const nlohmann::json now = book.Data()["detail"]["slots"][std::stoi(a.arg)]["item"];
-                std::vector<std::string> choices{""};
-                for (const auto &[item, count] : save.storage)
-                    if (count > 0 && campaign::SlotOk(def, item))
-                        choices.push_back(item);
-                const auto at = std::ranges::find(choices, now.get<std::string>());
-                const std::string next = at == choices.end() || at + 1 == choices.end() ? choices.front() : *(at + 1);
-                (void)book.SetSlot(book.Data()["selected"], std::stoi(a.arg), next);
-            }
+            else if (a.action == "pick") // pick then place: a slot or something in stock shows its card
+                book.Pick(a.arg);
+            else if (a.action == "take")
+                (void)book.Take();
+            else if (a.action == "drop")
+                (void)book.Drop();
             else if (a.action == "give")
                 play(hub.Give(a.arg));
             else if (a.action == "brew")

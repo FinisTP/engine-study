@@ -192,7 +192,12 @@
   "crtOn": "Màn hình TV cũ: bật",
   "crtOff": "Màn hình TV cũ: tắt",
   "vhsOn": "Băng mòn: bật",
-  "vhsOff": "Băng mòn: tắt"
+  "vhsOff": "Băng mòn: tắt",
+  "take": "Mang theo",
+  "drop": "Bỏ ra",
+  "stockSkills": "Kỹ năng chưa mang",
+  "lockedSkills": "Chưa mở",
+  "storeTitle": "Kho đồ"
  },
  "hub": {
   "backdrop": "art/cafe/back_wall.jpg",
@@ -263,7 +268,7 @@
   "selected": "bao",
   "selectedName": "Bác sĩ Bảo",
   "readOnly": false,
-  "lesson": "Lệ Thanh vừa đưa đồ. Chọn một người ở cột trái, bấm vào một ô trống trong Túi rồi chọn món mang theo khi ra trận.",
+  "lesson": "Lệ Thanh vừa đưa đồ. Chọn một người ở cột trái, bấm một món trong Kho đồ rồi bấm Mang theo. Kỹ năng cũng vậy: Bảo và bà Mai còn kỹ năng chưa mang.",
   "entries": [
    {
     "id": "player",
@@ -279,11 +284,6 @@
     "id": "mai",
     "name": "Bà Mai",
     "selected": false
-   },
-   {
-    "id": "ti",
-    "name": "?",
-    "selected": false
    }
   ],
   "detail": {
@@ -294,7 +294,15 @@
    "fights": true,
    "fightText": "Ra trận màn tới",
    "canToggle": true,
-   "locked": false,
+   "locked": [
+    {
+     "id": "giay_chung_tu",
+     "name": "Giấy chứng tử",
+     "level": 3,
+     "when": "Mở ở cấp 3",
+     "picked": false
+    }
+   ],
    "skills": [
     {
      "id": "basic",
@@ -312,17 +320,12 @@
      "selected": false
     }
    ],
-   "skill": {
-    "name": "Đánh thường",
-    "line": "Tầm 1 ô · sức 2 · tốn 0 HP",
-    "versions": []
-   },
    "slots": [
     {
      "slot": 0,
      "item": "bandage",
      "label": "Băng gạc",
-     "icon": "art/ui/campaign/item/gung.png"
+     "icon": ""
     },
     {
      "slot": 1,
@@ -344,7 +347,70 @@
     }
    ],
    "memories": [],
-   "memoryCount": "0/0"
+   "memoryCount": "0/0",
+   "carriedTitle": "Mang theo (2/4)",
+   "loadout": [
+    {
+     "index": 0,
+     "id": "basic",
+     "name": "Đánh thường",
+     "empty": false,
+     "picked": false
+    },
+    {
+     "index": 1,
+     "id": "dao_mo",
+     "name": "Dao mổ",
+     "empty": false,
+     "picked": false
+    },
+    {
+     "index": 2,
+     "id": "",
+     "name": "(trống)",
+     "empty": true,
+     "picked": false
+    },
+    {
+     "index": 3,
+     "id": "",
+     "name": "(trống)",
+     "empty": true,
+     "picked": false
+    }
+   ],
+   "learned": [
+    {
+     "id": "chan_doan",
+     "name": "Chẩn đoán",
+     "picked": true
+    }
+   ],
+   "store": [
+    {
+     "id": "bandage",
+     "name": "Băng gạc  ×2",
+     "count": 2,
+     "icon": "",
+     "picked": false
+    },
+    {
+     "id": "programme",
+     "name": "Tờ chương trình cũ  ×1",
+     "count": 1,
+     "icon": "",
+     "picked": false
+    }
+   ],
+   "card": {
+    "kind": "skill",
+    "name": "Chẩn đoán",
+    "lore": "Một cái nhìn của người thầy thuốc: chỗ yếu của đối phương lộ ra, đòn kế tiếp đánh vào nó nặng hơn 1.",
+    "text": "Trên bàn. Tầm 4 ô. Tốn 1 HP.",
+    "take": true,
+    "drop": false,
+    "hint": ""
+   }
   }
  },
  "map": {

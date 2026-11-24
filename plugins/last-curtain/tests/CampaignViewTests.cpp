@@ -160,14 +160,20 @@ TEST_CASE("The notebook: three tabs, unknowns as ?, slots edited only outside ba
     save.storage = {{"gung", 1}, {"bandage", 2}};
     save.player = {"Hoang", "male"};
     Notebook book(h.def, h.cast, h.memories, save);
-    // 1. Characters: the party known (the player by name), Ti a ? until he joins.
+    // 1. Characters: the player by name; Ti left out until he joins (feedback 2026-11-24 15:10, note 18).
     nlohmann::json d = book.Data();
     CHECK(d["tab"] == "characters");
-    bool tiHidden = false, playerNamed = false;
+    bool tiListed = false, playerNamed = false;
     for (const auto &e : d["entries"])
-        tiHidden |= e["id"] == "ti" && e["name"] == "?", playerNamed |= e["id"] == "player" && e["name"] == "Hoang";
-    CHECK(tiHidden);
+        tiListed |= e["id"] == "ti", playerNamed |= e["id"] == "player" && e["name"] == "Hoang";
+    CHECK_FALSE(tiListed);
     CHECK(playerNamed);
+    save.joined.insert("ti");
+    tiListed = false;
+    d = book.Data();
+    for (const auto &e : d["entries"])
+        tiListed |= e["id"] == "ti" && e["name"] != "?";
+    CHECK(tiListed);
     // 2. Ingredients: ginger known, sugar a ?.
     book.Tab("ingredients");
     d = book.Data();
@@ -361,4 +367,72 @@ TEST_CASE("The notebook's character page as in the mockup: portrait, stats, figh
     CHECK(book.ToggleFight("mai"));
     CHECK(std::ranges::find(save.party, std::string("mai")) != save.party.end());
     CHECK_FALSE(book.ToggleFight("player"));
+}
+
+TEST_CASE("The notebook's slots, pick then place: skills carried and in stock, locked ones with their level, items from storage, a card for what is picked (feedback 2026-11-24 15:10, notes 13, 16, 17)")
+{
+    HubData h;
+    campaign::Growth growth;
+    campaign::Skills skills;
+    std::vector<core::Diagnostic> d;
+    REQUIRE(campaign::LoadGrowth(data / "growth.csv", growth, d));
+    REQUIRE(campaign::LoadSkills(data / "skills.json", h.def, skills, d));
+    campaign::Save save;
+    save.player = {"Hoang", "male"};
+    save.roster = {{"player", 2, 0}, {"bao", 2, 0}};
+    save.storage = {{"bandage", 2}, {"gung", 1}};
+    Notebook book(h.def, h.cast, h.memories, save);
+    book.SetGrowth(&growth), book.SetSkills(&skills);
+    book.Select("bao");
+    const auto page = [&] { return book.Data()["detail"]; };
+    const auto has = [](const nlohmann::json &list, const std::string &id) { return std::ranges::any_of(list, [&](const nlohmann::json &x) { return x["id"] == id; }); };
+    // 1. Four skill slots: his start (basic, scalpel) and two empty; the rest in stock; the death paper locked to level 3.
+    nlohmann::json p = page();
+    REQUIRE(p["loadout"].size() == 4);
+    CHECK(p["loadout"][0]["id"] == "basic");
+    CHECK(p["loadout"][1]["id"] == "dao_mo");
+    CHECK(p["loadout"][2]["empty"] == true);
+    CHECK(has(p["learned"], "chan_doan"));
+    REQUIRE(has(p["locked"], "giay_chung_tu"));
+    for (const auto &l : p["locked"])
+        if (l["id"] == "giay_chung_tu")
+            CHECK(l["level"] == 3);
+    // 2. Picking a stocked skill shows its card (story, what it does, Mang theo); taking it fills a slot.
+    book.Pick("learned:chan_doan");
+    p = page();
+    CHECK_FALSE(p["card"]["lore"].get<std::string>().empty());
+    CHECK_FALSE(p["card"]["text"].get<std::string>().empty());
+    CHECK(p["card"]["take"] == true);
+    CHECK(p["card"]["drop"] == false);
+    REQUIRE(book.Take());
+    p = page();
+    CHECK(p["loadout"][2]["id"] == "chan_doan");
+    CHECK_FALSE(has(p["learned"], "chan_doan"));
+    // 3. A carried one: Bo ra puts it back in stock.
+    book.Pick("skill:1");
+    CHECK(page()["card"]["drop"] == true);
+    REQUIRE(book.Drop());
+    CHECK(has(page()["learned"], "dao_mo"));
+    // 4. Items: storage lists what can be carried (ginger cannot); an empty slot picked first is where it goes.
+    p = page();
+    CHECK(has(p["store"], "bandage"));
+    CHECK_FALSE(has(p["store"], "gung"));
+    book.Pick("bag:2");
+    book.Pick("store:bandage");
+    CHECK(page()["card"]["take"] == true);
+    REQUIRE(book.Take());
+    CHECK(save.slots["bao"][2] == "bandage");
+    book.Pick("bag:2");
+    REQUIRE(book.Drop());
+    CHECK(save.slots["bao"][2] == "");
+    // 5. No more than storage holds: two bandages, two slots.
+    book.Pick("store:bandage"), (void)book.Take();
+    book.Pick("store:bandage"), (void)book.Take();
+    book.Pick("store:bandage");
+    CHECK(page()["card"]["take"] == false);
+    CHECK_FALSE(book.Take());
+    // 6. In battle nothing moves.
+    book.SetReadOnly(true);
+    book.Pick("skill:0");
+    CHECK_FALSE(book.Drop());
 }

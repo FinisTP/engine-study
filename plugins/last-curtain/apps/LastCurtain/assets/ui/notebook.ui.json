@@ -157,22 +157,23 @@
               {
                 "type": "text",
                 "style": "heading",
-                "text": "{words.skills}"
+                "text": "{book.detail.carriedTitle}"
               },
               {
                 "type": "list",
-                "items": "{book.detail.skills}",
+                "items": "{book.detail.loadout}",
                 "as": "k",
-                "gap": 3,
+                "columns": 2,
+                "gap": 5,
                 "entry": {
                   "type": "button",
                   "style": "lcButton",
                   "text": "{k.name}",
-                  "action": "skill",
-                  "arg": "{k.id}",
-                  "selected": "{k.selected}",
+                  "action": "pick",
+                  "arg": "skill:{k.index}",
+                  "selected": "{k.picked}",
                   "size": [
-                    420,
+                    212,
                     0
                   ]
                 }
@@ -191,9 +192,8 @@
                 "entry": {
                   "type": "stack",
                   "style": "lcButton",
-                  "action": "slot",
-                  "arg": "{s.slot}",
-                  "disabled": "{book.readOnly}",
+                  "action": "pick",
+                  "arg": "bag:{s.slot}",
                   "align": "center",
                   "size": [
                     100,
@@ -215,7 +215,8 @@
                       "style": "small",
                       "text": "{s.label}"
                     }
-                  ]
+                  ],
+                  "selected": "{s.picked}"
                 }
               },
               {
@@ -232,58 +233,178 @@
               0
             ],
             "gap": 8,
-            "visible": "{book.detail.skill}",
+            "visible": "{book.detail.portrait}",
             "children": [
               {
-                "type": "text",
-                "style": "title",
-                "text": "{book.detail.skill.name}"
-              },
-              {
-                "type": "text",
-                "style": "text",
-                "text": "{book.detail.skill.line}",
-                "wrap": true,
+                "type": "stack",
+                "style": "lcPanel",
+                "gap": 6,
                 "size": [
-                  420,
+                  440,
                   0
+                ],
+                "visible": "{book.detail.card}",
+                "children": [
+                  {
+                    "type": "text",
+                    "style": "heading",
+                    "text": "{book.detail.card.name}",
+                    "visible": "{book.detail.card.name}"
+                  },
+                  {
+                    "type": "text",
+                    "style": "text",
+                    "text": "{book.detail.card.lore}",
+                    "wrap": true,
+                    "size": [
+                      400,
+                      0
+                    ],
+                    "visible": "{book.detail.card.lore}"
+                  },
+                  {
+                    "type": "text",
+                    "style": "muted",
+                    "text": "{book.detail.card.text}",
+                    "wrap": true,
+                    "size": [
+                      400,
+                      0
+                    ],
+                    "visible": "{book.detail.card.text}"
+                  },
+                  {
+                    "type": "text",
+                    "style": "warning",
+                    "text": "{book.detail.card.hint}",
+                    "wrap": true,
+                    "size": [
+                      400,
+                      0
+                    ],
+                    "visible": "{book.detail.card.hint}"
+                  },
+                  {
+                    "type": "list",
+                    "items": "{book.detail.skill.versions}",
+                    "as": "v",
+                    "gap": 4,
+                    "entry": {
+                      "type": "text",
+                      "style": "small",
+                      "text": "{words.upgrades}: {v.name}"
+                    }
+                  },
+                  {
+                    "type": "stack",
+                    "direction": "horizontal",
+                    "gap": 8,
+                    "children": [
+                      {
+                        "type": "button",
+                        "style": "lcButton",
+                        "text": "{words.take}",
+                        "action": "take",
+                        "visible": "{book.detail.card.take}"
+                      },
+                      {
+                        "type": "button",
+                        "style": "lcButton",
+                        "text": "{words.drop}",
+                        "action": "drop",
+                        "visible": "{book.detail.card.drop}"
+                      }
+                    ]
+                  }
                 ]
               },
               {
                 "type": "text",
                 "style": "heading",
-                "text": "{words.upgrades}",
-                "visible": "{book.detail.skill.versions}"
+                "text": "{words.stockSkills}",
+                "visible": "{book.detail.learned}"
               },
               {
                 "type": "list",
-                "items": "{book.detail.skill.versions}",
-                "as": "v",
-                "gap": 6,
+                "items": "{book.detail.learned}",
+                "as": "l",
+                "columns": 2,
+                "gap": 5,
+                "entry": {
+                  "type": "button",
+                  "style": "lcButton",
+                  "text": "{l.name}",
+                  "action": "pick",
+                  "arg": "learned:{l.id}",
+                  "selected": "{l.picked}",
+                  "size": [
+                    212,
+                    0
+                  ]
+                }
+              },
+              {
+                "type": "text",
+                "style": "heading",
+                "text": "{words.lockedSkills}",
+                "visible": "{book.detail.locked}"
+              },
+              {
+                "type": "list",
+                "items": "{book.detail.locked}",
+                "as": "l",
+                "gap": 5,
+                "entry": {
+                  "type": "button",
+                  "style": "lcToggle",
+                  "text": "{l.name} · {l.when}",
+                  "action": "pick",
+                  "arg": "locked:{l.id}",
+                  "selected": "{l.picked}",
+                  "size": [
+                    430,
+                    0
+                  ]
+                }
+              },
+              {
+                "type": "text",
+                "style": "heading",
+                "text": "{words.storeTitle}",
+                "visible": "{book.detail.store}"
+              },
+              {
+                "type": "list",
+                "items": "{book.detail.store}",
+                "as": "t",
+                "columns": 1,
+                "gap": 5,
                 "entry": {
                   "type": "stack",
-                  "style": "lcPanel",
-                  "size": [
-                    420,
-                    0
-                  ],
+                  "direction": "horizontal",
+                  "gap": 4,
+                  "align": "center",
                   "children": [
                     {
-                      "type": "text",
-                      "style": "strong",
-                      "text": "{v.name}"
+                      "type": "image",
+                      "image": "{t.icon}",
+                      "size": [
+                        28,
+                        28
+                      ],
+                      "visible": "{t.icon}"
                     },
                     {
-                      "type": "text",
-                      "style": "small",
-                      "text": "{words.chosen}",
-                      "visible": "{v.chosen}"
-                    },
-                    {
-                      "type": "text",
-                      "style": "muted",
-                      "text": "{words.unknownVersion}",
-                      "visible": "{v.unknown}"
+                      "type": "button",
+                      "style": "lcButton",
+                      "text": "{t.name}",
+                      "action": "pick",
+                      "arg": "store:{t.id}",
+                      "selected": "{t.picked}",
+                      "size": [
+                        390,
+                        0
+                      ]
                     }
                   ]
                 }
