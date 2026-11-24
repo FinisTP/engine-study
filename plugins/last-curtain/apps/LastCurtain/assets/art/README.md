@@ -235,7 +235,7 @@ ComfyUI on the user's PC, SDXL base 1.0, 30 steps, cfg 7, dpmpp_2m karras. Promp
 
 | Sprite | From | Notes |
 |---|---|---|
-| `player_male` | `slice1/player_male_103` (man base, 0.75) | Dark jacket, white T-shirt; trousers came out khaki, not jeans. **No fan:** two inpaints at the hand (351, 352) drew a pocket. |
+| `player_male` | `slice1/player_male_103` (man base, 0.75) | Dark jacket, white T-shirt; trousers came out khaki, not jeans. **No fan:** two inpaints at the hand (351, 352) drew a pocket. **Faces redone 2026-11-24** (every face had the eyes shut): the eyes inpainted open on `face_calm` (`tools/art/inpaint.py`, SDXL base, denoise 0.55, seed 2, only the eye region composited back; take B of five), then talk (`aaa` 20), happy, angry, afraid, scheming and neardead from it with ExpressionEditor (`tools/art/male-faces.bat`, the soft values), each cut from its own black ground within 4 px of the calm outline (12 for neardead's tilt). Scheming keeps a small smudge by the eye. |
 | `player_female` | `slice1/player_female_h_201` (woman base, 0.75) | Same outfit; from the woman base, not the man (the same stance came out either way). No fan. |
 | `lethanh` | concept `lethanh_b_21` | The hostess; `face_happy` is `portrait_kind`. Extra: `portrait_uneasy.png`, `portrait_cold.png` (ExpressionEditor; the revealed portrait still needs its strings). |
 | `ti`, `ti_bound` | concept `ti_12`, `ti_bound_2` | Front view (approved concept). **The hat stays on his head:** inpainting it onto his back failed 4 ways (hat redrawn, seams, a cartoon head). |

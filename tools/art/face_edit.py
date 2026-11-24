@@ -54,6 +54,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('sprite'), p.add_argument('source'), p.add_argument('face'), p.add_argument('settings')
     p.add_argument('--tag', default='a'), p.add_argument('--host', default='')
+    p.add_argument('--src', default='') # another picture to start from (a new calm face not yet in the sprite folder)
     a = p.parse_args()
     for host in ([a.host] if a.host else ['127.0.0.1:8000', '127.0.0.1:8188']):
         try:
@@ -64,7 +65,7 @@ def main():
             a.host = ''
     if not a.host:
         sys.exit('ComfyUI is not running (tried ports 8000 and 8188). Start ComfyUI and run this again.')
-    source = os.path.join(SPRITES, a.sprite, 'face_' + a.source + '.png')
+    source = a.src or os.path.join(SPRITES, a.sprite, 'face_' + a.source + '.png')
     out_dir = os.path.join('Temp', 'art-faces')
     os.makedirs(out_dir, exist_ok=True)
     target = os.path.join(out_dir, '%s_%s_%s.png' % (a.sprite, a.face, a.tag))
