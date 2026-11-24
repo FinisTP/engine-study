@@ -15,6 +15,13 @@
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
 
+## Update 2026-11-24, evening (The Last Curtain: the 22 notes, effects, localization, darker text: `#UMBRA-423`-`#UMBRA-435`)
+
+- **The 22 notes:** scenes have the screen; falls fade once told; enemies never revive; Băng bó heals a chosen ally; walks go around foes; marked squares explain themselves; the order strip rotates; the camera goes from the one acting to the one reached; numbers rise over who was hit; stronger strikes cost 1 HP (bands retuned); painted floor tiles; XP in the notebook and on the result; bag labels wrap; café spots by click.
+- **The tutorial ladder:** T1 → T2 (hurt, Mai heals, two on one square) → T2s (Bảo, skills cost HP) → T3 → Stage 1, each lesson's first use guided (one square, one action, a tip).
+- **Effects:** particles can be pictures (engine); told lines play as timed cues (`Sequences.md`); 26 effects and 11 sheets; ghosts' dread; a 3D-only tracking tear (`Post.md` 6b), stuttering lamps, dust, a twitching portrait; "Hiệu ứng hình ảnh: Giảm".
+- **Text:** one `localization.csv` (Vietnamese and English) for every word; scene lines in both; all lines rewritten darker (drafts). Windows play check: `testing/s55-notes-vfx-localization.md` §4.
+
 ## Update 2026-11-24, late afternoon (The Last Curtain, the user's 19 notes: `#UMBRA-414`-`#UMBRA-421`)
 
 - **The fight, one thing at a time:** the opening shot plays alone, then "Trận đấu bắt đầu"; at the end the fight's view leaves, "Chiến thắng" / "Thất bại" shows, then the end scene. Squares light after Di chuyển; targets are picked on the board with a card; the menu waits for the walk; undo jumps back; one damage number, a red cost only when it costs; camera on the speaker, a little higher, a kick per move.
