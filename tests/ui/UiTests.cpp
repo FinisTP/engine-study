@@ -415,6 +415,47 @@ TEST_CASE("A picture keeps its shape: contain, cover, or cover from the top (UI.
     CHECK(f.uv1.y == 0.5F);
 }
 
+TEST_CASE("A screen on top keeps the pointer: what lies under its panels neither lights up nor takes the click (feedback 2026-11-24 15:10, note 12)")
+{
+    // 1. A button on a lower screen and, on a later screen, a painted panel over the same place.
+    const auto root = test::TempDir("ui-cover");
+    std::filesystem::create_directories(root / "ui");
+    const json skin{{"format", "umbra.ui-skin"}, {"fonts", {{"body", {{"file", "ui/fonts/Poppins-Regular.ttf"}, {"size", 18}}}}},
+                    {"styles", {{"text", json::object()}, {"panel", {{"background", "#101010"}}}, {"stack", json::object()},
+                                {"button", {{"background", "#202020"}, {"hover", {{"scale", 1.1}}}}}}}};
+    test::WriteText(root / "ui" / "skin.json", skin.dump());
+    test::WriteText(root / "ui" / "below.ui.json", json{{"format", "umbra.ui"}, {"version", 1},
+        {"root", {{"type", "stack"}, {"anchor", "top-left"}, {"children", {{{"type", "button"}, {"size", {200, 50}}, {"text", "Go"}, {"action", "go"}}}}}}}.dump());
+    test::WriteText(root / "ui" / "above.ui.json", json{{"format", "umbra.ui"}, {"version", 1},
+        {"root", {{"type", "panel"}, {"anchor", "top-left"}, {"size", {400, 300}}, {"style", "panel"}, {"children", {{{"type", "text"}, {"text", "Notes"}}}}}}}.dump());
+    assets::AssetFolders folders(root);
+    folders.AddPlugin(UMBRA_RPG_UI_ASSETS);
+    ui::UiSystem uiSystem;
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(uiSystem.Load(folders, diagnostics));
+    REQUIRE(uiSystem.Open("below"));
+    REQUIRE(uiSystem.Open("above"));
+    core::UiDrawList draw;
+    std::vector<ui::UiAction> took;
+    const auto frame = [&](glm::vec2 mouse, bool click) {
+        ui::UiInput in;
+        in.mouse = mouse, in.mouseMoved = true, in.click = click;
+        draw.Clear();
+        took = uiSystem.Update(json::object(), {1280, 720}, in, draw);
+        return uiSystem.ChoiceScale("below", 0);
+    };
+    // 2. Over the panel (once laid out: the masks are last frame's): the button below stays at rest and a click there does nothing.
+    frame({900, 600}, false);
+    for (int i = 0; i < 4; ++i)
+        CHECK(frame({100, 25}, false) == 1.0F);
+    frame({100, 25}, true);
+    CHECK(took.empty());
+    // 3. With the panel closed the same pointer lights it.
+    uiSystem.Close("above");
+    frame({100, 25}, false);
+    CHECK(frame({100, 25}, false) > 1.0F);
+}
+
 TEST_CASE("Buttons answer the pointer: hover and pressed styles, a scale that eases in and out (UI.md States)")
 {
     // 1. A skin of our own: a button that grows on hover and shrinks while pressed.

@@ -110,6 +110,8 @@ namespace umbra::ui
         std::map<std::string, int> focus_;          // per screen
         std::map<std::string, std::vector<Choice>> choices_; // last frame's, per screen
         std::map<std::string, std::vector<Choice>> boxes_;   // ... and its clickable boxes
+        std::map<std::string, std::vector<Rect>> covers_;    // ... and what it painted (the pointer stops there)
+        [[nodiscard]] bool Covered(std::size_t below, glm::vec2 mouse) const; // a screen above stack_[below] has the pointer
         core::TextureHandle atlasTexture_;
         std::function<ImageRef(const std::string &)> images_;
         std::string tip_;

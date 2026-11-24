@@ -159,9 +159,11 @@ top. Everything else goes back to the game from `Update`.
 
 A style takes the fields of its `base`, then its own. `hover` (focused), `selected` and
 `disabled` override fields in that state. `pressed` (the mouse held on it; without one a style uses `hover`)
-too. A button, or a list entry with an action, is in `hover` under the pointer on any screen, and
+too. A button, or a list entry with an action, is in `hover` under the pointer, and
 eases toward its state's `scale` (0.35 of the way a frame: a bounce in and out); a selected one
-stays `selected` under the pointer. Fields: `font`, `color`, `background`, `border`,
+stays `selected` under the pointer. The pointer belongs to the top screen under it: a screen does not
+see it where a later screen painted a box (a background or a picture) or placed a choice last frame, nor
+anywhere under a `dim` or `modal` screen, and a click there stops at that screen. Fields: `font`, `color`, `background`, `border`,
 `borderWidth`, `padding` (one number, `[x, y]`, or `[left, top, right, bottom]`), `fill` (bars),
 `image` + `slice` (a 9-slice picture as the box), `tint`. Colors are `"#rrggbb"`, `"#rrggbbaa"`
 or `[r, g, b, a]` from 0 to 1.

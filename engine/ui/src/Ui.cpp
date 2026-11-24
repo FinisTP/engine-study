@@ -19,6 +19,7 @@ namespace umbra::ui
         int focus = 0;
         std::vector<Choice> choices; // collected while placing, in order
         std::vector<Choice> boxes;   // panels and stacks with an action: clicked anywhere, never focused
+        std::vector<Rect> covers;    // painted boxes: the pointer over them belongs to this screen
         std::vector<std::pair<std::string, const json *>> scopes; // list entries: "item" -> its value
         std::vector<int> indices;    // their positions, for "{index}"
         std::optional<State> entryState; // the state of the next list entry's root widget
@@ -371,6 +372,8 @@ namespace umbra::ui
 
     void UiSystem::DrawBox(const Style &style, Rect rect, Context &c)
     {
+        if (style.background.a > 0.0F || !style.image.empty())
+            c.covers.push_back(rect);
         c.painter.Fill(rect, style.background);
         if (!style.image.empty() && images_)
             if (const ImageRef image = images_(style.image); image.texture)
@@ -637,8 +640,8 @@ namespace umbra::ui
                     actions.push_back({*it, box->action, box->arg});
                     break;
                 }
-                if (screens_.at(*it).dim)
-                    break;
+                if (screens_.at(*it).dim || std::ranges::any_of(covers_[*it], [&](const Rect &r) { return r.Contains(input.mouse); }))
+                    break; // a dimmed screen, or a painted part of this one, keeps the click
             }
         // 2. The UI's own actions: "close" closes the screen, "open:<screen>" opens one.
         for (const UiAction &action : actions)
@@ -654,15 +657,20 @@ namespace umbra::ui
         painter.SetFontScale(uiScale_);
         tip_.clear();
         const Rect view{0.0F, 0.0F, viewport.x, viewport.y};
-        for (const std::string &name : std::vector<std::string>(stack_))
+        const std::vector<std::string> order(stack_);
+        for (std::size_t i = 0; i < order.size(); ++i)
         {
+            const std::string &name = order[i];
             const Screen &screen = screens_.at(name);
             if (screen.dim)
                 painter.Fill(view, skin_.Dim());
-            Context c{data, painter, name == target, focus_[name], {}, {}, {}, {}, State::Normal, State::Normal, input.mouse, {}, input.held, name};
+            // A screen under another's painted part (or under a dimmed or modal one) does not see the pointer.
+            const glm::vec2 mouse = Covered(i, input.mouse) ? glm::vec2{-1e9F} : input.mouse;
+            Context c{data, painter, name == target, focus_[name], {}, {}, {}, {}, {}, State::Normal, State::Normal, mouse, {}, input.held, name};
             Place(screen.root, AnchorRect(view, Measure(screen.root, c, view.w), screen.root.anchor, screen.root.offset), c);
             choices_[name] = std::move(c.choices);
             boxes_[name] = std::move(c.boxes);
+            covers_[name] = std::move(c.covers);
             if (!c.tip.empty())
                 tip_ = std::move(c.tip);
         }
@@ -693,6 +701,27 @@ namespace umbra::ui
                 return choices != choices_.end() && at >= 0 && at < static_cast<int>(choices->second.size()) &&
                        !choices->second[static_cast<std::size_t>(at)].field.empty();
             }
+        return false;
+    }
+
+    bool UiSystem::Covered(std::size_t below, glm::vec2 mouse) const
+    {
+        // Last frame's layout of every screen above: dimmed or modal ones take it all; else their painted boxes and choices.
+        const auto inside = [&](const auto &list, const std::string &name) {
+            const auto it = list.find(name);
+            return it != list.end() && std::ranges::any_of(it->second, [&](const auto &x) {
+                       if constexpr (std::is_same_v<std::decay_t<decltype(x)>, Rect>)
+                           return x.Contains(mouse);
+                       else
+                           return x.rect.Contains(mouse);
+                   });
+        };
+        for (std::size_t j = below + 1; j < stack_.size(); ++j)
+        {
+            const std::string &name = stack_[j];
+            if (screens_.at(name).dim || screens_.at(name).modal || inside(covers_, name) || inside(choices_, name) || inside(boxes_, name))
+                return true;
+        }
         return false;
     }
 
