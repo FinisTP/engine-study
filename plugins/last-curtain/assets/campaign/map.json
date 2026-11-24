@@ -25,8 +25,8 @@
       "id": "t3",
       "name": "Hành lang chân dung",
       "at": [
-        0.195,
-        0.7
+        0.2,
+        0.58
       ],
       "kind": "story",
       "stage": "t3",
@@ -62,7 +62,7 @@
       "name": "Cầu thang phụ",
       "at": [
         0.065,
-        0.7
+        0.86
       ],
       "kind": "skirmish",
       "stage": "sk_stairs",

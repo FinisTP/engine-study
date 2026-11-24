@@ -7,7 +7,7 @@
   "root": {
     "type": "stack",
     "anchor": "center",
-    "style": "panel",
+    "style": "lcPanel",
     "size": [
       700,
       0
@@ -36,7 +36,7 @@
         "gap": 4,
         "entry": {
           "type": "button",
-          "style": "act",
+          "style": "lcButton",
           "size": [
             400,
             0
@@ -56,19 +56,19 @@
       },
       {
         "type": "button",
-        "style": "act",
+        "style": "lcButton",
         "text": "{words.editInNotebook}",
         "action": "notebook"
       },
       {
         "type": "button",
-        "style": "act",
+        "style": "lcButton",
         "text": "{words.fight}",
         "action": "fight"
       },
       {
         "type": "button",
-        "style": "act",
+        "style": "lcButton",
         "text": "{words.back}",
         "action": "back"
       }

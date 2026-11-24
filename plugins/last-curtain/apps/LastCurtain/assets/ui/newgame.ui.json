@@ -5,7 +5,7 @@
   "root": {
     "type": "stack",
     "anchor": "center",
-    "style": "panel",
+    "style": "lcPanel",
     "gap": 10,
     "size": [
       520,
@@ -39,7 +39,7 @@
         "children": [
           {
             "type": "button",
-            "style": "act",
+            "style": "lcButton",
             "text": "{words.female}",
             "action": "gender",
             "arg": "female",
@@ -47,7 +47,7 @@
           },
           {
             "type": "button",
-            "style": "act",
+            "style": "lcButton",
             "text": "{words.male}",
             "action": "gender",
             "arg": "male",
@@ -57,13 +57,13 @@
       },
       {
         "type": "button",
-        "style": "act",
+        "style": "lcButton",
         "text": "{words.start}",
         "action": "start"
       },
       {
         "type": "button",
-        "style": "act",
+        "style": "lcButton",
         "text": "{words.back}",
         "action": "back"
       }

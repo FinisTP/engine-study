@@ -7,7 +7,7 @@
   "root": {
     "type": "stack",
     "anchor": "center",
-    "style": "panel",
+    "style": "lcPanel",
     "size": [
       860,
       0
@@ -26,21 +26,21 @@
         "children": [
           {
             "type": "button",
-            "style": "act",
+            "style": "lcButton",
             "text": "{words.tabCharacters}",
             "action": "tab",
             "arg": "characters"
           },
           {
             "type": "button",
-            "style": "act",
+            "style": "lcButton",
             "text": "{words.tabIngredients}",
             "action": "tab",
             "arg": "ingredients"
           },
           {
             "type": "button",
-            "style": "act",
+            "style": "lcButton",
             "text": "{words.tabKeepsakes}",
             "action": "tab",
             "arg": "keepsakes"
@@ -59,7 +59,7 @@
             "gap": 4,
             "entry": {
               "type": "button",
-              "style": "act",
+              "style": "lcButton",
               "size": [
                 260,
                 0
@@ -96,7 +96,7 @@
                 "gap": 4,
                 "entry": {
                   "type": "button",
-                  "style": "act",
+                  "style": "lcButton",
                   "size": [
                     300,
                     0
@@ -125,7 +125,7 @@
       },
       {
         "type": "button",
-        "style": "act",
+        "style": "lcButton",
         "size": [
           200,
           0

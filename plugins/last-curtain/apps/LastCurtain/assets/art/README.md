@@ -285,3 +285,34 @@ model, if the user installs one).
 
 **Not made:** the player's `fan_open` pictures and the fan itself (inpainting a closed fan into
 the hand failed twice).
+
+## Campaign UI, slice 1 (2026-11-24, `art/ui/campaign/`; list `docs/design/ui-art-requests-2026-11-23.md` §1)
+
+Style A (red-black lacquer, gold-leaf line), as the user chose. Painted on the PC (SDXL base 1.0, the
+icon recipe above; raw pictures in `Temp/art-ui/raw`, not committed), composed in the cloud with
+`python3 tools/art/ui_campaign_compose.py <raw folder>`, which rewrites every file below.
+
+- **tex/**: `lacquer_dark` drawn (depth, crackle, eggshell flecks from `tex_eggshell2_222`);
+  `gold_leaf` (`tex_gold_leaf_121`) and `eggshell` (`tex_eggshell2_222`) made tileable at 512 (half
+  offset, soft cross blend); `paper_plan` from `tex_paper2_231`.
+- **frame/** (9-slice, `frame/slices.json`; the skin's `lc*` styles use them): panel, panel_gold, menu,
+  button (normal, focus, disabled), bubble (cinnabar line), toast (green-gold line), nameplate, tab,
+  tab_active, and the map's ticket stub (normal, next with a gold glow, unknown) at 256 × 64 with the
+  perforation inside the right slice. Frames use a smooth lacquer ground: flecks and crackle smeared
+  when stretched.
+- **icon/**: cut out with rembg's `isnet-general-use` matte (`pip install rembg`; the edge flood failed
+  where the paper is lighter in the middle). Picks: cmd_move 341 (recoloured eggshell, black on black
+  otherwise), cmd_attack 352, cmd_skills 361, cmd_items 372, cmd_end 382, cmd_cut 171, mark_skirmish 252,
+  mark_unknown 311, upgrade_ready 321, rite 241. Drawn: mark_cleared (the tick), mark_next (a faceted
+  gold lozenge; the painted diamond lost its lower half to the matte), ap_full / ap_empty. upgrade_locked
+  is upgrade_ready dimmed and greyed.
+- **item/**: icon and `_pic` (512, the middle of the still life, so the painted scribbles in the corners
+  go): gung 191 / 502, duong 401 / 511, mut_gung 411 / 522, nuoc_gung 422 / 532, giay_gap_tu 432 / 541.
+
+Weak spots: mark_skirmish is one fan, not two crossed; mark_unknown still reads as a question mark;
+duong keeps a soft shadow; the controller and key glyphs (§1.5) are not made yet (plan 8).
+
+Wired (#394): the campaign screens (title, new game, settings, map, pre-stage, result, game over,
+retreat, café, brew, notebook, battle HUD) use `lcPanel`, `lcButton`, `lcToast`, `lcBubble`,
+`lcPlate`, `lcTicket`; the map's tickets carry their mark icon; brew rows show the drink and what is
+missing; the command menu shows each command's icon (or the item's).

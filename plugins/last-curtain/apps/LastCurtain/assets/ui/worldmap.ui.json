@@ -23,15 +23,27 @@
           "at": "{t.at}",
           "children": [
             {
+              "type": "image",
+              "image": "{t.icon}",
+              "size": [
+                36,
+                36
+              ]
+            },
+            {
               "type": "button",
-              "style": "act",
-              "text": "{t.name}\n{t.markText}",
+              "style": "lcTicket",
+              "text": "{t.name}",
               "action": "select",
               "arg": "{t.id}",
               "selected": "{t.selected}",
-              "disabled": "{t.closed}"
+              "disabled": "{t.closed}",
+              "tip": "{t.markText}"
             }
-          ]
+          ],
+          "direction": "horizontal",
+          "gap": 4,
+          "align": "center"
         }
       },
       {
@@ -41,7 +53,7 @@
           -20,
           -20
         ],
-        "style": "float",
+        "style": "lcPanel",
         "gap": 6,
         "size": [
           360,
@@ -66,7 +78,7 @@
           },
           {
             "type": "button",
-            "style": "act",
+            "style": "lcButton",
             "text": "{words.enter}",
             "action": "enter",
             "arg": "{map.panel.id}",
@@ -81,7 +93,7 @@
           20,
           14
         ],
-        "style": "float",
+        "style": "lcPanel",
         "gap": 4,
         "children": [
           {
@@ -91,7 +103,7 @@
           },
           {
             "type": "button",
-            "style": "act",
+            "style": "lcButton",
             "text": "{words.backCafe}",
             "action": "cafe"
           },

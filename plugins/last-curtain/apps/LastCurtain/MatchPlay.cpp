@@ -1021,9 +1021,17 @@ nlohmann::json MatchPlay::Menu() const
     std::string title;
     if (!PlayerTurn() || s_.battle.on || s_.over)
         return {{"title", ""}, {"rows", rows}};
+    const auto icon = [](const std::string &id) -> std::string {
+        // The row's picture (art/ui/campaign): a command, or an item by its id; none for targets.
+        const std::string dir = "art/ui/campaign/";
+        if (id.starts_with("item:"))
+            return dir + "item/" + id.substr(5) + ".png";
+        const std::string cmd = id == "undo" || id == "stay" ? "move" : id.starts_with("cut:") ? "cut" : id.starts_with("ability:") ? "skills" : id;
+        return cmd == "move" || cmd == "attack" || cmd == "skills" || cmd == "items" || cmd == "end" || cmd == "cut" ? dir + "icon/cmd_" + cmd + ".png" : "";
+    };
     const auto row = [&](const std::string &id, const std::string &label, const std::string &note, bool off, const std::string &why, bool sub) {
         rows.push_back({{"id", id}, {"label", label + (sub ? "  \u00bb" : "")}, {"note", note}, {"off", off}, {"on", !off}, {"why", why},
-                        {"key", std::to_string(rows.size() + 1)}});
+                        {"key", std::to_string(rows.size() + 1)}, {"icon", icon(id)}});
     };
     const nlohmann::json actions = Chose() ? Actions() : nlohmann::json::array();
     const auto starts = [](const nlohmann::json &a, const char *prefix) { return a["id"].get<std::string>().starts_with(prefix); };

@@ -7,7 +7,7 @@
   "root": {
     "type": "stack",
     "anchor": "center",
-    "style": "panel",
+    "style": "lcPanel",
     "gap": 8,
     "size": [
       760,
@@ -29,16 +29,32 @@
           "gap": 3,
           "children": [
             {
-              "type": "button",
-              "style": "act",
-              "size": [
-                700,
-                0
-              ],
-              "text": "{r.name}   {r.text}",
-              "action": "pick",
-              "arg": "{r.id}",
-              "disabled": "{r.off}"
+              "type": "stack",
+              "direction": "horizontal",
+              "gap": 8,
+              "align": "center",
+              "children": [
+                {
+                  "type": "image",
+                  "image": "art/ui/campaign/item/{r.id}.png",
+                  "size": [
+                    52,
+                    52
+                  ]
+                },
+                {
+                  "type": "button",
+                  "style": "lcButton",
+                  "size": [
+                    620,
+                    0
+                  ],
+                  "text": "{r.name}   {r.text}",
+                  "action": "pick",
+                  "arg": "{r.id}",
+                  "disabled": "{r.off}"
+                }
+              ]
             },
             {
               "type": "list",
@@ -47,9 +63,25 @@
               "direction": "horizontal",
               "gap": 10,
               "entry": {
-                "type": "text",
-                "style": "warning",
-                "text": "{l.label}"
+                "type": "stack",
+                "direction": "horizontal",
+                "gap": 4,
+                "align": "center",
+                "children": [
+                  {
+                    "type": "image",
+                    "image": "art/ui/campaign/item/{l.item}.png",
+                    "size": [
+                      28,
+                      28
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "style": "warning",
+                    "text": "{l.label}"
+                  }
+                ]
               }
             },
             {
@@ -75,7 +107,7 @@
         "gap": 8,
         "entry": {
           "type": "button",
-          "style": "act",
+          "style": "lcButton",
           "text": "{f.name}",
           "action": "for",
           "arg": "{f.who}"
@@ -83,7 +115,7 @@
       },
       {
         "type": "button",
-        "style": "act",
+        "style": "lcButton",
         "size": [
           200,
           0

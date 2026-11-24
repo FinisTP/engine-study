@@ -7,7 +7,7 @@
   "root": {
     "type": "stack",
     "anchor": "center",
-    "style": "panel",
+    "style": "lcPanel",
     "size": [
       560,
       0
@@ -31,13 +31,13 @@
         "children": [
           {
             "type": "button",
-            "style": "act",
+            "style": "lcButton",
             "text": "{words.no}",
             "action": "no"
           },
           {
             "type": "button",
-            "style": "act",
+            "style": "lcButton",
             "text": "{words.yes}",
             "action": "yes"
           }

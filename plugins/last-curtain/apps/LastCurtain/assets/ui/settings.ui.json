@@ -5,7 +5,7 @@
   "root": {
     "type": "stack",
     "anchor": "center",
-    "style": "panel",
+    "style": "lcPanel",
     "gap": 8,
     "size": [
       480,
@@ -19,49 +19,49 @@
       },
       {
         "type": "button",
-        "style": "act",
+        "style": "lcButton",
         "text": "{words.bigTextOn}",
         "action": "bigtext",
         "visible": "{analog.bigText}"
       },
       {
         "type": "button",
-        "style": "act",
+        "style": "lcButton",
         "text": "{words.bigTextOff}",
         "action": "bigtext",
         "visible": "{analog.bigTextOff}"
       },
       {
         "type": "button",
-        "style": "act",
+        "style": "lcButton",
         "text": "{words.crtOn}",
         "action": "crt",
         "visible": "{analog.crt}"
       },
       {
         "type": "button",
-        "style": "act",
+        "style": "lcButton",
         "text": "{words.crtOff}",
         "action": "crt",
         "visible": "{analog.crtOff}"
       },
       {
         "type": "button",
-        "style": "act",
+        "style": "lcButton",
         "text": "{words.vhsOn}",
         "action": "vhs",
         "visible": "{analog.vhs}"
       },
       {
         "type": "button",
-        "style": "act",
+        "style": "lcButton",
         "text": "{words.vhsOff}",
         "action": "vhs",
         "visible": "{analog.vhsOff}"
       },
       {
         "type": "button",
-        "style": "act",
+        "style": "lcButton",
         "text": "{words.close}",
         "action": "close"
       }

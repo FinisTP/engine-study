@@ -7,7 +7,7 @@
   "root": {
     "type": "stack",
     "anchor": "center",
-    "style": "panel",
+    "style": "lcPanel",
     "size": [
       700,
       0
@@ -26,20 +26,20 @@
       },
       {
         "type": "button",
-        "style": "act",
+        "style": "lcButton",
         "text": "{words.retry}",
         "action": "retry"
       },
       {
         "type": "button",
-        "style": "act",
+        "style": "lcButton",
         "text": "{words.rite}",
         "action": "rite",
         "visible": "{over.rite}"
       },
       {
         "type": "button",
-        "style": "act",
+        "style": "lcButton",
         "text": "{words.toMap}",
         "action": "map",
         "visible": "{over.notRetryOnly}"

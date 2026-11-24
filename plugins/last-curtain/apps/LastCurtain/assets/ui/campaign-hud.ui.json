@@ -13,7 +13,7 @@
           20,
           14
         ],
-        "style": "float",
+        "style": "lcPanel",
         "gap": 4,
         "size": [
           260,
@@ -70,7 +70,7 @@
           },
           {
             "type": "button",
-            "style": "act",
+            "style": "lcButton",
             "text": "{words.retreat}",
             "action": "retreat"
           }
@@ -83,7 +83,7 @@
           0,
           10
         ],
-        "style": "float",
+        "style": "lcPanel",
         "items": "{hud.strip}",
         "as": "o",
         "direction": "horizontal",
@@ -129,7 +129,7 @@
           20,
           -14
         ],
-        "style": "float",
+        "style": "lcPanel",
         "gap": 3,
         "size": [
           620,
@@ -155,7 +155,7 @@
         "as": "d",
         "entry": {
           "type": "stack",
-          "style": "float",
+          "style": "lcPanel",
           "gap": 6,
           "at": "{d.at}",
           "children": [
@@ -171,17 +171,34 @@
               "as": "r",
               "gap": 5,
               "entry": {
-                "type": "button",
-                "style": "act",
-                "size": [
-                  250,
-                  0
-                ],
-                "text": "{r.key}   {r.label}   {r.note}",
-                "action": "menu",
-                "arg": "{r.id}",
-                "disabled": "{r.off}",
-                "tip": "{r.why}"
+                "type": "stack",
+                "direction": "horizontal",
+                "gap": 6,
+                "align": "center",
+                "children": [
+                  {
+                    "type": "image",
+                    "image": "{r.icon}",
+                    "size": [
+                      30,
+                      30
+                    ],
+                    "visible": "{r.icon}"
+                  },
+                  {
+                    "type": "button",
+                    "style": "lcButton",
+                    "size": [
+                      230,
+                      0
+                    ],
+                    "text": "{r.key}   {r.label}   {r.note}",
+                    "action": "menu",
+                    "arg": "{r.id}",
+                    "disabled": "{r.off}",
+                    "tip": "{r.why}"
+                  }
+                ]
               }
             }
           ]
@@ -194,7 +211,7 @@
           -20,
           96
         ],
-        "style": "float",
+        "style": "lcPanel",
         "gap": 4,
         "size": [
           260,
@@ -252,7 +269,7 @@
         "gap": 4,
         "entry": {
           "type": "text",
-          "style": "float",
+          "style": "lcToast",
           "text": "{t.text}"
         }
       }

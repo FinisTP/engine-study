@@ -486,6 +486,15 @@
         10,
         2
       ]
-    }
+    },
+    "lcPanel": {"image": "art/ui/campaign/frame/panel.png", "slice": [24, 24, 24, 24], "padding": [24, 20]},
+    "lcPanelGold": {"image": "art/ui/campaign/frame/panel_gold.png", "slice": [24, 24, 24, 24], "padding": [24, 20]},
+    "lcMenu": {"image": "art/ui/campaign/frame/menu.png", "slice": [20, 20, 20, 20], "padding": [22, 18]},
+    "lcButton": {"base": "text", "color": "#f0e5cc", "image": "art/ui/campaign/frame/button.png", "slice": [16, 16, 16, 16], "padding": [16, 9], "hover": {"image": "art/ui/campaign/frame/button_focus.png", "color": "#fff4d0", "scale": 1.04}, "selected": {"image": "art/ui/campaign/frame/button_focus.png", "color": "#ffe9b0"}, "pressed": {"image": "art/ui/campaign/frame/button_focus.png", "scale": 0.95}, "disabled": {"image": "art/ui/campaign/frame/button_disabled.png", "color": "#6c6860"}},
+    "lcToast": {"base": "small", "color": "#f0e5cc", "image": "art/ui/campaign/frame/toast.png", "slice": [16, 16, 16, 16], "padding": [16, 9]},
+    "lcBubble": {"base": "small", "color": "#f0e5cc", "image": "art/ui/campaign/frame/bubble.png", "slice": [16, 16, 16, 16], "padding": [14, 10]},
+    "lcPlate": {"base": "small", "color": "#f0e5cc", "image": "art/ui/campaign/frame/nameplate.png", "slice": [12, 12, 12, 12], "padding": [12, 5], "hover": {"color": "#fff4d0", "scale": 1.05}, "selected": {"color": "#ffd76a", "image": "art/ui/campaign/frame/button_focus.png", "slice": [16, 16, 16, 16]}},
+    "lcTab": {"base": "text", "color": "#c9bca0", "image": "art/ui/campaign/frame/tab.png", "slice": [14, 14, 14, 14], "padding": [16, 8], "hover": {"color": "#fff4d0"}, "selected": {"image": "art/ui/campaign/frame/tab_active.png", "color": "#ffe9b0"}},
+    "lcTicket": {"base": "text", "color": "#f0e5cc", "image": "art/ui/campaign/frame/ticket.png", "slice": [18, 20, 48, 20], "padding": [20, 10, 50, 10], "hover": {"image": "art/ui/campaign/frame/ticket_next.png", "slice": [26, 28, 56, 28], "scale": 1.04}, "selected": {"image": "art/ui/campaign/frame/ticket_next.png", "slice": [26, 28, 56, 28], "color": "#ffe9b0"}, "disabled": {"image": "art/ui/campaign/frame/ticket_unknown.png", "color": "#7a7060"}}
   }
 }

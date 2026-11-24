@@ -222,7 +222,7 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
                 for (const campaign::TicketView &t : campaign::MapView(map, save, stages))
                 {
                     const std::string mark = words.value(t.mark == "cleared" ? "markCleared" : t.mark == "next" ? "markNext" : t.mark == "skirmish" ? "markSkirmish" : "markLocked", "?");
-                    data["map"]["tickets"].push_back({{"id", t.id}, {"name", t.mark == "unknown" ? "?" : t.name}, {"markText", mark}, {"at", {80.0F + t.x * 1100.0F - 60.0F, 60.0F + t.y * 560.0F - 24.0F}},
+                    data["map"]["tickets"].push_back({{"id", t.id}, {"name", t.mark == "unknown" ? "?" : t.name}, {"markText", mark}, {"icon", "art/ui/campaign/icon/mark_" + (t.mark == "locked" ? std::string("unknown") : t.mark) + ".png"}, {"at", {80.0F + t.x * 1100.0F - 60.0F, 60.0F + t.y * 560.0F - 24.0F}},
                                                       {"selected", t.id == selected}, {"closed", !t.open}});
                     if (t.id == selected)
                     {

@@ -15,7 +15,7 @@
       {
         "type": "stack",
         "anchor": "center",
-        "style": "panel",
+        "style": "lcPanel",
         "gap": 10,
         "size": [
           420,
@@ -29,26 +29,26 @@
           },
           {
             "type": "button",
-            "style": "act",
+            "style": "lcButton",
             "text": "{words.continue}",
             "action": "continue",
             "visible": "{canContinue}"
           },
           {
             "type": "button",
-            "style": "act",
+            "style": "lcButton",
             "text": "{words.newGame}",
             "action": "new"
           },
           {
             "type": "button",
-            "style": "act",
+            "style": "lcButton",
             "text": "{words.settings}",
             "action": "settings"
           },
           {
             "type": "button",
-            "style": "act",
+            "style": "lcButton",
             "text": "{words.quit}",
             "action": "quit"
           }

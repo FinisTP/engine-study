@@ -153,6 +153,7 @@
     "off": true,
     "lacks": [
      {
+      "item": "gung",
       "label": "Thiếu Gừng ×1 · Phòng vé"
      }
     ],
@@ -218,6 +219,7 @@
     "id": "t1",
     "name": "Tiền sảnh",
     "markText": "đã qua",
+    "icon": "art/ui/campaign/icon/mark_cleared.png",
     "at": [
      570.0,
      534.4000000000001
@@ -229,6 +231,7 @@
     "id": "t3",
     "name": "Hành lang chân dung",
     "markText": "tiếp theo",
+    "icon": "art/ui/campaign/icon/mark_next.png",
     "at": [
      234.5,
      428.0
@@ -240,6 +243,7 @@
     "id": "sk_props",
     "name": "Kho đạo cụ",
     "markText": "?",
+    "icon": "art/ui/campaign/icon/mark_unknown.png",
     "at": [
      163.0,
      181.6
@@ -251,6 +255,7 @@
     "id": "sk_stairs",
     "name": "Cầu thang phụ",
     "markText": "?",
+    "icon": "art/ui/campaign/icon/mark_unknown.png",
     "at": [
      91.5,
      428.0
@@ -262,6 +267,7 @@
     "id": "stage1",
     "name": "Phòng vé",
     "markText": "?",
+    "icon": "art/ui/campaign/icon/mark_unknown.png",
     "at": [
      955.0,
      506.4
@@ -273,6 +279,7 @@
     "id": "sk_boxoffice",
     "name": "Phòng vé (lần nữa)",
     "markText": "?",
+    "icon": "art/ui/campaign/icon/mark_unknown.png",
     "at": [
      955.0,
      383.2
@@ -284,6 +291,7 @@
     "id": "makeup",
     "name": "?",
     "markText": "?",
+    "icon": "art/ui/campaign/icon/mark_unknown.png",
     "at": [
      955.0,
      164.8
@@ -295,6 +303,7 @@
     "id": "under",
     "name": "?",
     "markText": "?",
+    "icon": "art/ui/campaign/icon/mark_unknown.png",
     "at": [
      570.0,
      248.8
@@ -306,6 +315,7 @@
     "id": "balcony",
     "name": "?",
     "markText": "?",
+    "icon": "art/ui/campaign/icon/mark_unknown.png",
     "at": [
      438.0,
      66.8
@@ -317,6 +327,7 @@
     "id": "music",
     "name": "?",
     "markText": "?",
+    "icon": "art/ui/campaign/icon/mark_unknown.png",
     "at": [
      955.0,
      282.4
@@ -328,6 +339,7 @@
     "id": "attic",
     "name": "?",
     "markText": "?",
+    "icon": "art/ui/campaign/icon/mark_unknown.png",
     "at": [
      702.0,
      66.8
@@ -339,6 +351,7 @@
     "id": "stage",
     "name": "?",
     "markText": "?",
+    "icon": "art/ui/campaign/icon/mark_unknown.png",
     "at": [
      570.0,
      159.2
