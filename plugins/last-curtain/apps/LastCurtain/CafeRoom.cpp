@@ -82,6 +82,21 @@ CafeRoom::CafeRoom(umbra::render::Renderer &renderer, const umbra::assets::Asset
         Picture(g.sprite);
 }
 
+CafeRoom::~CafeRoom()
+{
+    // 1. Each texture once (two sprites may share a picture), then the meshes.
+    std::vector<umbra::core::TextureHandle> textures{wall_, floor_, backWall_};
+    for (const auto &[sprite, texture] : pictures_)
+        if (std::ranges::find(textures, texture) == textures.end())
+            textures.push_back(texture);
+    for (const umbra::core::TextureHandle texture : textures)
+        if (texture)
+            renderer_.DestroyTexture(texture);
+    for (const umbra::core::MeshHandle mesh : {box_, quad_, mirrorQuad_})
+        if (mesh)
+            renderer_.DestroyMesh(mesh);
+}
+
 umbra::core::TextureHandle CafeRoom::Picture(const std::string &sprite)
 {
     // 1. Its calm figure; a ghost without its own picture yet takes the shared specter.

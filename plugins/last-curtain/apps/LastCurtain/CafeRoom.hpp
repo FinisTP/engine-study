@@ -19,6 +19,9 @@ class CafeRoom final
 public:
     CafeRoom(umbra::render::Renderer &renderer, const umbra::assets::AssetFolders &assets, const umbra::cafe::CafeDef &def,
              const umbra::match::MatchDef &match);
+    ~CafeRoom(); // gives the renderer back its textures and meshes (each café visit builds a new room)
+    CafeRoom(const CafeRoom &) = delete;
+    CafeRoom &operator=(const CafeRoom &) = delete;
     void Update(const umbra::night::CafePlay &play, float dt);
     void Draw(const umbra::night::CafePlay &play, umbra::core::DrawList &out) const;
     // Screen labels: each table's order and patience, the talk's bubble, the walker's name.

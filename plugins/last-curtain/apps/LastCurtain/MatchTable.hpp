@@ -26,6 +26,7 @@ class MatchTable final
 {
 public:
     MatchTable(umbra::render::Renderer &renderer, const umbra::assets::AssetFolders &assets, const umbra::match::MatchDef &def);
+    ~MatchTable(); // gives the renderer back every texture and mesh (a retry builds a new table)
     MatchTable(const MatchTable &) = delete;
     MatchTable &operator=(const MatchTable &) = delete;
 

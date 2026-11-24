@@ -114,6 +114,24 @@ MatchTable::MatchTable(umbra::render::Renderer &renderer, const umbra::assets::A
     load("specter"); // a ghost without its own art yet takes the shared specter (Sprite)
 }
 
+MatchTable::~MatchTable()
+{
+    // 1. Textures: the marks, the wall, then every map of them.
+    std::vector<umbra::core::TextureHandle> textures{eventIcon_, chestIcon_, wallArt_};
+    for (const auto *art : {&backdrops_, &sprites_})
+        for (const auto &[key, texture] : *art)
+            textures.push_back(texture);
+    for (const auto &[kind, list] : floors_)
+        textures.insert(textures.end(), list.begin(), list.end());
+    for (const umbra::core::TextureHandle texture : textures)
+        if (texture)
+            renderer_.DestroyTexture(texture);
+    // 2. Meshes.
+    for (const umbra::core::MeshHandle mesh : {box_, quad_, mirrorQuad_, disc_, triangle_})
+        if (mesh)
+            renderer_.DestroyMesh(mesh);
+}
+
 glm::vec3 MatchTable::Centre(const Board &b, int cell) const
 {
     // Sideways, as the prototype: the board's rows run left to right, side 0's hub (the bottom row) on the left.
