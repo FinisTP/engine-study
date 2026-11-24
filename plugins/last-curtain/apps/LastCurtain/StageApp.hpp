@@ -13,7 +13,7 @@ struct GameContext;
 // screen at their moments (Campaign.md "Scenes inside a fight"). The party: the player, Bao, Ba Mai up to
 // the stage's cap, at its level. refill picks a skirmish's twist. Returns RunMatch's result.
 // With a save (the campaign's flow): the party is `party` from it, with its versions and boosts; the stage
-// returns 3 once the fight is over and its last scene played, the fight in `out`.
+// returns 3 once the fight is over and its last scene played, the fight in `out`; 4 when the player retreats.
 namespace umbra::campaign { struct Save; }
 int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const std::string &id, int refill, std::uint64_t seed,
              const umbra::campaign::Speaker &player, const std::filesystem::path &capture, int frames,

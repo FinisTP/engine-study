@@ -167,7 +167,10 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
         {
             const campaign::Save before = save;
             campaign::BuiltStage out;
-            if (RunStage(game, assets, id, save.rooms[id].refill, 0, save.player, {}, 0, &save, party, &out) != 3)
+            const int ran = RunStage(game, assets, id, save.rooms[id].refill, 0, save.player, {}, 0, &save, party, &out);
+            if (ran == 4)
+                return save = before, "map"; // retreat: nothing from the stage is kept
+            if (ran != 3)
                 return "quit";
             const campaign::StageDef &stage = *stageOf(id);
             if (out.state.winner == 0)

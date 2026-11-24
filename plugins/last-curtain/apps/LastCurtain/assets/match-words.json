@@ -197,6 +197,10 @@
     "free": "Cut {name} free"
   },
   "screens": {
+    "retreat": "Retreat",
+    "retreatAsk": "Back to the map. Everything from this room is lost: levels, finds, freed ones.",
+    "no": "No",
+    "yes": "Yes",
     "level": "Lv",
     "atk": "ATK",
     "def": "DEF",

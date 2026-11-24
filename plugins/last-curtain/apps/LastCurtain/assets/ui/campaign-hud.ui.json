@@ -67,6 +67,12 @@
             "style": "warning",
             "text": "× {words.trapped}",
             "visible": "{hud.goals.failed}"
+          },
+          {
+            "type": "button",
+            "style": "act",
+            "text": "{words.retreat}",
+            "action": "retreat"
           }
         ]
       },

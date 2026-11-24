@@ -1,0 +1,48 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "dim": true,
+  "back": "no",
+  "root": {
+    "type": "stack",
+    "anchor": "center",
+    "style": "panel",
+    "size": [
+      560,
+      0
+    ],
+    "gap": 10,
+    "children": [
+      {
+        "type": "text",
+        "style": "title",
+        "text": "{words.retreat}"
+      },
+      {
+        "type": "text",
+        "style": "small",
+        "text": "{words.retreatAsk}"
+      },
+      {
+        "type": "stack",
+        "direction": "horizontal",
+        "gap": 10,
+        "children": [
+          {
+            "type": "button",
+            "style": "act",
+            "text": "{words.no}",
+            "action": "no"
+          },
+          {
+            "type": "button",
+            "style": "act",
+            "text": "{words.yes}",
+            "action": "yes"
+          }
+        ]
+      }
+    ]
+  }
+}

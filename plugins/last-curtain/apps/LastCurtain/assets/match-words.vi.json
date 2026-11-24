@@ -198,6 +198,10 @@
     "free": "Cắt dây cho {name}"
   },
   "screens": {
+    "retreat": "Rút lui",
+    "retreatAsk": "Về bản đồ. Mọi thứ trong phòng này sẽ mất: cấp, đồ nhặt, người được cứu.",
+    "no": "Không",
+    "yes": "Có",
     "level": "Cấp",
     "atk": "Công",
     "def": "Thủ",

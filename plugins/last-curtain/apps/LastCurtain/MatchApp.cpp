@@ -326,8 +326,14 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                     hooks ? begin(nullptr) : backToPick();
                 else if (a.screen == "pause" && a.action == "resume")
                     paused = false;
-                else if (a.screen == "pause" && a.action == "savequit" && hooks)
-                    quit = true; // stage saves come with the campaign save (plan 7)
+                else if (hooks && (a.action == "retreat" || (a.screen == "pause" && a.action == "savequit")))
+                    screens.Ui().Open("retreat"), paused = true; // a stage has no save: leaving is a retreat (asked first)
+                else if (hooks && a.screen == "retreat")
+                {
+                    screens.Ui().Close("retreat"), screens.Ui().Close("pause"), paused = false;
+                    if (a.action == "yes")
+                        result = 4, quit = true; // back to the map; the flow drops all the stage's progress
+                }
                 else if (a.screen == "pause" && (a.action == "save" || a.action == "savequit") && play && !hooks)
                 {
                     WriteSave(*play);
@@ -373,7 +379,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
     if (play && !play->State().over && !watch && !hooks)
         WriteSave(*play);
     if (screens.Ready())
-        for (const char *name : {"match-hud", "campaign-hud", "match-labels", "match-pick", "match-end", "match-battle", "match-level", "match-event", "match-treasure", "match-banner", "pause"})
+        for (const char *name : {"match-hud", "campaign-hud", "retreat", "match-labels", "match-pick", "match-end", "match-battle", "match-level", "match-event", "match-treasure", "match-banner", "pause"})
             screens.Ui().Close(name);
     return result;
 }
