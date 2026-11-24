@@ -15,6 +15,21 @@
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
 
+## Update 2026-11-25, night (The Last Curtain: the 30 notes, Ký ức, slice 1 at 90%: `#UMBRA-437`-`#UMBRA-438`)
+
+- **Fights:**
+  - the stage opens about 10 tiles across;
+  - battle close-ups pull back out;
+  - board panels: hide and show, inspect another unit, pick one of several on a square;
+  - board abilities are counted (2 a fight), and play on the battle stage;
+  - Withdraw ends a battle;
+  - Mai's rallying, with passive cards;
+  - campaign enemies never idle.
+- **Progress:** spoils; the brewing lesson after T2 (Mai's chè and memory); quests with markers; gear with signature skills; Ký ức by year.
+- **Story:** T1–T3 and the café's first talk are rewritten for the player's own feelings. Choices are saved as facts and answered later (`when` lines). Each café person has default lines.
+- **Balance:** every slice 1 stage wins 90% or more of bot runs. Further balance runs and rule tests happen only when the user asks.
+- **Windows play check:** `testing/s56-thirty-notes.md` §4.
+
 ## Update 2026-11-24, evening (The Last Curtain: the 22 notes, effects, localization, darker text: `#UMBRA-423`-`#UMBRA-435`)
 
 - **The 22 notes:** scenes have the screen; falls fade once told; enemies never revive; Băng bó heals a chosen ally; walks go around foes; marked squares explain themselves; the order strip rotates; the camera goes from the one acting to the one reached; numbers rise over who was hit; stronger strikes cost 1 HP (bands retuned); painted floor tiles; XP in the notebook and on the result; bag labels wrap; café spots by click.
