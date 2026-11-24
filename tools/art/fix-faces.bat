@@ -5,8 +5,8 @@ cd /d "%~dp0..\.."
 if not exist Temp\art-faces mkdir Temp\art-faces
 set LOG=Temp\art-faces\fix-faces.log
 echo run %date% %time% > %LOG%
-python tools\art\face_edit.py player_male calm talk "{\"aaa\": 22, \"blink\": 7, \"eyebrow\": 3}" --tag a >> %LOG% 2>&1
-python tools\art\face_edit.py player_male calm talk "{\"aaa\": 30, \"blink\": 10, \"eyebrow\": 5, \"pupil_y\": 4}" --tag b >> %LOG% 2>&1
-python tools\art\face_edit.py player_male calm calm "{\"blink\": 8, \"eyebrow\": 2}" --tag a >> %LOG% 2>&1
+python tools\art\face_edit.py player_male calm talk "{\"aaa\": 22, \"blink\": 4, \"eyebrow\": 3}" --tag a >> %LOG% 2>&1
+python tools\art\face_edit.py player_male calm talk "{\"aaa\": 30, \"blink\": 5, \"eyebrow\": 5, \"pupil_y\": 4}" --tag b >> %LOG% 2>&1
+python tools\art\face_edit.py player_male calm calm "{\"blink\": 3, \"eyebrow\": 2}" --tag a >> %LOG% 2>&1
 type %LOG%
 pause

@@ -43,10 +43,10 @@ def run(host, prompt):
         history = json.loads(call(host, '/history/' + prompt_id))
         if prompt_id in history:
             break
-    for output in history[prompt_id]['outputs'].values():
-        for image in output.get('images', []):
-            query = urllib.parse.urlencode({'filename': image['filename'], 'subfolder': image['subfolder'], 'type': image['type']})
-            return call(host, '/view?' + query)
+    # Only SaveImage's picture (node 3): ExpressionEditor also reports a preview of its own.
+    for image in history[prompt_id]['outputs'].get('3', {}).get('images', []):
+        query = urllib.parse.urlencode({'filename': image['filename'], 'subfolder': image.get('subfolder', ''), 'type': image.get('type', 'output')})
+        return call(host, '/view?' + query)
     raise RuntimeError('no picture came back: ' + json.dumps(history[prompt_id].get('status', {})))
 
 
