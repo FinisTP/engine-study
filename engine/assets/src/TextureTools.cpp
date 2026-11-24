@@ -46,8 +46,9 @@ namespace umbra::assets
 
     bool LoadImageFile(const std::filesystem::path &file, core::TextureData &texture, std::string &error)
     {
+        std::error_code ec;
         std::ifstream in(file, std::ios::binary);
-        if (!in)
+        if (!in || !std::filesystem::is_regular_file(file, ec)) // a folder opens on Linux, then throws on read
         {
             error = "cannot open " + file.string();
             return false;

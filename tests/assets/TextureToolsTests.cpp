@@ -188,3 +188,11 @@ TEST_CASE("Model licenses are looked up, and risky ones warned about (T65)", "[t
     CHECK(diagnostics[0].code == "material.license");
     CHECK(diagnostics[0].severity == core::Severity::Warning);
 }
+
+TEST_CASE("Loading a folder as a picture fails with an error, not a throw (a screen's empty image path)", "[textures]")
+{
+    umbra::core::TextureData data;
+    std::string error;
+    CHECK_FALSE(umbra::assets::LoadImageFile(std::filesystem::temp_directory_path(), data, error));
+    CHECK_FALSE(error.empty());
+}
