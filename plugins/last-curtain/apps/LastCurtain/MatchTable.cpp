@@ -245,6 +245,12 @@ float MatchTable::Kick() const
     return std::sin(3.14159265F * kickT_ / kickSeconds_);
 }
 
+bool MatchTable::Fallen(const Unit &u, int unit) const
+{
+    // Faded only once the fall is told: the HP the cards show, else the rules'.
+    return U(unit) < toldHp_.size() ? toldHp_[U(unit)] <= 0 : u.hp <= 0;
+}
+
 bool MatchTable::Walking(int unit) const { return unit >= 0 && U(unit) < route_.size() && !route_[U(unit)].empty(); }
 
 void MatchTable::Snap(int unit)
@@ -525,7 +531,7 @@ void MatchTable::Sprite(int index, const Unit &u, glm::vec3 feet, umbra::core::D
     const glm::vec3 tint = tinted ? glm::vec3(pose.tint) : glm::vec3(Hex(own));
     const float amount = tinted ? pose.tint.a : (u.kind == 0 ? 0.0F : 0.45F);
     out.items.push_back({facing < 0.0F ? mirrorQuad_ : quad_, art->second, umbra::night::SpriteModel(pose, feet, right, h, aspect, facing, clock_, up),
-                         glm::vec4(tint, pose.alpha * (u.hp <= 0 ? 0.5F : 1.0F)), 0.0F, std::floor(pose.dissolve * 99.0F) + std::clamp(amount, 0.0F, 1.0F) * 0.99F});
+                         glm::vec4(tint, pose.alpha * (Fallen(u, index) ? 0.5F : 1.0F)), 0.0F, std::floor(pose.dissolve * 99.0F) + std::clamp(amount, 0.0F, 1.0F) * 0.99F});
     out.items.back().surface = out.SurfaceIndex("sprite");
 }
 

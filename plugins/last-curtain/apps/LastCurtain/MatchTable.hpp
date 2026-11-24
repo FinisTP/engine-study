@@ -49,7 +49,8 @@ public:
     [[nodiscard]] bool InScene() const { return !scene_.empty(); }
     void StopFollow() { follow_ = false; } // a drag frees the camera until the next turn
     void LookAt(const umbra::match::MatchState &s, int unit); // the camera glides to it (frees it from following)
-    [[nodiscard]] bool Walking(int unit) const; // still on its way to its square
+    [[nodiscard]] bool Walking(int unit) const;
+    [[nodiscard]] bool Fallen(const umbra::match::Unit &u, int unit) const; // its fall has been told // still on its way to its square
     void Snap(int unit);                        // its next square is taken at once, no walk (an undone move)
     void CloseUp(bool on); // a scene's camera: down close; off goes back to the distance before
     [[nodiscard]] std::optional<glm::vec2> HeadOnScreen(const umbra::match::MatchState &s, int unit, glm::vec2 pixels) const;

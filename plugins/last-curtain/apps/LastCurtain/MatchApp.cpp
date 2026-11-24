@@ -231,7 +231,12 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                 // A stage's scenes, between beats, over the board: the camera close on whoever speaks; a narrated
                 // line keeps the last speaker in view.
                 std::string last;
+                bool hidden = false; // a scene has the screen: the fight's screens step away until it ends (note 1)
                 const SceneBehind board = [&](umbra::core::DrawList &out, float sdt, const std::string &speaker) {
+                    if (!std::exchange(hidden, true) && screens.Ready())
+                        for (const std::string &name : {shown, hudName, std::string("match-labels")})
+                            if (!name.empty())
+                                screens.Ui().Close(name);
                     const auto &names = play->Names();
                     if (!speaker.empty())
                         last = speaker;
@@ -242,6 +247,12 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                 };
                 hooks->beat(*play, board);
                 table.CloseUp(false);
+                if (hidden && screens.Ready()) // back as they were; the frame's screen opens again below
+                {
+                    shown.clear(), screens.Ui().Open("match-labels");
+                    if (hudOpen)
+                        screens.Ui().Open(hudName);
+                }
             }
             // What was just told: figures move, sounds play.
             for (const auto &[unit, motion] : play->TakeMoves())

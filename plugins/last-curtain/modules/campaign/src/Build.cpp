@@ -74,6 +74,7 @@ namespace umbra::campaign
         s.board = MapBoard(stage);
         s.mode = def.modes.at("campaign");
         s.mode.mustFree = stage.mustFree;
+        s.noRevive = 1 << 1; // the enemy side never revives: more come as reinforcements (note 7)
         for (const int side : stage.noRevive)
             s.noRevive = static_cast<std::uint8_t>(s.noRevive | (1 << side));
         const auto add = [&](match::Unit u, const std::string &who, float height, UnitBehaviour behaviour = {}) {

@@ -1215,3 +1215,14 @@ TEST_CASE("Skills: unlock levels, a starting loadout, four at most, only unlocke
     REQUIRE(bao < b.state.units.size());
     CHECK(ids(b.state.units[bao]) == std::vector<std::string>{"basic", "chan_doan", "giay_chung_tu"});
 }
+
+TEST_CASE("Enemies never revive in a stage: more come as reinforcements instead (feedback 2026-11-24 16:57, note 7)")
+{
+    const match::MatchDef def = MatchData();
+    for (const campaign::StageDef &st : TheStages())
+    {
+        const campaign::BuiltStage b = campaign::BuildStage(def, TheCast(), TheGrowth(), st, {{"player", st.level, {}}}, 0, {}, 3);
+        INFO(st.id);
+        CHECK((b.state.noRevive & (1 << 1)) != 0);
+    }
+}
