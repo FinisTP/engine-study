@@ -192,11 +192,13 @@ namespace umbra::campaign
                 error("format", "expected format umbra.lc-talk, version 1");
                 continue;
             }
-            Talk t{j.value("id", ""), j.value("who", ""), j.value("scene", ""), j.value("after", ""), j.value("memory", ""), {}, {}, {}, {}, j.value("repeat", false)};
+            Talk t{j.value("id", ""), j.value("who", ""), j.value("scene", ""), j.value("after", ""), j.value("memory", ""), {}, {}, {}, {}, {}, {}, j.value("repeat", false)};
             const nlohmann::json opens = j.value("opens", nlohmann::json::object());
             t.all = opens.value("all", std::vector<std::string>{}), t.none = opens.value("none", std::vector<std::string>{});
             t.sets = j.value("sets", Facts{});
             t.teaches = j.value("teaches", std::vector<std::string>{});
+            t.gives = j.value("gives", std::map<std::string, int>{});
+            t.then = j.value("then", std::string());
             if (!cast.Find(t.who))
                 error("who", "\"" + t.who + "\" is not in cast.csv");
             if (!std::filesystem::exists(scenes / (t.scene + ".json")))
@@ -232,6 +234,9 @@ namespace umbra::campaign
 
     void Talked(Save &save, const Talk &talk)
     {
+        if (!save.talks.contains(talk.id)) // a gift comes once
+            for (const auto &[item, count] : talk.gives)
+                save.storage[item] += count;
         save.talks.insert(talk.id), save.facts["talked:" + talk.id] = "1"; // talks can open after other talks
         for (const auto &[key, value] : talk.sets)
             save.facts[key] = value;

@@ -23,8 +23,11 @@ public:
     void SceneDone(const umbra::campaign::Facts &chosen);                   // the scene's facts: a memory comes back, a version is picked
     void Update(float dt);
     void Toast(std::string text); // a line in the corner for three seconds
+    // The talk Talk() last started (its gifts and what comes after); nullptr before any.
+    [[nodiscard]] const umbra::campaign::Talk *LastTalk() const { return last_; }
 
 private:
+    const umbra::campaign::Talk *last_ = nullptr;
     const umbra::match::MatchDef &def_;
     const umbra::campaign::Cast &cast_;
     const umbra::campaign::Recipes &recipes_;

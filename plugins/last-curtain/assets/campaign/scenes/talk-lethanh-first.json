@@ -2,7 +2,7 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "talk-lethanh-first",
-  "note": "Draft for the user's review (2026-11-24). ",
+  "note": "Draft for the user's review (2026-11-24; e-f added: the gift and the slot lesson).",
   "lines": [
     {
       "id": "a",
@@ -39,6 +39,18 @@
       "text": "Khách quen. Ai rồi cũng thành khách quen.",
       "speaker": "lethanh",
       "face": "scheming"
+    },
+    {
+      "id": "e",
+      "text": "Cầm lấy. Băng gạc với tờ chương trình cũ. Trên kia {anh/chị} sẽ cần.",
+      "speaker": "lethanh",
+      "face": "calm"
+    },
+    {
+      "id": "f",
+      "text": "Mỗi người mang theo được bốn món. Mở sổ tay, chọn người, rồi bỏ đồ vào ô trống.",
+      "speaker": "lethanh",
+      "face": "happy"
     }
   ]
 }

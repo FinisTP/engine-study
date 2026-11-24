@@ -18,7 +18,8 @@ struct GameContext;
 // window closes. `refresh` may update the data each frame and return true to keep waiting after an action.
 std::pair<std::string, std::string> RunScreen(GameContext &game, const std::string &screen, nlohmann::json data,
                                               const std::function<bool(const std::string &action, const std::string &arg, nlohmann::json &data)> &handle = {},
-                                              const std::filesystem::path &capture = {}, int frames = 0);
+                                              const std::filesystem::path &capture = {}, int frames = 0,
+                                              const std::function<void(nlohmann::json &data)> &each = {}); // each frame, before drawing
 
 // The settings screen (menus.md D) over whatever is showing; each change applies and saves at once. words:
 // campaign-words.json. Returns the settings as left.

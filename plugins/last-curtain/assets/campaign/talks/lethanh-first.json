@@ -3,5 +3,7 @@
   "version": 1,
   "id": "lethanh-first",
   "who": "lethanh",
-  "scene": "talk-lethanh-first"
+  "scene": "talk-lethanh-first",
+  "gives": {"bandage": 2, "programme": 1},
+  "then": "notebook"
 }

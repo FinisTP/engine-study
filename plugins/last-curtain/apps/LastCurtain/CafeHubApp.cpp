@@ -15,6 +15,7 @@
 
 #include <chrono>
 #include <fstream>
+#include <set>
 #include <thread>
 
 using umbra::platform::InputKey;
@@ -55,10 +56,16 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
         return 0;
     umbra::night::AnalogScreen analog = umbra::night::LoadAnalog(umbra::night::AnalogPath(), options);
     game.Apply(analog);
+    campaign::Growth growth;
+    (void)campaign::LoadGrowth(folder / "growth.csv", growth, d);
+    for (umbra::match::AbilityDef &a : def.abilities) // ability names in Vietnamese, as in a fight
+        if (words.contains("abilities") && words["abilities"].contains(a.id))
+            a.name = words["abilities"][a.id].get<std::string>();
 
     // 2. The room: the player and the allies walk (Tab), Le Thanh keeps the counter; each by its cast sprite.
     CafeHub hub(def, cast, recipes, memories, talks, stages, save, static_cast<int>(options.boostCapPerStat));
     Notebook book(def, cast, memories, save);
+    book.SetGrowth(&growth), book.SetWords(words);
     std::vector<std::string> party{"player"};
     std::map<std::string, std::string> sprites{{"player", player.gender == "male" ? "player_male" : "player_female"}};
     const nlohmann::json people = hub.Data()["people"]; // kept: a temporary's items would dangle
@@ -80,6 +87,9 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
     screens.Ui().Open("cafe-hub");
     game.sounds->Music("cafe");
     bool brewing = false;
+    std::string talkTo; // someone clicked: talk once near them
+    std::set<std::string> given; // talks whose gifts were shown this visit
+    bool lesson = false;         // the notebook shows how to fill a slot (after Le Thanh's gift)
     std::string picked; // a general drink waiting for whom
     umbra::core::DrawList drawList;
     umbra::core::FrameClock &clock = game.clock;
@@ -103,10 +113,18 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
             view.Look(at, 1.0F, dt);
             view.DrawCampaign(walk, sprites, "", out);
         };
+        const campaign::Talk *talk = hub.LastTalk();
+        const bool first = talk && talk->scene == scene && !talk->gives.empty() && given.insert(talk->id).second;
         if (RunScene(game, assets, scene, "", player, chosen, {}, 0, room) == 0)
             done = true;
         hub.SceneDone(chosen);
         screens.Ui().Open("cafe-hub");
+        // A gift: a toast per item, then (when the talk says so) the notebook opens with the slot lesson.
+        if (first)
+            for (const auto &[item, count] : talk->gives)
+                hub.Toast(words.value("received", std::string()) + " " + words["items"].value(item, item) + " x" + std::to_string(count));
+        if (first && talk->then == "notebook")
+            screens.Ui().Open("notebook"), lesson = true;
     };
     while (!done)
     {
@@ -147,6 +165,8 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
         walk.Update(dt);
         view.Follow(walk.Position(), roomSize, dt);
         const std::string near = walk.Interact();
+        if (!talkTo.empty() && near == "talk:" + talkTo) // walked up to whom was clicked: as if E was pressed
+            act = "use", talkTo.clear();
         view.DrawCampaign(walk, sprites, near, drawList);
 
         // 3. The screens' data: lack lines in words, who a general drink can go to.
@@ -172,7 +192,23 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
         data["hub"]["forWhom"] = picked.empty() ? nlohmann::json::array() : data["hub"]["people"];
         data["book"] = book.Data();
         for (auto &slot : data["book"]["detail"]["slots"]) // a slot's item by its Vietnamese name
+        {
             slot["label"] = slot["item"] == "" ? words.value("empty", std::string()) : words.value("items", nlohmann::json::object()).value(slot["item"].get<std::string>(), slot["item"].get<std::string>());
+            slot["icon"] = slot["item"] == "" ? "" : "art/ui/campaign/item/" + slot["item"].get<std::string>() + ".png";
+        }
+        data["book"]["lesson"] = lesson ? words.value("slotLesson", std::string()) : "";
+        if (nlohmann::json &page = data["book"]["detail"]; page.contains("stats")) // the page's lines in words
+        {
+            std::string stats = words.value("statsLine", std::string());
+            for (const char *k : {"hp", "attack", "defence", "speed", "move"})
+                if (const std::string key = std::string("{") + k + "}"; stats.find(key) != std::string::npos)
+                    stats.replace(stats.find(key), key.size(), std::to_string(page["stats"][k].get<int>()));
+            std::string level = words.value("levelShort", std::string());
+            if (const auto at = level.find("{n}"); at != std::string::npos)
+                level.replace(at, 3, std::to_string(page["level"].get<int>()));
+            page["statsText"] = stats, page["levelText"] = level;
+            page["fightText"] = words.value(page["fights"].get<bool>() ? "fightsNext" : "staysNext", std::string());
+        }
         data["words"] = words;
         data["room"]["who"] = walk.Active() == "player" ? campaign::FillTokens("{player}", player, cast) : cast.Find(walk.Active()) ? cast.Find(walk.Active())->name : walk.Active();
         data["room"]["labels"] = nlohmann::json::array();
@@ -199,12 +235,16 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
                 if (a.action == "notebook")
                     screens.Ui().Open("notebook");
                 else
-                    screens.Ui().Close("notebook");
+                    screens.Ui().Close("notebook"), lesson = false;
             }
             else if (a.action == "tab")
                 book.Tab(a.arg);
             else if (a.action == "select")
                 book.Select(a.arg);
+            else if (a.action == "skill")
+                book.Skill(a.arg);
+            else if (a.action == "fight")
+                (void)book.ToggleFight(book.Data()["selected"].get<std::string>());
             else if (a.action == "slot")
             {
                 // The slot takes the next carriable item in storage, then empty.
@@ -243,7 +283,7 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
         {
             const std::string who = near.substr(5), scene = hub.Talk(who);
             if (scene.empty())
-                hub.Toast((cast.Find(who) ? cast.Find(who)->name : who) + " " + words.value("noTalk", std::string()));
+                hub.Toast((cast.Find(who) ? campaign::FillTokens(cast.Find(who)->name, player, cast) : who) + " " + words.value("noTalk", std::string()));
             play(scene);
         }
         else if (act == "use" && near == "brew")
@@ -252,9 +292,21 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
             screens.Ui().Open("notebook");
         else if (act == "use" && near == "door")
             result = 1, done = true;
+        // A click on someone walks up to them and talks (once near); elsewhere on the floor, walks there.
         if (uiInput.click && !uiTook && free)
-            if (const auto at = view.Floor(uiInput.mouse, pixels, roomSize))
-                walk.WalkTo(*at);
+        {
+            std::string clicked;
+            for (const CampaignRoom::Person &p : walk.People())
+            {
+                const auto feet = view.Above(p.at, 0.0F, pixels), head = view.Above(p.at, 1.9F, pixels);
+                if (feet && head && std::abs(uiInput.mouse.x - feet->x) < (feet->y - head->y) * 0.3F && uiInput.mouse.y > head->y && uiInput.mouse.y < feet->y)
+                    clicked = p.who, walk.WalkTo(p.at);
+            }
+            if (!clicked.empty())
+                talkTo = clicked;
+            else if (const auto at = view.Floor(uiInput.mouse, pixels, roomSize))
+                walk.WalkTo(*at), talkTo.clear();
+        }
         if (++frame == lastFrame && !capture.empty())
             game.renderer.CaptureNextFrame([&](const umbra::core::TextureData &picture) {
                 std::vector<std::uint8_t> png;

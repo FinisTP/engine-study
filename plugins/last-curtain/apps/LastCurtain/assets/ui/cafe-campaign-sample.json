@@ -12,6 +12,32 @@
    "abilities": {}
   },
   "abilities": {
+   "jab": "Đâm nhanh",
+   "cleave": "Chém ngang",
+   "gamble": "Liều một phen",
+   "execute": "Kết liễu",
+   "snipe": "Bắn tỉa",
+   "shove": "Xô ngã",
+   "brace": "Thủ thế",
+   "rally": "Hô hào",
+   "wall": "Tường chắn",
+   "bash": "Húc mạnh",
+   "tap": "Gõ nhẹ",
+   "mend": "Băng bó",
+   "sting": "Châm",
+   "tend": "Chăm sóc",
+   "bloom": "Hồi sắc",
+   "flick": "Búng",
+   "lunge": "Lao tới",
+   "blur": "Nhòe bóng",
+   "duel": "Tay đôi",
+   "dart": "Phi tiêu",
+   "slash": "Rạch",
+   "guard": "Che chắn",
+   "throw": "Ném",
+   "claw": "Cào",
+   "bite": "Cắn",
+   "crush": "Nghiền",
    "basic": "Đánh thường",
    "dao_mo": "Dao mổ",
    "chan_doan": "Chẩn đoán",
@@ -63,7 +89,7 @@
   "count": "Đang có:",
   "readOnly": "Đang trong trận: chỉ xem.",
   "empty": "(trống)",
-  "mapTitle": "Nhà hát",
+  "mapTitle": "Nhà hát Thành phố",
   "backCafe": "Về quán",
   "enter": "Vào phòng",
   "markCleared": "đã qua",
@@ -96,6 +122,20 @@
   "continue": "Tiếp tục",
   "newGame": "Trò chơi mới",
   "settings": "Cài đặt",
+  "skillLine": "Tầm {range} ô · sức {power} · tốn {hp} HP",
+  "skills": "Kỹ năng",
+  "bag": "Túi",
+  "fightsNext": "Ra trận màn tới",
+  "staysNext": "Ở lại quán màn tới",
+  "memoriesLabel": "Ký ức",
+  "statsLine": "HP {hp} · Công {attack} · Thủ {defence} · Tốc {speed} · Đi {move}",
+  "levelShort": "Cấp {n}",
+  "upgrades": "Nâng cấp",
+  "chosen": "đã chọn",
+  "unknownVersion": "chưa nhớ ra",
+  "received": "Nhận:",
+  "slotLesson": "Lệ Thanh vừa đưa đồ. Chọn một người ở cột trái, bấm vào một ô trống trong Túi rồi chọn món mang theo khi ra trận.",
+  "mapHint": "Kéo để di chuyển bản đồ · lăn chuột để phóng to",
   "keyboard": "Bàn phím",
   "kbDone": "Xong",
   "kbSpace": "Cách",
@@ -117,6 +157,7 @@
   "fullOn": "Toàn màn hình: bật",
   "fullOff": "Toàn màn hình: tắt",
   "effects": "Hiệu ứng",
+  "music": "Nhạc",
   "speed0": "Tốc độ chữ: chậm",
   "speed1": "Tốc độ chữ: vừa",
   "speed2": "Tốc độ chữ: nhanh",
@@ -219,47 +260,91 @@
  },
  "book": {
   "tab": "characters",
-  "selected": "ti",
+  "selected": "bao",
+  "selectedName": "Bác sĩ Bảo",
   "readOnly": false,
+  "lesson": "Lệ Thanh vừa đưa đồ. Chọn một người ở cột trái, bấm vào một ô trống trong Túi rồi chọn món mang theo khi ra trận.",
   "entries": [
    {
     "id": "player",
-    "name": "Linh",
+    "name": "Hoàng",
+    "selected": false
+   },
+   {
+    "id": "bao",
+    "name": "Bác sĩ Bảo",
+    "selected": true
+   },
+   {
+    "id": "mai",
+    "name": "Bà Mai",
     "selected": false
    },
    {
     "id": "ti",
-    "name": "Bé Tí",
-    "selected": true
+    "name": "?",
+    "selected": false
    }
   ],
   "detail": {
-   "memories": [
+   "portrait": "art/sprites/bao/face_calm.png",
+   "level": 2,
+   "levelText": "Cấp 2",
+   "statsText": "HP 24 · Công 6 · Thủ 3 · Tốc 4 · Đi 3",
+   "fights": true,
+   "fightText": "Ra trận màn tới",
+   "canToggle": true,
+   "locked": false,
+   "skills": [
     {
-     "name": "Tên mẹ"
+     "id": "basic",
+     "name": "Đánh thường",
+     "selected": true
     },
     {
-     "name": "?"
+     "id": "dao_mo",
+     "name": "Dao mổ",
+     "selected": false
+    },
+    {
+     "id": "chan_doan",
+     "name": "Chẩn đoán",
+     "selected": false
     }
    ],
+   "skill": {
+    "name": "Đánh thường",
+    "line": "Tầm 1 ô · sức 2 · tốn 0 HP",
+    "versions": []
+   },
    "slots": [
     {
      "slot": 0,
-     "label": "Băng gạc"
+     "item": "bandage",
+     "label": "Băng gạc",
+     "icon": "art/ui/campaign/item/gung.png"
     },
     {
      "slot": 1,
-     "label": "(trống)"
+     "item": "",
+     "label": "(trống)",
+     "icon": ""
     },
     {
      "slot": 2,
-     "label": "(trống)"
+     "item": "",
+     "label": "(trống)",
+     "icon": ""
     },
     {
      "slot": 3,
-     "label": "(trống)"
+     "item": "",
+     "label": "(trống)",
+     "icon": ""
     }
-   ]
+   ],
+   "memories": [],
+   "memoryCount": "0/0"
   }
  },
  "map": {
@@ -271,11 +356,13 @@
     "markText": "đã qua",
     "icon": "art/ui/campaign/icon/mark_cleared.png",
     "at": [
-     570.0,
-     534.4000000000001
+     456,
+     573
     ],
     "selected": false,
-    "closed": false
+    "closed": false,
+    "u": 0.5,
+    "v": 0.89
    },
    {
     "id": "t3",
@@ -283,11 +370,13 @@
     "markText": "tiếp theo",
     "icon": "art/ui/campaign/icon/mark_next.png",
     "at": [
-     234.5,
-     428.0
+     204,
+     424
     ],
     "selected": true,
-    "closed": false
+    "closed": false,
+    "u": 0.2,
+    "v": 0.58
    },
    {
     "id": "sk_props",
@@ -295,11 +384,13 @@
     "markText": "?",
     "icon": "art/ui/campaign/icon/mark_unknown.png",
     "at": [
-     163.0,
-     181.6
+     145,
+     271
     ],
     "selected": false,
-    "closed": false
+    "closed": false,
+    "u": 0.13,
+    "v": 0.26
    },
    {
     "id": "sk_stairs",
@@ -307,11 +398,13 @@
     "markText": "?",
     "icon": "art/ui/campaign/icon/mark_unknown.png",
     "at": [
-     91.5,
-     428.0
+     91,
+     559
     ],
     "selected": false,
-    "closed": false
+    "closed": false,
+    "u": 0.065,
+    "v": 0.86
    },
    {
     "id": "stage1",
@@ -319,11 +412,13 @@
     "markText": "?",
     "icon": "art/ui/campaign/icon/mark_unknown.png",
     "at": [
-     955.0,
-     506.4
+     750,
+     549
     ],
     "selected": false,
-    "closed": false
+    "closed": false,
+    "u": 0.85,
+    "v": 0.84
    },
    {
     "id": "sk_boxoffice",
@@ -331,11 +426,13 @@
     "markText": "?",
     "icon": "art/ui/campaign/icon/mark_unknown.png",
     "at": [
-     955.0,
-     383.2
+     750,
+     444
     ],
     "selected": false,
-    "closed": false
+    "closed": false,
+    "u": 0.85,
+    "v": 0.62
    },
    {
     "id": "makeup",
@@ -343,11 +440,13 @@
     "markText": "?",
     "icon": "art/ui/campaign/icon/mark_unknown.png",
     "at": [
-     955.0,
-     164.8
+     750,
+     256
     ],
     "selected": false,
-    "closed": true
+    "closed": true,
+    "u": 0.85,
+    "v": 0.23
    },
    {
     "id": "under",
@@ -355,11 +454,13 @@
     "markText": "?",
     "icon": "art/ui/campaign/icon/mark_unknown.png",
     "at": [
-     570.0,
-     248.8
+     456,
+     328
     ],
     "selected": false,
-    "closed": true
+    "closed": true,
+    "u": 0.5,
+    "v": 0.38
    },
    {
     "id": "balcony",
@@ -367,11 +468,13 @@
     "markText": "?",
     "icon": "art/ui/campaign/icon/mark_unknown.png",
     "at": [
-     438.0,
-     66.8
+     355,
+     172
     ],
     "selected": false,
-    "closed": true
+    "closed": true,
+    "u": 0.38,
+    "v": 0.055
    },
    {
     "id": "music",
@@ -379,11 +482,13 @@
     "markText": "?",
     "icon": "art/ui/campaign/icon/mark_unknown.png",
     "at": [
-     955.0,
-     282.4
+     750,
+     357
     ],
     "selected": false,
-    "closed": true
+    "closed": true,
+    "u": 0.85,
+    "v": 0.44
    },
    {
     "id": "attic",
@@ -391,11 +496,13 @@
     "markText": "?",
     "icon": "art/ui/campaign/icon/mark_unknown.png",
     "at": [
-     702.0,
-     66.8
+     557,
+     172
     ],
     "selected": false,
-    "closed": true
+    "closed": true,
+    "u": 0.62,
+    "v": 0.055
    },
    {
     "id": "stage",
@@ -403,11 +510,13 @@
     "markText": "?",
     "icon": "art/ui/campaign/icon/mark_unknown.png",
     "at": [
-     570.0,
-     159.2
+     456,
+     252
     ],
     "selected": false,
-    "closed": true
+    "closed": true,
+    "u": 0.5,
+    "v": 0.22
    }
   ],
   "panel": {
@@ -424,6 +533,19 @@
    },
    {
     "text": "Có 2 trận giao tranh mới"
+   }
+  ],
+  "plans": [
+   {
+    "file": "art/map/floor_plan.png",
+    "size": [
+     840,
+     480
+    ],
+    "at": [
+     456,
+     606
+    ]
    }
   ]
  },

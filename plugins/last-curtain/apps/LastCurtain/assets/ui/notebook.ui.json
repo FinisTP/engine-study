@@ -9,48 +9,73 @@
     "anchor": "center",
     "style": "lcPanel",
     "size": [
-      860,
-      0
+      1200,
+      660
     ],
-    "gap": 10,
+    "gap": 14,
     "children": [
-      {
-        "type": "text",
-        "style": "title",
-        "text": "{words.notebook}"
-      },
       {
         "type": "stack",
         "direction": "horizontal",
-        "gap": 8,
+        "gap": 22,
+        "align": "center",
         "children": [
           {
-            "type": "button",
-            "style": "lcButton",
-            "text": "{words.tabCharacters}",
-            "action": "tab",
-            "arg": "characters"
+            "type": "text",
+            "style": "title",
+            "text": "{words.notebook}"
           },
           {
-            "type": "button",
-            "style": "lcButton",
-            "text": "{words.tabIngredients}",
-            "action": "tab",
-            "arg": "ingredients"
+            "type": "stack",
+            "direction": "horizontal",
+            "gap": 4,
+            "children": [
+              {
+                "type": "button",
+                "style": "lcButton",
+                "text": "{words.tabCharacters}",
+                "action": "tab",
+                "arg": "characters"
+              },
+              {
+                "type": "button",
+                "style": "lcButton",
+                "text": "{words.tabIngredients}",
+                "action": "tab",
+                "arg": "ingredients"
+              },
+              {
+                "type": "button",
+                "style": "lcButton",
+                "text": "{words.tabKeepsakes}",
+                "action": "tab",
+                "arg": "keepsakes"
+              }
+            ]
           },
           {
-            "type": "button",
-            "style": "lcButton",
-            "text": "{words.tabKeepsakes}",
-            "action": "tab",
-            "arg": "keepsakes"
+            "type": "text",
+            "style": "muted",
+            "text": "{words.readOnly}",
+            "visible": "{book.readOnly}"
           }
+        ]
+      },
+      {
+        "type": "text",
+        "style": "lcToast",
+        "text": "{book.lesson}",
+        "visible": "{book.lesson}",
+        "wrap": true,
+        "size": [
+          1100,
+          0
         ]
       },
       {
         "type": "stack",
         "direction": "horizontal",
-        "gap": 16,
+        "gap": 22,
         "children": [
           {
             "type": "list",
@@ -60,78 +85,234 @@
             "entry": {
               "type": "button",
               "style": "lcButton",
-              "size": [
-                260,
-                0
-              ],
               "text": "{e.name}",
               "action": "select",
               "arg": "{e.id}",
-              "selected": "{e.selected}"
+              "selected": "{e.selected}",
+              "size": [
+                200,
+                0
+              ]
             }
           },
           {
             "type": "stack",
-            "gap": 5,
             "size": [
-              520,
+              440,
               0
             ],
+            "gap": 10,
+            "visible": "{book.detail.portrait}",
             "children": [
               {
+                "type": "stack",
+                "direction": "horizontal",
+                "gap": 14,
+                "align": "center",
+                "children": [
+                  {
+                    "type": "image",
+                    "image": "{book.detail.portrait}",
+                    "size": [
+                      76,
+                      76
+                    ],
+                    "fit": "top"
+                  },
+                  {
+                    "type": "stack",
+                    "gap": 3,
+                    "children": [
+                      {
+                        "type": "text",
+                        "style": "heading",
+                        "text": "{book.selectedName}"
+                      },
+                      {
+                        "type": "text",
+                        "style": "muted",
+                        "text": "{book.detail.levelText}"
+                      },
+                      {
+                        "type": "text",
+                        "style": "small",
+                        "text": "{book.detail.statsText}"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "button",
+                "style": "lcButton",
+                "text": "{book.detail.fightText}",
+                "action": "fight",
+                "disabled": "{book.detail.locked}",
+                "selected": "{book.detail.fights}",
+                "size": [
+                  300,
+                  0
+                ]
+              },
+              {
+                "type": "text",
+                "style": "heading",
+                "text": "{words.skills}"
+              },
+              {
                 "type": "list",
-                "items": "{book.detail.memories}",
-                "as": "m",
+                "items": "{book.detail.skills}",
+                "as": "k",
                 "gap": 3,
                 "entry": {
-                  "type": "text",
-                  "style": "small",
-                  "text": "· {m.name}"
+                  "type": "button",
+                  "style": "lcButton",
+                  "text": "{k.name}",
+                  "action": "skill",
+                  "arg": "{k.id}",
+                  "selected": "{k.selected}",
+                  "size": [
+                    420,
+                    0
+                  ]
                 }
+              },
+              {
+                "type": "text",
+                "style": "heading",
+                "text": "{words.bag}"
               },
               {
                 "type": "list",
                 "items": "{book.detail.slots}",
                 "as": "s",
-                "gap": 4,
+                "columns": 4,
+                "gap": 6,
                 "entry": {
-                  "type": "button",
+                  "type": "stack",
                   "style": "lcButton",
-                  "size": [
-                    300,
-                    0
-                  ],
-                  "text": "{words.slot} {s.label}",
                   "action": "slot",
                   "arg": "{s.slot}",
-                  "disabled": "{book.readOnly}"
+                  "disabled": "{book.readOnly}",
+                  "align": "center",
+                  "size": [
+                    100,
+                    74
+                  ],
+                  "gap": 2,
+                  "children": [
+                    {
+                      "type": "image",
+                      "image": "{s.icon}",
+                      "size": [
+                        40,
+                        40
+                      ],
+                      "visible": "{s.icon}"
+                    },
+                    {
+                      "type": "text",
+                      "style": "small",
+                      "text": "{s.label}"
+                    }
+                  ]
                 }
               },
               {
                 "type": "text",
-                "style": "small",
-                "text": "{words.count} {book.detail.count}",
-                "visible": "{book.detail.count}"
+                "style": "muted",
+                "text": "{words.memoriesLabel} {book.detail.memoryCount}"
+              }
+            ]
+          },
+          {
+            "type": "stack",
+            "size": [
+              440,
+              0
+            ],
+            "gap": 8,
+            "visible": "{book.detail.skill}",
+            "children": [
+              {
+                "type": "text",
+                "style": "title",
+                "text": "{book.detail.skill.name}"
+              },
+              {
+                "type": "text",
+                "style": "text",
+                "text": "{book.detail.skill.line}",
+                "wrap": true,
+                "size": [
+                  420,
+                  0
+                ]
+              },
+              {
+                "type": "text",
+                "style": "heading",
+                "text": "{words.upgrades}",
+                "visible": "{book.detail.skill.versions}"
+              },
+              {
+                "type": "list",
+                "items": "{book.detail.skill.versions}",
+                "as": "v",
+                "gap": 6,
+                "entry": {
+                  "type": "stack",
+                  "style": "lcPanel",
+                  "size": [
+                    420,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "style": "strong",
+                      "text": "{v.name}"
+                    },
+                    {
+                      "type": "text",
+                      "style": "small",
+                      "text": "{words.chosen}",
+                      "visible": "{v.chosen}"
+                    },
+                    {
+                      "type": "text",
+                      "style": "muted",
+                      "text": "{words.unknownVersion}",
+                      "visible": "{v.unknown}"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "type": "stack",
+            "gap": 6,
+            "visible": "{book.detail.count}",
+            "children": [
+              {
+                "type": "text",
+                "style": "text",
+                "text": "{words.count} {book.detail.count}"
               }
             ]
           }
         ]
       },
       {
-        "type": "text",
-        "style": "muted",
-        "text": "{words.readOnly}",
-        "visible": "{book.readOnly}"
-      },
-      {
         "type": "button",
         "style": "lcButton",
+        "text": "{words.close}",
+        "action": "close",
         "size": [
           200,
           0
-        ],
-        "text": "{words.close}",
-        "action": "close"
+        ]
       }
     ]
   }

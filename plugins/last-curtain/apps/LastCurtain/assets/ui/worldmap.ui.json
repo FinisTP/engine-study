@@ -1,106 +1,22 @@
 {
   "format": "umbra.ui",
   "version": 1,
-  "back": "cafe",
   "root": {
     "type": "panel",
     "anchor": "fill",
-    "style": "layer",
+    "style": "lcGround",
     "children": [
-      {
-        "type": "image",
-        "anchor": "fill",
-        "image": "{map.plan}",
-        "fit": "contain",
-        "visible": "{map.plan}"
-      },
-      {
-        "type": "list",
-        "items": "{map.tickets}",
-        "as": "t",
-        "entry": {
-          "type": "stack",
-          "at": "{t.at}",
-          "children": [
-            {
-              "type": "image",
-              "image": "{t.icon}",
-              "size": [
-                36,
-                36
-              ]
-            },
-            {
-              "type": "button",
-              "style": "lcTicket",
-              "text": "{t.name}",
-              "action": "select",
-              "arg": "{t.id}",
-              "selected": "{t.selected}",
-              "disabled": "{t.closed}",
-              "tip": "{t.markText}"
-            }
-          ],
-          "direction": "horizontal",
-          "gap": 4,
-          "align": "center"
-        }
-      },
-      {
-        "type": "stack",
-        "anchor": "bottom-right",
-        "offset": [
-          -20,
-          -20
-        ],
-        "style": "lcPanel",
-        "gap": 6,
-        "size": [
-          360,
-          0
-        ],
-        "visible": "{map.panel}",
-        "children": [
-          {
-            "type": "text",
-            "style": "heading",
-            "text": "{map.panel.name}"
-          },
-          {
-            "type": "text",
-            "style": "small",
-            "text": "{map.panel.detail}"
-          },
-          {
-            "type": "text",
-            "style": "muted",
-            "text": "{map.panel.level}"
-          },
-          {
-            "type": "button",
-            "style": "lcButton",
-            "text": "{words.enter}",
-            "action": "enter",
-            "arg": "{map.panel.id}",
-            "visible": "{map.panel.open}"
-          }
-        ]
-      },
       {
         "type": "stack",
         "anchor": "top-left",
         "offset": [
-          20,
-          14
+          36,
+          26
         ],
-        "style": "lcPanel",
-        "gap": 4,
+        "direction": "horizontal",
+        "gap": 12,
+        "align": "center",
         "children": [
-          {
-            "type": "text",
-            "style": "heading",
-            "text": "{words.mapTitle}"
-          },
           {
             "type": "button",
             "style": "lcButton",
@@ -108,25 +24,172 @@
             "action": "cafe"
           },
           {
-            "type": "button",
-            "style": "lcButton",
-            "text": "{words.settings}",
-            "action": "settings"
-          },
-          {
             "type": "text",
-            "style": "muted",
+            "style": "small",
             "text": "{map.news}",
             "visible": "{map.news}"
           }
         ]
       },
       {
-        "type": "list",
-        "anchor": "bottom",
+        "type": "text",
+        "anchor": "top",
         "offset": [
-          -160,
-          -18
+          0,
+          30
+        ],
+        "style": "heading",
+        "text": "{words.mapTitle}"
+      },
+      {
+        "type": "stack",
+        "anchor": "top-right",
+        "offset": [
+          -36,
+          26
+        ],
+        "direction": "horizontal",
+        "gap": 8,
+        "children": [
+          {
+            "type": "button",
+            "style": "lcButton",
+            "text": "{words.settings}",
+            "action": "settings"
+          }
+        ]
+      },
+      {
+        "type": "panel",
+        "anchor": "top-left",
+        "offset": [
+          36,
+          96
+        ],
+        "size": [
+          840,
+          540
+        ],
+        "style": "lcFrame",
+        "clip": true,
+        "children": [
+          {
+            "type": "list",
+            "anchor": "fill",
+            "items": "{map.plans}",
+            "as": "p",
+            "entry": {
+              "type": "image",
+              "image": "{p.file}",
+              "size": "{p.size}",
+              "at": "{p.at}"
+            }
+          },
+          {
+            "type": "list",
+            "anchor": "fill",
+            "items": "{map.tickets}",
+            "as": "t",
+            "entry": {
+              "type": "stack",
+              "at": "{t.at}",
+              "direction": "horizontal",
+              "gap": 4,
+              "align": "center",
+              "children": [
+                {
+                  "type": "image",
+                  "image": "{t.icon}",
+                  "size": [
+                    32,
+                    32
+                  ]
+                },
+                {
+                  "type": "button",
+                  "style": "lcTicket",
+                  "text": "{t.name}",
+                  "action": "select",
+                  "arg": "{t.id}",
+                  "selected": "{t.selected}",
+                  "disabled": "{t.closed}",
+                  "tip": "{t.markText}"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "anchor": "bottom-left",
+        "offset": [
+          40,
+          -34
+        ],
+        "style": "small",
+        "text": "{words.mapHint}"
+      },
+      {
+        "type": "stack",
+        "anchor": "top-right",
+        "offset": [
+          -36,
+          96
+        ],
+        "size": [
+          330,
+          540
+        ],
+        "style": "lcPanel",
+        "gap": 10,
+        "visible": "{map.panel}",
+        "children": [
+          {
+            "type": "text",
+            "style": "heading",
+            "text": "{map.panel.name}",
+            "wrap": true,
+            "size": [
+              280,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "style": "muted",
+            "text": "{map.panel.level}"
+          },
+          {
+            "type": "text",
+            "style": "text",
+            "text": "{map.panel.detail}",
+            "wrap": true,
+            "size": [
+              280,
+              0
+            ]
+          },
+          {
+            "type": "button",
+            "style": "lcButton",
+            "text": "{words.enter}",
+            "action": "enter",
+            "arg": "{map.panel.id}",
+            "visible": "{map.panel.open}",
+            "size": [
+              280,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "type": "list",
+        "anchor": "bottom-right",
+        "offset": [
+          -36,
+          -12
         ],
         "items": "{map.toasts}",
         "as": "t",

@@ -19,7 +19,7 @@
 
 std::pair<std::string, std::string> RunScreen(GameContext &game, const std::string &screen, nlohmann::json data,
                                               const std::function<bool(const std::string &, const std::string &, nlohmann::json &)> &handle,
-                                              const std::filesystem::path &capture, int frames)
+                                              const std::filesystem::path &capture, int frames, const std::function<void(nlohmann::json &)> &each)
 {
     Screens &screens = *game.screens;
     screens.Ui().Open(screen), screens.Ui().ResetFocus(screen);
@@ -51,6 +51,8 @@ std::pair<std::string, std::string> RunScreen(GameContext &game, const std::stri
         const glm::vec2 pixels{static_cast<float>(width), static_cast<float>(height)};
         umbra::ui::UiInput input = Screens::MapInput(game.input, {static_cast<float>(game.window.GetWidth()), static_cast<float>(game.window.GetHeight())}, pixels);
         game.window.SetTextInput(screens.Ui().WantsText());
+        if (each)
+            each(data); // e.g. the map's drag and zoom
         // 1. An action ends the screen unless the handler keeps it open (a toggle, a selection).
         for (const umbra::ui::UiAction &a : screens.Ui().Update(data, pixels, input, drawList.ui))
         {
@@ -274,6 +276,9 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
     };
     std::string where = save.facts.contains("won:t1") ? "cafe" : "t1";
     std::string selected;
+    campaign::MapLens lens; // the map's zoom and pan, kept between visits
+    glm::vec2 lensMouse{0.0F};
+    bool lensHeld = false;
     std::set<std::string> seenOpen; // tickets open when the map was last shown (world-map.md 6: new ones get a toast)
     bool mapSeen = false;
     while (where != "quit")
@@ -299,8 +304,8 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
                 for (const campaign::TicketView &t : campaign::MapView(map, save, stages))
                 {
                     const std::string mark = words.value(t.mark == "cleared" ? "markCleared" : t.mark == "next" ? "markNext" : t.mark == "skirmish" ? "markSkirmish" : "markLocked", "?");
-                    data["map"]["tickets"].push_back({{"id", t.id}, {"name", t.mark == "unknown" ? "?" : t.name}, {"markText", mark}, {"icon", "art/ui/campaign/icon/mark_" + (t.mark == "locked" ? std::string("unknown") : t.mark) + ".png"}, {"at", {80.0F + t.x * 1100.0F - 60.0F, 60.0F + t.y * 560.0F - 24.0F}},
-                                                      {"selected", t.id == selected}, {"closed", !t.open}});
+                    data["map"]["tickets"].push_back({{"id", t.id}, {"name", t.mark == "unknown" ? "?" : t.name}, {"markText", mark}, {"icon", "art/ui/campaign/icon/mark_" + (t.mark == "locked" ? std::string("unknown") : t.mark) + ".png"},
+                                                      {"u", t.x}, {"v", t.y}, {"selected", t.id == selected}, {"closed", !t.open}});
                     if (t.id == selected)
                     {
                         const auto s = stageOf(t.id);
@@ -308,6 +313,32 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
                                                 {"level", s == stages.end() ? std::string() : Fill(words.value("levelLine", ""), {{"n", std::to_string(s->level)}})}};
                     }
                 }
+            };
+            // The map area (worldmap.ui.json: 840 x 540 at 36, 96, in the screen's 1280 x 720 units): a drag
+            // pans, the wheel zooms; the plan and each ticket are placed from the lens in window pixels.
+            const glm::vec2 area{840.0F, 540.0F}, corner{36.0F, 96.0F};
+            const float aspect = 1344.0F / 768.0F;
+            const auto lensFrame = [&](nlohmann::json &data) {
+                const float k = game.screens->Ui().UiScale();
+                const auto [width, height] = game.renderer.Extent();
+                const glm::vec2 scale = glm::vec2{static_cast<float>(width), static_cast<float>(height)} /
+                                        glm::max(glm::vec2{static_cast<float>(game.window.GetWidth()), static_cast<float>(game.window.GetHeight())}, glm::vec2{1.0F});
+                const glm::vec2 mouse = glm::vec2{game.input.GetMouseX(), game.input.GetMouseY()} * scale / k - corner; // in the area
+                const bool inside = mouse.x >= 0.0F && mouse.y >= 0.0F && mouse.x < area.x && mouse.y < area.y;
+                if (inside && game.input.Wheel() != 0.0F)
+                    campaign::Zoom(lens, game.input.Wheel(), mouse, area.x, area.y, aspect);
+                if (game.input.IsMouseButtonHeld(0) && inside && lensHeld)
+                    campaign::Drag(lens, mouse - lensMouse, area.x, area.y, aspect);
+                lensHeld = game.input.IsMouseButtonHeld(0) && inside, lensMouse = mouse;
+                const campaign::PlanBox b = campaign::Plan(lens, area.x, area.y, aspect);
+                // "at" is in window pixels: the bottom middle of what stands there.
+                data["map"]["plans"] = nlohmann::json::array();
+                if (!data["map"]["plan"].get<std::string>().empty())
+                    data["map"]["plans"].push_back({{"file", data["map"]["plan"]}, {"size", {b.w, b.h}}, {"at", {(corner.x + b.x + b.w * 0.5F) * k, (corner.y + b.y + b.h) * k}}});
+                // A ticket near the edge is kept whole inside the area (about 100 units each side of its middle).
+                for (nlohmann::json &t : data["map"]["tickets"])
+                    t["at"] = {(corner.x + glm::clamp(b.x + t["u"].get<float>() * b.w, 100.0F, area.x - 100.0F)) * k,
+                               (corner.y + b.y + t["v"].get<float>() * b.h + 20.0F) * k};
             };
             nlohmann::json data{{"words", words}};
             // New since the map was last shown: a toast for each opened room, one for the new skirmishes; focus the first.
@@ -328,15 +359,18 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
             mapSeen = true;
             data["map"]["plan"] = std::filesystem::exists(assets.RootOf(map.plan) / map.plan) ? map.plan : "";
             view(data);
-            const auto [action, arg] = RunScreen(game, "worldmap", data, [&](const std::string &a, const std::string &id, nlohmann::json &shown) {
-                if (a == "settings")
-                    return (void)RunSettings(game, words), true;
-                if (a != "select")
-                    return false;
-                selected = id;
-                view(shown);
-                return true;
-            });
+            const auto [action, arg] = RunScreen(
+                game, "worldmap", data,
+                [&](const std::string &a, const std::string &id, nlohmann::json &shown) {
+                    if (a == "settings")
+                        return (void)RunSettings(game, words), true;
+                    if (a != "select")
+                        return false;
+                    selected = id;
+                    view(shown);
+                    return true;
+                },
+                {}, 0, lensFrame);
             if (action == "cafe")
                 where = "cafe";
             else if (action != "enter")

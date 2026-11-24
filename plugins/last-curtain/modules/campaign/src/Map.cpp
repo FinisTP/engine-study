@@ -83,4 +83,33 @@ namespace umbra::campaign
         }
         return best;
     }
+
+    PlanBox Plan(const MapLens &lens, float areaW, float areaH, float aspect)
+    {
+        // 1. The plan's size: its width fits the area at zoom 1.
+        const float w = areaW * lens.zoom, h = w / aspect;
+        // 2. Where: centred on an axis it doesn't fill; else at the lens, kept so no edge comes inside the area.
+        const float x = w <= areaW ? (areaW - w) * 0.5F : std::clamp(lens.x, areaW - w, 0.0F);
+        const float y = h <= areaH ? (areaH - h) * 0.5F : std::clamp(lens.y, areaH - h, 0.0F);
+        return {x, y, w, h};
+    }
+
+    void Drag(MapLens &lens, glm::vec2 by, float areaW, float areaH, float aspect)
+    {
+        const PlanBox b = Plan(lens, areaW, areaH, aspect);
+        lens.x = b.x + by.x, lens.y = b.y + by.y;
+        const PlanBox kept = Plan(lens, areaW, areaH, aspect);
+        lens.x = kept.x, lens.y = kept.y;
+    }
+
+    void Zoom(MapLens &lens, float steps, glm::vec2 about, float areaW, float areaH, float aspect)
+    {
+        // The point under `about` stays under it: the plan grows around it.
+        const PlanBox before = Plan(lens, areaW, areaH, aspect);
+        const float zoom = std::clamp(lens.zoom * std::pow(1.25F, steps), 1.0F, 3.0F), k = zoom / lens.zoom;
+        lens.zoom = zoom;
+        lens.x = about.x - (about.x - before.x) * k, lens.y = about.y - (about.y - before.y) * k;
+        const PlanBox kept = Plan(lens, areaW, areaH, aspect);
+        lens.x = kept.x, lens.y = kept.y;
+    }
 }

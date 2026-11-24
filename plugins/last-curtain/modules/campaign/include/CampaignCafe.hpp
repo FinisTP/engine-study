@@ -3,6 +3,8 @@
 #include <Campaign.hpp>
 
 #include <array>
+#include <glm/vec2.hpp>
+
 #include <map>
 #include <set>
 #include <string>
@@ -103,6 +105,8 @@ namespace umbra::campaign
         std::vector<std::string> all, none; // facts "key" (any value) or "key=value"
         Facts sets;
         std::vector<std::string> teaches; // recipe ids learnt
+        std::map<std::string, int> gives; // items handed over into storage (items.csv id -> count), the first time only
+        std::string then;                 // after the scene: "notebook" opens it with the slot lesson
         bool repeat = false;
     };
 
@@ -152,6 +156,20 @@ namespace umbra::campaign
     std::vector<TicketView> MapView(const TheatreMap &map, const Save &save, const std::vector<StageDef> &stages);
     // The ticket nearest `from` in a direction (u, d, l, r), "" none.
     std::string Nearest(const TheatreMap &map, const std::string &from, char direction);
+
+    // The map's lens (Map.md "Lens"): how far in and where the floor plan sits in its area. At zoom 1 the
+    // plan's width fits the area, centred; zoomed in, it can be dragged but its edges never leave the area.
+    struct MapLens
+    {
+        float zoom = 1.0F, x = 0.0F, y = 0.0F; // x, y: the plan's top-left in the area when zoomed in
+    };
+    struct PlanBox
+    {
+        float x = 0.0F, y = 0.0F, w = 0.0F, h = 0.0F; // in the area's units
+    };
+    PlanBox Plan(const MapLens &lens, float areaW, float areaH, float aspect); // aspect: the plan's width / height
+    void Drag(MapLens &lens, glm::vec2 by, float areaW, float areaH, float aspect);
+    void Zoom(MapLens &lens, float steps, glm::vec2 about, float areaW, float areaH, float aspect); // about: a point in the area
 
     // Around a stage (stage-flow.md). Pre-stage: who goes (the player first and always, up to the cap) and
     // whether nobody can revive. The result: what the win changed. Game over: why, and whether Le Thanh's

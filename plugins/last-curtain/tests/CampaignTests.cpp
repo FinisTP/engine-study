@@ -1,6 +1,7 @@
 #include <Campaign.hpp>
 #include <MatchSave.hpp>
 
+#include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <nlohmann/json.hpp>
 
@@ -1128,4 +1129,43 @@ TEST_CASE("Every character's first ability is the basic attack, Danh thuong (the
         CHECK(a.hpCost == 0);
         CHECK(std::ranges::count(u.abilities, u.abilities[0]) == 1);
     }
+}
+
+TEST_CASE("A talk can hand over items into the cafe's storage, once (Le Thanh's first talk; feedback 2026-11-24)", "[campaign][cafe]")
+{
+    campaign::Talk talk;
+    talk.id = "gift", talk.gives = {{"bandage", 2}, {"programme", 1}};
+    campaign::Save save;
+    save.storage["bandage"] = 1;
+    campaign::Talked(save, talk);
+    CHECK(save.storage["bandage"] == 3);
+    CHECK(save.storage["programme"] == 1);
+    campaign::Talked(save, talk); // told again (a repeat talk): nothing more
+    CHECK(save.storage["bandage"] == 3);
+}
+
+TEST_CASE("The map's lens: the plan fills the area, zooms about a point and never drags off it (feedback 2026-11-24)", "[campaign][map]")
+{
+    campaign::MapLens lens;
+    const float w = 840.0F, h = 560.0F, aspect = 1344.0F / 768.0F;
+    // 1. At rest the plan's width fits the area, centred.
+    campaign::PlanBox b = campaign::Plan(lens, w, h, aspect);
+    CHECK(b.w == 840.0F);
+    CHECK(b.h == Catch::Approx(480.0F));
+    CHECK(b.y == Catch::Approx(40.0F));
+    // 2. Zoom in about the area's middle: twice as large, still centred.
+    campaign::Zoom(lens, 1.0F, {420.0F, 280.0F}, w, h, aspect);
+    b = campaign::Plan(lens, w, h, aspect);
+    CHECK(b.w > 840.0F);
+    CHECK(b.x + b.w * 0.5F == Catch::Approx(420.0F).margin(0.5F));
+    // 3. A long drag stops with the plan's edge at the area's edge.
+    campaign::Drag(lens, {5000.0F, 0.0F}, w, h, aspect);
+    b = campaign::Plan(lens, w, h, aspect);
+    CHECK(b.x == Catch::Approx(0.0F));
+    // 4. Zoomed all the way out, nothing to drag; the zoom stays between 1 and 3.
+    for (int i = 0; i < 20; ++i)
+        campaign::Zoom(lens, -1.0F, {0.0F, 0.0F}, w, h, aspect);
+    CHECK(lens.zoom == 1.0F);
+    campaign::Drag(lens, {300.0F, 300.0F}, w, h, aspect);
+    CHECK(campaign::Plan(lens, w, h, aspect).x == 0.0F);
 }

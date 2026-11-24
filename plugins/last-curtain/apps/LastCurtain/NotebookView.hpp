@@ -19,12 +19,21 @@ public:
     void Select(const std::string &id);
     void SetReadOnly(bool readOnly) { readOnly_ = readOnly; }
     bool SetSlot(const std::string &character, int slot, const std::string &item); // "" empties it
+    // The character page (the mockup's middle and right columns): stats need the growth table; words give the
+    // skill line ("skillLine": "{range} {power} {hp}" filled in).
+    void SetGrowth(const umbra::campaign::Growth *growth) { growth_ = growth; }
+    void SetWords(nlohmann::json words) { words_ = std::move(words); }
+    void Skill(const std::string &ability) { skill_ = ability; } // the skill shown on the right
+    bool ToggleFight(const std::string &character);           // in or out of the next fight; the player always fights
 
 private:
     const umbra::match::MatchDef &def_;
     const umbra::campaign::Cast &cast_;
     const umbra::campaign::Memories &memories_;
     umbra::campaign::Save &save_;
-    std::string tab_ = "characters", selected_;
+    std::string tab_ = "characters", selected_, skill_;
+    const umbra::campaign::Growth *growth_ = nullptr;
+    nlohmann::json words_ = nlohmann::json::object();
+    [[nodiscard]] nlohmann::json Page() const; // the selected character's page
     bool readOnly_ = false;
 };

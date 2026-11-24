@@ -23,7 +23,7 @@ nlohmann::json CafeHub::Data() const
     {
         const campaign::CastMember *m = cast_.Find(who);
         const bool talk = std::ranges::any_of(open, [&](const campaign::Talk *t) { return t->who == who; });
-        d["people"].push_back({{"who", who}, {"name", m ? m->name : who}, {"talk", talk}});
+        d["people"].push_back({{"who", who}, {"name", m ? campaign::FillTokens(m->name, save_.player, cast_) : who}, {"talk", talk}});
     }
     // 2. Recipes known: memory drinks first, then general; what each lacks; a memory's two versions.
     d["recipes"] = nlohmann::json::array();
@@ -68,6 +68,7 @@ std::string CafeHub::Talk(const std::string &who)
     for (const campaign::Talk *t : campaign::OpenTalks(talks_, save_, 99))
         if (t->who == who)
         {
+            last_ = t;
             campaign::Talked(save_, *t);
             if (!t->memory.empty())
                 for (const auto &[recruit, list] : memories_.byRecruit)

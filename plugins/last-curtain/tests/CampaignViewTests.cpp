@@ -158,14 +158,16 @@ TEST_CASE("The notebook: three tabs, unknowns as ?, slots edited only outside ba
     HubData h;
     campaign::Save save;
     save.storage = {{"gung", 1}, {"bandage", 2}};
+    save.player = {"Hoang", "male"};
     Notebook book(h.def, h.cast, h.memories, save);
-    // 1. Characters: the party known, Ti a ? until he joins.
+    // 1. Characters: the party known (the player by name), Ti a ? until he joins.
     nlohmann::json d = book.Data();
     CHECK(d["tab"] == "characters");
-    bool tiHidden = false;
+    bool tiHidden = false, playerNamed = false;
     for (const auto &e : d["entries"])
-        tiHidden |= e["id"] == "ti" && e["name"] == "?";
+        tiHidden |= e["id"] == "ti" && e["name"] == "?", playerNamed |= e["id"] == "player" && e["name"] == "Hoang";
     CHECK(tiHidden);
+    CHECK(playerNamed);
     // 2. Ingredients: ginger known, sugar a ?.
     book.Tab("ingredients");
     d = book.Data();
@@ -293,6 +295,15 @@ TEST_CASE("The campaign cafe is a room: walk, talk with E, brew at the counter, 
     for (int i = 0; i < 200; ++i)
         room.Update(0.02F);
     CHECK(glm::length(room.Position() - glm::vec2{8.0F, 6.0F}) < 0.2F);
+    // 6. A click on someone walks up to where they stand: they end within reach (a talk follows).
+    glm::vec2 mai{};
+    for (const CampaignRoom::Person &p : room.People())
+        if (p.who == "mai")
+            mai = p.at;
+    room.WalkTo(mai);
+    for (int i = 0; i < 400; ++i)
+        room.Update(0.02F);
+    CHECK(room.Interact() == "talk:mai");
 }
 
 #include <Typing.hpp>
@@ -317,4 +328,37 @@ TEST_CASE("The on-screen keyboard puts a tone mark where Vietnamese puts it (pla
     CHECK(t.Backspace("L" + row(0, 1)) == "L");                           // a whole letter, not a byte
     CHECK(t.Upper(row(10, 2)) == row(22, 2));                             // a vowel keeps its tone in capitals
     CHECK(t.Upper("n") == "N");
+}
+
+TEST_CASE("The notebook's character page as in the mockup: portrait, stats, fights or not, skills, a skill's upgrades (feedback 2026-11-24)")
+{
+    HubData h;
+    campaign::Growth growth;
+    std::vector<core::Diagnostic> d;
+    REQUIRE(campaign::LoadGrowth(data / "growth.csv", growth, d));
+    campaign::Save save;
+    save.player = {"Hoang", "male"};
+    save.roster = {{"player", 2, 0}, {"bao", 2, 0}, {"mai", 2, 0}};
+    save.party = {"player", "bao"};
+    Notebook book(h.def, h.cast, h.memories, save);
+    book.SetGrowth(&growth);
+    book.Select("bao");
+    nlohmann::json p = book.Data()["detail"];
+    // 1. Who: a portrait, level and stats from the growth at that level.
+    CHECK(p["portrait"].get<std::string>().find("art/sprites/") == 0);
+    CHECK(p["level"] == 2);
+    CHECK(p["stats"]["hp"].get<int>() > 0);
+    CHECK(p["fights"] == true);
+    // 2. Skills: the basic attack first; one chosen shows its line and no versions for a skill with no upgrade.
+    REQUIRE(p["skills"].size() >= 2);
+    CHECK(p["skills"][0]["id"] == "basic");
+    book.Skill("basic");
+    p = book.Data()["detail"];
+    CHECK(p["skill"]["name"] == h.def.abilities[static_cast<std::size_t>(std::ranges::find(h.def.abilities, std::string("basic"), &match::AbilityDef::id) - h.def.abilities.begin())].name);
+    CHECK(!p["skill"]["line"].get<std::string>().empty());
+    CHECK(p["skill"]["versions"].empty());
+    // 3. Fights: toggled for anyone but the player.
+    CHECK(book.ToggleFight("mai"));
+    CHECK(std::ranges::find(save.party, std::string("mai")) != save.party.end());
+    CHECK_FALSE(book.ToggleFight("player"));
 }
