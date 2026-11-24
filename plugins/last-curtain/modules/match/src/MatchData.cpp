@@ -288,7 +288,7 @@ namespace umbra::match
                 // 2. And its targets: strikes an enemy, shields yourself, board heals your side, hits anyone not on it.
                 const Target t = a.target;
                 const bool aims = a.kind == AbilityClass::Hit ? t == Target::Enemy || t == Target::Monster || t == Target::Any
-                                : a.kind == AbilityClass::Heal && a.use == Use::Board ? t == Target::Ally || t == Target::Self
+                                : a.kind == AbilityClass::Heal ? t == Target::Ally || t == Target::Self // in battle: one of its own group
                                 : a.kind == AbilityClass::Revive || a.kind == AbilityClass::GiveAp || a.kind == AbilityClass::Hasten ? t == Target::Ally
                                 : a.kind == AbilityClass::Effect ? t == Target::Enemy || t == Target::Ally
                                 : a.kind == AbilityClass::Remove ? t == Target::Enemy

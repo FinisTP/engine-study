@@ -246,13 +246,23 @@
                 }
               ]
             }
-          },
-          {
-            "type": "text",
-            "style": "warning",
-            "text": "{tip}",
-            "visible": "{tip}"
           }
+        ]
+      },
+      {
+        "type": "text",
+        "anchor": "bottom",
+        "offset": [
+          0,
+          -150
+        ],
+        "style": "lcToast",
+        "text": "{tip}",
+        "visible": "{tip}",
+        "wrap": true,
+        "size": [
+          760,
+          0
         ]
       }
     ]

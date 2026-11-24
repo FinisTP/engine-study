@@ -171,9 +171,23 @@ namespace umbra::match
             // A strike goes at a standing fighter of the other group (none named: the first one standing).
             if (a->kind == AbilityClass::Strike && target >= 0 && (Place(s, target) < 0 || Place(s, target) / 2 == Place(s, me) / 2 || !Standing(s, Place(s, target))))
                 return Why::OwnSide;
+            // A heal goes to a standing fighter of one's own group (none named: the most hurt of it).
+            if (a->kind == AbilityClass::Heal && target >= 0 && (Place(s, target) < 0 || Place(s, target) / 2 != Place(s, me) / 2 || !Standing(s, Place(s, target))))
+                return Why::OwnSide;
             if (s.units[U(me)].hp <= CostOf(def, s.units[U(me)], slot))
                 return Why::TooCostly;
             return Why::Ok;
+        }
+
+        int MostHurt(const MatchState &s, int me)
+        {
+            // The standing fighter of my group missing the most HP (me when no one else is hurt more).
+            int best = me;
+            for (int p = Place(s, me) / 2 * 2, end = p + 2; p < end; ++p)
+                if (const int f = s.battle.fighters[U(p)]; f >= 0 && Standing(s, p))
+                    if (s.units[U(f)].maxHp - s.units[U(f)].hp > s.units[U(best)].maxHp - s.units[U(best)].hp)
+                        best = f;
+            return best;
         }
 
         void StartBattle(const MatchDef &def, MatchState &s, int me, int target)
@@ -224,7 +238,10 @@ namespace umbra::match
             else if (a.kind == AbilityClass::Shield)
                 s.battle.shield[U(Place(s, me))] = static_cast<std::int16_t>(s.battle.shield[U(Place(s, me))] + PowerOf(def, u, slot));
             else if (a.kind == AbilityClass::Heal)
-                u.hp = static_cast<std::int16_t>(std::min<int>(u.maxHp, u.hp + PowerOf(def, u, slot)));
+            {
+                Unit &t = s.units[U(target >= 0 ? target : MostHurt(s, me))];
+                t.hp = static_cast<std::int16_t>(std::min<int>(t.maxHp, t.hp + PowerOf(def, u, slot)));
+            }
             // 2. The next standing fighter in the round's order; after the last, the next round; after the last round, the end.
             do
                 ++s.battle.next;

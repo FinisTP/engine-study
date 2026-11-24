@@ -853,11 +853,15 @@ nlohmann::json MatchPlay::BattleData() const
         for (int p = mine < 2 ? 2 : 0, end = p + 2; p < end; ++p)
             if (const int f = b.fighters[U(p)]; f >= 0 && s_.units[U(f)].hp > 0 && s_.units[U(f)].cell >= 0)
                 foes.push_back(f);
+        std::vector<int> friends; // a heal is offered for each one of my group standing (feedback note 19)
+        for (int p = mine < 2 ? 0 : 2, end = p + 2; p < end; ++p)
+            if (const int f = b.fighters[U(p)]; f >= 0 && s_.units[U(f)].hp > 0 && s_.units[U(f)].cell >= 0)
+                friends.push_back(f);
         for (int slot = 0; slot < maxAbilities; ++slot)
             if (const int id = u.abilities[U(slot)]; id >= 0 && def_.abilities[U(id)].use == Use::Battle)
             {
-                const bool strike = def_.abilities[U(id)].kind == AbilityClass::Strike;
-                for (int foe : strike && foes.size() > 1 ? foes : std::vector<int>{-1})
+                const bool strike = def_.abilities[U(id)].kind == AbilityClass::Strike, heal = def_.abilities[U(id)].kind == AbilityClass::Heal;
+                for (int foe : strike && foes.size() > 1 ? foes : heal && friends.size() > 1 ? friends : std::vector<int>{-1})
                 {
                     const Action a{ActionKind::BattleAbility, static_cast<std::int8_t>(slot), static_cast<std::int8_t>(foe)};
                     const Why w = Check(def_, s_, a);

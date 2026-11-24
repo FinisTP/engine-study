@@ -296,6 +296,22 @@
           "style": "lcToast",
           "text": "{t.text}"
         }
+      },
+      {
+        "type": "text",
+        "anchor": "bottom",
+        "offset": [
+          0,
+          -86
+        ],
+        "style": "lcToast",
+        "text": "{tip}",
+        "visible": "{tip}",
+        "wrap": true,
+        "size": [
+          720,
+          0
+        ]
       }
     ]
   }

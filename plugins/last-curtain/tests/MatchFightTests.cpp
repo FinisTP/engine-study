@@ -1004,3 +1004,40 @@ TEST_CASE("A boss still waiting to arrive keeps the fight going (campaign plan 4
     Fight(def, s, 0, 2);
     CHECK_FALSE(s.over);
 }
+
+TEST_CASE("A battle heal mends the ally it names, else the most hurt one of its group (feedback 2026-11-24 16:57, note 19)", "[match][fight][heal]")
+{
+    MatchDef def = Data();
+    const int mend = AddEffect(def, "mend_ally", Use::Battle, AbilityClass::Heal, Target::Ally, AbilityEffect::None, 0, 5, 1);
+    for (const int named : {0, -1})
+    {
+        MatchState s = ::Fight(def);
+        s.units[3].flags = 0, s.units[3].cell = -1; // only the boss stands against them
+        TurnOf(def, s, 1);
+        Give(s, 1, mend);
+        Put(s, 1, Beside(s, s.units[2].cell));
+        Put(s, 0, s.units[1].cell); // the two on one square fight together
+        s.now.origin = s.units[1].cell;
+        s.units[0].hp = static_cast<std::int16_t>(s.units[0].maxHp - 8);
+        s.units[1].hp = static_cast<std::int16_t>(s.units[1].maxHp - 1);
+        REQUIRE(Apply(def, s, {ActionKind::Attack, I8(2)}));
+        REQUIRE(s.battle.on);
+        REQUIRE(std::ranges::find(s.battle.fighters, I8(0)) != s.battle.fighters.end());
+        // 1. The first time the healer picks, it mends the player (named, or as the most hurt), not itself.
+        bool healed = false;
+        for (int i = 0; i < 20 && s.battle.on && !healed; ++i)
+            if (Current(s) == 1)
+            {
+                const int hp0 = s.units[0].hp, hp1 = s.units[1].hp;
+                REQUIRE(Check(def, s, {ActionKind::BattleAbility, maxAbilities - 1, I8(named)}) == Why::Ok);
+                REQUIRE(Apply(def, s, {ActionKind::BattleAbility, maxAbilities - 1, I8(named)}));
+                INFO("named " << named);
+                CHECK(s.units[0].hp == std::min<int>(s.units[0].maxHp, hp0 + 5));
+                CHECK(s.units[1].hp == hp1);
+                healed = true;
+            }
+            else
+                REQUIRE(Apply(def, s, {ActionKind::BattleAbility, 0}));
+        REQUIRE(healed);
+    }
+}
