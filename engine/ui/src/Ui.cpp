@@ -231,13 +231,25 @@ namespace umbra::ui
     {
         if (scale < 0.5F || scale > 2.0F)
             return false;
+        const float old = textScale_;
+        textScale_ = scale;
+        if (!BuildFonts(diagnostics))
+            return textScale_ = old, false;
+        return true;
+    }
+
+    bool UiSystem::BuildFonts(std::vector<core::Diagnostic> &diagnostics)
+    {
         std::vector<FontSource> sized = sources_;
         for (FontSource &f : sized)
-            f.size *= scale;
-        if (!fonts_.Build(sized, diagnostics))
-            return false;
-        textScale_ = scale;
-        return true;
+            f.size *= textScale_ * uiScale_;
+        return fonts_.Build(sized, diagnostics);
+    }
+
+    glm::vec2 UiSystem::TextSize(const Face &face, std::string_view text, float wrap) const
+    {
+        // Measured in font pixels (fonts are uiScale_ larger), returned in layout units.
+        return FontAtlas::Measure(face, text, wrap * uiScale_) / uiScale_;
     }
 
     bool UiSystem::Open(const std::string &screen)
@@ -285,7 +297,7 @@ namespace umbra::ui
             if (const Face *face = fonts_.Find(style.font))
             {
                 const std::string &typed = fields_[c.screen + "#" + node.id];
-                content = FontAtlas::Measure(*face, typed.empty() ? c.Text(node.placeholder) : typed);
+                content = TextSize(*face, typed.empty() ? c.Text(node.placeholder) : typed);
                 content.y = face->lineHeight;
             }
         }
@@ -294,7 +306,7 @@ namespace umbra::ui
             if (const Face *face = fonts_.Find(style.font))
             {
                 const float wrap = node.wrap ? (node.size.x > 0.0F ? node.size.x : width) - pad.x : 0.0F;
-                content = FontAtlas::Measure(*face, c.Text(node.text), wrap);
+                content = TextSize(*face, c.Text(node.text), wrap);
             }
         }
         else if (node.type == "bar")
@@ -414,7 +426,7 @@ namespace umbra::ui
                 const float align = node.textAlign == "center" ? 0.5F : node.textAlign == "right" ? 1.0F : 0.0F;
                 Rect area = inner;
                 if (node.type == "button") // centered vertically in the button
-                    area.y += std::round((inner.h - FontAtlas::Measure(*face, text, node.wrap ? inner.w : 0.0F).y) * 0.5F);
+                    area.y += std::round((inner.h - TextSize(*face, text, node.wrap ? inner.w : 0.0F).y) * 0.5F);
                 c.painter.Text(*face, area, text, style.color, node.wrap, align);
             }
         }
@@ -430,7 +442,7 @@ namespace umbra::ui
                 c.painter.Text(*face, {inner.x, top, inner.w, face->lineHeight}, shown, color, false, 0.0F);
                 if (focused)
                 {
-                    const float x = typed.empty() ? 0.0F : FontAtlas::Measure(*face, typed).x;
+                    const float x = typed.empty() ? 0.0F : TextSize(*face, typed).x;
                     c.painter.Fill({inner.x + std::min(x, inner.w - 2.0F), top, 2.0F, face->lineHeight}, style.color);
                 }
             }
@@ -444,7 +456,7 @@ namespace umbra::ui
                 if (const Face *face = fonts_.Find(style.font))
                 {
                     const std::string text = c.Text(node.text);
-                    const float h = FontAtlas::Measure(*face, text).y;
+                    const float h = TextSize(*face, text).y;
                     c.painter.Text(*face, {inner.x, inner.y + std::round((inner.h - h) * 0.5F), inner.w, h}, text, style.color, false, 0.5F);
                 }
         }
@@ -519,7 +531,7 @@ namespace umbra::ui
                     const json point = c.Value(node.entry->at);
                     const glm::vec2 size = Measure(*node.entry, c, inner.w);
                     const bool ok = point.is_array() && point.size() == 2 && point[0].is_number() && point[1].is_number();
-                    const glm::vec2 p = ok ? glm::vec2{point[0].get<float>(), point[1].get<float>()} : glm::vec2{-10000.0F};
+                    const glm::vec2 p = ok ? glm::vec2{point[0].get<float>(), point[1].get<float>()} / uiScale_ : glm::vec2{-10000.0F}; // given in window pixels
                     r = {std::round(p.x - size.x * 0.5F), std::round(p.y - size.y), size.x, size.y};
                 }
                 const bool entryDisabled = !node.entry->disabled.empty() && c.Truthy(node.entry->disabled);
@@ -540,8 +552,23 @@ namespace umbra::ui
         }
     }
 
-    std::vector<UiAction> UiSystem::Update(const json &data, glm::vec2 viewport, const UiInput &input, core::UiDrawList &out)
+    std::vector<UiAction> UiSystem::Update(const json &data, glm::vec2 windowPixels, const UiInput &windowInput, core::UiDrawList &out)
     {
+        // 0. The UI scale: lay out for the design height, draw at the window's (fonts rebuilt at its size).
+        if (const float k = designHeight_ > 0.0F && windowPixels.y > 0.0F ? std::max(0.5F, windowPixels.y / designHeight_) : 1.0F; std::abs(k - uiScale_) > 0.001F)
+        {
+            const float old = uiScale_;
+            uiScale_ = k;
+            std::vector<core::Diagnostic> ignored;
+            if (!BuildFonts(ignored))
+                uiScale_ = old, (void)BuildFonts(ignored);
+            else if (uploader_)
+                atlasTexture_ = uploader_(fonts_.Image());
+        }
+        const glm::vec2 viewport = windowPixels / uiScale_;
+        UiInput input = windowInput;
+        input.mouse /= uiScale_;
+        const std::size_t firstVertex = out.vertices.size(), firstBatch = out.batches.size();
         std::vector<UiAction> actions;
         // 1. Input goes to the top modal screen, using last frame's layout of its choices.
         std::string target;
@@ -616,6 +643,7 @@ namespace umbra::ui
 
         // 3. Every open screen, bottom to top: dim, lay out, draw, remember its choices.
         Painter painter(out, fonts_, atlasTexture_);
+        painter.SetFontScale(uiScale_);
         tip_.clear();
         const Rect view{0.0F, 0.0F, viewport.x, viewport.y};
         for (const std::string &name : std::vector<std::string>(stack_))
@@ -630,6 +658,12 @@ namespace umbra::ui
             if (!c.tip.empty())
                 tip_ = std::move(c.tip);
         }
+        // 4. Layout units to window pixels.
+        for (std::size_t i = firstVertex; i < out.vertices.size(); ++i)
+            out.vertices[i].position *= uiScale_;
+        for (std::size_t i = firstBatch; i < out.batches.size(); ++i)
+            if (out.batches[i].clip.z < 1e8F)
+                out.batches[i].clip *= uiScale_;
         return actions;
     }
 

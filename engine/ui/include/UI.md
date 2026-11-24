@@ -75,6 +75,17 @@ are placed in order instead, and `align` lines them up across (start, center, en
 screens are laid out each frame, so they grow at once (panels with their text; fixed `size`s stay).
 The game uploads `Atlas()` again afterwards. The Last Curtain's "Large text" switch uses 1.25.
 
+### UI scale
+
+`SetDesignHeight(h)` makes screens a fixed share of the window: each frame the scale is
+`k = window height / h` (at least 0.5). Screens are laid out in units of a window `h` rows tall
+(`viewport / k`; the mouse divided by `k` too) and every vertex and clip is multiplied by `k` at the
+end, so a 100-unit button is 150 pixels tall at `h` = 720 in a 1080-row window. Fonts are rebuilt at
+`size × text scale × k` whenever `k` changes and the game's `SetAtlasUploader` makes the new texture;
+glyphs are drawn at `1 / k` layout units each (`Painter::SetFontScale`) and pens land on whole font
+pixels, so after the final `× k` text is drawn 1:1 from the atlas, sharp. Points a screen is given
+in window pixels (`at`) are divided by `k`. Without a design height everything is in pixels as before.
+
 ### Pictures
 
 An `image` fills its box by default, stretched. `fit` keeps its shape: `contain` shows all of it,

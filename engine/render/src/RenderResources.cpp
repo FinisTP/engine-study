@@ -714,9 +714,9 @@ namespace umbra::render
         VkSamplerCreateInfo samplerInfo{VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
         samplerInfo.magFilter = VK_FILTER_LINEAR;
         samplerInfo.minFilter = VK_FILTER_LINEAR;
-        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        // A picture (a portrait, a sprite) clamps: repeating would bleed its bottom row onto its top edge.
+        const VkSamplerAddressMode mode = data.clamp ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE : VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeU = samplerInfo.addressModeV = samplerInfo.addressModeW = mode;
         samplerInfo.anisotropyEnable = VK_TRUE;
         samplerInfo.maxAnisotropy = maxAnisotropy_;
         samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;

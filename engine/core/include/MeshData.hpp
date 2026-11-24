@@ -41,6 +41,7 @@ namespace umbra::core
         std::uint32_t width = 0;
         std::uint32_t height = 0;
         std::vector<std::uint8_t> rgba;
+        bool clamp = false; // sampled clamped at the edges, not repeated: a picture, not a tiled surface
     };
 
     // Return an empty string when valid, otherwise a short reason.

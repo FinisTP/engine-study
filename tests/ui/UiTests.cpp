@@ -574,3 +574,48 @@ TEST_CASE("A text scale rebuilds the fonts larger; open screens lay out again (c
     CHECK_FALSE(uiSystem.SetTextScale(5.0F, diagnostics));
     CHECK(uiSystem.TextScale() == 1.0F);
 }
+
+TEST_CASE("A design height scales every screen with the window; text stays sharp; clicks and points follow (UI.md \"UI scale\")")
+{
+    const json screen{{"format", "umbra.ui"}, {"version", 1}, {"modal", true},
+                      {"root", {{"type", "button"}, {"anchor", "top-left"}, {"size", {100, 50}}, {"text", "Go"}, {"action", "go"}}}};
+    const json over{{"format", "umbra.ui"}, {"version", 1},
+                    {"root", {{"type", "list"}, {"anchor", "fill"}, {"items", "{marks}"}, {"as", "m"},
+                              {"entry", {{"type", "text"}, {"text", "x"}, {"at", "{m.at}"}}}}}};
+    ui::UiSystem ui;
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(ui.Load(TestProject("scale", {{"menu", screen}, {"marks", over}}), diagnostics));
+    ui.SetDesignHeight(720.0F);
+    int uploads = 0;
+    ui.SetAtlasUploader([&](const core::TextureData &) { ++uploads; return core::TextureHandle{}; });
+    REQUIRE(ui.Open("menu"));
+    // 1. At 1080 rows the 100 x 50 button is drawn 150 x 75, and the fonts were rebuilt once for it.
+    core::UiDrawList out;
+    (void)ui.Update({}, {1920.0F, 1080.0F}, {}, out);
+    float maxX = 0.0F, maxY = 0.0F;
+    for (const core::UiVertex &v : out.vertices)
+        maxX = std::max(maxX, v.position.x), maxY = std::max(maxY, v.position.y);
+    CHECK(maxX == 150.0F);
+    CHECK(maxY == 75.0F);
+    CHECK(ui.UiScale() == 1.5F);
+    CHECK(uploads == 1);
+    // 2. A click at window pixels inside the drawn button chooses it.
+    ui::UiInput click;
+    click.mouse = {140.0F, 70.0F}, click.click = true;
+    out.Clear();
+    const auto actions = ui.Update({}, {1920.0F, 1080.0F}, click, out);
+    CHECK(std::ranges::any_of(actions, [](const ui::UiAction &a) { return a.action == "go"; }));
+    CHECK(uploads == 1); // the same size: no new atlas
+    // 3. A point given in window pixels ("at") stays where it was given.
+    ui.Close("menu");
+    REQUIRE(ui.Open("marks"));
+    out.Clear();
+    (void)ui.Update({{"marks", {{{"at", {600, 300}}}}}}, {1920.0F, 1080.0F}, {}, out);
+    REQUIRE(!out.vertices.empty());
+    float bottom = 0.0F, left = 1e9F, right = 0.0F;
+    for (const core::UiVertex &v : out.vertices)
+        bottom = std::max(bottom, v.position.y), left = std::min(left, v.position.x), right = std::max(right, v.position.x);
+    CHECK(bottom <= 300.0F);
+    CHECK(left < 600.0F);
+    CHECK(right > 600.0F);
+}

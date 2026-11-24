@@ -72,6 +72,12 @@ namespace umbra::ui
         // out from the new sizes next frame. The game uploads Atlas() again after a change.
         bool SetTextScale(float scale, std::vector<core::Diagnostic> &diagnostics);
         [[nodiscard]] float TextScale() const { return textScale_; }
+        // UI scale (UI.md "UI scale"): screens are laid out for a window `height` rows tall and drawn
+        // scaled to the real one, fonts rebuilt at the real size; 0 draws them in pixels. The uploader
+        // makes the renderer's texture whenever the atlas is rebuilt for a new size.
+        void SetDesignHeight(float height) { designHeight_ = height; }
+        void SetAtlasUploader(std::function<core::TextureHandle(const core::TextureData &)> uploader) { uploader_ = std::move(uploader); }
+        [[nodiscard]] float UiScale() const { return uiScale_; }
         [[nodiscard]] const std::map<std::string, Screen> &Screens() const { return screens_; }
         void SetScreen(Screen screen) { screens_[screen.name] = std::move(screen); } // e.g. edited in the editor
         [[nodiscard]] const Skin &GetSkin() const { return skin_; }
@@ -94,7 +100,10 @@ namespace umbra::ui
 
         FontAtlas fonts_;
         std::vector<FontSource> sources_; // the skin's fonts at scale 1
-        float textScale_ = 1.0F;
+        float textScale_ = 1.0F, uiScale_ = 1.0F, designHeight_ = 0.0F;
+        std::function<core::TextureHandle(const core::TextureData &)> uploader_;
+        bool BuildFonts(std::vector<core::Diagnostic> &diagnostics); // at text scale x UI scale
+        [[nodiscard]] glm::vec2 TextSize(const Face &face, std::string_view text, float wrap = 0.0F) const; // in layout units
         Skin skin_;
         std::map<std::string, Screen> screens_;
         std::vector<std::string> stack_;

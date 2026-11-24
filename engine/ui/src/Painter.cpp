@@ -87,23 +87,26 @@ namespace umbra::ui
 
     void Painter::Text(const Face &face, Rect r, std::string_view text, glm::vec4 color, bool wrap, float align)
     {
+        // Font pixels times unit_ are layout units; pens land on whole font pixels (crisp once scaled up).
         const std::uint32_t packed = PackColor(color);
-        float y = r.y + face.ascent;
-        for (const std::string &line : FontAtlas::Lines(face, text, wrap ? r.w : 0.0F))
+        const float u = unit_;
+        const auto snap = [u](float v) { return std::round(v / u) * u; };
+        float y = snap(r.y) + face.ascent * u;
+        for (const std::string &line : FontAtlas::Lines(face, text, wrap ? r.w / u : 0.0F))
         {
-            // Each line starts where `align` puts it; pen positions are rounded to whole pixels (crisp).
-            const float width = FontAtlas::Measure(face, line).x;
-            float x = std::round(r.x + (r.w - width) * align);
+            // Each line starts where `align` puts it.
+            const float width = FontAtlas::Measure(face, line).x * u;
+            float x = snap(r.x + (r.w - width) * align);
             for (std::size_t i = 0; i < line.size();)
             {
                 const Glyph *g = face.Find(NextCodePoint(line, i));
                 if (g == nullptr)
                     continue;
                 if (g->max.x > g->min.x)
-                    Quad(atlas_, {x + g->min.x, y + g->min.y}, {x + g->max.x, y + g->max.y}, g->uvMin, g->uvMax, packed);
-                x += g->advance;
+                    Quad(atlas_, {x + g->min.x * u, y + g->min.y * u}, {x + g->max.x * u, y + g->max.y * u}, g->uvMin, g->uvMax, packed);
+                x += g->advance * u;
             }
-            y += face.lineHeight;
+            y += face.lineHeight * u;
         }
     }
 

@@ -48,6 +48,8 @@ namespace umbra::ui
 
         void PushClip(Rect r);
         void PopClip();
+        // Fonts built `scale` times larger than the layout's units (UI.md "UI scale"): glyphs drawn 1/scale.
+        void SetFontScale(float scale) { unit_ = 1.0F / scale; }
 
     private:
         void Quad(core::TextureHandle texture, glm::vec2 p0, glm::vec2 p1, glm::vec2 uv0, glm::vec2 uv1, std::uint32_t color);
@@ -56,5 +58,6 @@ namespace umbra::ui
         const FontAtlas &fonts_;
         core::TextureHandle atlas_;
         std::vector<glm::vec4> clips_;
+        float unit_ = 1.0F; // layout units per font pixel
     };
 }
