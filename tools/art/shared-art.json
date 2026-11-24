@@ -1,0 +1,46 @@
+{
+ "note": "Shared item pictures (the user, 2026-11-25 note 8) and the board's plinth wood (HD-2D polish task 4). Cut and fitted in the cloud.",
+ "style": "oil pastel on toned paper, muted colours, low contrast, painterly, dim",
+ "negative": "text, letters, watermark, logo, frame, border, perspective, walls, furniture, person, figure, face, hand, shadow of a person, blood, skull, vignette, horizon, multiple objects",
+ "jobs": [
+  {
+   "name": "item_armour",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    71,
+    72
+   ],
+   "prompt": "a single long old brown coat folded neatly, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+  },
+  {
+   "name": "item_accessory",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    71,
+    72
+   ],
+   "prompt": "a single carved wooden hairpin with a small flower end, lying diagonally, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+  },
+  {
+   "name": "item_item",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    71,
+    72
+   ],
+   "prompt": "a small worn cloth pouch tied with a string, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+  },
+  {
+   "name": "plinth_wood",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    73
+   ],
+   "prompt": "seamless texture of dark lacquered wood with faint red-brown grain and a few worn gold flecks, flat, evenly lit, top-down, no objects"
+  }
+ ]
+}
