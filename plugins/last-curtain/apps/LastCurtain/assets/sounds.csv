@@ -11,3 +11,10 @@ click,audio/click.wav,0.4,a button or a dialog is clicked
 killer,audio/killer.wav,0.8,the killer's steps come within hearing
 pass,audio/pass.wav,0.6,a roll passes (the verdict told)
 fail,audio/fail.wav,0.6,a roll fails (the verdict told)
+type,audio/sfx/type.wav,0.35,a soft key while a dialogue line types (every few letters)
+music:title,audio/music/title.ogg,0.72,the title and new game: slow piano and strings
+music:cafe,audio/music/cafe.ogg,0.77,the café: warm piano and dan bau
+music:map,audio/music/map.ogg,1.0,the map and who fights: sparse piano over a cello drone
+music:fight,audio/music/fight.ogg,1.0,a fight: low strings ostinato and soft drums
+music:result,audio/music/result.ogg,1.0,a won fight's result
+music:gameover,audio/music/gameover.ogg,0.55,a lost fight

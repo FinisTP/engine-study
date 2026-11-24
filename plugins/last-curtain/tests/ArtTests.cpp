@@ -2,6 +2,7 @@
 
 #include <Art.hpp>
 #include <Font.hpp>
+#include <Ogg.hpp>
 #include <Play.hpp>
 #include <Wav.hpp>
 
@@ -146,11 +147,15 @@ TEST_CASE("Every sound cue in sounds.csv names a WAV the engine plays (T227)", "
         const std::string file = line.substr(line.find(',') + 1, line.find(',', line.find(',') + 1) - line.find(',') - 1);
         std::string error;
         INFO(file);
-        CHECK(umbra::audio::LoadWav(assets / file, error).has_value());
+        // A place's music ("music:<place>") is Ogg Vorbis; every other cue is a WAV.
+        if (line.starts_with("music:"))
+            CHECK(umbra::audio::LoadMusic(assets / file, error).has_value());
+        else
+            CHECK(umbra::audio::LoadWav(assets / file, error).has_value());
         CHECK(error.empty());
         ++cues;
     }
-    CHECK(cues == 12); // with the killer (battle royale), pass and fail (2026-11-17)
+    CHECK(cues == 19); // with the killer, pass and fail (2026-11-17); typing and six places' music (2026-11-24)
 }
 
 TEST_CASE("Every font in the Last Curtain skin draws every Vietnamese letter (campaign plan 1)", "[night][art]")

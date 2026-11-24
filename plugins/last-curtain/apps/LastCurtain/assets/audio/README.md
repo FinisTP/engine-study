@@ -32,3 +32,11 @@ theatrical, no music, no voice"; kept seed 101, which rises into its second note
 and fail ("a short low muted descending thud with a dull out-of-tune piano note, a small failure,
 no music, no voice"; kept seed 202, the lowest and longest; cut to 1.1 s), 1.6 s takes, 200 ms
 fade, -1 dB peak.
+
+Added 2026-11-24 for the campaign (`tools/audio/campaign-audio.bat`, `UmbraTool sound`, Stable Audio 3
+medium base on the user's PC; two takes each, prompts in the script): `sfx/type.wav` (seed 101, one dry
+key click, 0.24 s; take 2 had two clicks) and the looped music `music/<place>.ogg` for title, cafe, map,
+fight (75 s) and result, gameover (30 s). Take 1 of each was kept without listening: none has a gap
+(no stretch under -45 dB for 1.5 s). Their mean loudness ran from -12.6 to -21.9 dB, so the
+`sounds.csv` volume evens them out to about -18 dB (title 0.72, cafe 0.77, gameover 0.55). Listen and
+swap a take if one is wrong; the second takes are still in the user's checkout beside the kept ones.
