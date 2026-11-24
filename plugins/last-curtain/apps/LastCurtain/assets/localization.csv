@@ -532,7 +532,7 @@ timeline.mai.1,Theo chồng vào Sài Gòn. Chồng đi biển một chuyến r�
 timeline.mai.2,"Nhận chùm chìa khóa nhà hát. Bốn mươi năm sau, tay bà vẫn chưa buông nó ra.",Takes the opera house's ring of keys. Forty years later her hand has still not let it go.
 timeline.mai.3,"Sinh một đứa con trai trong phòng gác cổng. Nó lớn lên dưới gầm sân khấu, chơi giữa dây kéo màn.","Gives birth to a son in the gatekeeper's room. He grows up under the stage, playing among the curtain ropes."
 timeline.mai.4,"Đêm bom, thằng con xuống gầm sân khấu và không lên nữa. Từ đó, đêm nào bà cũng để một chén cơm nguội cạnh cửa sập.","The night of the raid, her son goes down under the stage and never comes up. Every night since, she leaves a bowl of cold rice by the trapdoor."
-timeline.mai.5,"Chết trên ghế gác cổng, chìa khóa còn trong tay. Chén cơm bên cửa sập vẫn đầy.","Dies on the gatekeeper's chair, the keys still in her hand. The bowl by the trapdoor is still full."
+timeline.mai.6,"Chết trên ghế gác cổng, chìa khóa còn trong tay. Chén cơm bên cửa sập vẫn đầy.","Dies on the gatekeeper's chair, the keys still in her hand. The bowl by the trapdoor is still full."
 timeline.ti.0,Sinh ở một làng biển miền Trung. Mạ tên Lụa. Chiều nào mạ cũng đứng đầu ngõ kêu về ăn cơm.,Born in a fishing village in the Centre. His mother is Lụa. Every evening she stands at the lane's end and calls him home to eat.
 timeline.ti.1,Mạ hứa Tết ni sên mứt gừng. Tí hứa chạy xong chuyến ni là về liền.,His mother promises ginger jam this Tết. Tí promises to come home right after this one run.
 timeline.ti.2,"Một chú dặn đưa mẩu giấy gấp tư tận tay, không được đọc. Tí chạy suốt đêm, chân chảy máu mà không dừng.","A man tells him to deliver a folded note by hand, unread. Tí runs all night, feet bleeding, and does not stop."
@@ -572,3 +572,9 @@ campaign.gearWeapon,Vũ khí,Weapon
 campaign.gearArmour,Áo,Armour
 campaign.gearAccessory,Phụ kiện,Accessory
 campaign.gearTitle,Trang bị,Gear
+campaign.abilities.khau_vet_thuong,Khâu vết thương,Stitch
+lore.khau_vet_thuong,"Kim chỉ của bác sĩ Bảo, vẫn khâu cho cả người không còn chảy máu. Hồi 7 HP cho người đứng sát bên.","Doctor Bảo's needle and thread, still stitching people who no longer bleed. Heals 7 HP for someone right beside him."
+campaign.abilities.chia_khoa,Chùm chìa khóa,Ring of keys
+lore.chia_khoa,Bà Mai rung chùm chìa khóa: cửa nào trong nhà hát cũng nghe lời bà. Một kẻ địch cách 3 ô bị chậm lại 2 Tốc tới lượt sau.,Bà Mai shakes her ring of keys: every door in the theatre obeys her. A foe up to 3 tiles away loses 2 Speed until its next turn.
+timeline.bao.5,"Đường phố còn khói. Ông mở cửa sau nhà hát làm trạm cứu thương, khâu cho những người không ai đến nhận.",The streets still smoke. He opens the theatre's back door as an aid post and stitches up those nobody comes to claim.
+timeline.mai.5,"Nhà hát thôi diễn. Người ta dọn đi hết, chỉ để lại cho bà chùm chìa khóa và lệnh khóa cửa. Bà không khóa cửa sập.","The theatre stops playing. Everyone moves out, leaving her only the keys and an order to lock up. She never locks the trapdoor."

@@ -45,3 +45,5 @@ chan_sao_dau_chan,Skipping feet: Footprints,passive,afterhasten,self,0,0,3,none,
 tend_am,Tend: Warm hands,board,heal,ally,3,0,9,none,4,walk,use,none,0,0
 tend_xa,Tend: Calling far,board,heal,ally,3,0,6,none,7,walk,use,none,0,0
 dong_long,Rallying,passive,passive,self,0,0,0,none,0,walk,none,rally,1,0
+khau_vet_thuong,Stitch,board,heal,ally,2,0,7,none,1,walk,use,none,0,0
+chia_khoa,Ring of keys,board,effect,enemy,2,0,0,none,3,walk,use,alarm,2,0

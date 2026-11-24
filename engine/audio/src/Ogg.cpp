@@ -1,6 +1,7 @@
 #include <Ogg.hpp>
 
 #include <fstream>
+#include <algorithm>
 #include <iterator>
 
 // stb_vorbis is C written for many compilers; its warnings are not ours.
@@ -123,12 +124,26 @@ namespace umbra::audio
     {
         std::string error;
         vorbis_ = Open(track.ogg.data(), track.ogg.size(), channels_, error);
+        length_ = vorbis_ != nullptr ? stb_vorbis_stream_length_in_samples(vorbis_) : 0;
     }
 
     MusicDecoder::~MusicDecoder()
     {
         if (vorbis_ != nullptr)
             stb_vorbis_close(vorbis_);
+    }
+
+    std::size_t MusicDecoder::Frame() const
+    {
+        return frame_;
+    }
+
+    void MusicDecoder::Seek(std::size_t frame)
+    {
+        if (vorbis_ == nullptr)
+            return;
+        frame_ = length_ > 0 ? frame % length_ : 0;
+        (void)stb_vorbis_seek(vorbis_, static_cast<unsigned int>(frame_));
     }
 
     void MusicDecoder::AddTo(float *out, std::size_t frames, float from, float to)
@@ -146,11 +161,13 @@ namespace umbra::audio
                 if (restarted)
                     break;
                 stb_vorbis_seek_start(vorbis_);
+                frame_ = 0;
                 restarted = true;
                 continue;
             }
             restarted = false;
             done += static_cast<std::size_t>(got);
+            frame_ += static_cast<std::size_t>(got);
         }
         // 2. Add to the output with a smooth gain ramp (fades without steps); mono goes to both sides.
         for (std::size_t i = 0; i < done; ++i)

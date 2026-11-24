@@ -18,7 +18,7 @@ public:
     void SetVolume(float volume) { volume_ = volume; } // the player's effects volume, 0..1, times each cue's
     // The place's music (sounds.csv row "music:<place>"), crossfading over `fade` seconds; a place with
     // none, or a missing file, fades the music out. The player's music volume, 0..1, applies at once.
-    void Music(const std::string &place, float fade = 1.5F);
+    void Music(const std::string &place, float fade = 1.5F, bool keepTime = false); // keepTime: a variant takes over at the same moment
     void SetMusicVolume(float volume);
     // A place's music that is there: its row, else `fallback` (a battle theme not generated yet plays the fight's).
     [[nodiscard]] std::string MusicOr(const std::string &place, const std::string &fallback) const;

@@ -1378,29 +1378,29 @@ TEST_CASE("Skills: unlock levels, a starting loadout, four at most, only unlocke
         return out;
     };
     const std::vector<std::string> known = ids(campaign::MakeUnit(def, TheCast(), TheGrowth(), "bao", 2, 0, false));
-    REQUIRE(known == std::vector<std::string>{"basic", "dao_mo", "chan_doan", "giay_chung_tu"});
+    REQUIRE(known == std::vector<std::string>{"basic", "dao_mo", "chan_doan", "giay_chung_tu", "khau_vet_thuong"});
     // 1. Each ability's story; a locked one names its level.
     CHECK_FALSE(skills.lore.at("dao_mo").empty());
-    CHECK(campaign::UnlockLevel(skills, "giay_chung_tu") == 3);
+    CHECK(campaign::UnlockLevel(skills, "giay_chung_tu") == 4);
     CHECK(campaign::UnlockLevel(skills, "dao_mo") == 1);
     // 2. Bao starts with the basic attack (his scalpel comes with the weapon, note 30; the tutorial leaves the rest
     //    for the player); the save changes that.
     campaign::Save save;
-    CHECK(campaign::Loadout(skills, save, "bao", known, 2) == std::vector<std::string>{"basic"});
-    CHECK(campaign::Equip(skills, save, "bao", known, 2, "chan_doan"));
-    CHECK(campaign::Loadout(skills, save, "bao", known, 2) == std::vector<std::string>{"basic", "chan_doan"});
-    CHECK_FALSE(campaign::Equip(skills, save, "bao", known, 2, "giay_chung_tu")); // locked until level 3
-    CHECK_FALSE(campaign::Equip(skills, save, "bao", known, 2, "chan_doan"));     // already carried
-    CHECK_FALSE(campaign::Equip(skills, save, "bao", known, 2, "slash"));         // not his
-    CHECK(campaign::Equip(skills, save, "bao", known, 3, "giay_chung_tu"));
-    CHECK_FALSE(campaign::Equip(skills, save, "bao", known, 3, "dao_mo")); // the scalpel's: only with the weapon
-    CHECK(campaign::Loadout(skills, save, "bao", known, 3) == std::vector<std::string>{"basic", "chan_doan", "giay_chung_tu"});
+    CHECK(campaign::Loadout(skills, save, "bao", known, 3) == std::vector<std::string>{"basic"});
+    CHECK(campaign::Equip(skills, save, "bao", known, 3, "chan_doan"));
+    CHECK(campaign::Loadout(skills, save, "bao", known, 3) == std::vector<std::string>{"basic", "chan_doan"});
+    CHECK_FALSE(campaign::Equip(skills, save, "bao", known, 3, "giay_chung_tu")); // locked until level 4
+    CHECK_FALSE(campaign::Equip(skills, save, "bao", known, 3, "chan_doan"));     // already carried
+    CHECK_FALSE(campaign::Equip(skills, save, "bao", known, 3, "slash"));         // not his
+    CHECK(campaign::Equip(skills, save, "bao", known, 4, "giay_chung_tu"));
+    CHECK_FALSE(campaign::Equip(skills, save, "bao", known, 4, "dao_mo")); // the scalpel's: only with the weapon
+    CHECK(campaign::Loadout(skills, save, "bao", known, 4) == std::vector<std::string>{"basic", "chan_doan", "giay_chung_tu"});
     CHECK_FALSE(campaign::Unequip(skills, save, "bao", known, 3, "dao_mo")); // not carried
     // 3. Four at most; someone with no starting loadout carries the first four unlocked.
     const std::vector<std::string> five{"basic", "a", "b", "c", "d"};
     CHECK(campaign::Loadout(skills, save, "nobody", five, 9).size() == 4);
     // 4. The fight: Bao's unit carries exactly his loadout.
-    save.roster = {{"player", 2, 0}, {"bao", 3, 0}};
+    save.roster = {{"player", 2, 0}, {"bao", 4, 0}};
     const std::vector<campaign::StageDef> stages = TheStages();
     const campaign::StageDef &st = *std::ranges::find(stages, std::string("sk_props"), &campaign::StageDef::id);
     campaign::BuiltStage b = campaign::BuildStage(def, TheCast(), TheGrowth(), st, campaign::PartyOf(save, {"player", "bao"}), 0, save.taken, 3);

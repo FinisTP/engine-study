@@ -1,7 +1,7 @@
 {
   "format": "umbra.lc-skills",
   "version": 1,
-  "note": "Abilities in the notebook and the fight (feedback 2026-11-24 15:10, notes 13 and 17). 'unlock': the level an ability opens at (default 1; a class line's abilities already open by level in jobs.csv). Each one's story is localization.csv 'lore.<id>'. 'starts': the skills a recruit carries when they join (at most 4); the tutorial leaves some out so the player assigns them. Anyone else carries their first four. 'timeline': each character's life by year for the notebook's Ky uc (the user, 2026-11-25); a year with a skill shows ??? until that skill opens (its level, and its memory if one upgrades it); its words are localization.csv 'timeline.<who>.<n>'. 'gear' (the user, 2026-11-24 23:57, note 30): weapon, armour, accessory; a weapon brings its signature skill (never one of the four), the others numbers or a passive; 'gearStarts' what each wears until changed.",
+  "note": "Abilities in the notebook and the fight (feedback 2026-11-24 15:10, notes 13 and 17). 'unlock': the level an ability opens at (default 1; a class line's abilities already open by level in jobs.csv). Each one's story is localization.csv 'lore.<id>'. 'starts': the skills a recruit carries when they join (at most 4); the tutorial leaves some out so the player assigns them. Anyone else carries their first four. 'timeline': each character's life by year for the notebook's Ky uc (the user, 2026-11-25); a year with a skill shows ??? until that skill opens (its level, and its memory if one upgrades it); its words are localization.csv 'timeline.<who>.<n>'. 'gear' (the user, 2026-11-24 23:57, note 30): weapon, armour, accessory; a weapon brings its signature skill (never one of the four), the others numbers or a passive; 'gearStarts' what each wears until changed. Later unlocks for Bao and Mai so Ky uc keeps years to find (the user, 2026-11-25 02:18).",
   "skills": {
     "basic": {},
     "slash": {},
@@ -10,19 +10,29 @@
     "lunge": {},
     "cleave": {},
     "dao_mo": {},
-    "chan_doan": {},
-    "giay_chung_tu": {
+    "chan_doan": {
       "unlock": 3
     },
+    "giay_chung_tu": {
+      "unlock": 4
+    },
     "tend": {},
-    "mend": {},
+    "mend": {
+      "unlock": 3
+    },
     "com_nguoi": {},
     "na_cao_su": {},
     "dua_tin": {},
     "chan_sao": {
       "unlock": 4
     },
-    "dong_long": {}
+    "dong_long": {},
+    "khau_vet_thuong": {
+      "unlock": 5
+    },
+    "chia_khoa": {
+      "unlock": 5
+    }
   },
   "starts": {
     "bao": [
@@ -54,6 +64,10 @@
       {
         "year": 1944,
         "skill": "giay_chung_tu"
+      },
+      {
+        "year": 1946,
+        "skill": "khau_vet_thuong"
       }
     ],
     "mai": [
@@ -76,7 +90,12 @@
         "skill": "com_nguoi"
       },
       {
-        "year": 1963
+        "year": 1955,
+        "skill": "chia_khoa"
+      },
+      {
+        "year": 1963,
+        "skill": "chia_khoa"
       }
     ],
     "ti": [

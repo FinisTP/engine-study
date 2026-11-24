@@ -33,7 +33,9 @@ namespace umbra::audio
 
         // Music: one track at a time, looping. A new track fades in over `fadeSeconds` while the
         // old one fades out (a crossfade); nullptr fades the music out. Keeps playing while paused.
-        void PlayMusic(std::shared_ptr<const MusicTrack> track, float volume = 0.7F, float fadeSeconds = 1.5F);
+        // keepTime: the new track starts at the playing one's moment (a variant of the same music, Mixer.md).
+        void PlayMusic(std::shared_ptr<const MusicTrack> track, float volume = 0.7F, float fadeSeconds = 1.5F, bool keepTime = false);
+        [[nodiscard]] std::size_t MusicFrame() const; // the current track's frame (0 with none)
         [[nodiscard]] std::shared_ptr<const MusicTrack> Music() const;
         [[nodiscard]] std::size_t VoiceCount() const;
 

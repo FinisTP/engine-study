@@ -68,7 +68,7 @@ namespace umbra::audio
         voices_.clear();
     }
 
-    void Mixer::PlayMusic(std::shared_ptr<const MusicTrack> track, float volume, float fadeSeconds)
+    void Mixer::PlayMusic(std::shared_ptr<const MusicTrack> track, float volume, float fadeSeconds, bool keepTime)
     {
         const std::scoped_lock lock(mutex_);
         if (track && !music_.empty() && music_.back().track == track && music_.back().target > 0.0F)
@@ -76,7 +76,8 @@ namespace umbra::audio
             music_.back().target = std::clamp(volume, 0.0F, 1.0F); // already playing: only the volume changes
             return;
         }
-        // 1. Everything playing fades out.
+        // 1. Everything playing fades out (its moment kept first, for a variant that takes over there).
+        const std::size_t at = keepTime && !music_.empty() ? music_.back().decoder->Frame() : 0;
         const float frames = std::max(fadeSeconds, 0.01F) * static_cast<float>(mixRate);
         for (MusicStream &m : music_)
         {
@@ -88,11 +89,19 @@ namespace umbra::audio
         {
             MusicStream stream{track, std::make_unique<MusicDecoder>(*track), 0.0F, std::clamp(volume, 0.0F, 1.0F), 0.0F};
             stream.step = stream.target / frames;
+            if (at > 0)
+                stream.decoder->Seek(at);
             if (stream.decoder->Ok())
                 music_.push_back(std::move(stream));
         }
         if (music_.size() > 3)
             music_.erase(music_.begin()); // switching very fast: drop the oldest at once
+    }
+
+    std::size_t Mixer::MusicFrame() const
+    {
+        const std::scoped_lock lock(mutex_);
+        return music_.empty() ? 0 : music_.back().decoder->Frame();
     }
 
     std::shared_ptr<const MusicTrack> Mixer::Music() const

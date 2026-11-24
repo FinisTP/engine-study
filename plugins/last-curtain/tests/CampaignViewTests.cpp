@@ -435,7 +435,7 @@ TEST_CASE("Ky uc: each character's life by year; a moment shows ??? until its li
     CHECK(paper()["known"] == false);
     CHECK(paper()["text"] == "???");
     CHECK(paper()["year"].get<int>() > 0);
-    save.roster[1].level = 3;
+    save.roster[1].level = 4;
     CHECK(paper()["known"] == true);
     CHECK(paper()["text"] != "???");
     // 2. A moment whose skill a memory upgrades waits for that memory too (Ti's message).
@@ -463,7 +463,7 @@ TEST_CASE("The notebook's slots, pick then place: skills carried and in stock, l
     REQUIRE(campaign::LoadSkills(data / "skills.json", h.def, skills, d));
     campaign::Save save;
     save.player = {"Hoang", "male"};
-    save.roster = {{"player", 2, 0}, {"bao", 2, 0}};
+    save.roster = {{"player", 2, 0}, {"bao", 3, 0}};
     save.storage = {{"bandage", 2}, {"gung", 1}};
     Notebook book(h.def, h.cast, h.memories, save);
     {
@@ -486,7 +486,7 @@ TEST_CASE("The notebook's slots, pick then place: skills carried and in stock, l
     REQUIRE(has(p["locked"], "giay_chung_tu"));
     for (const auto &l : p["locked"])
         if (l["id"] == "giay_chung_tu")
-            CHECK(l["level"] == 3);
+            CHECK(l["level"] == 4);
     // 2. Picking a stocked skill shows its card (story, what it does, Mang theo); taking it fills a slot.
     book.Pick("learned:chan_doan");
     p = page();

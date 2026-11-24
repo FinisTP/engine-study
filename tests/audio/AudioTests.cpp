@@ -232,3 +232,27 @@ TEST_CASE("Music streams, loops past its end, and crossfades to the next track")
         last = std::max(last, std::abs(out[i]));
     CHECK(last == Approx(0.0F).margin(1e-6));
 }
+
+TEST_CASE("A variant of the same music can take over at the same moment: a seamless switch")
+{
+    std::string error;
+    auto track = audio::LoadMusic(std::filesystem::path(UMBRA_AUDIO_TEST_DATA) / "tone_48k_mono.ogg", error);
+    REQUIRE(track);
+    const auto board = std::make_shared<const audio::MusicTrack>(*track);
+    const auto battle = std::make_shared<const audio::MusicTrack>(*track);
+    audio::Mixer mixer;
+    mixer.PlayMusic(board, 1.0F, 0.01F);
+    std::vector<float> out(2 * 48000);
+    mixer.Mix(out.data(), 3000);
+    CHECK(mixer.MusicFrame() == 3000);
+    // 1. Keeping the time: the variant starts where the first one is, not from its start.
+    mixer.PlayMusic(battle, 1.0F, 0.1F, true);
+    CHECK(mixer.Music() == battle);
+    CHECK(mixer.MusicFrame() == 3000);
+    mixer.Mix(out.data(), 1000);
+    CHECK(mixer.MusicFrame() == 4000);
+    // 2. Without it, a new track starts from the top.
+    mixer.PlayMusic(board, 1.0F, 0.1F);
+    CHECK(mixer.MusicFrame() == 0);
+}
+

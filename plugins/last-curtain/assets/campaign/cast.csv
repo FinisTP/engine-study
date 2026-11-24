@@ -2,8 +2,8 @@ id,name,sprite,bound,form,voice,role,hpPlus,attackPlus,movePlus,kit
 player,{player},player_female,,player,,allrounder,0,0,0,
 lethanh,Lệ Thanh,lethanh,,host,lethanh,supporter,0,0,0,
 ti,Bé Tí,ti,ti_bound,strung,ti,speedster,-2,0,0,na_cao_su;dua_tin;chan_sao
-bao,Bác sĩ Bảo,cafe_bao,,ally,bao,attacker,0,0,0,dao_mo;chan_doan;giay_chung_tu
-mai,Bà Mai,cafe_mai,,ally,mai,supporter,0,0,0,tend;mend;com_nguoi;dong_long
+bao,Bác sĩ Bảo,cafe_bao,,ally,bao,attacker,0,0,0,dao_mo;chan_doan;giay_chung_tu;khau_vet_thuong
+mai,Bà Mai,cafe_mai,,ally,mai,supporter,0,0,0,tend;mend;com_nguoi;dong_long;chia_khoa
 rat,Con Chuột,zodiac_rat,,zodiac,,attacker,0,-3,0,bite;moc_tui;chay_lang;speedkill
 keeper,Người giữ tranh,ghost_defender,,ghost,,defender,0,0,0,
 ghost_attacker,Bóng ma,ghost_attacker,,ghost,,attacker,0,0,0,

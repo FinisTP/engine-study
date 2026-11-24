@@ -39,10 +39,13 @@ namespace umbra::audio
         [[nodiscard]] bool Ok() const noexcept { return vorbis_ != nullptr; }
         // Adds `frames` stereo frames into `out` (L R L R ...), the gain going from `from` to `to`.
         void AddTo(float *out, std::size_t frames, float from, float to);
+        [[nodiscard]] std::size_t Frame() const;  // where it is in the track
+        void Seek(std::size_t frame);              // jump there (wrapping past the end)
 
     private:
         ::stb_vorbis *vorbis_ = nullptr;
         int channels_ = 2;
         std::vector<float> buffer_;
+        std::size_t frame_ = 0, length_ = 0; // frames handed out (wrapping at the length)
     };
 }

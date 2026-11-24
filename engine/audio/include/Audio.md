@@ -94,3 +94,11 @@ while UI voices keep playing.
 `sound.load` warning; later requests for the same path return `nullptr` silently.
 The scene validator also warns (`entity.interactable.sound`) when a scene refers to a sound
 file that does not exist, so `UmbraSceneCheck` catches it before the game runs.
+
+## Variants of one track
+
+`PlayMusic(track, volume, fade, keepTime = true)` starts the new track at the frame where the
+current one is (`MusicDecoder::Seek`, wrapping past the end), then crossfades as usual. Two cuts of
+the same music with the same length (The Last Curtain's board theme and its bass-heavy battle cut)
+then switch without a jump in the music: only the mix changes.
+

@@ -34,7 +34,7 @@ void Sounds::Play(const std::string &cue)
         umbra::diagnostics::Error(umbra::core::Format(problem));
 }
 
-void Sounds::Music(const std::string &place, float fade)
+void Sounds::Music(const std::string &place, float fade, bool keepTime)
 {
     if (place == place_ || !device_.IsOpen())
         return;
@@ -43,7 +43,7 @@ void Sounds::Music(const std::string &place, float fade)
     if (const std::string file = "audio/music/" + place + ".ogg"; !place.empty() && !cues_.contains("music:" + place) && std::filesystem::exists(assets_.RootOf(file) / file))
         cues_["music:" + place] = {file, 1.0F};
     const auto it = cues_.find("music:" + place);
-    mixer_.PlayMusic(it == cues_.end() ? nullptr : bank_.GetMusic(it->second.file), it == cues_.end() ? 0.0F : it->second.volume * musicVolume_, fade);
+    mixer_.PlayMusic(it == cues_.end() ? nullptr : bank_.GetMusic(it->second.file), it == cues_.end() ? 0.0F : it->second.volume * musicVolume_, fade, keepTime);
     for (const umbra::core::Diagnostic &problem : bank_.TakeDiagnostics())
         umbra::diagnostics::Error(umbra::core::Format(problem));
 }

@@ -316,7 +316,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                 const nlohmann::json told = play->UiData();
                 table.SetFight(told.value("fight", std::vector<int>{}), told.value("picking", -1));
                 if (hooks) // the battle view: the same theme with more bass (Music crossfades only on a change)
-                    game.sounds->Music(told.contains("fight") ? battleMusic : boardMusic, 0.6F);
+                    game.sounds->Music(told.contains("fight") ? battleMusic : boardMusic, 0.5F, true); // the same moment of the same music
                 table.SetTold(told.value("standing", std::vector<int>{}), told.value("hp", std::vector<int>{}));
             }
             table.SetFocus(play->UiData().value("focus", std::vector<int>{}));
