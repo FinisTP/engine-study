@@ -1,6 +1,7 @@
 #include "MatchTestData.hpp"
 
 #include <CareerMatch.hpp>
+#include <Localization.hpp>
 #include <MatchPlay.hpp>
 
 #include <algorithm>
@@ -14,8 +15,7 @@ namespace
 {
     nlohmann::json Words()
     {
-        std::ifstream in(std::filesystem::path(UMBRA_LASTCURTAIN_ASSETS) / "match-words.json");
-        return nlohmann::json::parse(in);
+        return umbra::night::LoadWords(std::filesystem::path(UMBRA_LASTCURTAIN_ASSETS) / "localization.csv", "match", true);
     }
 
     umbra::night::GameOptions Pace()
@@ -925,7 +925,7 @@ TEST_CASE("The fight's screens carry no typed words; both words files have the s
             CHECK((!letters || t.find('{') != std::string::npos));
         }
     }
-    const nlohmann::json en = Words(), vi = nlohmann::json::parse(std::ifstream(std::filesystem::path(UMBRA_LASTCURTAIN_ASSETS) / "match-words.vi.json"));
+    const nlohmann::json en = Words(), vi = umbra::night::LoadWords(std::filesystem::path(UMBRA_LASTCURTAIN_ASSETS) / "localization.csv", "match", false);
     std::set<std::string> a = Keys(en), b = Keys(vi);
     b.erase("note");
     CHECK(a == b);

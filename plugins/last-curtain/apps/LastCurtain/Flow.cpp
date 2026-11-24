@@ -1,4 +1,5 @@
 #include "Flow.hpp"
+#include "Localization.hpp"
 
 #include "Analog.hpp"
 #include "CafeHubApp.hpp"
@@ -184,8 +185,7 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
             stages.push_back(s);
     loaded = loaded && campaign::LoadMap(folder / "map.json", stages, map, d);
     nlohmann::json words;
-    if (std::ifstream in(assets / "campaign-words.json"); in)
-        words = nlohmann::json::parse(in, nullptr, false);
+    words = umbra::night::LoadWords(assets / "localization.csv", "campaign", umbra::night::EnglishChosen());
     for (const umbra::core::Diagnostic &e : d)
         umbra::diagnostics::Error(umbra::core::Format(e));
     if (!loaded || words.is_discarded() || !game.screens->Ready())

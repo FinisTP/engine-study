@@ -6,6 +6,7 @@
 #include "MatchPlay.hpp"
 #include "MatchTable.hpp"
 #include "Effects.hpp"
+#include "Localization.hpp"
 #include "Unease.hpp"
 #include "Analog.hpp"
 #include "Flow.hpp"
@@ -85,16 +86,15 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         pace = {};
     umbra::night::AnalogScreen analog = umbra::night::LoadAnalog(umbra::night::AnalogPath(), pace); // CRT, VHS and the settings (Analog.hpp)
     nlohmann::json words, settingsWords; // a campaign stage speaks Vietnamese (match-words.vi.json) unless set to English; the career English
-    if (std::ifstream in(assets / (hooks && !analog.english ? "match-words.vi.json" : "match-words.json")); in)
-        words = nlohmann::json::parse(in, nullptr, false);
-    if (std::ifstream in(assets / "campaign-words.json"); in && hooks)
-        settingsWords = nlohmann::json::parse(in, nullptr, false);
+    words = umbra::night::LoadWords(assets / "localization.csv", "match", !hooks || analog.english); // localization.csv (the user, 2026-11-24 19:40)
+    if (hooks)
+        settingsWords = umbra::night::LoadWords(assets / "localization.csv", "campaign", analog.english);
     for (const umbra::core::Diagnostic &d : diagnostics)
         umbra::diagnostics::Error(umbra::core::Format(d));
     if (!loaded || words.is_discarded())
         return 1;
     // A stage: ability names in Vietnamese and each one's story (campaign-words.json "abilities", "abilityLore").
-    if (hooks && !analog.english && settingsWords.is_object())
+    if (hooks && settingsWords.is_object())
     {
         for (umbra::match::AbilityDef &a : def.abilities)
             if (settingsWords.contains("abilities") && settingsWords["abilities"].contains(a.id))

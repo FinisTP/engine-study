@@ -1,4 +1,5 @@
 #include "CafeHubApp.hpp"
+#include "Localization.hpp"
 
 #include "Analog.hpp"
 #include "CafeHub.hpp"
@@ -40,8 +41,7 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
         if (campaign::StageDef s; loaded && campaign::LoadStage(f.path(), cast, def, folder / "scenes", s, d))
             stages.push_back(s);
     nlohmann::json words, room, spots;
-    if (std::ifstream in(assets / "campaign-words.json"); in)
-        words = nlohmann::json::parse(in, nullptr, false);
+    words = umbra::night::LoadWords(assets / "localization.csv", "campaign", umbra::night::EnglishChosen());
     if (std::ifstream in(assets.RootOf("cafe/room.json") / "cafe/room.json"); in)
         room = nlohmann::json::parse(in, nullptr, false);
     if (std::ifstream in(folder / "cafe-room.json"); in)

@@ -1,4 +1,5 @@
 #include "DialogApp.hpp"
+#include "Localization.hpp"
 
 #include "Analog.hpp"
 #include "DialogView.hpp"
@@ -29,8 +30,7 @@ int RunScene(GameContext &game, const umbra::assets::AssetFolders &assets, const
     for (const umbra::core::Diagnostic &d : diagnostics)
         umbra::diagnostics::Error(umbra::core::Format(d));
     nlohmann::json words;
-    if (std::ifstream in(assets / "campaign-words.json"); in)
-        words = nlohmann::json::parse(in, nullptr, false);
+    words = umbra::night::LoadWords(assets / "localization.csv", "campaign", umbra::night::EnglishChosen());
     Screens &screens = *game.screens;
     if (!loaded || words.is_discarded() || !screens.Ready())
         return 0;

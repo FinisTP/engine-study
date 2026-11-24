@@ -103,7 +103,7 @@
                 {
                   "type": "text",
                   "style": "good",
-                  "text": "Shield {f.shield}",
+                  "text": "{words.shield} {f.shield}",
                   "visible": "{f.shield}"
                 }
               ]
@@ -184,7 +184,7 @@
                 {
                   "type": "text",
                   "style": "good",
-                  "text": "Shield {f.shield}",
+                  "text": "{words.shield} {f.shield}",
                   "visible": "{f.shield}"
                 }
               ]

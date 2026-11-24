@@ -1,4 +1,5 @@
 #include "StageApp.hpp"
+#include "Localization.hpp"
 
 #include <fstream>
 
@@ -32,8 +33,7 @@ int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const
     if (!loaded)
         return 1;
     // Ability names in Vietnamese (campaign-words.json "abilities"), everywhere the fight shows them.
-    if (std::ifstream in(assets / "campaign-words.json"); in)
-        if (const nlohmann::json w = nlohmann::json::parse(in, nullptr, false); w.is_object())
+    if (const nlohmann::json w = umbra::night::LoadWords(assets / "localization.csv", "campaign", umbra::night::EnglishChosen()); w.is_object())
             for (umbra::match::AbilityDef &a : def.abilities)
                 if (w.contains("abilities") && w["abilities"].contains(a.id))
                     a.name = w["abilities"][a.id].get<std::string>();

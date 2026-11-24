@@ -1,3 +1,4 @@
+#include <Localization.hpp>
 #include <Campaign.hpp>
 #include <MatchSave.hpp>
 
@@ -531,8 +532,8 @@ TEST_CASE("The slice's kits: Bao, Ba Mai, the Rat and Ti carry their abilities; 
     CHECK(has(rat, "speedkill"));
     CHECK(has(campaign::MakeUnit(def, cast, growth, "bao", 3, 0, false), "chan_doan"));
     CHECK(has(campaign::MakeUnit(def, cast, growth, "mai", 3, 0, false), "com_nguoi"));
-    // Every upgrade version is an ability row, with its Vietnamese name in campaign-words.json.
-    const nlohmann::json words = nlohmann::json::parse(std::ifstream(std::filesystem::path(UMBRA_LASTCURTAIN_APP_ASSETS) / "campaign-words.json"));
+    // Every upgrade version is an ability row, with its Vietnamese name in localization.csv.
+    const nlohmann::json words = umbra::night::LoadWords(std::filesystem::path(UMBRA_LASTCURTAIN_APP_ASSETS) / "localization.csv", "campaign", false);
     for (const char *id : {"na_bao_dong", "na_ban_truoc", "dua_tin_ve_kip", "dua_tin_phan_qua", "chan_sao_gio_bien", "chan_sao_dau_chan",
                            "na_cao_su", "dua_tin", "chan_sao", "dao_mo", "chan_doan", "giay_chung_tu", "com_nguoi", "moc_tui", "chay_lang", "speedkill"})
     {

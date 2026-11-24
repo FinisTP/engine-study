@@ -1,0 +1,419 @@
+key,vi,en
+campaign.abilities.bash,Húc mạnh,Bash
+campaign.abilities.basic,Đánh thường,Basic attack
+campaign.abilities.bite,Cắn,Bite
+campaign.abilities.bloom,Hồi sắc,Bloom
+campaign.abilities.blur,Nhòe bóng,Blur
+campaign.abilities.brace,Thủ thế,Brace
+campaign.abilities.chan_doan,Chẩn đoán,Diagnosis
+campaign.abilities.chan_sao,Chân sáo,Skipping feet
+campaign.abilities.chan_sao_dau_chan,Chân sáo · Dấu chân,Skipping feet · Footprints
+campaign.abilities.chan_sao_gio_bien,Chân sáo · Gió biển,Skipping feet · Sea wind
+campaign.abilities.chay_lang,Chạy làng,Run off
+campaign.abilities.claw,Cào,Claw
+campaign.abilities.cleave,Chém ngang,Cleave
+campaign.abilities.com_nguoi,Cơm nguội,Cold rice
+campaign.abilities.crush,Nghiền,Crush
+campaign.abilities.dao_mo,Dao mổ,Scalpel
+campaign.abilities.dart,Phi tiêu,Dart
+campaign.abilities.dua_tin,Đưa tin,Errand
+campaign.abilities.dua_tin_phan_qua,Đưa tin · Phần quà,Errand · A gift
+campaign.abilities.dua_tin_ve_kip,Đưa tin · Về kịp,Errand · Back in time
+campaign.abilities.duel,Tay đôi,Duel
+campaign.abilities.execute,Kết liễu,Execute
+campaign.abilities.flick,Búng,Flick
+campaign.abilities.gamble,Liều một phen,Gamble
+campaign.abilities.giay_chung_tu,Giấy chứng tử,Death certificate
+campaign.abilities.guard,Che chắn,Guard
+campaign.abilities.jab,Đâm nhanh,Jab
+campaign.abilities.lunge,Lao tới,Lunge
+campaign.abilities.mend,Băng bó,Bandage
+campaign.abilities.moc_tui,Móc túi,Pickpocket
+campaign.abilities.na_ban_truoc,Ná cao su · Bắn trước,Slingshot · First shot
+campaign.abilities.na_bao_dong,Ná cao su · Báo động,Slingshot · Alarm
+campaign.abilities.na_cao_su,Ná cao su,Slingshot
+campaign.abilities.rally,Hô hào,Rally
+campaign.abilities.shove,Xô ngã,Shove
+campaign.abilities.slash,Rạch,Slash
+campaign.abilities.snipe,Bắn tỉa,Snipe
+campaign.abilities.speedkill,Ra tay chớp nhoáng,Lightning hand
+campaign.abilities.sting,Châm,Sting
+campaign.abilities.tap,Gõ nhẹ,Tap
+campaign.abilities.tend,Chăm sóc,Tend
+campaign.abilities.throw,Ném,Throw
+campaign.abilities.wall,Tường chắn,Wall
+campaign.alwaysPicked,Luôn ra trận,Always fights
+campaign.back,Quay lại,Back
+campaign.backCafe,Về quán,Back to the café
+campaign.bag,Túi,Bag
+campaign.bigTextOff,Cỡ chữ: thường,Text size: normal
+campaign.bigTextOn,Cỡ chữ: lớn,Text size: large
+campaign.brew,Pha chế,Brew
+campaign.cafe,Quán nước dưới hầm,The cellar café
+campaign.cafeHint,"WASD hoặc bấm sàn để đi · E: nói chuyện, pha chế, sổ tay, ra cửa · Tab: đổi người. Tên vàng: có chuyện mới.","WASD or click the floor to walk · E: talk, brew, notebook, door · Tab: switch. Gold name: something new to say."
+campaign.canBrew,Có thể pha chế,Can brew
+campaign.carried,Mang theo ({n}/4),Carried ({n}/4)
+campaign.chosen,đã chọn,chosen
+campaign.close,Đóng,Close
+campaign.continue,Tiếp tục,Continue
+campaign.count,Đang có:,Holding:
+campaign.crtOff,Màn hình TV cũ: tắt,Old TV screen: off
+campaign.crtOn,Màn hình TV cũ: bật,Old TV screen: on
+campaign.door,Ra cửa,Leave
+campaign.drop,Bỏ ra,Put away
+campaign.editInNotebook,Sửa trong Sổ tay,Edit in the notebook
+campaign.effects,Hiệu ứng,Effects
+campaign.empty,(trống),(empty)
+campaign.emptySlot,(trống),(empty)
+campaign.enemyFast,Lượt địch: nhanh,Enemy turns: fast
+campaign.enemyNormal,Lượt địch: thường,Enemy turns: normal
+campaign.enter,Vào phòng,Enter
+campaign.female,Nữ,Female
+campaign.fight,Ra trận,Fight
+campaign.fightsNext,Ra trận màn tới,Fights next stage
+campaign.forWhom,Cho ai uống?,Who drinks it?
+campaign.fullOff,Toàn màn hình: tắt,Full screen: off
+campaign.fullOn,Toàn màn hình: bật,Full screen: on
+campaign.gameOver,Màn đã hạ,The curtain falls
+campaign.gameTitle,Tấm Màn Cuối,The Last Curtain
+campaign.give,Đưa kỷ vật:,Give the keepsake:
+campaign.groupDisplay,Hiển thị,Display
+campaign.groupGame,Trò chơi,Game
+campaign.groupKeys,Phím điều khiển,Controls
+campaign.groupSound,Âm thanh,Sound
+campaign.itemText.bandage,Hồi 6 HP. Dùng trên bàn.,Heals 6 HP. Used on the board.
+campaign.itemText.duong,"Một gói đường cát nhỏ, giấy gói đã ngả vàng.","A small packet of sugar, its paper gone yellow."
+campaign.itemText.giay_gap_tu,"Gấp tư, mép sờn. Có người đã giữ nó rất kỹ.","Folded in four, edges worn. Someone kept it very carefully."
+campaign.itemText.gung,"Củ gừng già, cay nồng. Bóng chuột trong phòng vé hay tha theo.","Old ginger, sharp and hot. The rat shadows in the box office carry it off."
+campaign.itemText.programme,Đọc nó được 3 XP. Dùng trên bàn.,Reading it gives 3 XP. Used on the board.
+campaign.items.bandage,Băng gạc,Bandage
+campaign.items.duong,Đường,Sugar
+campaign.items.giay_gap_tu,Mẩu giấy gấp tư,Folded note
+campaign.items.gung,Gừng,Ginger
+campaign.items.programme,Tờ chương trình cũ,Old programme
+campaign.kbBack,Xóa,Delete
+campaign.kbDone,Xong,Done
+campaign.kbSpace,Cách,Space
+campaign.keyNames.back,Quay lại / tạm dừng,Back / pause
+campaign.keyNames.confirm,Chọn,Select
+campaign.keyNames.endTurn,Kết thúc lượt,End turn
+campaign.keyNames.hurry,Giữ: lượt địch nhanh,Hold: hurry enemy turns
+campaign.keyNames.log,Nhật ký,Log
+campaign.keyNames.menu,Chọn dòng 1–6,Rows 1–6
+campaign.keyNames.next,Câu tiếp,Next line
+campaign.keyNames.notebook,Sổ tay,Notebook
+campaign.keyNames.pin,Ghim thẻ,Pin card
+campaign.keyNames.skip,Bỏ qua lượt địch,Skip enemy turns
+campaign.keyNames.switch,Đổi người (quán),Switch (café)
+campaign.keyNames.use,Dùng (quán),Use (café)
+campaign.keyNames.walk,Đi (quán),Walk (café)
+campaign.keyboard,Bàn phím,Keyboard
+campaign.lack,Thiếu {item} ×{n} · {where},Missing {item} ×{n} · {where}
+campaign.langEn,Ngôn ngữ trận: English (thử),Language: English
+campaign.langVi,Ngôn ngữ trận: Tiếng Việt,Language: Tiếng Việt
+campaign.levelLine,Cấp đề nghị {n},Suggested level {n}
+campaign.levelShort,Cấp {n},Level {n}
+campaign.lineFound,Nhặt được: {item} ×{n}.,Found: {item} ×{n}.
+campaign.lineFreed,{name} đã được tự do.,{name} is free.
+campaign.lineLevel,{name} lên cấp {n}.,{name} reaches level {n}.
+campaign.lineXp,{name} +{n} XP.,{name} +{n} XP.
+campaign.lockedSkills,Chưa mở,Locked
+campaign.log,Nhật ký,Log
+campaign.logTitle,Nhật ký hội thoại,Conversation log
+campaign.male,Nam,Male
+campaign.mapHint,Kéo để di chuyển bản đồ · lăn chuột để phóng to,Drag to move the map · scroll to zoom
+campaign.mapTitle,Nhà hát Thành phố,The Municipal Theatre
+campaign.markCleared,đã qua,cleared
+campaign.markLocked,?,?
+campaign.markNext,tiếp theo,next
+campaign.markSkirmish,giao tranh,skirmish
+campaign.markUnknown,?,?
+campaign.memoriesLabel,Ký ức,Memories
+campaign.music,Nhạc,Music
+campaign.namePlaceholder,Linh,Linh
+campaign.newGame,Trò chơi mới,New game
+campaign.newSkirmishes,Có {n} trận giao tranh mới,{n} new skirmishes
+campaign.no,Không,No
+campaign.noTalk,chưa có chuyện gì mới.,has nothing new to say.
+campaign.notPicked,Ở lại quán,Stays in the café
+campaign.notebook,Sổ tay,Notebook
+campaign.opened,Mở: {name},Opened: {name}
+campaign.pickItem,Chọn một món trong kho ở cột phải.,Pick something from storage on the right.
+campaign.pickSkill,Chọn một kỹ năng ở cột phải để mang theo.,Pick a skill on the right to carry.
+campaign.picked,Ra trận,Fights
+campaign.press,[E],[E]
+campaign.quit,Thoát,Quit
+campaign.readOnly,Đang trong trận: chỉ xem.,In a fight: view only.
+campaign.reasonPlayerFell,{player} đã ngã.,{player} has fallen.
+campaign.reasonSideDown,Cả đội đã ngã.,The whole party has fallen.
+campaign.reasonTrapped,Không kịp cắt dây cho {name}.,Too late to cut {name} free.
+campaign.received,Nhận:,Received:
+campaign.retry,Thử lại,Try again
+campaign.reviveWarning,Không ai trong đội cứu được người ngã.,Nobody in the party can raise the fallen.
+campaign.rite,Lễ cầu hồn,Requiem rite
+campaign.riteConfirm,Lễ cầu hồn chỉ làm được một lần trong cả trò chơi. Làm bây giờ?,The requiem rite can be done only once in the whole game. Do it now?
+campaign.settings,Cài đặt,Settings
+campaign.skillBattle,Trong trận.,In battle.
+campaign.skillBoard,Trên bàn.,On the board.
+campaign.skillCost,Tốn {n} HP.,Costs {n} HP.
+campaign.skillHeal,Hồi {n} HP.,Heals {n} HP.
+campaign.skillLine,Tầm {range} ô · sức {power} · tốn {hp} HP,Range {range} · power {power} · costs {hp} HP
+campaign.skillPassive,Luôn có tác dụng.,Always on.
+campaign.skillPower,Sức {n} cộng Công.,Power {n} plus ATK.
+campaign.skillRange,Tầm {n} ô.,Range {n} squares.
+campaign.skills,Kỹ năng,Skills
+campaign.skillsFull,Đã mang đủ 4 kỹ năng: bỏ ra một cái trước.,Already carrying 4 skills: put one away first.
+campaign.skip,Bỏ qua,Skip
+campaign.slot,Ô:,Slot:
+campaign.slotLesson,"Lệ Thanh vừa đưa đồ. Chọn một người ở cột trái, bấm một món trong Kho đồ rồi bấm Mang theo. Kỹ năng cũng vậy: bà Mai còn kỹ năng chưa mang.","Le Thanh just handed you things. Pick someone on the left, click something in Storage, then Take. Skills work the same: Ba Mai has skills she does not carry yet."
+campaign.speed0,Tốc độ chữ: chậm,Text speed: slow
+campaign.speed1,Tốc độ chữ: vừa,Text speed: normal
+campaign.speed2,Tốc độ chữ: nhanh,Text speed: fast
+campaign.speed3,Tốc độ chữ: hiện ngay,Text speed: instant
+campaign.start,Bắt đầu,Start
+campaign.statsLine,HP {hp} · Công {attack} · Thủ {defence} · Tốc {speed} · Đi {move},HP {hp} · ATK {attack} · DEF {defence} · SPD {speed} · MOVE {move}
+campaign.staysNext,Ở lại quán màn tới,Stays in the café next stage
+campaign.stockSkills,Kỹ năng chưa mang,Skills not carried
+campaign.storeTitle,Kho đồ,Storage
+campaign.switch,Đổi người (Tab),Switch (Tab)
+campaign.tabCharacters,Nhân vật,Characters
+campaign.tabIngredients,Nguyên liệu,Ingredients
+campaign.tabKeepsakes,Kỷ vật,Keepsakes
+campaign.take,Mang theo,Take
+campaign.talkTo,Trò chuyện,Talk
+campaign.toCafe,Về quán,To the café
+campaign.toMap,Về bản đồ,To the map
+campaign.tones.0,Bỏ dấu,No tone
+campaign.tones.1,Sắc,Sắc
+campaign.tones.2,Huyền,Huyền
+campaign.tones.3,Hỏi,Hỏi
+campaign.tones.4,Ngã,Ngã
+campaign.tones.5,Nặng,Nặng
+campaign.unknownVersion,chưa nhớ ra,not yet remembered
+campaign.unlockAt,Mở ở cấp {n},Opens at level {n}
+campaign.upgrades,Nâng cấp,Upgrades
+campaign.vfxFull,Hiệu ứng hình ảnh: Đầy đủ,Visual effects: Full
+campaign.vfxReduced,Hiệu ứng hình ảnh: Giảm,Visual effects: Reduced
+campaign.vhsOff,Băng mòn: tắt,Worn tape: off
+campaign.vhsOn,Băng mòn: bật,Worn tape: on
+campaign.walking,Đang đi:,Walking:
+campaign.whoFights,Ai ra trận? Bấm một người để đổi.,Who fights? Click someone to change.
+campaign.won,Đã qua: {name},Cleared: {name}
+campaign.yes,Có,Yes
+campaign.yourName,Tên của {anh/chị}:,Your name:
+match.abilityText.battle,Trong trận,In battle
+match.abilityText.board,Trên bàn,On the board
+match.abilityText.cost,Tốn {cost} HP.,Costs {cost} HP.
+match.abilityText.firststrike,Luôn luôn: được chọn trước mỗi hiệp.,Always: you pick first in every round of a battle.
+match.abilityText.heal,{where}: hồi {power} HP cho một đồng đội cách tối đa {range} ô ({reach}).,"{where}: heals {power} HP, an ally up to {range} tiles away ({reach})."
+match.abilityText.hit,"Trên bàn: đánh một kẻ địch cách tối đa {range} ô ({reach}), {power} cộng Công.",On the board: strikes a foe up to {range} tiles away ({reach}) for {power} plus your Attack.
+match.abilityText.shield,Trong trận: chặn {power} mỗi đòn tới hết trận.,In battle: blocks {power} of every blow for the rest of it.
+match.abilityText.straight,"tính thẳng, xuyên tường","counted straight, through walls"
+match.abilityText.strike,Trong trận: một đòn {power} cộng Công.,In battle: a blow of {power} plus your Attack.
+match.abilityText.walk,đi qua cửa,walking through doors
+match.actions.aim,Gây {d},Deals {d}
+match.actions.aimCounter,Gây {d} · bị trả {c},Deals {d} · takes {c} back
+match.actions.answer,Nhìn vào phòng,Look into the room
+match.actions.attack,Tấn công,Attack
+match.actions.back,Quay lại,Back
+match.actions.cut,Cắt dây,Cut the strings
+match.actions.end,Kết thúc lượt,End turn
+match.actions.essenceNote,{n} tinh hoa,{n} essence
+match.actions.hpNote,-{n} HP,-{n} HP
+match.actions.items,Vật phẩm,Items
+match.actions.move,Di chuyển,Move
+match.actions.perform,Diễn,Perform
+match.actions.pickup,Nhặt,Pick up
+match.actions.preview,{min}–{max},{min}-{max}
+match.actions.previewCounter,{min}–{max} · trả {cmin}–{cmax},{min}-{max} · back {cmin}-{cmax}
+match.actions.skills,Kỹ năng,Skills
+match.actions.stay,Đứng yên,Stay
+match.actions.target,Chọn mục tiêu,Choose a target
+match.actions.undo,Hoàn tác di chuyển,Undo move
+match.actions.warnFaster,nhanh hơn: ×2,faster: x2
+match.banner.first,Trận đấu bắt đầu,The fight begins
+match.banner.text,Còn {n} lượt,{n} turns left
+match.banner.title,Lượt {n},Turn {n}
+match.battle.title,Hiệp {r}/{n},Round {r} of {n}
+match.cards.essence,{n} tinh hoa,{n} essence
+match.cards.heal,hồi {n} HP,{n} HP back
+match.cards.item,{item},{item}
+match.cards.xp,{n} XP,{n} XP
+match.end.kills,Hạ được,Kills
+match.end.monsters,Bóng ma đã hạ,Monsters downed
+match.end.performed,Tinh hoa đã diễn,Essence performed
+match.end.score,Điểm,Score
+match.goals.all,Hạ hết bóng ma,Defeat every enemy
+match.goals.down,Hạ {name},Defeat {name}
+match.goals.free,Cắt dây cho {name},Cut {name} free
+match.hints.act,"Chọn việc: tấn công, kỹ năng, vật phẩm, hoặc Kết thúc lượt.","Choose an action: attack, an ability, an item, or End turn."
+match.hints.battle,Tới lượt chọn: chọn đòn (và đánh ai).,Your pick: choose a blow (and whom to strike).
+match.hints.event,Chọn cách làm; xúc xắc quyết định kết quả.,Choose what to do; the dice decide how it goes.
+match.hints.fight,Trận đánh tiếp diễn: xem từng đòn.,The fight goes on: watch the blows land.
+match.hints.level,Lên cấp: chọn một lá.,Level up: choose one of the cards.
+match.hints.move,"Bấm ô sáng để đi tới, hoặc bấm vào mình để đứng yên.","Click a lit square to walk there, or click yourself to stay."
+match.hints.start,"Lượt của bạn: Di chuyển để đi, Đứng yên để hành động tại chỗ.","Your turn: Move to walk, Stay to act from here."
+match.hints.target,"Bấm ô đỏ để chọn mục tiêu, hoặc Quay lại.","Click a red square to choose the target, or Back."
+match.hints.treasure,"Lật một lá, rồi nhận thứ nó cho.","Turn one card over, then take what it gives."
+match.hints.watch,"Lượt của phe kia: xem, hoặc bấm Bỏ qua cho nhanh.","Their turn: watch, or press Skip to hurry it."
+match.levelcards.attack,Mỗi đòn đánh mạnh hơn.,Every blow lands harder.
+match.levelcards.attackIcon,art/ui/match/icons/attack.png,art/ui/match/icons/attack.png
+match.levelcards.attackTitle,+{n} Công,+{n} Attack
+match.levelcards.cost,Nâng cấp: {ability} tốn ít hơn {n} HP.,Upgrade: {ability} costs {n} HP less.
+match.levelcards.costIcon,art/ui/match/icons/essence.png,art/ui/match/icons/essence.png
+match.levelcards.costTitle,{ability} -{n} HP,{ability} -{n} HP
+match.levelcards.defence,Mỗi đòn nhận nhẹ hơn.,Every blow you take is softer.
+match.levelcards.defenceIcon,art/ui/match/icons/defence.png,art/ui/match/icons/defence.png
+match.levelcards.defenceTitle,+{n} Thủ,+{n} Defence
+match.levelcards.hp,"Thêm máu, từ giờ về sau.","More health, now and from here on."
+match.levelcards.hpIcon,art/ui/match/icons/hp.png,art/ui/match/icons/hp.png
+match.levelcards.hpTitle,+{n} HP,+{n} HP
+match.levelcards.learn,Kỹ năng mới:,A new ability:
+match.levelcards.learnIcon,art/ui/match/icons/level.png,art/ui/match/icons/level.png
+match.levelcards.learnTitle,Học {ability},Learn {ability}
+match.levelcards.move,Mỗi lượt đi thêm một ô.,One more step each turn.
+match.levelcards.moveIcon,art/ui/match/icons/move.png,art/ui/match/icons/move.png
+match.levelcards.moveTitle,+{n} Bước,+{n} Move
+match.levelcards.power,Nâng cấp: {ability} mạnh thêm {n}.,Upgrade: {ability} gains {n} power.
+match.levelcards.powerIcon,art/ui/match/icons/attack.png,art/ui/match/icons/attack.png
+match.levelcards.powerTitle,{ability} +{n},{ability} +{n}
+match.levelcards.speed,Đi sớm hơn trong thứ tự các lượt sau.,Act earlier in later rounds' order.
+match.levelcards.speedIcon,art/ui/match/icons/speed.png,art/ui/match/icons/speed.png
+match.levelcards.speedTitle,+{n} Tốc,+{n} Speed
+match.lines.Blow.0,Tránh ra!,Out of my way!
+match.lines.Blow.1,Nằm yên đó.,Stay down.
+match.lines.Blow.2,Vì buổi diễn cuối!,For the curtain call!
+match.lines.Blow.3,Chọn nhầm sân khấu rồi.,You picked the wrong stage.
+match.lines.Blow.4,Thấy chưa?,Feel that?
+match.lines.Blow.5,Nữa nè!,Again!
+match.lines.Down.0,Không... không phải vầy...,Not... like this...
+match.lines.Down.1,Đèn... tắt rồi...,The lights... going out...
+match.lines.Down.2,Ta sẽ quay lại.,I'll be back for you.
+match.lines.Down.3,Nói với họ là tôi đã cố.,Tell them I tried.
+match.lines.Level.0,Giờ thì thấy rồi.,I can feel it now.
+match.lines.Level.1,Mạnh hơn.,Stronger.
+match.lines.Level.2,Sân khấu còn nhớ mình.,The stage remembers me.
+match.lines.Level.3,Thêm một bước.,One more step.
+match.lines.Performed.0,Cúi chào nào.,"Take a bow, everyone."
+match.lines.Performed.1,Thêm một bài!,Encore!
+match.lines.Performed.2,Xin một tràng vỗ tay.,"Applause, please."
+match.lines.Performed.3,Đêm nay nhà hát là của mình.,The house is ours tonight.
+match.log.Arrived,{who} bước ra từ bóng tối.,{who} steps out of the dark.
+match.log.Arriving,Có gì đó cựa mình: lượt sau {who} tới.,Something stirs: {who} comes next round.
+match.log.Back,{who} đã về chỗ nghỉ.,{who} is back at the hub.
+match.log.Battle,{who} tấn công {whom}.,{who} attacks {whom}.
+match.log.Bided,{who} chờ thời.,{who} bides their time.
+match.log.Blow,"{who} đánh trúng {whom}, mất {n} HP.",{who} hits {whom} for {n}.
+match.log.Breath,{who} hít một hơi dài.,{who} draws a long breath.
+match.log.Down,{who} ngã dưới tay {whom}.,"{who} falls to {whom}, carrying {n} essence."
+match.log.Essence,{who} nhận {n} tinh hoa.,{who} gains {n} essence.
+match.log.Event,{who} vào phòng: {result}.,{who} faces the room: {result}.
+match.log.Freed,{who} cắt dây: {whom} được tự do.,{who} cuts the strings: {whom} is free.
+match.log.Hazard,Có thứ rơi trúng {who}: mất {n} HP.,Something falls on {who}: {n} damage.
+match.log.Healed,{who} chăm cho {whom}: hồi {n} HP.,{who} tends {whom}: {n} HP back.
+match.log.Item,{who} nhặt {item}.,{who} takes {item}.
+match.log.Level,{who} lên cấp {n}.,{who} reaches level {n}.
+match.log.Moved,{who} đi.,{who} walks.
+match.log.Over,Màn hạ: {side}.,The curtain falls: {side}.
+match.log.Performed,{who} diễn {n} tinh hoa.,{who} performs {n} essence.
+match.log.SpawnSoon,{monster} sẽ hiện ra ở lượt {n}.,{monster} will appear on round {n}.
+match.log.Spawned,{who} hiện ra.,{who} appears.
+match.log.Treasure,{who} lật một lá: {card}.,{who} turns a card: {card}.
+match.misc.draw,hòa,a draw
+match.misc.enemyTurn,Lượt của {name} · Giữ {hurry} nhanh hơn · {skip} bỏ qua,{name}'s turn · hold {hurry} to hurry · {skip} skips
+match.misc.essence,tinh hoa,essence
+match.misc.failed,không ổn,it went badly
+match.misc.nextTurn,lượt sau,next turn
+match.misc.nobody,nhà hát,the house
+match.misc.orderTip,"{name}  Cấp {level}
+HP {hp}/{maxHp}   CÔNG {attack}   THỦ {defence}
+Bấm: nhìn tới người này.","{name}  Lv {level}
+HP {hp}/{maxHp}   ATK {attack}   DEF {defence}   essence {essence}
+Click: look at them."
+match.misc.passed,suôn sẻ,it went well
+match.misc.side0,phe mình thắng,your side wins
+match.misc.side1,phe kia thắng,their side wins
+match.misc.theirs,{name} (phe kia),{name} (theirs)
+match.outcome.lost,Thất bại,Defeat
+match.outcome.won,Chiến thắng,Victory
+match.roles.allrounder,Toàn năng,All-Rounder
+match.roles.attacker,Tấn công,Attacker
+match.roles.defender,Phòng thủ,Defender
+match.roles.speedster,Tốc độ,Speedster
+match.roles.supporter,Hỗ trợ,Supporter
+match.screens.atk,Công,ATK
+match.screens.backToCafe,Về quán,Back to the cafe
+match.screens.bigTextOff,Chữ lớn: tắt,Large text: off
+match.screens.bigTextOn,Chữ lớn: bật,Large text: on
+match.screens.bots,Máy,Bots
+match.screens.chooseCard,Chọn một lá.,Choose a card.
+match.screens.chooseOne,Chọn một.,Choose one.
+match.screens.chosen,Đã chọn,Chosen
+match.screens.continue,Tiếp,Continue
+match.screens.crtOff,Màn hình TV cũ: tắt,Old TV screen: off
+match.screens.crtOn,Màn hình TV cũ: bật,Old TV screen: on
+match.screens.def,Thủ,DEF
+match.screens.easy,Dễ,Easy
+match.screens.forecast,Dự đoán,Forecast
+match.screens.hard,Khó,Hard
+match.screens.hide,ẩn,hide
+match.screens.level,Cấp,Lv
+match.screens.log,Nhật ký,Log
+match.screens.medium,Vừa,Medium
+match.screens.nextTurn,lượt sau,next turn
+match.screens.no,Không,No
+match.screens.paused,Tạm dừng,Paused
+match.screens.pinned,Đã ghim (I để bỏ),Pinned (I to let go)
+match.screens.playAgain,Thử lại,Play again
+match.screens.quit,Thoát,Quit
+match.screens.reachesLevel,lên cấp,reaches level
+match.screens.resume,Tiếp tục,Resume
+match.screens.retreat,Rút lui,Retreat
+match.screens.retreatAsk,"Về bản đồ. Mọi thứ trong phòng này sẽ mất: cấp, đồ nhặt, người được cứu.","Back to the map. Everything from this room is lost: levels, finds, freed ones."
+match.screens.settings,Cài đặt,Settings
+match.screens.shield,Khiên,Shield
+match.screens.skip,Bỏ qua,Skip
+match.screens.spd,Tốc,SPD
+match.screens.start,Bắt đầu,Start
+match.screens.theirSide,Phe kia,Their side
+match.screens.title,Tấm Màn Cuối,The Last Curtain
+match.screens.trapped,Không kịp cắt dây,Trapped: the strings could not be cut
+match.screens.treasure,Kho báu,Treasure
+match.screens.vhsOff,Băng mòn: tắt,Worn tape: off
+match.screens.vhsOn,Băng mòn: bật,Worn tape: on
+match.screens.yes,Có,Yes
+match.screens.yourSide,Phe mình,Your side
+match.telegraphs.arrival,Vòng tới có kẻ xuất hiện ở ô này.,Someone arrives here next round.
+match.telegraphs.breath,Lối hơi thở: ai đứng đây sẽ trúng khi nó thở ra.,The breath's path: anyone here is hit when it breathes out.
+match.telegraphs.hazard,Ô bị đánh dấu: vòng tới có thứ rơi xuống đây.,Marked: something falls here next round.
+match.telegraphs.window,Cửa sổ sắp mở: vòng tới có thứ chui ra.,A window that opens next round: something comes out.
+match.tiles.centre,"Giữa nhà hát, nơi bóng ma giữ.","The centre, held by monsters."
+match.tiles.hall,Lối đi.,A hall.
+match.tiles.hub,Chỗ nghỉ: đứng đây để hồi sức.,A hub: rest here to heal.
+match.tiles.room,Một căn phòng.,A room.
+match.tiles.stage,Sân khấu: mỗi lần một người.,The stage: one at a time. Perform here to score what you carry.
+match.tiles.wall,Tường.,Wall.
+match.why.AlreadyActed,Lượt này đã hành động rồi.,You have already acted this turn.
+match.why.BagFull,Túi đã đầy.,Your bag is full.
+match.why.Blocked,Có gì đó chắn lối.,Something blocks the way.
+match.why.Fallen,Người này đã ngã.,That one has fallen.
+match.why.FullHp,Đã đầy HP: hồi máu sẽ phí.,Already at full HP: the heal would be wasted.
+match.why.MustChoose,Chọn trước đã.,Choose first.
+match.why.NoAp,Không đủ điểm hành động.,Not enough action points.
+match.why.NoMovesLeft,Hết bước đi lượt này.,No steps left this turn.
+match.why.NoRite,Chưa làm lễ tiễn được lúc này.,The rite cannot be called now.
+match.why.NoTarget,Không ai trong tầm để nhắm.,No one in reach to aim at.
+match.why.NotFallen,Chỉ dùng cho người đã ngã.,Only for one who has fallen.
+match.why.NotHere,Chỉ dùng được ở quán.,This can only be used in the café.
+match.why.NotOnStage,Chỉ diễn được trên sân khấu.,Perform only on the stage.
+match.why.NotStrung,Không có dây để cắt.,There are no strings to cut.
+match.why.NotYourTurn,Chưa tới lượt.,It is not your turn.
+match.why.NothingHere,Ở đây không có gì cho việc đó.,There is nothing here for that.
+match.why.NothingToPerform,Không có tinh hoa để diễn.,You carry no essence to perform.
+match.why.Off,Không dùng trong trận này.,Not in this fight.
+match.why.Ok,Sẵn sàng.,Ready.
+match.why.OnlyPlayer,Chỉ người sống mới cắt được dây.,Only the living can cut the strings.
+match.why.OutOfRange,Không ai trong tầm.,No target within reach.
+match.why.Over,Trận đã xong.,The match is over.
+match.why.OwnSide,Người phe mình.,That one is on your side.
+match.why.TooCostly,Tốn nhiều HP hơn đang có.,It costs more HP than you have.

@@ -2,7 +2,7 @@ find_package(Catch2 3 CONFIG REQUIRED)
 
 # The night of The Last Curtain, headless.
 add_executable(UmbraNightTests)
-target_sources(UmbraNightTests PRIVATE NightDataTests.cpp BoardTests.cpp TurnTests.cpp BattleTests.cpp CompanyTests.cpp SaveTests.cpp BotTests.cpp BoardViewTests.cpp NarrateTests.cpp TableTests.cpp PlayTests.cpp PawnModelTests.cpp NightMindTests.cpp WordsTests.cpp ArtTests.cpp OptionsTests.cpp KeysTests.cpp TableCameraTests.cpp RoyaleTests.cpp MotionTests.cpp)
+target_sources(UmbraNightTests PRIVATE NightDataTests.cpp BoardTests.cpp TurnTests.cpp BattleTests.cpp CompanyTests.cpp SaveTests.cpp BotTests.cpp BoardViewTests.cpp NarrateTests.cpp TableTests.cpp PlayTests.cpp PawnModelTests.cpp NightMindTests.cpp WordsTests.cpp ArtTests.cpp OptionsTests.cpp KeysTests.cpp TableCameraTests.cpp RoyaleTests.cpp MotionTests.cpp LocalizationTests.cpp)
 target_compile_definitions(UmbraNightTests PRIVATE UMBRA_NIGHT_DATA="${CMAKE_CURRENT_SOURCE_DIR}/../assets/night"
                                                    UMBRA_LASTCURTAIN_ASSETS="${CMAKE_CURRENT_SOURCE_DIR}/../apps/LastCurtain/assets")
 target_compile_features(UmbraNightTests PRIVATE cxx_std_20)
@@ -67,7 +67,7 @@ target_compile_definitions(UmbraCampaignTests PRIVATE UMBRA_CAMPAIGN_DATA="${CMA
                                                       UMBRA_LASTCURTAIN_APP_ASSETS="${CMAKE_CURRENT_SOURCE_DIR}/../apps/LastCurtain/assets"
                                                       UMBRA_MATCH_DATA="${CMAKE_CURRENT_SOURCE_DIR}/../assets/match")
 target_compile_features(UmbraCampaignTests PRIVATE cxx_std_20)
-target_link_libraries(UmbraCampaignTests PRIVATE Umbra::Campaign Umbra::CampaignPlay Umbra::Warnings Umbra::Sanitizers Catch2::Catch2WithMain)
+target_link_libraries(UmbraCampaignTests PRIVATE Umbra::Campaign Umbra::CampaignPlay Umbra::NightPlay Umbra::Warnings Umbra::Sanitizers Catch2::Catch2WithMain)
 umbra_copy_asan_runtime(UmbraCampaignTests)
 add_test(NAME Umbra.Campaign COMMAND UmbraCampaignTests "~[campaign-balance]")
 add_test(NAME Umbra.Campaign.Balance COMMAND UmbraCampaignTests "[campaign-balance]")
