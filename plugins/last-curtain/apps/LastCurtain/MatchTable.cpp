@@ -82,16 +82,7 @@ MatchTable::MatchTable(umbra::render::Renderer &renderer, const umbra::assets::A
     // 1. Each sprite folder's pictures, one per face the motions use; a missing calm one draws a box.
     std::string motionError;
     motions_ = umbra::night::Motions::Load(assets / "motions.json", motionError);
-    auto load = [&](const std::string &sprite) {
-        for (const char *face : {"calm", "afraid", "angry", "happy", "neardead", "scheming", "talk"})
-        {
-            umbra::core::TextureData data;
-            std::string error;
-            const std::string key = sprite + "/" + face;
-            if (!sprites_.contains(key) && umbra::assets::LoadImageFile(assets / ("art/sprites/" + key.substr(0, key.find('/')) + "/body_" + face + ".png"), data, error))
-                sprites_[key] = renderer.CreateTexture(data), aspects_[sprite] = static_cast<float>(data.width) / static_cast<float>(std::max(1u, data.height));
-        }
-    };
+    const auto load = [&](const std::string &sprite) { Load(sprite); };
     for (const CharacterDef &c : def.characters)
         load(c.sprite);
     // 2. The shadow: a flat disc (24 sides), drawn twice, a dark core in a softer rim.
@@ -419,13 +410,37 @@ void MatchTable::Animate(const MatchState &s, float dt)
     }
 }
 
+void MatchTable::Load(const std::string &sprite)
+{
+    // A sprite folder's pictures, one per face the motions use (each once).
+    for (const char *face : {"calm", "afraid", "angry", "happy", "neardead", "scheming", "talk"})
+    {
+        umbra::core::TextureData data;
+        std::string error;
+        const std::string key = sprite + "/" + face;
+        if (!sprites_.contains(key) && umbra::assets::LoadImageFile(assets_ / ("art/sprites/" + sprite + "/body_" + face + ".png"), data, error))
+            sprites_[key] = renderer_.CreateTexture(data), aspects_[sprite] = static_cast<float>(data.width) / static_cast<float>(std::max(1u, data.height));
+    }
+}
+
+void MatchTable::SetCast(std::vector<std::string> names, std::vector<float> heights, std::vector<std::string> figures)
+{
+    names_ = std::move(names), heights_ = std::move(heights);
+    for (const std::string &f : figures)
+        if (!f.empty() && tried_.insert(f).second) // SetCast runs every frame: each folder is read once
+            Load(f);
+    figures_ = std::move(figures);
+}
+
 void MatchTable::Sprite(int index, const Unit &u, glm::vec3 feet, umbra::core::DrawList &out) const
 {
     // 1. Facing the camera square on, upright on screen (a 2D board's figures), moved by its motion.
     const umbra::core::Camera camera = view_.Camera();
     const glm::vec3 forward = glm::normalize(camera.target - camera.position);
     const glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3{0, 1, 0})), up = SpriteUp();
-    const std::string &sprite = u.kind == 0 ? def_.characters[U(u.def)].sprite : def_.monsters[U(u.def)].sprite;
+    const std::string sprite = U(index) < figures_.size() && !figures_[U(index)].empty() ? figures_[U(index)]
+                               : u.kind == 0                                               ? def_.characters[U(u.def)].sprite
+                                                                                           : def_.monsters[U(u.def)].sprite;
     const float h = Height(u, index);
     float aspect = aspects_.contains(sprite) ? aspects_.at(sprite) : 0.3F;
     const umbra::night::SpriteState idle;

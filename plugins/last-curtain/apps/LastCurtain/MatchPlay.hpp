@@ -42,6 +42,7 @@ public:
     void SetHeights(std::vector<float> heights) { heights_ = std::move(heights); }
     [[nodiscard]] const std::vector<std::string> &Names() const { return names_; }
     [[nodiscard]] const std::vector<float> &Heights() const { return heights_; }
+    [[nodiscard]] const std::vector<std::string> &Sprites() const { return sprites_; } // a stage's figure per unit ("" the class's)
     void SetKeyNames(std::string hurry, std::string skip) { hurryKey_ = std::move(hurry), skipKey_ = std::move(skip); }
     [[nodiscard]] nlohmann::json HudData() const;
     // The command menu (campaign plan 5, P2): {title, rows: [{id, label, note, key, off, why, sub}]} for the

@@ -16,6 +16,7 @@
 #include <glm/vec3.hpp>
 
 #include <map>
+#include <set>
 #include <optional>
 #include <string>
 
@@ -55,7 +56,8 @@ public:
     // Whom the told line is about (MatchPlay "focus"): the camera frames them all.
     void SetFocus(std::vector<int> units) { focus_ = std::move(units); }
     // A campaign stage: each unit's shown name and height (1 a person, 0.8 a ghost); empty keeps the match's.
-    void SetCast(std::vector<std::string> names, std::vector<float> heights) { names_ = std::move(names), heights_ = std::move(heights); }
+    // A stage's cast: names, ghost heights and each unit's own figure ("" keeps its class's), loaded on first use.
+    void SetCast(std::vector<std::string> names, std::vector<float> heights, std::vector<std::string> figures = {});
 
 private:
     [[nodiscard]] glm::vec3 Centre(const umbra::match::Board &b, int cell) const;          // a square's middle on the table
@@ -85,6 +87,9 @@ private:
     umbra::assets::AssetFolders assets_;
     umbra::core::MeshHandle box_, quad_, mirrorQuad_;
     std::map<std::string, umbra::core::TextureHandle> sprites_; // by "folder/face": body_<face>.png
+    std::vector<std::string> figures_;                          // per unit, from SetCast
+    std::set<std::string> tried_;                               // folders already loaded (or missing)
+    void Load(const std::string &sprite);
     umbra::night::Motions motions_;
     std::vector<umbra::night::SpriteState> states_; // by unit
     std::map<std::string, float> aspects_;                      // ... its width per height

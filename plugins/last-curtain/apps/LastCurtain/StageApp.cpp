@@ -56,6 +56,21 @@ int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const
         }
         return out;
     };
+    const auto sprites = [&] {
+        // Each unit's own figure: the player's by gender; a recruit still strung (on the other side) its bound one.
+        std::vector<std::string> out;
+        int ours = -1;
+        for (std::size_t i = 0; i < built.who.size() && i < built.state.units.size(); ++i)
+            if (built.who[i] == "player")
+                ours = built.state.units[i].faction;
+        for (std::size_t i = 0; i < built.who.size(); ++i)
+        {
+            const campaign::CastMember *m = cast.Find(built.who[i]);
+            const bool strung = m && !m->bound.empty() && i < built.state.units.size() && built.state.units[i].faction != ours;
+            out.push_back(built.who[i] == "player" ? (player.gender == "male" ? "player_male" : "player_female") : !m ? "" : strung ? m->bound : m->sprite);
+        }
+        return out;
+    };
     hooks.start = [&] {
         built = campaign::BuildStage(def, cast, growth, stage, members, refill, save ? save->taken : std::set<std::string>{}, tries++);
         if (save)
@@ -75,13 +90,13 @@ int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const
             return;
         built.state = play.State();
         campaign::Sync(built);
-        play.SetCast(names(), {}), play.SetHeights(built.height);
+        play.SetCast(names(), sprites()), play.SetHeights(built.height);
         for (const std::string &scene : campaign::StageMoments(stage, built, play.Told(), moments))
             if (RunScene(game, assets, scene, stage.backdrop, player, facts) == 0)
                 return;
         if (out && play.State().over && play.Quiet())
             *out = built, ended = true;
     };
-    hooks.setup = [&](MatchPlay &play) { play.SetCast(names(), {}), play.SetHeights(built.height), play.SetStage(stage.title); };
+    hooks.setup = [&](MatchPlay &play) { play.SetCast(names(), sprites()), play.SetHeights(built.height), play.SetStage(stage.title); };
     return RunMatch(game, assets, seed, false, capture, frames, 0.0F, nullptr, 0, {}, &hooks);
 }
