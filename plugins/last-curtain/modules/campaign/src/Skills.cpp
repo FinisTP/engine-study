@@ -41,6 +41,18 @@ namespace umbra::campaign
                     error("starts." + who, "\"" + id + "\" is not in abilities.csv");
             skills.starts[who] = std::move(carried);
         }
+        // 3. Each character's life: years in order, each linked to a known skill or none.
+        const nlohmann::json lives = j.value("timeline", nlohmann::json::object());
+        for (const auto &[who, list] : lives.items())
+            for (const nlohmann::json &m : list)
+            {
+                Moment moment{m.value("year", 0), m.value("skill", "")};
+                if (!moment.skill.empty() && !known(moment.skill))
+                    error("timeline." + who, "\"" + moment.skill + "\" is not in abilities.csv");
+                if (!skills.timeline[who].empty() && moment.year < skills.timeline[who].back().year)
+                    error("timeline." + who, "expected years in order");
+                skills.timeline[who].push_back(moment);
+            }
         if (d.size() != before)
             return false;
         out = std::move(skills);

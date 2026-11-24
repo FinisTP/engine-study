@@ -1,0 +1,13 @@
+{
+  "format": "umbra.lc-talk",
+  "version": 1,
+  "id": "bao-default-3",
+  "who": "bao",
+  "scene": "bao-default-3",
+  "idle": true,
+  "opens": {
+    "all": [
+      "won:t2s"
+    ]
+  }
+}

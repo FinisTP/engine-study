@@ -23,7 +23,7 @@ std::pair<std::string, std::string> RunScreen(GameContext &game, const std::stri
 
 // The settings screen (menus.md D) over whatever is showing; each change applies and saves at once. words:
 // campaign-words.json. Returns the settings as left.
-umbra::night::AnalogScreen RunSettings(GameContext &game, const nlohmann::json &words);
+umbra::night::AnalogScreen RunSettings(GameContext &game, const nlohmann::json &words, bool backdrop = false);
 
 // The campaign from the title to the end of slice 1 (CampaignApp.md). save: the save file.
 int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, const std::filesystem::path &save, const std::filesystem::path &capture = {}, int frames = 0);

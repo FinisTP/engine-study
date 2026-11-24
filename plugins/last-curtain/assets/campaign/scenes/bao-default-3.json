@@ -1,0 +1,29 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "bao-default-3",
+  "note": "A default line when nothing is new (the user, 2026-11-24 23:57, note 29). Draft for review, Vietnamese and English.",
+  "lines": [
+    {
+      "id": "a",
+      "speaker": "bao",
+      "face": "talk",
+      "text": "Đừng hỏi tôi về đêm đó. Hỏi tôi về vết thương của cậu thì được.",
+      "en": "Don't ask me about that night. Ask me about your wounds instead.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "bao",
+          "side": "right",
+          "slot": 0,
+          "face": "talk"
+        }
+      ]
+    }
+  ]
+}

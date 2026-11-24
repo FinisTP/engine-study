@@ -400,6 +400,59 @@ TEST_CASE("The notebook's character page as in the mockup: portrait, stats, figh
     CHECK_FALSE(book.ToggleFight("player"));
 }
 
+TEST_CASE("Ky uc: each character's life by year; a moment shows ??? until its linked skill opens (the user, 2026-11-25 00:11)")
+{
+    HubData h;
+    campaign::Growth growth;
+    campaign::Skills skills;
+    std::vector<core::Diagnostic> d;
+    REQUIRE(campaign::LoadGrowth(data / "growth.csv", growth, d));
+    REQUIRE(campaign::LoadSkills(data / "skills.json", h.def, skills, d));
+    {
+        CampaignText text;
+        std::string error;
+        (void)text.table.Load(std::filesystem::path(UMBRA_LASTCURTAIN_APP_ASSETS) / "localization.csv", error);
+        text.Fill(skills);
+    }
+    campaign::Save save;
+    save.roster = {{"player", 2, 0}, {"bao", 2, 0}};
+    Notebook book(h.def, h.cast, h.memories, save);
+    book.SetGrowth(&growth), book.SetSkills(&skills);
+    book.Select("bao");
+    // 1. In year order; the death paper's year is there, its words hidden until level 3.
+    const auto paper = [&] {
+        const nlohmann::json all = book.Data()["detail"]["timeline"]; // kept: a temporary's items would dangle
+        for (const auto &m : all)
+            if (m["skill"] == "giay_chung_tu")
+                return m;
+        return nlohmann::json();
+    };
+    const nlohmann::json life = book.Data()["detail"]["timeline"];
+    REQUIRE(life.size() >= 4);
+    for (std::size_t i = 1; i < life.size(); ++i)
+        CHECK(life[i]["year"].get<int>() >= life[i - 1]["year"].get<int>());
+    REQUIRE(paper().is_object());
+    CHECK(paper()["known"] == false);
+    CHECK(paper()["text"] == "???");
+    CHECK(paper()["year"].get<int>() > 0);
+    save.roster[1].level = 3;
+    CHECK(paper()["known"] == true);
+    CHECK(paper()["text"] != "???");
+    // 2. A moment whose skill a memory upgrades waits for that memory too (Ti's message).
+    save.joined.insert("ti"), save.roster.push_back({"ti", 4, 0});
+    book.Select("ti");
+    const auto ti = [&](const std::string &skill) {
+        const nlohmann::json all = book.Data()["detail"]["timeline"];
+        for (const auto &m : all)
+            if (m["skill"] == skill)
+                return m["known"].get<bool>();
+        return true;
+    };
+    CHECK_FALSE(ti("na_cao_su"));
+    save.memories.insert("ti_3");
+    CHECK(ti("na_cao_su"));
+}
+
 TEST_CASE("The notebook's slots, pick then place: skills carried and in stock, locked ones with their level, items from storage, a card for what is picked (feedback 2026-11-24 15:10, notes 13, 16, 17)")
 {
     HubData h;

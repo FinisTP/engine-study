@@ -1,0 +1,29 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "mai-default-3",
+  "note": "A default line when nothing is new (the user, 2026-11-24 23:57, note 29). Draft for review, Vietnamese and English.",
+  "lines": [
+    {
+      "id": "a",
+      "speaker": "mai",
+      "face": "calm",
+      "text": "Con nghe không? Dưới sàn. Không phải chuột đâu. Thôi, đừng nghe nữa.",
+      "en": "Do you hear it, child? Under the floor. Not rats. Never mind, don't listen.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "mai",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    }
+  ]
+}

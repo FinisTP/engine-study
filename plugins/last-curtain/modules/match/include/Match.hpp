@@ -114,7 +114,7 @@ namespace umbra::match
     struct Gimmicks
     {
         std::int8_t hazards = 0, hazardDamage = 0;                  // squares marked each round, and the damage when they fall
-        std::int8_t breathUnit = -1, breathDamage = 0, breathEvery = 2; // marks its row every `breathEvery` rounds
+        std::int8_t breathUnit = -1, breathDamage = 0, breathEvery = 2, breathFirst = 1; // marks its row every `breathEvery` rounds from `breathFirst`
         std::vector<std::int16_t> windows;                          // the window squares
         std::vector<std::vector<std::int8_t>> pattern;              // which windows open each round, cycling
         Unit spawn;                                                 // what an open window lets out
@@ -233,11 +233,11 @@ namespace umbra::match
     // (Match.md "Biding").
     // Cut: the player frees a fallen strung recruit beside it (a = unit). Rite: after the player fell, Le
     // Thanh's rite stands the side up, once a game (Match.md "Freeing and the end").
-    enum class ActionKind : std::uint8_t { Move, Undo, Attack, BattleAbility, BoardAbility, UseItem, PickUp, Perform, Answer, LevelUp, EndTurn, Card, Bide, Extra, Cut, Rite };
+    enum class ActionKind : std::uint8_t { Move, Undo, Attack, BattleAbility, BoardAbility, UseItem, PickUp, Perform, Answer, LevelUp, EndTurn, Card, Bide, Extra, Cut, Rite, Withdraw };
 
     // Move: a = direction 0-3. Attack: a = unit. BattleAbility: a = ability slot. BoardAbility: a = slot,
     // b = target unit. UseItem: a = item slot, b = the target of a revive item (else -1). PickUp: a = floor index. Answer: a = choice. LevelUp: a = 0 or 1.
-    // Card: a = the dealt card.
+    // Card: a = the dealt card. Withdraw: leaves the battle on now, no more blows (a player's way out; not in Legal).
     struct Action
     {
         ActionKind kind = ActionKind::EndTurn;

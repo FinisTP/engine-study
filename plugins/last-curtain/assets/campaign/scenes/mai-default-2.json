@@ -1,0 +1,29 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "mai-default-2",
+  "note": "A default line when nothing is new (the user, 2026-11-24 23:57, note 29). Draft for review, Vietnamese and English.",
+  "lines": [
+    {
+      "id": "a",
+      "speaker": "mai",
+      "face": "calm",
+      "text": "Chùm chìa này có một cái tui không biết mở cửa nào. Bốn mươi năm rồi.",
+      "en": "There's one key on this ring I don't know the door for. Forty years now.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "mai",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    }
+  ]
+}

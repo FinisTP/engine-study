@@ -4,363 +4,377 @@
   "dim": true,
   "modal": true,
   "root": {
-    "type": "stack",
-    "anchor": "center",
-    "style": "lcPanel",
-    "gap": 10,
+    "type": "panel",
+    "anchor": "fill",
+    "style": "layer",
     "children": [
       {
-        "type": "text",
-        "style": "title",
-        "text": "{words.settings}"
+        "type": "image",
+        "anchor": "fill",
+        "image": "art/backdrops/foyer_today.jpg",
+        "fit": "cover",
+        "visible": "{backdrop}"
       },
       {
         "type": "stack",
-        "direction": "horizontal",
-        "gap": 28,
+        "anchor": "center",
+        "style": "lcPanel",
+        "gap": 10,
         "children": [
           {
+            "type": "text",
+            "style": "title",
+            "text": "{words.settings}"
+          },
+          {
             "type": "stack",
-            "gap": 6,
+            "direction": "horizontal",
+            "gap": 28,
             "children": [
               {
-                "type": "text",
-                "style": "heading",
-                "text": "{words.groupDisplay}"
-              },
-              {
-                "type": "button",
-                "style": "lcButton",
-                "size": [
-                  300,
-                  0
-                ],
-                "text": "{words.fullOn}",
-                "action": "full",
-                "visible": "{analog.full}"
-              },
-              {
-                "type": "button",
-                "style": "lcButton",
-                "size": [
-                  300,
-                  0
-                ],
-                "text": "{words.fullOff}",
-                "action": "full",
-                "visible": "{analog.fullOff}"
-              },
-              {
-                "type": "button",
-                "style": "lcButton",
-                "size": [
-                  300,
-                  0
-                ],
-                "text": "{words.bigTextOn}",
-                "action": "bigtext",
-                "visible": "{analog.bigText}"
-              },
-              {
-                "type": "button",
-                "style": "lcButton",
-                "size": [
-                  300,
-                  0
-                ],
-                "text": "{words.bigTextOff}",
-                "action": "bigtext",
-                "visible": "{analog.bigTextOff}"
-              },
-              {
-                "type": "button",
-                "style": "lcButton",
-                "size": [
-                  300,
-                  0
-                ],
-                "text": "{words.crtOn}",
-                "action": "crt",
-                "visible": "{analog.crt}"
-              },
-              {
-                "type": "button",
-                "style": "lcButton",
-                "size": [
-                  300,
-                  0
-                ],
-                "text": "{words.crtOff}",
-                "action": "crt",
-                "visible": "{analog.crtOff}"
-              },
-              {
-                "type": "button",
-                "style": "lcButton",
-                "size": [
-                  300,
-                  0
-                ],
-                "text": "{words.vhsOn}",
-                "action": "vhs",
-                "visible": "{analog.vhs}"
-              },
-              {
-                "type": "button",
-                "style": "lcButton",
-                "size": [
-                  300,
-                  0
-                ],
-                "text": "{words.vhsOff}",
-                "action": "vhs",
-                "visible": "{analog.vhsOff}"
-              },
-              {
-                "type": "text",
-                "style": "heading",
-                "text": "{words.groupSound}"
-              },
-              {
                 "type": "stack",
-                "direction": "horizontal",
                 "gap": 6,
-                "align": "center",
                 "children": [
                   {
                     "type": "text",
-                    "text": "{words.effects}",
-                    "size": [
-                      120,
-                      0
-                    ]
+                    "style": "heading",
+                    "text": "{words.groupDisplay}"
                   },
                   {
                     "type": "button",
                     "style": "lcButton",
-                    "text": "-",
-                    "action": "fx-"
+                    "size": [
+                      300,
+                      0
+                    ],
+                    "text": "{words.fullOn}",
+                    "action": "full",
+                    "visible": "{analog.full}"
+                  },
+                  {
+                    "type": "button",
+                    "style": "lcButton",
+                    "size": [
+                      300,
+                      0
+                    ],
+                    "text": "{words.fullOff}",
+                    "action": "full",
+                    "visible": "{analog.fullOff}"
+                  },
+                  {
+                    "type": "button",
+                    "style": "lcButton",
+                    "size": [
+                      300,
+                      0
+                    ],
+                    "text": "{words.bigTextOn}",
+                    "action": "bigtext",
+                    "visible": "{analog.bigText}"
+                  },
+                  {
+                    "type": "button",
+                    "style": "lcButton",
+                    "size": [
+                      300,
+                      0
+                    ],
+                    "text": "{words.bigTextOff}",
+                    "action": "bigtext",
+                    "visible": "{analog.bigTextOff}"
+                  },
+                  {
+                    "type": "button",
+                    "style": "lcButton",
+                    "size": [
+                      300,
+                      0
+                    ],
+                    "text": "{words.crtOn}",
+                    "action": "crt",
+                    "visible": "{analog.crt}"
+                  },
+                  {
+                    "type": "button",
+                    "style": "lcButton",
+                    "size": [
+                      300,
+                      0
+                    ],
+                    "text": "{words.crtOff}",
+                    "action": "crt",
+                    "visible": "{analog.crtOff}"
+                  },
+                  {
+                    "type": "button",
+                    "style": "lcButton",
+                    "size": [
+                      300,
+                      0
+                    ],
+                    "text": "{words.vhsOn}",
+                    "action": "vhs",
+                    "visible": "{analog.vhs}"
+                  },
+                  {
+                    "type": "button",
+                    "style": "lcButton",
+                    "size": [
+                      300,
+                      0
+                    ],
+                    "text": "{words.vhsOff}",
+                    "action": "vhs",
+                    "visible": "{analog.vhsOff}"
                   },
                   {
                     "type": "text",
-                    "text": "{analog.effects}",
-                    "size": [
-                      44,
-                      0
-                    ],
-                    "textAlign": "center"
+                    "style": "heading",
+                    "text": "{words.groupSound}"
+                  },
+                  {
+                    "type": "stack",
+                    "direction": "horizontal",
+                    "gap": 6,
+                    "align": "center",
+                    "children": [
+                      {
+                        "type": "text",
+                        "text": "{words.effects}",
+                        "size": [
+                          120,
+                          0
+                        ]
+                      },
+                      {
+                        "type": "button",
+                        "style": "lcButton",
+                        "text": "-",
+                        "action": "fx-"
+                      },
+                      {
+                        "type": "text",
+                        "text": "{analog.effects}",
+                        "size": [
+                          44,
+                          0
+                        ],
+                        "textAlign": "center"
+                      },
+                      {
+                        "type": "button",
+                        "style": "lcButton",
+                        "text": "+",
+                        "action": "fx+"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "stack",
+                    "direction": "horizontal",
+                    "gap": 6,
+                    "align": "center",
+                    "children": [
+                      {
+                        "type": "text",
+                        "text": "{words.music}",
+                        "size": [
+                          120,
+                          0
+                        ]
+                      },
+                      {
+                        "type": "button",
+                        "style": "lcButton",
+                        "text": "-",
+                        "action": "mu-"
+                      },
+                      {
+                        "type": "text",
+                        "text": "{analog.music}",
+                        "size": [
+                          44,
+                          0
+                        ],
+                        "textAlign": "center"
+                      },
+                      {
+                        "type": "button",
+                        "style": "lcButton",
+                        "text": "+",
+                        "action": "mu+"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "style": "heading",
+                    "text": "{words.groupGame}"
                   },
                   {
                     "type": "button",
                     "style": "lcButton",
-                    "text": "+",
-                    "action": "fx+"
+                    "size": [
+                      300,
+                      0
+                    ],
+                    "text": "{words.speed0}",
+                    "action": "textspeed",
+                    "visible": "{analog.textSpeed0}"
+                  },
+                  {
+                    "type": "button",
+                    "style": "lcButton",
+                    "size": [
+                      300,
+                      0
+                    ],
+                    "text": "{words.speed1}",
+                    "action": "textspeed",
+                    "visible": "{analog.textSpeed1}"
+                  },
+                  {
+                    "type": "button",
+                    "style": "lcButton",
+                    "size": [
+                      300,
+                      0
+                    ],
+                    "text": "{words.speed2}",
+                    "action": "textspeed",
+                    "visible": "{analog.textSpeed2}"
+                  },
+                  {
+                    "type": "button",
+                    "style": "lcButton",
+                    "size": [
+                      300,
+                      0
+                    ],
+                    "text": "{words.speed3}",
+                    "action": "textspeed",
+                    "visible": "{analog.textSpeed3}"
+                  },
+                  {
+                    "type": "button",
+                    "style": "lcButton",
+                    "size": [
+                      300,
+                      0
+                    ],
+                    "text": "{words.enemyNormal}",
+                    "action": "enemyspeed",
+                    "visible": "{analog.enemyNormal}"
+                  },
+                  {
+                    "type": "button",
+                    "style": "lcButton",
+                    "size": [
+                      300,
+                      0
+                    ],
+                    "text": "{words.enemyFast}",
+                    "action": "enemyspeed",
+                    "visible": "{analog.enemyFast}"
+                  },
+                  {
+                    "type": "button",
+                    "style": "lcButton",
+                    "size": [
+                      300,
+                      0
+                    ],
+                    "text": "{words.vfxFull}",
+                    "action": "vfx",
+                    "visible": "{analog.vfxFull}"
+                  },
+                  {
+                    "type": "button",
+                    "style": "lcButton",
+                    "size": [
+                      300,
+                      0
+                    ],
+                    "text": "{words.vfxReduced}",
+                    "action": "vfx",
+                    "visible": "{analog.vfxReduced}"
+                  },
+                  {
+                    "type": "button",
+                    "style": "lcButton",
+                    "size": [
+                      300,
+                      0
+                    ],
+                    "text": "{words.langVi}",
+                    "action": "language",
+                    "visible": "{analog.vietnamese}"
+                  },
+                  {
+                    "type": "button",
+                    "style": "lcButton",
+                    "size": [
+                      300,
+                      0
+                    ],
+                    "text": "{words.langEn}",
+                    "action": "language",
+                    "visible": "{analog.english}"
                   }
                 ]
               },
               {
                 "type": "stack",
-                "direction": "horizontal",
-                "gap": 6,
-                "align": "center",
+                "gap": 4,
                 "children": [
                   {
                     "type": "text",
-                    "text": "{words.music}",
-                    "size": [
-                      120,
-                      0
-                    ]
+                    "style": "heading",
+                    "text": "{words.groupKeys}"
                   },
                   {
-                    "type": "button",
-                    "style": "lcButton",
-                    "text": "-",
-                    "action": "mu-"
-                  },
-                  {
-                    "type": "text",
-                    "text": "{analog.music}",
-                    "size": [
-                      44,
-                      0
-                    ],
-                    "textAlign": "center"
-                  },
-                  {
-                    "type": "button",
-                    "style": "lcButton",
-                    "text": "+",
-                    "action": "mu+"
+                    "type": "list",
+                    "items": "{keys}",
+                    "as": "k",
+                    "gap": 2,
+                    "entry": {
+                      "type": "stack",
+                      "direction": "horizontal",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "text",
+                          "style": "small",
+                          "text": "{k.name}",
+                          "size": [
+                            200,
+                            0
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "style": "strong",
+                          "text": "{k.key}"
+                        }
+                      ]
+                    }
                   }
                 ]
-              },
-              {
-                "type": "text",
-                "style": "heading",
-                "text": "{words.groupGame}"
-              },
-              {
-                "type": "button",
-                "style": "lcButton",
-                "size": [
-                  300,
-                  0
-                ],
-                "text": "{words.speed0}",
-                "action": "textspeed",
-                "visible": "{analog.textSpeed0}"
-              },
-              {
-                "type": "button",
-                "style": "lcButton",
-                "size": [
-                  300,
-                  0
-                ],
-                "text": "{words.speed1}",
-                "action": "textspeed",
-                "visible": "{analog.textSpeed1}"
-              },
-              {
-                "type": "button",
-                "style": "lcButton",
-                "size": [
-                  300,
-                  0
-                ],
-                "text": "{words.speed2}",
-                "action": "textspeed",
-                "visible": "{analog.textSpeed2}"
-              },
-              {
-                "type": "button",
-                "style": "lcButton",
-                "size": [
-                  300,
-                  0
-                ],
-                "text": "{words.speed3}",
-                "action": "textspeed",
-                "visible": "{analog.textSpeed3}"
-              },
-              {
-                "type": "button",
-                "style": "lcButton",
-                "size": [
-                  300,
-                  0
-                ],
-                "text": "{words.enemyNormal}",
-                "action": "enemyspeed",
-                "visible": "{analog.enemyNormal}"
-              },
-              {
-                "type": "button",
-                "style": "lcButton",
-                "size": [
-                  300,
-                  0
-                ],
-                "text": "{words.enemyFast}",
-                "action": "enemyspeed",
-                "visible": "{analog.enemyFast}"
-              },
-              {
-                "type": "button",
-                "style": "lcButton",
-                "size": [
-                  300,
-                  0
-                ],
-                "text": "{words.vfxFull}",
-                "action": "vfx",
-                "visible": "{analog.vfxFull}"
-              },
-              {
-                "type": "button",
-                "style": "lcButton",
-                "size": [
-                  300,
-                  0
-                ],
-                "text": "{words.vfxReduced}",
-                "action": "vfx",
-                "visible": "{analog.vfxReduced}"
-              },
-              {
-                "type": "button",
-                "style": "lcButton",
-                "size": [
-                  300,
-                  0
-                ],
-                "text": "{words.langVi}",
-                "action": "language",
-                "visible": "{analog.vietnamese}"
-              },
-              {
-                "type": "button",
-                "style": "lcButton",
-                "size": [
-                  300,
-                  0
-                ],
-                "text": "{words.langEn}",
-                "action": "language",
-                "visible": "{analog.english}"
               }
             ]
           },
           {
-            "type": "stack",
-            "gap": 4,
-            "children": [
-              {
-                "type": "text",
-                "style": "heading",
-                "text": "{words.groupKeys}"
-              },
-              {
-                "type": "list",
-                "items": "{keys}",
-                "as": "k",
-                "gap": 2,
-                "entry": {
-                  "type": "stack",
-                  "direction": "horizontal",
-                  "gap": 8,
-                  "children": [
-                    {
-                      "type": "text",
-                      "style": "small",
-                      "text": "{k.name}",
-                      "size": [
-                        200,
-                        0
-                      ]
-                    },
-                    {
-                      "type": "text",
-                      "style": "strong",
-                      "text": "{k.key}"
-                    }
-                  ]
-                }
-              }
-            ]
+            "type": "button",
+            "style": "lcButton",
+            "size": [
+              300,
+              0
+            ],
+            "text": "{words.close}",
+            "action": "close"
           }
         ]
-      },
-      {
-        "type": "button",
-        "style": "lcButton",
-        "size": [
-          300,
-          0
-        ],
-        "text": "{words.close}",
-        "action": "close"
       }
     ]
   }

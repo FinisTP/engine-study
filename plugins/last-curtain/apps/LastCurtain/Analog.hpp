@@ -17,7 +17,7 @@ namespace umbra::night
     struct AnalogScreen
     {
         float crt = 0.0F, vhs = 0.0F;    // strengths from options.csv
-        bool crtOn = true, vhsOn = true; // the player's switches (on until turned off, the user)
+        bool crtOn = true, vhsOn = false; // the player's switches: the old screen on, the worn tape off (the user)
         bool bigText = false;            // large text (campaign plan 5): fonts x1.25
         bool fullScreen = false, enemyFast = false, english = false;
         bool reducedFx = false; // "Hieu ung hinh anh: Giam": half the particles, no shake, softer horror

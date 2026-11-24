@@ -43,7 +43,7 @@ namespace umbra::night
             std::error_code error;
             std::filesystem::create_directories(file.parent_path(), error);
             const std::filesystem::path temp = file.string() + ".tmp";
-            std::ofstream(temp) << nlohmann::json{{"format", "umbra.lc-screen"}, {"version", 1}, {"crt", crtOn}, {"vhs", vhsOn}, {"bigText", bigText},
+            std::ofstream(temp) << nlohmann::json{{"format", "umbra.lc-screen"}, {"version", 2}, {"crt", crtOn}, {"vhs", vhsOn}, {"bigText", bigText},
                                              {"fullScreen", fullScreen}, {"effects", effects}, {"music", music}, {"textSpeed", textSpeed}, {"enemyFast", enemyFast}, {"english", english}, {"reducedFx", reducedFx}}
                                     .dump(2) << "\n";
             std::filesystem::rename(temp, file, error);
@@ -75,10 +75,11 @@ namespace umbra::night
         analog.vhs = std::clamp(options.vhs, 0.0F, 1.0F);
         std::ifstream in(file);
         const nlohmann::json saved = nlohmann::json::parse(in, nullptr, false);
-        if (saved.is_object() && saved.value("format", "") == "umbra.lc-screen" && saved.value("version", 0) == 1)
+        // Version 1 had the worn tape on by default; version 2 starts it off (the user, 2026-11-24 23:57).
+        if (const int version = saved.is_object() ? saved.value("version", 0) : 0; saved.is_object() && saved.value("format", "") == "umbra.lc-screen" && (version == 1 || version == 2))
         {
             analog.crtOn = saved.value("crt", true);
-            analog.vhsOn = saved.value("vhs", true);
+            analog.vhsOn = version == 2 && saved.value("vhs", false);
             analog.bigText = saved.value("bigText", false);
             analog.fullScreen = saved.value("fullScreen", false);
             analog.effects = std::clamp(saved.value("effects", 100), 0, 100);

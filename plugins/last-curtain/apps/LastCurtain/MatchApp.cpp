@@ -116,6 +116,8 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
     if (std::ifstream in(assets / "match-look.json"); in)
         table.SetLook(nlohmann::json::parse(in, nullptr, false));
     table.SetCamera(pace.matchCameraDistance, pace.matchCameraDistance * 0.3F, pace.matchCameraDistance * 1.6F, pace.matchCameraTilt); // the wheel zooms down into the rooms
+    if (const float across = pace.stageTilesAcross; hooks && across > 0.0F) // a stage opens on about this many tiles across (note 5)
+        table.SetCamera(table.DistanceAcross(across), table.DistanceAcross(across) * 0.7F, pace.matchCameraDistance * 1.6F, pace.matchCameraTilt);
     umbra::core::DrawList drawList;
     // Effects and how told lines play out (Sequences.md): looks only; "Giam" halves the particles.
     Effects effects;
@@ -482,7 +484,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                         paused = false, backToPick();
                 }
                 else if (play && a.action == "focus" && !a.arg.empty() && std::isdigit(static_cast<unsigned char>(a.arg[0]))) // an order portrait: the camera goes to that one
-                    table.LookAt(play->State(), std::stoi(a.arg));
+                    table.LookAt(play->State(), std::stoi(a.arg)), play->Look(std::stoi(a.arg)); // and its card; the acting one: the panel back
                 else if (play)
                     (void)play->HandleUi(a.screen == hudName ? "" : a.screen.substr(a.screen.starts_with("match-") ? 6 : 0), a.action, a.arg);
             }

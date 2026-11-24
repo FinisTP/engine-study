@@ -5,6 +5,7 @@
   "kind": "story",
   "note": "Draft (2026-11-24): teaches moving, attacking and the order strip. Three rat specters rise from the rope posts at rounds 1, 2 and 3.",
   "level": 1,
+  "meleeEnemies": true,
   "partyCap": 1,
   "backdrop": "foyer_today",
   "xp": 100,

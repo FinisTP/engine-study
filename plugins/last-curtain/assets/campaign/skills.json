@@ -1,37 +1,99 @@
 {
- "format": "umbra.lc-skills",
- "version": 1,
- "note": "Abilities in the notebook and the fight (feedback 2026-11-24 15:10, notes 13 and 17). 'unlock': the level an ability opens at (default 1; a class line's abilities already open by level in jobs.csv). Each one's story is localization.csv 'lore.<id>'. 'starts': the skills a recruit carries when they join (at most 4); the tutorial leaves some out so the player assigns them. Anyone else carries their first four.",
- "skills": {
-  "basic": {},
-  "slash": {},
-  "throw": {},
-  "guard": {},
-  "lunge": {},
-  "cleave": {},
-  "dao_mo": {},
-  "chan_doan": {},
-  "giay_chung_tu": {
-   "unlock": 3
+  "format": "umbra.lc-skills",
+  "version": 1,
+  "note": "Abilities in the notebook and the fight (feedback 2026-11-24 15:10, notes 13 and 17). 'unlock': the level an ability opens at (default 1; a class line's abilities already open by level in jobs.csv). Each one's story is localization.csv 'lore.<id>'. 'starts': the skills a recruit carries when they join (at most 4); the tutorial leaves some out so the player assigns them. Anyone else carries their first four. 'timeline': each character's life by year for the notebook's Ky uc (the user, 2026-11-25); a year with a skill shows ??? until that skill opens (its level, and its memory if one upgrades it); its words are localization.csv 'timeline.<who>.<n>'.",
+  "skills": {
+    "basic": {},
+    "slash": {},
+    "throw": {},
+    "guard": {},
+    "lunge": {},
+    "cleave": {},
+    "dao_mo": {},
+    "chan_doan": {},
+    "giay_chung_tu": {
+      "unlock": 3
+    },
+    "tend": {},
+    "mend": {},
+    "com_nguoi": {},
+    "na_cao_su": {},
+    "dua_tin": {},
+    "chan_sao": {
+      "unlock": 4
+    }
   },
-  "tend": {},
-  "mend": {},
-  "com_nguoi": {},
-  "na_cao_su": {},
-  "dua_tin": {},
-  "chan_sao": {
-   "unlock": 4
+  "starts": {
+    "bao": [
+      "basic",
+      "dao_mo"
+    ],
+    "mai": [
+      "basic",
+      "tend",
+      "com_nguoi"
+    ]
+  },
+  "timeline": {
+    "bao": [
+      {
+        "year": 1910
+      },
+      {
+        "year": 1927
+      },
+      {
+        "year": 1933,
+        "skill": "dao_mo"
+      },
+      {
+        "year": 1940,
+        "skill": "chan_doan"
+      },
+      {
+        "year": 1944,
+        "skill": "giay_chung_tu"
+      }
+    ],
+    "mai": [
+      {
+        "year": 1897
+      },
+      {
+        "year": 1921
+      },
+      {
+        "year": 1923,
+        "skill": "tend"
+      },
+      {
+        "year": 1932,
+        "skill": "mend"
+      },
+      {
+        "year": 1944,
+        "skill": "com_nguoi"
+      },
+      {
+        "year": 1963
+      }
+    ],
+    "ti": [
+      {
+        "year": 1957
+      },
+      {
+        "year": 1966,
+        "skill": "dua_tin"
+      },
+      {
+        "year": 1967,
+        "skill": "na_cao_su"
+      },
+      {
+        "year": 1968,
+        "skill": "chan_sao"
+      }
+    ]
   }
- },
- "starts": {
-  "bao": [
-   "basic",
-   "dao_mo"
-  ],
-  "mai": [
-   "basic",
-   "tend",
-   "com_nguoi"
-  ]
- }
 }

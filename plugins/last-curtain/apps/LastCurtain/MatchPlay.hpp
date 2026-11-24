@@ -67,7 +67,8 @@ public:
     [[nodiscard]] nlohmann::json Menu() const;
     bool MenuKey(int n);                // number key n (1-based) picks row n when it is on
     bool MenuPick(const std::string &id);
-    bool Back();                        // one level back: targets, sub-menu, the walk; false at the top
+    bool Back();                        // one level back: targets, sub-menu, the walk; at the top the panel hides and comes back
+    void Look(int unit);                // a portrait or a click: that unit's card (the acting one: the panel back)
     // What an action would do (campaign plan 5): {min, max, counterMin, counterMax, hp, warn}; an attack
     // uses the best battle strike each way, a board ability the rules' Preview.
     [[nodiscard]] nlohmann::json PreviewFor(const umbra::match::Action &action) const;
@@ -164,6 +165,8 @@ private:
     int lastMover_ = -1;             // a Moved caption is replaced by the same unit's next step
     int shownRound_ = 0;             // the round whose banner has played
     float banner_ = 0.0F, clock_ = 0.0F, wait_ = 0.0F;
+    int turnKey_ = -1;      // the turn (or battle pick) last seen, so a new one waits turnPause
+    float turnPause_ = 0.0F;
     bool bannerOn_ = false, logOpen_ = true;
     int hover_ = -1, chosen_ = -1, armedKey_ = -1;
     bool watch_ = false, paused_ = false;
@@ -171,6 +174,9 @@ private:
     std::vector<float> heights_;
     std::string submenu_; // "", "skills" or "items"
     int pinned_ = -1;     // the unit whose card is pinned
+    int looking_ = -1;    // another unit clicked on the board: its card and reach, the panel aside (notes 7-8)
+    bool menuHidden_ = false; // Back with nothing to cancel puts the action panel away; again brings it
+    std::vector<umbra::match::Action> choices_; // armed at a square holding several: which one (note 9)
     struct Toasted
     {
         std::string text;

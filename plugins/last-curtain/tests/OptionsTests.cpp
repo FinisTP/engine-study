@@ -45,27 +45,30 @@ TEST_CASE("The analog screen: strengths from options.csv, the player's two switc
     CHECK(options.boostCapPerStat == 3); // general drinks per stat per character (the user, campaign plan 6)
     const std::filesystem::path file = std::filesystem::temp_directory_path() / "umbra-analog-test" / "screen.json";
     std::filesystem::remove_all(file.parent_path());
-    AnalogScreen analog = LoadAnalog(file, options); // no file yet: on
+    AnalogScreen analog = LoadAnalog(file, options); // no file yet: the screen on, the worn tape off (the user, 2026-11-24 23:57)
     CHECK(analog.crtOn);
-    CHECK(analog.vhsOn);
+    CHECK_FALSE(analog.vhsOn);
     umbra::core::PostSettings post;
     analog.Apply(post);
     CHECK(post.crt == options.crt);
-    CHECK(post.vhs == options.vhs);
-    // 2. A switch from the pause screen turns one off, is saved at once, and survives a restart.
+    CHECK(post.vhs == 0.0F);
+    // 2. A switch from the pause screen turns one on, is saved at once, and survives a restart.
     CHECK(analog.Toggle("vhs", file));
     CHECK_FALSE(analog.Toggle("save", file)); // not ours
     analog.Apply(post);
-    CHECK(post.vhs == 0.0F);
+    CHECK(post.vhs == options.vhs);
     CHECK(post.crt == options.crt);
     const AnalogScreen again = LoadAnalog(file, options);
     CHECK(again.crtOn);
-    CHECK_FALSE(again.vhsOn);
-    CHECK(again.Data()["vhsOff"] == true);
+    CHECK(again.vhsOn);
+    CHECK(again.Data()["vhs"] == true);
     CHECK(again.Data()["crt"] == true);
+    // 2b. A file from before (version 1) had the tape on by default: it starts off once.
+    std::ofstream(file) << R"({"format": "umbra.lc-screen", "version": 1, "crt": true, "vhs": true})";
+    CHECK_FALSE(LoadAnalog(file, options).vhsOn);
     // 3. A broken file keeps the defaults; no folder (no preferences) still plays, unsaved.
     std::ofstream(file) << "{ not json";
-    CHECK(LoadAnalog(file, options).vhsOn);
+    CHECK_FALSE(LoadAnalog(file, options).vhsOn);
     AnalogScreen nowhere = LoadAnalog({}, options);
     CHECK(nowhere.Toggle("crt", {}));
     CHECK_FALSE(nowhere.crtOn);

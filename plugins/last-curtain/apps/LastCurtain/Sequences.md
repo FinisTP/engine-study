@@ -29,7 +29,7 @@ the screen shows, and when, changes.
 
 | `do` | What happens |
 |---|---|
-| `camera` | the camera goes to `on` |
+| `camera` | the camera goes to `on` (closer in a battle); `on: all` pulls back out to the whole fight |
 | `effect` | `effect` (assets/vfx/<name>.vfx.json) bursts at `on`'s middle |
 | `projectile` | `effect` flies from `on` to `to` over `seconds` (eased in and out) |
 | `hit` | the number rises and the cards change: before this cue, nobody sees the damage |

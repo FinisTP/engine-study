@@ -1,0 +1,13 @@
+{
+  "format": "umbra.lc-talk",
+  "version": 1,
+  "id": "ti-default-2",
+  "who": "ti",
+  "scene": "ti-default-2",
+  "idle": true,
+  "opens": {
+    "all": [
+      "joined:ti"
+    ]
+  }
+}

@@ -950,6 +950,54 @@ TEST_CASE("Breath: every other round a unit marks its row, and the next round st
     CHECK(s.units[0].hp == hp - 5);
 }
 
+TEST_CASE("Withdraw ends a battle at once, only while one is on, and never for a bot to choose (the user, 2026-11-24 23:57, note 19)", "[match][fight]")
+{
+    MatchDef def = Data();
+    MatchState s = ::Fight(def);
+    CHECK(Check(def, s, {ActionKind::Withdraw}) != Why::Ok); // no battle yet
+    TurnOf(def, s, 0);
+    Put(s, 0, Beside(s, s.units[2].cell));
+    s.now.origin = s.units[0].cell;
+    REQUIRE(Apply(def, s, {ActionKind::Attack, I8(2)}));
+    REQUIRE(s.battle.on);
+    CHECK(std::ranges::none_of(Legal(def, s), [](const Action &a) { return a.kind == ActionKind::Withdraw; }));
+    const int foe = s.units[2].hp;
+    REQUIRE(Apply(def, s, {ActionKind::Withdraw}));
+    CHECK_FALSE(s.battle.on);
+    CHECK(s.units[2].hp == foe);
+}
+
+TEST_CASE("Leaders act first in the first rounds, whatever their speed; later rounds go by speed (the user, 2026-11-24 23:57, notes 14 and 20)", "[match][fight]")
+{
+    MatchDef def = Data();
+    MatchState s = ::Fight(def);
+    s.units[1].speed = -5; // the slowest
+    s.mode.leaders = {1};
+    s.mode.leadRounds = 1;
+    BeginMatch(def, s, 7);
+    CHECK(s.order.front() == 1);
+    ToRound(def, s, 2);
+    CHECK(s.order.back() == 1);
+}
+
+TEST_CASE("Breath can first be drawn later: breathFirst 2 marks rounds 2, 4, not 3 (the user, 2026-11-24 23:57, note 11)", "[match][fight][gimmicks]")
+{
+    MatchDef def = Data();
+    MatchState s = ::Fight(def);
+    s.units[2].flags = 0;
+    s.gimmicks.breathUnit = 2;
+    s.gimmicks.breathDamage = 5;
+    s.gimmicks.breathEvery = 2;
+    s.gimmicks.breathFirst = 2;
+    const auto marked = [&] { return std::ranges::any_of(s.gimmicks.marks, [](const Mark &m) { return m.kind == Mark::Breath; }); };
+    ToRound(def, s, 2);
+    CHECK(marked());
+    ToRound(def, s, 3);
+    CHECK_FALSE(marked());
+    ToRound(def, s, 4);
+    CHECK(marked());
+}
+
 TEST_CASE("Windows: marked a round ahead, an open window lets out a spawn with its drops, up to the most alive (campaign plan 4)", "[match][fight][gimmicks]")
 {
     MatchDef def = Data();

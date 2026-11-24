@@ -334,7 +334,7 @@ TEST_CASE("The battle screen follows the rules' battle, a hunter's included (T32
     for (const auto &k : b["picks"])
     {
         const int lo = k["dealtMin"], hi = k["dealtMax"], cost = k["cost"];
-        CHECK(k["dealtText"] == (lo == hi ? std::to_string(hi) : std::to_string(lo) + "\u2013" + std::to_string(hi)));
+        CHECK(k["dealtText"] == (lo == hi ? std::to_string(hi) : std::to_string(lo) + "\xE2\x80\x93" + std::to_string(hi)));
         CHECK(k["costText"] == (cost > 0 ? "-" + std::to_string(cost) + " HP" : ""));
         CHECK_FALSE(k["label"].get<std::string>().find("cost") != std::string::npos);
         if (!k["off"].get<bool>())
@@ -1084,6 +1084,55 @@ TEST_CASE("Armed: the menu lists the targets with keys; Back disarms (campaign p
     CHECK(p.State().log.size() > lines); // the attack happened
 }
 
+TEST_CASE("The board panels: Back hides the action panel and brings it back; a click on another shows its card and reach; two on a square ask which (the user, 2026-11-24 23:57, notes 7-9)", "[match][play][menu]")
+{
+    const MatchDef def = Data();
+    int a = -1, b = -1;
+    MatchPlay p = AtPlayer(def, [&](MatchState &s) {
+        // Two foes on one square beside the one about to act.
+        const int me = Current(s);
+        int beside = -1;
+        for (int d = 0; d < 4 && beside < 0; ++d)
+            if (const int n = Neighbour(s.board, s.units[static_cast<std::size_t>(me)].cell, d); n >= 0 && s.board.cells[static_cast<std::size_t>(n)].kind != CellKind::Wall)
+                beside = n;
+        for (std::size_t i = 0; i < s.units.size(); ++i)
+            if (s.units[i].faction != s.units[static_cast<std::size_t>(me)].faction && s.units[i].faction >= 0 && Up(s.units[i]) && b < 0)
+                (a < 0 ? a : b) = static_cast<int>(i), s.units[i].cell = static_cast<std::int16_t>(beside);
+    });
+    REQUIRE(b >= 0);
+    const int me = Current(p.State());
+    // 1. Back with nothing to cancel hides the panel; Back again brings it.
+    REQUIRE_FALSE(p.Menu()["rows"].empty());
+    CHECK(p.Back());
+    CHECK(p.Menu()["rows"].empty());
+    CHECK(p.Back());
+    CHECK_FALSE(p.Menu()["rows"].empty());
+    // 2. A click on another: the panel steps aside for its card (skills, items) and its reach; a click on oneself brings the panel.
+    p.Click(p.State().units[static_cast<std::size_t>(a)].cell);
+    REQUIRE(p.UiData()["looking"].is_object());
+    CHECK(p.UiData()["looking"]["unit"] == a);
+    CHECK(p.UiData()["looking"]["skills"].is_array());
+    CHECK(p.UiData()["looking"]["items"].is_array());
+    CHECK_FALSE(p.UiData()["reach"].empty());
+    CHECK(p.Menu()["rows"].empty());
+    p.Click(p.State().units[static_cast<std::size_t>(a)].cell); // again: the other one there
+    CHECK(p.UiData()["looking"]["unit"] == b);
+    p.Click(p.State().units[static_cast<std::size_t>(me)].cell);
+    CHECK_FALSE(p.UiData().contains("looking"));
+    CHECK_FALSE(p.Menu()["rows"].empty());
+    // 3. Armed at a square holding two: which one, then that one.
+    REQUIRE(p.MenuKey(2)); // stay
+    const std::vector<std::string> ids = RowIds(p);
+    REQUIRE(p.MenuKey(static_cast<int>(std::ranges::find(ids, "attack") - ids.begin()) + 1));
+    p.Click(p.State().units[static_cast<std::size_t>(a)].cell);
+    const nlohmann::json choices = p.UiData()["choices"];
+    REQUIRE(choices.size() == 2);
+    const std::size_t lines = p.State().log.size();
+    REQUIRE(p.HandleUi("", "choose", "1"));
+    CHECK(p.State().log.size() > lines);
+    CHECK(p.State().battle.defender == choices[1]["unit"].get<int>());
+}
+
 TEST_CASE("Skill and item rows: no cost note when free, what it does as the tip, its story first when known (feedback 2026-11-24 15:10, notes 9 and 14)", "[match][play][menu]")
 {
     const MatchDef def = Data();
@@ -1134,7 +1183,10 @@ TEST_CASE("No lit squares and no walking before Di chuyen; undo jumps back (feed
     REQUIRE(p.MenuKey(1)); // Di chuyen
     const nlohmann::json reach = p.UiData()["reach"];
     REQUIRE_FALSE(reach.empty());
-    const int to = reach[0].get<int>();
+    int to = reach[0].get<int>();
+    for (const auto &c : reach) // an empty square (a click on someone shows their card, notes 7-8)
+        if (std::ranges::none_of(p.State().units, [&](const Unit &u) { return u.cell == c.get<int>(); }))
+            to = c.get<int>();
     CHECK(p.Back());
     p.Click(to);
     CHECK(p.State().units[static_cast<std::size_t>(me)].cell == from);
@@ -1214,7 +1266,7 @@ TEST_CASE("Target preview equals the rules' damage; the card shows the hovered u
     REQUIRE(aimed["kind"] == "target");
     CHECK(aimed["dealtMax"] == best);
     CHECK(aimed["counterMax"] == counter);
-    CHECK(aimed["dealtText"] == (f["min"] == f["max"] ? std::to_string(best) : std::to_string(f["min"].get<int>()) + "\u2013" + std::to_string(best)));
+    CHECK(aimed["dealtText"] == (f["min"] == f["max"] ? std::to_string(best) : std::to_string(f["min"].get<int>()) + "\xE2\x80\x93" + std::to_string(best)));
     // 3. The card: the hovered unit's numbers; pinned, it stays when the mouse leaves.
     p.Hover(s.units[static_cast<std::size_t>(foe)].cell);
     nlohmann::json card = p.HudData()["card"];
@@ -1339,11 +1391,38 @@ namespace
         "byKind": {"Blow": "blow"}, "byAbility": {"slash": "slash"},
         "sequences": {
           "blow": {"length": 0.6, "cues": [{"at": 0.0, "do": "camera", "on": "user"}, {"at": 0.2, "do": "hit", "on": "target"},
-                                           {"at": 0.2, "do": "effect", "effect": "hit_ink", "on": "target"}, {"at": 0.3, "do": "camera", "on": "target"}]},
+                                           {"at": 0.2, "do": "effect", "effect": "hit_ink", "on": "target"}, {"at": 0.3, "do": "camera", "on": "target"},
+                                           {"at": 0.42, "do": "camera", "on": "all"}]},
           "slash": {"length": 1.2, "cues": [{"at": 0.0, "do": "camera", "on": "user"}, {"at": 0.1, "do": "effect", "effect": "buff", "on": "user"},
                                             {"at": 0.3, "do": "projectile", "effect": "shot_trail", "on": "user", "to": "target", "seconds": 0.4},
                                             {"at": 0.7, "do": "hit", "on": "target"}, {"at": 0.7, "do": "shake", "amount": 0.3},
                                             {"at": 0.8, "do": "camera", "on": "target"}]}}})";
+}
+
+TEST_CASE("A new turn lets the camera arrive: a bot waits turnPause before it acts (the user, 2026-11-24 23:57, note 18)", "[match][play]")
+{
+    const MatchDef def = Data();
+    MatchState start = NewMatch(def, 7, {MatchDef::Find(def.characters, "bao"), MatchDef::Find(def.characters, "khang"), MatchDef::Find(def.characters, "mai")});
+    // 1. A bot's turn next: the player ends a turn whose next one is the other side's.
+    while (!(start.units[static_cast<std::size_t>(Current(start))].faction == 0 &&
+             start.units[static_cast<std::size_t>(start.order[static_cast<std::size_t>(start.turn + 1) % start.order.size()])].faction != 0))
+        REQUIRE(Apply(def, start, {ActionKind::EndTurn}));
+    MatchPlay p(def, start, BotLevel::Medium);
+    p.SetWords(Words());
+    umbra::night::GameOptions o = Pace();
+    o.turnBannerSeconds = 0.0F, o.turnPause = 1.0F;
+    p.SetOptions(o);
+    p.Update(0.1F);
+    REQUIRE(p.Do({ActionKind::EndTurn}));
+    p.Update(0.01F); // the new turn seen: its pause starts
+    const auto mark = [&] { return std::pair{p.State().log.size(), p.State().turn}; };
+    const auto before = mark();
+    // 2. Not before the pause; soon after it.
+    p.Update(0.3F), p.Update(0.3F);
+    CHECK(mark() == before);
+    for (int i = 0; i < 20 && mark() == before; ++i)
+        p.Update(0.25F);
+    CHECK(mark() != before);
 }
 
 TEST_CASE("Sequences load: cues in time order, a default by kind, an ability's own; mistakes are named (the user, 2026-11-24 19:05, point 3)", "[match][play][sequences]")
@@ -1411,9 +1490,11 @@ TEST_CASE("A blow plays its ability's sequence: the camera, then effects in time
     REQUIRE(fx.size() == 1);
     CHECK(fx[0].effect == "hit_ink");
     CHECK(fx[0].unit == enemy);
-    // 3. At 0.3 s the camera goes to the one struck.
+    // 3. At 0.3 s the camera goes to the one struck; at 0.42 s it pulls back out to the whole fight (note 4).
     p.Update(0.1F);
     CHECK(p.UiData()["focus"].get<std::vector<int>>() == std::vector<int>{enemy});
+    p.Update(0.1F);
+    CHECK(p.UiData().value("focus", nlohmann::json()).empty()); // none: the whole fight
 }
 
 TEST_CASE("Skipping tells every hit at once and spawns no effects (point 3)", "[match][play][sequences]")

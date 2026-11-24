@@ -66,6 +66,10 @@ std::string Notebook::SkillText(const umbra::match::AbilityDef &a) const
         text += " " + fill("skillPower", "Power {n} plus Attack.", a.power);
     else if (a.power > 0 && a.kind == AbilityClass::Heal)
         text += " " + fill("skillHeal", "Heals {n} HP.", a.power);
+    else if (a.kind == AbilityClass::Revive) // Com nguoi: what it does, not only its cost (note 21)
+        text += " " + fill("skillRevive", "Wakes an ally who just fell, back up with {n}% HP.", a.power);
+    if (a.effect == umbra::match::AbilityEffect::Rice)
+        text += " " + fill("skillRice", "On one still standing: heals {n} HP and clears a mark and a slow.", a.amount);
     if (a.range > 1)
         text += " " + fill("skillRange", "Reach {n} squares.", a.range);
     if (a.hpCost > 0)
@@ -272,6 +276,24 @@ nlohmann::json Notebook::Page() const
     return p;
 }
 
+nlohmann::json Notebook::Life(const std::string &who) const
+{
+    // Each year shows; its words once its skill opens: the level, and the memory that upgrades it if any.
+    nlohmann::json out = nlohmann::json::array();
+    if (!skills_ || !skills_->timeline.contains(who))
+        return out;
+    for (const umbra::campaign::Moment &m : skills_->timeline.at(who))
+    {
+        bool known = m.skill.empty() || Level(who) >= umbra::campaign::UnlockLevel(*skills_, m.skill);
+        for (const auto &[recruit, list] : memories_.byRecruit)
+            for (const umbra::campaign::Memory &mem : list)
+                if (!m.skill.empty() && mem.upgrade == m.skill && !save_.memories.contains(mem.id))
+                    known = false;
+        out.push_back({{"year", m.year}, {"skill", m.skill}, {"known", known}, {"unknown", !known}, {"text", known ? m.text : "???"}});
+    }
+    return out;
+}
+
 nlohmann::json Notebook::Data() const
 {
     nlohmann::json d{{"tab", tab_}, {"selected", selected_}, {"readOnly", readOnly_}, {"entries", nlohmann::json::array()}};
@@ -304,6 +326,7 @@ nlohmann::json Notebook::Data() const
                 slots.push_back({{"slot", i}, {"item", it == save_.slots.end() ? "" : it->second[static_cast<std::size_t>(i)]}, {"picked", picked_ == "bag:" + std::to_string(i)}});
             d["detail"] = Page();
             d["detail"]["memories"] = memories, d["detail"]["slots"] = slots;
+            d["detail"]["timeline"] = Life(selected_);
             d["detail"]["memoryCount"] = std::to_string(std::ranges::count_if(memories, [](const nlohmann::json &x) { return x["name"] != "?"; })) + "/" + std::to_string(memories.size());
         }
         return d;

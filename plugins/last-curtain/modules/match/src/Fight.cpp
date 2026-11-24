@@ -136,7 +136,7 @@ namespace umbra::match
                 g.marks.push_back({Mark::Hazard, static_cast<std::int16_t>(open[U(pick)])});
                 open.erase(open.begin() + pick);
             }
-            if (g.breathUnit >= 0 && Up(s.units[U(g.breathUnit)]) && g.breathEvery > 0 && s.round % g.breathEvery == 1 % g.breathEvery)
+            if (g.breathUnit >= 0 && Up(s.units[U(g.breathUnit)]) && g.breathEvery > 0 && s.round >= g.breathFirst && (s.round - g.breathFirst) % g.breathEvery == 0)
             {
                 const Unit &b = s.units[U(g.breathUnit)];
                 const int row = b.cell / s.board.width;

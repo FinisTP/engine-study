@@ -1,6 +1,7 @@
 #include <CampaignCafe.hpp>
 
 #include <algorithm>
+#include <cstdlib>
 #include <fstream>
 #include <system_error>
 
@@ -192,7 +193,7 @@ namespace umbra::campaign
                 error("format", "expected format umbra.lc-talk, version 1");
                 continue;
             }
-            Talk t{j.value("id", ""), j.value("who", ""), j.value("scene", ""), j.value("after", ""), j.value("memory", ""), {}, {}, {}, {}, {}, {}, j.value("repeat", false)};
+            Talk t{j.value("id", ""), j.value("who", ""), j.value("scene", ""), j.value("after", ""), j.value("memory", ""), {}, {}, {}, {}, {}, {}, j.value("repeat", false), j.value("idle", false)};
             const nlohmann::json opens = j.value("opens", nlohmann::json::object());
             t.all = opens.value("all", std::vector<std::string>{}), t.none = opens.value("none", std::vector<std::string>{});
             t.sets = j.value("sets", Facts{});
@@ -226,10 +227,27 @@ namespace umbra::campaign
         {
             const bool open = (t.after.empty() || Holds(save.facts, "won:" + t.after)) && std::ranges::all_of(t.all, [&](const std::string &f) { return Holds(save.facts, f); }) &&
                               std::ranges::none_of(t.none, [&](const std::string &f) { return Holds(save.facts, f); }) && (t.repeat || !save.talks.contains(t.id));
-            if (open && static_cast<int>(out.size()) < limit)
+            if (open && !t.idle && static_cast<int>(out.size()) < limit)
                 out.push_back(&t);
         }
         return out;
+    }
+
+    const Talk *IdleTalk(const Talks &talks, Save &save, const std::string &who)
+    {
+        // 1. The open default lines of this one, by file name.
+        std::vector<const Talk *> open;
+        for (const Talk &t : talks.list)
+            if (t.idle && t.who == who && (t.after.empty() || Holds(save.facts, "won:" + t.after)) &&
+                std::ranges::all_of(t.all, [&](const std::string &f) { return Holds(save.facts, f); }) && std::ranges::none_of(t.none, [&](const std::string &f) { return Holds(save.facts, f); }))
+                open.push_back(&t);
+        if (open.empty())
+            return nullptr;
+        // 2. The next one in turn, counted in the save so a new visit goes on from the last.
+        std::string &count = save.facts["idle:" + who];
+        const int n = std::atoi(count.c_str());
+        count = std::to_string(n + 1);
+        return open[static_cast<std::size_t>(n) % open.size()];
     }
 
     void Talked(Save &save, const Talk &talk)

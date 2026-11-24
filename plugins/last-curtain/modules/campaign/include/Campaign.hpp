@@ -108,6 +108,9 @@ namespace umbra::campaign
         std::vector<StageUnit> units;
         std::vector<StageItem> items;
         bool mustFree = false;
+        std::vector<std::string> leaders; // a tutorial's: these cast ids act first for `leadRounds` rounds
+        int leadRounds = 0;
+        bool meleeEnemies = false; // tutorials: enemies keep only abilities with range 1 (no Snipe)
         std::vector<int> noRevive; // sides that never revive
         std::map<std::string, int> startHp; // the party starts hurt: HP by cast id (a tutorial)
         std::vector<GuideDef> guide;        // a tutorial's guided steps, in order

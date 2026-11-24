@@ -50,8 +50,8 @@ bool LoadSequences(const nlohmann::json &j, Sequences &out, std::vector<std::str
                 errors.push_back(at + ": \"do\" is one of camera, effect, projectile, hit, shake, sound, bubble");
             if (cue.at < 0.0F || cue.at + cue.seconds > seq.length)
                 errors.push_back(at + ": \"at\" (plus a projectile's seconds) must be within the length");
-            if (cue.on != "user" && cue.on != "target")
-                errors.push_back(at + ": \"on\" is user or target");
+            if (cue.on != "user" && cue.on != "target" && !(cue.on == "all" && cue.what == "camera"))
+                errors.push_back(at + ": \"on\" is user or target (a camera also all)");
             if ((cue.what == "effect" || cue.what == "projectile") && cue.effect.empty())
                 errors.push_back(at + ": names its \"effect\"");
             seq.cues.push_back(cue);

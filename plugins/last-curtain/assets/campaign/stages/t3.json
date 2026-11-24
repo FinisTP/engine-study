@@ -5,6 +5,7 @@
   "kind": "story",
   "note": "Draft (2026-11-24): teaches reading a telegraph, falls and reviving. The Keeper draws breath on its lane every other round; step out, then punish. Two alcove specters wait until passed.",
   "level": 2,
+  "meleeEnemies": true,
   "partyCap": 3,
   "backdrop": "portrait_corridor",
   "xp": 120,
@@ -66,8 +67,9 @@
   "gimmicks": {
     "breath": {
       "unit": "keeper",
-      "damage": 5,
-      "every": 2
+      "damage": 6,
+      "every": 2,
+      "first": 2
     }
   },
   "aims": {

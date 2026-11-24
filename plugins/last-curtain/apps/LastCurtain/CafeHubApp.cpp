@@ -210,7 +210,7 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
         if (nlohmann::json &page = data["book"]["detail"]; page.is_object())
         {
             for (auto &it : page["store"])
-                it["name"] = itemNames.value(it["id"].get<std::string>(), it["id"].get<std::string>()) + "  \u00d7" + std::to_string(it["count"].get<int>()),
+                it["name"] = itemNames.value(it["id"].get<std::string>(), it["id"].get<std::string>()) + "  \xC3\x97" + std::to_string(it["count"].get<int>()),
                 it["icon"] = Icon("art/ui/campaign/item/" + it["id"].get<std::string>() + ".png");
             if (page.contains("card") && page["card"].value("kind", "") == "item")
             {
@@ -275,8 +275,7 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
                 book.Select(a.arg);
             else if (a.action == "skill")
                 book.Skill(a.arg);
-            else if (a.action == "fight")
-                (void)book.ToggleFight(book.Data()["selected"].get<std::string>());
+            // Who fights is chosen only before each stage (prestage), not here (note 27).
             else if (a.action == "pick") // pick then place: a slot or something in stock shows its card
                 book.Pick(a.arg);
             else if (a.action == "take")

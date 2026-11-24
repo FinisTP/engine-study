@@ -29,6 +29,7 @@ public:
     // stock ("learned:<id>", "locked:<id>", "store:<item>"); its card says what it is; Take carries the picked stock
     // (into the empty slot picked before it, else the first empty one), Drop puts a picked slot's back.
     void SetSkills(const umbra::campaign::Skills *skills) { skills_ = skills; }
+    nlohmann::json Life(const std::string &who) const; // Ky uc: [{year, skill, known, text}] (??? until known)
     void Pick(const std::string &what);
     bool Take();
     bool Drop();

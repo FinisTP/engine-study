@@ -131,6 +131,7 @@ campaign.markUnknown,?,?
 campaign.memoriesLabel,Ký ức,Memories
 campaign.music,Nhạc,Music
 campaign.namePlaceholder,Linh,Linh
+campaign.namePlaceholderMale,Hoàng,Hoàng
 campaign.newGame,Trò chơi mới,New game
 campaign.newSkirmishes,Có {n} trận giao tranh mới,{n} new skirmishes
 campaign.no,Không,No
@@ -156,6 +157,8 @@ campaign.settings,Cài đặt,Settings
 campaign.skillBattle,Trong trận.,In battle.
 campaign.skillBoard,Trên bàn.,On the board.
 campaign.skillCost,Tốn {n} HP.,Costs {n} HP.
+campaign.skillRevive,"Đánh thức một đồng đội vừa ngã, đứng dậy với {n}% HP.","Wakes an ally who just fell, back up with {n}% HP."
+campaign.skillRice,"Trên người còn đứng: hồi {n} HP, xóa dấu và chậm.","On one still standing: heals {n} HP and clears a mark and a slow."
 campaign.skillHeal,Hồi {n} HP.,Heals {n} HP.
 campaign.skillLine,Tầm {range} ô · sức {power} · tốn {hp} HP,Range {range} · power {power} · costs {hp} HP
 campaign.skillPassive,Luôn có tác dụng.,Always on.
@@ -234,6 +237,14 @@ match.abilityText.cost,Tốn {cost} HP.,Costs {cost} HP.
 match.abilityText.firststrike,Luôn luôn: được chọn trước mỗi hiệp.,Always: you pick first in every round of a battle.
 match.abilityText.heal,{where}: hồi {power} HP cho một đồng đội cách tối đa {range} ô ({reach}).,"{where}: heals {power} HP, an ally up to {range} tiles away ({reach})."
 match.abilityText.hit,"Trên bàn: đánh một kẻ địch cách tối đa {range} ô ({reach}), {power} cộng Công.",On the board: strikes a foe up to {range} tiles away ({reach}) for {power} plus your Attack.
+match.abilityText.revive,"{where}: đánh thức một đồng đội vừa ngã cách tối đa {range} ô, đứng dậy với {power}% HP.","{where}: wakes an ally who just fell, up to {range} tiles away, back up with {power}% HP."
+match.abilityText.remove,{where}: tiễn hẳn một kẻ đã ngã cách tối đa {range} ô; nó không dậy được nữa.,{where}: sends off a fallen foe up to {range} tiles away for good; it won't rise again.
+match.abilityText.giveap,{where}: trao 1 điểm hành động cho một đồng đội cách tối đa {range} ô.,{where}: gives 1 action point to an ally up to {range} tiles away.
+match.abilityText.hasten,{where}: một đồng đội cách tối đa {range} ô được đi thêm một lượt ngay sau lượt này.,{where}: an ally up to {range} tiles away takes an extra turn right after this one.
+match.abilityText.afterhasten,"Luôn luôn: khi được giục đi thêm lượt, nhận thêm một điều tốt.","Always: when hurried into an extra turn, gains something more."
+match.abilityText.effect,{where}: phủ một hiệu ứng lên một mục tiêu cách tối đa {range} ô.,{where}: lays an effect on a target up to {range} tiles away.
+match.abilityText.passive,"Luôn luôn: tự có hiệu lực, không cần dùng.","Always: works on its own, never used."
+match.abilityText.rice,"Trên người còn đứng: hồi {amount} HP, xóa dấu và chậm.","On one still standing: heals {amount} HP, clears a mark and a slow."
 match.abilityText.shield,Trong trận: chặn {power} mỗi đòn tới hết trận.,In battle: blocks {power} of every blow for the rest of it.
 match.abilityText.straight,"tính thẳng, xuyên tường","counted straight, through walls"
 match.abilityText.strike,Trong trận: một đòn {power} cộng Công.,In battle: a blow of {power} plus your Attack.
@@ -261,6 +272,8 @@ match.actions.warnFaster,nhanh hơn: ×2,faster: x2
 match.banner.first,Màn mở. Có ai đó đang xem.,The curtain rises. Someone is watching.
 match.banner.text,Còn {n} lượt,{n} turns left
 match.banner.title,Lượt {n},Turn {n}
+match.battle.withdraw,Rút khỏi trận,Leave the fight
+match.battle.withdrawTip,"Thôi đánh, lùi về bàn. Không ai bị thương thêm; lượt của bạn vẫn tính là đã đánh.","Stop fighting and step back to the board. No one is hurt further; your turn still counts as having attacked."
 match.battle.title,Hiệp {r}/{n},Round {r} of {n}
 match.cards.essence,{n} tinh hoa,{n} essence
 match.cards.heal,hồi {n} HP,{n} HP back
@@ -274,7 +287,8 @@ match.goals.all,Hạ hết bóng ma,Defeat every enemy
 match.goals.down,Hạ {name},Defeat {name}
 match.goals.free,Cắt dây cho {name},Cut {name} free
 match.guide.t1,"Bấm Di chuyển, rồi bấm ô sáng ngay trước con chuột. Đứng đó, chọn Đánh, rồi chọn Đánh thường.","Press Move, then the lit square right before the rat. From there choose Attack, then Basic attack."
-match.guide.t2Share,"Bấm Di chuyển, rồi bấm ô của bà Mai. Hai người chung một ô sẽ đánh chung một trận. Rồi kết thúc lượt.","Press Move, then Ba Mai's square. Two on one square fight one battle together. Then end the turn."
+match.guide.t2Approach,"Bấm Di chuyển, rồi bước tới ô sáng sát cái bóng. Đừng đánh một mình: kết thúc lượt và chờ bà Mai.","Press Move, then step onto the lit square beside the shadow. Don't fight it alone: end the turn and wait for Ba Mai."
+match.guide.t2Together,"Lượt bà Mai: bấm Di chuyển, rồi bấm vào ô của bạn. Hai người chung một ô đánh chung một trận. Chọn Đánh.","Ba Mai's turn: press Move, then your square. Two on one square fight one battle together. Choose Attack."
 match.guide.t2Tend,"Lượt bà Mai: mở Kỹ năng, chọn Chăm sóc, rồi chọn chính bạn. Vết thương đang ăn sâu.","Ba Mai's turn: open Skills, choose Tend, then choose yourself. The wound is eating deeper."
 match.guide.t2sScalpel,"Đưa bác sĩ Bảo tới sát một cái bóng, chọn Đánh, rồi chọn Dao mổ. Nó mạnh hơn, và lấy của ông 1 HP.","Bring Doctor Bao beside a shadow, choose Attack, then Scalpel. It hits harder, and takes 1 HP from him."
 match.guide.t3Safe,"Hàng gạch đỏ sắp bị thổi. Bấm Di chuyển, rồi bước ra một ô không đỏ.","The red row is about to be breathed on. Press Move, then step onto a square that is not red."
@@ -395,6 +409,10 @@ match.screens.medium,Vừa,Medium
 match.screens.nextTurn,lượt sau,next turn
 match.screens.no,Không,No
 match.screens.paused,Tạm dừng,Paused
+match.screens.move,Đi được,Move
+match.screens.cardSkills,Kỹ năng,Skills
+match.screens.cardItems,Đồ mang theo,Carrying
+match.screens.whichOne,Ai trong ô này?,Which one here?
 match.screens.pinned,Đã ghim (I để bỏ),Pinned (I to let go)
 match.screens.playAgain,Thử lại,Play again
 match.screens.quit,Thoát,Quit
@@ -419,6 +437,7 @@ match.telegraphs.arrival,Vòng tới có kẻ xuất hiện ở ô này.,Someone
 match.telegraphs.breath,Lối hơi thở: ai đứng đây sẽ trúng khi nó thở ra.,The breath's path: anyone here is hit when it breathes out.
 match.telegraphs.hazard,Ô bị đánh dấu: vòng tới có thứ rơi xuống đây.,Marked: something falls here next round.
 match.telegraphs.window,Cửa sổ sắp mở: vòng tới có thứ chui ra.,A window that opens next round: something comes out.
+match.tiles.item,Trên đất: {item},On the floor: {item}
 match.tiles.centre,"Giữa nhà hát, nơi bóng ma giữ.","The centre, held by monsters."
 match.tiles.hall,Lối đi.,A hall.
 match.tiles.hub,Chỗ nghỉ: đứng đây để hồi sức.,A hub: rest here to heal.
@@ -497,3 +516,18 @@ ticket.t2s.name,Phòng y tế,Infirmary
 ticket.t3.name,Hành lang chân dung,Portrait Corridor
 ticket.under.lock,Mở sau Phòng hóa trang. Có tiếng gõ từ dưới sàn.,Opens after the Dressing Room. Something knocks from beneath the floor.
 ticket.under.name,Hầm sân khấu,Under the Stage
+timeline.bao.0,"Sinh ở Mỹ Tho, con một ông thầy thuốc Bắc. Nhà lúc nào cũng thơm mùi thuốc sắc và mùi người sắp chết.","Born in Mỹ Tho, son of a herbal doctor. The house always smelled of brewed medicine and of the dying."
+timeline.bao.1,"Vào học trường Pétrus Ký khóa đầu. Đứng nhất lớp, không có bạn.","Enters the first class of the Pétrus Ký school. First in his class, and friendless."
+timeline.bao.2,"Ra Hà Nội học trường Y. Lần đầu cầm dao mổ, tay không run. Thầy khen. Ông thấy sợ chính mình.",Goes north to medical school in Hà Nội. The first time he holds a scalpel his hand does not shake. His teacher praises him. He is afraid of himself.
+timeline.bao.3,"Về Sài Gòn, mở phòng mạch sau nhà hát. Ca sĩ, vũ công, người kéo màn: ai đau cũng gõ cửa sau.","Back in Saigon, he opens a practice behind the opera house. Singers, dancers, stagehands: whoever hurts knocks at the back door."
+timeline.bao.4,"Đêm bom, ông ký một tờ giấy chứng tử. Ô nguyên nhân, ông không nhớ mình đã viết gì. Từ đêm đó ông không rời nhà hát nữa.","The night of the raid, he signs a death paper. He does not remember what he wrote under the cause. From that night on he never leaves the house."
+timeline.mai.0,"Sinh ở Quảng Nam, con gái út một nhà làm nón. Mạ dặn: đàn bà phải biết giữ cửa.","Born in Quảng Nam, the youngest daughter of hat makers. Her mother told her: a woman must know how to keep a door."
+timeline.mai.1,Theo chồng vào Sài Gòn. Chồng đi biển một chuyến rồi không về.,Follows her husband to Saigon. He goes to sea once and does not come back.
+timeline.mai.2,"Nhận chùm chìa khóa nhà hát. Bốn mươi năm sau, tay bà vẫn chưa buông nó ra.",Takes the opera house's ring of keys. Forty years later her hand has still not let it go.
+timeline.mai.3,"Sinh một đứa con trai trong phòng gác cổng. Nó lớn lên dưới gầm sân khấu, chơi giữa dây kéo màn.","Gives birth to a son in the gatekeeper's room. He grows up under the stage, playing among the curtain ropes."
+timeline.mai.4,"Đêm bom, thằng con xuống gầm sân khấu và không lên nữa. Từ đó, đêm nào bà cũng để một chén cơm nguội cạnh cửa sập.","The night of the raid, her son goes down under the stage and never comes up. Every night since, she leaves a bowl of cold rice by the trapdoor."
+timeline.mai.5,"Chết trên ghế gác cổng, chìa khóa còn trong tay. Chén cơm bên cửa sập vẫn đầy.","Dies on the gatekeeper's chair, the keys still in her hand. The bowl by the trapdoor is still full."
+timeline.ti.0,Sinh ở một làng biển miền Trung. Mạ tên Lụa. Chiều nào mạ cũng đứng đầu ngõ kêu về ăn cơm.,Born in a fishing village in the Centre. His mother is Lụa. Every evening she stands at the lane's end and calls him home to eat.
+timeline.ti.1,Mạ hứa Tết ni sên mứt gừng. Tí hứa chạy xong chuyến ni là về liền.,His mother promises ginger jam this Tết. Tí promises to come home right after this one run.
+timeline.ti.2,"Một chú dặn đưa mẩu giấy gấp tư tận tay, không được đọc. Tí chạy suốt đêm, chân chảy máu mà không dừng.","A man tells him to deliver a folded note by hand, unread. Tí runs all night, feet bleeding, and does not stop."
+timeline.ti.3,"Bãi cát trắng. Tí nằm xuống, nghe sóng. Mứt gừng của mạ vẫn chưa ăn.",The white sand. Tí lies down and listens to the waves. He never got to taste his mother's ginger jam.

@@ -1,0 +1,29 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "bao-default-1",
+  "note": "A default line when nothing is new (the user, 2026-11-24 23:57, note 29). Draft for review, Vietnamese and English.",
+  "lines": [
+    {
+      "id": "a",
+      "speaker": "bao",
+      "face": "calm",
+      "text": "Mạch cậu còn đập. Ở chỗ này, đó là một điều đáng ghi vào sổ.",
+      "en": "Your pulse still beats. In this place, that's worth writing down.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "bao",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    }
+  ]
+}

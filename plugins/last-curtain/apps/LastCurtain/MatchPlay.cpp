@@ -4,6 +4,7 @@
 #include <MatchSave.hpp>
 
 #include <algorithm>
+#include <cctype>
 #include <tuple>
 
 // The faction match on screen (MatchPlay.md).
@@ -154,7 +155,9 @@ void MatchPlay::Play(float dt)
     for (; playing_.next < seq.cues.size() && seq.cues[playing_.next].at <= playing_.time; ++playing_.next)
     {
         const Cue &c = seq.cues[playing_.next];
-        if (c.what == "camera" && who(c.on) >= 0)
+        if (c.what == "camera" && c.on == "all") // pull back out to everyone (note 4)
+            focus_.clear(), focusNext_ = -1;
+        else if (c.what == "camera" && who(c.on) >= 0)
             focus_ = {who(c.on)}, focusNext_ = -1, focusLeft_ = seq.length - c.at + options_.beatSeconds * 0.5F;
         else if (c.what == "effect")
             fx_.push_back({c.effect, who(c.on)});
@@ -379,7 +382,12 @@ void MatchPlay::Update(float dt)
         bannerOn_ = false, shownRound_ = s_.round, clock_ = 0.0F, wait_ = 0.0F;
         return;
     }
-    // 2. One beat at a time: the next line the rules wrote, else a bot's next action.
+    // 2. One beat at a time: the next line the rules wrote, else a bot's next action; a new turn
+    //    (or battle pick) first lets the camera arrive (note 18).
+    if (const int key = s_.battle.on ? 1000 + s_.battle.round * 10 + s_.battle.next : Current(s_) + s_.round * 100; key != turnKey_ && shown_ == s_.log.size())
+        turnKey_ = key, turnPause_ = s_.battle.on ? options_.battleTurnPause : options_.turnPause, looking_ = -1, menuHidden_ = false, choices_.clear();
+    if ((turnPause_ -= dt) > 0.0F)
+        return;
     if ((clock_ += dt) < wait_)
         return;
     clock_ = 0.0F;
@@ -403,6 +411,8 @@ bool MatchPlay::HandleUi(const std::string &screen, const std::string &action, c
     if (action == "log")
         return logOpen_ = !logOpen_, true;
     // 1. The battle's pick, the level choice, the event's choice and its close.
+    if (screen == "battle" && action == "withdraw") // leave a fight that can't be won (note 19)
+        return Do({ActionKind::Withdraw});
     if ((screen == "battle" || screen == "level") && action == "pick" && !arg.empty())
     {
         const auto colon = arg.find(':'); // "slot:target" picks a foe in a group battle
@@ -447,6 +457,15 @@ bool MatchPlay::HandleUi(const std::string &screen, const std::string &action, c
                 diceLeft_ = options_.diceSeconds;
             }
         return true;
+    }
+    if (screen.empty() && action == "choose" && !arg.empty() && std::isdigit(static_cast<unsigned char>(arg[0]))) // which of several on a square
+    {
+        const std::size_t i = std::stoul(arg);
+        if (i >= choices_.size())
+            return false;
+        const Action a = choices_[i];
+        choices_.clear(), armed_.clear();
+        return Do(a);
     }
     if (screen.empty() && action == "menu")
         return MenuPick(arg); // the campaign's command menu (campaign plan 5)
@@ -584,7 +603,7 @@ nlohmann::json MatchPlay::UiData() const
             j["path"] = path;
             j["hint"] = Word("hints", "move");
         }
-        else if (Chose())
+        else if (Chose() && !menuHidden_)
             j["actions"] = Actions(), j["hint"] = Word("hints", "act");
         else
             j["hint"] = Word("hints", "start"); // the turn's first choice: walk or act from here
@@ -611,6 +630,33 @@ nlohmann::json MatchPlay::UiData() const
             j["hint"] = Word("hints", "target");
             j["unit"]["attack"] = s_.units[U(me)].attack;
             j["unit"]["defence"] = s_.units[U(me)].defence;
+        }
+    }
+    // 3b. Another unit looked at: its card (skills, items) and where it could walk (notes 7-8); a square of several: which.
+    if (looking_ >= 0 && U(looking_) < s_.units.size() && s_.units[U(looking_)].cell >= 0 && !Armed())
+    {
+        const Unit &u = s_.units[U(looking_)];
+        nlohmann::json c = UnitNumbers(looking_), skills = nlohmann::json::array(), items = nlohmann::json::array(), reach = nlohmann::json::array();
+        for (const auto a : u.abilities)
+            if (a >= 0)
+                skills.push_back({{"name", def_.abilities[U(a)].name}, {"tip", AbilityText(a)}});
+        for (const auto it : u.items)
+            if (it >= 0)
+                items.push_back({{"name", def_.items[U(it)].name}, {"tip", def_.items[U(it)].text}});
+        for (int cell = 0; cell < static_cast<int>(s_.board.cells.size()); ++cell)
+            if (const int d = Steps(s_.board, u.cell, cell); d > 0 && d <= u.move)
+                reach.push_back(cell);
+        c["skills"] = skills, c["items"] = items, c["speed"] = u.speed, c["move"] = u.move;
+        j["looking"] = c;
+        j["reach"] = reach;
+    }
+    if (!choices_.empty())
+    {
+        j["choices"] = nlohmann::json::array();
+        for (const Action &a : choices_)
+        {
+            const int t = a.kind == ActionKind::Attack ? a.a : a.b;
+            j["choices"].push_back({{"unit", t}, {"name", Name(t)}, {"index", j["choices"].size()}});
         }
     }
     j["forecast"] = Forecast();
@@ -883,22 +929,37 @@ void MatchPlay::Click(int cell)
     if (!PlayerTurn() || s_.battle.on || cell < 0)
         return;
     const int me = Current(s_);
-    // 1. Armed: a valid target there is attacked; anything else disarms.
+    // 1. Armed: a valid target there is attacked; two or more there ask which (note 9); anything else disarms.
     if (Armed())
     {
+        std::vector<Action> here;
         for (const Action &a : ArmedActions())
-        {
-            const int t = a.kind == ActionKind::Attack ? a.a : a.b;
-            if (Covers(s_.board, s_.units[U(t)], cell))
-            {
-                armed_.clear();
-                Do(a);
-                return;
-            }
-        }
+            if (Covers(s_.board, s_.units[U(a.kind == ActionKind::Attack ? a.a : a.b)], cell))
+                here.push_back(a);
+        if (here.size() > 1)
+            return choices_ = here, void();
         armed_.clear();
+        if (here.size() == 1)
+            Do(here[0]);
         return;
     }
+    // 1b. Another unit, not while walking: its card and reach, the panel aside; again on that square, the next one there.
+    if (!moving_ && cell != s_.units[U(me)].cell)
+    {
+        std::vector<int> there;
+        for (int i = 0; i < static_cast<int>(s_.units.size()); ++i)
+            if (i != me && s_.units[U(i)].cell >= 0 && Covers(s_.board, s_.units[U(i)], cell))
+                there.push_back(i);
+        if (!there.empty())
+        {
+            const auto at = std::ranges::find(there, looking_);
+            looking_ = at == there.end() || at + 1 == there.end() ? there.front() : *(at + 1);
+            menuHidden_ = true;
+            return;
+        }
+    }
+    if (cell == s_.units[U(me)].cell && (looking_ >= 0 || menuHidden_)) // oneself: the panel back
+        return Look(me);
     if (Chose())
         return;
     // 2. Oneself stays; a lit square walks there along the path, one legal step at a time.
@@ -1011,7 +1072,7 @@ nlohmann::json MatchPlay::Forecast() const
         f["kind"] = "target";
         // The same numbers as PreviewFor (the best strike each way); shown as one number when the roll cannot vary.
         const nlohmann::json v = PreviewFor(a);
-        const auto range = [](int lo, int hi) { return lo == hi ? std::to_string(hi) : std::to_string(lo) + "\u2013" + std::to_string(hi); };
+        const auto range = [](int lo, int hi) { return lo == hi ? std::to_string(hi) : std::to_string(lo) + "\xE2\x80\x93" + std::to_string(hi); };
         f["dealtMin"] = v["min"], f["dealtMax"] = v["max"], f["counterMin"] = v["counterMin"], f["counterMax"] = v["counterMax"];
         f["dealtText"] = range(v["min"].get<int>(), v["max"].get<int>());
         f["counterText"] = v["counterMax"].get<int>() > 0 ? range(v["counterMin"].get<int>(), v["counterMax"].get<int>()) : std::string();
@@ -1045,6 +1106,9 @@ nlohmann::json MatchPlay::Forecast() const
             f["kind"] = "unit";
             return f;
         }
+    for (const umbra::match::Floor &f : s_.floor) // an item lying here: its name (note 15)
+        if (f.cell == hover_ && !f.treasure && f.item >= 0)
+            return {{"kind", "tile"}, {"text", Fill(Word("tiles", "item"), {{"item", def_.items[U(f.item)].name}})}};
     static const char *kinds[] = {"wall", "hall", "room", "centre", "hub"};
     return {{"kind", "tile"}, {"text", Word("tiles", kinds[static_cast<int>(s_.board.cells[U(hover_)].kind)])}};
 }
@@ -1095,17 +1159,19 @@ nlohmann::json MatchPlay::BattleData() const
                 {
                     const Action a{ActionKind::BattleAbility, static_cast<std::int8_t>(slot), static_cast<std::int8_t>(foe)};
                     const Why w = Check(def_, s_, a);
+                    const bool allowed = GuideAllows(a), guided = Guided() && allowed && w == Why::Ok; // a tutorial's pick: only it, lit (note 14)
                     const umbra::match::Forecast f = Preview(def_, s_, a);
                     const std::string label = def_.abilities[U(id)].name + (foe >= 0 ? ": " + Name(foe) : "");
                     // One number when the roll cannot vary; the cost only when there is one; what it does as the tip.
                     const int lo = f.healed > 0 ? f.healed : f.dealtMin, hi = f.healed > 0 ? f.healed : f.dealtMax;
-                    const std::string amount = hi <= 0 ? "" : lo == hi ? std::to_string(hi) : std::to_string(lo) + "\u2013" + std::to_string(hi);
+                    const std::string amount = hi <= 0 ? "" : lo == hi ? std::to_string(hi) : std::to_string(lo) + "\xE2\x80\x93" + std::to_string(hi);
                     picks.push_back({{"slot", foe >= 0 ? std::to_string(slot) + ":" + std::to_string(foe) : std::to_string(slot)}, {"label", label},
                                      {"dealtMin", f.dealtMin}, {"dealtMax", f.dealtMax}, {"healed", f.healed}, {"cost", f.cost},
                                      {"dealtText", amount}, {"costText", f.cost > 0 ? "-" + std::to_string(f.cost) + " HP" : ""},
                                      {"icon", std::string("art/ui/campaign/icon/") + (f.healed > 0 ? "cmd_items.png" : strike ? "cmd_attack.png" : "cmd_skills.png")},
                                      {"tip", w == Why::Ok ? AbilityText(id) : WhyText(w)},
-                                     {"enabled", w == Why::Ok}, {"off", w != Why::Ok}, {"why", w == Why::Ok ? "" : WhyText(w)}});
+                                     {"enabled", w == Why::Ok && allowed}, {"off", w != Why::Ok || !allowed}, {"guided", guided},
+                                     {"why", w == Why::Ok ? "" : WhyText(w)}});
                 }
             }
     }
@@ -1117,12 +1183,13 @@ std::string MatchPlay::AbilityText(int ability) const
 {
     // What it does, from its row: the class's words with its numbers (match-words.json "abilityText").
     const AbilityDef &a = def_.abilities[U(ability)];
-    static const char *classes[] = {"strike", "shield", "heal", "hit", "firststrike"};
+    static const char *classes[] = {"strike", "shield", "heal", "hit", "firststrike", "revive", "remove", "giveap", "hasten", "afterhasten", "effect", "passive"};
     const std::string dice = a.dice.count > 0 ? std::to_string(a.dice.count) + "d" + std::to_string(a.dice.sides) : std::to_string(a.power);
     const std::string text = Fill(Word("abilityText", classes[static_cast<int>(a.kind)]),
-                                  {{"power", dice}, {"range", std::to_string(a.range)},
+                                  {{"power", dice}, {"range", std::to_string(a.range)}, {"amount", std::to_string(a.amount)},
                                    {"reach", Word("abilityText", a.reach == RangeBy::Straight ? "straight" : "walk")}, {"where", Word("abilityText", a.use == Use::Board ? "board" : "battle")}});
-    return a.hpCost > 0 ? text + " " + Fill(Word("abilityText", "cost"), {{"cost", std::to_string(a.hpCost)}}) : text; // no cost, no words for it
+    const std::string extra = a.effect == umbra::match::AbilityEffect::Rice ? " " + Fill(Word("abilityText", "rice"), {{"amount", std::to_string(a.amount)}}) : "";
+    return a.hpCost > 0 ? text + extra + " " + Fill(Word("abilityText", "cost"), {{"cost", std::to_string(a.hpCost)}}) : text + extra; // no cost, no words for it
 }
 
 nlohmann::json MatchPlay::EndData() const
@@ -1279,7 +1346,8 @@ nlohmann::json MatchPlay::HudData() const
         if (!Up(s_.units[U(u)]))
             continue;
         strip.push_back({{"unit", u}, {"name", Name(u)}, {"portrait", Portrait(Sprite(u))}, {"mine", s_.units[U(u)].faction == 0},
-                         {"theirs", s_.units[U(u)].faction != 0}, {"acting", u == Current(s_)}, {"next", first + k >= n}});
+                         {"theirs", s_.units[U(u)].faction != 0}, {"acting", u == Current(s_)}, {"next", first + k >= n},
+                         {"tint", first + k >= n ? "#8c8c8c" : "#ffffff"}}); // next round's: dimmed, still a click to look (note 12)
     }
     j["strip"] = strip;
     // 3. The hint (whose turn, the keys) and the last told line.
@@ -1290,8 +1358,8 @@ nlohmann::json MatchPlay::HudData() const
     j["toasts"] = nlohmann::json::array();
     for (const Toasted &t : toasts_)
         j["toasts"].push_back({{"text", t.text}});
-    // 4. The card: the pinned unit, else the one under the mouse.
-    int card = pinned_;
+    // 4. The card: the one looked at, the pinned unit, else the one under the mouse.
+    int card = looking_ >= 0 ? looking_ : pinned_;
     for (int i = 0; card < 0 && i < static_cast<int>(s_.units.size()) && hover_ >= 0; ++i)
         if (Up(s_.units[U(i)]) && Covers(s_.board, s_.units[U(i)], hover_))
             card = i;
@@ -1304,6 +1372,14 @@ nlohmann::json MatchPlay::HudData() const
         c["speed"] = u.speed;
         c["role"] = u.kind == 0 ? Word("roles", roles[static_cast<int>(def_.characters[U(u.def)].role)]) : std::string();
         c["pinned"] = card == pinned_;
+        c["skills"] = nlohmann::json::array(), c["items"] = nlohmann::json::array(); // what it can do (note 8)
+        for (const auto a : u.abilities)
+            if (a >= 0)
+                c["skills"].push_back({{"name", def_.abilities[U(a)].name}, {"tip", AbilityText(a)}});
+        for (const auto it : u.items)
+            if (it >= 0)
+                c["items"].push_back({{"name", def_.items[U(it)].name}, {"tip", def_.items[U(it)].text}});
+        c["move"] = u.move;
         j["card"] = c;
     }
     return j;
@@ -1313,7 +1389,7 @@ nlohmann::json MatchPlay::Menu() const
 {
     nlohmann::json rows = nlohmann::json::array();
     std::string title;
-    if (!PlayerTurn() || s_.battle.on || s_.over)
+    if (!PlayerTurn() || s_.battle.on || s_.over || menuHidden_ || !choices_.empty())
         return {{"title", ""}, {"rows", rows}};
     const auto icon = [](const std::string &id) -> std::string {
         // The row's picture (art/ui/campaign): a command, or an item by its id; none for targets.
@@ -1328,7 +1404,7 @@ nlohmann::json MatchPlay::Menu() const
         // The tip on hover: why it is off, else what it does. A guided step leaves only its row on, lit.
         const bool guided = Guided() && GuideAllows(id) && !off;
         off |= !GuideAllows(id);
-        rows.push_back({{"id", id}, {"label", label + (sub ? "  \u00bb" : "")}, {"note", note}, {"off", off}, {"on", !off}, {"why", why}, {"guided", guided},
+        rows.push_back({{"id", id}, {"label", label + (sub ? "  \xC2\xBB" : "")}, {"note", note}, {"off", off}, {"on", !off}, {"why", why}, {"guided", guided},
                         {"tip", off && !why.empty() ? why : tip}, {"key", std::to_string(rows.size() + 1)}, {"icon", icon(id)}});
     };
     const nlohmann::json actions = Chose() ? Actions() : nlohmann::json::array();
@@ -1418,15 +1494,27 @@ bool MatchPlay::Back()
 {
     if (!PlayerTurn() || s_.battle.on)
         return false;
+    if (!choices_.empty())
+        return choices_.clear(), armed_.clear(), true;
     if (Armed())
         return armed_.clear(), true;
+    if (looking_ >= 0 || menuHidden_) // the panel back (note 7)
+        return looking_ = -1, menuHidden_ = false, true;
     if (!submenu_.empty())
         return submenu_.clear(), true;
     if (moving_ && !Chose())
         return moving_ = false, true;
     if (Chose() && !s_.now.acted)
         return HandleUi("", "act", "undo");
-    return false;
+    return menuHidden_ = true; // nothing to cancel: the panel steps away
+}
+
+void MatchPlay::Look(int unit)
+{
+    if (unit == Current(s_) || unit < 0 || U(unit) >= s_.units.size())
+        looking_ = -1, menuHidden_ = false;
+    else
+        looking_ = unit, menuHidden_ = PlayerTurn();
 }
 
 nlohmann::json MatchPlay::PreviewFor(const Action &action) const

@@ -233,7 +233,9 @@ namespace umbra::match
         if (u.pending >= 0)
             return a.kind == ActionKind::LevelUp ? CheckLevelUp(def, s, me, a.a) : Why::MustChoose;
         if (s.battle.on)
-            return a.kind == ActionKind::BattleAbility ? CheckBattleAbility(def, s, me, a.a, a.b) : Why::MustChoose;
+            return a.kind == ActionKind::Withdraw ? Why::Ok : a.kind == ActionKind::BattleAbility ? CheckBattleAbility(def, s, me, a.a, a.b) : Why::MustChoose;
+        if (a.kind == ActionKind::Withdraw)
+            return Why::NothingHere;
         if (!s.cards.empty()) // 1b. dealt treasure: pick a card first
             return a.kind != ActionKind::Card ? Why::MustChoose : a.a >= 0 && a.a < static_cast<int>(s.cards.size()) ? Why::Ok : Why::NothingHere;
         if (a.kind == ActionKind::Card)
@@ -348,6 +350,7 @@ namespace umbra::match
         case ActionKind::BattleAbility:
             Pick(def, s, me, a.a, a.b);
             break;
+        case ActionKind::Withdraw: Withdraw(def, s); break;
         case ActionKind::BoardAbility: BoardAbility(def, s, me, a.a, a.b); break;
         case ActionKind::UseItem: UseItem(def, s, me, a.a, a.b); break;
         case ActionKind::Answer: Answer(def, s, me, a.a); break;

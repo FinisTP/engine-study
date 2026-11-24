@@ -48,6 +48,7 @@ namespace umbra::match::inner
     int Picker(const MatchState &s);              // whose pick it is
     int FirstFoe(const MatchState &s, int me);     // the first standing fighter of the other group
     void StartBattle(const MatchDef &def, MatchState &s, int me, int target);
+    void Withdraw(const MatchDef &def, MatchState &s); // the battle ends now (a player's way out)
     void Pick(const MatchDef &def, MatchState &s, int me, int slot, int target); // target -1: the first foe standing
     void Down(const MatchDef &def, MatchState &s, int victim, int killer);
     bool Adjacent(const Board &b, int a, int c); // one step apart through a door

@@ -1,0 +1,29 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "lethanh-default-1",
+  "note": "A default line when nothing is new (the user, 2026-11-24 23:57, note 29). Draft for review, Vietnamese and English.",
+  "lines": [
+    {
+      "id": "a",
+      "speaker": "lethanh",
+      "face": "calm",
+      "text": "Ngồi đi. Đêm còn dài, mà ở đây thì đêm nào cũng dài.",
+      "en": "Sit. The night is long, and here every night is long.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "lethanh",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    }
+  ]
+}

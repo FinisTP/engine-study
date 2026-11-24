@@ -5,6 +5,7 @@
   "kind": "story",
   "note": "Draft (2026-11-24): teaches skills. Bao joins: Dao mo is stronger than the basic attack but costs 1 HP; the skills menu shows each cost. His other skills wait in the notebook (the cafe lesson).",
   "level": 2,
+  "meleeEnemies": true,
   "partyCap": 3,
   "backdrop": "infirmary",
   "xp": 100,
@@ -82,7 +83,12 @@
       "move": "toward",
       "do": "attack",
       "pick": "dao_mo",
-      "tip": "t2sScalpel"
+      "tip": "t2sScalpel",
+      "round": 1
     }
-  ]
+  ],
+  "leaders": [
+    "bao"
+  ],
+  "leadRounds": 1
 }

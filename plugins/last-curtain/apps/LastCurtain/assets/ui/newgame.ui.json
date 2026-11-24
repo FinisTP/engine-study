@@ -25,7 +25,7 @@
       {
         "type": "field",
         "id": "name",
-        "placeholder": "{words.namePlaceholder}",
+        "placeholder": "{placeholder}",
         "max": 16,
         "size": [
           440,

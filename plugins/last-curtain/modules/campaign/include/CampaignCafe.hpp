@@ -109,6 +109,7 @@ namespace umbra::campaign
         std::map<std::string, int> gives; // items handed over into storage (items.csv id -> count), the first time only
         std::string then;                 // after the scene: "notebook" opens it with the slot lesson
         bool repeat = false;
+        bool idle = false; // a default line: never new, said when nothing else is (note 29)
     };
 
     struct Talks
@@ -119,6 +120,8 @@ namespace umbra::campaign
     bool LoadTalks(const std::filesystem::path &folder, const std::filesystem::path &scenes, const Cast &cast, Talks &out, std::vector<core::Diagnostic> &d);
     std::vector<const Talk *> OpenTalks(const Talks &talks, const Save &save, int limit); // new talks first, at most `limit`
     void Talked(Save &save, const Talk &talk);
+    // A default line for `who` when nothing is new: the next open one each time (the save's idle:<who> counts).
+    const Talk *IdleTalk(const Talks &talks, Save &save, const std::string &who);
     // What a fight leaves in the save's facts: won:<stage>, fell:<cast id>, ratStole:<item> (who: each unit's cast id).
     void RecordFight(const match::MatchDef &def, Save &save, const std::string &stage, const match::MatchState &s, const std::vector<std::string> &who);
 
@@ -198,11 +201,17 @@ namespace umbra::campaign
     // Skills (campaign/skills.json; feedback 2026-11-24 15:10): each ability's unlock level and story, the
     // recruits' starting loadouts. A character carries at most maxCarried of the abilities it knows.
     inline constexpr std::size_t maxCarried = 4;
+    struct Moment // a year in a character's life (Ky uc); its words wait for its skill (the user, 2026-11-25)
+    {
+        int year = 0;
+        std::string skill, text; // skill: none = always known; text: localization.csv timeline.<who>.<n>
+    };
     struct Skills
     {
         std::map<std::string, int> unlock;                         // ability id -> level (missing: 1)
         std::map<std::string, std::string> lore;                   // ability id -> its line in the story
         std::map<std::string, std::vector<std::string>> starts;    // character -> what it carries on joining
+        std::map<std::string, std::vector<Moment>> timeline;       // character -> its life, year by year
     };
 
     // The save into a fight: the party as BuildStage takes it (roster levels, slots), then ApplySave swaps

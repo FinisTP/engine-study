@@ -74,6 +74,8 @@ namespace umbra::match
 
     namespace inner
     {
+        void Withdraw(const MatchDef &def, MatchState &s) { EndBattle(def, s); }
+
         bool Adjacent(const Board &b, int a, int c)
         {
             for (int d = 0; d < 4; ++d)

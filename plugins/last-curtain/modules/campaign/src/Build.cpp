@@ -110,6 +110,12 @@ namespace umbra::campaign
         for (const StageUnit &su : units)
         {
             match::Unit u = MakeUnit(def, cast, growth, su.who, su.level, su.side, su.side != 0);
+            if (stage.meleeEnemies && su.side != 0) // a tutorial's enemies fight up close (no Snipe)
+                for (auto &a : u.abilities)
+                    if (a >= 0 && def.abilities[static_cast<std::size_t>(a)].range > 1)
+                        a = -1;
+            if (stage.meleeEnemies && su.side != 0)
+                (void)std::ranges::stable_partition(u.abilities, [](auto a) { return a >= 0; });
             u.flags = static_cast<std::uint8_t>((su.boss ? match::flag::Boss : 0) | (su.recruit ? match::flag::Recruit : 0) | (su.strung ? match::flag::Strung : 0));
             const int cell = su.y * stage.width + su.x;
             u.cell = static_cast<std::int16_t>(su.behaviour == Behaviour::Reinforcement ? -1 : cell);
@@ -149,6 +155,7 @@ namespace umbra::campaign
                     mg.breathUnit = static_cast<std::int8_t>(i);
             mg.breathDamage = static_cast<std::int8_t>(g["breath"].value("damage", 0));
             mg.breathEvery = static_cast<std::int8_t>(g["breath"].value("every", 2));
+            mg.breathFirst = static_cast<std::int8_t>(g["breath"].value("first", 1));
         }
         if (g.contains("dark"))
             out.sight = g["dark"].value("sight", 4);
@@ -156,6 +163,11 @@ namespace umbra::campaign
         for (const StageItem &it : stage.items)
             if (!taken.contains(it.id))
                 s.floor.push_back({static_cast<std::int16_t>(it.y * stage.width + it.x), static_cast<std::int8_t>(ItemRow(def, it.item)), 0, false});
+        for (const std::string &l : stage.leaders) // a tutorial's turn order (the user, notes 14 and 20)
+            for (std::size_t i = 0; i < out.who.size(); ++i)
+                if (out.who[i] == l)
+                    s.mode.leaders.push_back(static_cast<std::int8_t>(i));
+        s.mode.leadRounds = stage.leadRounds;
         match::BeginMatch(def, s, seed);
         Sync(out);
         return out;

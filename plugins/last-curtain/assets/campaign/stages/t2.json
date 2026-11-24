@@ -3,8 +3,9 @@
   "version": 1,
   "id": "t2",
   "kind": "story",
-  "note": "Draft (2026-11-24): teaches healing and fighting together. The player starts hurt; Ba Mai tends from afar. Two on one square fight one battle together: the Defender ghost is too much for one.",
+  "note": "Draft (2026-11-24): teaches healing and fighting together. The player starts hurt; Ba Mai tends from afar. Two on one square fight one battle together: the Defender ghost is too much for one. Mai heals first, the player steps beside the ghost, then Mai joins on the player's square and attacks: a group battle (the user, 2026-11-24 23:57, note 20).",
   "level": 2,
+  "meleeEnemies": true,
   "partyCap": 2,
   "backdrop": "auditorium",
   "xp": 100,
@@ -69,9 +70,23 @@
     {
       "unit": "player",
       "round": 1,
-      "move": "with:mai",
+      "move": "toward",
+      "target": "ghost_defender",
       "do": "end",
-      "tip": "t2Share"
+      "tip": "t2Approach"
+    },
+    {
+      "unit": "mai",
+      "round": 2,
+      "move": "with:player",
+      "do": "attack",
+      "target": "ghost_defender",
+      "tip": "t2Together"
     }
-  ]
+  ],
+  "leaders": [
+    "mai",
+    "player"
+  ],
+  "leadRounds": 2
 }

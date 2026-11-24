@@ -154,6 +154,9 @@ namespace umbra::campaign
             out.items.push_back(it);
         }
         out.mustFree = j.value("mustFree", false);
+        out.meleeEnemies = j.value("meleeEnemies", false);
+        out.leaders = j.value("leaders", std::vector<std::string>{});
+        out.leadRounds = j.value("leadRounds", out.leaders.empty() ? 0 : 1);
         out.noRevive = j.value("noRevive", std::vector<int>{});
         out.startHp = j.value("startHp", std::map<std::string, int>{});
         for (const json &g : j.value("guide", json::array()))

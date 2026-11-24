@@ -36,7 +36,8 @@ public:
     // One card per unit on the board, at its screen point above the figure (match-labels.ui.json).
     [[nodiscard]] nlohmann::json Labels(const umbra::match::MatchState &s, glm::vec2 pixels) const;
     [[nodiscard]] int Pick(const umbra::match::Board &b, glm::vec2 mouse, glm::vec2 pixels) const; // the square under the mouse, -1 none
-    void SetCamera(float distance, float minDistance, float maxDistance, float tilt) { view_.Set(distance, minDistance, maxDistance, tilt); }
+    void SetCamera(float distance, float minDistance, float maxDistance, float tilt) { view_.Set(distance, minDistance, maxDistance, tilt), refDistance_ = distance; }
+    [[nodiscard]] float DistanceAcross(float tiles) const; // the seat's distance that shows this many tiles across (16:9)
     void Pan(glm::vec2 pixels) { view_.Pan(pixels); }
     void Zoom(float steps) { view_.Zoom(steps); }
     void Update(float dt) { clock_ += dt, view_.Update(dt), shake_ = std::max(0.0F, shake_ - dt * 2.5F); }
@@ -62,7 +63,7 @@ public:
     // From MatchPlay: the fallen not yet told (still drawn), and HP as told (the cards over figures).
     void SetTold(std::vector<int> standing, std::vector<int> hp) { standing_ = std::move(standing), toldHp_ = std::move(hp); }
     // Whom the told line is about (MatchPlay "focus"): the camera frames them all.
-    void SetFocus(std::vector<int> units) { focus_ = std::move(units); }
+    void SetFocus(std::vector<int> units) { follow_ = follow_ || !units.empty(), focus_ = std::move(units); } // the action takes the camera back (note 18)
     // A campaign stage: each unit's shown name and height (1 a person, 0.8 a ghost); empty keeps the match's.
     // A stage's cast: names, ghost heights and each unit's own figure ("" keeps its class's), loaded on first use.
     void SetCast(std::vector<std::string> names, std::vector<float> heights, std::vector<std::string> figures = {});
@@ -83,6 +84,7 @@ private:
     int picking_ = -1, stageCell_ = -1;
     glm::vec3 stageMiddle_{0.0F}; // where the stage stands: fixed when the fight begins
     std::vector<int> standing_, toldHp_;
+    float refDistance_ = 19.0F; // the default seat: figures keep their size nearer than this (note 5)
     std::vector<std::string> names_;
     std::vector<float> heights_;
     float fightT_ = 0.0F, focusT_ = 0.0F;
@@ -109,7 +111,9 @@ private:
     void Shadow(glm::vec3 feet, float width, umbra::core::DrawList &out) const;
     umbra::core::MeshHandle disc_; // a flat round disc for shadows
     umbra::core::TextureHandle eventIcon_, chestIcon_; // the optional rooms' marks (art/ui/match/icons)
-    void Mark(glm::vec3 at, umbra::core::TextureHandle icon, glm::vec3 color, float strength, umbra::core::DrawList &out) const;
+    void Mark(glm::vec3 at, umbra::core::TextureHandle icon, glm::vec3 color, float strength, umbra::core::DrawList &out, float size = 0.0F) const;
+    umbra::core::TextureHandle ItemIcon(int item) const; // an item's picture, loaded on first use
+    mutable std::map<std::string, umbra::core::TextureHandle> itemIcons_;
     std::map<std::string, std::vector<umbra::core::TextureHandle>> floors_; // by square kind
     [[nodiscard]] umbra::core::TextureHandle FloorArt(const umbra::match::Board &b, int cell, bool stage) const;
     [[nodiscard]] float RoomT() const; // 0 the board, 1 close enough for walls
@@ -117,6 +121,7 @@ private:
     [[nodiscard]] glm::vec3 Shown(const umbra::match::MatchState &s, int unit) const; // where the figure stands now
     void Walk(const umbra::match::MatchState &s, float dt);
     void Arrow(glm::vec3 tip, float size, umbra::core::DrawList &out) const; // a downward gold triangle facing the camera
+    void Rope(const umbra::match::MatchState &s, int unit, umbra::core::DrawList &out) const; // a strung unit's rope to its holder
     umbra::core::MeshHandle triangle_;
     umbra::core::TextureHandle wallArt_; // match-look.json rooms.wallArt, repeated every wallRepeat metres
     void Edge(glm::vec3 centre, int dir, glm::vec4 color, float glow, umbra::core::DrawList &out) const;

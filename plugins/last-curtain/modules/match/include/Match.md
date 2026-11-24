@@ -38,6 +38,7 @@ takes `campaign` and may change it, plan 4):
 | `playerLoss` | off | on | the unit flagged `flag::Player` falling loses the fight |
 | `mustFree` | off | a stage's | the win also needs every recruit freed ("Freeing and the end") |
 | `win` | `score` | `boss` | score after the round limit, or every boss down |
+| `leaders`, `leadRounds` | a campaign stage | none, 0 | these units act first, in order, for the first rounds (tutorials) |
 | `roundLimit` | `options.csv` rounds | 0 | 0 = no limit |
 | `maxAp`, `apPerTurn` | | 2, 2 | AP stored at most, spent at most a turn |
 
@@ -165,7 +166,7 @@ effect, aimed at an enemy or an ally) and `passive` (always on). Each upgrade ve
    A breath hurts the other side on its row by `breathDamage`. A window lets `spawn` out (flag
    `Spawned`, acting from the next round, with `spawnDrops`) while fewer than `spawnMax` spawns stand.
 2. New marks are laid for next round: `hazards` random open squares; a breath on the breather's row every
-   `breathEvery` rounds (log `Breath`); the windows named by `pattern[(round-1) % size]`.
+   `breathEvery` rounds from round `breathFirst` (default 1) (log `Breath`); the windows named by `pattern[(round-1) % size]`.
 
 So every hazard, breath and window is shown one round before it acts. A stolen item is parked on the
 nearest window when there is one.

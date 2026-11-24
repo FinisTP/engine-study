@@ -173,6 +173,8 @@ namespace umbra::match
         WinBy win = WinBy::Score;
         int roundLimit = 0; // 0 = none
         int maxAp = 2, apPerTurn = 2;
+        std::vector<std::int8_t> leaders; // a tutorial's: these act first, in this order, for the first `leadRounds` rounds
+        int leadRounds = 0;
     };
 
     inline constexpr int maxAbilities = 8, maxItems = 4; // slots in a Unit; rules.carry may not exceed maxItems

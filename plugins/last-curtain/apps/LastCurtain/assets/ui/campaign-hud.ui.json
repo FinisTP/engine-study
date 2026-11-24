@@ -98,6 +98,7 @@
             {
               "type": "image",
               "image": "{o.portrait}",
+              "tint": "{o.tint}",
               "fit": "top",
               "size": [
                 44,
@@ -117,8 +118,7 @@
               "text": "{o.name}",
               "visible": "{o.theirs}"
             }
-          ],
-          "disabled": "{o.next}"
+          ]
         },
         "action": "focus",
         "arg": "{o.unit}"
@@ -277,6 +277,47 @@
           },
           {
             "type": "text",
+            "style": "small",
+            "text": "{words.move} {hud.card.move}"
+          },
+          {
+            "type": "text",
+            "style": "heading",
+            "text": "{words.cardSkills}",
+            "visible": "{hud.card.skills}"
+          },
+          {
+            "type": "list",
+            "items": "{hud.card.skills}",
+            "as": "k",
+            "gap": 1,
+            "entry": {
+              "type": "text",
+              "style": "small",
+              "text": "· {k.name}",
+              "tip": "{k.tip}"
+            }
+          },
+          {
+            "type": "text",
+            "style": "heading",
+            "text": "{words.cardItems}",
+            "visible": "{hud.card.items}"
+          },
+          {
+            "type": "list",
+            "items": "{hud.card.items}",
+            "as": "k",
+            "gap": 1,
+            "entry": {
+              "type": "text",
+              "style": "small",
+              "text": "· {k.name}",
+              "tip": "{k.tip}"
+            }
+          },
+          {
+            "type": "text",
             "style": "muted",
             "text": "{words.pinned}",
             "visible": "{hud.card.pinned}"
@@ -337,6 +378,37 @@
             }
           ]
         }
+      },
+      {
+        "type": "stack",
+        "anchor": "center",
+        "style": "lcPanel",
+        "gap": 6,
+        "visible": "{choices}",
+        "children": [
+          {
+            "type": "text",
+            "style": "heading",
+            "text": "{words.whichOne}"
+          },
+          {
+            "type": "list",
+            "items": "{choices}",
+            "as": "c",
+            "gap": 4,
+            "entry": {
+              "type": "button",
+              "style": "lcButton",
+              "text": "{c.name}",
+              "action": "choose",
+              "arg": "{c.index}",
+              "size": [
+                260,
+                0
+              ]
+            }
+          }
+        ]
       }
     ]
   }

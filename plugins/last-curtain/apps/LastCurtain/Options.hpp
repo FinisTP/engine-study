@@ -37,6 +37,9 @@ namespace umbra::night
         float vhs = 0.0F;                  // ... and its VHS tape strength, 0..1
         float boostCapPerStat = 3.0F;      // general drinks per stat per character (campaign plan 6)
         float lettersPerSecond = 40.0F;    // a dialog line appears this fast (DialogApp.hpp)
+        float stageTilesAcross = 0.0F;     // a campaign stage's seat shows this many tiles across (0: matchCameraDistance)
+        float turnPause = 0.0F;            // a bot waits this long when a new turn begins on the board (note 18)
+        float battleTurnPause = 0.0F;      // ... and when a new pick begins in a battle
     };
 
     // Reads key,value,note rows; an unknown key or a bad value is refused with its row.

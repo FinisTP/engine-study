@@ -1,7 +1,7 @@
 {
  "format": "lastcurtain.sequences",
  "version": 1,
- "note": "How each told line plays out on screen (Sequences.md). byAbility first, then byKind; a line with neither is told the plain way. Times in seconds after the line is told; every use plays in full (the user, 2026-11-24 19:05); hurry speeds it up, skip tells the hits with no effects.",
+ "note": "How each told line plays out on screen (Sequences.md). byAbility first, then byKind; a line with neither is told the plain way. Times in seconds after the line is told; every use plays in full (the user, 2026-11-24 19:05); hurry speeds it up, skip tells the hits with no effects. Every camera sequence ends pulling back out to the whole fight ('on': 'all'; the user, 2026-11-24 23:57, note 4).",
  "byKind": {
   "Blow": "blow",
   "Healed": "heal",
@@ -50,6 +50,11 @@
      "at": 0.45,
      "do": "camera",
      "on": "target"
+    },
+    {
+     "at": 0.75,
+     "do": "camera",
+     "on": "all"
     }
    ]
   },
@@ -71,6 +76,11 @@
      "at": 0.3,
      "do": "hit",
      "on": "target"
+    },
+    {
+     "at": 0.6,
+     "do": "camera",
+     "on": "all"
     }
    ]
   },
@@ -92,6 +102,11 @@
      "at": 0.05,
      "do": "shake",
      "amount": 0.25
+    },
+    {
+     "at": 0.35,
+     "do": "camera",
+     "on": "all"
     }
    ]
   },
@@ -108,6 +123,11 @@
      "do": "effect",
      "effect": "revive",
      "on": "user"
+    },
+    {
+     "at": 0.35,
+     "do": "camera",
+     "on": "all"
     }
    ]
   },
@@ -124,6 +144,11 @@
      "do": "effect",
      "effect": "spawn_ticket",
      "on": "target"
+    },
+    {
+     "at": 0.3,
+     "do": "camera",
+     "on": "all"
     }
    ]
   },
@@ -140,6 +165,11 @@
      "do": "effect",
      "effect": "spawn_ticket",
      "on": "user"
+    },
+    {
+     "at": 0.3,
+     "do": "camera",
+     "on": "all"
     }
    ]
   },
@@ -156,6 +186,11 @@
      "do": "effect",
      "effect": "levelup",
      "on": "user"
+    },
+    {
+     "at": 0.35,
+     "do": "camera",
+     "on": "all"
     }
    ]
   },
@@ -183,6 +218,11 @@
      "at": 0.1,
      "do": "shake",
      "amount": 0.15
+    },
+    {
+     "at": 0.4,
+     "do": "camera",
+     "on": "all"
     }
    ]
   },
@@ -209,6 +249,11 @@
      "at": 0.1,
      "do": "hit",
      "on": "user"
+    },
+    {
+     "at": 0.4,
+     "do": "camera",
+     "on": "all"
     }
    ]
   },
@@ -225,6 +270,11 @@
      "do": "effect",
      "effect": "breath",
      "on": "user"
+    },
+    {
+     "at": 0.4,
+     "do": "camera",
+     "on": "all"
     }
    ]
   },
@@ -252,6 +302,11 @@
      "do": "effect",
      "effect": "buff",
      "on": "user"
+    },
+    {
+     "at": 0.35,
+     "do": "camera",
+     "on": "all"
     }
    ]
   },
@@ -304,6 +359,11 @@
      "at": 0.85,
      "do": "sound",
      "sound": "hit"
+    },
+    {
+     "at": 1.15,
+     "do": "camera",
+     "on": "all"
     }
    ]
   },
@@ -342,6 +402,11 @@
      "at": 0.9,
      "do": "hit",
      "on": "target"
+    },
+    {
+     "at": 1.2,
+     "do": "camera",
+     "on": "all"
     }
    ]
   },
@@ -391,6 +456,11 @@
      "at": 0.7,
      "do": "sound",
      "sound": "hit"
+    },
+    {
+     "at": 1.0,
+     "do": "camera",
+     "on": "all"
     }
    ]
   }

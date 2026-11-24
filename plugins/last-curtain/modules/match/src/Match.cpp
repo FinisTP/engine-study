@@ -203,6 +203,11 @@ namespace umbra::match
                 const int sa = s.units[U(a)].speed - s.units[U(a)].slow, sc = s.units[U(c)].speed - s.units[U(c)].slow; // an alarm slows
                 return sa != sc ? sa > sc : key[U(a)] < key[U(c)];
             });
+            // A tutorial's leaders go first in its first rounds (MatchDef.hpp Mode).
+            if (s.round <= s.mode.leadRounds)
+                for (auto l = s.mode.leaders.rbegin(); l != s.mode.leaders.rend(); ++l)
+                    if (const auto at = std::ranges::find(s.order, *l); at != s.order.end())
+                        std::rotate(s.order.begin(), at, at + 1);
         }
     }
 

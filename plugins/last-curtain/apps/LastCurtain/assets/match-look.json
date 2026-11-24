@@ -34,7 +34,7 @@
     "seconds": 1.0
   },
   "follow": {
-    "seconds": 0.2,
+    "seconds": 0.12,
     "pull": 1.0,
     "edge": 0.45,
     "fit": 2.4,
@@ -54,7 +54,7 @@
     "tilt": 40
   },
   "rooms": {
-    "note": "Floor tiles by square kind (a path, art/floors/*.jpg) or room paintings (a bare name, art/rooms/<name>.jpg); one per kind on a board, picked by the board's size. Walls rise as the camera comes within roomDistance.",
+    "note": "Floor tiles by square kind (a path, art/floors/*.jpg) or room paintings (a bare name, art/rooms/<name>.jpg); one per kind on a board, picked by the board's size. Walls rise as the camera comes within roomDistance. Since the stage opens at about 10 tiles across (about 5 m), walls only rise nearer than that (boardDistance 5.5 to roomDistance 3).",
     "hall": [
       "art/floors/boards.jpg",
       "art/floors/marble.jpg"
@@ -74,8 +74,8 @@
     "stage": [
       "art/floors/backstage.jpg"
     ],
-    "boardDistance": 19,
-    "roomDistance": 7,
+    "boardDistance": 5.5,
+    "roomDistance": 3,
     "wallHeight": 0.9,
     "wallLow": 0.45,
     "wallArt": "art/ui/match/wall.jpg",
@@ -89,17 +89,17 @@
     "shareApart": 0.22
   },
   "figures": {
-    "note": "Figures grow with the camera's distance (distance / rooms.boardDistance) so they keep their size on screen, within these bounds.",
-    "minScale": 0.3,
-    "maxScale": 1.6,
-    "lean": 0.5
+    "note": "A figure is 'base' tall (times 3 x 0.625 m) at the default seat; farther out it grows to keep its size on screen, nearer it keeps its height, so zooming in never shrinks it (the user, note 5).",
+    "maxScale": 3.0,
+    "lean": 0.5,
+    "base": 0.8
   },
   "battle": {
-    "note": "The battle view: the camera comes down to distance/tilt over seconds, the two fighters stand gap squares either side of their middle at figureScale.",
+    "note": "The battle view: the camera comes down to distance/tilt over seconds, the two fighters stand gap squares either side of their middle at figureScale. 'across': the tiles the battle view shows (the sides stand 'gap' = a quarter of it from the middle, so at 25% and 75% of the screen; the user, notes 5-6); a sequence's camera on one fighter comes to focusNear of the distance and focusPull of the way to it (note 4).",
     "seconds": 0.6,
     "distance": 7,
     "tilt": 14,
-    "gap": 1.3,
+    "gap": 2.5,
     "figureScale": 1.2,
     "fade": 3.0,
     "backdropWidth": 24,
@@ -116,9 +116,12 @@
     },
     "light": 25,
     "near": 2.0,
-    "pairGap": 1.2,
+    "pairGap": 1.0,
     "pairDepth": 0.8,
-    "lift": 1.1
+    "lift": 1.1,
+    "across": 10,
+    "focusNear": 0.75,
+    "focusPull": 0.6
   },
   "reach": {
     "note": "The player's reach and targets wash the tile half over in their colour, blinking.",

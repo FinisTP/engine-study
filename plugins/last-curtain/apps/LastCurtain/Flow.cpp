@@ -135,7 +135,7 @@ std::string RunKeyboard(GameContext &game, const umbra::assets::AssetFolders &as
     return text;
 }
 
-umbra::night::AnalogScreen RunSettings(GameContext &game, const nlohmann::json &words)
+umbra::night::AnalogScreen RunSettings(GameContext &game, const nlohmann::json &words, bool backdrop)
 {
     // 1. The settings as saved, and the keys as the player has them (read-only, remapping later).
     umbra::night::GameOptions options;
@@ -150,12 +150,13 @@ umbra::night::AnalogScreen RunSettings(GameContext &game, const nlohmann::json &
     keys.push_back({{"name", names.value("walk", std::string("walk"))}, {"key", "WASD"}});
     keys.push_back({{"name", names.value("use", std::string("use"))}, {"key", "E"}});
     keys.push_back({{"name", names.value("switch", std::string("switch"))}, {"key", "Tab"}});
-    // 2. The screens under it step aside (they would read this screen's data) and come back after.
+    // 2. The screens under it step aside (they would read this screen's data) and come back after;
+    //    from the title, the foyer painting stays behind it (no empty sky, the user 2026-11-24).
     const std::vector<std::string> under = game.screens->Ui().OpenScreens();
     for (const std::string &name : under)
         game.screens->Ui().Close(name);
     // 3. Each change applies at once (Apply) and is saved (Toggle); Close or Back leaves.
-    (void)RunScreen(game, "settings", {{"words", words}, {"analog", analog.Data()}, {"keys", keys}},
+    (void)RunScreen(game, "settings", {{"words", words}, {"analog", analog.Data()}, {"keys", keys}, {"backdrop", backdrop}},
                     [&](const std::string &action, const std::string &, nlohmann::json &data) {
                         if (!analog.Toggle(action, umbra::night::AnalogPath()))
                             return false;
@@ -211,26 +212,27 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
         if (action == "quit" || !capture.empty())
             return 0;
         if (action == "settings")
-            (void)RunSettings(game, words);
+            (void)RunSettings(game, words, true);
         else if (action == "continue" && has)
             started = true;
         else if (action == "new")
         {
             // A name and a form of address, then the prologue and the first fight.
             std::string gender = "female";
-            const auto [made, unused] = RunScreen(game, "newgame", {{"words", words}, {"female", true}}, [&](const std::string &a, const std::string &g, nlohmann::json &data) {
+            const auto [made, unused] = RunScreen(game, "newgame", {{"words", words}, {"female", true}, {"placeholder", words.value("namePlaceholder", "")}}, [&](const std::string &a, const std::string &g, nlohmann::json &data) {
                 if (a == "keyboard") // a gamepad's way to type the name (P17)
                     return game.screens->Ui().SetFieldText("newgame", "name", RunKeyboard(game, assets, words, game.screens->Ui().FieldText("newgame", "name"))), true;
                 if (a != "gender")
                     return false;
                 gender = g, data["female"] = g == "female", data["male"] = g == "male";
+                data["placeholder"] = words.value(g == "male" ? "namePlaceholderMale" : "namePlaceholder", ""); // Hoang for a man (the user)
                 return true;
             });
             std::string player = game.screens->Ui().FieldText("newgame", "name");
             if (made != "start")
                 continue;
             if (player.empty())
-                player = cast.Find("nameless") ? cast.Find("nameless")->name : "Linh";
+                player = gender == "male" ? words.value("namePlaceholderMale", std::string("Hoang")) : cast.Find("nameless") ? cast.Find("nameless")->name : "Linh";
             save = {};
             save.player = {player, gender};
             save.roster = {{"player", 1, 0}};

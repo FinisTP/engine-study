@@ -77,6 +77,8 @@ std::string CafeHub::Talk(const std::string &who)
                             pending_ = &m;
             return t->scene;
         }
+    if (const campaign::Talk *t = campaign::IdleTalk(talks_, save_, who)) // nothing new: a default line (note 29)
+        return last_ = t, t->scene;
     return {};
 }
 

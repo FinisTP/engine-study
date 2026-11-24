@@ -136,7 +136,10 @@
                       {
                         "type": "bar",
                         "style": "xp",
-                        "size": [160, 6],
+                        "size": [
+                          160,
+                          6
+                        ],
                         "value": "{book.detail.xp}",
                         "max": "{book.detail.xpMax}"
                       },
@@ -152,18 +155,6 @@
                       }
                     ]
                   }
-                ]
-              },
-              {
-                "type": "button",
-                "style": "lcButton",
-                "text": "{book.detail.fightText}",
-                "action": "fight",
-                "disabled": "{book.detail.locked}",
-                "selected": "{book.detail.fights}",
-                "size": [
-                  300,
-                  0
                 ]
               },
               {
@@ -236,8 +227,48 @@
               },
               {
                 "type": "text",
-                "style": "muted",
-                "text": "{words.memoriesLabel} {book.detail.memoryCount}"
+                "style": "heading",
+                "text": "{words.memoriesLabel}",
+                "visible": "{book.detail.timeline}"
+              },
+              {
+                "type": "list",
+                "items": "{book.detail.timeline}",
+                "as": "m",
+                "gap": 3,
+                "entry": {
+                  "type": "stack",
+                  "direction": "horizontal",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "text",
+                      "style": "heading",
+                      "text": "{m.year}",
+                      "size": [
+                        52,
+                        0
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "style": "text",
+                      "text": "{m.text}",
+                      "wrap": true,
+                      "size": [
+                        360,
+                        0
+                      ],
+                      "visible": "{m.known}"
+                    },
+                    {
+                      "type": "text",
+                      "style": "muted",
+                      "text": "{m.text}",
+                      "visible": "{m.unknown}"
+                    }
+                  ]
+                }
               }
             ]
           },

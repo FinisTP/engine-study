@@ -236,6 +236,7 @@
                   "action": "pick",
                   "arg": "{p.slot}",
                   "disabled": "{p.off}",
+                  "selected": "{p.guided}",
                   "tip": "{p.tip}"
                 },
                 {
@@ -246,6 +247,13 @@
                 }
               ]
             }
+          },
+          {
+            "type": "button",
+            "style": "lcButton",
+            "text": "{words.battle.withdraw}",
+            "action": "withdraw",
+            "tip": "{words.battle.withdrawTip}"
           }
         ]
       },

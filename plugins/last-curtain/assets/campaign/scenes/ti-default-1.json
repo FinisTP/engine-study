@@ -1,0 +1,29 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "ti-default-1",
+  "note": "A default line when nothing is new (the user, 2026-11-24 23:57, note 29). Draft for review, Vietnamese and English.",
+  "lines": [
+    {
+      "id": "a",
+      "speaker": "ti",
+      "face": "talk",
+      "text": "{Anh/Chị} đi đâu cũng cho tui theo nghe. Tui không muốn ngồi một mình nữa mô.",
+      "en": "Take me wherever you go, okay? I don't want to sit alone anymore.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "ti",
+          "side": "right",
+          "slot": 0,
+          "face": "talk"
+        }
+      ]
+    }
+  ]
+}

@@ -45,6 +45,9 @@ void CampaignText::Fill(umbra::campaign::Skills &skills) const
     const std::string start = "lore.";
     for (auto it = table.text.lower_bound(start); it != table.text.end() && it->first.starts_with(start); ++it)
         skills.lore[it->first.substr(start.size())] = table.Get(it->first, english);
+    for (auto &[who, life] : skills.timeline) // timeline.<who>.<n>, n from 0
+        for (std::size_t n = 0; n < life.size(); ++n)
+            life[n].text = table.Get("timeline." + who + "." + std::to_string(n), english);
 }
 
 void CampaignText::Fill(umbra::campaign::Recipes &recipes) const

@@ -884,6 +884,30 @@ TEST_CASE("General drinks: one at a time on one character, refused at the cap; t
     CHECK_FALSE(campaign::Boost(save, recipes, *recipes.Find("mut_gung"), "ti", 3));
 }
 
+TEST_CASE("Each one at the cafe always has a default line when nothing is new, turning over visit by visit (the user, 2026-11-24 23:57, note 29)")
+{
+    campaign::Talks talks;
+    std::vector<core::Diagnostic> d;
+    REQUIRE(campaign::LoadTalks(data / "talks", data / "scenes", TheCast(), talks, d));
+    campaign::Save save;
+    save.facts["won:t1"] = "1", save.facts["won:t2s"] = "1";
+    // 1. Default lines never count as new.
+    for (const campaign::Talk *t : campaign::OpenTalks(talks, save, 99))
+        CHECK_FALSE(t->idle);
+    // 2. Le Thanh, Ba Mai and Doctor Bao each have one; asking again gives the next.
+    for (const char *who : {"lethanh", "mai", "bao"})
+    {
+        INFO(who);
+        const campaign::Talk *first = campaign::IdleTalk(talks, save, who);
+        REQUIRE(first != nullptr);
+        CHECK(first->who == who);
+        const campaign::Talk *second = campaign::IdleTalk(talks, save, who);
+        REQUIRE(second != nullptr);
+        CHECK(second->id != first->id);
+    }
+    CHECK(campaign::IdleTalk(talks, save, "nobody") == nullptr);
+}
+
 TEST_CASE("Talks open by stage and facts, at most three new a visit; a fight leaves its facts (campaign plan 6)")
 {
     campaign::Talks talks;
@@ -1204,6 +1228,18 @@ TEST_CASE("Skills: unlock levels, a starting loadout, four at most, only unlocke
     REQUIRE(campaign::LoadSkills(data / "skills.json", def, skills, d));
     CHECK(d.empty());
     Text().Fill(skills);
+    // Every character's timeline (Ky uc): a year, a known skill or none, its words in localization.csv.
+    for (const char *who : {"bao", "mai", "ti"})
+    {
+        INFO(who);
+        REQUIRE(skills.timeline.contains(who));
+        for (const campaign::Moment &m : skills.timeline.at(who))
+        {
+            CHECK(m.year > 1800);
+            CHECK_FALSE(m.text.empty());
+            CHECK((m.skill.empty() || std::ranges::any_of(def.abilities, [&](const match::AbilityDef &a) { return a.id == m.skill; })));
+        }
+    }
     const auto ids = [&](const match::Unit &u) {
         std::vector<std::string> out;
         for (const int a : u.abilities)
@@ -1252,6 +1288,24 @@ TEST_CASE("Enemies never revive in a stage: more come as reinforcements instead 
         INFO(st.id);
         CHECK((b.state.noRevive & (1 << 1)) != 0);
     }
+}
+
+TEST_CASE("Tutorial enemies fight up close: no Snipe or other ranged ability (the user, 2026-11-24 23:57, note 10)")
+{
+    const match::MatchDef def = MatchData();
+    for (const campaign::StageDef &st : TheStages())
+    {
+        if (!st.meleeEnemies)
+            continue;
+        const campaign::BuiltStage b = campaign::BuildStage(def, TheCast(), TheGrowth(), st, {{"player", st.level, {}}}, 0, {}, 3);
+        for (const match::Unit &u : b.state.units)
+            for (const auto a : u.abilities)
+            {
+                INFO(st.id << " " << (a >= 0 ? def.abilities[static_cast<std::size_t>(a)].id : ""));
+                CHECK((u.faction == 0 || a < 0 || def.abilities[static_cast<std::size_t>(a)].range <= 1));
+            }
+    }
+    CHECK(std::ranges::count_if(TheStages(), &campaign::StageDef::meleeEnemies) == 4); // t1, t2, t2s, t3
 }
 
 TEST_CASE("A stage can start the party hurt: startHp per cast id, kept within 1 and the maximum (the tutorial ladder)")

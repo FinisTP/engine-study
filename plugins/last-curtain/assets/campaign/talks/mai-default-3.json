@@ -1,0 +1,13 @@
+{
+  "format": "umbra.lc-talk",
+  "version": 1,
+  "id": "mai-default-3",
+  "who": "mai",
+  "scene": "mai-default-3",
+  "idle": true,
+  "opens": {
+    "all": [
+      "won:t1"
+    ]
+  }
+}
