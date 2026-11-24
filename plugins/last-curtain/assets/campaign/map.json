@@ -1,20 +1,217 @@
 {
   "format": "umbra.lc-map",
   "version": 1,
-  "note": "The theatre map of slice 1 (campaign plan 7): tickets on the floor plan (at: 0-1 across and down), what opens each. Rooms to come show as ? with what opens them.",
+  "note": "The theatre map of slice 1 (campaign plan 7): tickets on the floor plan (at: 0-1 across and down), what opens each. Rooms to come show as ? with what opens them. room: [x0, y0, x1, y1] its outline on the plan (tools/art/floor_plan_compose.py).",
   "plan": "art/map/floor_plan.png",
   "tickets": [
-    {"id": "t1", "name": "Tiền sảnh", "at": [0.50, 0.86], "kind": "story", "stage": "t1"},
-    {"id": "t3", "name": "Hành lang chân dung", "at": [0.24, 0.66], "kind": "story", "stage": "t3", "opensAfter": "t1"},
-    {"id": "sk_props", "name": "Kho đạo cụ", "at": [0.12, 0.42], "kind": "skirmish", "stage": "sk_props", "opensAfter": "t3"},
-    {"id": "sk_stairs", "name": "Cầu thang phụ", "at": [0.36, 0.40], "kind": "skirmish", "stage": "sk_stairs", "opensAfter": "t3"},
-    {"id": "stage1", "name": "Phòng vé", "at": [0.74, 0.70], "kind": "story", "stage": "stage1", "opensAfter": "t3"},
-    {"id": "sk_boxoffice", "name": "Phòng vé (lần nữa)", "at": [0.86, 0.52], "kind": "skirmish", "stage": "sk_boxoffice", "opensAfter": "stage1"},
-    {"id": "makeup", "name": "Phòng hóa trang", "at": [0.62, 0.40], "kind": "unknown", "lock": "Mở sau Phòng vé."},
-    {"id": "under", "name": "Hầm sân khấu", "at": [0.50, 0.22], "kind": "unknown", "lock": "Mở sau Phòng hóa trang."},
-    {"id": "balcony", "name": "Ban công", "at": [0.18, 0.16], "kind": "unknown", "lock": "Chưa ai lên tới đó."},
-    {"id": "music", "name": "Phòng nhạc", "at": [0.82, 0.24], "kind": "unknown", "lock": "Có tiếng đàn sau cửa."},
-    {"id": "attic", "name": "Gác thượng", "at": [0.36, 0.08], "kind": "unknown", "lock": "Cầu thang đã sập."},
-    {"id": "stage", "name": "Sân khấu chính", "at": [0.66, 0.08], "kind": "unknown", "lock": "Nơi màn cuối hạ."}
+    {
+      "id": "t1",
+      "name": "Tiền sảnh",
+      "at": [
+        0.5,
+        0.89
+      ],
+      "kind": "story",
+      "stage": "t1",
+      "room": [
+        0.28,
+        0.82,
+        0.72,
+        0.96
+      ],
+      "shape": "foyer"
+    },
+    {
+      "id": "t3",
+      "name": "Hành lang chân dung",
+      "at": [
+        0.195,
+        0.7
+      ],
+      "kind": "story",
+      "stage": "t3",
+      "opensAfter": "t1",
+      "room": [
+        0.13,
+        0.44,
+        0.26,
+        0.96
+      ],
+      "shape": "corridor"
+    },
+    {
+      "id": "sk_props",
+      "name": "Kho đạo cụ",
+      "at": [
+        0.13,
+        0.26
+      ],
+      "kind": "skirmish",
+      "stage": "sk_props",
+      "opensAfter": "t3",
+      "room": [
+        0.02,
+        0.12,
+        0.24,
+        0.4
+      ],
+      "shape": "room"
+    },
+    {
+      "id": "sk_stairs",
+      "name": "Cầu thang phụ",
+      "at": [
+        0.065,
+        0.7
+      ],
+      "kind": "skirmish",
+      "stage": "sk_stairs",
+      "opensAfter": "t3",
+      "room": [
+        0.02,
+        0.44,
+        0.11,
+        0.96
+      ],
+      "shape": "stairs"
+    },
+    {
+      "id": "stage1",
+      "name": "Phòng vé",
+      "at": [
+        0.85,
+        0.84
+      ],
+      "kind": "story",
+      "stage": "stage1",
+      "opensAfter": "t3",
+      "room": [
+        0.74,
+        0.72,
+        0.96,
+        0.96
+      ],
+      "shape": "office"
+    },
+    {
+      "id": "sk_boxoffice",
+      "name": "Phòng vé (lần nữa)",
+      "at": [
+        0.85,
+        0.62
+      ],
+      "kind": "skirmish",
+      "stage": "sk_boxoffice",
+      "opensAfter": "stage1",
+      "room": [
+        0.74,
+        0.54,
+        0.96,
+        0.7
+      ],
+      "shape": "room"
+    },
+    {
+      "id": "makeup",
+      "name": "Phòng hóa trang",
+      "at": [
+        0.85,
+        0.23
+      ],
+      "kind": "unknown",
+      "lock": "Mở sau Phòng vé.",
+      "room": [
+        0.74,
+        0.12,
+        0.96,
+        0.34
+      ],
+      "shape": "room"
+    },
+    {
+      "id": "under",
+      "name": "Hầm sân khấu",
+      "at": [
+        0.5,
+        0.38
+      ],
+      "kind": "unknown",
+      "lock": "Mở sau Phòng hóa trang.",
+      "room": [
+        0.34,
+        0.34,
+        0.66,
+        0.42
+      ],
+      "shape": "stage"
+    },
+    {
+      "id": "balcony",
+      "name": "Ban công",
+      "at": [
+        0.38,
+        0.055
+      ],
+      "kind": "unknown",
+      "lock": "Chưa ai lên tới đó.",
+      "room": [
+        0.28,
+        0.01,
+        0.48,
+        0.1
+      ],
+      "shape": "room"
+    },
+    {
+      "id": "music",
+      "name": "Phòng nhạc",
+      "at": [
+        0.85,
+        0.44
+      ],
+      "kind": "unknown",
+      "lock": "Có tiếng đàn sau cửa.",
+      "room": [
+        0.74,
+        0.36,
+        0.96,
+        0.52
+      ],
+      "shape": "room"
+    },
+    {
+      "id": "attic",
+      "name": "Gác thượng",
+      "at": [
+        0.62,
+        0.055
+      ],
+      "kind": "unknown",
+      "lock": "Cầu thang đã sập.",
+      "room": [
+        0.52,
+        0.01,
+        0.72,
+        0.1
+      ],
+      "shape": "room"
+    },
+    {
+      "id": "stage",
+      "name": "Sân khấu chính",
+      "at": [
+        0.5,
+        0.22
+      ],
+      "kind": "unknown",
+      "lock": "Nơi màn cuối hạ.",
+      "room": [
+        0.3,
+        0.12,
+        0.7,
+        0.32
+      ],
+      "shape": "stage"
+    }
   ]
 }

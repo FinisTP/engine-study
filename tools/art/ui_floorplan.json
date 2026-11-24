@@ -1,0 +1,19 @@
+{
+ "note": "The theatre map's floor plan (ui-art-requests section 1, map/floor_plan.png): SDXL gives the aged paper and ink; tools/art/floor_plan_compose.py traces the rooms over it. Requested by the user 2026-11-24.",
+ "style": "aged architectural blueprint drawing, sepia and faded gold ink lines on yellowed paper, hand drawn, top-down floor plan, soft vignette",
+ "negative": "text, letters, words, writing, watermark, signature, logo, frame, border, blood, skull, body, person, face, repeated objects, numbers, labels, colourful, modern, 3d, perspective",
+ "jobs": [
+  {
+   "name": "map_floor_plan",
+   "w": 1344,
+   "h": 768,
+   "seeds": [
+    811,
+    812,
+    813,
+    814
+   ],
+   "prompt": "top-down architectural floor plan of a grand nineteenth century opera house, horseshoe auditorium with rows of seats, a wide stage with wings at the top, a long foyer at the bottom, side corridors and small rooms, thin precise sepia ink lines, faded gold accents, aged yellowed paper, no text"
+  }
+ ]
+}

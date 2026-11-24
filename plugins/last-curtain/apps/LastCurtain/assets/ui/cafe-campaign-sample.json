@@ -212,15 +212,15 @@
   }
  },
  "map": {
-  "plan": "",
+  "plan": "art/map/floor_plan.png",
   "tickets": [
    {
     "id": "t1",
     "name": "Tiền sảnh",
     "markText": "đã qua",
     "at": [
-     600,
-     580
+     570.0,
+     534.4000000000001
     ],
     "selected": false,
     "closed": false
@@ -230,10 +230,54 @@
     "name": "Hành lang chân dung",
     "markText": "tiếp theo",
     "at": [
-     280,
-     450
+     234.5,
+     428.0
     ],
     "selected": true,
+    "closed": false
+   },
+   {
+    "id": "sk_props",
+    "name": "Kho đạo cụ",
+    "markText": "?",
+    "at": [
+     163.0,
+     181.6
+    ],
+    "selected": false,
+    "closed": false
+   },
+   {
+    "id": "sk_stairs",
+    "name": "Cầu thang phụ",
+    "markText": "?",
+    "at": [
+     91.5,
+     428.0
+    ],
+    "selected": false,
+    "closed": false
+   },
+   {
+    "id": "stage1",
+    "name": "Phòng vé",
+    "markText": "?",
+    "at": [
+     955.0,
+     506.4
+    ],
+    "selected": false,
+    "closed": false
+   },
+   {
+    "id": "sk_boxoffice",
+    "name": "Phòng vé (lần nữa)",
+    "markText": "?",
+    "at": [
+     955.0,
+     383.2
+    ],
+    "selected": false,
     "closed": false
    },
    {
@@ -241,8 +285,63 @@
     "name": "?",
     "markText": "?",
     "at": [
-     760,
-     260
+     955.0,
+     164.8
+    ],
+    "selected": false,
+    "closed": true
+   },
+   {
+    "id": "under",
+    "name": "?",
+    "markText": "?",
+    "at": [
+     570.0,
+     248.8
+    ],
+    "selected": false,
+    "closed": true
+   },
+   {
+    "id": "balcony",
+    "name": "?",
+    "markText": "?",
+    "at": [
+     438.0,
+     66.8
+    ],
+    "selected": false,
+    "closed": true
+   },
+   {
+    "id": "music",
+    "name": "?",
+    "markText": "?",
+    "at": [
+     955.0,
+     282.4
+    ],
+    "selected": false,
+    "closed": true
+   },
+   {
+    "id": "attic",
+    "name": "?",
+    "markText": "?",
+    "at": [
+     702.0,
+     66.8
+    ],
+    "selected": false,
+    "closed": true
+   },
+   {
+    "id": "stage",
+    "name": "?",
+    "markText": "?",
+    "at": [
+     570.0,
+     159.2
     ],
     "selected": false,
     "closed": true
