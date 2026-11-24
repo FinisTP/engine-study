@@ -1,0 +1,67 @@
+{
+ "note": "Item icons for the 30 notes (2026-11-25): gear and mung beans; cut and fitted in the cloud like the bandage.",
+ "style": "oil pastel on toned paper, muted colours, low contrast, painterly, dim",
+ "negative": "text, letters, watermark, logo, frame, border, perspective, walls, furniture, person, figure, face, hand, shadow of a person, blood, skull, vignette, horizon, multiple objects",
+ "jobs": [
+  {
+   "name": "item_dau_xanh",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    61,
+    62
+   ],
+   "prompt": "a small heap of dried green mung beans, a few with thin pale sprouts, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+  },
+  {
+   "name": "item_dao",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    61,
+    62
+   ],
+   "prompt": "a single old kitchen knife with a cracked wooden handle, lying diagonally, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+  },
+  {
+   "name": "item_dao_mo",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    61,
+    62
+   ],
+   "prompt": "a single old surgical scalpel with a steel handle, lying diagonally, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+  },
+  {
+   "name": "item_na",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    61,
+    62
+   ],
+   "prompt": "a single child's slingshot carved from a forked guava branch with a rubber band, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+  },
+  {
+   "name": "item_ao_khoac_cu",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    61,
+    62
+   ],
+   "prompt": "a single long old brown coat folded neatly, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+  },
+  {
+   "name": "item_tram_go",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    61,
+    62
+   ],
+   "prompt": "a single plain wooden hairpin, simple carved stick, lying diagonally, centred, isolated object, plain flat cream background, game icon, simple bold silhouette"
+  }
+ ]
+}
