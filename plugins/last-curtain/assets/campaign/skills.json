@@ -1,26 +1,37 @@
 {
-  "format": "umbra.lc-skills",
-  "version": 1,
-  "note": "Abilities in the notebook and the fight (feedback 2026-11-24 15:10, notes 13 and 17). 'unlock': the level an ability opens at (default 1; a class line's abilities already open by level in jobs.csv). 'lore': what it is in the character's story, shown above its numbers; drafts for the user's review. 'starts': the skills a recruit carries when they join (at most 4); the tutorial leaves some out so the player assigns them. Anyone else carries their first four.",
-  "skills": {
-    "basic": {"lore": "Ai bị dồn vào chân tường cũng biết vung tay."},
-    "slash": {"lore": "Một nhát rạch vội, học được từ những đêm phải tự lo cho mình."},
-    "throw": {"lore": "Vớ được gì thì ném nấy: một chiếc giày, một cuốn sổ, một ly nước."},
-    "guard": {"lore": "Đứng chắn trước người khác, như ai đó từng đứng chắn trước mình."},
-    "lunge": {"lore": "Lao tới trước khi kịp sợ."},
-    "cleave": {"lore": "Một đường chém rộng, khi đã thôi chần chừ."},
-    "dao_mo": {"lore": "Con dao mổ ông giữ từ hồi làm bác sĩ cho nhà hát. Lưỡi vẫn sáng như đêm năm 1944."},
-    "chan_doan": {"lore": "Một cái nhìn của người thầy thuốc: chỗ yếu của đối phương lộ ra, đòn kế tiếp đánh vào nó nặng hơn 1."},
-    "giay_chung_tu": {"unlock": 3, "lore": "Ông từng ký một tờ giấy chứng tử không đúng sự thật. Mỗi kẻ ngã dưới tay ông, ông hồi lại 2 HP."},
-    "tend": {"lore": "Bốn mươi năm bà chăm cái nhà hát này như chăm con: bà hồi máu cho một người ở xa."},
-    "mend": {"lore": "Một vòng vải quấn chặt, như bà vẫn quấn cho đám thợ dàn cảnh: bà tự băng bó giữa trận."},
-    "com_nguoi": {"lore": "Bát cơm nguội bà để bên cửa sập cho đứa con dưới sân khấu. Đánh thức một người vừa ngã."},
-    "na_cao_su": {"lore": "Cái ná Tí tự làm bằng ruột xe đạp. Nhỏ mà trúng."},
-    "dua_tin": {"lore": "Tí chạy tin giữa các xóm: một người được đi thêm trong lượt này."},
-    "chan_sao": {"unlock": 4, "lore": "Đôi chân trần quen cát nóng: đưa tin xong, Tí còn chạy thêm được."}
+ "format": "umbra.lc-skills",
+ "version": 1,
+ "note": "Abilities in the notebook and the fight (feedback 2026-11-24 15:10, notes 13 and 17). 'unlock': the level an ability opens at (default 1; a class line's abilities already open by level in jobs.csv). Each one's story is localization.csv 'lore.<id>'. 'starts': the skills a recruit carries when they join (at most 4); the tutorial leaves some out so the player assigns them. Anyone else carries their first four.",
+ "skills": {
+  "basic": {},
+  "slash": {},
+  "throw": {},
+  "guard": {},
+  "lunge": {},
+  "cleave": {},
+  "dao_mo": {},
+  "chan_doan": {},
+  "giay_chung_tu": {
+   "unlock": 3
   },
-  "starts": {
-    "bao": ["basic", "dao_mo"],
-    "mai": ["basic", "tend", "com_nguoi"]
+  "tend": {},
+  "mend": {},
+  "com_nguoi": {},
+  "na_cao_su": {},
+  "dua_tin": {},
+  "chan_sao": {
+   "unlock": 4
   }
+ },
+ "starts": {
+  "bao": [
+   "basic",
+   "dao_mo"
+  ],
+  "mai": [
+   "basic",
+   "tend",
+   "com_nguoi"
+  ]
+ }
 }

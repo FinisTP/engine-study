@@ -2,11 +2,11 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "stage1-freed",
-  "note": "Draft for the user's review (2026-11-24, written overnight). Stage 1: Ti cut free (ti-content 4.1).",
+  "note": "Draft for the user's review (2026-11-24, written overnight). Stage 1: Ti cut free (ti-content 4.1). Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Dây… đứt rồi hả? Tui… tui không nhớ tui là ai nữa.",
+      "text": "Dây… đứt rồi hả? Tui… tui không nhớ tui là ai nữa. Chỉ nhớ cát. Cát nóng lắm.",
       "speaker": "ti",
       "face": "afraid",
       "enter": [
@@ -16,11 +16,13 @@
           "slot": 0,
           "face": "afraid"
         }
-      ]
+      ],
+      "en": "The strings… they're cut? I… I don't remember who I am. Only sand. Hot sand."
     },
     {
       "id": "b",
-      "text": "Một vệt sáng vàng cuốn lấy đứa nhỏ rồi đưa em đi mất. Lệ Thanh bảo em sẽ chờ dưới quán."
+      "text": "Một vệt sáng vàng cuốn lấy đứa nhỏ rồi đưa em đi mất. Lệ Thanh bảo em sẽ chờ dưới quán.",
+      "en": "A streak of gold light wraps the child and carries him off. Le Thanh says he will wait in the café."
     }
   ]
 }

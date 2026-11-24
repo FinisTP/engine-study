@@ -3,8 +3,6 @@
   "version": 1,
   "id": "t1",
   "kind": "story",
-  "title": "Khách lạ",
-  "titleEn": "The Stranger",
   "note": "Draft (2026-11-24): teaches moving, attacking and the order strip. Three rat specters rise from the rope posts at rounds 1, 2 and 3.",
   "level": 1,
   "partyCap": 1,
@@ -20,10 +18,61 @@
     "#########"
   ],
   "units": [
-    {"who": "rat_specter", "at": [4, 3], "side": 1, "level": 1, "flags": ["boss"], "behaviour": {"kind": "reinforcement", "round": 1}},
-    {"who": "rat_specter", "at": [1, 1], "side": 1, "level": 1, "flags": ["boss"], "behaviour": {"kind": "reinforcement", "round": 2}},
-    {"who": "rat_specter", "at": [7, 1], "side": 1, "level": 1, "flags": ["boss"], "behaviour": {"kind": "reinforcement", "round": 3}}
+    {
+      "who": "rat_specter",
+      "at": [
+        4,
+        3
+      ],
+      "side": 1,
+      "level": 1,
+      "flags": [
+        "boss"
+      ],
+      "behaviour": {
+        "kind": "reinforcement",
+        "round": 1
+      }
+    },
+    {
+      "who": "rat_specter",
+      "at": [
+        1,
+        1
+      ],
+      "side": 1,
+      "level": 1,
+      "flags": [
+        "boss"
+      ],
+      "behaviour": {
+        "kind": "reinforcement",
+        "round": 2
+      }
+    },
+    {
+      "who": "rat_specter",
+      "at": [
+        7,
+        1
+      ],
+      "side": 1,
+      "level": 1,
+      "flags": [
+        "boss"
+      ],
+      "behaviour": {
+        "kind": "reinforcement",
+        "round": 3
+      }
+    }
   ],
-  "aims": {"start": "Hạ ba cái bóng chuột.", "recap": ""},
-  "scenes": {"start": "t1-start", "end": "t1-rescue"}
+  "aims": {
+    "start": "",
+    "recap": ""
+  },
+  "scenes": {
+    "start": "t1-start",
+    "end": "t1-rescue"
+  }
 }

@@ -2,11 +2,11 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "talk-bao-t3",
-  "note": "Draft for the user's review (2026-11-24). ",
+  "note": "Draft for the user's review (2026-11-24).  Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Bảo gấp cuốn sổ lại khi {player} tới gần.",
+      "text": "Bảo gấp cuốn sổ lại khi {player} tới gần. Mép sổ có dấu răng.",
       "enter": [
         {
           "who": "player",
@@ -20,25 +20,29 @@
           "slot": 0,
           "face": "calm"
         }
-      ]
+      ],
+      "en": "Bao shuts his notebook as {player} comes near. Its edge bears teeth marks."
     },
     {
       "id": "b",
-      "text": "Cái người giữ tranh đó... tôi nhớ mặt ông ta. Ông ta treo tranh cho nhà hát từ hồi tôi còn trẻ.",
+      "text": "Cái người giữ tranh đó... tôi nhớ mặt ông ta. Ông ta treo tranh cho nhà hát từ hồi tôi còn trẻ. Treo cả những người không chịu ngồi yên cho vẽ.",
       "speaker": "bao",
-      "face": "talk"
+      "face": "talk",
+      "en": "That Keeper... I remember his face. He hung pictures for the theatre when I was young. Hung the people who wouldn't sit still to be painted, too."
     },
     {
       "id": "c",
       "text": "Bác biết nhiều người ở đây quá.",
       "speaker": "player",
-      "face": "calm"
+      "face": "calm",
+      "en": "You know so many people here."
     },
     {
       "id": "d",
-      "text": "Biết nhiều quá cũng là một cái tội.",
+      "text": "Biết nhiều quá cũng là một cái tội. Cái tội không có giấy nào xóa được.",
       "speaker": "bao",
-      "face": "calm"
+      "face": "calm",
+      "en": "Knowing too much is a sin too. One no paper can sign away."
     }
   ]
 }

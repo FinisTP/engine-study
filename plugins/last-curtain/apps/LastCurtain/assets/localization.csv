@@ -74,18 +74,18 @@ campaign.fightsNext,Ra trận màn tới,Fights next stage
 campaign.forWhom,Cho ai uống?,Who drinks it?
 campaign.fullOff,Toàn màn hình: tắt,Full screen: off
 campaign.fullOn,Toàn màn hình: bật,Full screen: on
-campaign.gameOver,Màn đã hạ,The curtain falls
+campaign.gameOver,Màn đã hạ trên đầu các người,The curtain falls on you
 campaign.gameTitle,Tấm Màn Cuối,The Last Curtain
 campaign.give,Đưa kỷ vật:,Give the keepsake:
 campaign.groupDisplay,Hiển thị,Display
 campaign.groupGame,Trò chơi,Game
 campaign.groupKeys,Phím điều khiển,Controls
 campaign.groupSound,Âm thanh,Sound
-campaign.itemText.bandage,Hồi 6 HP. Dùng trên bàn.,Heals 6 HP. Used on the board.
-campaign.itemText.duong,"Một gói đường cát nhỏ, giấy gói đã ngả vàng.","A small packet of sugar, its paper gone yellow."
-campaign.itemText.giay_gap_tu,"Gấp tư, mép sờn. Có người đã giữ nó rất kỹ.","Folded in four, edges worn. Someone kept it very carefully."
-campaign.itemText.gung,"Củ gừng già, cay nồng. Bóng chuột trong phòng vé hay tha theo.","Old ginger, sharp and hot. The rat shadows in the box office carry it off."
-campaign.itemText.programme,Đọc nó được 3 XP. Dùng trên bàn.,Reading it gives 3 XP. Used on the board.
+campaign.itemText.bandage,Hồi 6 HP. Dùng trên bàn. Vải còn mùi người khác.,Heals 6 HP. Used on the board. The cloth still smells of someone else.
+campaign.itemText.duong,"Một gói đường cát nhỏ, giấy gói đã ngả vàng, có kiến chết bên trong.","A small packet of sugar, its paper yellowed, dead ants inside."
+campaign.itemText.giay_gap_tu,"Gấp tư, mép sờn, một góc cứng vì máu khô. Có người đã giữ nó tới chết.","Folded in four, edges worn, one corner stiff with dried blood. Someone kept it until they died."
+campaign.itemText.gung,"Củ gừng già, cay nồng. Bóng chuột trong phòng vé hay tha theo, dính nước dãi.","Old ginger, sharp and hot. The rat shadows in the box office carry it off, slick with drool."
+campaign.itemText.programme,Đọc nó được 3 XP. Dùng trên bàn. Tên diễn viên nào cũng đã bị gạch.,Reading it gives 3 XP. Used on the board. Every actor's name is crossed out.
 campaign.items.bandage,Băng gạc,Bandage
 campaign.items.duong,Đường,Sugar
 campaign.items.giay_gap_tu,Mẩu giấy gấp tư,Folded note
@@ -201,6 +201,33 @@ campaign.whoFights,Ai ra trận? Bấm một người để đổi.,Who fights? 
 campaign.won,Đã qua: {name},Cleared: {name}
 campaign.yes,Có,Yes
 campaign.yourName,Tên của {anh/chị}:,Your name:
+cast.bao.name,Bác sĩ Bảo,Doctor Bao
+cast.ghost_attacker.name,Bóng ma,Ghost
+cast.ghost_defender.name,Bóng ma,Ghost
+cast.ghost_speedster.name,Bóng ma,Ghost
+cast.ghost_supporter.name,Bóng ma,Ghost
+cast.keeper.name,Người giữ tranh,The Portrait Keeper
+cast.lethanh.name,Lệ Thanh,Le Thanh
+cast.mai.name,Bà Mai,Ba Mai
+cast.rat.name,Con Chuột,The Rat
+cast.rat_specter.name,Bóng chuột,Rat shadow
+cast.thief_specter.name,Bóng chuột móc túi,Pickpocket rat shadow
+cast.ti.name,Bé Tí,Little Ti
+lore.basic,Ai bị dồn vào chân tường cũng biết vung tay. Có người vung tới gãy cả xương mình.,Anyone backed against a wall learns to swing. Some swing until their own bones break.
+lore.chan_doan,Một cái nhìn của người thầy thuốc: chỗ yếu của đối phương lộ ra như vết bầm dưới da. Đòn kế tiếp vào đó nặng hơn 1.,A physician's look: the foe's weakness shows like a bruise under the skin. The next blow there hits 1 harder.
+lore.chan_sao,"Đôi chân trần quen cát nóng, rồi quen cát lạnh: đưa tin xong, Tí còn chạy thêm được.","Bare feet used to hot sand, then to cold sand: after an errand, Ti can still run on."
+lore.cleave,"Một đường chém rộng, khi đã thôi chần chừ và thôi nhìn mặt.","A wide cut, once you stop hesitating and stop looking at faces."
+lore.com_nguoi,"Bát cơm nguội bà để bên cửa sập cho đứa con dưới sân khấu. Năm mươi năm, chưa ai đụng tới. Đánh thức một người vừa ngã.","The bowl of cold rice she leaves by the trapdoor for her son under the stage. Fifty years, never touched. Wakes someone who just fell."
+lore.dao_mo,"Con dao mổ ông giữ từ hồi làm bác sĩ cho nhà hát. Lưỡi vẫn sáng như đêm năm 1944, đêm ông mổ cho người chưa chết.","The scalpel he kept from his years as the theatre's doctor. The blade still shines as it did in 1944, the night he cut into someone not yet dead."
+lore.dua_tin,"Tí chạy tin giữa các xóm, chạy cả khi chân đã nát: một người được đi thêm trong lượt này.","Ti ran messages between villages, even on torn feet: one ally moves further this turn."
+lore.giay_chung_tu,"Ông từng ký giấy chứng tử cho một người còn thở. Mỗi kẻ ngã dưới tay ông, ông hồi lại 2 HP.",He once signed a death certificate for someone still breathing. Each foe that falls to him gives him back 2 HP.
+lore.guard,"Đứng chắn trước người khác, như ai đó từng đứng chắn trước mình và không đứng dậy nữa.","Stand in front of someone, as someone once stood in front of you and never stood up again."
+lore.lunge,"Lao tới trước khi kịp sợ. Sợ để sau, nếu còn sau.","Lunge before fear catches up. Fear can come later, if there is a later."
+lore.mend,"Một vòng vải quấn chặt, như bà vẫn quấn cho đám thợ dàn cảnh bị xà rơi trúng: bà băng cho một người cùng trận.","A tight wrap of cloth, the way she bound the stagehands crushed by falling beams: she bandages someone in the same battle."
+lore.na_cao_su,"Cái ná Tí tự làm bằng ruột xe đạp. Nhỏ mà trúng, trúng là để lại lỗ.","The slingshot Ti made from a bicycle inner tube. Small but true, and where it hits, it leaves a hole."
+lore.slash,"Một nhát rạch vội, học từ những đêm không ai tới cứu.","A hurried slash, learned on nights when nobody came."
+lore.tend,Bốn mươi năm bà lau máu trên sàn nhà hát. Bà hồi máu cho một người ở xa.,Forty years she scrubbed blood off the theatre floors. She heals someone at a distance.
+lore.throw,"Vớ được gì thì ném nấy: chiếc giày, cuốn sổ, cái răng ai rơi trên thảm.","Throw whatever is at hand: a shoe, a notebook, someone's tooth from the carpet."
 match.abilityText.battle,Trong trận,In battle
 match.abilityText.board,Trên bàn,On the board
 match.abilityText.cost,Tốn {cost} HP.,Costs {cost} HP.
@@ -231,7 +258,7 @@ match.actions.stay,Đứng yên,Stay
 match.actions.target,Chọn mục tiêu,Choose a target
 match.actions.undo,Hoàn tác di chuyển,Undo move
 match.actions.warnFaster,nhanh hơn: ×2,faster: x2
-match.banner.first,Trận đấu bắt đầu,The fight begins
+match.banner.first,Màn mở. Có ai đó đang xem.,The curtain rises. Someone is watching.
 match.banner.text,Còn {n} lượt,{n} turns left
 match.banner.title,Lượt {n},Turn {n}
 match.battle.title,Hiệp {r}/{n},Round {r} of {n}
@@ -280,24 +307,24 @@ match.levelcards.powerTitle,{ability} +{n},{ability} +{n}
 match.levelcards.speed,Đi sớm hơn trong thứ tự các lượt sau.,Act earlier in later rounds' order.
 match.levelcards.speedIcon,art/ui/match/icons/speed.png,art/ui/match/icons/speed.png
 match.levelcards.speedTitle,+{n} Tốc,+{n} Speed
-match.lines.Blow.0,Tránh ra!,Out of my way!
-match.lines.Blow.1,Nằm yên đó.,Stay down.
-match.lines.Blow.2,Vì buổi diễn cuối!,For the curtain call!
-match.lines.Blow.3,Chọn nhầm sân khấu rồi.,You picked the wrong stage.
-match.lines.Blow.4,Thấy chưa?,Feel that?
-match.lines.Blow.5,Nữa nè!,Again!
+match.lines.Blow.0,Nằm xuống.,Lie down.
+match.lines.Blow.1,Nghe xương kêu chưa?,Hear the bones?
+match.lines.Blow.2,Cho buổi diễn cuối!,For the last performance!
+match.lines.Blow.3,Mày chọn nhầm sân khấu rồi.,You chose the wrong stage.
+match.lines.Blow.4,Thấy đau chưa?,Does it hurt yet?
+match.lines.Blow.5,Thêm một vết nữa.,One more wound.
 match.lines.Down.0,Không... không phải vầy...,Not... like this...
-match.lines.Down.1,Đèn... tắt rồi...,The lights... going out...
-match.lines.Down.2,Ta sẽ quay lại.,I'll be back for you.
-match.lines.Down.3,Nói với họ là tôi đã cố.,Tell them I tried.
-match.lines.Level.0,Giờ thì thấy rồi.,I can feel it now.
-match.lines.Level.1,Mạnh hơn.,Stronger.
-match.lines.Level.2,Sân khấu còn nhớ mình.,The stage remembers me.
-match.lines.Level.3,Thêm một bước.,One more step.
-match.lines.Performed.0,Cúi chào nào.,"Take a bow, everyone."
-match.lines.Performed.1,Thêm một bài!,Encore!
-match.lines.Performed.2,Xin một tràng vỗ tay.,"Applause, please."
-match.lines.Performed.3,Đêm nay nhà hát là của mình.,The house is ours tonight.
+match.lines.Down.1,Đèn... ai tắt đèn...,The lights... who turned off...
+match.lines.Down.2,Tao sẽ bò về.,I'll crawl back.
+match.lines.Down.3,Nói với mạ là tôi đã cố.,Tell my mother I tried.
+match.lines.Level.0,Giờ thì thấy rồi. Thấy cả những thứ không nên thấy.,Now I see. Even what I shouldn't.
+match.lines.Level.1,Mạnh hơn. Lạnh hơn.,Stronger. Colder.
+match.lines.Level.2,Sân khấu nhớ tên mình.,The stage knows my name.
+match.lines.Level.3,Thêm một bước xuống.,One more step down.
+match.lines.Performed.0,Cúi chào đi. Họ vẫn đang nhìn.,Take a bow. They're still watching.
+match.lines.Performed.1,"Thêm một bài nữa, cho người chết.","One more song, for the dead."
+match.lines.Performed.2,Vỗ tay đi. Ai còn tay thì vỗ.,"Applause, please. Whoever still has hands."
+match.lines.Performed.3,"Đêm nay nhà hát là của mình, mãi mãi.",Tonight the house is ours. Forever.
 match.log.Arrived,{who} bước ra từ bóng tối.,{who} steps out of the dark.
 match.log.Arriving,Có gì đó cựa mình: lượt sau {who} tới.,Something stirs: {who} comes next round.
 match.log.Back,{who} đã về chỗ nghỉ.,{who} is back at the hub.
@@ -334,8 +361,8 @@ match.misc.passed,suôn sẻ,it went well
 match.misc.side0,phe mình thắng,your side wins
 match.misc.side1,phe kia thắng,their side wins
 match.misc.theirs,{name} (phe kia),{name} (theirs)
-match.outcome.lost,Thất bại,Defeat
-match.outcome.won,Chiến thắng,Victory
+match.outcome.lost,Màn đã hạ,The curtain falls
+match.outcome.won,Còn sống,Still alive
 match.roles.allrounder,Toàn năng,All-Rounder
 match.roles.attacker,Tấn công,Attacker
 match.roles.defender,Phòng thủ,Defender
@@ -417,3 +444,51 @@ match.why.OutOfRange,Không ai trong tầm.,No target within reach.
 match.why.Over,Trận đã xong.,The match is over.
 match.why.OwnSide,Người phe mình.,That one is on your side.
 match.why.TooCostly,Tốn nhiều HP hơn đang có.,It costs more HP than you have.
+memory.ti_1.name,Tên mạ,Ma's name
+memory.ti_2.name,Lời hứa Tết,The Tết promise
+memory.ti_3.name,Lời nhắn,The message
+memory.ti_4.name,Bãi cát trắng,The white sand
+recipe.mut_gung.name,Mứt gừng,Candied ginger
+recipe.mut_gung.text,"Gừng sên đường, cay mà ngọt, như một lời hứa chưa kịp giữ.","Ginger simmered in sugar, hot and sweet, like a promise never kept."
+recipe.nuoc_gung.name,Nước gừng,Ginger tea
+recipe.nuoc_gung.text,"Ấm bụng, ấm tay, ấm được một lúc. Thêm 2 HP tối đa.","Warms the belly and the hands, for a while. +2 max HP."
+stage.sk_boxoffice.aim,Hạ hết bóng ma. Ô cửa sắp mở đã được đánh dấu. Đừng thò tay qua song sắt.,Kill every ghost. The windows about to open are marked. Don't reach through the bars.
+stage.sk_boxoffice.title,Phòng vé (lần nữa),The Box Office (again)
+stage.sk_boxoffice.twist.0,Ba cửa,Three windows
+stage.sk_boxoffice.twist.1,Hai tên móc túi,Two pickpockets
+stage.sk_props.aim,Hạ hết bóng ma. Tránh chỗ bao cát sắp rơi: bên trong không chỉ có cát.,Kill every ghost. Keep clear of the falling sandbags: there is more than sand inside.
+stage.sk_props.title,Kho đạo cụ,The Prop Store
+stage.sk_props.twist.0,Chuột trong tường,Rats in the walls
+stage.sk_props.twist.1,Cả hai cùng lúc,Both at once
+stage.sk_stairs.aim,Hạ hết bóng ma ở cả hai đầu cầu thang. Đừng đếm bậc.,Kill every ghost at both ends of the stairs. Don't count the steps.
+stage.sk_stairs.title,Cầu thang phụ,The Back Stairs
+stage.sk_stairs.twist.0,Tắt đèn,Lights out
+stage.sk_stairs.twist.1,Kẻ canh trên chiếu nghỉ,The watcher on the landing
+stage.stage1.aim,"Cắt dây cho bé Tí trước khi con Chuột ngã, kẻo sợi chỉ siết đứt em.","Cut Ti's strings before the Rat falls, or the thread will cut through him."
+stage.stage1.title,Phòng vé,The Box Office
+stage.t1.aim,Giết ba cái bóng chuột trước khi chúng gặm tới xương.,Kill the three rat shadows before they gnaw to the bone.
+stage.t1.title,Khách lạ,The Stranger
+stage.t2.aim,"Để bà Mai băng vết thương. Đứng chung ô với bà mà đánh: một mình, bạn sẽ bị xé xác.","Let Ba Mai bind your wound. Share her square to fight: alone, you will be torn apart."
+stage.t2.title,Hàng ghế khán phòng,The Stalls
+stage.t2s.aim,"Hạ ba cái bóng. Kỹ năng cắt sâu hơn, nhưng đòi máu người dùng.","Bring down the three shadows. Skills cut deeper, but they take blood from whoever uses them."
+stage.t2s.title,Phòng y tế,The Infirmary
+stage.t3.aim,Hạ Người giữ tranh. Rời khỏi hàng gạch khi nó hít vào: hơi thở của nó làm da bong ra.,Bring down the Portrait Keeper. Leave the row when it breathes in: its breath peels skin.
+stage.t3.title,Hành lang chân dung,The Portrait Corridor
+ticket.attic.lock,Cầu thang đã sập. Có người đã tháo nó.,The stairs have collapsed. Someone took them apart.
+ticket.attic.name,Gác thượng,Attic
+ticket.balcony.lock,Chưa ai lên tới đó mà còn quay xuống.,No one who went up there came back down.
+ticket.balcony.name,Ban công,Balcony
+ticket.makeup.lock,Mở sau Phòng vé. Gương trong đó không phản chiếu ai.,Opens after the Box Office. Its mirrors reflect no one.
+ticket.makeup.name,Phòng hóa trang,Dressing Room
+ticket.sk_boxoffice.name,Phòng vé (lần nữa),Box Office (again)
+ticket.sk_props.name,Kho đạo cụ,Prop Store
+ticket.sk_stairs.name,Cầu thang phụ,Back Stairs
+ticket.stage.lock,"Nơi màn cuối hạ, xuống đầu những ai còn ngồi.","Where the last curtain falls, on whoever is still seated."
+ticket.stage.name,Sân khấu chính,Main Stage
+ticket.stage1.name,Phòng vé,Box Office
+ticket.t1.name,Tiền sảnh,Foyer
+ticket.t2.name,Hàng ghế khán phòng,The Stalls
+ticket.t2s.name,Phòng y tế,Infirmary
+ticket.t3.name,Hành lang chân dung,Portrait Corridor
+ticket.under.lock,Mở sau Phòng hóa trang. Có tiếng gõ từ dưới sàn.,Opens after the Dressing Room. Something knocks from beneath the floor.
+ticket.under.name,Hầm sân khấu,Under the Stage

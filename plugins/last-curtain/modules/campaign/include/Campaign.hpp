@@ -183,6 +183,7 @@ namespace umbra::campaign
     struct Choice
     {
         std::string text, fact, value, jump;
+        std::string en; // the English (Localization.md); text is the Vietnamese
     };
 
     struct Line
@@ -192,6 +193,7 @@ namespace umbra::campaign
         std::vector<std::string> leave;
         std::vector<Choice> choices; // 0 or 2-4
         bool model = false;          // plan 6: the model may reword it
+        std::string en;              // the English of text (Localization.md)
     };
 
     struct Scene
@@ -205,6 +207,7 @@ namespace umbra::campaign
 
     // Reads and checks a scene; each problem names the file, the line's field and the fix.
     bool LoadScene(const std::filesystem::path &file, const Cast &cast, Scene &scene, std::vector<core::Diagnostic> &d);
+    void UseEnglish(Scene &scene); // every line and choice shows its English (where it has one)
 
     // The player as the save knows them: the typed name and "male" or "female".
     struct Speaker

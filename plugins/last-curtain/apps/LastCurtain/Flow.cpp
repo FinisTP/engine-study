@@ -1,4 +1,5 @@
 #include "Flow.hpp"
+#include "CampaignText.hpp"
 #include "Localization.hpp"
 
 #include "Analog.hpp"
@@ -184,6 +185,8 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
         if (campaign::StageDef s; loaded && campaign::LoadStage(f.path(), cast, def, folder / "scenes", s, d))
             stages.push_back(s);
     loaded = loaded && campaign::LoadMap(folder / "map.json", stages, map, d);
+    if (CampaignText text; text.Load(assets / "localization.csv")) // display text (Localization.md "Data")
+        text.Fill(cast), text.Fill(stages), text.Fill(map);
     nlohmann::json words;
     words = umbra::night::LoadWords(assets / "localization.csv", "campaign", umbra::night::EnglishChosen());
     for (const umbra::core::Diagnostic &e : d)

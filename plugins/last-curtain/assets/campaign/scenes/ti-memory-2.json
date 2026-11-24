@@ -2,11 +2,11 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "ti-memory-2",
-  "note": "From ti-content 4.2-4.5 (draft for the user's review, 2026-11-24). The choice picks the Dua tin version: a = Ve kip, b = Phan qua.",
+  "note": "From ti-content 4.2-4.5 (draft for the user's review, 2026-11-24). The choice picks the Dua tin version: a = Ve kip, b = Phan qua. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Mùi gừng sên đường bốc lên. Tí ngồi im, hai tay ôm chén.",
+      "text": "Mùi gừng sên đường bốc lên. Tí ngồi im, hai tay ôm chén. Tay em lạnh tới mức hơi nóng không bốc lên nổi.",
       "enter": [
         {
           "who": "player",
@@ -20,13 +20,15 @@
           "slot": 0,
           "face": "calm"
         }
-      ]
+      ],
+      "en": "The smell of candied ginger rises. Ti sits still, both hands around the bowl. His hands are so cold the steam won't rise."
     },
     {
       "id": "b",
       "text": "Mạ hứa… Tết ni tui về, mạ sên mứt gừng cho tui. Cay mà ngọt.",
       "speaker": "ti",
-      "face": "talk"
+      "face": "talk",
+      "en": "Ma promised… when I come home this Tết, she'll make me candied ginger. Hot and sweet."
     },
     {
       "id": "c",
@@ -38,32 +40,38 @@
           "text": "Em về kịp mà, Tí.",
           "fact": "ti.memory2",
           "value": "a",
-          "jump": "d1"
+          "jump": "d1",
+          "en": "You'll make it home in time, Ti."
         },
         {
           "text": "Mạ để phần em một hũ đó.",
           "fact": "ti.memory2",
           "value": "b",
-          "jump": "d2"
+          "jump": "d2",
+          "en": "Your ma saved you a jar."
         }
-      ]
+      ],
+      "en": "And I promised her: after this one run, I'll come straight home."
     },
     {
       "id": "d1",
       "text": "Ừ hé. Tết ni tui không trễ nữa mô.",
       "speaker": "ti",
       "face": "happy",
-      "jump": "e"
+      "jump": "e",
+      "en": "Yeah. This Tết I won't be late."
     },
     {
       "id": "d2",
       "text": "Một hũ thôi hả? Tui chia cho {anh/chị} nửa hũ.",
       "speaker": "ti",
-      "face": "happy"
+      "face": "happy",
+      "en": "Just one jar? I'll share half with you."
     },
     {
       "id": "e",
-      "text": "Tí liếm sạch muỗng mứt cuối cùng."
+      "text": "Tí liếm sạch muỗng mứt cuối cùng. Trong chén chỉ còn cát.",
+      "en": "Ti licks the last spoon clean. Only sand is left in the bowl."
     }
   ]
 }

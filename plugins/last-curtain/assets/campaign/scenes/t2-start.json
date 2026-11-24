@@ -2,15 +2,16 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "t2-start",
-  "note": "Draft for the user's review (2026-11-24): T2 opens: the player is hurt after the foyer; Ba Mai tends the wound and teaches fighting side by side.",
+  "note": "Draft for the user's review (2026-11-24): T2 opens: the player is hurt after the foyer; Ba Mai tends the wound and teaches fighting side by side. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Hàng ghế khán phòng phủ một lớp bụi mỏng. Vết cào ở tay bạn vẫn rỉ máu."
+      "text": "Hàng ghế khán phòng phủ một lớp bụi mỏng. Vết cào trên tay {player} vẫn rỉ máu, và máu chảy ngược lên.",
+      "en": "Dust lies thin on the stalls. The scratch on {player}'s arm still bleeds, and the blood runs upward."
     },
     {
       "id": "b",
-      "text": "Đứng yên đó. Để bà xem nào.",
+      "text": "Đứng yên đó con. Vết này mà để lâu là nó mọc răng.",
       "speaker": "mai",
       "face": "calm",
       "enter": [
@@ -26,17 +27,20 @@
           "slot": 0,
           "face": "calm"
         }
-      ]
+      ],
+      "en": "Stand still, child. Leave a wound like that too long and it grows teeth."
     },
     {
       "id": "c",
       "text": "Bà ở xa vẫn băng được cho con. Đến lượt bà, chọn Kỹ năng rồi chọn con.",
       "speaker": "mai",
-      "face": "calm"
+      "face": "calm",
+      "en": "I can bind you from over here. On my turn, choose Skills, then choose you."
     },
     {
       "id": "d",
-      "text": "Cái bóng to đằng kia một mình con không kham nổi. Đứng chung một ô với bà: hai người đánh chung một trận."
+      "text": "Cái bóng to đằng kia một mình con không kham nổi. Đứng chung một ô với bà: hai người đánh chung một trận.",
+      "en": "That big shadow is too much for you alone. Share a square with me: two of us fight one battle together."
     }
   ]
 }

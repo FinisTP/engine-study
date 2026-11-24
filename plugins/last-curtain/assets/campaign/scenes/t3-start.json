@@ -2,11 +2,11 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "t3-start",
-  "note": "Draft for the user's review (2026-11-24, written overnight). T3 opens: the portrait corridor; Bao and Ba Mai beside the player.",
+  "note": "Draft for the user's review (2026-11-24, written overnight). T3 opens: the portrait corridor; Bao and Ba Mai beside the player. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Hành lang dài hun hút. Mấy bức chân dung cũ nhìn theo từng bước chân.",
+      "text": "Hành lang dài hun hút. Mấy bức chân dung cũ đảo mắt theo từng bước chân. Có bức không còn mặt, chỉ còn vết cào.",
       "enter": [
         {
           "who": "player",
@@ -26,19 +26,22 @@
           "slot": 1,
           "face": "calm"
         }
-      ]
+      ],
+      "en": "The corridor runs on forever. The old portraits roll their eyes after every step. Some have no faces left, only scratch marks."
     },
     {
       "id": "b",
-      "text": "Cái thứ cuối hành lang kia... nó đang hít vào.",
+      "text": "Cái thứ cuối hành lang kia... nó đang hít vào. Nghe như phổi đầy nước.",
       "speaker": "bao",
-      "face": "afraid"
+      "face": "afraid",
+      "en": "That thing at the end of the corridor... it's breathing in. Sounds like lungs full of water."
     },
     {
       "id": "c",
       "text": "Thấy hàng nào sáng lên thì bước ra khỏi hàng đó, {anh/chị} nghe. Ai ngã, bà có cơm nguội.",
       "speaker": "mai",
-      "face": "calm"
+      "face": "calm",
+      "en": "When a row lights up, step out of it, you hear? Whoever falls, I have cold rice."
     }
   ]
 }

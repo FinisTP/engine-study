@@ -2,11 +2,11 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "stage1-trapped",
-  "note": "Draft for the user's review (2026-11-24, written overnight). Stage 1 lost: the Rat fell with Ti still strung, or a party fall ended it.",
+  "note": "Draft for the user's review (2026-11-24, written overnight). Stage 1 lost: the Rat fell with Ti still strung, or a party fall ended it. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Sợi chỉ đỏ siết lại. Phòng vé chìm vào bóng tối.",
+      "text": "Sợi chỉ đỏ siết lại, cắt vào da thịt đứa nhỏ. Phòng vé chìm vào bóng tối và tiếng đếm tiền.",
       "enter": [
         {
           "who": "lethanh",
@@ -14,13 +14,15 @@
           "slot": 0,
           "face": "calm"
         }
-      ]
+      ],
+      "en": "The red thread pulls tight and cuts into the child. The box office sinks into darkness and the sound of counting."
     },
     {
       "id": "b",
       "text": "Mình phải quay lại phòng vé. Lần này cắt dây cho em trước đã.",
       "speaker": "lethanh",
-      "face": "calm"
+      "face": "calm",
+      "en": "We have to go back to the box office. This time, cut him free first."
     }
   ]
 }

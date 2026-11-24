@@ -1,3 +1,4 @@
+#include <CampaignText.hpp>
 #include <Localization.hpp>
 #include <Campaign.hpp>
 #include <MatchSave.hpp>
@@ -9,6 +10,21 @@
 #include <algorithm>
 #include <fstream>
 #include <functional>
+
+namespace
+{
+    // The display text in Vietnamese, as the game fills it (Localization.md "Data").
+    const CampaignText &Text()
+    {
+        static const CampaignText text = [] {
+            CampaignText t;
+            std::string error;
+            (void)t.table.Load(std::filesystem::path(UMBRA_LASTCURTAIN_APP_ASSETS) / "localization.csv", error);
+            return t;
+        }();
+        return text;
+    }
+}
 
 using namespace umbra;
 using json = nlohmann::json;
@@ -766,6 +782,7 @@ namespace
             campaign::StageDef s;
             std::vector<core::Diagnostic> d;
             REQUIRE(campaign::LoadStage(data / "stages" / (std::string(id) + ".json"), TheCast(), MatchData(), data / "scenes", s, d));
+            Text().Fill(s);
             out.push_back(s);
         }
         return out;
@@ -1008,6 +1025,7 @@ TEST_CASE("The theatre map: tickets open in order with marks, the cursor reaches
     std::vector<core::Diagnostic> d;
     REQUIRE(campaign::LoadMap(data / "map.json", TheStages(), map, d));
     CHECK(d.empty());
+    Text().Fill(map);
     campaign::Save save;
     const auto mark = [&](const std::string &id) {
         for (const auto &t : campaign::MapView(map, save, TheStages()))
@@ -1050,7 +1068,7 @@ TEST_CASE("The theatre map: tickets open in order with marks, the cursor reaches
         if (t.id == "sk_props")
             CHECK(t.detail == "Chuột trong tường");
         if (t.id == "makeup")
-            CHECK(t.detail == "Mở sau Phòng vé.");
+            CHECK(t.detail == "Mở sau Phòng vé. Gương trong đó không phản chiếu ai.");
     }
 }
 
@@ -1185,6 +1203,7 @@ TEST_CASE("Skills: unlock levels, a starting loadout, four at most, only unlocke
     std::vector<core::Diagnostic> d;
     REQUIRE(campaign::LoadSkills(data / "skills.json", def, skills, d));
     CHECK(d.empty());
+    Text().Fill(skills);
     const auto ids = [&](const match::Unit &u) {
         std::vector<std::string> out;
         for (const int a : u.abilities)
@@ -1244,4 +1263,60 @@ TEST_CASE("A stage can start the party hurt: startHp per cast id, kept within 1 
     const campaign::BuiltStage b = campaign::BuildStage(def, TheCast(), TheGrowth(), st, {{"player", 2, {}}}, 0, {}, 3);
     CHECK(b.state.units[0].hp == 5);
     CHECK(b.state.units[0].maxHp > 5);
+}
+
+TEST_CASE("Every scene line and choice has Vietnamese and English; English swaps in when chosen (the user, 2026-11-24 19:40)")
+{
+    for (const auto &file : std::filesystem::directory_iterator(data / "scenes"))
+    {
+        campaign::Scene scene;
+        std::vector<core::Diagnostic> d;
+        REQUIRE(campaign::LoadScene(file.path(), TheCast(), scene, d));
+        for (const campaign::Line &l : scene.lines)
+        {
+            INFO(file.path().filename().string() << " " << l.id);
+            CHECK_FALSE(l.text.empty());
+            CHECK_FALSE(l.en.empty());
+            for (const campaign::Choice &c : l.choices)
+                CHECK_FALSE(c.en.empty());
+        }
+        campaign::Scene english = scene;
+        campaign::UseEnglish(english);
+        CHECK(english.lines.front().text == scene.lines.front().en);
+    }
+}
+
+TEST_CASE("Every stage, ticket, cast member, skill, recipe and memory has its text in localization.csv (the user, 2026-11-24 19:40)")
+{
+    CampaignText text;
+    REQUIRE(text.table.Load(std::filesystem::path(UMBRA_LASTCURTAIN_APP_ASSETS) / "localization.csv", *std::make_unique<std::string>()));
+    const auto has = [&](const std::string &key) {
+        INFO(key);
+        CHECK(text.table.text.contains(key));
+    };
+    for (const campaign::StageDef &s : TheStages())
+    {
+        has("stage." + s.id + ".title"), has("stage." + s.id + ".aim");
+        for (std::size_t i = 0; i < s.twists.size(); ++i)
+            has("stage." + s.id + ".twist." + std::to_string(i));
+    }
+    campaign::TheatreMap map;
+    std::vector<core::Diagnostic> d;
+    REQUIRE(campaign::LoadMap(data / "map.json", TheStages(), map, d));
+    for (const campaign::Ticket &t : map.tickets)
+    {
+        has("ticket." + t.id + ".name");
+        if (t.kind == "unknown")
+            has("ticket." + t.id + ".lock");
+    }
+    for (const campaign::CastMember &m : TheCast().members)
+        if (m.id != "player" && m.id != "nameless")
+            has("cast." + m.id + ".name");
+    for (const campaign::Recipe &r : TheRecipes().list)
+        has("recipe." + r.id + ".name"), has("recipe." + r.id + ".text");
+    // Filled in English, a stage reads English.
+    text.english = true;
+    campaign::StageDef t1 = TheStages().front();
+    text.Fill(t1);
+    CHECK(t1.title == "The Stranger");
 }

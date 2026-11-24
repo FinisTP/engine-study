@@ -2,11 +2,11 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "stage1-end",
-  "note": "Draft for the user's review (2026-11-24, written overnight). Stage 1 won: Le Thanh's story piece 1 (money); she regains restoring memories.",
+  "note": "Draft for the user's review (2026-11-24, written overnight). Stage 1 won: Le Thanh's story piece 1 (money); she regains restoring memories. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Con Chuột co lại, chỉ còn là một ông thư ký gầy gò, kính trễ xuống mũi.",
+      "text": "Con Chuột co lại, da trùng xuống như áo mượn, chỉ còn là một ông thư ký gầy gò, kính trễ xuống mũi, miệng còn ngậm tiền.",
       "enter": [
         {
           "who": "player",
@@ -20,41 +20,48 @@
           "slot": 0,
           "face": "calm"
         }
-      ]
+      ],
+      "en": "The Rat shrinks, its skin sagging like a borrowed coat, until only a thin clerk is left, glasses low on his nose, coins still in his mouth."
     },
     {
       "id": "b",
-      "text": "Hồi đó, mỗi đêm diễn xong tôi lên phòng vé lãnh lương. Ông ấy đếm tiền chậm lắm, đếm xong lúc nào cũng thiếu.",
+      "text": "Hồi đó, mỗi đêm diễn xong tôi lên phòng vé lãnh lương. Ông ấy đếm chậm lắm, liếm ngón tay mỗi tờ. Đếm xong lúc nào cũng thiếu.",
       "speaker": "lethanh",
-      "face": "calm"
+      "face": "calm",
+      "en": "Back then, after every show I went up for my wages. He counted so slowly, licking his finger at every note. It always came up short."
     },
     {
       "id": "c",
       "text": "Rồi một hôm cái vòng ngọc của má tôi biến mất khỏi phòng thay đồ. Tôi biết ai lấy. Tôi không nói.",
       "speaker": "lethanh",
-      "face": "talk"
+      "face": "talk",
+      "en": "Then one day my mother's jade bangle vanished from the dressing room. I knew who took it. I said nothing."
     },
     {
       "id": "d",
       "text": "Sao cô không nói?",
       "speaker": "player",
-      "face": "calm"
+      "face": "calm",
+      "en": "Why didn't you say anything?"
     },
     {
       "id": "e",
-      "text": "Vì tôi còn cần đứng trên sân khấu đó. Tiền thì mất được. Chỗ đứng thì không.",
+      "text": "Vì tôi còn cần đứng trên sân khấu đó. Tiền thì mất được. Chỗ đứng thì không. Rồi tôi mất cả hai, cùng một đêm.",
       "speaker": "lethanh",
-      "face": "scheming"
+      "face": "scheming",
+      "en": "Because I still needed that stage. Money can be lost. A place cannot. Then I lost both, on the same night."
     },
     {
       "id": "f",
-      "text": "Có thứ gì ấm lên trong tay cô ấy. Lệ Thanh nhìn xuống, như vừa nhớ ra một bài hát cũ."
+      "text": "Có thứ gì ấm lên trong lòng bàn tay cô ấy, ấm như máu mới. Lệ Thanh nhìn xuống, như vừa nhớ ra một bài hát cũ.",
+      "en": "Something warms in her palm, warm as fresh blood. Le Thanh looks down, as if remembering an old song."
     },
     {
       "id": "g",
-      "text": "Tôi nhớ lại được rồi... cách trả trí nhớ cho người ta. Đứa nhỏ dưới quán đang cần nó.",
+      "text": "Tôi nhớ lại được rồi... cách trả trí nhớ cho người ta. Đứa nhỏ dưới quán đang cần nó, trước khi nó quên luôn cả tên mình.",
       "speaker": "lethanh",
-      "face": "happy"
+      "face": "happy",
+      "en": "I remember now... how to give people back their memories. The child in the café needs it, before he forgets even his name."
     }
   ]
 }

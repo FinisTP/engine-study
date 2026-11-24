@@ -3,8 +3,6 @@
   "version": 1,
   "id": "stage1",
   "kind": "story",
-  "title": "Phòng vé",
-  "titleEn": "The Box Office",
   "note": "Draft (2026-11-24): freeing a recruit under pressure; theft. Three windows open by a pattern and let out rat specters. Phong ket (left) holds the keepsake.",
   "level": 3,
   "partyCap": 3,
@@ -22,19 +20,96 @@
     "###########"
   ],
   "units": [
-    {"who": "rat", "at": [6, 1], "side": 1, "level": 2, "flags": ["boss"]},
-    {"who": "ti", "at": [8, 1], "side": 1, "level": 3, "flags": ["recruit", "strung"]}
+    {
+      "who": "rat",
+      "at": [
+        6,
+        1
+      ],
+      "side": 1,
+      "level": 2,
+      "flags": [
+        "boss"
+      ]
+    },
+    {
+      "who": "ti",
+      "at": [
+        8,
+        1
+      ],
+      "side": 1,
+      "level": 3,
+      "flags": [
+        "recruit",
+        "strung"
+      ]
+    }
   ],
   "items": [
-    {"id": "stage1-bandage", "item": "bandage", "at": [5, 3]},
-    {"id": "stage1-giay", "item": "giay_gap_tu", "at": [1, 1]}
+    {
+      "id": "stage1-bandage",
+      "item": "bandage",
+      "at": [
+        5,
+        3
+      ]
+    },
+    {
+      "id": "stage1-giay",
+      "item": "giay_gap_tu",
+      "at": [
+        1,
+        1
+      ]
+    }
   ],
   "mustFree": true,
-  "noRevive": [1],
-  "gimmicks": {"windows": {"spawn": "rat_specter", "level": 1, "max": 1, "pattern": [[], [], [0], [], [], [2], [], [], [1]],
-                           "drops": [{"item": "gung", "percent": 30}]}},
-  "aims": {"start": "Cắt dây cho bé Tí trước khi con Chuột ngã.", "recap": ""},
-  "scenes": {"start": "stage1-start", "round:1": "stage1-ti-seen", "firstAttacked:rat": "stage1-rat-first-hit",
-             "firstAttacked:ti": "stage1-ti-hit", "falls:ti": "stage1-ti-falls", "freed:ti": "stage1-freed",
-             "end": "stage1-end", "lost": "stage1-trapped"}
+  "noRevive": [
+    1
+  ],
+  "gimmicks": {
+    "windows": {
+      "spawn": "rat_specter",
+      "level": 1,
+      "max": 1,
+      "pattern": [
+        [],
+        [],
+        [
+          0
+        ],
+        [],
+        [],
+        [
+          2
+        ],
+        [],
+        [],
+        [
+          1
+        ]
+      ],
+      "drops": [
+        {
+          "item": "gung",
+          "percent": 30
+        }
+      ]
+    }
+  },
+  "aims": {
+    "start": "",
+    "recap": ""
+  },
+  "scenes": {
+    "start": "stage1-start",
+    "round:1": "stage1-ti-seen",
+    "firstAttacked:rat": "stage1-rat-first-hit",
+    "firstAttacked:ti": "stage1-ti-hit",
+    "falls:ti": "stage1-ti-falls",
+    "freed:ti": "stage1-freed",
+    "end": "stage1-end",
+    "lost": "stage1-trapped"
+  }
 }

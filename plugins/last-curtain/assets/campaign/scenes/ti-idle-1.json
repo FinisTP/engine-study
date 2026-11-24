@@ -2,13 +2,13 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "ti-idle-1",
-  "note": "ti-content 4.6 (draft).",
+  "note": "ti-content 4.6 (draft). Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
       "speaker": "ti",
       "face": "talk",
-      "text": "Quán ni có bánh tét không {anh/chị}? Tui thèm quá.",
+      "text": "Quán ni có bánh tét không {anh/chị}? Tui thèm quá. Tui thèm từ hồi đó tới giờ.",
       "enter": [
         {
           "who": "player",
@@ -22,7 +22,8 @@
           "slot": 0,
           "face": "talk"
         }
-      ]
+      ],
+      "en": "Does this place have bánh tét? I want some so bad. I've wanted it ever since."
     }
   ]
 }

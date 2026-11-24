@@ -2,11 +2,11 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "talk-bao-t1",
-  "note": "Draft for the user's review (2026-11-24). ",
+  "note": "Draft for the user's review (2026-11-24).  Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Bác sĩ Bảo ngồi một mình, cây bút máy kẹp giữa hai ngón tay.",
+      "text": "Bác sĩ Bảo ngồi một mình, cây bút máy kẹp giữa hai ngón tay, mực rỉ ra thành vệt đen trên da.",
       "enter": [
         {
           "who": "player",
@@ -20,25 +20,29 @@
           "slot": 0,
           "face": "calm"
         }
-      ]
+      ],
+      "en": "Doctor Bao sits alone, a fountain pen between two fingers, ink leaking in a black line across his skin."
     },
     {
       "id": "b",
-      "text": "{Anh/Chị} đứng vững được qua đêm đầu. Hồi đó tôi run tới mức ký sai cả tên mình.",
+      "text": "{Anh/Chị} qua được mấy màn đầu. Hồi đó tôi run tới mức ký sai cả tên mình. Rồi tôi ký sai cả tên người khác.",
       "speaker": "bao",
-      "face": "talk"
+      "face": "talk",
+      "en": "You survived the first acts. Back then my hands shook so badly I signed my own name wrong. Then I signed other people's wrong too."
     },
     {
       "id": "c",
       "text": "Ký cái gì vậy bác?",
       "speaker": "player",
-      "face": "calm"
+      "face": "calm",
+      "en": "Signed what, doctor?"
     },
     {
       "id": "d",
-      "text": "Giấy tờ. Toàn là giấy tờ.",
+      "text": "Giấy tờ. Toàn là giấy tờ. Giấy nói người ta đã chết, trong khi họ vẫn còn gõ cửa.",
       "speaker": "bao",
-      "face": "calm"
+      "face": "calm",
+      "en": "Papers. Nothing but papers. Papers saying people were dead, while they were still knocking on the door."
     }
   ]
 }

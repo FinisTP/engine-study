@@ -2,11 +2,11 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "stage1-ti-seen",
-  "note": "Draft for the user's review (2026-11-24, written overnight). Stage 1 round 1: Ti first seen (ti-content 4.1).",
+  "note": "Draft for the user's review (2026-11-24, written overnight). Stage 1 round 1: Ti first seen (ti-content 4.1). Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Đừng lại gần… tui phải chạy. Có người đang chờ tin.",
+      "text": "Đừng lại gần… tui phải chạy. Có người đang chờ tin. Người ta chờ lâu lắm rồi.",
       "speaker": "ti",
       "face": "afraid",
       "enter": [
@@ -16,7 +16,8 @@
           "slot": 0,
           "face": "afraid"
         }
-      ]
+      ],
+      "en": "Don't come near… I have to run. Someone's waiting for word. They've waited so long."
     }
   ]
 }

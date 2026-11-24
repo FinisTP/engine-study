@@ -1,4 +1,5 @@
 #include "DialogApp.hpp"
+#include "CampaignText.hpp"
 #include "Localization.hpp"
 
 #include "Analog.hpp"
@@ -29,6 +30,10 @@ int RunScene(GameContext &game, const umbra::assets::AssetFolders &assets, const
                         umbra::campaign::LoadScene(campaign / "scenes" / (sceneId + ".json"), cast, scene, diagnostics);
     for (const umbra::core::Diagnostic &d : diagnostics)
         umbra::diagnostics::Error(umbra::core::Format(d));
+    if (umbra::night::EnglishChosen())
+        umbra::campaign::UseEnglish(scene); // the lines in the chosen language (Localization.md)
+    if (CampaignText text; text.Load(assets / "localization.csv"))
+        text.Fill(cast); // speakers' names
     nlohmann::json words;
     words = umbra::night::LoadWords(assets / "localization.csv", "campaign", umbra::night::EnglishChosen());
     Screens &screens = *game.screens;

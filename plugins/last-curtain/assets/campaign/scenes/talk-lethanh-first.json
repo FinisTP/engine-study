@@ -2,11 +2,11 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "talk-lethanh-first",
-  "note": "Draft for the user's review (2026-11-24; e-f added: the gift and the slot lesson).",
+  "note": "Draft for the user's review (2026-11-24; e-f added: the gift and the slot lesson). Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Quán nhỏ dưới tầng hầm. Đèn dầu, mùi cà phê rang, tiếng mưa đâu đó rất xa.",
+      "text": "Quán nhỏ dưới hầm. Đèn dầu, mùi cà phê rang, và tiếng mưa rất xa, dù trên kia trời không mưa từ năm 1944.",
       "enter": [
         {
           "who": "player",
@@ -20,37 +20,43 @@
           "slot": 0,
           "face": "calm"
         }
-      ]
+      ],
+      "en": "A small café in the cellar. An oil lamp, the smell of roasting coffee, and rain far away, though it has not rained up there since 1944."
     },
     {
       "id": "b",
-      "text": "Ở đây không ai đòi tiền {anh/chị} hết. Ngồi đi.",
+      "text": "Ở đây không ai đòi tiền {anh/chị} hết. Ngồi đi. Ghế đó còn ấm, người ngồi trước mới đi.",
       "speaker": "lethanh",
-      "face": "calm"
+      "face": "calm",
+      "en": "No one here will ask you for money. Sit. That chair is still warm; its last guest only just went."
     },
     {
       "id": "c",
       "text": "Mấy người kia là ai vậy cô?",
       "speaker": "player",
-      "face": "calm"
+      "face": "calm",
+      "en": "Who are those people?"
     },
     {
       "id": "d",
-      "text": "Khách quen. Ai rồi cũng thành khách quen.",
+      "text": "Khách quen. Ai rồi cũng thành khách quen. Có người quen tới mức quên mình đã chết.",
       "speaker": "lethanh",
-      "face": "scheming"
+      "face": "scheming",
+      "en": "Regulars. Everyone becomes a regular. Some so regular they forget they're dead."
     },
     {
       "id": "e",
-      "text": "Cầm lấy. Băng gạc với tờ chương trình cũ. Trên kia {anh/chị} sẽ cần.",
+      "text": "Cầm lấy. Băng gạc với tờ chương trình cũ. Trên kia {anh/chị} sẽ cần. Đừng đọc tên diễn viên to quá.",
       "speaker": "lethanh",
-      "face": "calm"
+      "face": "calm",
+      "en": "Take these. Bandages and an old programme. You'll need them up there. Don't read the cast names aloud."
     },
     {
       "id": "f",
-      "text": "Mỗi người mang được bốn món và bốn kỹ năng. Mở sổ tay, chọn người, chọn thứ cần mang rồi bấm Mang theo. Bảo với bà Mai còn kỹ năng chưa mang đó.",
+      "text": "Mỗi người mang được bốn món và bốn kỹ năng. Mở sổ tay, chọn người, chọn thứ cần mang rồi bấm Mang theo. Bà Mai còn kỹ năng chưa mang đó.",
       "speaker": "lethanh",
-      "face": "happy"
+      "face": "happy",
+      "en": "Each of you can carry four things and four skills. Open the notebook, pick someone, pick what to carry, then press Take. Ba Mai has skills she isn't carrying yet."
     }
   ]
 }

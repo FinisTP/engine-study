@@ -3,8 +3,6 @@
   "version": 1,
   "id": "sk_boxoffice",
   "kind": "skirmish",
-  "title": "Phòng vé",
-  "titleEn": "The Box Office (again)",
   "note": "Draft (2026-11-24): the windows without the Rat; ginger drops. Refill 1 three windows faster, refill 2 a second thief.",
   "level": 3,
   "partyCap": 3,
@@ -22,19 +20,134 @@
     "###########"
   ],
   "units": [
-    {"who": "thief_specter", "at": [6, 1], "side": 1, "level": 3, "flags": ["boss"]},
-    {"who": "ghost_attacker", "at": [8, 2], "side": 1, "level": 2, "flags": ["boss"]},
-    {"who": "ghost_defender", "at": [4, 2], "side": 1, "level": 1, "flags": ["boss"]}
+    {
+      "who": "thief_specter",
+      "at": [
+        6,
+        1
+      ],
+      "side": 1,
+      "level": 3,
+      "flags": [
+        "boss"
+      ]
+    },
+    {
+      "who": "ghost_attacker",
+      "at": [
+        8,
+        2
+      ],
+      "side": 1,
+      "level": 2,
+      "flags": [
+        "boss"
+      ]
+    },
+    {
+      "who": "ghost_defender",
+      "at": [
+        4,
+        2
+      ],
+      "side": 1,
+      "level": 1,
+      "flags": [
+        "boss"
+      ]
+    }
   ],
-  "gimmicks": {"windows": {"spawn": "rat_specter", "level": 2, "max": 2, "pattern": [[0], [2], [1]],
-                           "drops": [{"item": "gung", "percent": 30}]}},
-  "aims": {"start": "Hạ hết bóng ma. Cửa bán vé nào sắp mở thì đã được đánh dấu.", "recap": ""},
+  "gimmicks": {
+    "windows": {
+      "spawn": "rat_specter",
+      "level": 2,
+      "max": 2,
+      "pattern": [
+        [
+          0
+        ],
+        [
+          2
+        ],
+        [
+          1
+        ]
+      ],
+      "drops": [
+        {
+          "item": "gung",
+          "percent": 30
+        }
+      ]
+    }
+  },
+  "aims": {
+    "start": "",
+    "recap": ""
+  },
   "twists": [
-    {"name": "Ba cửa", "units": [],
-     "gimmicks": {"windows": {"spawn": "rat_specter", "level": 2, "max": 4, "pattern": [[0, 1, 2], [1], [0, 2], [1]],
-                              "drops": [{"item": "gung", "percent": 30}]}}},
-    {"name": "Hai tên móc túi",
-     "units": [{"who": "thief_specter", "at": [5, 1], "side": 1, "level": 4, "flags": ["boss"]},
-               {"who": "ghost_attacker", "at": [9, 6], "side": 1, "level": 4, "flags": ["boss"]}]}
+    {
+      "name": "",
+      "units": [],
+      "gimmicks": {
+        "windows": {
+          "spawn": "rat_specter",
+          "level": 2,
+          "max": 4,
+          "pattern": [
+            [
+              0,
+              1,
+              2
+            ],
+            [
+              1
+            ],
+            [
+              0,
+              2
+            ],
+            [
+              1
+            ]
+          ],
+          "drops": [
+            {
+              "item": "gung",
+              "percent": 30
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "",
+      "units": [
+        {
+          "who": "thief_specter",
+          "at": [
+            5,
+            1
+          ],
+          "side": 1,
+          "level": 4,
+          "flags": [
+            "boss"
+          ]
+        },
+        {
+          "who": "ghost_attacker",
+          "at": [
+            9,
+            6
+          ],
+          "side": 1,
+          "level": 4,
+          "flags": [
+            "boss"
+          ]
+        }
+      ]
+    }
   ]
 }

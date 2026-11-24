@@ -2,13 +2,13 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "ti-idle-fed",
-  "note": "ti-content 4.6 (draft).",
+  "note": "ti-content 4.6 (draft). Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
       "speaker": "ti",
       "face": "talk",
-      "text": "{Anh/Chị} còn cơm không? Tui ăn được thêm chén nữa.",
+      "text": "{Anh/Chị} còn cơm không? Tui ăn được thêm chén nữa. Bụng tui cứ trống hoài.",
       "enter": [
         {
           "who": "player",
@@ -22,7 +22,8 @@
           "slot": 0,
           "face": "talk"
         }
-      ]
+      ],
+      "en": "Is there more rice? I could eat another bowl. My belly just stays empty."
     }
   ]
 }

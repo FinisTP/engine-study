@@ -2,13 +2,13 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "ti-idle-3",
-  "note": "ti-content 4.6 (draft).",
+  "note": "ti-content 4.6 (draft). Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
       "speaker": "ti",
       "face": "talk",
-      "text": "Cơm bà Mai nấu giống cơm mạ tui… mà mạ tui nêm mặn hơn chút.",
+      "text": "Cơm bà Mai nấu giống cơm mạ tui… mà mạ tui nêm mặn hơn chút. Mặn như nước mắt.",
       "enter": [
         {
           "who": "player",
@@ -22,7 +22,8 @@
           "slot": 0,
           "face": "talk"
         }
-      ]
+      ],
+      "en": "Ba Mai's rice tastes like my ma's… only ma's was a bit saltier. Salty like tears."
     }
   ]
 }

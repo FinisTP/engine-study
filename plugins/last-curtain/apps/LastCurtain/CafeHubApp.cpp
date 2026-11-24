@@ -1,4 +1,5 @@
 #include "CafeHubApp.hpp"
+#include "CampaignText.hpp"
 #include "Localization.hpp"
 
 #include "Analog.hpp"
@@ -40,6 +41,9 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
     for (const auto &f : std::filesystem::directory_iterator(folder / "stages"))
         if (campaign::StageDef s; loaded && campaign::LoadStage(f.path(), cast, def, folder / "scenes", s, d))
             stages.push_back(s);
+    CampaignText text; // display text from localization.csv (Localization.md "Data")
+    if (text.Load(assets / "localization.csv"))
+        text.Fill(cast), text.Fill(recipes), text.Fill(memories), text.Fill(stages);
     nlohmann::json words, room, spots;
     words = umbra::night::LoadWords(assets / "localization.csv", "campaign", umbra::night::EnglishChosen());
     if (std::ifstream in(assets.RootOf("cafe/room.json") / "cafe/room.json"); in)
@@ -69,6 +73,7 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
     Notebook book(def, cast, memories, save);
     campaign::Skills skills;
     const bool haveSkills = campaign::LoadSkills(folder / "skills.json", def, skills, d);
+    text.Fill(skills);
     book.SetGrowth(&growth), book.SetWords(words), book.SetSkills(haveSkills ? &skills : nullptr);
     std::vector<std::string> party{"player"};
     std::map<std::string, std::string> sprites{{"player", player.gender == "male" ? "player_male" : "player_female"}};

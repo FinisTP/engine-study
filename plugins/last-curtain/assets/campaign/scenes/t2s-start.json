@@ -2,15 +2,16 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "t2s-start",
-  "note": "Draft for the user's review (2026-11-24): T2s opens: Doctor Bao joins and teaches skills and their HP cost; his other skills wait in the notebook.",
+  "note": "Draft for the user's review (2026-11-24): T2s opens: Doctor Bao joins and teaches skills and their HP cost; his other skills wait in the notebook. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Mùi thuốc sát trùng vẫn còn trong căn phòng nhỏ sau cánh gà."
+      "text": "Mùi thuốc sát trùng vẫn còn trong căn phòng nhỏ sau cánh gà. Trên bàn, một cái khay. Trong khay, thứ gì đó đã thôi đập.",
+      "en": "The smell of antiseptic lingers in the small room behind the wings. On the table, a tray. In the tray, something that has stopped beating."
     },
     {
       "id": "b",
-      "text": "Bác sĩ Bảo. Tôi từng khám cho cả đoàn hát này.",
+      "text": "Bác sĩ Bảo. Tôi khám cho cả đoàn hát này. Cả những người đã chết khi tôi ký giấy rằng họ khỏe.",
       "speaker": "bao",
       "face": "calm",
       "enter": [
@@ -26,17 +27,20 @@
           "slot": 0,
           "face": "calm"
         }
-      ]
+      ],
+      "en": "Doctor Bao. I examined this whole company. Even the ones who died after I signed them fit."
     },
     {
       "id": "c",
-      "text": "Dao mổ của tôi đánh mạnh hơn Đánh thường. Nhưng mỗi nhát lấy của tôi 1 HP.",
+      "text": "Dao mổ của tôi cắt sâu hơn Đánh thường. Nhưng mỗi nhát nó lấy lại của tôi 1 HP. Dao nào cũng đòi máu.",
       "speaker": "bao",
-      "face": "calm"
+      "face": "calm",
+      "en": "My scalpel cuts deeper than a basic attack. But every stroke takes 1 HP back from me. Every blade wants blood."
     },
     {
       "id": "d",
-      "text": "Đến lượt bác sĩ Bảo, bấm Kỹ năng để xem từng món làm gì và tốn bao nhiêu. Các kỹ năng khác của ông nằm trong Sổ tay ở quán."
+      "text": "Đến lượt bác sĩ Bảo, bấm Kỹ năng để xem từng món làm gì và tốn bao nhiêu. Các kỹ năng khác của ông nằm trong Sổ tay ở quán.",
+      "en": "On Doctor Bao's turn, open Skills to see what each does and what it costs. His other skills wait in the notebook at the café."
     }
   ]
 }

@@ -6,7 +6,6 @@
   "tickets": [
     {
       "id": "t1",
-      "name": "Tiền sảnh",
       "at": [
         0.5,
         0.89
@@ -23,7 +22,6 @@
     },
     {
       "id": "t2",
-      "name": "Hàng ghế khán phòng",
       "at": [
         0.5,
         0.6
@@ -41,7 +39,6 @@
     },
     {
       "id": "t2s",
-      "name": "Phòng y tế",
       "at": [
         0.85,
         0.44
@@ -59,7 +56,6 @@
     },
     {
       "id": "t3",
-      "name": "Hành lang chân dung",
       "at": [
         0.2,
         0.58
@@ -77,7 +73,6 @@
     },
     {
       "id": "sk_props",
-      "name": "Kho đạo cụ",
       "at": [
         0.13,
         0.26
@@ -95,7 +90,6 @@
     },
     {
       "id": "sk_stairs",
-      "name": "Cầu thang phụ",
       "at": [
         0.065,
         0.86
@@ -113,7 +107,6 @@
     },
     {
       "id": "stage1",
-      "name": "Phòng vé",
       "at": [
         0.85,
         0.84
@@ -131,7 +124,6 @@
     },
     {
       "id": "sk_boxoffice",
-      "name": "Phòng vé (lần nữa)",
       "at": [
         0.85,
         0.62
@@ -149,13 +141,11 @@
     },
     {
       "id": "makeup",
-      "name": "Phòng hóa trang",
       "at": [
         0.85,
         0.23
       ],
       "kind": "unknown",
-      "lock": "Mở sau Phòng vé.",
       "room": [
         0.74,
         0.12,
@@ -166,13 +156,11 @@
     },
     {
       "id": "under",
-      "name": "Hầm sân khấu",
       "at": [
         0.5,
         0.38
       ],
       "kind": "unknown",
-      "lock": "Mở sau Phòng hóa trang.",
       "room": [
         0.34,
         0.34,
@@ -183,13 +171,11 @@
     },
     {
       "id": "balcony",
-      "name": "Ban công",
       "at": [
         0.38,
         0.055
       ],
       "kind": "unknown",
-      "lock": "Chưa ai lên tới đó.",
       "room": [
         0.28,
         0.01,
@@ -200,13 +186,11 @@
     },
     {
       "id": "attic",
-      "name": "Gác thượng",
       "at": [
         0.62,
         0.055
       ],
       "kind": "unknown",
-      "lock": "Cầu thang đã sập.",
       "room": [
         0.52,
         0.01,
@@ -217,13 +201,11 @@
     },
     {
       "id": "stage",
-      "name": "Sân khấu chính",
       "at": [
         0.5,
         0.22
       ],
       "kind": "unknown",
-      "lock": "Nơi màn cuối hạ.",
       "room": [
         0.3,
         0.12,

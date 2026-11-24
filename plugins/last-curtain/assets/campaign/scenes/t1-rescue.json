@@ -2,11 +2,11 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "t1-rescue",
-  "note": "Draft for the user's review (2026-11-24, written overnight). T1 ends: Le Thanh finds the player and leads them to the cafe.",
+  "note": "Draft for the user's review (2026-11-24, written overnight). T1 ends: Le Thanh finds the player and leads them to the cafe. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Cái bóng cuối cùng tan ra như khói nhang.",
+      "text": "Cái bóng cuối cùng vỡ ra như túi da căng nước, rồi tan thành khói nhang.",
       "enter": [
         {
           "who": "player",
@@ -14,11 +14,12 @@
           "slot": 0,
           "face": "afraid"
         }
-      ]
+      ],
+      "en": "The last shadow bursts like a skin bag full of water, then thins into incense smoke."
     },
     {
       "id": "b",
-      "text": "Tiếng guốc gõ trên bậc đá. Người phụ nữ áo cưới đỏ đã đứng đó từ lúc nào.",
+      "text": "Tiếng guốc gõ trên bậc đá. Người phụ nữ áo cưới đỏ đã đứng đó từ lúc nào, và đã nhìn từ lúc nào.",
       "enter": [
         {
           "who": "lethanh",
@@ -26,32 +27,37 @@
           "slot": 0,
           "face": "calm"
         }
-      ]
+      ],
+      "en": "Clogs tap on the stone steps. The woman in red has been standing there all along, and watching all along."
     },
     {
       "id": "c",
-      "text": "{player} đánh khéo lắm. Khách của tôi ít ai đứng vững được tới giờ này.",
+      "text": "{player} đánh khéo lắm. Khách của tôi ít ai còn đủ tay chân tới giờ này.",
       "speaker": "lethanh",
       "face": "talk",
-      "model": true
+      "model": true,
+      "en": "Nicely done, {player}. Few of my guests still have all their limbs by this hour."
     },
     {
       "id": "d",
       "text": "Mấy thứ đó là gì vậy?",
       "speaker": "player",
-      "face": "afraid"
+      "face": "afraid",
+      "en": "What were those things?"
     },
     {
       "id": "e",
-      "text": "Bóng của con Chuột, kẻ giữ phòng vé. Nó trói người ta lại để khỏi phải trả nợ.",
+      "text": "Bóng của con Chuột, kẻ giữ phòng vé. Nó gặm nợ của người ta. Gặm luôn cả người.",
       "speaker": "lethanh",
-      "face": "calm"
+      "face": "calm",
+      "en": "Shadows of the Rat, keeper of the box office. It gnaws on people's debts. And on the people too."
     },
     {
       "id": "f",
-      "text": "Đi theo tôi. Dưới tầng hầm có một quán nước nhỏ, ấm hơn ở đây nhiều.",
+      "text": "Đi theo tôi. Dưới hầm có một quán nước nhỏ. Ở đó, người chết ngồi uống với người chưa chết.",
       "speaker": "lethanh",
-      "face": "happy"
+      "face": "happy",
+      "en": "Follow me. There's a small café in the cellar. There, the dead drink with those not dead yet."
     }
   ]
 }

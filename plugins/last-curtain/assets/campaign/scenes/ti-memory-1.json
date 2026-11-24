@@ -2,11 +2,11 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "ti-memory-1",
-  "note": "From ti-content 4.2-4.5 (draft for the user's review, 2026-11-24). Ti joins; the choice sets ti.first (hope/fed) for idle lines.",
+  "note": "From ti-content 4.2-4.5 (draft for the user's review, 2026-11-24). Ti joins; the choice sets ti.first (hope/fed) for idle lines. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Lệ Thanh dắt một đứa nhỏ chân đất vào quán, đặt nó ngồi xuống bên bàn gần cửa sổ.",
+      "text": "Lệ Thanh dắt một đứa nhỏ chân đất vào quán, đặt nó ngồi xuống bên bàn gần cửa sổ. Chân nó còn dính cát ướt.",
       "enter": [
         {
           "who": "player",
@@ -26,27 +26,31 @@
           "slot": 1,
           "face": "calm"
         }
-      ]
+      ],
+      "en": "Le Thanh leads a barefoot child into the café and sits him by the window. Wet sand still clings to his feet."
     },
     {
       "id": "b",
       "text": "Chị ơi, tui đói. Mà tui không nhớ nhà tui ở mô.",
       "speaker": "ti",
-      "face": "afraid"
+      "face": "afraid",
+      "en": "Miss, I'm hungry. And I can't remember where my home is."
     },
     {
       "id": "c",
       "text": "Từ từ thôi em. Nhớ từ điều gần nhất.",
       "speaker": "lethanh",
-      "face": "calm"
+      "face": "calm",
+      "en": "Slowly. Start with the nearest thing."
     },
     {
       "id": "d",
-      "text": "Lệ Thanh đặt tay lên tấm khăn tang trên mắt Tí. Nút khăn lỏng ra."
+      "text": "Lệ Thanh đặt tay lên tấm khăn tang trên mắt Tí. Nút khăn lỏng ra, và bên dưới, mắt em vẫn nhắm.",
+      "en": "Le Thanh lays a hand on the mourning cloth over Ti's eyes. The knot loosens, and beneath it his eyes are still closed."
     },
     {
       "id": "e",
-      "text": "Mạ… mạ tui tên Lụa. Chiều mô mạ cũng đứng đầu ngõ kêu tui về ăn cơm.",
+      "text": "Mạ… mạ tui tên Lụa. Chiều mô mạ cũng đứng đầu ngõ kêu tui về ăn cơm. Chiều đó tui không về.",
       "speaker": "ti",
       "face": "talk",
       "choices": [
@@ -54,25 +58,30 @@
           "text": "Mạ Lụa chắc đang chờ em đó.",
           "fact": "ti.first",
           "value": "hope",
-          "jump": "f"
+          "jump": "f",
+          "en": "Your ma Lua must be waiting for you."
         },
         {
           "text": "Đói thì ăn cái đã, Tí.",
           "fact": "ti.first",
           "value": "fed",
-          "jump": "f"
+          "jump": "f",
+          "en": "Eat first, Ti, if you're hungry."
         }
-      ]
+      ],
+      "en": "Ma… my ma's name is Lua. Every evening she stood at the end of the lane calling me home to eat. That evening I didn't come."
     },
     {
       "id": "f",
-      "text": "{Anh/Chị} cho tui đi theo với nghe. Tui chạy lẹ lắm, không ai đuổi kịp mô!",
+      "text": "{Anh/Chị} cho tui đi theo với nghe. Tui chạy lẹ lắm, không ai đuổi kịp mô! ...Trừ một lần.",
       "speaker": "ti",
-      "face": "happy"
+      "face": "happy",
+      "en": "Let me come with you. I'm fast, nobody can catch me! ...Except once."
     },
     {
       "id": "g",
-      "text": "Tấm khăn rơi xuống. Quanh Tí ánh lên một màu xanh nhạt."
+      "text": "Tấm khăn rơi xuống. Quanh Tí ánh lên một màu xanh nhạt, màu của biển lúc trời chưa sáng.",
+      "en": "The cloth falls. A pale blue light rises around Ti, the colour of the sea before dawn."
     }
   ]
 }

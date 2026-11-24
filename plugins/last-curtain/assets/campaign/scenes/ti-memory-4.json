@@ -2,11 +2,11 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "ti-memory-4",
-  "note": "From ti-content 4.2-4.5 (draft for the user's review, 2026-11-24). After the slice (Stage 2's coconut). The choice picks the Chan sao version: a = Gio bien, b = Dau chan.",
+  "note": "From ti-content 4.2-4.5 (draft for the user's review, 2026-11-24). After the slice (Stage 2's coconut). The choice picks the Chan sao version: a = Gio bien, b = Dau chan. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Tí uống một hơi hết trái dừa, rồi ngồi nhìn ra cửa rất lâu.",
+      "text": "Tí uống một hơi hết trái dừa, rồi ngồi nhìn ra cửa rất lâu. Nước dừa chảy ra từ một lỗ trên lưng áo em.",
       "enter": [
         {
           "who": "player",
@@ -20,19 +20,22 @@
           "slot": 0,
           "face": "calm"
         }
-      ]
+      ],
+      "en": "Ti drinks the whole coconut in one go, then stares at the door a long time. The coconut water seeps out of a hole in the back of his shirt."
     },
     {
       "id": "b",
       "text": "Cát ngoài bãi trắng lắm, trưa nóng rát chân. Tui hay chạy trên đó cho lẹ.",
       "speaker": "ti",
-      "face": "talk"
+      "face": "talk",
+      "en": "The sand out on the beach is so white, it burns your feet at noon. I always ran on it to go faster."
     },
     {
       "id": "c",
-      "text": "Sáng hôm đó tui nằm xuống trên cát, nghe sóng. Tui không sợ mô.",
+      "text": "Sáng hôm đó tui nằm xuống trên cát, nghe sóng. Có tiếng súng mà tui không sợ mô. Cát ấm lắm, rồi lạnh dần.",
       "speaker": "ti",
-      "face": "calm"
+      "face": "calm",
+      "en": "That morning I lay down on the sand and listened to the waves. There were shots, but I wasn't scared. The sand was warm, then it got cold."
     },
     {
       "id": "d",
@@ -44,15 +47,18 @@
           "text": "Giờ em chạy đâu cũng được rồi.",
           "fact": "ti.memory4",
           "value": "a",
-          "jump": "e"
+          "jump": "e",
+          "en": "Now you can run anywhere you like."
         },
         {
           "text": "Em chạy trước, tụi {anh/chị} theo sau.",
           "fact": "ti.memory4",
           "value": "b",
-          "jump": "e"
+          "jump": "e",
+          "en": "You run ahead. We'll follow."
         }
-      ]
+      ],
+      "en": "I only wish I'd had ma's ginger."
     },
     {
       "id": "e",
@@ -64,7 +70,8 @@
           "slot": 1,
           "face": "calm"
         }
-      ]
+      ],
+      "en": "Le Thanh stands behind the counter, saying nothing. For the first time, she turns her face away."
     }
   ]
 }

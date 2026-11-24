@@ -2,11 +2,12 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "t3-breath",
-  "note": "Draft for the user's review (2026-11-24, written overnight). T3 round 2: the telegraph is explained once.",
+  "note": "Draft for the user's review (2026-11-24, written overnight). T3 round 2: the telegraph is explained once. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Người giữ tranh phồng ngực. Cả một hàng gạch đỏ rực lên."
+      "text": "Người giữ tranh phồng ngực tới mức da rách ra. Cả một hàng gạch đỏ rực lên.",
+      "en": "The Keeper swells its chest until the skin splits. A whole row of tiles glows red."
     },
     {
       "id": "b",
@@ -20,7 +21,8 @@
           "slot": 0,
           "face": "calm"
         }
-      ]
+      ],
+      "en": "Next turn it breathes out down that whole row. Step to another row, then strike while it exhales!"
     }
   ]
 }

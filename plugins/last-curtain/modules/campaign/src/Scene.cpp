@@ -53,7 +53,7 @@ namespace umbra::campaign
         {
             const json &l = j["lines"][i];
             const std::string at = "lines[" + std::to_string(i) + "].";
-            Line line{Str(l, "id"), Str(l, "speaker"), Str(l, "face"), Str(l, "text"), Str(l, "sound"), Str(l, "jump"), {}, {}, {}, l.value("model", false)};
+            Line line{Str(l, "id"), Str(l, "speaker"), Str(l, "face"), Str(l, "text"), Str(l, "sound"), Str(l, "jump"), {}, {}, {}, l.value("model", false), Str(l, "en")};
             if (!line.face.empty() && !KnownFace(line.face))
                 error(at + "face", "expected calm, talk, happy, angry, afraid, scheming or neardead");
             for (const json &who : l.value("leave", json::array()))
@@ -93,7 +93,7 @@ namespace umbra::campaign
             if (choices.size() == 1 || choices.size() > 4)
                 error(at + "choices", "a line has no choices or 2 to 4");
             for (const json &c : choices)
-                line.choices.push_back({Str(c, "text"), Str(c, "fact"), Str(c, "value"), Str(c, "jump")});
+                line.choices.push_back({Str(c, "text"), Str(c, "fact"), Str(c, "value"), Str(c, "jump"), Str(c, "en")});
             out.lines.push_back(std::move(line));
         }
         // 6. Ids are unique; jumps go to an id.
@@ -128,5 +128,15 @@ namespace umbra::campaign
         }
         scene = std::move(out);
         return true;
+    }
+
+    void UseEnglish(Scene &scene)
+    {
+        for (Line &l : scene.lines)
+        {
+            l.text = l.en.empty() ? l.text : l.en;
+            for (Choice &c : l.choices)
+                c.text = c.en.empty() ? c.text : c.en;
+        }
     }
 }

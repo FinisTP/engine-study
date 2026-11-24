@@ -2,11 +2,11 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "talk-lethanh-rite",
-  "note": "Draft for the user's review (2026-11-24). ",
+  "note": "Draft for the user's review (2026-11-24).  Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Lệ Thanh lau cái ly đã sạch từ lâu.",
+      "text": "Lệ Thanh lau cái ly đã sạch từ lâu. Lau tới mức thủy tinh mỏng đi.",
       "enter": [
         {
           "who": "player",
@@ -20,25 +20,29 @@
           "slot": 0,
           "face": "calm"
         }
-      ]
+      ],
+      "en": "Le Thanh polishes a glass that was clean long ago. Polishes until the glass wears thin."
     },
     {
       "id": "b",
-      "text": "Lễ tiễn không làm cho họ mất đi. Nó làm cho họ được nhớ.",
+      "text": "Lễ tiễn không làm cho họ mất đi. Nó làm cho họ được nhớ. Bị quên mới là chết thật.",
       "speaker": "lethanh",
-      "face": "talk"
+      "face": "talk",
+      "en": "The rite doesn't make them vanish. It makes them remembered. Being forgotten is the real death."
     },
     {
       "id": "c",
       "text": "Còn cô? Ai tiễn cô?",
       "speaker": "player",
-      "face": "calm"
+      "face": "calm",
+      "en": "And you? Who will see you off?"
     },
     {
       "id": "d",
       "text": "...Uống nước đi, kẻo nguội.",
       "speaker": "lethanh",
-      "face": "calm"
+      "face": "calm",
+      "en": "...Drink your tea before it goes cold."
     }
   ]
 }

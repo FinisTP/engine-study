@@ -2,13 +2,13 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "ti-idle-hope",
-  "note": "ti-content 4.6 (draft).",
+  "note": "ti-content 4.6 (draft). Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
       "speaker": "ti",
       "face": "talk",
-      "text": "Hồi nãy tui mơ thấy mạ đứng đầu ngõ. Mạ cười.",
+      "text": "Hồi nãy tui mơ thấy mạ đứng đầu ngõ. Mạ cười. Mà mạ không có mặt.",
       "enter": [
         {
           "who": "player",
@@ -22,7 +22,8 @@
           "slot": 0,
           "face": "talk"
         }
-      ]
+      ],
+      "en": "I dreamed ma was at the end of the lane. She was smiling. But she had no face."
     }
   ]
 }

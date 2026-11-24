@@ -2,11 +2,11 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "t3-end-rite",
-  "note": "Draft for the user's review (2026-11-24, written overnight). T3 ends: Le Thanh teaches the rite.",
+  "note": "Draft for the user's review (2026-11-24, written overnight). T3 ends: Le Thanh teaches the rite. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Người giữ tranh quỳ xuống, khung tranh trên tay nó trống trơn.",
+      "text": "Người giữ tranh quỳ xuống. Khung tranh trên tay nó trống trơn: bức chân dung duy nhất nó không treo được là của chính nó.",
       "enter": [
         {
           "who": "player",
@@ -20,25 +20,29 @@
           "slot": 0,
           "face": "calm"
         }
-      ]
+      ],
+      "en": "The Keeper kneels. The frame in its hands is empty: the only portrait it never hung was its own."
     },
     {
       "id": "b",
       "text": "Đừng để nó đi tay không. Đọc giùm nó một câu tiễn.",
       "speaker": "lethanh",
-      "face": "calm"
+      "face": "calm",
+      "en": "Don't let it leave empty-handed. Say a parting word for it."
     },
     {
       "id": "c",
       "text": "Tôi phải nói gì?",
       "speaker": "player",
-      "face": "afraid"
+      "face": "afraid",
+      "en": "What do I say?"
     },
     {
       "id": "d",
-      "text": "Nói rằng có người còn nhớ. Từ giờ, khi một bóng ma ngã, {anh/chị} có thể làm lễ tiễn nó.",
+      "text": "Nói rằng có người còn nhớ mặt nó. Từ giờ, khi một bóng ma ngã, {anh/chị} có thể làm lễ tiễn nó.",
       "speaker": "lethanh",
-      "face": "talk"
+      "face": "talk",
+      "en": "Say that someone still remembers its face. From now on, when a ghost falls, you can perform the parting rite."
     }
   ]
 }

@@ -2,11 +2,11 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "ti-memory-3",
-  "note": "From ti-content 4.2-4.5 (draft for the user's review, 2026-11-24). The choice picks the Na cao su version: a = Bao dong, b = Ban truoc.",
+  "note": "From ti-content 4.2-4.5 (draft for the user's review, 2026-11-24). The choice picks the Na cao su version: a = Bao dong, b = Ban truoc. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Mẩu giấy ố vàng, gấp tư, mép đã sờn.",
+      "text": "Mẩu giấy ố vàng, gấp tư, mép đã sờn. Một góc thấm màu nâu sẫm, cứng lại.",
       "enter": [
         {
           "who": "player",
@@ -20,23 +20,26 @@
           "slot": 0,
           "face": "calm"
         }
-      ]
+      ],
+      "en": "A yellowed scrap, folded in four, edges worn. One corner is soaked dark brown and gone stiff."
     },
     {
       "id": "b",
       "text": "Cái ni… của tui! Tui giắt sau tai mà.",
       "speaker": "ti",
-      "face": "afraid"
+      "face": "afraid",
+      "en": "This… is mine! I kept it behind my ear."
     },
     {
       "id": "c",
       "text": "Chú dặn đưa tận tay, không được đọc. Mà tui biết trong đó ghi: 'Sáng mai chúng tới.'",
       "speaker": "ti",
-      "face": "talk"
+      "face": "talk",
+      "en": "Uncle said hand it over yourself, don't read it. But I know what it says: 'They come tomorrow morning.'"
     },
     {
       "id": "d",
-      "text": "Tui chạy suốt đêm. Tui có kịp không, {anh/chị}?",
+      "text": "Tui chạy suốt đêm. Chân tui chảy máu mà tui không dừng. Tui có kịp không, {anh/chị}?",
       "speaker": "ti",
       "face": "afraid",
       "choices": [
@@ -44,25 +47,30 @@
           "text": "Em đưa tới nơi rồi, Tí.",
           "fact": "ti.memory3",
           "value": "a",
-          "jump": "e"
+          "jump": "e",
+          "en": "You delivered it, Ti."
         },
         {
           "text": "Em đã chạy hết sức rồi.",
           "fact": "ti.memory3",
           "value": "b",
-          "jump": "e"
+          "jump": "e",
+          "en": "You ran as hard as you could."
         }
-      ]
+      ],
+      "en": "I ran all night. My feet were bleeding and I didn't stop. Did I make it in time?"
     },
     {
       "id": "e",
       "text": "Rứa thì được rồi.",
       "speaker": "ti",
-      "face": "calm"
+      "face": "calm",
+      "en": "Then it's alright."
     },
     {
       "id": "f",
-      "text": "Tí gấp mẩu giấy lại, cất vào túi áo."
+      "text": "Tí gấp mẩu giấy lại, cất vào túi áo, chỗ ngực em không còn đập.",
+      "en": "Ti folds the note and tucks it in his shirt pocket, over the chest that no longer beats."
     }
   ]
 }

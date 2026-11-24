@@ -2,11 +2,11 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "talk-mai-t1",
-  "note": "Draft for the user's review (2026-11-24). ",
+  "note": "Draft for the user's review (2026-11-24).  Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Bà Mai múc cho {player} một chén cơm còn bốc khói.",
+      "text": "Bà Mai múc cho {player} một chén cơm còn bốc khói. Hơi khói có hình bàn tay.",
       "enter": [
         {
           "who": "player",
@@ -20,25 +20,29 @@
           "slot": 0,
           "face": "calm"
         }
-      ]
+      ],
+      "en": "Ba Mai scoops {player} a bowl of steaming rice. The steam takes the shape of a hand."
     },
     {
       "id": "b",
-      "text": "Ăn đi con. Đánh nhau với ma thì phải no bụng.",
+      "text": "Ăn đi con. Đánh nhau với ma thì phải no bụng. Đói là tụi nó ngửi thấy.",
       "speaker": "mai",
-      "face": "happy"
+      "face": "happy",
+      "en": "Eat, child. You fight ghosts on a full stomach. They can smell hunger."
     },
     {
       "id": "c",
       "text": "Bà ở đây lâu chưa?",
       "speaker": "player",
-      "face": "calm"
+      "face": "calm",
+      "en": "How long have you been here?"
     },
     {
       "id": "d",
-      "text": "Lâu tới mức quên đếm. Bà còn đợi thằng con trai.",
+      "text": "Lâu tới mức quên đếm. Bà còn đợi thằng con trai. Nó xuống gầm sân khấu năm đó, chưa thấy lên.",
       "speaker": "mai",
-      "face": "calm"
+      "face": "calm",
+      "en": "Too long to count. I'm still waiting for my boy. He went down under the stage that year. He hasn't come up."
     }
   ]
 }

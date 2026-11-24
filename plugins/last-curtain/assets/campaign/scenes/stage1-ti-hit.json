@@ -2,11 +2,11 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "stage1-ti-hit",
-  "note": "Draft for the user's review (2026-11-24, written overnight). Stage 1: Ti hit once (ti-content 4.1).",
+  "note": "Draft for the user's review (2026-11-24, written overnight). Stage 1: Ti hit once (ti-content 4.1). Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Ui da… tui có làm chi mô…",
+      "text": "Ui da… tui có làm chi mô… đừng đánh tui nữa…",
       "speaker": "ti",
       "face": "afraid",
       "enter": [
@@ -16,7 +16,8 @@
           "slot": 0,
           "face": "afraid"
         }
-      ]
+      ],
+      "en": "Ow… I didn't do nothing… don't hit me no more…"
     }
   ]
 }

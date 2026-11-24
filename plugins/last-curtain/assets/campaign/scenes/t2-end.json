@@ -2,11 +2,11 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "t2-end",
-  "note": "Draft for the user's review (2026-11-24): T2 ends: Ba Mai stays with the player.",
+  "note": "Draft for the user's review (2026-11-24): T2 ends: Ba Mai stays with the player. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Cái bóng tan như khói nhang trước gió.",
+      "text": "Cái bóng sụp xuống như áo quần không còn người mặc, rồi tan như khói nhang trước gió.",
       "enter": [
         {
           "who": "player",
@@ -20,13 +20,15 @@
           "slot": 0,
           "face": "calm"
         }
-      ]
+      ],
+      "en": "The shadow slumps like clothes with no one inside them, then drifts away like incense smoke."
     },
     {
       "id": "b",
-      "text": "Bà làm ở đây bốn mươi năm rồi. Bà đi với con.",
+      "text": "Bà lau sàn ở đây bốn mươi năm. Vết bẩn nào bà cũng biết tên. Bà đi với con.",
       "speaker": "mai",
-      "face": "calm"
+      "face": "calm",
+      "en": "I've scrubbed these floors forty years. I know every stain by name. I'm coming with you."
     }
   ]
 }

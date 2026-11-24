@@ -3,8 +3,6 @@
   "version": 1,
   "id": "sk_stairs",
   "kind": "skirmish",
-  "title": "Cầu thang phụ",
-  "titleEn": "The Back Stairs",
   "note": "Draft (2026-11-24): a pincer from both landings. Refill 1 puts the lights out (passive ghosts see 2 squares), refill 2 a mini-boss at the top.",
   "level": 2,
   "partyCap": 3,
@@ -24,17 +22,98 @@
     "#####"
   ],
   "units": [
-    {"who": "ghost_attacker", "at": [2, 1], "side": 1, "level": 2, "flags": ["boss"]},
-    {"who": "ghost_speedster", "at": [2, 9], "side": 1, "level": 2, "flags": ["boss"]},
-    {"who": "ghost_attacker", "at": [1, 9], "side": 1, "level": 1, "flags": ["boss"]},
-    {"who": "ghost_attacker", "at": [1, 1], "side": 1, "level": 2, "flags": ["boss"]}
+    {
+      "who": "ghost_attacker",
+      "at": [
+        2,
+        1
+      ],
+      "side": 1,
+      "level": 2,
+      "flags": [
+        "boss"
+      ]
+    },
+    {
+      "who": "ghost_speedster",
+      "at": [
+        2,
+        9
+      ],
+      "side": 1,
+      "level": 2,
+      "flags": [
+        "boss"
+      ]
+    },
+    {
+      "who": "ghost_attacker",
+      "at": [
+        1,
+        9
+      ],
+      "side": 1,
+      "level": 1,
+      "flags": [
+        "boss"
+      ]
+    },
+    {
+      "who": "ghost_attacker",
+      "at": [
+        1,
+        1
+      ],
+      "side": 1,
+      "level": 2,
+      "flags": [
+        "boss"
+      ]
+    }
   ],
-  "aims": {"start": "Hạ hết bóng ma ở cả hai đầu cầu thang.", "recap": ""},
+  "aims": {
+    "start": "",
+    "recap": ""
+  },
   "twists": [
-    {"name": "Tắt đèn",
-     "units": [{"who": "ghost_speedster", "at": [3, 2], "side": 1, "level": 1, "behaviour": {"kind": "passive"}}],
-     "gimmicks": {"dark": {"sight": 2}}},
-    {"name": "Kẻ canh trên chiếu nghỉ",
-     "units": [{"who": "keeper", "at": [3, 1], "side": 1, "level": 7, "flags": ["boss"]}]}
+    {
+      "name": "",
+      "units": [
+        {
+          "who": "ghost_speedster",
+          "at": [
+            3,
+            2
+          ],
+          "side": 1,
+          "level": 1,
+          "behaviour": {
+            "kind": "passive"
+          }
+        }
+      ],
+      "gimmicks": {
+        "dark": {
+          "sight": 2
+        }
+      }
+    },
+    {
+      "name": "",
+      "units": [
+        {
+          "who": "keeper",
+          "at": [
+            3,
+            1
+          ],
+          "side": 1,
+          "level": 7,
+          "flags": [
+            "boss"
+          ]
+        }
+      ]
+    }
   ]
 }

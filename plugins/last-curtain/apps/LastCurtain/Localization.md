@@ -19,3 +19,20 @@ campaign.close,Đóng,Close
 
 Placeholders in braces (`{name}`, `{n}`) are filled by the code; keep them in both languages. Text inside
 the scene files (dialogue) carries its own `vi` and `en` per line; everything shorter is here.
+
+## Data
+
+The campaign's data files keep ids and numbers; their display text is here too, filled in by
+`CampaignText` right after each loader (Flow, the café, a stage, a dialog):
+
+| Key | Fills |
+|---|---|
+| `stage.<id>.title`, `.aim`, `.twist.<n>` | a stage's title, its aim, each refill's name |
+| `ticket.<id>.name`, `.lock` | the map's ticket names and what opens a locked room |
+| `cast.<id>.name` | names (cast.csv keeps its own as a fallback) |
+| `lore.<ability>` | each skill's story in the notebook |
+| `recipe.<id>.name`, `.text`, `memory.<id>.name` | the café's drinks and memories |
+
+Scenes (`assets/campaign/scenes`) keep their lines, each with `text` (Vietnamese) and `en`;
+`campaign::UseEnglish` swaps them when English is chosen. Tests: every key above exists for every id,
+and every scene line and choice has both languages.

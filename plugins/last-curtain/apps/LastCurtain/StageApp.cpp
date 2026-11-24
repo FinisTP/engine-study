@@ -1,4 +1,5 @@
 #include "StageApp.hpp"
+#include "CampaignText.hpp"
 #include "Localization.hpp"
 
 #include <fstream>
@@ -32,6 +33,9 @@ int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const
         umbra::diagnostics::Error(umbra::core::Format(e));
     if (!loaded)
         return 1;
+    CampaignText text; // display text (Localization.md "Data")
+    if (text.Load(assets / "localization.csv"))
+        text.Fill(cast), text.Fill(stage);
     // Ability names in Vietnamese (campaign-words.json "abilities"), everywhere the fight shows them.
     if (const nlohmann::json w = umbra::night::LoadWords(assets / "localization.csv", "campaign", umbra::night::EnglishChosen()); w.is_object())
             for (umbra::match::AbilityDef &a : def.abilities)
@@ -49,6 +53,7 @@ int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const
         members = campaign::PartyOf(*save, party);
         (void)campaign::LoadRecipes(folder / "recipes.json", def, recipes, d);
         haveSkills = campaign::LoadSkills(folder / "skills.json", def, skills, d);
+        text.Fill(recipes), text.Fill(skills);
     }
 
     // 2. The hooks: a fresh fight, the enemy brain, the scenes between beats.

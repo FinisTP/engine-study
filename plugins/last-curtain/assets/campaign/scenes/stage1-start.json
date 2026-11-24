@@ -2,15 +2,16 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "stage1-start",
-  "note": "Draft for the user's review (2026-11-24, written overnight). Stage 1 opens: the box office; Le Thanh's hint (from ti-content 4.1, Ty -> con Chuot).",
+  "note": "Draft for the user's review (2026-11-24, written overnight). Stage 1 opens: the box office; Le Thanh's hint (from ti-content 4.1, Ty -> con Chuot). Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Phòng vé. Quạt trần quay chầm chậm, vé cũ dồn thành đống dưới chân quầy."
+      "text": "Phòng vé. Quạt trần quay chầm chậm, cánh quạt dính tóc người. Vé cũ dồn thành đống dưới chân quầy, vé nào cũng ghi cùng một đêm.",
+      "en": "The box office. The ceiling fan turns slowly, its blades matted with human hair. Old tickets pile under the counter, every one dated the same night."
     },
     {
       "id": "b",
-      "text": "Sau song sắt, một con chuột to như người đang đếm tiền. Bên cạnh nó, một đứa nhỏ bị trói, khăn tang che mắt.",
+      "text": "Sau song sắt, một con chuột to như người đang đếm tiền bằng những ngón tay quá dài. Bên cạnh nó, một đứa nhỏ bị trói, khăn tang che mắt.",
       "enter": [
         {
           "who": "player",
@@ -24,17 +25,20 @@
           "slot": 0,
           "face": "calm"
         }
-      ]
+      ],
+      "en": "Behind the bars, a rat the size of a man counts money with fingers far too long. Beside it, a child is bound, a mourning cloth over his eyes."
     },
     {
       "id": "c",
       "text": "Đứa nhỏ kia bị con Chuột trói rồi. Cắt dây cho em trước khi nó ngã nghe {anh/chị}.",
       "speaker": "lethanh",
-      "face": "calm"
+      "face": "calm",
+      "en": "The Rat has that child tied up. Cut his strings before the Rat falls, you hear?"
     },
     {
       "id": "d",
-      "text": "Đánh cho đứa nhỏ ngã xuống, rồi đứng cạnh em mà cắt dây. Đừng hạ con Chuột trước."
+      "text": "Đánh cho đứa nhỏ ngã xuống, rồi đứng cạnh em mà cắt dây. Đừng hạ con Chuột trước.",
+      "en": "Knock the child down, then stand beside him and cut the strings. Don't bring the Rat down first."
     }
   ]
 }

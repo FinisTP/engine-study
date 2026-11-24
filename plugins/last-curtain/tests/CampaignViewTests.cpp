@@ -1,3 +1,4 @@
+#include <CampaignText.hpp>
 #include <DialogView.hpp>
 
 #include <catch2/catch_test_macros.hpp>
@@ -412,6 +413,12 @@ TEST_CASE("The notebook's slots, pick then place: skills carried and in stock, l
     save.roster = {{"player", 2, 0}, {"bao", 2, 0}};
     save.storage = {{"bandage", 2}, {"gung", 1}};
     Notebook book(h.def, h.cast, h.memories, save);
+    {
+        CampaignText text; // the stories, as the game fills them
+        std::string error;
+        (void)text.table.Load(std::filesystem::path(UMBRA_LASTCURTAIN_APP_ASSETS) / "localization.csv", error);
+        text.Fill(skills);
+    }
     book.SetGrowth(&growth), book.SetSkills(&skills);
     book.Select("bao");
     const auto page = [&] { return book.Data()["detail"]; };

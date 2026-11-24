@@ -2,27 +2,135 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "prologue",
-  "note": "Draft for the user's review (2026-11-23). The hook: today's night tour; the guide's torch dies; Le Thanh already knows the player's name. Fact lethanh.first (kind/wary) colours one cafe line.",
+  "note": "Draft for the user's review (2026-11-23). The hook: today's night tour; the guide's torch dies; Le Thanh already knows the player's name. Fact lethanh.first (kind/wary) colours one cafe line. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
-    {"id": "a", "text": "Sài Gòn, đêm nay. Đoàn tham quan đêm đi qua Nhà hát Thành phố vừa trùng tu, mùi sơn mới còn hăng."},
-    {"id": "b", "text": "Cô hướng dẫn viên rọi đèn pin lên trần: \"Ngày xưa, ở đây có một đêm diễn không bao giờ hạ màn...\""},
-    {"id": "c", "text": "Đèn pin chớp hai lần rồi tắt. Khi mắt {player} quen với bóng tối, đoàn người đã không còn ở đó.",
-     "enter": [{"who": "player", "side": "left", "slot": 0, "face": "afraid"}]},
-    {"id": "d", "speaker": "player", "face": "afraid", "text": "Có ai không? ...Chị hướng dẫn ơi?"},
-    {"id": "e", "text": "Trên bậc cầu thang đôi, một người phụ nữ mặc áo dài cưới đỏ đứng im. Im quá mức.",
-     "enter": [{"who": "lethanh", "side": "right", "slot": 0, "face": "calm"}]},
-    {"id": "f", "speaker": "lethanh", "face": "calm", "text": "{player}. Tên đẹp lắm.", "model": true},
-    {"id": "g", "speaker": "player", "face": "afraid", "text": "Sao... sao cô biết tên tôi?"},
-    {"id": "h", "speaker": "lethanh", "face": "talk", "text": "Đêm nay nhà hát kín chỗ. Ai cũng đến để xem buổi diễn cuối cùng."},
-    {"id": "i", "text": "Hàng ghế nhung đỏ trống trơn. Chỉ có tiếng cào khe khẽ trong tường."},
-    {"id": "j", "speaker": "lethanh", "face": "scheming", "text": "Mời {anh/chị} ở lại. Họ không thích khách bỏ về giữa chừng.",
-     "choices": [
-       {"text": "Cảm ơn cô. Tôi sẽ ở lại.", "fact": "lethanh.first", "value": "kind", "jump": "k1"},
-       {"text": "Cô là ai? Tôi phải đi.", "fact": "lethanh.first", "value": "wary", "jump": "k2"}]},
-    {"id": "k1", "speaker": "lethanh", "face": "happy", "text": "Lâu lắm rồi mới có người nói cảm ơn với tôi.", "jump": "l"},
-    {"id": "k2", "speaker": "lethanh", "face": "calm", "text": "Ai cũng hỏi vậy. Rồi ai cũng ở lại."},
-    {"id": "l", "text": "Cô ấy quay đi. Khi {player} chớp mắt, cầu thang đã trống.", "leave": ["lethanh"]},
-    {"id": "m", "text": "Từ trên trần, một sợi chỉ đỏ kẽo kẹt căng ra. Có thứ gì đó đang được thả xuống."},
-    {"id": "n", "speaker": "player", "face": "afraid", "text": "...Ai đó?"}
+    {
+      "id": "a",
+      "text": "Sài Gòn, đêm nay. Đoàn tham quan đêm đi qua Nhà hát Thành phố vừa trùng tu. Mùi sơn mới không che nổi một mùi khác, ngòn ngọt, như hoa để quá ba ngày.",
+      "en": "Saigon, tonight. The night tour walks through the newly restored Municipal Theatre. The fresh paint cannot hide another smell, sweetish, like flowers left three days too long."
+    },
+    {
+      "id": "b",
+      "text": "Cô hướng dẫn viên rọi đèn pin lên trần: \"Ngày xưa, ở đây có một đêm diễn không bao giờ hạ màn. Người ta nói khán giả đêm đó vẫn chưa về.\"",
+      "en": "The guide lifts her torch to the ceiling: \"Once, there was a performance here whose curtain never came down. They say that night's audience never went home.\""
+    },
+    {
+      "id": "c",
+      "text": "Đèn pin chớp hai lần rồi tắt. Khi mắt {player} quen với bóng tối, đoàn người đã biến mất. Chỉ còn lại tiếng thở, không phải của {player}.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "afraid"
+        }
+      ],
+      "en": "The torch blinks twice and dies. When {player}'s eyes adjust, the group is gone. Only breathing remains, and it is not {player}'s."
+    },
+    {
+      "id": "d",
+      "speaker": "player",
+      "face": "afraid",
+      "text": "Có ai không? ...Chị hướng dẫn ơi? Đừng đùa vậy mà.",
+      "en": "Hello? ...Miss? This isn't funny."
+    },
+    {
+      "id": "e",
+      "text": "Trên bậc cầu thang đôi, một người phụ nữ mặc áo dài cưới đỏ đứng im. Im quá mức. Ngực cô không lên xuống.",
+      "enter": [
+        {
+          "who": "lethanh",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ],
+      "en": "On the double staircase stands a woman in a red wedding áo dài. Too still. Her chest does not rise or fall."
+    },
+    {
+      "id": "f",
+      "speaker": "lethanh",
+      "face": "calm",
+      "text": "{player}. Tên đẹp lắm. Người ta sẽ khắc nó lên đâu đó.",
+      "model": true,
+      "en": "{player}. A lovely name. Someone will carve it somewhere."
+    },
+    {
+      "id": "g",
+      "speaker": "player",
+      "face": "afraid",
+      "text": "Sao... sao cô biết tên tôi?",
+      "en": "How... how do you know my name?"
+    },
+    {
+      "id": "h",
+      "speaker": "lethanh",
+      "face": "talk",
+      "text": "Đêm nay nhà hát kín chỗ. Ai cũng tới xem buổi diễn cuối cùng. Có người tới từ năm mươi năm trước.",
+      "en": "The house is full tonight. Everyone has come for the last performance. Some came fifty years ago."
+    },
+    {
+      "id": "i",
+      "text": "Hàng ghế nhung đỏ trống trơn, nhưng chỗ nào cũng còn hơi ấm. Trong tường có tiếng cào, chậm, đều, như móng tay người.",
+      "en": "The red velvet seats are empty, yet every one is still warm. Inside the walls something scratches, slow and steady, like human nails."
+    },
+    {
+      "id": "j",
+      "speaker": "lethanh",
+      "face": "scheming",
+      "text": "Mời {anh/chị} ở lại. Họ không thích khách bỏ về giữa chừng. Người bỏ về lần trước vẫn còn treo trong cánh gà.",
+      "choices": [
+        {
+          "text": "Cảm ơn cô. Tôi sẽ ở lại.",
+          "fact": "lethanh.first",
+          "value": "kind",
+          "jump": "k1",
+          "en": "Thank you. I'll stay."
+        },
+        {
+          "text": "Cô là ai? Tôi phải đi.",
+          "fact": "lethanh.first",
+          "value": "wary",
+          "jump": "k2",
+          "en": "Who are you? I have to go."
+        }
+      ],
+      "en": "Please stay. They don't like guests who leave early. The last one who did still hangs in the wings."
+    },
+    {
+      "id": "k1",
+      "speaker": "lethanh",
+      "face": "happy",
+      "text": "Lâu lắm rồi mới có người nói cảm ơn với tôi. Lần trước là một đứa nhỏ, trước khi nó thôi biết nói.",
+      "jump": "l",
+      "en": "It has been so long since anyone thanked me. The last was a child, before it forgot how to speak."
+    },
+    {
+      "id": "k2",
+      "speaker": "lethanh",
+      "face": "calm",
+      "text": "Ai cũng hỏi vậy. Rồi ai cũng ở lại. Cửa ở đây chỉ mở vào trong.",
+      "en": "They all ask that. Then they all stay. The doors here only open inward."
+    },
+    {
+      "id": "l",
+      "text": "Cô quay đi. Khi {player} chớp mắt, cầu thang đã trống, chỉ còn vệt nước đỏ nhạt nơi cô vừa đứng.",
+      "leave": [
+        "lethanh"
+      ],
+      "en": "She turns away. When {player} blinks, the staircase is empty, save a pale red wetness where she stood."
+    },
+    {
+      "id": "m",
+      "text": "Từ trên trần, một sợi chỉ đỏ căng ra, kẽo kẹt như gân bị kéo. Có thứ gì đó đang được thả xuống, và nó đang cười.",
+      "en": "From the ceiling a red thread pulls taut, creaking like a stretched tendon. Something is being lowered, and it is laughing."
+    },
+    {
+      "id": "n",
+      "speaker": "player",
+      "face": "afraid",
+      "text": "...Ai đó? Ai đang cười?",
+      "en": "...Who's there? Who's laughing?"
+    }
   ]
 }

@@ -3,8 +3,6 @@
   "version": 1,
   "id": "t3",
   "kind": "story",
-  "title": "Hành lang chân dung",
-  "titleEn": "The Portrait Corridor",
   "note": "Draft (2026-11-24): teaches reading a telegraph, falls and reviving. The Keeper draws breath on its lane every other round; step out, then punish. Two alcove specters wait until passed.",
   "level": 2,
   "partyCap": 3,
@@ -18,12 +16,67 @@
     "#############"
   ],
   "units": [
-    {"who": "keeper", "at": [11, 2], "side": 1, "level": 2, "flags": ["boss"]},
-    {"who": "ghost_attacker", "at": [4, 1], "side": 1, "level": 2, "behaviour": {"kind": "passive"}},
-    {"who": "ghost_speedster", "at": [7, 1], "side": 1, "level": 1, "behaviour": {"kind": "passive"}}
+    {
+      "who": "keeper",
+      "at": [
+        11,
+        2
+      ],
+      "side": 1,
+      "level": 2,
+      "flags": [
+        "boss"
+      ]
+    },
+    {
+      "who": "ghost_attacker",
+      "at": [
+        4,
+        1
+      ],
+      "side": 1,
+      "level": 2,
+      "behaviour": {
+        "kind": "passive"
+      }
+    },
+    {
+      "who": "ghost_speedster",
+      "at": [
+        7,
+        1
+      ],
+      "side": 1,
+      "level": 1,
+      "behaviour": {
+        "kind": "passive"
+      }
+    }
   ],
-  "items": [{"id": "t3-duong", "item": "duong", "at": [10, 1]}],
-  "gimmicks": {"breath": {"unit": "keeper", "damage": 5, "every": 2}},
-  "aims": {"start": "Hạ Người giữ tranh. Tránh khỏi lối khi nó hít hơi.", "recap": ""},
-  "scenes": {"start": "t3-start", "round:2": "t3-breath", "end": "t3-end-rite"}
+  "items": [
+    {
+      "id": "t3-duong",
+      "item": "duong",
+      "at": [
+        10,
+        1
+      ]
+    }
+  ],
+  "gimmicks": {
+    "breath": {
+      "unit": "keeper",
+      "damage": 5,
+      "every": 2
+    }
+  },
+  "aims": {
+    "start": "",
+    "recap": ""
+  },
+  "scenes": {
+    "start": "t3-start",
+    "round:2": "t3-breath",
+    "end": "t3-end-rite"
+  }
 }

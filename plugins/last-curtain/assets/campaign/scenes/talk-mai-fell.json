@@ -2,11 +2,11 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "talk-mai-fell",
-  "note": "Draft for the user's review (2026-11-24). Opens when the player fell in a fight.",
+  "note": "Draft for the user's review (2026-11-24). Opens when the player fell in a fight. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Bà Mai lấy khăn lau vết bụi trên vai {player}.",
+      "text": "Bà Mai lấy khăn lau vết bụi trên vai {player}. Khăn rút về đỏ.",
       "enter": [
         {
           "who": "player",
@@ -20,13 +20,15 @@
           "slot": 0,
           "face": "calm"
         }
-      ]
+      ],
+      "en": "Ba Mai wipes the dust from {player}'s shoulder. The cloth comes away red."
     },
     {
       "id": "b",
-      "text": "Hồi nãy con ngã, bà thót cả tim. Lần sau đứng sau lưng bà mà đánh.",
+      "text": "Hồi nãy con ngã, bà thót cả tim. Bà mất một đứa rồi. Lần sau đứng sau lưng bà mà đánh.",
       "speaker": "mai",
-      "face": "afraid"
+      "face": "afraid",
+      "en": "When you fell back there, my heart stopped. I've lost one child already. Next time, fight from behind me."
     }
   ]
 }
