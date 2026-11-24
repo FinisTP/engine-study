@@ -115,7 +115,7 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
                         if (person.who == p["who"].get<std::string>())
                             at = person.at;
             view.Look(at, 1.0F, dt);
-            view.DrawCampaign(walk, sprites, "", out);
+            view.DrawCampaign(walk, sprites, "", out, at); // anyone in front of the speaker fades (note 15)
         };
         const campaign::Talk *talk = hub.LastTalk();
         const bool first = talk && talk->scene == scene && !talk->gives.empty() && given.insert(talk->id).second;

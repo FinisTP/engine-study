@@ -12,6 +12,8 @@
 class CampaignRoom final
 {
 public:
+    // In a talk: a figure standing between the camera (the room's front, +y) and the speaker, overlapping it.
+    [[nodiscard]] static bool Hides(glm::vec2 figure, glm::vec2 speaker);
     struct Person
     {
         std::string who;

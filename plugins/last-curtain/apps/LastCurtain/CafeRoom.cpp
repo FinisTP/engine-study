@@ -150,7 +150,7 @@ void CafeRoom::Follow(glm::vec2 at, glm::vec2 size, float dt)
     last_ = at;
 }
 
-void CafeRoom::Figure(const std::string &sprite, glm::vec3 feet, float height, float facing, umbra::core::DrawList &out) const
+void CafeRoom::Figure(const std::string &sprite, glm::vec3 feet, float height, float facing, umbra::core::DrawList &out, float opacity) const
 {
     // A flat figure facing the camera, upright, its feet on the floor.
     const auto it = pictures_.find(sprite);
@@ -158,8 +158,8 @@ void CafeRoom::Figure(const std::string &sprite, glm::vec3 feet, float height, f
     glm::mat4 model{1.0F};
     model = glm::translate(model, feet);
     model = glm::scale(model, {height * aspect, height, 1.0F});
-    out.items.push_back({facing < 0.0F ? mirrorQuad_ : quad_, it != pictures_.end() ? it->second : umbra::core::TextureHandle{}, model, glm::vec4(1.0F), 0.0F, 0.0F});
-    out.items.back().surface = out.SurfaceIndex("sprite");
+    out.items.push_back({facing < 0.0F ? mirrorQuad_ : quad_, it != pictures_.end() ? it->second : umbra::core::TextureHandle{}, model, glm::vec4(1.0F, 1.0F, 1.0F, opacity), 0.0F, 0.0F});
+    out.items.back().surface = out.SurfaceIndex("sprite"); // the sprite shader drops a scatter of pixels below opacity 1
 }
 
 void CafeRoom::DrawShell(const nlohmann::json &room, umbra::core::DrawList &out) const
@@ -293,7 +293,8 @@ nlohmann::json CafeRoom::Labels(const umbra::night::CafePlay &play, glm::vec2 pi
     return labels;
 }
 
-void CafeRoom::DrawCampaign(const CampaignRoom &room, const std::map<std::string, std::string> &sprites, const std::string &near, umbra::core::DrawList &out) const
+void CafeRoom::DrawCampaign(const CampaignRoom &room, const std::map<std::string, std::string> &sprites, const std::string &near, umbra::core::DrawList &out,
+                            std::optional<glm::vec2> focus) const
 {
     const nlohmann::json &r = room.Room();
     const glm::vec2 size{r["size"][0].get<float>(), r["size"][1].get<float>()};
@@ -317,9 +318,11 @@ void CafeRoom::DrawCampaign(const CampaignRoom &room, const std::map<std::string
     {
         if (near == "talk:" + p.who)
             Box(out, box_, World(p.at, 0.01F), {0.9F, 0.02F, 0.6F}, Hex(0xd8b25a), 0.6F + 0.3F * std::sin(clock_ * 5.0F));
-        Figure(sprite(p.who), World(p.at, 0.02F + 0.02F * std::sin(clock_ * 1.5F + p.at.x)), 1.75F, p.at.x < size.x * 0.5F ? 1.0F : -1.0F, out);
+        Figure(sprite(p.who), World(p.at, 0.02F + 0.02F * std::sin(clock_ * 1.5F + p.at.x)), 1.75F, p.at.x < size.x * 0.5F ? 1.0F : -1.0F, out,
+               focus && CampaignRoom::Hides(p.at, *focus) ? 0.3F : 1.0F);
     }
-    Figure(sprite(room.Active()), World(room.Position(), 0.02F + (walk_ > 0.0F ? 0.04F * std::abs(std::sin(walk_ * 9.0F)) : 0.0F)), 1.8F, facing_, out);
+    Figure(sprite(room.Active()), World(room.Position(), 0.02F + (walk_ > 0.0F ? 0.04F * std::abs(std::sin(walk_ * 9.0F)) : 0.0F)), 1.8F, facing_, out,
+           focus && CampaignRoom::Hides(room.Position(), *focus) ? 0.3F : 1.0F);
 }
 
 std::optional<glm::vec2> CafeRoom::Above(glm::vec2 floor, float height, glm::vec2 pixels) const

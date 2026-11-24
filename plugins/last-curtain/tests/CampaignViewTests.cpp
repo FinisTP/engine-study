@@ -436,3 +436,13 @@ TEST_CASE("The notebook's slots, pick then place: skills carried and in stock, l
     book.Pick("skill:0");
     CHECK_FALSE(book.Drop());
 }
+
+TEST_CASE("In a cafe talk, whoever stands between the camera and the speaker fades (feedback 2026-11-24 15:10, note 15)")
+{
+    // The camera looks from the room's front (larger floor y is nearer); a figure is about a metre wide.
+    const glm::vec2 speaker{5.0F, 3.0F};
+    CHECK(CampaignRoom::Hides({5.3F, 4.5F}, speaker));  // in front, overlapping
+    CHECK_FALSE(CampaignRoom::Hides({5.3F, 2.0F}, speaker)); // behind
+    CHECK_FALSE(CampaignRoom::Hides({7.5F, 4.5F}, speaker)); // in front, but well to the side
+    CHECK_FALSE(CampaignRoom::Hides(speaker, speaker));       // the speaker itself
+}

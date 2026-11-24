@@ -3,6 +3,7 @@
 #include <glm/geometric.hpp>
 
 #include <algorithm>
+#include <cmath>
 
 namespace
 {
@@ -92,4 +93,10 @@ std::string CampaignRoom::Interact() const
         if (const float d = glm::length(Vec(s["at"]) - at_); d <= bestDistance)
             best = s["kind"].get<std::string>(), bestDistance = d;
     return best;
+}
+
+bool CampaignRoom::Hides(glm::vec2 figure, glm::vec2 speaker)
+{
+    // Nearer the camera by a step or more, and less than a figure's width aside.
+    return figure.y > speaker.y + 0.3F && std::abs(figure.x - speaker.x) < 1.2F;
 }

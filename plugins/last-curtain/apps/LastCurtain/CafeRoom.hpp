@@ -34,7 +34,9 @@ public:
     void Follow(glm::vec2 at, glm::vec2 roomSize, float dt); // the camera and the walker's facing
     // A scene in the room: the camera eases close onto a floor point (close 1), or back (close 0).
     void Look(glm::vec2 at, float close, float dt);
-    void DrawCampaign(const CampaignRoom &room, const std::map<std::string, std::string> &sprites, const std::string &near, umbra::core::DrawList &out) const;
+    // focus: whoever speaks in a talk; anyone standing in front of them is drawn faded so they stay in view.
+    void DrawCampaign(const CampaignRoom &room, const std::map<std::string, std::string> &sprites, const std::string &near, umbra::core::DrawList &out,
+                      std::optional<glm::vec2> focus = std::nullopt) const;
     // A point above the floor (metres) on the screen, for a name over a head.
     [[nodiscard]] std::optional<glm::vec2> Above(glm::vec2 floor, float height, glm::vec2 pixels) const;
 
@@ -43,7 +45,7 @@ private:
     float close_ = 0.0F; // 0 the walking view, 1 a scene's close-up
     void DrawShell(const nlohmann::json &room, umbra::core::DrawList &out) const; // light, floor, walls, counter, tables
     [[nodiscard]] std::optional<glm::vec2> ScreenPoint(glm::vec3 world, glm::vec2 pixels) const;
-    void Figure(const std::string &sprite, glm::vec3 feet, float height, float facing, umbra::core::DrawList &out) const;
+    void Figure(const std::string &sprite, glm::vec3 feet, float height, float facing, umbra::core::DrawList &out, float opacity = 1.0F) const;
     umbra::core::TextureHandle Picture(const std::string &sprite);
 
     const umbra::cafe::CafeDef &def_;
