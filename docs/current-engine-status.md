@@ -15,6 +15,14 @@
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
 
+## Update 2026-11-24, late afternoon (The Last Curtain, the user's 19 notes: `#UMBRA-414`-`#UMBRA-421`)
+
+- **The fight, one thing at a time:** the opening shot plays alone, then "Trận đấu bắt đầu"; at the end the fight's view leaves, "Chiến thắng" / "Thất bại" shows, then the end scene. Squares light after Di chuyển; targets are picked on the board with a card; the menu waits for the walk; undo jumps back; one damage number, a red cost only when it costs; camera on the speaker, a little higher, a kick per move.
+- **Moves of 2-4 squares**, with the stairs and box office retuned (every band holds).
+- **Engine UI:** the pointer belongs to the top screen under it. Settings, the result and game over draw over the place they came from.
+- **Skills carried:** four per character, unlock levels and a story line per skill (`campaign/skills.json`); the notebook's pick then place for skills and items; people not met are left out.
+- **Art:** the male player's faces with open eyes. Windows play check: `testing/s54-campaign-feedback-3.md` §4.
+
 ## Update 2026-11-24, afternoon (The Last Curtain, the user's 25 notes: `#UMBRA-401`-`#UMBRA-412`)
 
 - **Fight board:** Di chuyển first, a bounded drag, the ability's name in the bubble, sprites on their feet, the Rat's shadows, no end spin.
