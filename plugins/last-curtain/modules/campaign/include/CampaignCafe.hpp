@@ -185,7 +185,7 @@ namespace umbra::campaign
     struct Result
     {
         std::vector<std::string> levels, freed; // who levelled up; recruits freed
-        std::map<std::string, int> found;      // storage gained
+        std::map<std::string, int> found, xp;  // storage gained; XP gained by who fought
     };
     Result ResultOf(const Save &before, const Save &after);
     struct Over

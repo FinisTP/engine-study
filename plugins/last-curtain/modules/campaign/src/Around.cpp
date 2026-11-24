@@ -34,8 +34,13 @@ namespace umbra::campaign
     {
         Result r;
         for (const Member &m : after.roster)
-            if (const auto b = std::ranges::find(before.roster, m.id, &Member::id); b != before.roster.end() && m.level > b->level)
-                r.levels.push_back(m.id);
+            if (const auto b = std::ranges::find(before.roster, m.id, &Member::id); b != before.roster.end())
+            {
+                if (m.level > b->level)
+                    r.levels.push_back(m.id);
+                if (const int gained = (m.level - b->level) * xpPerLevel + m.xp - b->xp; gained > 0)
+                    r.xp[m.id] = gained;
+            }
         for (const auto &[item, count] : after.storage)
             if (const int had = before.storage.contains(item) ? before.storage.at(item) : 0; count > had)
                 r.found[item] = count - had;

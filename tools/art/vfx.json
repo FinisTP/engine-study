@@ -1,0 +1,139 @@
+{
+ "note": "Particle textures for the VFX library (vfx-design-2026-11-24): four seeds each, made into 2x2 variant sheets in the cloud; white on black, the alpha is the brightness, the engine tints.",
+ "style": "clean digital texture, high contrast mask, studio render",
+ "negative": "text, letters, watermark, logo, frame, border, colour, background texture, paper texture, person, face, blood, skull, multiple objects, grid, pattern",
+ "jobs": [
+  {
+   "name": "vfx_dab_ink",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    31,
+    32,
+    33,
+    34
+   ],
+   "prompt": "a single splash of ink dropped on paper, irregular blot with tiny droplets, brush ink texture, isolated in the centre on a pure flat black background, white and light grey only, monochrome, soft edges, nothing touching the edges, single element"
+  },
+  {
+   "name": "vfx_splash_ink",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    31,
+    32,
+    33,
+    34
+   ],
+   "prompt": "a single wide ink splash burst with streaks flying outward, sumi-e brush ink, isolated in the centre on a pure flat black background, white and light grey only, monochrome, soft edges, nothing touching the edges, single element"
+  },
+  {
+   "name": "vfx_puff_dust",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    31,
+    32,
+    33,
+    34
+   ],
+   "prompt": "a small soft puff of dust cloud, wispy powder, isolated in the centre on a pure flat black background, white and light grey only, monochrome, soft edges, nothing touching the edges, single element"
+  },
+  {
+   "name": "vfx_mote_lamp",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    31,
+    32,
+    33,
+    34
+   ],
+   "prompt": "a single soft round glowing light mote, gentle bloom, lantern glow, isolated in the centre on a pure flat black background, white and light grey only, monochrome, soft edges, nothing touching the edges, single element"
+  },
+  {
+   "name": "vfx_fleck_gold",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    31,
+    32,
+    33,
+    34
+   ],
+   "prompt": "a tiny sparkling glint, four pointed star flare with soft glow, isolated in the centre on a pure flat black background, white and light grey only, monochrome, soft edges, nothing touching the edges, single element"
+  },
+  {
+   "name": "vfx_ash_paper",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    31,
+    32,
+    33,
+    34
+   ],
+   "prompt": "a small curled flake of burnt paper ash with torn edges, isolated in the centre on a pure flat black background, white and light grey only, monochrome, soft edges, nothing touching the edges, single element"
+  },
+  {
+   "name": "vfx_smoke_incense",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    31,
+    32,
+    33,
+    34
+   ],
+   "prompt": "a thin curling wisp of incense smoke rising, delicate swirl, isolated in the centre on a pure flat black background, white and light grey only, monochrome, soft edges, nothing touching the edges, single element"
+  },
+  {
+   "name": "vfx_thread_red",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    31,
+    32,
+    33,
+    34
+   ],
+   "prompt": "a short loose piece of thread, gently curved line, thin fibre, isolated in the centre on a pure flat black background, white and light grey only, monochrome, soft edges, nothing touching the edges, single element"
+  },
+  {
+   "name": "vfx_ember",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    31,
+    32,
+    33,
+    34
+   ],
+   "prompt": "a small glowing ember spark with a soft halo, isolated in the centre on a pure flat black background, white and light grey only, monochrome, soft edges, nothing touching the edges, single element"
+  },
+  {
+   "name": "vfx_streak",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    31,
+    32,
+    33,
+    34
+   ],
+   "prompt": "a single horizontal motion streak, long thin tapered light trail, speed line, isolated in the centre on a pure flat black background, white and light grey only, monochrome, soft edges, nothing touching the edges, single element"
+  },
+  {
+   "name": "vfx_bead_gold",
+   "w": 1024,
+   "h": 1024,
+   "seeds": [
+    31,
+    32,
+    33,
+    34
+   ],
+   "prompt": "a small round glossy bead with a highlight, polished sphere, isolated in the centre on a pure flat black background, white and light grey only, monochrome, soft edges, nothing touching the edges, single element"
+  }
+ ]
+}

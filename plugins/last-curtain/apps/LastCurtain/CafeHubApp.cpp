@@ -91,7 +91,7 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
     screens.Ui().Open("cafe-hub");
     game.sounds->Music("cafe");
     bool brewing = false;
-    std::string talkTo; // someone clicked: talk once near them
+    std::string useAt; // someone or a spot clicked: talk:<who> or brew/notebook/door, used once near
     std::set<std::string> given; // talks whose gifts were shown this visit
     bool lesson = false;         // the notebook shows how to fill a slot (after Le Thanh's gift)
     std::string picked; // a general drink waiting for whom
@@ -169,8 +169,8 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
         walk.Update(dt);
         view.Follow(walk.Position(), roomSize, dt);
         const std::string near = walk.Interact();
-        if (!talkTo.empty() && near == "talk:" + talkTo) // walked up to whom was clicked: as if E was pressed
-            act = "use", talkTo.clear();
+        if (!useAt.empty() && near == useAt) // walked up to what was clicked: as if E was pressed
+            act = "use", useAt.clear();
         view.DrawCampaign(walk, sprites, near, drawList);
 
         // 3. The screens' data: lack lines in words, who a general drink can go to.
@@ -239,6 +239,10 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
                 if (person.who == p["who"].get<std::string>())
                     if (const auto at = view.Above(person.at, 2.05F, pixels))
                         data["room"]["labels"].push_back({{"at", {at->x, at->y}}, {"who", person.who}, {"name", p["name"]}, {"talk", p["talk"]}, {"near", near == "talk:" + person.who}});
+        data["room"]["spots"] = nlohmann::json::array(); // the door, the counter and the notebook, labelled to click
+        for (const CampaignRoom::Spot &spot : walk.Spots())
+            if (const auto at = view.Above(spot.at, 1.4F, pixels))
+                data["room"]["spots"].push_back({{"at", {at->x, at->y}}, {"kind", spot.kind}, {"name", words.value(spot.kind, spot.kind)}});
         data["room"]["prompt"] = near.empty() ? "" : words.value("press", std::string()) + " " +
                                                       (near.starts_with("talk:") ? words.value("talkTo", std::string()) : words.value(near, std::string()));
         bool uiTook = false;
@@ -289,8 +293,14 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
                 picked = a.arg; // a general drink: whom next
             else if (a.action == "for" && !picked.empty())
                 (void)hub.Brew(picked, a.arg), picked.clear();
-            else if (a.action == "leave")
+            else if (a.action == "leave" || (a.action == "use" && a.arg == "door"))
                 result = 1, done = true;
+            else if (a.action == "use" && a.arg == "brew")
+                brewing = true, screens.Ui().Open("brew");
+            else if (a.action == "use" && a.arg == "notebook")
+                screens.Ui().Open("notebook");
+            else if (a.action == "use")
+                act = "use"; // the prompt clicked: as if E was pressed
         }
         // 4. E at a person talks (a toast when they have nothing new), at the counter brews, at the board
         // opens the notebook, at the door leaves; Tab hands the walk to the next ally.
@@ -320,9 +330,12 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
                     clicked = p.who, walk.WalkTo(p.at);
             }
             if (!clicked.empty())
-                talkTo = clicked;
+                useAt = "talk:" + clicked;
             else if (const auto at = view.Floor(uiInput.mouse, pixels, roomSize))
-                walk.WalkTo(*at), talkTo.clear();
+            {
+                const auto spot = walk.SpotAt(*at); // near the door, the counter or the notebook: walk there and use it
+                walk.WalkTo(spot ? spot->at : *at), useAt = spot ? spot->kind : "";
+            }
         }
         if (++frame == lastFrame && !capture.empty())
             game.renderer.CaptureNextFrame([&](const umbra::core::TextureData &picture) {

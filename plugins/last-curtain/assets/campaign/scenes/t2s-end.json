@@ -1,0 +1,32 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "t2s-end",
+  "note": "Draft for the user's review (2026-11-24): T2s ends: Bao comes along.",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Ông lau con dao mổ vào vạt áo blouse đã ngả vàng.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "bao",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "text": "Hành lang chân dung ở phía trước. Tôi đi cùng.",
+      "speaker": "bao",
+      "face": "calm"
+    }
+  ]
+}

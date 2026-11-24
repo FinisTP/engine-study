@@ -1,0 +1,29 @@
+{
+  "format": "umbra.lc-stage",
+  "version": 1,
+  "id": "t2",
+  "kind": "story",
+  "title": "Hàng ghế khán phòng",
+  "titleEn": "The Stalls",
+  "note": "Draft (2026-11-24): teaches healing and fighting together. The player starts hurt; Ba Mai tends from afar. Two on one square fight one battle together: the Defender ghost is too much for one.",
+  "level": 2,
+  "partyCap": 2,
+  "backdrop": "auditorium",
+  "xp": 100,
+  "startHp": {"player": 9},
+  "map": [
+    "#########",
+    "#.......#",
+    "#.#.#.#.#",
+    "#.......#",
+    "#.#.#.#.#",
+    "#..SS...#",
+    "#########"
+  ],
+  "units": [
+    {"who": "ghost_defender", "at": [4, 1], "side": 1, "level": 4, "flags": ["boss"]},
+    {"who": "rat_specter", "at": [7, 3], "side": 1, "level": 1, "flags": ["boss"], "behaviour": {"kind": "reinforcement", "round": 3}}
+  ],
+  "aims": {"start": "Để bà Mai băng cho bạn. Đứng chung ô với bà để đánh chung một trận.", "recap": ""},
+  "scenes": {"start": "t2-start", "end": "t2-end"}
+}

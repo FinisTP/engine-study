@@ -197,6 +197,19 @@ TEST_CASE("The notebook: three tabs, unknowns as ?, slots edited only outside ba
     CHECK(book.Data()["readOnly"] == true);
 }
 
+TEST_CASE("The notebook page shows XP toward the next level (feedback 2026-11-24 16:57, note 11)")
+{
+    HubData h;
+    campaign::Save save;
+    save.player = {"Hoang", "male"};
+    save.roster.push_back({"bao", 2, 40});
+    Notebook book(h.def, h.cast, h.memories, save);
+    book.Select("bao");
+    const nlohmann::json p = book.Data()["detail"];
+    CHECK(p["xp"] == 40);
+    CHECK(p["xpMax"] == campaign::xpPerLevel);
+}
+
 TEST_CASE("A scripted walk through slice 1: three story wins, the cafe brings Ti in, skirmishes refill, the save is written (campaign plan 7)")
 {
     HubData h;
@@ -204,7 +217,7 @@ TEST_CASE("A scripted walk through slice 1: three story wins, the cafe brings Ti
     std::vector<core::Diagnostic> d;
     REQUIRE(campaign::LoadGrowth(data / "growth.csv", growth, d));
     std::vector<campaign::StageDef> stages;
-    for (const char *id : {"t1", "t3", "stage1", "sk_props", "sk_stairs", "sk_boxoffice"})
+    for (const char *id : {"t1", "t2", "t2s", "t3", "stage1", "sk_props", "sk_stairs", "sk_boxoffice"})
     {
         campaign::StageDef s;
         REQUIRE(campaign::LoadStage(data / "stages" / (std::string(id) + ".json"), h.cast, h.def, data / "scenes", s, d));
@@ -261,6 +274,23 @@ namespace
         room["campaign"] = nlohmann::json::parse(std::ifstream(data / "cafe-room.json"));
         return room;
     }
+}
+
+TEST_CASE("A click near the door, the counter or the notebook walks there and uses it (feedback 2026-11-24 16:57, note 10)")
+{
+    CampaignRoom room(CafeRoomFile(), {"player", "bao", "mai"}, {"lethanh"});
+    // 1. The spot under a click on the floor, within a step; none in the room's middle.
+    const auto door = room.SpotAt({11.0F, 7.2F});
+    REQUIRE(door);
+    CHECK(door->kind == "door");
+    CHECK_FALSE(room.SpotAt({6.0F, 4.0F}));
+    // 2. Walking to it ends where E uses it.
+    room.WalkTo(door->at);
+    for (int i = 0; i < 2000 && room.Interact() != "door"; ++i)
+        room.Update(0.02F);
+    CHECK(room.Interact() == "door");
+    // 3. Every spot has a place to label.
+    CHECK(room.Spots().size() == 3);
 }
 
 TEST_CASE("The campaign cafe is a room: walk, talk with E, brew at the counter, switch who walks (the user, 2026-11-24)")

@@ -96,6 +96,8 @@ namespace umbra::campaign
             u.flags = i == 0 ? match::flag::Player : 0;
             for (std::size_t k = 0; k < party[i].items.size() && k < u.items.size(); ++k)
                 u.items[k] = static_cast<std::int8_t>(ItemRow(def, party[i].items[k]));
+            if (const auto hurt = stage.startHp.find(party[i].id); hurt != stage.startHp.end())
+                u.hp = static_cast<std::int16_t>(std::clamp<int>(hurt->second, 1, u.maxHp));
             add(u, party[i].id, 1.0F);
         }
         // 3. Enemies and others: the stage's, then the refill's twist (the last twist repeats).

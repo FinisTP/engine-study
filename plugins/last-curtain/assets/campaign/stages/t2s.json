@@ -1,0 +1,30 @@
+{
+  "format": "umbra.lc-stage",
+  "version": 1,
+  "id": "t2s",
+  "kind": "story",
+  "title": "Phòng y tế",
+  "titleEn": "The Infirmary",
+  "note": "Draft (2026-11-24): teaches skills. Bao joins: Dao mo is stronger than the basic attack but costs 1 HP; the skills menu shows each cost. His other skills wait in the notebook (the cafe lesson).",
+  "level": 2,
+  "partyCap": 3,
+  "backdrop": "infirmary",
+  "xp": 100,
+  "map": [
+    "#########",
+    "#...#...#",
+    "#.......#",
+    "#..#.#..#",
+    "#.......#",
+    "#.SSS...#",
+    "#########"
+  ],
+  "units": [
+    {"who": "ghost_attacker", "at": [6, 1], "side": 1, "level": 2, "flags": ["boss"]},
+    {"who": "ghost_speedster", "at": [2, 1], "side": 1, "level": 1, "flags": ["boss"]},
+    {"who": "ghost_attacker", "at": [7, 3], "side": 1, "level": 1, "flags": ["boss"], "behaviour": {"kind": "passive"}}
+  ],
+  "items": [{"id": "t2s-bandage", "item": "bandage", "at": [1, 3]}],
+  "aims": {"start": "Hạ ba cái bóng. Kỹ năng mạnh hơn, nhưng tốn HP.", "recap": ""},
+  "scenes": {"start": "t2s-start", "end": "t2s-end"}
+}

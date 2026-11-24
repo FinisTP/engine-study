@@ -1,0 +1,42 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "t2-start",
+  "note": "Draft for the user's review (2026-11-24): T2 opens: the player is hurt after the foyer; Ba Mai tends the wound and teaches fighting side by side.",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Hàng ghế khán phòng phủ một lớp bụi mỏng. Vết cào ở tay bạn vẫn rỉ máu."
+    },
+    {
+      "id": "b",
+      "text": "Đứng yên đó. Để bà xem nào.",
+      "speaker": "mai",
+      "face": "calm",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "afraid"
+        },
+        {
+          "who": "mai",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    },
+    {
+      "id": "c",
+      "text": "Bà ở xa vẫn băng được cho con. Đến lượt bà, chọn Kỹ năng rồi chọn con.",
+      "speaker": "mai",
+      "face": "calm"
+    },
+    {
+      "id": "d",
+      "text": "Cái bóng to đằng kia một mình con không kham nổi. Đứng chung một ô với bà: hai người đánh chung một trận."
+    }
+  ]
+}

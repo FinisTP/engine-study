@@ -164,6 +164,8 @@ nlohmann::json Notebook::Page() const
     p["portrait"] = "art/sprites/" + sprite + "/face_calm.png";
     const int level = Level(selected_);
     p["level"] = level;
+    const auto in = std::ranges::find(save_.roster, selected_, &campaign::Member::id);
+    p["xp"] = in == save_.roster.end() ? 0 : in->xp, p["xpMax"] = campaign::xpPerLevel;
     p["fights"] = selected_ == "player" || std::ranges::find(save_.party, selected_) != save_.party.end();
     p["canToggle"] = selected_ != "player" && !readOnly_;
     p["locked"] = !p["canToggle"].get<bool>();

@@ -1,0 +1,32 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "t2-end",
+  "note": "Draft for the user's review (2026-11-24): T2 ends: Ba Mai stays with the player.",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Cái bóng tan như khói nhang trước gió.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "mai",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "text": "Bà làm ở đây bốn mươi năm rồi. Bà đi với con.",
+      "speaker": "mai",
+      "face": "calm"
+    }
+  ]
+}

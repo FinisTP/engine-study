@@ -8,7 +8,7 @@ namespace umbra::campaign
     StageReport SoakStage(const match::MatchDef &def, const Cast &cast, const Growth &growth, const StageDef &stage, int refill, std::uint64_t seed, int runs)
     {
         std::vector<PartyMember> party;
-        for (const char *who : {"player", "bao", "mai"})
+        for (const char *who : {"player", "mai", "bao"}) // in the order they join
             if (static_cast<int>(party.size()) < stage.partyCap)
                 party.push_back({who, stage.level + refill, {}}); // a refill comes after a story stage: the party has grown
         StageReport r;

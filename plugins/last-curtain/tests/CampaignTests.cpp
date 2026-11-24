@@ -630,7 +630,7 @@ TEST_CASE("A fight's moments start their scenes once each, only when told (campa
 TEST_CASE("The slice's stages and scenes load (campaign plan 4)")
 {
     const match::MatchDef def = MatchData();
-    for (const char *id : {"t1", "t3", "stage1", "sk_props", "sk_stairs", "sk_boxoffice"})
+    for (const char *id : {"t1", "t2", "t2s", "t3", "stage1", "sk_props", "sk_stairs", "sk_boxoffice"})
     {
         INFO(id);
         campaign::StageDef stage;
@@ -652,13 +652,13 @@ TEST_CASE("The slice's stages and scenes load (campaign plan 4)")
 TEST_CASE("Each stage and each refill can be won by the party brain (campaign plan 4)", "[campaign][slow]")
 {
     const match::MatchDef def = MatchData();
-    for (const char *id : {"t1", "t3", "stage1", "sk_props", "sk_stairs", "sk_boxoffice"})
+    for (const char *id : {"t1", "t2", "t2s", "t3", "stage1", "sk_props", "sk_stairs", "sk_boxoffice"})
     {
         campaign::StageDef stage;
         std::vector<core::Diagnostic> d;
         REQUIRE(campaign::LoadStage(data / "stages" / (std::string(id) + ".json"), TheCast(), def, data / "scenes", stage, d));
         std::vector<campaign::PartyMember> party;
-        for (const char *who : {"player", "bao", "mai"})
+        for (const char *who : {"player", "mai", "bao"})
             if (static_cast<int>(party.size()) < stage.partyCap)
                 party.push_back({who, stage.level, {}});
         for (int refill = 0; refill <= static_cast<int>(stage.twists.size()); ++refill)
@@ -731,7 +731,7 @@ TEST_CASE("Every stage and refill holds its bands in balance.json (campaign plan
 {
     const match::MatchDef def = MatchData();
     const nlohmann::json bands = nlohmann::json::parse(std::ifstream(data / "balance.json"));
-    for (const char *id : {"t1", "t3", "stage1", "sk_props", "sk_stairs", "sk_boxoffice"})
+    for (const char *id : {"t1", "t2", "t2s", "t3", "stage1", "sk_props", "sk_stairs", "sk_boxoffice"})
     {
         campaign::StageDef stage;
         std::vector<core::Diagnostic> d;
@@ -760,7 +760,7 @@ namespace
     std::vector<campaign::StageDef> TheStages()
     {
         std::vector<campaign::StageDef> out;
-        for (const char *id : {"t1", "t3", "stage1", "sk_props", "sk_stairs", "sk_boxoffice"})
+        for (const char *id : {"t1", "t2", "t2s", "t3", "stage1", "sk_props", "sk_stairs", "sk_boxoffice"})
         {
             campaign::StageDef s;
             std::vector<core::Diagnostic> d;
@@ -879,7 +879,7 @@ TEST_CASE("Talks open by stage and facts, at most three new a visit; a fight lea
     CHECK(open[0]->id == "lethanh-first");
     campaign::Talked(save, *open[0]);
     CHECK(campaign::OpenTalks(talks, save, 3).empty());
-    // 2. After T1, two more; a fall in the fight opens Ba Mai's worry.
+    // 2. After T1, Ba Mai's two (Bao's waits for T2s, after he joins); a fall in the fight opens her worry.
     match::MatchState s;
     s.units.resize(2);
     s.units[0].faction = 0;
@@ -890,9 +890,9 @@ TEST_CASE("Talks open by stage and facts, at most three new a visit; a fight lea
     CHECK(save.facts["won:t1"] == "1");
     CHECK(save.facts["fell:player"] == "1");
     open = campaign::OpenTalks(talks, save, 3);
-    CHECK(open.size() == 3);
+    CHECK(open.size() == 2);
     // 3. At most `limit`; a talk's facts are set when talked.
-    CHECK(campaign::OpenTalks(talks, save, 2).size() == 2);
+    CHECK(campaign::OpenTalks(talks, save, 1).size() == 1);
     save.facts["won:t3"] = "1";
     for (const campaign::Talk *t : campaign::OpenTalks(talks, save, 10))
         if (t->id == "bao-t3")
@@ -1014,13 +1014,18 @@ TEST_CASE("The theatre map: tickets open in order with marks, the cursor reaches
                 return t.mark;
         return std::string("none");
     };
-    // 1. A new game: T1 is next, T3 locked (?), the box office unseen.
+    // 1. A new game: T1 is next, T2 and T3 locked (?), the box office unseen; after T1, T2 is next.
     CHECK(mark("t1") == "next");
+    CHECK(mark("t2") == "locked");
     CHECK(mark("t3") == "locked");
     CHECK(mark("makeup") == "unknown");
-    // 2. After T1 and T3: T3 cleared, the skirmishes open, Stage 1 next.
-    save.facts = {{"won:t1", "1"}, {"won:t3", "1"}};
-    save.rooms["t1"].cleared = save.rooms["t3"].cleared = true;
+    save.facts = {{"won:t1", "1"}};
+    save.rooms["t1"].cleared = true;
+    CHECK(mark("t2") == "next");
+    CHECK(mark("t2s") == "locked");
+    // 2. After the tutorial ladder (T1, T2, T2s, T3): T3 cleared, the skirmishes open, Stage 1 next.
+    save.facts = {{"won:t1", "1"}, {"won:t2", "1"}, {"won:t2s", "1"}, {"won:t3", "1"}};
+    save.rooms["t1"].cleared = save.rooms["t2"].cleared = save.rooms["t2s"].cleared = save.rooms["t3"].cleared = true;
     CHECK(mark("t3") == "cleared");
     CHECK(mark("sk_props") == "skirmish");
     CHECK(mark("stage1") == "next");
@@ -1075,6 +1080,8 @@ TEST_CASE("Around a stage: who may fight, the revive warning, the result's gains
     CHECK(r.levels[0] == "player");
     CHECK(r.found.at("gung") == 1);
     CHECK(r.freed == std::vector<std::string>{"ti"});
+    // XP gained per member, across a level (feedback 2026-11-24 16:57, note 11).
+    CHECK(r.xp.at("player") == (after.roster[0].level - save.roster[0].level) * campaign::xpPerLevel + after.roster[0].xp - save.roster[0].xp);
     // 3. Game over: the reason; the rite only for the player's fall, unlocked, unused, never in T1.
     match::MatchState s;
     s.over = true, s.winner = 1, s.loss = match::Loss::PlayerFell;
@@ -1225,4 +1232,15 @@ TEST_CASE("Enemies never revive in a stage: more come as reinforcements instead 
         INFO(st.id);
         CHECK((b.state.noRevive & (1 << 1)) != 0);
     }
+}
+
+TEST_CASE("A stage can start the party hurt: startHp per cast id, kept within 1 and the maximum (the tutorial ladder)")
+{
+    const match::MatchDef def = MatchData();
+    campaign::StageDef st = TheStages().front();
+    st.startHp = {{"player", 5}, {"mai", 999}};
+    st.partyCap = 1;
+    const campaign::BuiltStage b = campaign::BuildStage(def, TheCast(), TheGrowth(), st, {{"player", 2, {}}}, 0, {}, 3);
+    CHECK(b.state.units[0].hp == 5);
+    CHECK(b.state.units[0].maxHp > 5);
 }

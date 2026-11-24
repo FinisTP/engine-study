@@ -268,7 +268,7 @@
   "selected": "bao",
   "selectedName": "Bác sĩ Bảo",
   "readOnly": false,
-  "lesson": "Lệ Thanh vừa đưa đồ. Chọn một người ở cột trái, bấm một món trong Kho đồ rồi bấm Mang theo. Kỹ năng cũng vậy: Bảo và bà Mai còn kỹ năng chưa mang.",
+  "lesson": "Lệ Thanh vừa đưa đồ. Chọn một người ở cột trái, bấm một món trong Kho đồ rồi bấm Mang theo. Kỹ năng cũng vậy: bà Mai còn kỹ năng chưa mang.",
   "entries": [
    {
     "id": "player",
@@ -290,6 +290,8 @@
    "portrait": "art/sprites/bao/face_calm.png",
    "level": 2,
    "levelText": "Cấp 2",
+   "xp": 40,
+   "xpMax": 100,
    "statsText": "HP 24 · Công 6 · Thủ 3 · Tốc 4 · Đi 3",
    "fights": true,
    "fightText": "Ra trận màn tới",
@@ -325,13 +327,13 @@
      "slot": 0,
      "item": "bandage",
      "label": "Băng gạc",
-     "icon": ""
+     "icon": "art/ui/campaign/item/bandage.png"
     },
     {
      "slot": 1,
-     "item": "",
-     "label": "(trống)",
-     "icon": ""
+     "item": "programme",
+     "label": "Tờ chương trình cũ",
+     "icon": "art/ui/campaign/item/programme.png"
     },
     {
      "slot": 2,

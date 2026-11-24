@@ -290,6 +290,13 @@
       "padding": 0,
       "fill": "#7fbf6a"
     },
+    "xp": {
+      "font": "small",
+      "color": "#ffffff",
+      "background": "#1c1714",
+      "padding": 0,
+      "fill": "#d8b25a"
+    },
     "essence": {
       "font": "essence",
       "color": "#ffd76a"
@@ -495,6 +502,7 @@
     "lcPanelGold": {"image": "art/ui/campaign/frame/panel_gold.png", "slice": [24, 24, 24, 24], "padding": [24, 20]},
     "lcMenu": {"image": "art/ui/campaign/frame/menu.png", "slice": [20, 20, 20, 20], "padding": [22, 18]},
     "lcButton": {"base": "text", "color": "#f0e5cc", "image": "art/ui/campaign/frame/button.png", "slice": [16, 16, 16, 16], "padding": [16, 9], "hover": {"image": "art/ui/campaign/frame/button_focus.png", "color": "#fff4d0"}, "selected": {"image": "art/ui/campaign/frame/button_focus.png", "color": "#ffe9b0"}, "pressed": {"image": "art/ui/campaign/frame/button_focus.png", "scale": 0.95}, "disabled": {"image": "art/ui/campaign/frame/button_disabled.png", "color": "#6c6860"}},
+    "lcSlot": {"base": "text", "color": "#f0e5cc", "image": "art/ui/campaign/frame/button.png", "slice": [16, 16, 16, 16], "padding": [6, 6], "hover": {"image": "art/ui/campaign/frame/button_focus.png", "color": "#fff4d0"}, "selected": {"image": "art/ui/campaign/frame/button_focus.png", "color": "#ffe9b0"}, "pressed": {"image": "art/ui/campaign/frame/button_focus.png", "scale": 0.95}, "disabled": {"image": "art/ui/campaign/frame/button_disabled.png", "color": "#6c6860"}},
     "lcToggle": {"base": "lcButton", "color": "#9a9080", "hover": {"image": "art/ui/campaign/frame/button.png", "color": "#f0e5cc"}, "selected": {"image": "art/ui/campaign/frame/button_focus.png", "color": "#ffd76a"}},
     "lcToast": {"base": "small", "color": "#f0e5cc", "image": "art/ui/campaign/frame/toast.png", "slice": [16, 16, 16, 16], "padding": [16, 9]},
     "lcBubble": {"base": "small", "color": "#f0e5cc", "image": "art/ui/campaign/frame/bubble.png", "slice": [16, 16, 16, 16], "padding": [14, 10]},

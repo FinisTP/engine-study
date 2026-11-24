@@ -3,6 +3,8 @@
 #include <glm/vec2.hpp>
 #include <nlohmann/json.hpp>
 
+#include <optional>
+
 #include <string>
 #include <vector>
 
@@ -28,6 +30,13 @@ public:
     void Place(glm::vec2 at) { at_ = at, goal_ = {-1.0F, -1.0F}; }
     void Update(float dt);
     void Switch(); // the next in the party walks from here; the one who walked goes back to its place
+    struct Spot
+    {
+        std::string kind; // brew, notebook, door
+        glm::vec2 at{0.0F};
+    };
+    [[nodiscard]] std::vector<Spot> Spots() const;
+    [[nodiscard]] std::optional<Spot> SpotAt(glm::vec2 floor) const; // the spot within a step of a clicked floor point
     // What E does here: "talk:<who>", "brew", "notebook", "door" or "".
     [[nodiscard]] std::string Interact() const;
     [[nodiscard]] const std::string &Active() const { return party_[active_]; }

@@ -134,6 +134,18 @@
                         "text": "{book.detail.levelText}"
                       },
                       {
+                        "type": "bar",
+                        "style": "xp",
+                        "size": [160, 6],
+                        "value": "{book.detail.xp}",
+                        "max": "{book.detail.xpMax}"
+                      },
+                      {
+                        "type": "text",
+                        "style": "small",
+                        "text": "XP {book.detail.xp}/{book.detail.xpMax}"
+                      },
+                      {
                         "type": "text",
                         "style": "small",
                         "text": "{book.detail.statsText}"
@@ -191,29 +203,32 @@
                 "gap": 6,
                 "entry": {
                   "type": "stack",
-                  "style": "lcButton",
+                  "style": "lcSlot",
                   "action": "pick",
                   "arg": "bag:{s.slot}",
                   "align": "center",
                   "size": [
                     100,
-                    74
+                    84
                   ],
+                  "clip": true,
                   "gap": 2,
                   "children": [
                     {
                       "type": "image",
                       "image": "{s.icon}",
                       "size": [
-                        40,
-                        40
+                        32,
+                        32
                       ],
                       "visible": "{s.icon}"
                     },
                     {
                       "type": "text",
                       "style": "small",
-                      "text": "{s.label}"
+                      "text": "{s.label}",
+                      "wrap": true,
+                      "textAlign": "center"
                     }
                   ],
                   "selected": "{s.picked}"

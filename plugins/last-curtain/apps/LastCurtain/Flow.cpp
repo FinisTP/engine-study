@@ -256,6 +256,8 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
             (void)campaign::SaveCampaign(saveFile, save, error);
             const campaign::Result r = campaign::ResultOf(before, save);
             nlohmann::json lines = nlohmann::json::array();
+            for (const auto &[who, n] : r.xp)
+                lines.push_back({{"text", Fill(words.value("lineXp", ""), {{"name", who == "player" ? save.player.name : name(who)}, {"n", std::to_string(n)}})}});
             for (const std::string &who : r.levels)
                 lines.push_back({{"text", Fill(words.value("lineLevel", ""), {{"name", who == "player" ? save.player.name : name(who)}, {"n", std::to_string(std::ranges::find(save.roster, who, &campaign::Member::id)->level)}})}});
             for (const auto &[item, n] : r.found)
@@ -281,14 +283,13 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
     bool mapSeen = false;
     while (where != "quit")
     {
-        // Recruits who joined in the café enter the roster; Bao and Ba Mai come before T3 at level 2.
+        // Recruits who joined in the café enter the roster; Ba Mai comes after T1, Bao after T2, at level 2.
         for (const std::string &r : save.joined)
             if (std::ranges::none_of(save.roster, [&](const campaign::Member &m) { return m.id == r; }))
                 save.roster.push_back({r, 3, 0});
-        if (save.facts.contains("won:t1"))
-            for (const char *ally : {"bao", "mai"})
-                if (std::ranges::none_of(save.roster, [&](const campaign::Member &m) { return m.id == ally; }))
-                    save.roster.push_back({ally, 2, 0});
+        for (const auto &[stage, ally] : {std::pair{"won:t1", "mai"}, std::pair{"won:t2", "bao"}})
+            if (save.facts.contains(stage) && std::ranges::none_of(save.roster, [&](const campaign::Member &m) { return m.id == ally; }))
+                save.roster.push_back({ally, 2, 0});
         (void)campaign::SaveCampaign(saveFile, save, error);
         if (where == "t1")
             while ((where = fight("t1", {"player"})) == "retry") // the first fight has no roster to pick

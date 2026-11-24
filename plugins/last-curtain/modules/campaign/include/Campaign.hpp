@@ -101,6 +101,7 @@ namespace umbra::campaign
         std::vector<StageItem> items;
         bool mustFree = false;
         std::vector<int> noRevive; // sides that never revive
+        std::map<std::string, int> startHp; // the party starts hurt: HP by cast id (a tutorial)
         nlohmann::json gimmicks = nlohmann::json::object();
         std::string aimStart, aimRecap;
         std::map<std::string, std::string> scenes; // moment -> scene id

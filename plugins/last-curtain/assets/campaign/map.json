@@ -22,6 +22,42 @@
       "shape": "foyer"
     },
     {
+      "id": "t2",
+      "name": "Hàng ghế khán phòng",
+      "at": [
+        0.5,
+        0.6
+      ],
+      "kind": "story",
+      "stage": "t2",
+      "opensAfter": "t1",
+      "room": [
+        0.32,
+        0.42,
+        0.67,
+        0.71
+      ],
+      "shape": "room"
+    },
+    {
+      "id": "t2s",
+      "name": "Phòng y tế",
+      "at": [
+        0.85,
+        0.44
+      ],
+      "kind": "story",
+      "stage": "t2s",
+      "opensAfter": "t2",
+      "room": [
+        0.74,
+        0.36,
+        0.96,
+        0.52
+      ],
+      "shape": "room"
+    },
+    {
       "id": "t3",
       "name": "Hành lang chân dung",
       "at": [
@@ -30,7 +66,7 @@
       ],
       "kind": "story",
       "stage": "t3",
-      "opensAfter": "t1",
+      "opensAfter": "t2s",
       "room": [
         0.13,
         0.44,
@@ -159,23 +195,6 @@
         0.01,
         0.48,
         0.1
-      ],
-      "shape": "room"
-    },
-    {
-      "id": "music",
-      "name": "Phòng nhạc",
-      "at": [
-        0.85,
-        0.44
-      ],
-      "kind": "unknown",
-      "lock": "Có tiếng đàn sau cửa.",
-      "room": [
-        0.74,
-        0.36,
-        0.96,
-        0.52
       ],
       "shape": "room"
     },

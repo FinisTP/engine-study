@@ -95,6 +95,22 @@ std::string CampaignRoom::Interact() const
     return best;
 }
 
+std::vector<CampaignRoom::Spot> CampaignRoom::Spots() const
+{
+    std::vector<Spot> out;
+    for (const nlohmann::json &s : room_["campaign"]["spots"])
+        out.push_back({s["kind"].get<std::string>(), Vec(s["at"])});
+    return out;
+}
+
+std::optional<CampaignRoom::Spot> CampaignRoom::SpotAt(glm::vec2 floor) const
+{
+    for (const Spot &s : Spots())
+        if (glm::length(s.at - floor) < 1.0F)
+            return s;
+    return std::nullopt;
+}
+
 bool CampaignRoom::Hides(glm::vec2 figure, glm::vec2 speaker)
 {
     // Nearer the camera by a step or more, and less than a figure's width aside.

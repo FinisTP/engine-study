@@ -155,6 +155,7 @@ namespace umbra::campaign
         }
         out.mustFree = j.value("mustFree", false);
         out.noRevive = j.value("noRevive", std::vector<int>{});
+        out.startHp = j.value("startHp", std::map<std::string, int>{});
         out.gimmicks = j.value("gimmicks", json::object());
         out.aimStart = j.value("aims", json::object()).value("start", "");
         out.aimRecap = j.value("aims", json::object()).value("recap", "");

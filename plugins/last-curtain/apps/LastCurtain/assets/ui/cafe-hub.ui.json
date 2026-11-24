@@ -8,6 +8,19 @@
     "children": [
       {
         "type": "list",
+        "items": "{room.spots}",
+        "as": "p",
+        "entry": {
+          "type": "button",
+          "style": "lcPlate",
+          "at": "{p.at}",
+          "text": "{p.name}",
+          "action": "use",
+          "arg": "{p.kind}"
+        }
+      },
+      {
+        "type": "list",
         "items": "{room.labels}",
         "as": "l",
         "entry": {
@@ -153,7 +166,7 @@
         }
       },
       {
-        "type": "text",
+        "type": "button",
         "anchor": "bottom",
         "offset": [
           0,
@@ -161,6 +174,7 @@
         ],
         "style": "lcToast",
         "text": "{room.prompt}",
+        "action": "use",
         "visible": "{room.prompt}"
       }
     ]
