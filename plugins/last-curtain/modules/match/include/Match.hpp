@@ -63,6 +63,7 @@ namespace umbra::match
         std::array<std::int8_t, maxAbilities> abilities{-1, -1, -1, -1, -1, -1, -1, -1};
         std::array<std::int8_t, maxItems> items{-1, -1, -1, -1};
         std::array<std::int8_t, maxAbilities> boost{}, cut{}; // level-card upgrades: +power, -HP cost, by slot
+        std::array<std::int8_t, maxAbilities> used{};         // board abilities used this fight, by slot (Mode::boardUses)
         std::uint8_t flags = 0;  // flag::
         std::int8_t ap = 0;      // action points stored by biding (Match.md "Biding")
         std::int16_t from = 0;   // the first round it may act (one that appears mid-fight waits a round)
@@ -220,6 +221,9 @@ namespace umbra::match
     // Starts a fight whose units stand placed: everyone may act, the order by Speed (ties from `seed`),
     // round 1, the first turn (monsters faster than everyone act at once). NewMatch ends with it.
     void BeginMatch(const MatchDef &def, MatchState &s, std::uint64_t seed);
+    // Rally (a passive): the most defence one standing of the unit's side on its square or next to it gives it
+    // (itself included); the giver in `holder`. 0 when none.
+    int RallyOf(const MatchDef &def, const MatchState &s, int unit, int *holder = nullptr);
 
     // picks: side 0's characters.csv rows (options.side of them, no repeats). Side 1 is RiggedPick.
     MatchState NewMatch(const MatchDef &def, std::uint64_t seed, const std::vector<int> &picks);
@@ -257,7 +261,8 @@ namespace umbra::match
         OnlyPlayer, // only the living player cuts strings
         NotStrung, // no gold knot to cut
         NoRite,    // the rite is not offered now
-        NotHere    // the item can't be used here (items.csv "use")
+        NotHere,   // the item can't be used here (items.csv "use")
+        NoUses     // a board ability's uses this fight are spent (Mode::boardUses)
     };
 
     int Current(const MatchState &s); // the unit that acts next; -1 when the match is over (the player while the rite is offered)

@@ -156,6 +156,10 @@ namespace umbra::campaign
         out.mustFree = j.value("mustFree", false);
         out.meleeEnemies = j.value("meleeEnemies", false);
         out.leaders = j.value("leaders", std::vector<std::string>{});
+        out.spoils = j.value("spoils", std::map<std::string, int>{});
+        for (const auto &[item, count] : out.spoils)
+            if (!r.Item(item) || count < 1)
+                r.Error("spoils." + item, "expected an items.csv id and a count of 1 or more");
         out.leadRounds = j.value("leadRounds", out.leaders.empty() ? 0 : 1);
         out.noRevive = j.value("noRevive", std::vector<int>{});
         out.startHp = j.value("startHp", std::map<std::string, int>{});

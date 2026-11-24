@@ -74,6 +74,9 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
     campaign::Skills skills;
     const bool haveSkills = campaign::LoadSkills(folder / "skills.json", def, skills, d);
     text.Fill(skills);
+    campaign::Quests quests; // the quest line (note 25): its target marked in the room
+    (void)campaign::LoadQuests(folder / "quests.json", stages, cast, quests, d);
+    text.Fill(quests);
     book.SetGrowth(&growth), book.SetWords(words), book.SetSkills(haveSkills ? &skills : nullptr);
     std::vector<std::string> party{"player"};
     std::map<std::string, std::string> sprites{{"player", player.gender == "male" ? "player_male" : "player_female"}};
@@ -108,7 +111,7 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
     const auto play = [&](const std::string &scene) {
         if (scene.empty())
             return;
-        campaign::Facts chosen;
+        campaign::Facts chosen = save.facts; // earlier choices: lines may answer them (note 28)
         screens.Ui().Close("cafe-hub");
         // The talk plays in the room itself: the camera close on whoever speaks (no backdrop).
         const SceneBehind room = [&](umbra::core::DrawList &out, float dt, const std::string &speaker) {
@@ -134,6 +137,8 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
                 hub.Toast(words.value("received", std::string()) + " " + words["items"].value(item, item) + " x" + std::to_string(count));
         if (first && talk->then == "notebook")
             screens.Ui().Open("notebook"), lesson = true;
+        if (talk && talk->scene == scene && talk->then == "brew" && given.insert(talk->id).second) // the brewing lesson (note 13)
+            brewing = true, screens.Ui().Open("brew");
     };
     while (!done)
     {
@@ -200,6 +205,11 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
             k["name"] = words.value("items", nlohmann::json::object()).value(k["item"].get<std::string>(), k["name"].get<std::string>());
         data["hub"]["forWhom"] = picked.empty() ? nlohmann::json::array() : data["hub"]["people"];
         data["book"] = book.Data();
+        for (auto &g : data["book"]["detail"]["gear"]) // worn gear by its Vietnamese name and picture (note 30)
+        {
+            g["label"] = g["item"] == "" ? words.value("empty", std::string()) : words.value("items", nlohmann::json::object()).value(g["item"].get<std::string>(), g["item"].get<std::string>());
+            g["icon"] = g["item"] == "" ? "" : Icon("art/ui/campaign/item/" + g["item"].get<std::string>() + ".png");
+        }
         for (auto &slot : data["book"]["detail"]["slots"]) // a slot's item by its Vietnamese name
         {
             slot["label"] = slot["item"] == "" ? words.value("empty", std::string()) : words.value("items", nlohmann::json::object()).value(slot["item"].get<std::string>(), slot["item"].get<std::string>());
@@ -238,16 +248,20 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
         }
         data["words"] = words;
         data["room"]["who"] = walk.Active() == "player" ? campaign::FillTokens("{player}", player, cast) : cast.Find(walk.Active()) ? cast.Find(walk.Active())->name : walk.Active();
+        const campaign::Quest *quest = campaign::CurrentQuest(quests, save);
+        data["hub"]["quest"] = quest ? quest->text : "";
         data["room"]["labels"] = nlohmann::json::array();
         for (const nlohmann::json &p : data["hub"]["people"])
             for (const CampaignRoom::Person &person : walk.People())
                 if (person.who == p["who"].get<std::string>())
                     if (const auto at = view.Above(person.at, 2.05F, pixels))
-                        data["room"]["labels"].push_back({{"at", {at->x, at->y}}, {"who", person.who}, {"name", p["name"]}, {"talk", p["talk"]}, {"near", near == "talk:" + person.who}});
+                        data["room"]["labels"].push_back({{"at", {at->x, at->y}}, {"who", person.who}, {"name", p["name"]}, {"talk", p["talk"]}, {"near", near == "talk:" + person.who},
+                                                                  {"quest", quest && quest->talk == person.who}});
         data["room"]["spots"] = nlohmann::json::array(); // the door, the counter and the notebook, labelled to click
         for (const CampaignRoom::Spot &spot : walk.Spots())
             if (const auto at = view.Above(spot.at, 1.4F, pixels))
-                data["room"]["spots"].push_back({{"at", {at->x, at->y}}, {"kind", spot.kind}, {"name", words.value(spot.kind, spot.kind)}});
+                data["room"]["spots"].push_back({{"at", {at->x, at->y}}, {"kind", spot.kind}, {"name", words.value(spot.kind, spot.kind)},
+                                                         {"quest", quest && ((quest->door && spot.kind == "door") || (quest->brew && spot.kind == "brew"))}});
         data["room"]["prompt"] = near.empty() ? "" : words.value("press", std::string()) + " " +
                                                       (near.starts_with("talk:") ? words.value("talkTo", std::string()) : words.value(near, std::string()));
         bool uiTook = false;

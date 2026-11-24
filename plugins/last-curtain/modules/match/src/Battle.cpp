@@ -323,10 +323,25 @@ namespace umbra::match
                     power += a.amount;
                     break;
                 }
-        int dmg = std::max(def.rules.battle.minDamage, power + f.attack - (t.defence + shield)) + t.marked;
+        int dmg = std::max(def.rules.battle.minDamage, power + f.attack - (t.defence + shield + RallyOf(def, s, to))) + t.marked;
         if (const int times = inner::Passive(def, f, AbilityEffect::Speedkill); times > 0 && t.speed < f.speed)
             dmg *= times; // speedkill: against a slower one
         return dmg;
+    }
+
+    int RallyOf(const MatchDef &def, const MatchState &s, int unit, int *holder)
+    {
+        const Unit &t = s.units[U(unit)];
+        int best = 0;
+        for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
+        {
+            const Unit &o = s.units[U(i)];
+            if (!Up(o) || o.faction != t.faction || o.cell < 0 || t.cell < 0 || (o.cell != t.cell && !inner::Adjacent(s.board, o.cell, t.cell)))
+                continue;
+            if (const int r = inner::Passive(def, o, AbilityEffect::Rally); r > best)
+                best = r, holder ? *holder = i : 0;
+        }
+        return best;
     }
 
     Forecast Preview(const MatchDef &def, const MatchState &s, const Action &act)
@@ -347,7 +362,7 @@ namespace umbra::match
         const AbilityDef *a = Slot(def, u, act.a);
         if (!a)
             return f;
-        f.cost = CostOf(def, u, act.a);
+        f.cost = act.kind == ActionKind::BoardAbility && UsesOf(def, s, u, act.a) > 0 ? 0 : CostOf(def, u, act.a);
         const int target = act.kind == ActionKind::BattleAbility ? (!s.battle.on ? -1 : act.b >= 0 ? act.b : FirstFoe(s, me)) : act.b;
         if (a->kind == AbilityClass::Heal)
             f.healed = PowerOf(def, u, act.a);

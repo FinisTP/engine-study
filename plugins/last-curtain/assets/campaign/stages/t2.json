@@ -88,5 +88,9 @@
     "mai",
     "player"
   ],
-  "leadRounds": 2
+  "leadRounds": 2,
+  "spoils": {
+    "dau_xanh": 1,
+    "duong": 1
+  }
 }

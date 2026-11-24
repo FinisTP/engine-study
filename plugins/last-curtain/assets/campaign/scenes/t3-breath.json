@@ -2,27 +2,27 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "t3-breath",
-  "note": "Draft for the user's review (2026-11-24, written overnight). T3 round 2: the telegraph is explained once. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
+  "note": "T3 round 2: the Keeper draws its first breath; Bao warns (the row turns red now, note 11). Rewritten for the player's own feelings and remembered choices (the user, 2026-11-24 23:57, note 28): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
       "text": "Người giữ tranh phồng ngực tới mức da rách ra. Cả một hàng gạch đỏ rực lên.",
-      "en": "The Keeper swells its chest until the skin splits. A whole row of tiles glows red."
+      "en": "The Keeper swells its chest until the skin tears. A whole row of tiles glows red."
     },
     {
       "id": "b",
       "text": "Lượt sau nó thổi hết cả hàng đó. Bước sang hàng khác, rồi đánh lúc nó đang thở ra!",
+      "en": "Next turn it breathes down that whole row. Step to another row, then strike while it breathes out!",
       "speaker": "bao",
-      "face": "talk",
+      "face": "afraid",
       "enter": [
         {
           "who": "bao",
           "side": "right",
           "slot": 0,
-          "face": "calm"
+          "face": "afraid"
         }
-      ],
-      "en": "Next turn it breathes out down that whole row. Step to another row, then strike while it exhales!"
+      ]
     }
   ]
 }

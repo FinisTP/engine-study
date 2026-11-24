@@ -2,11 +2,12 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "t3-start",
-  "note": "Draft for the user's review (2026-11-24, written overnight). T3 opens: the portrait corridor; Bao and Ba Mai beside the player. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
+  "note": "T3 opens: the portrait corridor; the player is tired and homesick. Rewritten for the player's own feelings and remembered choices (the user, 2026-11-24 23:57, note 28): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
       "text": "Hành lang dài hun hút. Mấy bức chân dung cũ đảo mắt theo từng bước chân. Có bức không còn mặt, chỉ còn vết cào.",
+      "en": "The corridor runs on and on. Old portraits roll their eyes after every step. Some have no faces left, only scratches.",
       "enter": [
         {
           "who": "player",
@@ -26,22 +27,37 @@
           "slot": 1,
           "face": "calm"
         }
-      ],
-      "en": "The corridor runs on forever. The old portraits roll their eyes after every step. Some have no faces left, only scratch marks."
+      ]
     },
     {
       "id": "b",
-      "text": "Cái thứ cuối hành lang kia... nó đang hít vào. Nghe như phổi đầy nước.",
-      "speaker": "bao",
-      "face": "afraid",
-      "en": "That thing at the end of the corridor... it's breathing in. Sounds like lungs full of water."
+      "text": "Bức kia... trông giống mẹ tôi. Không. Không phải. Tôi mệt quá rồi.",
+      "en": "That one... looks like my mother. No. It isn't. I'm so tired.",
+      "speaker": "player",
+      "face": "calm",
+      "when": "player.home=mother"
+    },
+    {
+      "id": "b2",
+      "text": "Không bức nào nhìn tôi. Ở ngoài kia cũng vậy.",
+      "en": "None of them look at me. Out there it was the same.",
+      "speaker": "player",
+      "face": "calm",
+      "when": "player.home=nobody"
     },
     {
       "id": "c",
-      "text": "Thấy hàng nào sáng lên thì bước ra khỏi hàng đó, {anh/chị} nghe. Ai ngã, bà có cơm nguội.",
+      "text": "Cái thứ cuối hành lang kia... nó đang hít vào. Nghe như phổi đầy nước.",
+      "en": "That thing at the end of the corridor... it's breathing in. It sounds like lungs full of water.",
+      "speaker": "bao",
+      "face": "calm"
+    },
+    {
+      "id": "d",
+      "text": "Ai ngã, bà có cơm nguội. Đừng ai ngã nghe.",
+      "en": "Whoever falls, I have cold rice. But nobody fall, you hear.",
       "speaker": "mai",
-      "face": "calm",
-      "en": "When a row lights up, step out of it, you hear? Whoever falls, I have cold rice."
+      "face": "calm"
     }
   ]
 }

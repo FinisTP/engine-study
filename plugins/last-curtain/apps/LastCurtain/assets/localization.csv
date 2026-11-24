@@ -128,6 +128,8 @@ campaign.markLocked,?,?
 campaign.markNext,tiếp theo,next
 campaign.markSkirmish,giao tranh,skirmish
 campaign.markUnknown,?,?
+campaign.questMark,!,!
+campaign.questLabel,Việc cần làm,To do
 campaign.memoriesLabel,Ký ức,Memories
 campaign.music,Nhạc,Music
 campaign.namePlaceholder,Linh,Linh
@@ -159,6 +161,7 @@ campaign.skillBoard,Trên bàn.,On the board.
 campaign.skillCost,Tốn {n} HP.,Costs {n} HP.
 campaign.skillRevive,"Đánh thức một đồng đội vừa ngã, đứng dậy với {n}% HP.","Wakes an ally who just fell, back up with {n}% HP."
 campaign.skillRice,"Trên người còn đứng: hồi {n} HP, xóa dấu và chậm.","On one still standing: heals {n} HP and clears a mark and a slow."
+campaign.skillUses,Dùng được {n} lần mỗi trận.,Usable {n} times a fight.
 campaign.skillHeal,Hồi {n} HP.,Heals {n} HP.
 campaign.skillLine,Tầm {range} ô · sức {power} · tốn {hp} HP,Range {range} · power {power} · costs {hp} HP
 campaign.skillPassive,Luôn có tác dụng.,Always on.
@@ -233,6 +236,7 @@ lore.tend,Bốn mươi năm bà lau máu trên sàn nhà hát. Bà hồi máu ch
 lore.throw,"Vớ được gì thì ném nấy: chiếc giày, cuốn sổ, cái răng ai rơi trên thảm.","Throw whatever is at hand: a shoe, a notebook, someone's tooth from the carpet."
 match.abilityText.battle,Trong trận,In battle
 match.abilityText.board,Trên bàn,On the board
+match.abilityText.uses,Dùng được {n} lần mỗi trận.,Usable {n} times a fight.
 match.abilityText.cost,Tốn {cost} HP.,Costs {cost} HP.
 match.abilityText.firststrike,Luôn luôn: được chọn trước mỗi hiệp.,Always: you pick first in every round of a battle.
 match.abilityText.heal,{where}: hồi {power} HP cho một đồng đội cách tối đa {range} ô ({reach}).,"{where}: heals {power} HP, an ally up to {range} tiles away ({reach})."
@@ -249,6 +253,7 @@ match.abilityText.shield,Trong trận: chặn {power} mỗi đòn tới hết tr
 match.abilityText.straight,"tính thẳng, xuyên tường","counted straight, through walls"
 match.abilityText.strike,Trong trận: một đòn {power} cộng Công.,In battle: a blow of {power} plus your Attack.
 match.abilityText.walk,đi qua cửa,walking through doors
+match.actions.usesLeft,còn {n} lần,{n} left
 match.actions.aim,Gây {d},Deals {d}
 match.actions.aimCounter,Gây {d} · bị trả {c},Deals {d} · takes {c} back
 match.actions.answer,Nhìn vào phòng,Look into the room
@@ -455,6 +460,7 @@ match.why.NoMovesLeft,Hết bước đi lượt này.,No steps left this turn.
 match.why.NoRite,Chưa làm lễ tiễn được lúc này.,The rite cannot be called now.
 match.why.NoTarget,Không ai trong tầm để nhắm.,No one in reach to aim at.
 match.why.NotFallen,Chỉ dùng cho người đã ngã.,Only for one who has fallen.
+match.why.NoUses,Đã dùng hết lượt trong trận này.,Its uses this fight are spent.
 match.why.NotHere,Chỉ dùng được ở quán.,This can only be used in the café.
 match.why.NotOnStage,Chỉ diễn được trên sân khấu.,Perform only on the stage.
 match.why.NotStrung,Không có dây để cắt.,There are no strings to cut.
@@ -531,3 +537,38 @@ timeline.ti.0,Sinh ở một làng biển miền Trung. Mạ tên Lụa. Chiều
 timeline.ti.1,Mạ hứa Tết ni sên mứt gừng. Tí hứa chạy xong chuyến ni là về liền.,His mother promises ginger jam this Tết. Tí promises to come home right after this one run.
 timeline.ti.2,"Một chú dặn đưa mẩu giấy gấp tư tận tay, không được đọc. Tí chạy suốt đêm, chân chảy máu mà không dừng.","A man tells him to deliver a folded note by hand, unread. Tí runs all night, feet bleeding, and does not stop."
 timeline.ti.3,"Bãi cát trắng. Tí nằm xuống, nghe sóng. Mứt gừng của mạ vẫn chưa ăn.",The white sand. Tí lies down and listens to the waves. He never got to taste his mother's ginger jam.
+campaign.items.dau_xanh,Đậu xanh,Mung beans
+campaign.itemText.dau_xanh,"Một nắm đậu xanh khô; vài hạt đã nảy mầm trong bóng tối, mầm trắng như ngón tay.","A handful of dried mung beans; a few have sprouted in the dark, shoots white as fingers."
+campaign.abilities.tend_am,Chăm sóc · Ấm tay,Tend · Warm hands
+campaign.abilities.tend_xa,Chăm sóc · Gọi xa,Tend · Calling far
+lore.tend_am,"Đôi tay đã xoa mãi một bàn tay lạnh: giờ hồi nhiều hơn, ở gần.","Hands that rubbed a cold hand for hours: now they heal more, up close."
+lore.tend_xa,Tiếng gọi xuyên tường của một người mẹ: giờ với tới xa hơn.,A mother's call through the walls: now it reaches farther.
+recipe.che_dau_xanh.name,Chè đậu xanh,Mung bean chè
+recipe.che_dau_xanh.text,"Đậu xanh nảy mầm trong bóng tối, nấu với đường vàng. Món thằng con bà Mai mê.","Mung beans sprouted in the dark, cooked with old sugar. Ba Mai's son loved it."
+memory.mai_1.name,Tiếng gọi dưới sân khấu,The call under the stage
+campaign.abilities.dong_long,Đồng lòng,Rallying
+lore.dong_long,"Bà đứng đâu, người ta đứng vững ở đó. Ai chung ô hoặc sát bên bà, kể cả bà, được thêm 1 Thủ.","Where she stands, people hold firm. Anyone on her square or next to her, herself too, gets 1 more Defence."
+match.passive.rally,{who}: Đồng lòng · +{n} Thủ,{who}: Rallying · +{n} Defence
+match.passive.deathpaper,{who}: Giấy chứng tử · hồi {n} HP,{who}: Death certificate · heals {n} HP
+match.passive.speedkill,{who}: Ra tay chớp nhoáng · đánh x{n},{who}: Lightning hand · strikes x{n}
+quest.t1_lethanh,Nói chuyện với Lệ Thanh. Cô ấy là người duy nhất ở đây có vẻ biết bạn là ai.,Talk to Lệ Thanh. She is the only one here who seems to know who you are.
+quest.t1_door,"Ra cửa quán, tới khán phòng. Lối về nhà nằm sau mười hai con thú.","Go to the café door, to the auditorium. The way home lies past the twelve beasts."
+quest.t2_lethanh,Lệ Thanh gọi bạn. Có gì đó về bà Mai.,Lệ Thanh is calling you. Something about Ba Mai.
+quest.t2_che,"Ra quầy, nấu chè đậu xanh cho bà Mai.",Go to the counter and cook mung bean chè for Ba Mai.
+quest.t2s_door,"Bác sĩ Bảo đang ở phòng y tế. Ra cửa, đi tìm ông.",Doctor Bảo is in the infirmary. Go out the door and find him.
+quest.t3_door,Hành lang chân dung. Đừng nhìn vào mắt tranh quá lâu.,The portrait corridor. Don't look into the paintings' eyes too long.
+quest.stage1_door,Phòng vé. Con Chuột đang giữ một đứa nhỏ bằng sợi dây đỏ.,The box office. The Rat holds a child on a red string.
+campaign.items.dao,Dao,Knife
+campaign.itemText.dao,"Con dao bếp cũ, cán gỗ nứt. Thứ duy nhất trong tay bạn lúc tỉnh dậy. Mang nó: Rạch.","An old kitchen knife, its wooden handle cracked. The only thing in your hand when you woke. Carrying it: Slash."
+campaign.items.dao_mo,Dao mổ,Scalpel
+campaign.itemText.dao_mo,Dao mổ của bác sĩ Bảo. Lưỡi sạch; hộp đựng thì không. Mang nó: Dao mổ.,Doctor Bảo's scalpel. The blade is clean; the case is not. Carrying it: Scalpel.
+campaign.items.na,Ná,Slingshot
+campaign.itemText.na,"Cái ná trẻ con, chạc ổi gọt tay. Mang nó: Ná cao su.","A child's slingshot, a hand-cut guava fork. Carrying it: Slingshot."
+campaign.items.ao_khoac_cu,Áo khoác cũ,Old coat
+campaign.itemText.ao_khoac_cu,"Áo khoác dài lấy từ phòng gửi đồ; túi còn mấy cuống vé của ai đó. +1 Thủ, +2 HP.","A long coat from the cloakroom; the pockets still hold someone's ticket stubs. +1 Defence, +2 HP."
+campaign.items.tram_go,Trâm gỗ,Wooden hairpin
+campaign.itemText.tram_go,Cây trâm gỗ trơn. Ai cài nó đi nhẹ hơn một chút. +1 Tốc.,A plain wooden hairpin. Whoever wears it walks a little lighter. +1 Speed.
+campaign.gearWeapon,Vũ khí,Weapon
+campaign.gearArmour,Áo,Armour
+campaign.gearAccessory,Phụ kiện,Accessory
+campaign.gearTitle,Trang bị,Gear

@@ -53,7 +53,7 @@ namespace umbra::campaign
         {
             const json &l = j["lines"][i];
             const std::string at = "lines[" + std::to_string(i) + "].";
-            Line line{Str(l, "id"), Str(l, "speaker"), Str(l, "face"), Str(l, "text"), Str(l, "sound"), Str(l, "jump"), {}, {}, {}, l.value("model", false), Str(l, "en")};
+            Line line{Str(l, "id"), Str(l, "speaker"), Str(l, "face"), Str(l, "text"), Str(l, "sound"), Str(l, "jump"), {}, {}, {}, l.value("model", false), Str(l, "en"), Str(l, "when")};
             if (!line.face.empty() && !KnownFace(line.face))
                 error(at + "face", "expected calm, talk, happy, angry, afraid, scheming or neardead");
             for (const json &who : l.value("leave", json::array()))

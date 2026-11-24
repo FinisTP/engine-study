@@ -24,6 +24,22 @@
           "face": "talk"
         }
       ]
+    },
+    {
+      "id": "w0",
+      "speaker": "mai",
+      "face": "calm",
+      "text": "Mẹ con ở nhà chắc đang hâm cơm lần thứ ba rồi đó. Ráng lên con.",
+      "en": "Your mother's probably warming the rice for the third time. Keep going, child.",
+      "when": "player.home=mother"
+    },
+    {
+      "id": "w1",
+      "speaker": "mai",
+      "face": "calm",
+      "text": "Không ai chờ thì bà chờ. Đi đâu cũng nhớ quay về đây ăn.",
+      "en": "If no one's waiting, I'll wait. Wherever you go, come back here to eat.",
+      "when": "player.home=nobody"
     }
   ]
 }

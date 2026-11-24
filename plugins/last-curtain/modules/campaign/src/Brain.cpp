@@ -3,6 +3,37 @@
 
 namespace umbra::campaign
 {
+    namespace
+    {
+        // A campaign fight never idles: when the faction bots would only end the turn, attack a foe in reach,
+        // else step nearer to the nearest one (board abilities are counted now, so no side can wait them out).
+        match::Action Press(const match::MatchDef &def, const match::MatchState &s, match::Action chosen)
+        {
+            using match::ActionKind;
+            const int me = match::Current(s);
+            if (chosen.kind != ActionKind::EndTurn || me < 0 || s.battle.on)
+                return chosen;
+            const match::Unit &u = s.units[static_cast<std::size_t>(me)];
+            const auto ok = [&](const match::Action &a) { return match::Check(def, s, a) == match::Why::Ok; };
+            int nearest = -1, far = 1 << 20;
+            for (int t = 0; t < static_cast<int>(s.units.size()); ++t)
+            {
+                const match::Unit &o = s.units[static_cast<std::size_t>(t)];
+                if (!match::Up(o) || o.faction < 0 || o.faction == u.faction || o.cell < 0 || (o.flags & match::flag::Strung))
+                    continue;
+                if (const match::Action hit{ActionKind::Attack, static_cast<std::int8_t>(t)}; ok(hit))
+                    return hit;
+                if (const int d = match::Steps(s.board, u.cell, o.cell); d >= 0 && d < far)
+                    nearest = t, far = d;
+            }
+            for (int d = 0; nearest >= 0 && d < 4; ++d)
+                if (const int n = match::Neighbour(s.board, u.cell, d); n >= 0 && match::Steps(s.board, n, s.units[static_cast<std::size_t>(nearest)].cell) < far &&
+                                                                       ok({ActionKind::Move, static_cast<std::int8_t>(d)}))
+                    return {ActionKind::Move, static_cast<std::int8_t>(d)};
+            return chosen;
+        }
+    }
+
     match::Action EnemyAction(const match::MatchDef &def, const BuiltStage &stage, const match::MatchState &s, match::BotLevel level)
     {
         const int me = match::Current(s);
@@ -25,8 +56,10 @@ namespace umbra::campaign
             if (!sees)
                 return hold;
         }
-        // 3. Otherwise the faction bots play it.
-        return match::ChooseAction(def, s, level);
+        // 3. Otherwise the faction bots play it (a tutorial's never idle).
+        // A boss holding a recruit's rope keeps its own counsel: it waits for you (the Rat and Ti).
+        const bool boss = (u.flags & match::flag::Boss) != 0 && s.mode.mustFree;
+        return stage.press && !boss ? Press(def, s, match::ChooseAction(def, s, level)) : match::ChooseAction(def, s, level);
     }
 
     match::Action PartyAction(const match::MatchDef &def, const BuiltStage &stage, const match::MatchState &s, match::BotLevel level)
@@ -42,7 +75,7 @@ namespace umbra::campaign
                 recruit = static_cast<int>(i);
         const match::Unit &u = s.units[static_cast<std::size_t>(me)];
         if (recruit < 0 || !s.mode.mustFree || s.battle.on || u.pending >= 0 || !s.cards.empty())
-            return match::ChooseAction(def, s, level);
+            return match::ChooseAction(def, s, level); // the party weighs its risks; only enemies press
         // 1. Cut when beside; attack the recruit when it stands.
         if (const Action cut{ActionKind::Cut, i8(recruit)}; ok(cut))
             return cut;

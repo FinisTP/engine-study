@@ -65,6 +65,7 @@ namespace umbra::match::inner
     void GainXp(const MatchDef &def, MatchState &s, int unit, int amount);
     int PowerOf(const MatchDef &def, const Unit &u, int slot); // the ability's power with this unit's upgrades
     int CostOf(const MatchDef &def, const Unit &u, int slot);  // ... its HP cost, never below 0
+    int UsesOf(const MatchDef &def, const MatchState &s, const Unit &u, int slot); // a board ability's uses a fight; 0: none counted (HP cost)
     Why CheckLevelUp(const MatchDef &def, const MatchState &s, int me, int choice);
     Why CheckBoardAbility(const MatchDef &def, const MatchState &s, int me, int slot, int target);
     Why CheckUseItem(const MatchDef &def, const MatchState &s, int me, int slot, int target);

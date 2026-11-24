@@ -2,16 +2,17 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "t2s-start",
-  "note": "Draft for the user's review (2026-11-24): T2s opens: Doctor Bao joins and teaches skills and their HP cost; his other skills wait in the notebook. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
+  "note": "T2s opens: Doctor Bao, brittle and guilty; skills and their costs. Rewritten for the player's own feelings and remembered choices (the user, 2026-11-24 23:57, note 28): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Mùi thuốc sát trùng vẫn còn trong căn phòng nhỏ sau cánh gà. Trên bàn, một cái khay. Trong khay, thứ gì đó đã thôi đập.",
-      "en": "The smell of antiseptic lingers in the small room behind the wings. On the table, a tray. In the tray, something that has stopped beating."
+      "text": "Mùi thuốc sát trùng vẫn còn trong căn phòng nhỏ sau cánh gà. Trên bàn, một cái khay. Trong khay, thứ gì đó đã thôi cựa quậy.",
+      "en": "The smell of antiseptic still hangs in the little room behind the wings. On the table, a tray. In the tray, something that has stopped twitching."
     },
     {
       "id": "b",
       "text": "Bác sĩ Bảo. Tôi khám cho cả đoàn hát này. Cả những người đã chết khi tôi ký giấy rằng họ khỏe.",
+      "en": "Doctor Bảo. I examined this whole troupe. Including the ones who died while my papers said they were well.",
       "speaker": "bao",
       "face": "calm",
       "enter": [
@@ -27,20 +28,49 @@
           "slot": 0,
           "face": "calm"
         }
-      ],
-      "en": "Doctor Bao. I examined this whole company. Even the ones who died after I signed them fit."
+      ]
+    },
+    {
+      "id": "b1",
+      "text": "Cậu vẫn có người chờ. Mạch của người có người chờ đập khác lắm. Đừng để nó chậm lại.",
+      "en": "Someone's still waiting for you. A pulse with someone waiting beats differently. Don't let it slow down.",
+      "speaker": "bao",
+      "face": "calm",
+      "when": "player.home=mother"
+    },
+    {
+      "id": "b2",
+      "text": "Không ai chờ cậu à. Tôi cũng vậy. Ta làm bạn với nhau một đoạn.",
+      "en": "No one waiting for you? Nor me. We can keep each other company a while.",
+      "speaker": "bao",
+      "face": "calm",
+      "when": "player.home=nobody"
     },
     {
       "id": "c",
-      "text": "Dao mổ của tôi cắt sâu hơn Đánh thường. Nhưng mỗi nhát nó lấy lại của tôi 1 HP. Dao nào cũng đòi máu.",
-      "speaker": "bao",
-      "face": "calm",
-      "en": "My scalpel cuts deeper than a basic attack. But every stroke takes 1 HP back from me. Every blade wants blood."
+      "text": "Ông ký giấy cho người còn sống? Sao ông làm vậy được?",
+      "en": "You signed papers for people who were still alive? How could you?",
+      "speaker": "player",
+      "face": "angry"
     },
     {
       "id": "d",
-      "text": "Đến lượt bác sĩ Bảo, bấm Kỹ năng để xem từng món làm gì và tốn bao nhiêu. Các kỹ năng khác của ông nằm trong Sổ tay ở quán.",
-      "en": "On Doctor Bao's turn, open Skills to see what each does and what it costs. His other skills wait in the notebook at the café."
+      "text": "Tôi không nhớ. Đó là điều tệ nhất. Tôi không nhớ mình đã viết gì.",
+      "en": "I don't remember. That's the worst of it. I don't remember what I wrote.",
+      "speaker": "bao",
+      "face": "calm"
+    },
+    {
+      "id": "e",
+      "text": "Dao mổ của tôi cắt sâu hơn Đánh thường. Nhưng mỗi nhát nó lấy lại của tôi 1 HP. Dao nào cũng đòi máu.",
+      "en": "My scalpel cuts deeper than a Basic attack. But every stroke takes 1 HP back from me. Every blade wants blood.",
+      "speaker": "bao",
+      "face": "calm"
+    },
+    {
+      "id": "f",
+      "text": "Bác sĩ Bảo đi trước. Đưa ông tới sát một cái bóng, chọn Đánh, rồi chọn Dao mổ. Các kỹ năng khác của ông nằm trong Sổ tay.",
+      "en": "Doctor Bảo goes first. Bring him beside a shadow, choose Attack, then Scalpel. His other skills wait in the Notebook."
     }
   ]
 }

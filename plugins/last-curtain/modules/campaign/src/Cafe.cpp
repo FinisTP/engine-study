@@ -233,6 +233,45 @@ namespace umbra::campaign
         return out;
     }
 
+    bool LoadQuests(const std::filesystem::path &file, const std::vector<StageDef> &stages, const Cast &cast, Quests &out, std::vector<core::Diagnostic> &d)
+    {
+        const std::size_t before = d.size();
+        const auto error = [&](const std::string &field, const std::string &message) { d.push_back({core::Severity::Error, "campaign.quests", file.string(), field, message}); };
+        std::ifstream in(file);
+        const nlohmann::json j = nlohmann::json::parse(in, nullptr, false);
+        if (!j.is_object() || j.value("format", "") != "umbra.lc-quests" || j.value("version", 0) != 1)
+            return error("format", "expected format umbra.lc-quests, version 1"), false;
+        Quests quests;
+        for (const nlohmann::json &q : j.value("quests", nlohmann::json::array()))
+        {
+            Quest quest{q.value("id", ""), "", q.value("talk", ""), q.value("stage", ""), q.value("door", false), q.value("brew", false),
+                        q.value("all", std::vector<std::string>{}), q.value("none", std::vector<std::string>{}), q.value("done", std::vector<std::string>{})};
+            const std::string at = "quests." + quest.id;
+            if (quest.id.empty())
+                error("quests", "a quest without an id");
+            if (!quest.talk.empty() && !cast.Find(quest.talk))
+                error(at + ".talk", "\"" + quest.talk + "\" is not in cast.csv");
+            if (!quest.stage.empty() && std::ranges::none_of(stages, [&](const StageDef &s) { return s.id == quest.stage; }))
+                error(at + ".stage", "\"" + quest.stage + "\" is not a stage");
+            if (quest.done.empty())
+                error(at + ".done", "expected the facts that finish it");
+            quests.list.push_back(std::move(quest));
+        }
+        if (d.size() != before)
+            return false;
+        out = std::move(quests);
+        return true;
+    }
+
+    const Quest *CurrentQuest(const Quests &quests, const Save &save)
+    {
+        const auto holds = [&](const std::string &f) { return Holds(save.facts, f); };
+        for (const Quest &q : quests.list)
+            if (std::ranges::all_of(q.all, holds) && std::ranges::none_of(q.none, holds) && std::ranges::none_of(q.done, holds))
+                return &q;
+        return nullptr;
+    }
+
     const Talk *IdleTalk(const Talks &talks, Save &save, const std::string &who)
     {
         // 1. The open default lines of this one, by file name.
@@ -283,7 +322,7 @@ namespace umbra::campaign
                                {"roster", save.roster}, {"rooms", save.rooms}, {"chapter", save.chapter}, {"riteUnlocked", save.riteUnlocked},
                                {"riteUsed", save.riteUsed}, {"storage", save.storage}, {"recipes", save.recipes}, {"taken", save.taken},
                                {"memories", save.memories}, {"talks", save.talks}, {"joined", save.joined}, {"facts", save.facts},
-                               {"versions", save.versions}, {"boosts", save.boosts}, {"slots", save.slots}, {"party", save.party}, {"skills", save.skills}};
+                               {"versions", save.versions}, {"boosts", save.boosts}, {"slots", save.slots}, {"party", save.party}, {"skills", save.skills}, {"gear", save.gear}};
         // 2. A temp file, then renamed over the old one.
         std::error_code ec;
         std::filesystem::create_directories(file.parent_path(), ec);
@@ -313,6 +352,7 @@ namespace umbra::campaign
             s.facts = j.value("facts", s.facts), s.versions = j.value("versions", s.versions), s.boosts = j.value("boosts", s.boosts);
             s.slots = j.value("slots", s.slots), s.party = j.value("party", s.party);
             s.skills = j.value("skills", s.skills);
+            s.gear = j.value("gear", s.gear);
             save = std::move(s);
             return true;
         }

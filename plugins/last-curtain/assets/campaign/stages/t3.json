@@ -24,7 +24,7 @@
         2
       ],
       "side": 1,
-      "level": 2,
+      "level": 1,
       "flags": [
         "boss"
       ]
@@ -33,18 +33,6 @@
       "who": "ghost_attacker",
       "at": [
         4,
-        1
-      ],
-      "side": 1,
-      "level": 2,
-      "behaviour": {
-        "kind": "passive"
-      }
-    },
-    {
-      "who": "ghost_speedster",
-      "at": [
-        7,
         1
       ],
       "side": 1,

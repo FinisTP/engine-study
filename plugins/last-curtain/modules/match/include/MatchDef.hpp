@@ -24,13 +24,13 @@ namespace umbra::match
     // Effect: a board ability that only does its effect; Passive: always on, its effect says what (Match.md "Effects").
     enum class AbilityClass : std::uint8_t { Strike, Shield, Heal, Hit, FirstStrike, Revive, Remove, GiveAp, Hasten, AfterHasten, Effect, Passive };
     // What an ability does besides its class, with `amount` (Match.md "Effects").
-    enum class AbilityEffect : std::uint8_t { None, Mark, Steal, Dart, Speedkill, DeathPaper, Rice, Alarm, FirstShot, HasteMove, HasteHeal, SeaWind, Footsteps };
+    enum class AbilityEffect : std::uint8_t { None, Mark, Steal, Dart, Speedkill, DeathPaper, Rice, Alarm, FirstShot, HasteMove, HasteHeal, SeaWind, Footsteps, Rally };
     enum class Tier : std::uint8_t { Weak, Strong, Great, Guardian };
     enum class Behaviour : std::uint8_t { Stay, Flee, Stage, Guard, Hunt };
     // Who a board ability may aim at: the target symbol beside it on screen.
     enum class Target : std::uint8_t { Enemy, Ally, Self, Monster, Room, Any };
     enum class ItemClass : std::uint8_t { HealItem, ExpGrant, Revive }; // Revive: amount = percent of max HP
-    enum class ItemFamily : std::uint8_t { Item, Ingredient, Keepsake }; // ingredients and keepsakes go to the cafe's storage
+    enum class ItemFamily : std::uint8_t { Item, Ingredient, Keepsake, Gear }; // ingredients and keepsakes go to the cafe's storage
     constexpr std::uint8_t useCafe = 1, useBoard = 2, useFight = 4; // where an item can be used (items.csv "use")
     enum class TreasureKind : std::uint8_t { Item, Essence, Xp, Heal };
     enum class CardKind : std::uint8_t { Learn, Stat, Upgrade };
@@ -52,6 +52,7 @@ namespace umbra::match
         AbilityClass kind = AbilityClass::Strike;
         Target target = Target::Enemy;
         int hpCost = 0, power = 0, range = 0;
+        int uses = 0; // board: times a fight where the mode counts uses (0: the mode's boardUses)
         int ap = 0; // action points it costs, paid first (board abilities only; Match.md "Biding")
         AbilityEffect effect = AbilityEffect::None;
         int amount = 0; // the effect's strength
@@ -175,6 +176,7 @@ namespace umbra::match
         int maxAp = 2, apPerTurn = 2;
         std::vector<std::int8_t> leaders; // a tutorial's: these act first, in this order, for the first `leadRounds` rounds
         int leadRounds = 0;
+        int boardUses = 0; // > 0: a board ability with an HP cost (or its own uses) is free, that many times a fight (the campaign)
     };
 
     inline constexpr int maxAbilities = 8, maxItems = 4; // slots in a Unit; rules.carry may not exceed maxItems

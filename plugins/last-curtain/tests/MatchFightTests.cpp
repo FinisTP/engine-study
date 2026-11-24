@@ -723,6 +723,57 @@ TEST_CASE("Mark: the target takes more damage until its next turn (campaign plan
     CHECK(s.units[2].marked == 0);
 }
 
+TEST_CASE("Rally: one with it on the same or a next square raises their side's defence there, its own too; not stacked (the user, 2026-11-24 23:57, note 20)", "[match][fight][effects]")
+{
+    MatchDef def = Data();
+    const int rally = AddEffect(def, "dong_long", Use::Passive, AbilityClass::Passive, Target::Ally, AbilityEffect::Rally, 2);
+    MatchState s = ::Fight(def);
+    s.units[2].flags = 0;
+    int ally = -1;
+    for (int i = 0; i < static_cast<int>(s.units.size()); ++i)
+        if (i != 2 && s.units[U(i)].faction == s.units[2].faction && Up(s.units[U(i)]))
+            ally = i;
+    REQUIRE(ally >= 0);
+    Give(s, ally, rally);
+    const int strike = s.units[1].abilities[0];
+    Put(s, ally, Beside(s, s.units[2].cell));
+    const int near = Damage(def, s, strike, 1, 2, 0);
+    s.units[U(ally)].cell = -1; // gone from the board: no rally
+    const int alone = Damage(def, s, strike, 1, 2, 0);
+    CHECK(std::max(def.rules.battle.minDamage, alone - 2) == near);
+    int holder = -1;
+    Put(s, ally, s.units[2].cell); // the same square
+    CHECK(RallyOf(def, s, 2, &holder) == 2);
+    CHECK(holder == ally);
+    CHECK(RallyOf(def, s, ally) == 2); // its own
+}
+
+TEST_CASE("Board uses: in a mode with boardUses, a costly board ability is free but runs out; elsewhere it costs HP (the user, 2026-11-24 23:57, note 16)", "[match][fight][effects]")
+{
+    MatchDef def = Data();
+    const int mark = AddEffect(def, "diagnose", Use::Board, AbilityClass::Effect, Target::Enemy, AbilityEffect::Mark, 1, 0, 6);
+    def.abilities[U(mark)].hpCost = 3;
+    for (const int uses : {0, 2})
+    {
+        MatchState s = ::Fight(def);
+        s.mode.boardUses = uses;
+        s.units[2].flags = 0;
+        TurnOf(def, s, 0);
+        Give(s, 0, mark);
+        Put(s, 0, Beside(s, s.units[2].cell));
+        const int hp = s.units[0].hp;
+        REQUIRE(Apply(def, s, {ActionKind::BoardAbility, maxAbilities - 1, 2}));
+        CHECK(s.units[0].hp == (uses > 0 ? hp : hp - 3));
+        if (uses == 0)
+            continue;
+        CHECK(s.units[0].used[maxAbilities - 1] == 1);
+        s.units[0].used[maxAbilities - 1] = 2; // both spent
+        REQUIRE(Apply(def, s, {ActionKind::EndTurn}));
+        TurnOf(def, s, 0);
+        CHECK(Check(def, s, {ActionKind::BoardAbility, maxAbilities - 1, 2}) == Why::NoUses);
+    }
+}
+
 TEST_CASE("Alarm: the target loses Speed until its next turn and acts later in the next round's order (campaign plan 4)", "[match][fight][effects]")
 {
     MatchDef def = Data();

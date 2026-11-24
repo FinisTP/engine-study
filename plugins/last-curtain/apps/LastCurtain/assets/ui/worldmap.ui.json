@@ -98,6 +98,12 @@
               "align": "center",
               "children": [
                 {
+                  "type": "text",
+                  "style": "warning",
+                  "text": "{words.questMark}",
+                  "visible": "{t.quest}"
+                },
+                {
                   "type": "image",
                   "image": "{t.icon}",
                   "size": [
@@ -199,6 +205,28 @@
           "style": "lcToast",
           "text": "{t.text}"
         }
+      },
+      {
+        "type": "stack",
+        "anchor": "top",
+        "offset": [
+          0,
+          20
+        ],
+        "style": "lcPanel",
+        "visible": "{map.quest}",
+        "children": [
+          {
+            "type": "text",
+            "style": "text",
+            "text": "{words.questLabel}: {map.quest}",
+            "wrap": true,
+            "size": [
+              620,
+              0
+            ]
+          }
+        ]
       }
     ]
   }

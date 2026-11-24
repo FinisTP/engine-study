@@ -187,6 +187,56 @@
                 "text": "{words.bag}"
               },
               {
+                "type": "text",
+                "style": "heading",
+                "text": "{words.gearTitle}",
+                "visible": "{book.detail.gear}"
+              },
+              {
+                "type": "list",
+                "items": "{book.detail.gear}",
+                "as": "g",
+                "direction": "horizontal",
+                "gap": 6,
+                "entry": {
+                  "type": "stack",
+                  "style": "lcSlot",
+                  "action": "pick",
+                  "arg": "gear:{g.slot}",
+                  "align": "center",
+                  "size": [
+                    132,
+                    84
+                  ],
+                  "clip": true,
+                  "gap": 2,
+                  "selected": "{g.picked}",
+                  "children": [
+                    {
+                      "type": "text",
+                      "style": "muted",
+                      "text": "{g.kind}"
+                    },
+                    {
+                      "type": "image",
+                      "image": "{g.icon}",
+                      "size": [
+                        28,
+                        28
+                      ],
+                      "visible": "{g.icon}"
+                    },
+                    {
+                      "type": "text",
+                      "style": "small",
+                      "text": "{g.label}",
+                      "wrap": true,
+                      "textAlign": "center"
+                    }
+                  ]
+                }
+              },
+              {
                 "type": "list",
                 "items": "{book.detail.slots}",
                 "as": "s",

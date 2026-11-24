@@ -24,6 +24,14 @@
           "face": "calm"
         }
       ]
+    },
+    {
+      "id": "w0",
+      "speaker": "bao",
+      "face": "calm",
+      "text": "Hôm trước cậu tiễn cái bóng kia tử tế. Tôi ước có ai tiễn tôi như vậy.",
+      "en": "You saw that shadow off kindly. I wish someone would do that for me.",
+      "when": "player.rite=kind"
     }
   ]
 }

@@ -60,9 +60,12 @@ int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const
     // 2. The hooks: a fresh fight, the enemy brain, the scenes between beats.
     campaign::BuiltStage built;
     campaign::Moments moments;
-    campaign::Facts facts;
+    campaign::Facts facts = save ? save->facts : campaign::Facts{}; // earlier choices: lines may answer them (note 28)
+    const campaign::Facts known = facts;
     std::uint64_t tries = seed ? seed : static_cast<std::uint64_t>(std::chrono::system_clock::now().time_since_epoch().count());
     MatchHooks hooks;
+    // The theme by the kind of fight (note 17): the stage's own, else tutorial, skirmish or a zodiac's.
+    hooks.music = !stage.music.empty() ? stage.music : stage.kind == "skirmish" ? "fight_skirmish" : stage.id.starts_with("t") ? "fight_tutorial" : "fight_zodiac";
     // 3. Names from the cast (the player's own, else the nameless default); spawned units get theirs too.
     const auto names = [&] {
         std::vector<std::string> out;
@@ -112,7 +115,12 @@ int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const
             if (RunScene(game, assets, scene, "", player, facts, {}, 0, board) == 0) // over the board, not a backdrop
                 return;
         if (out && play.State().over && play.Quiet())
+        {
             *out = built, ended = true;
+            for (const auto &[key, value] : facts) // what was chosen here, for the save
+                if (!known.contains(key) || known.at(key) != value)
+                    out->said[key] = value;
+        }
     };
     hooks.setup = [&](MatchPlay &play) { play.SetCast(names(), sprites()), play.SetHeights(built.height), play.SetStage(stage.title), play.SetGuide(GuideFor(stage, built)); };
     return RunMatch(game, assets, seed, false, capture, frames, zoom, nullptr, 0, {}, &hooks);

@@ -11,12 +11,25 @@
         "items": "{room.spots}",
         "as": "p",
         "entry": {
-          "type": "button",
-          "style": "lcPlate",
+          "type": "stack",
+          "style": "plain",
+          "align": "center",
           "at": "{p.at}",
-          "text": "{p.name}",
-          "action": "use",
-          "arg": "{p.kind}"
+          "children": [
+            {
+              "type": "text",
+              "style": "warning",
+              "text": "{words.questMark}",
+              "visible": "{p.quest}"
+            },
+            {
+              "type": "button",
+              "style": "lcPlate",
+              "text": "{p.name}",
+              "action": "use",
+              "arg": "{p.kind}"
+            }
+          ]
         }
       },
       {
@@ -29,6 +42,12 @@
           "align": "center",
           "at": "{l.at}",
           "children": [
+            {
+              "type": "text",
+              "style": "warning",
+              "text": "{words.questMark}",
+              "visible": "{l.quest}"
+            },
             {
               "type": "button",
               "style": "lcPlate",
@@ -146,6 +165,17 @@
             ],
             "text": "{words.door}",
             "action": "leave"
+          },
+          {
+            "type": "text",
+            "style": "warning",
+            "text": "{words.questLabel}: {hub.quest}",
+            "wrap": true,
+            "size": [
+              350,
+              0
+            ],
+            "visible": "{hub.quest}"
           }
         ]
       },

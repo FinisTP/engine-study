@@ -160,6 +160,26 @@ TEST_CASE("The typewriter shows whole letters, then Advance completes the line a
     CHECK(p.SpeakerName() == "L\xe1\xbb\x87 Thanh");
 }
 
+TEST_CASE("A line with \"when\" plays only when the facts say so: small echoes of earlier choices (the user, 2026-11-24 23:57, note 28)")
+{
+    campaign::Scene scene;
+    scene.lines = {{"a", "", "", "first"}, {"b", "", "", "angry echo"}, {"c", "", "", "afraid echo"}, {"d", "", "", "last"}};
+    scene.lines[1].when = "player.t1=angry";
+    scene.lines[2].when = "player.t1=afraid";
+    const campaign::Cast cast = TheCast();
+    campaign::Facts facts{{"player.t1", "afraid"}};
+    campaign::ScenePlayer p(scene, cast, {"Lan", "female"}, facts);
+    std::vector<std::string> seen;
+    for (int i = 0; i < 10 && !p.Done(); ++i)
+    {
+        p.Advance();
+        seen.push_back(p.Shown());
+        p.Advance();
+    }
+    CHECK(std::ranges::find(seen, std::string("afraid echo")) != seen.end());
+    CHECK(std::ranges::find(seen, std::string("angry echo")) == seen.end());
+}
+
 TEST_CASE("Portraits come and go; the speaker is lit, narration lights nobody")
 {
     const campaign::Scene scene = TestScene();
@@ -306,7 +326,7 @@ TEST_CASE("Class lines by level, and units made from the cast with their adjustm
     CHECK(ti.move == 4);
     // 3. Enemies: a zodiac's attack and HP x1.33, an ordinary ghost's x0.6 (rounded).
     const match::Unit rat = campaign::MakeUnit(def, cast, growth, "rat", 3, 1, true);
-    CHECK(rat.attack == 7); // (6 - 1 of its own) x 1.33
+    CHECK(rat.attack == 4); // (6 - 3 of its own) x 1.33 (slice 1 wins at least 90%, the user 2026-11-25)
     CHECK(rat.maxHp == 32);
     CHECK(rat.faction == 1);
     const match::Unit ghost = campaign::MakeUnit(def, cast, growth, "ghost_attacker", 3, 1, true);
@@ -1001,6 +1021,116 @@ TEST_CASE("The campaign save: a round trip, a wrong version refused, a corrupt f
     CHECK(back.player.name == "Lan");
 }
 
+TEST_CASE("Spoils: T2's first win gives everything Mai's chè needs; Le Thanh then teaches it and opens the brewing (the user, 2026-11-24 23:57, note 13)")
+{
+    const match::MatchDef def = MatchData();
+    const std::vector<campaign::StageDef> stages = TheStages();
+    const campaign::StageDef t2 = *std::ranges::find(stages, std::string("t2"), &campaign::StageDef::id);
+    campaign::Save save;
+    save.roster = {{"player", 2, 0}, {"mai", 2, 0}};
+    campaign::BuiltStage b = campaign::BuildStage(def, TheCast(), TheGrowth(), t2, {{"player", 2, {}}, {"mai", 2, {}}}, 0, {}, 3);
+    b.state.over = true, b.state.winner = 0;
+    // 1. The first win: the chè's ingredients, all of them; a second win gives none again.
+    campaign::WinStage(def, save, t2, b, stages);
+    const campaign::Recipes recipes = TheRecipes(); // kept: a pointer into a temporary would dangle
+    const campaign::Recipe *che = recipes.Find("che_dau_xanh");
+    REQUIRE(che != nullptr);
+    for (const auto &[item, count] : che->needs)
+        CHECK(save.storage[item] >= count);
+    const auto before = save.storage;
+    campaign::WinStage(def, save, t2, b, stages);
+    CHECK(save.storage == before);
+    // 2. Le Thanh's brewing lesson opens after T2: it teaches the chè and opens the brewing.
+    campaign::Talks talks;
+    std::vector<core::Diagnostic> d;
+    REQUIRE(campaign::LoadTalks(data / "talks", data / "scenes", TheCast(), talks, d));
+    const campaign::Talk *lesson = nullptr;
+    for (const campaign::Talk *t : campaign::OpenTalks(talks, save, 99))
+        if (t->id == "lethanh-brew")
+            lesson = t;
+    REQUIRE(lesson != nullptr);
+    CHECK(lesson->then == "brew");
+    CHECK(std::ranges::find(lesson->teaches, std::string("che_dau_xanh")) != lesson->teaches.end());
+    // 3. The chè brings back Mai's memory, which upgrades Tend.
+    campaign::Memories memories;
+    REQUIRE(campaign::LoadMemories(data / "memories.json", data / "scenes", TheRecipes(), def, memories, d));
+    REQUIRE(memories.byRecruit.contains("mai"));
+    CHECK(memories.byRecruit.at("mai").front().upgrade == "tend");
+    CHECK(memories.byRecruit.at("mai").front().from == "che_dau_xanh");
+}
+
+TEST_CASE("Quests: one line to follow at a time, with its target: a person, the door, a stage on the map (the user, 2026-11-24 23:57, note 25)")
+{
+    campaign::Quests quests;
+    std::vector<core::Diagnostic> d;
+    REQUIRE(campaign::LoadQuests(data / "quests.json", TheStages(), TheCast(), quests, d));
+    CHECK(d.empty());
+    Text().Fill(quests);
+    campaign::Save save;
+    CHECK(campaign::CurrentQuest(quests, save) == nullptr); // before T1: nothing yet
+    // 1. After T1: talk to Le Thanh; then the door, with T2 marked on the map.
+    save.facts["won:t1"] = "1";
+    const campaign::Quest *q = campaign::CurrentQuest(quests, save);
+    REQUIRE(q != nullptr);
+    CHECK(q->talk == "lethanh");
+    CHECK_FALSE(q->text.empty());
+    save.facts["talked:lethanh-first"] = "1";
+    q = campaign::CurrentQuest(quests, save);
+    REQUIRE(q != nullptr);
+    CHECK(q->door);
+    CHECK(q->stage == "t2");
+    // 2. After T2: Le Thanh's brewing lesson, the che for Ba Mai, then T2s.
+    save.facts["won:t2"] = "1";
+    CHECK(campaign::CurrentQuest(quests, save)->talk == "lethanh");
+    save.facts["talked:lethanh-brew"] = "1";
+    CHECK(campaign::CurrentQuest(quests, save)->brew);
+    save.facts["mai.memory1"] = "a";
+    CHECK(campaign::CurrentQuest(quests, save)->stage == "t2s");
+    // 3. A broken file is named.
+    campaign::Quests bad;
+    CHECK_FALSE(campaign::LoadQuests(Write("quests.json", R"({"format":"umbra.lc-quests","version":1,"quests":[{"id":"x","stage":"nowhere"}]})"), TheStages(), TheCast(), bad, d));
+}
+
+TEST_CASE("Gear: a weapon carries its signature skill, armour and accessories give stats; worn from storage, taken off back to it (the user, 2026-11-24 23:57, note 30)")
+{
+    const match::MatchDef def = MatchData();
+    campaign::Skills skills;
+    std::vector<core::Diagnostic> d;
+    REQUIRE(campaign::LoadSkills(data / "skills.json", def, skills, d));
+    CHECK(d.empty());
+    campaign::Save save;
+    save.roster = {{"player", 2, 0}, {"bao", 2, 0}};
+    // 1. The start: the player holds the knife (Rach), Bao his scalpel; their skill is not in the four slots.
+    CHECK(campaign::GearOf(skills, save, "player")[0] == "dao");
+    CHECK(campaign::GearOf(skills, save, "bao")[0] == "dao_mo");
+    const std::vector<std::string> known{"basic", "dao_mo", "chan_doan", "giay_chung_tu"};
+    const std::vector<std::string> carried = campaign::Loadout(skills, save, "bao", known, 3);
+    CHECK(std::ranges::find(carried, std::string("dao_mo")) == carried.end());
+    CHECK_FALSE(campaign::Equip(skills, save, "bao", known, 3, "dao_mo"));
+    // 2. Into a fight: the weapon's skill is carried, armour adds its numbers.
+    save.storage["ao_khoac_cu"] = 1;
+    REQUIRE(campaign::Wear(def, skills, save, "player", "ao_khoac_cu"));
+    CHECK_FALSE(campaign::Wear(def, skills, save, "bao", "ao_khoac_cu")); // only one, already worn
+    const campaign::StageDef st = TheStages().front();
+    campaign::BuiltStage b = campaign::BuildStage(def, TheCast(), TheGrowth(), st, {{"player", 2, {}}}, 0, {}, 3);
+    const int defence = b.state.units[0].defence;
+    campaign::ApplySave(def, TheRecipes(), save, b, &skills);
+    CHECK(b.state.units[0].defence == defence + skills.gear.at("ao_khoac_cu").defence);
+    const auto has = [&](const match::Unit &u, const std::string &id) {
+        return std::ranges::any_of(u.abilities, [&](int a) { return a >= 0 && def.abilities[static_cast<std::size_t>(a)].id == id; });
+    };
+    CHECK(has(b.state.units[0], "slash"));
+    // 3. Taken off: the slot empties, the skill goes with it, the coat is free again.
+    REQUIRE(campaign::TakeOff(skills, save, "player", 1));
+    CHECK(campaign::GearOf(skills, save, "player")[1].empty());
+    CHECK(campaign::Wear(def, skills, save, "bao", "ao_khoac_cu"));
+    REQUIRE(campaign::TakeOff(skills, save, "player", 0)); // the knife: Rach is gone
+    campaign::BuiltStage c = campaign::BuildStage(def, TheCast(), TheGrowth(), st, {{"player", 2, {}}}, 0, {}, 3);
+    campaign::ApplySave(def, TheRecipes(), save, c, &skills);
+    CHECK_FALSE(has(c.state.units[0], "slash"));
+    CHECK(save.storage["dao"] == 1);
+}
+
 TEST_CASE("Progress: a win shares XP (capped in skirmishes), keeps finds and refills skirmishes; a loss keeps only the rite's use (campaign plan 7)")
 {
     const match::MatchDef def = MatchData();
@@ -1253,16 +1383,17 @@ TEST_CASE("Skills: unlock levels, a starting loadout, four at most, only unlocke
     CHECK_FALSE(skills.lore.at("dao_mo").empty());
     CHECK(campaign::UnlockLevel(skills, "giay_chung_tu") == 3);
     CHECK(campaign::UnlockLevel(skills, "dao_mo") == 1);
-    // 2. Bao starts with two (the tutorial leaves the rest for the player); the save changes that.
+    // 2. Bao starts with the basic attack (his scalpel comes with the weapon, note 30; the tutorial leaves the rest
+    //    for the player); the save changes that.
     campaign::Save save;
-    CHECK(campaign::Loadout(skills, save, "bao", known, 2) == std::vector<std::string>{"basic", "dao_mo"});
+    CHECK(campaign::Loadout(skills, save, "bao", known, 2) == std::vector<std::string>{"basic"});
     CHECK(campaign::Equip(skills, save, "bao", known, 2, "chan_doan"));
-    CHECK(campaign::Loadout(skills, save, "bao", known, 2) == std::vector<std::string>{"basic", "dao_mo", "chan_doan"});
+    CHECK(campaign::Loadout(skills, save, "bao", known, 2) == std::vector<std::string>{"basic", "chan_doan"});
     CHECK_FALSE(campaign::Equip(skills, save, "bao", known, 2, "giay_chung_tu")); // locked until level 3
     CHECK_FALSE(campaign::Equip(skills, save, "bao", known, 2, "chan_doan"));     // already carried
     CHECK_FALSE(campaign::Equip(skills, save, "bao", known, 2, "slash"));         // not his
     CHECK(campaign::Equip(skills, save, "bao", known, 3, "giay_chung_tu"));
-    CHECK(campaign::Unequip(skills, save, "bao", known, 3, "dao_mo"));
+    CHECK_FALSE(campaign::Equip(skills, save, "bao", known, 3, "dao_mo")); // the scalpel's: only with the weapon
     CHECK(campaign::Loadout(skills, save, "bao", known, 3) == std::vector<std::string>{"basic", "chan_doan", "giay_chung_tu"});
     CHECK_FALSE(campaign::Unequip(skills, save, "bao", known, 3, "dao_mo")); // not carried
     // 3. Four at most; someone with no starting loadout carries the first four unlocked.
@@ -1276,7 +1407,7 @@ TEST_CASE("Skills: unlock levels, a starting loadout, four at most, only unlocke
     campaign::ApplySave(def, TheRecipes(), save, b, &skills);
     const std::size_t bao = static_cast<std::size_t>(std::ranges::find(b.who, std::string("bao")) - b.who.begin());
     REQUIRE(bao < b.state.units.size());
-    CHECK(ids(b.state.units[bao]) == std::vector<std::string>{"basic", "chan_doan", "giay_chung_tu"});
+    CHECK(ids(b.state.units[bao]) == std::vector<std::string>{"basic", "chan_doan", "giay_chung_tu", "dao_mo"}); // the weapon's last
 }
 
 TEST_CASE("Enemies never revive in a stage: more come as reinforcements instead (feedback 2026-11-24 16:57, note 7)")

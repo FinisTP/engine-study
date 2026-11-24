@@ -56,7 +56,7 @@ const char *MatchPlay::LogName(LogKind kind)
 const char *MatchPlay::WhyName(Why why)
 {
     static const char *names[] = {"Ok", "NotYourTurn", "NoMovesLeft", "Blocked", "AlreadyActed", "OutOfRange", "OwnSide", "TooCostly",
-                                  "NotOnStage", "NothingToPerform", "NothingHere", "BagFull", "MustChoose", "Over", "FullHp", "Off", "Fallen", "NotFallen", "NoAp", "OnlyPlayer", "NotStrung", "NoRite", "NotHere"};
+                                  "NotOnStage", "NothingToPerform", "NothingHere", "BagFull", "MustChoose", "Over", "FullHp", "Off", "Fallen", "NotFallen", "NoAp", "OnlyPlayer", "NotStrung", "NoRite", "NotHere", "NoUses"};
     return names[static_cast<int>(why)];
 }
 
@@ -141,6 +141,28 @@ void MatchPlay::Tell(const LogEntry &e)
         toldHp_[U(e.b)] = std::min<int>(s_.units[U(e.b)].maxHp, toldHp_[U(e.b)] + e.c);
     else if (e.kind == LogKind::Down && U(e.a) < toldHp_.size())
         toldHp_[U(e.a)] = 0;
+    // 3. A passive that worked shows its card, stacked at the top left (note 20).
+    const auto passive = [&](int unit, AbilityEffect effect) {
+        for (const auto a : unit >= 0 ? s_.units[U(unit)].abilities : decltype(s_.units[0].abilities){})
+            if (a >= 0 && def_.abilities[U(a)].use == Use::Passive && def_.abilities[U(a)].effect == effect)
+                return def_.abilities[U(a)].amount;
+        return 0;
+    };
+    const auto card = [&](const char *key, int who, int n) {
+        passives_.push_back({Fill(Word("passive", key), {{"who", Name(who)}, {"n", std::to_string(n)}}), 3.0F});
+        if (passives_.size() > 4)
+            passives_.erase(passives_.begin());
+    };
+    if (e.kind == LogKind::Blow && e.a >= 0 && e.b >= 0)
+    {
+        if (int holder = -1; const int r = umbra::match::RallyOf(def_, s_, e.b, &holder))
+            card("rally", holder, r);
+        if (const int k = passive(e.a, AbilityEffect::Speedkill); k > 0 && s_.units[U(e.b)].speed < s_.units[U(e.a)].speed)
+            card("speedkill", e.a, k);
+    }
+    if (e.kind == LogKind::Down && e.b >= 0)
+        if (const int heal = passive(e.b, AbilityEffect::DeathPaper); heal > 0)
+            card("deathpaper", e.b, heal);
 }
 
 void MatchPlay::Play(float dt)
@@ -228,6 +250,11 @@ bool MatchPlay::Reveal()
     }
     if (e.kind == LogKind::Battle || e.kind == LogKind::Blow || e.kind == LogKind::Down)
         fightHold_ = options_.beatSeconds;
+    if (boardActs_.contains(shown_ - 1) && e.a >= 0 && e.b >= 0 && e.b != e.a && !s_.battle.on) // a board ability: onto the battle stage, then back
+    {
+        fight_[0] = e.a, fight_[1] = e.b, fighters_ = {e.a, -1, e.b, -1};
+        fightHold_ = std::max(options_.beatSeconds, sequence ? sequence->length + 0.4F : 0.0F);
+    }
     wait_ = e.kind == LogKind::Moved ? options_.plainBeatSeconds : e.kind == LogKind::Blow || e.kind == LogKind::Battle ? options_.blowSeconds : options_.beatSeconds;
     if (sequence) // the sequence's cues move the camera and hold the line its length
     {
@@ -275,6 +302,8 @@ void MatchPlay::Act(const Action &action)
         for (std::size_t i = before; i < s_.log.size() && !id.empty(); ++i)
             if (s_.log[i].a == me)
                 abilityOf_[i] = id;
+        if (action.kind == ActionKind::BoardAbility && before < s_.log.size()) // its first line plays on the battle stage (note 16)
+            boardActs_.insert(before);
         return;
     }
     Apply(def_, s_, action);
@@ -348,6 +377,9 @@ void MatchPlay::Update(float dt)
         return;
     for (Toasted &t : toasts_)
         t.left -= dt;
+    for (Toasted &t : passives_)
+        t.left -= dt;
+    std::erase_if(passives_, [](const Toasted &t) { return t.left <= 0.0F; });
     std::erase_if(toasts_, [](const Toasted &t) { return t.left <= 0.0F; });
     diceLeft_ = std::max(0.0F, diceLeft_ - dt);
     Play(dt);
@@ -659,6 +691,9 @@ nlohmann::json MatchPlay::UiData() const
             j["choices"].push_back({{"unit", t}, {"name", Name(t)}, {"index", j["choices"].size()}});
         }
     }
+    j["passives"] = nlohmann::json::array();
+    for (const Toasted &t : passives_)
+        j["passives"].push_back({{"text", t.text}});
     j["forecast"] = Forecast();
     if (s_.battle.on || fight_[0] >= 0)
         j["battle"] = BattleData();
@@ -1023,11 +1058,14 @@ nlohmann::json MatchPlay::Actions() const
         {
             const AbilityDef &a = def_.abilities[U(id)];
             Why w = any([&](int t) { return Action{ActionKind::BoardAbility, static_cast<std::int8_t>(slot), static_cast<std::int8_t>(t)}; });
-            if (w != Why::Ok && !s_.now.acted && u.hp <= a.hpCost)
+            // A campaign fight counts uses in place of the HP cost (note 16): the note says how many are left.
+            const int limit = s_.mode.boardUses > 0 && (a.hpCost > 0 || a.uses > 0) ? (a.uses > 0 ? a.uses : s_.mode.boardUses) : 0;
+            if (w != Why::Ok && !s_.now.acted && limit == 0 && u.hp <= a.hpCost)
                 w = Why::TooCostly;
+            const std::string note = limit > 0 ? Fill(Word("actions", "usesLeft"), {{"n", std::to_string(std::max(0, limit - u.used[U(slot)]))}}) : a.hpCost > 0 ? hp(a.hpCost) : "";
             // What it does: its story first when the stage knows one ("lore"), then its numbers in words.
             const std::string lore = Word("lore", a.id), text = AbilityText(id);
-            list.push_back({{"id", "ability:" + std::to_string(slot)}, {"label", a.name}, {"note", a.hpCost > 0 ? hp(a.hpCost) : ""}, {"target", static_cast<int>(a.target)},
+            list.push_back({{"id", "ability:" + std::to_string(slot)}, {"label", a.name}, {"note", note}, {"target", static_cast<int>(a.target)},
                             {"tip", lore.empty() ? text : lore + "\n" + text},
                             {"enabled", w == Why::Ok}, {"off", w != Why::Ok}, {"why", w == Why::Ok ? "" : w == Why::NothingHere ? Word("why", "NoTarget") : WhyText(w)}});
         }
@@ -1189,6 +1227,8 @@ std::string MatchPlay::AbilityText(int ability) const
                                   {{"power", dice}, {"range", std::to_string(a.range)}, {"amount", std::to_string(a.amount)},
                                    {"reach", Word("abilityText", a.reach == RangeBy::Straight ? "straight" : "walk")}, {"where", Word("abilityText", a.use == Use::Board ? "board" : "battle")}});
     const std::string extra = a.effect == umbra::match::AbilityEffect::Rice ? " " + Fill(Word("abilityText", "rice"), {{"amount", std::to_string(a.amount)}}) : "";
+    if (s_.mode.boardUses > 0 && a.use == Use::Board && (a.hpCost > 0 || a.uses > 0)) // a campaign fight: uses, not HP
+        return text + extra + " " + Fill(Word("abilityText", "uses"), {{"n", std::to_string(a.uses > 0 ? a.uses : s_.mode.boardUses)}});
     return a.hpCost > 0 ? text + extra + " " + Fill(Word("abilityText", "cost"), {{"cost", std::to_string(a.hpCost)}}) : text + extra; // no cost, no words for it
 }
 

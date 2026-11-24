@@ -186,8 +186,10 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
         if (campaign::StageDef s; loaded && campaign::LoadStage(f.path(), cast, def, folder / "scenes", s, d))
             stages.push_back(s);
     loaded = loaded && campaign::LoadMap(folder / "map.json", stages, map, d);
+    campaign::Quests quests; // the quest line (note 25); none if the file is missing or broken
+    (void)campaign::LoadQuests(folder / "quests.json", stages, cast, quests, d); // its mistakes are printed with the rest
     if (CampaignText text; text.Load(assets / "localization.csv")) // display text (Localization.md "Data")
-        text.Fill(cast), text.Fill(stages), text.Fill(map);
+        text.Fill(cast), text.Fill(stages), text.Fill(map), text.Fill(quests);
     nlohmann::json words;
     words = umbra::night::LoadWords(assets / "localization.csv", "campaign", umbra::night::EnglishChosen());
     for (const umbra::core::Diagnostic &e : d)
@@ -254,6 +256,8 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
             return save = before, "map"; // retreat: nothing from the stage is kept
         if (ran != 3)
             return "quit";
+        for (const auto &[key, value] : out.said) // the choices made in its scenes (note 28)
+            save.facts[key] = value;
         const campaign::StageDef &stage = *stageOf(id);
         if (out.state.winner == 0)
         {
@@ -307,11 +311,14 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
             // The map: select a ticket (the panel), enter an open one, or back to the café.
             const auto view = [&](nlohmann::json &data) {
                 data["map"]["tickets"] = nlohmann::json::array();
+                const campaign::Quest *quest = campaign::CurrentQuest(quests, save);
+                data["map"]["quest"] = quest ? quest->text : "";
                 for (const campaign::TicketView &t : campaign::MapView(map, save, stages))
                 {
                     const std::string mark = words.value(t.mark == "cleared" ? "markCleared" : t.mark == "next" ? "markNext" : t.mark == "skirmish" ? "markSkirmish" : "markLocked", "?");
                     data["map"]["tickets"].push_back({{"id", t.id}, {"name", t.mark == "unknown" ? "?" : t.name}, {"markText", mark}, {"icon", "art/ui/campaign/icon/mark_" + (t.mark == "locked" ? std::string("unknown") : t.mark) + ".png"},
-                                                      {"u", t.x}, {"v", t.y}, {"selected", t.id == selected}, {"closed", !t.open}});
+                                                      {"u", t.x}, {"v", t.y}, {"selected", t.id == selected}, {"closed", !t.open},
+                                                      {"quest", quest && quest->stage == t.id}});
                     if (t.id == selected)
                     {
                         const auto s = stageOf(t.id);

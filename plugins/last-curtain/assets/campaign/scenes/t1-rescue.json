@@ -2,11 +2,12 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "t1-rescue",
-  "note": "Draft for the user's review (2026-11-24, written overnight). T1 ends: Le Thanh finds the player and leads them to the cafe. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
+  "note": "T1 ends: Le Thanh finds the player; the way home is named (player.trust). Rewritten for the player's own feelings and remembered choices (the user, 2026-11-24 23:57, note 28): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
-      "text": "Cái bóng cuối cùng vỡ ra như túi da căng nước, rồi tan thành khói nhang.",
+      "text": "Cái bóng cuối cùng vỡ ra như túi da căng nước, rồi tan thành khói nhang. Tay {player} run tới mức không nắm nổi.",
+      "en": "The last shadow bursts like a skin full of water, then thins into incense smoke. {player}'s hands shake too hard to make a fist.",
       "enter": [
         {
           "who": "player",
@@ -14,12 +15,12 @@
           "slot": 0,
           "face": "afraid"
         }
-      ],
-      "en": "The last shadow bursts like a skin bag full of water, then thins into incense smoke."
+      ]
     },
     {
       "id": "b",
       "text": "Tiếng guốc gõ trên bậc đá. Người phụ nữ áo cưới đỏ đã đứng đó từ lúc nào, và đã nhìn từ lúc nào.",
+      "en": "Clogs click on the stone steps. The woman in the red wedding dress has been standing there for a while, and watching for a while.",
       "enter": [
         {
           "who": "lethanh",
@@ -27,37 +28,90 @@
           "slot": 0,
           "face": "calm"
         }
-      ],
-      "en": "Clogs tap on the stone steps. The woman in red has been standing there all along, and watching all along."
+      ]
     },
     {
       "id": "c",
       "text": "{player} đánh khéo lắm. Khách của tôi ít ai còn đủ tay chân tới giờ này.",
+      "en": "You fought well, {player}. Few of my guests still have all their limbs by this hour.",
       "speaker": "lethanh",
-      "face": "talk",
-      "model": true,
-      "en": "Nicely done, {player}. Few of my guests still have all their limbs by this hour."
+      "face": "calm",
+      "model": true
+    },
+    {
+      "id": "c1",
+      "text": "Lúc nãy {anh/chị} giận dữ lắm. Giữ lấy cơn giận đó. Ở đây, người buồn chết trước.",
+      "en": "You were furious just now. Hold on to that anger. Here, the sad ones die first.",
+      "speaker": "lethanh",
+      "face": "calm",
+      "when": "player.t1=angry"
+    },
+    {
+      "id": "c2",
+      "text": "Lúc nãy {anh/chị} xin nó tha. Nó không biết tha đâu. Tôi thì biết.",
+      "en": "Just now you begged it for mercy. It doesn't know mercy. I do.",
+      "speaker": "lethanh",
+      "face": "calm",
+      "when": "player.t1=afraid"
     },
     {
       "id": "d",
-      "text": "Mấy thứ đó là gì vậy?",
+      "text": "Tôi không cần khéo. Tôi cần ra khỏi đây. Cửa nằm ở đâu?",
+      "en": "I don't need to fight well. I need to get out of here. Where's the door?",
       "speaker": "player",
-      "face": "afraid",
-      "en": "What were those things?"
+      "face": "angry"
     },
     {
       "id": "e",
-      "text": "Bóng của con Chuột, kẻ giữ phòng vé. Nó gặm nợ của người ta. Gặm luôn cả người.",
+      "text": "Cửa nhà hát này buộc bằng mười hai sợi dây. Mỗi sợi là một con thú giữ. Cắt hết mười hai, cửa sẽ mở ra phía ngoài.",
+      "en": "This theatre's door is tied with twelve threads. A beast holds each one. Cut all twelve, and the door opens outward.",
       "speaker": "lethanh",
-      "face": "calm",
-      "en": "Shadows of the Rat, keeper of the box office. It gnaws on people's debts. And on the people too."
+      "face": "calm"
     },
     {
       "id": "f",
-      "text": "Đi theo tôi. Dưới hầm có một quán nước nhỏ. Ở đó, người chết ngồi uống với người chưa chết.",
+      "text": "Con Chuột giữ sợi đầu tiên. {anh/chị} vừa gặp bóng của nó.",
+      "en": "The Rat holds the first thread. You just met its shadows.",
       "speaker": "lethanh",
-      "face": "happy",
-      "en": "Follow me. There's a small café in the cellar. There, the dead drink with those not dead yet."
+      "face": "calm",
+      "choices": [
+        {
+          "text": "Được. Mười hai con. Rồi tôi về.",
+          "en": "Fine. Twelve. Then I go home.",
+          "fact": "player.trust",
+          "value": "believe",
+          "jump": "g1"
+        },
+        {
+          "text": "Sao cô biết mấy chuyện đó? Cô là ai?",
+          "en": "How do you know all this? Who are you?",
+          "fact": "player.trust",
+          "value": "doubt",
+          "jump": "g2"
+        }
+      ]
+    },
+    {
+      "id": "g1",
+      "text": "Người nào cũng nói vậy ở con số một.",
+      "en": "Everyone says that at number one.",
+      "speaker": "lethanh",
+      "face": "calm",
+      "jump": "h"
+    },
+    {
+      "id": "g2",
+      "text": "Tôi là người còn ở lại hát khi đèn đã tắt. Vậy đủ chưa?",
+      "en": "I'm the one who stayed to sing after the lights went out. Is that enough?",
+      "speaker": "lethanh",
+      "face": "scheming"
+    },
+    {
+      "id": "h",
+      "text": "Đi theo tôi. Dưới hầm có một quán nước nhỏ. Ở đó, người chết ngồi uống với người chưa chết.",
+      "en": "Follow me. There's a small café below. The dead sit there drinking with the not-yet-dead.",
+      "speaker": "lethanh",
+      "face": "calm"
     }
   ]
 }

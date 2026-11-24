@@ -52,6 +52,16 @@ namespace umbra::campaign
     void ScenePlayer::Enter(std::size_t index)
     {
         at_ = index;
+        // 0. A line for another answer is passed over (its "when" does not hold).
+        while (!Done() && !scene_.lines[at_].when.empty())
+        {
+            const std::string &when = scene_.lines[at_].when;
+            const std::size_t eq = when.find('=');
+            const auto it = facts_.find(when.substr(0, eq));
+            if (it != facts_.end() && (eq == std::string::npos || it->second == when.substr(eq + 1)))
+                break;
+            ++at_;
+        }
         if (Done())
             return;
         const Line &line = scene_.lines[at_];

@@ -1,10 +1,59 @@
 {
-  "note": "Bands for UmbraTool campaign-soak (Campaign.md \"The soak\"): shares of runs played by the party bot (Medium). Minutes and trapped losses are reported, not banded: the bot is careful with recruits and fast, so both need a person's play (the user's check). A key 'id/n' is a skirmish's refill n.", "t1": {"playerFalls": [0.0, 0.05], "wins": [0.9, 1.0]},
-  "t2": {"playerFalls": [0.0, 0.05], "wins": [0.85, 1.0]},
-  "t2s": {"wins": [0.85, 1.0]},
-  "t3": {"wins": [0.6, 0.85]},
-  "stage1": {"wins": [0.45, 0.7]},
-  "sk_props": {"wins": [0.7, 0.9]},
-  "sk_stairs": {"wins": [0.7, 0.9]},
-  "sk_boxoffice": {"wins": [0.7, 0.9]}
+  "note": "Bands for UmbraTool campaign-soak (Campaign.md \"The soak\"): shares of runs played by the party bot (Medium). Minutes and trapped losses are reported, not banded: the bot is careful with recruits and fast, so both need a person's play (the user's check). A key 'id/n' is a skirmish's refill n. Slice 1 (T1-T3, Stage 1 and its skirmishes) is the opening: every stage wins at least 90% of runs; the difficulty ramp starts after slice 1 (the user, 2026-11-25 01:35).",
+  "t1": {
+    "playerFalls": [
+      0.0,
+      0.05
+    ],
+    "wins": [
+      0.9,
+      1.0
+    ]
+  },
+  "t2": {
+    "playerFalls": [
+      0.0,
+      0.05
+    ],
+    "wins": [
+      0.9,
+      1.0
+    ]
+  },
+  "t2s": {
+    "wins": [
+      0.9,
+      1.0
+    ]
+  },
+  "t3": {
+    "wins": [
+      0.9,
+      1.0
+    ]
+  },
+  "stage1": {
+    "wins": [
+      0.9,
+      1.0
+    ]
+  },
+  "sk_props": {
+    "wins": [
+      0.9,
+      1.0
+    ]
+  },
+  "sk_stairs": {
+    "wins": [
+      0.9,
+      1.0
+    ]
+  },
+  "sk_boxoffice": {
+    "wins": [
+      0.9,
+      1.0
+    ]
+  }
 }

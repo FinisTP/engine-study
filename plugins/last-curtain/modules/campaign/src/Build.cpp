@@ -168,6 +168,8 @@ namespace umbra::campaign
                 if (out.who[i] == l)
                     s.mode.leaders.push_back(static_cast<std::int8_t>(i));
         s.mode.leadRounds = stage.leadRounds;
+        s.mode.boardUses = 2;
+        out.press = true; // campaign enemies come to you: board abilities are counted, so nobody can wait a fight out // the campaign: a board ability is free, twice a fight (the user, note 16)
         match::BeginMatch(def, s, seed);
         Sync(out);
         return out;

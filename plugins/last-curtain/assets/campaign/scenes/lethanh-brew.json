@@ -1,0 +1,43 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "lethanh-brew",
+  "note": "The brewing lesson after T2 (the user, 2026-11-24 23:57, note 13). Draft for review, Vietnamese and English.",
+  "lines": [
+    {
+      "id": "a",
+      "speaker": "lethanh",
+      "face": "calm",
+      "text": "Bà Mai nhặt được đậu xanh dưới hàng ghế. Mọc mầm trong bóng tối, tội nghiệp.",
+      "en": "Ba Mai found mung beans under the seats. Sprouted in the dark, poor things.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "lethanh",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "speaker": "lethanh",
+      "face": "talk",
+      "text": "Người chết quên nhiều thứ, nhưng cái lưỡi nhớ lâu lắm. Nấu cho bà một chén chè. Ra quầy, chọn món, chọn người.",
+      "en": "The dead forget a great deal, but the tongue remembers for a long time. Cook her a bowl of chè. Go to the counter, choose the dish, choose who it's for."
+    },
+    {
+      "id": "c",
+      "speaker": "lethanh",
+      "face": "calm",
+      "text": "Nếu bà khóc, đừng nhìn. Nước mắt ở đây không mặn.",
+      "en": "If she cries, don't look. Tears here aren't salty."
+    }
+  ]
+}

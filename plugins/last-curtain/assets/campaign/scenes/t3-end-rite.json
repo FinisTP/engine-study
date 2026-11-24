@@ -2,11 +2,12 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "t3-end-rite",
-  "note": "Draft for the user's review (2026-11-24, written overnight). T3 ends: Le Thanh teaches the rite. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
+  "note": "T3 ends: Le Thanh teaches the rite; the player speaks it kindly or bitterly (player.rite). Rewritten for the player's own feelings and remembered choices (the user, 2026-11-24 23:57, note 28): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
       "text": "Người giữ tranh quỳ xuống. Khung tranh trên tay nó trống trơn: bức chân dung duy nhất nó không treo được là của chính nó.",
+      "en": "The Keeper kneels. The frame in its hands is empty: the one portrait it could never hang was its own.",
       "enter": [
         {
           "who": "player",
@@ -20,29 +21,59 @@
           "slot": 0,
           "face": "calm"
         }
-      ],
-      "en": "The Keeper kneels. The frame in its hands is empty: the only portrait it never hung was its own."
+      ]
     },
     {
       "id": "b",
       "text": "Đừng để nó đi tay không. Đọc giùm nó một câu tiễn.",
+      "en": "Don't let it leave empty-handed. Say a farewell for it.",
       "speaker": "lethanh",
-      "face": "calm",
-      "en": "Don't let it leave empty-handed. Say a parting word for it."
+      "face": "calm"
     },
     {
       "id": "c",
-      "text": "Tôi phải nói gì?",
+      "text": "Tôi phải nói gì? Nó vừa muốn giết tụi tôi.",
+      "en": "What am I supposed to say? It just tried to kill us.",
       "speaker": "player",
-      "face": "afraid",
-      "en": "What do I say?"
+      "face": "calm",
+      "choices": [
+        {
+          "text": "Có người còn nhớ mặt ông. Đi đi.",
+          "en": "Someone still remembers your face. Go.",
+          "fact": "player.rite",
+          "value": "kind",
+          "jump": "d1"
+        },
+        {
+          "text": "Đi đi. Đừng quay lại.",
+          "en": "Go. Don't come back.",
+          "fact": "player.rite",
+          "value": "bitter",
+          "jump": "d2"
+        }
+      ]
     },
     {
-      "id": "d",
-      "text": "Nói rằng có người còn nhớ mặt nó. Từ giờ, khi một bóng ma ngã, {anh/chị} có thể làm lễ tiễn nó.",
+      "id": "d1",
+      "text": "Ừ. Vậy là đủ.",
+      "en": "Yes. That's enough.",
       "speaker": "lethanh",
-      "face": "talk",
-      "en": "Say that someone still remembers its face. From now on, when a ghost falls, you can perform the parting rite."
+      "face": "happy",
+      "jump": "e"
+    },
+    {
+      "id": "d2",
+      "text": "Cũng là một câu tiễn. Người chết không kén chọn.",
+      "en": "That's a farewell too. The dead aren't choosy.",
+      "speaker": "lethanh",
+      "face": "calm"
+    },
+    {
+      "id": "e",
+      "text": "Từ giờ, khi một bóng ma ngã, {anh/chị} có thể làm lễ tiễn nó. Còn mười hai sợi dây, chưa sợi nào đứt.",
+      "en": "From now on, when a ghost falls, you can give it the rite. Twelve threads remain, not one cut yet.",
+      "speaker": "lethanh",
+      "face": "calm"
     }
   ]
 }

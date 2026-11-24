@@ -42,6 +42,7 @@ namespace umbra::campaign
         std::map<std::string, std::array<std::string, 4>> slots;  // character -> its 4 battle slots (items.csv ids, "" empty)
         std::vector<std::string> party;                           // who goes to the next fight ("Ra trận")
         std::map<std::string, std::vector<std::string>> skills;   // character -> the abilities carried (at most 4; Loadout)
+        std::map<std::string, std::array<std::string, 3>> gear;   // character -> weapon, armour, accessory worn (items.csv ids; GearOf)
     };
 
     struct Recipe
@@ -120,6 +121,20 @@ namespace umbra::campaign
     bool LoadTalks(const std::filesystem::path &folder, const std::filesystem::path &scenes, const Cast &cast, Talks &out, std::vector<core::Diagnostic> &d);
     std::vector<const Talk *> OpenTalks(const Talks &talks, const Save &save, int limit); // new talks first, at most `limit`
     void Talked(Save &save, const Talk &talk);
+    // Quests (the user, 2026-11-24 23:57, note 25): one line to follow at a time, its target marked: a person
+    // to talk to, the counter (brew), the door, a stage on the map. campaign/quests.json; text localization.csv quest.<id>.
+    struct Quest
+    {
+        std::string id, text, talk, stage; // talk: a cast id; stage: marked on the map
+        bool door = false, brew = false;
+        std::vector<std::string> all, none, done; // facts: open when all and none hold; done when any of done holds
+    };
+    struct Quests
+    {
+        std::vector<Quest> list; // in order: the first open and not done is the one shown
+    };
+    bool LoadQuests(const std::filesystem::path &file, const std::vector<StageDef> &stages, const Cast &cast, Quests &out, std::vector<core::Diagnostic> &d);
+    const Quest *CurrentQuest(const Quests &quests, const Save &save);
     // A default line for `who` when nothing is new: the next open one each time (the save's idle:<who> counts).
     const Talk *IdleTalk(const Talks &talks, Save &save, const std::string &who);
     // What a fight leaves in the save's facts: won:<stage>, fell:<cast id>, ratStole:<item> (who: each unit's cast id).
@@ -201,6 +216,14 @@ namespace umbra::campaign
     // Skills (campaign/skills.json; feedback 2026-11-24 15:10): each ability's unlock level and story, the
     // recruits' starting loadouts. A character carries at most maxCarried of the abilities it knows.
     inline constexpr std::size_t maxCarried = 4;
+    // Gear (the user, 2026-11-24 23:57, note 30): a weapon carries its signature skill (never in the four slots),
+    // armour and accessories add numbers and may carry a passive. skills.json "gear" and "gearStarts".
+    struct Gear
+    {
+        int slot = 0;              // 0 weapon, 1 armour, 2 accessory
+        std::string skill, passive; // abilities.csv ids it brings into a fight
+        int hp = 0, attack = 0, defence = 0, speed = 0;
+    };
     struct Moment // a year in a character's life (Ky uc); its words wait for its skill (the user, 2026-11-25)
     {
         int year = 0;
@@ -212,6 +235,8 @@ namespace umbra::campaign
         std::map<std::string, std::string> lore;                   // ability id -> its line in the story
         std::map<std::string, std::vector<std::string>> starts;    // character -> what it carries on joining
         std::map<std::string, std::vector<Moment>> timeline;       // character -> its life, year by year
+        std::map<std::string, Gear> gear;                          // items.csv id -> what wearing it does
+        std::map<std::string, std::array<std::string, 3>> gearStarts; // character -> what it wears until changed
     };
 
     // The save into a fight: the party as BuildStage takes it (roster levels, slots), then ApplySave swaps
@@ -226,5 +251,8 @@ namespace umbra::campaign
     // the first ones; only known, unlocked ones, at most maxCarried.
     std::vector<std::string> Loadout(const Skills &skills, const Save &save, const std::string &who, const std::vector<std::string> &known, int level);
     bool Equip(const Skills &skills, Save &save, const std::string &who, const std::vector<std::string> &known, int level, const std::string &ability);
+    std::array<std::string, 3> GearOf(const Skills &skills, const Save &save, const std::string &who); // the save's, else the start
+    bool Wear(const match::MatchDef &def, const Skills &skills, Save &save, const std::string &who, const std::string &item); // from storage, if one is free
+    bool TakeOff(const Skills &skills, Save &save, const std::string &who, int slot);                                         // back into storage
     bool Unequip(const Skills &skills, Save &save, const std::string &who, const std::vector<std::string> &known, int level, const std::string &ability);
 }

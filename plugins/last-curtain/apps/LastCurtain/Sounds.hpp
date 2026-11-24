@@ -20,6 +20,8 @@ public:
     // none, or a missing file, fades the music out. The player's music volume, 0..1, applies at once.
     void Music(const std::string &place, float fade = 1.5F);
     void SetMusicVolume(float volume);
+    // A place's music that is there: its row, else `fallback` (a battle theme not generated yet plays the fight's).
+    [[nodiscard]] std::string MusicOr(const std::string &place, const std::string &fallback) const;
 
 private:
     struct Cue
@@ -29,6 +31,7 @@ private:
     };
     umbra::audio::Mixer mixer_; // outlives the device (declared first)
     umbra::audio::SoundBank bank_;
+    umbra::assets::AssetFolders assets_;
     umbra::platform::AudioDevice device_;
     std::map<std::string, Cue> cues_;
     float volume_ = 1.0F, musicVolume_ = 0.7F;

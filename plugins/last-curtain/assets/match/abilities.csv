@@ -1,44 +1,47 @@
-id,name,use,class,target,hpCost,ap,power,dice,range,reach,animation,effect,amount
-jab,Jab,battle,strike,enemy,0,0,3,none,1,walk,attack,none,0
-cleave,Cleave,battle,strike,enemy,3,0,7,none,1,walk,attack,none,0
-gamble,Gamble,battle,strike,enemy,2,0,0,2d6,1,walk,lunge,none,0
-execute,Execute,battle,strike,enemy,4,0,9,none,1,walk,attack,none,0
-snipe,Snipe,board,hit,enemy,3,0,4,none,6,straight,power,none,0
-shove,Shove,battle,strike,enemy,0,0,2,none,1,walk,attack,none,0
-brace,Brace,battle,shield,self,1,0,4,none,1,walk,brace,none,0
-rally,Rally,battle,shield,self,2,0,6,none,1,walk,guard,none,0
-wall,Wall,battle,shield,self,3,0,8,none,1,walk,guard,none,0
-bash,Bash,board,hit,enemy,2,0,3,none,2,walk,attack,none,0
-tap,Tap,battle,strike,enemy,0,0,2,none,1,walk,attack,none,0
-basic,Basic attack,battle,strike,enemy,0,0,2,none,1,walk,attack,none,0
-mend,Mend,battle,heal,ally,2,0,5,none,1,walk,use,none,0
-sting,Sting,battle,strike,enemy,2,0,5,none,1,walk,attack,none,0
-tend,Tend,board,heal,ally,3,0,6,none,4,walk,use,none,0
-bloom,Bloom,board,heal,ally,4,0,10,none,6,walk,power,none,0
-flick,Flick,battle,strike,enemy,0,0,3,none,1,walk,attack,none,0
-lunge,Lunge,battle,strike,enemy,2,0,6,none,1,walk,lunge,none,0
-blur,Blur,battle,strike,enemy,3,0,7,none,1,walk,lunge,none,0
-duel,Duellist,passive,firststrike,self,0,0,0,none,0,walk,none,none,0
-dart,Dart,board,hit,enemy,2,0,3,none,8,straight,power,none,0
-slash,Slash,battle,strike,enemy,1,0,3,none,1,walk,attack,none,0
-guard,Guard,battle,shield,self,1,0,3,none,1,walk,guard,none,0
-throw,Throw,board,hit,enemy,3,0,4,none,4,straight,power,none,0
-claw,Claw,battle,strike,enemy,0,0,2,none,1,walk,attack,none,0
-bite,Bite,battle,strike,enemy,0,0,4,none,1,walk,lunge,none,0
-crush,Crush,battle,strike,enemy,0,0,6,none,1,walk,attack,none,0
-dao_mo,Scalpel,battle,strike,enemy,1,0,4,none,1,walk,attack,none,0
-chan_doan,Diagnosis,board,effect,enemy,1,0,0,none,4,straight,power,mark,1
-giay_chung_tu,Death paper,passive,passive,self,0,0,0,none,0,walk,none,deathpaper,2
-com_nguoi,Cold rice,board,revive,ally,2,0,30,none,1,walk,use,rice,5
-moc_tui,Pickpocket,board,effect,enemy,0,0,0,none,1,walk,attack,steal,0
-chay_lang,Run off,passive,passive,self,0,0,0,none,0,walk,none,dart,3
-speedkill,Speedkill,passive,passive,self,0,0,0,none,0,walk,none,speedkill,2
-na_cao_su,Slingshot,battle,strike,enemy,1,0,3,none,1,walk,attack,none,0
-na_bao_dong,Slingshot: Alarm,battle,strike,enemy,0,0,3,none,1,walk,attack,alarm,2
-na_ban_truoc,Slingshot: First shot,battle,strike,enemy,0,0,3,none,1,walk,attack,firstshot,3
-dua_tin,Carry the word,board,hasten,ally,2,0,0,none,6,walk,use,none,0
-dua_tin_ve_kip,Carry the word: Home in time,board,hasten,ally,2,0,0,none,6,walk,use,hastemove,2
-dua_tin_phan_qua,Carry the word: A share,board,hasten,ally,2,0,0,none,6,walk,use,hasteheal,3
-chan_sao,Skipping feet,passive,afterhasten,self,0,0,3,none,0,walk,none,none,0
-chan_sao_gio_bien,Skipping feet: Sea wind,passive,afterhasten,self,0,0,4,none,0,walk,none,seawind,0
-chan_sao_dau_chan,Skipping feet: Footprints,passive,afterhasten,self,0,0,3,none,0,walk,none,footsteps,1
+id,name,use,class,target,hpCost,ap,power,dice,range,reach,animation,effect,amount,uses
+jab,Jab,battle,strike,enemy,0,0,3,none,1,walk,attack,none,0,0
+cleave,Cleave,battle,strike,enemy,3,0,7,none,1,walk,attack,none,0,0
+gamble,Gamble,battle,strike,enemy,2,0,0,2d6,1,walk,lunge,none,0,0
+execute,Execute,battle,strike,enemy,4,0,9,none,1,walk,attack,none,0,0
+snipe,Snipe,board,hit,enemy,3,0,4,none,6,straight,power,none,0,0
+shove,Shove,battle,strike,enemy,0,0,2,none,1,walk,attack,none,0,0
+brace,Brace,battle,shield,self,1,0,4,none,1,walk,brace,none,0,0
+rally,Rally,battle,shield,self,2,0,6,none,1,walk,guard,none,0,0
+wall,Wall,battle,shield,self,3,0,8,none,1,walk,guard,none,0,0
+bash,Bash,board,hit,enemy,2,0,3,none,2,walk,attack,none,0,0
+tap,Tap,battle,strike,enemy,0,0,2,none,1,walk,attack,none,0,0
+basic,Basic attack,battle,strike,enemy,0,0,2,none,1,walk,attack,none,0,0
+mend,Mend,battle,heal,ally,2,0,5,none,1,walk,use,none,0,0
+sting,Sting,battle,strike,enemy,2,0,5,none,1,walk,attack,none,0,0
+tend,Tend,board,heal,ally,3,0,6,none,4,walk,use,none,0,0
+bloom,Bloom,board,heal,ally,4,0,10,none,6,walk,power,none,0,0
+flick,Flick,battle,strike,enemy,0,0,3,none,1,walk,attack,none,0,0
+lunge,Lunge,battle,strike,enemy,2,0,6,none,1,walk,lunge,none,0,0
+blur,Blur,battle,strike,enemy,3,0,7,none,1,walk,lunge,none,0,0
+duel,Duellist,passive,firststrike,self,0,0,0,none,0,walk,none,none,0,0
+dart,Dart,board,hit,enemy,2,0,3,none,8,straight,power,none,0,0
+slash,Slash,battle,strike,enemy,1,0,3,none,1,walk,attack,none,0,0
+guard,Guard,battle,shield,self,1,0,3,none,1,walk,guard,none,0,0
+throw,Throw,board,hit,enemy,3,0,4,none,4,straight,power,none,0,0
+claw,Claw,battle,strike,enemy,0,0,2,none,1,walk,attack,none,0,0
+bite,Bite,battle,strike,enemy,0,0,4,none,1,walk,lunge,none,0,0
+crush,Crush,battle,strike,enemy,0,0,6,none,1,walk,attack,none,0,0
+dao_mo,Scalpel,battle,strike,enemy,1,0,4,none,1,walk,attack,none,0,0
+chan_doan,Diagnosis,board,effect,enemy,1,0,0,none,4,straight,power,mark,1,0
+giay_chung_tu,Death paper,passive,passive,self,0,0,0,none,0,walk,none,deathpaper,2,0
+com_nguoi,Cold rice,board,revive,ally,2,0,30,none,1,walk,use,rice,5,0
+moc_tui,Pickpocket,board,effect,enemy,0,0,0,none,1,walk,attack,steal,0,0
+chay_lang,Run off,passive,passive,self,0,0,0,none,0,walk,none,dart,3,0
+speedkill,Speedkill,passive,passive,self,0,0,0,none,0,walk,none,speedkill,2,0
+na_cao_su,Slingshot,battle,strike,enemy,1,0,3,none,1,walk,attack,none,0,0
+na_bao_dong,Slingshot: Alarm,battle,strike,enemy,0,0,3,none,1,walk,attack,alarm,2,0
+na_ban_truoc,Slingshot: First shot,battle,strike,enemy,0,0,3,none,1,walk,attack,firstshot,3,0
+dua_tin,Carry the word,board,hasten,ally,2,0,0,none,6,walk,use,none,0,0
+dua_tin_ve_kip,Carry the word: Home in time,board,hasten,ally,2,0,0,none,6,walk,use,hastemove,2,0
+dua_tin_phan_qua,Carry the word: A share,board,hasten,ally,2,0,0,none,6,walk,use,hasteheal,3,0
+chan_sao,Skipping feet,passive,afterhasten,self,0,0,3,none,0,walk,none,none,0,0
+chan_sao_gio_bien,Skipping feet: Sea wind,passive,afterhasten,self,0,0,4,none,0,walk,none,seawind,0,0
+chan_sao_dau_chan,Skipping feet: Footprints,passive,afterhasten,self,0,0,3,none,0,walk,none,footsteps,1,0
+tend_am,Tend: Warm hands,board,heal,ally,3,0,9,none,4,walk,use,none,0,0
+tend_xa,Tend: Calling far,board,heal,ally,3,0,6,none,7,walk,use,none,0,0
+dong_long,Rallying,passive,passive,self,0,0,0,none,0,walk,none,rally,1,0

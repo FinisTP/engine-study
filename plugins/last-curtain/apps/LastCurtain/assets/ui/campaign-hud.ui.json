@@ -409,6 +409,37 @@
             }
           }
         ]
+      },
+      {
+        "type": "list",
+        "anchor": "top-left",
+        "offset": [
+          20,
+          170
+        ],
+        "items": "{passives}",
+        "as": "c",
+        "gap": 4,
+        "entry": {
+          "type": "stack",
+          "style": "lcPanel",
+          "size": [
+            300,
+            0
+          ],
+          "children": [
+            {
+              "type": "text",
+              "style": "small",
+              "text": "{c.text}",
+              "wrap": true,
+              "size": [
+                280,
+                0
+              ]
+            }
+          ]
+        }
       }
     ]
   }

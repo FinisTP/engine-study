@@ -47,6 +47,14 @@ namespace umbra::match
         int PowerOf(const MatchDef &def, const Unit &u, int slot) { return def.abilities[U(u.abilities[U(slot)])].power + u.boost[U(slot)]; }
         int CostOf(const MatchDef &def, const Unit &u, int slot) { return std::max(0, def.abilities[U(u.abilities[U(slot)])].hpCost - u.cut[U(slot)]); }
 
+        int UsesOf(const MatchDef &def, const MatchState &s, const Unit &u, int slot)
+        {
+            const AbilityDef &a = def.abilities[U(u.abilities[U(slot)])];
+            if (s.mode.boardUses <= 0 || a.use != Use::Board || (a.hpCost <= 0 && a.uses <= 0))
+                return 0;
+            return a.uses > 0 ? a.uses : s.mode.boardUses;
+        }
+
         void Deal(const MatchDef &def, MatchState &s, int unit)
         {
             // 1. What may be offered: the role's abilities of levels 2..now not yet known, slots that can be upgraded.
@@ -178,7 +186,9 @@ namespace umbra::match
                 return Why::OutOfRange;
             if (a.kind == AbilityClass::Heal && t.hp >= t.maxHp) // a heal on someone whole is wasted
                 return Why::FullHp;
-            if (u.hp <= CostOf(def, u, slot))
+            if (const int uses = UsesOf(def, s, u, slot); uses > 0 && u.used[U(slot)] >= uses)
+                return Why::NoUses;
+            if (UsesOf(def, s, u, slot) == 0 && u.hp <= CostOf(def, u, slot))
                 return Why::TooCostly;
             if (a.kind == AbilityClass::Revive && Fallen(t) && RevivePlace(def, s, target, me) < 0)
                 return Why::Blocked;
@@ -190,7 +200,10 @@ namespace umbra::match
             Unit &u = s.units[U(me)];
             const int ability = u.abilities[U(slot)];
             const AbilityDef &a = def.abilities[U(ability)];
-            u.hp = static_cast<std::int16_t>(u.hp - CostOf(def, u, slot));
+            if (UsesOf(def, s, u, slot) > 0) // counted uses in place of the HP cost (Mode::boardUses)
+                ++u.used[U(slot)];
+            else
+                u.hp = static_cast<std::int16_t>(u.hp - CostOf(def, u, slot));
             u.ap = static_cast<std::int8_t>(u.ap - a.ap);
             s.now.apSpent = static_cast<std::int8_t>(s.now.apSpent + a.ap);
             Unit &t = s.units[U(target)];

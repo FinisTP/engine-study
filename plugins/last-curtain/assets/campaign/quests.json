@@ -1,0 +1,81 @@
+{
+  "format": "umbra.lc-quests",
+  "version": 1,
+  "note": "Quests (the user, 2026-11-24 23:57, note 25): one line at a time, the first open and not done; its target marked (talk: a person, brew: the counter, door, stage: on the map). Text: localization.csv quest.<id>.",
+  "quests": [
+    {
+      "id": "t1_lethanh",
+      "all": [
+        "won:t1"
+      ],
+      "done": [
+        "talked:lethanh-first"
+      ],
+      "talk": "lethanh"
+    },
+    {
+      "id": "t1_door",
+      "all": [
+        "talked:lethanh-first"
+      ],
+      "done": [
+        "won:t2"
+      ],
+      "door": true,
+      "stage": "t2"
+    },
+    {
+      "id": "t2_lethanh",
+      "all": [
+        "won:t2"
+      ],
+      "done": [
+        "talked:lethanh-brew"
+      ],
+      "talk": "lethanh"
+    },
+    {
+      "id": "t2_che",
+      "all": [
+        "talked:lethanh-brew"
+      ],
+      "done": [
+        "mai.memory1"
+      ],
+      "brew": true
+    },
+    {
+      "id": "t2s_door",
+      "all": [
+        "won:t2"
+      ],
+      "done": [
+        "won:t2s"
+      ],
+      "door": true,
+      "stage": "t2s"
+    },
+    {
+      "id": "t3_door",
+      "all": [
+        "won:t2s"
+      ],
+      "done": [
+        "won:t3"
+      ],
+      "door": true,
+      "stage": "t3"
+    },
+    {
+      "id": "stage1_door",
+      "all": [
+        "won:t3"
+      ],
+      "done": [
+        "won:stage1"
+      ],
+      "door": true,
+      "stage": "stage1"
+    }
+  ]
+}

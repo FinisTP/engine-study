@@ -22,4 +22,5 @@ struct CampaignText
     void Fill(umbra::campaign::Skills &skills) const;
     void Fill(umbra::campaign::Recipes &recipes) const;
     void Fill(umbra::campaign::Memories &memories) const;
+    void Fill(umbra::campaign::Quests &quests) const; // quest.<id>
 };

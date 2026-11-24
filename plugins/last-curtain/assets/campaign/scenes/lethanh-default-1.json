@@ -24,6 +24,14 @@
           "face": "calm"
         }
       ]
+    },
+    {
+      "id": "w0",
+      "speaker": "lethanh",
+      "face": "scheming",
+      "text": "{anh/chị} vẫn chưa tin tôi. Khôn đấy.",
+      "en": "You still don't trust me. Wise.",
+      "when": "player.trust=doubt"
     }
   ]
 }

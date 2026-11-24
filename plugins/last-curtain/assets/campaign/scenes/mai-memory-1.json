@@ -1,0 +1,77 @@
+{
+  "format": "umbra.lc-scene",
+  "version": 1,
+  "id": "mai-memory-1",
+  "note": "Mai's first memory, brought back by che dau xanh (note 13). The choice picks the Tend version: a = Am tay (warm hands), b = Goi xa (calling far). Draft for review, Vietnamese and English.",
+  "lines": [
+    {
+      "id": "a",
+      "text": "Chè đậu xanh còn bốc khói. Bà Mai cầm muỗng mà không múc, như sợ chén chè biến mất.",
+      "en": "The mung bean chè is still steaming. Ba Mai holds the spoon without eating, as if afraid the bowl will vanish.",
+      "enter": [
+        {
+          "who": "player",
+          "side": "left",
+          "slot": 0,
+          "face": "calm"
+        },
+        {
+          "who": "mai",
+          "side": "right",
+          "slot": 0,
+          "face": "calm"
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "speaker": "mai",
+      "face": "talk",
+      "text": "Thằng Thiện mê chè này lắm. Sốt cũng đòi, đau bụng cũng đòi. Tui nấu xong, kêu nó lên ăn.",
+      "en": "Thien loved this chè. Feverish, he'd beg for it; bellyache, he'd beg for it. I'd finish cooking and call him up to eat."
+    },
+    {
+      "id": "c",
+      "speaker": "mai",
+      "face": "calm",
+      "text": "Đêm đó tui kêu hoài. Dưới gầm sân khấu, tối thui, có tiếng gì cào cào.",
+      "en": "That night I kept calling. Under the stage, pitch dark, something was scratching.",
+      "choices": [
+        {
+          "text": "Bà đã ôm nó, phải không? Lần cuối.",
+          "fact": "mai.memory1",
+          "value": "a",
+          "jump": "d1",
+          "en": "You held him, didn't you? One last time."
+        },
+        {
+          "text": "Bà vẫn đang kêu nó. Tới giờ.",
+          "fact": "mai.memory1",
+          "value": "b",
+          "jump": "d2",
+          "en": "You're still calling him. Even now."
+        }
+      ]
+    },
+    {
+      "id": "d1",
+      "speaker": "mai",
+      "face": "calm",
+      "text": "Ừ. Tay nó lạnh ngắt, mà tui cứ xoa, xoa hoài. Tay tui giờ còn ấm là nhờ vậy đó con.",
+      "jump": "e",
+      "en": "Yes. His hands were ice cold, and I kept rubbing them, rubbing. My hands are still warm because of it, child."
+    },
+    {
+      "id": "d2",
+      "speaker": "mai",
+      "face": "calm",
+      "text": "Ừ. Tiếng tui giờ đi xa lắm, qua cả tường. Có điều nó không trả lời.",
+      "en": "Yes. My voice carries far now, through the walls. Only he never answers."
+    },
+    {
+      "id": "e",
+      "text": "Bà Mai ăn hết chén chè. Dưới sàn, tiếng cào ngừng một lúc, rồi lại tiếp.",
+      "en": "Ba Mai finishes the bowl. Under the floor, the scratching stops for a while, then goes on."
+    }
+  ]
+}

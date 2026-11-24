@@ -47,6 +47,8 @@ int Notebook::Free(const std::string &item) const
     int left = save_.storage.contains(item) ? save_.storage.at(item) : 0;
     for (const auto &[who, slots] : save_.slots)
         left -= static_cast<int>(std::ranges::count(slots, item));
+    for (const auto &[who, worn] : save_.gear) // worn gear stays counted in storage
+        left -= static_cast<int>(std::ranges::count(worn, item));
     return std::max(0, left);
 }
 
@@ -72,7 +74,9 @@ std::string Notebook::SkillText(const umbra::match::AbilityDef &a) const
         text += " " + fill("skillRice", "On one still standing: heals {n} HP and clears a mark and a slow.", a.amount);
     if (a.range > 1)
         text += " " + fill("skillRange", "Reach {n} squares.", a.range);
-    if (a.hpCost > 0)
+    if (a.use == umbra::match::Use::Board && (a.hpCost > 0 || a.uses > 0)) // a campaign fight counts uses (note 16)
+        text += " " + fill("skillUses", "Usable {n} times a fight.", a.uses > 0 ? a.uses : 2);
+    else if (a.hpCost > 0)
         text += " " + fill("skillCost", "Costs {n} HP.", a.hpCost);
     return text;
 }
@@ -111,7 +115,9 @@ bool Notebook::Take()
             skillTarget_ = -1;
         return ok;
     }
-    // 2. An item from storage: into the empty slot picked first, else the first empty one.
+    // 2. An item from storage: gear into its own slot (note 30); else into the empty slot picked first, else the first empty one.
+    if (picked_.starts_with("store:") && skills_ && skills_->gear.contains(picked_.substr(6)))
+        return campaign::Wear(def_, *skills_, save_, selected_, picked_.substr(6));
     if (picked_.starts_with("store:"))
     {
         const std::string item = picked_.substr(6);
@@ -140,6 +146,8 @@ bool Notebook::Drop()
         const std::size_t k = static_cast<std::size_t>(std::atoi(picked_.c_str() + 6));
         return k < carried.size() && campaign::Unequip(*skills_, save_, selected_, Known(), Level(selected_), carried[k]);
     }
+    if (picked_.starts_with("gear:") && skills_)
+        return campaign::TakeOff(*skills_, save_, selected_, std::atoi(picked_.c_str() + 5));
     if (picked_.starts_with("bag:"))
     {
         const int k = std::atoi(picked_.c_str() + 4);
@@ -213,9 +221,18 @@ nlohmann::json Notebook::Page() const
         }
         else if (std::ranges::find(carried, id) == carried.end())
             p["learned"].push_back({{"id", id}, {"name", name(id)}, {"picked", picked_ == "learned:" + id}});
+    // 2a'. Gear: weapon, armour, accessory (note 30).
+    p["gear"] = nlohmann::json::array();
+    if (skills_)
+    {
+        static const char *kinds[] = {"gearWeapon", "gearArmour", "gearAccessory"};
+        const std::array<std::string, 3> worn = campaign::GearOf(*skills_, save_, selected_);
+        for (int i = 0; i < 3; ++i)
+            p["gear"].push_back({{"slot", i}, {"kind", Word(kinds[i], kinds[i])}, {"item", worn[static_cast<std::size_t>(i)]}, {"picked", picked_ == "gear:" + std::to_string(i)}});
+    }
     p["store"] = nlohmann::json::array();
     for (const auto &[item, count] : save_.storage)
-        if (count > 0 && campaign::SlotOk(def_, item))
+        if (count > 0 && (campaign::SlotOk(def_, item) || (skills_ && skills_->gear.contains(item))))
             p["store"].push_back({{"id", item}, {"count", Free(item)}, {"picked", picked_ == "store:" + item}});
     // 2c. The card: what is picked, what it does, and whether it can be carried or put back.
     const auto bag = save_.slots.contains(selected_) ? save_.slots.at(selected_) : std::array<std::string, 4>{};
@@ -244,8 +261,16 @@ nlohmann::json Notebook::Page() const
         else
             p["card"] = {{"kind", "hint"}, {"name", ""}, {"lore", ""}, {"text", Word("pickSkill", "Pick a skill on the right to carry.")}, {"take", false}, {"drop", false}, {"hint", ""}};
     }
+    else if (picked_.starts_with("store:") && skills_ && skills_->gear.contains(picked_.substr(6)))
+        itemCard(picked_.substr(6), Free(picked_.substr(6)) > 0, false); // gear: worn in its own slot
     else if (picked_.starts_with("store:"))
         itemCard(picked_.substr(6), Free(picked_.substr(6)) > 0 && std::ranges::any_of(bag, [](const std::string &x) { return x.empty(); }), false);
+    else if (picked_.starts_with("gear:") && skills_)
+    {
+        const std::string worn = campaign::GearOf(*skills_, save_, selected_)[static_cast<std::size_t>(std::clamp(std::atoi(picked_.c_str() + 5), 0, 2))];
+        if (!worn.empty())
+            itemCard(worn, false, true);
+    }
     else if (picked_.starts_with("bag:"))
     {
         const std::string held = bag[static_cast<std::size_t>(std::clamp(std::atoi(picked_.c_str() + 4), 0, 3))];

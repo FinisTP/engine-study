@@ -26,9 +26,12 @@ namespace umbra::campaign
             for (Member &m : save.roster)
                 if (m.id == who)
                     AddXp(m, stage.kind == "skirmish" && m.level >= cap ? 0 : stage.xp, stage.kind == "skirmish" ? cap : levelCap);
-        // 2. Finds to storage; take-once items picked up; the room cleared; the fight's facts.
+        // 2. Finds to storage, the stage's spoils on its first win; take-once items picked up; the room cleared; the fight's facts.
         for (const std::int8_t item : s.found)
             ++save.storage[def.items[static_cast<std::size_t>(item)].id];
+        if (!save.facts.contains("won:" + stage.id))
+            for (const auto &[item, count] : stage.spoils)
+                save.storage[item] += count;
         Room &room = save.rooms[stage.id];
         for (const StageItem &it : stage.items)
             if (!save.taken.contains(it.id) && std::ranges::none_of(s.floor, [&](const match::Floor &f) { return f.cell == it.y * stage.width + it.x; }))

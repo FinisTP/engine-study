@@ -27,7 +27,7 @@
         1
       ],
       "side": 1,
-      "level": 3,
+      "level": 1,
       "flags": [
         "boss"
       ]
@@ -39,31 +39,7 @@
         6
       ],
       "side": 1,
-      "level": 2,
-      "flags": [
-        "boss"
-      ]
-    },
-    {
-      "who": "ghost_speedster",
-      "at": [
-        4,
-        6
-      ],
-      "side": 1,
-      "level": 2,
-      "flags": [
-        "boss"
-      ]
-    },
-    {
-      "who": "ghost_attacker",
-      "at": [
-        6,
-        4
-      ],
-      "side": 1,
-      "level": 2,
+      "level": 1,
       "flags": [
         "boss"
       ]

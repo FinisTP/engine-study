@@ -90,6 +90,18 @@ namespace umbra::campaign
                 for (std::size_t k = 0; k < carried.size() && k < u.abilities.size(); ++k)
                     u.abilities[k] = static_cast<std::int8_t>(find(carried[k]));
             }
+            // 0b. Gear (note 30): a weapon's skill and any passive into the free slots; its numbers onto the unit.
+            if (skills)
+                for (const std::string &item : GearOf(*skills, save, built.who[i]))
+                    if (const auto g = skills->gear.find(item); !item.empty() && g != skills->gear.end())
+                    {
+                        for (const std::string &a : {g->second.skill, g->second.passive})
+                            if (const auto free = std::ranges::find(u.abilities, std::int8_t(-1)); !a.empty() && free != u.abilities.end() && find(a) < static_cast<int>(def.abilities.size()))
+                                *free = static_cast<std::int8_t>(find(a));
+                        u.maxHp = static_cast<std::int16_t>(u.maxHp + g->second.hp), u.hp = static_cast<std::int16_t>(u.hp + g->second.hp);
+                        u.attack = static_cast<std::int16_t>(u.attack + g->second.attack), u.defence = static_cast<std::int16_t>(u.defence + g->second.defence);
+                        u.speed = static_cast<std::int16_t>(u.speed + g->second.speed);
+                    }
             // 1. Versions in place of base abilities.
             for (auto &a : u.abilities)
                 if (a >= 0)

@@ -2,11 +2,12 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "t2s-end",
-  "note": "Draft for the user's review (2026-11-24): T2s ends: Bao comes along. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
+  "note": "T2s ends: Bao comes along, and says what he fears. Rewritten for the player's own feelings and remembered choices (the user, 2026-11-24 23:57, note 28): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
       "text": "Ông lau con dao mổ vào vạt áo blouse đã ngả vàng. Vết lau không bao giờ sạch.",
+      "en": "He wipes the scalpel on the yellowed hem of his coat. The smear never comes clean.",
       "enter": [
         {
           "who": "player",
@@ -20,15 +21,28 @@
           "slot": 0,
           "face": "calm"
         }
-      ],
-      "en": "He wipes the scalpel on his yellowed coat. The stain never comes off."
+      ]
     },
     {
       "id": "b",
-      "text": "Hành lang chân dung ở phía trước. Những người trong tranh... tôi đã ký giấy cho từng người. Tôi đi cùng.",
+      "text": "Hành lang chân dung ở phía trước. Những người trong tranh... tôi đã ký giấy cho từng người.",
+      "en": "The portrait corridor is ahead. The people in those paintings... I signed a paper for each of them.",
       "speaker": "bao",
-      "face": "calm",
-      "en": "The portrait corridor is ahead. The people in those frames... I signed for every one. I'm coming."
+      "face": "calm"
+    },
+    {
+      "id": "c",
+      "text": "Ông sợ họ nhận ra ông?",
+      "en": "Are you afraid they'll recognise you?",
+      "speaker": "player",
+      "face": "calm"
+    },
+    {
+      "id": "d",
+      "text": "Tôi sợ họ không nhận ra. Tôi đi cùng cậu.",
+      "en": "I'm afraid they won't. I'm coming with you.",
+      "speaker": "bao",
+      "face": "calm"
     }
   ]
 }

@@ -4,7 +4,7 @@
   "id": "stage1",
   "kind": "story",
   "note": "Draft (2026-11-24): freeing a recruit under pressure; theft. Three windows open by a pattern and let out rat specters. Phong ket (left) holds the keepsake.",
-  "level": 3,
+  "level": 4,
   "partyCap": 3,
   "backdrop": "box_office",
   "xp": 200,
@@ -27,7 +27,7 @@
         1
       ],
       "side": 1,
-      "level": 2,
+      "level": 1,
       "flags": [
         "boss"
       ]
@@ -39,7 +39,7 @@
         1
       ],
       "side": 1,
-      "level": 3,
+      "level": 1,
       "flags": [
         "recruit",
         "strung"
@@ -76,14 +76,7 @@
       "pattern": [
         [],
         [],
-        [
-          0
-        ],
         [],
-        [],
-        [
-          2
-        ],
         [],
         [],
         [

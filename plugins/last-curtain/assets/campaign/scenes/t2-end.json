@@ -2,11 +2,12 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "t2-end",
-  "note": "Draft for the user's review (2026-11-24): T2 ends: Ba Mai stays with the player. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
+  "note": "T2 ends: Ba Mai hears the player wants to go home (player.t2). Rewritten for the player's own feelings and remembered choices (the user, 2026-11-24 23:57, note 28): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
       "text": "Cái bóng sụp xuống như áo quần không còn người mặc, rồi tan như khói nhang trước gió.",
+      "en": "The shadow slumps like clothes with no one inside them, then drifts away like incense in the wind.",
       "enter": [
         {
           "who": "player",
@@ -20,15 +21,59 @@
           "slot": 0,
           "face": "calm"
         }
-      ],
-      "en": "The shadow slumps like clothes with no one inside them, then drifts away like incense smoke."
+      ]
     },
     {
       "id": "b",
-      "text": "Bà lau sàn ở đây bốn mươi năm. Vết bẩn nào bà cũng biết tên. Bà đi với con.",
+      "text": "Con nói con muốn về nhà. Bà nghe Lệ Thanh nói rồi.",
+      "en": "You said you want to go home. Lệ Thanh told me.",
+      "speaker": "mai",
+      "face": "calm"
+    },
+    {
+      "id": "c",
+      "text": "Bà ở đây bốn mươi năm, chưa thấy ai ra được cửa. Nhưng con còn ấm. Người còn ấm thì khác.",
+      "en": "Forty years here, I've never seen anyone get out the door. But you're still warm. The warm ones are different.",
       "speaker": "mai",
       "face": "calm",
-      "en": "I've scrubbed these floors forty years. I know every stain by name. I'm coming with you."
+      "choices": [
+        {
+          "text": "Bà đi với con nhé. Con không muốn một mình nữa.",
+          "en": "Come with me. I don't want to be alone anymore.",
+          "fact": "player.t2",
+          "value": "lonely",
+          "jump": "d1"
+        },
+        {
+          "text": "Nếu không ai ra được thì con sẽ là người đầu tiên.",
+          "en": "If no one's ever got out, I'll be the first.",
+          "fact": "player.t2",
+          "value": "stubborn",
+          "jump": "d2"
+        }
+      ]
+    },
+    {
+      "id": "d1",
+      "text": "Ừ. Có bà đây. Đi đâu bà cũng mang theo chìa khóa.",
+      "en": "Yes. I'm here. Wherever we go, I'll bring the keys.",
+      "speaker": "mai",
+      "face": "happy",
+      "jump": "e"
+    },
+    {
+      "id": "d2",
+      "text": "Cứng đầu y như thằng Thiện nhà bà. Thôi được, bà đi theo coi con làm sao.",
+      "en": "Stubborn as my Thiện. All right, I'll come and see how you manage.",
+      "speaker": "mai",
+      "face": "calm"
+    },
+    {
+      "id": "e",
+      "text": "Có điều... con đừng hỏi bà về cái gầm sân khấu. Chưa phải lúc.",
+      "en": "Only... don't ask me about under the stage. Not yet.",
+      "speaker": "mai",
+      "face": "calm"
     }
   ]
 }

@@ -1,7 +1,7 @@
 {
   "format": "umbra.lc-skills",
   "version": 1,
-  "note": "Abilities in the notebook and the fight (feedback 2026-11-24 15:10, notes 13 and 17). 'unlock': the level an ability opens at (default 1; a class line's abilities already open by level in jobs.csv). Each one's story is localization.csv 'lore.<id>'. 'starts': the skills a recruit carries when they join (at most 4); the tutorial leaves some out so the player assigns them. Anyone else carries their first four. 'timeline': each character's life by year for the notebook's Ky uc (the user, 2026-11-25); a year with a skill shows ??? until that skill opens (its level, and its memory if one upgrades it); its words are localization.csv 'timeline.<who>.<n>'.",
+  "note": "Abilities in the notebook and the fight (feedback 2026-11-24 15:10, notes 13 and 17). 'unlock': the level an ability opens at (default 1; a class line's abilities already open by level in jobs.csv). Each one's story is localization.csv 'lore.<id>'. 'starts': the skills a recruit carries when they join (at most 4); the tutorial leaves some out so the player assigns them. Anyone else carries their first four. 'timeline': each character's life by year for the notebook's Ky uc (the user, 2026-11-25); a year with a skill shows ??? until that skill opens (its level, and its memory if one upgrades it); its words are localization.csv 'timeline.<who>.<n>'. 'gear' (the user, 2026-11-24 23:57, note 30): weapon, armour, accessory; a weapon brings its signature skill (never one of the four), the others numbers or a passive; 'gearStarts' what each wears until changed.",
   "skills": {
     "basic": {},
     "slash": {},
@@ -21,17 +21,18 @@
     "dua_tin": {},
     "chan_sao": {
       "unlock": 4
-    }
+    },
+    "dong_long": {}
   },
   "starts": {
     "bao": [
-      "basic",
-      "dao_mo"
+      "basic"
     ],
     "mai": [
       "basic",
       "tend",
-      "com_nguoi"
+      "com_nguoi",
+      "dong_long"
     ]
   },
   "timeline": {
@@ -94,6 +95,46 @@
         "year": 1968,
         "skill": "chan_sao"
       }
+    ]
+  },
+  "gear": {
+    "dao": {
+      "slot": "weapon",
+      "skill": "slash"
+    },
+    "dao_mo": {
+      "slot": "weapon",
+      "skill": "dao_mo"
+    },
+    "na": {
+      "slot": "weapon",
+      "skill": "na_cao_su"
+    },
+    "ao_khoac_cu": {
+      "slot": "armour",
+      "defence": 1,
+      "hp": 2
+    },
+    "tram_go": {
+      "slot": "accessory",
+      "speed": 1
+    }
+  },
+  "gearStarts": {
+    "player": [
+      "dao",
+      "",
+      ""
+    ],
+    "bao": [
+      "dao_mo",
+      "",
+      ""
+    ],
+    "ti": [
+      "na",
+      "",
+      ""
     ]
   }
 }

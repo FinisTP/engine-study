@@ -2,11 +2,12 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "talk-lethanh-first",
-  "note": "Draft for the user's review (2026-11-24; e-f added: the gift and the slot lesson). Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
+  "note": "The cafe's first talk: who these people are; who waits at home (player.home); then the gift and the slot lesson. Rewritten for the player's own feelings and remembered choices (the user, 2026-11-24 23:57, note 28): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
       "text": "Quán nhỏ dưới hầm. Đèn dầu, mùi cà phê rang, và tiếng mưa rất xa, dù trên kia trời không mưa từ năm 1944.",
+      "en": "A small café below. Oil lamps, the smell of roasting coffee, and rain very far away, though up there it hasn't rained since 1944.",
       "enter": [
         {
           "who": "player",
@@ -20,39 +21,90 @@
           "slot": 0,
           "face": "calm"
         }
-      ],
-      "en": "A small café in the cellar. An oil lamp, the smell of roasting coffee, and rain far away, though it has not rained up there since 1944."
+      ]
     },
     {
       "id": "b",
-      "text": "Ở đây không ai đòi tiền {anh/chị} hết. Ngồi đi. Ghế đó còn ấm, người ngồi trước mới đi.",
-      "speaker": "lethanh",
-      "face": "calm",
-      "en": "No one here will ask you for money. Sit. That chair is still warm; its last guest only just went."
+      "text": "Điện thoại tôi không có sóng. Giờ trên màn hình đứng ở 23 giờ 59. Nó không chịu qua nửa đêm.",
+      "en": "My phone has no signal. The clock on it is stuck at 23:59. It won't pass midnight.",
+      "speaker": "player",
+      "face": "afraid"
     },
     {
       "id": "c",
-      "text": "Mấy người kia là ai vậy cô?",
-      "speaker": "player",
-      "face": "calm",
-      "en": "Who are those people?"
+      "text": "Ở đây không có nửa đêm. Ngồi đi. Ghế đó còn ấm, người ngồi trước mới đi.",
+      "en": "There is no midnight here. Sit. That chair is still warm; whoever sat there just left.",
+      "speaker": "lethanh",
+      "face": "calm"
     },
     {
       "id": "d",
-      "text": "Khách quen. Ai rồi cũng thành khách quen. Có người quen tới mức quên mình đã chết.",
-      "speaker": "lethanh",
-      "face": "scheming",
-      "en": "Regulars. Everyone becomes a regular. Some so regular they forget they're dead."
+      "text": "Bà cụ lau bàn, ông bác sĩ ngồi góc kia... họ là ai?",
+      "en": "The old woman wiping tables, the doctor in the corner... who are they?",
+      "speaker": "player",
+      "face": "calm"
     },
     {
       "id": "e",
+      "text": "Bà Mai giữ chìa khóa nhà hát bốn mươi năm. Bác sĩ Bảo ký giấy cho người chết ở đây. Họ chết lâu rồi, nhưng chưa ai cho họ đi.",
+      "en": "Ba Mai kept the theatre's keys for forty years. Doctor Bảo signed the papers for the dead here. They died long ago, but no one has let them go.",
+      "speaker": "lethanh",
+      "face": "calm"
+    },
+    {
+      "id": "f",
+      "text": "{anh/chị} thì chưa chết. Hiếm lắm. Ở nhà có ai đợi không?",
+      "en": "You're not dead. That's rare. Is anyone waiting at home?",
+      "speaker": "lethanh",
+      "face": "calm",
+      "choices": [
+        {
+          "text": "Mẹ tôi. Chắc bà đang gọi mà không ai bắt máy.",
+          "en": "My mother. She's probably calling and no one's answering.",
+          "fact": "player.home",
+          "value": "mother",
+          "jump": "g1"
+        },
+        {
+          "text": "Không ai hết. Có khi chẳng ai biết tôi biến mất.",
+          "en": "No one. Maybe no one even knows I've vanished.",
+          "fact": "player.home",
+          "value": "nobody",
+          "jump": "g2"
+        }
+      ]
+    },
+    {
+      "id": "g1",
+      "text": "Vậy thì đừng để bà đợi lâu. Người đợi lâu ở đây hay hóa thành thứ khác.",
+      "en": "Then don't keep her waiting long. People who wait too long here turn into something else.",
+      "speaker": "lethanh",
+      "face": "calm",
+      "jump": "h"
+    },
+    {
+      "id": "g2",
+      "text": "Vậy thì ở đây, ít ra, có người biết. Tôi biết.",
+      "en": "Then here, at least, someone knows. I know.",
+      "speaker": "lethanh",
+      "face": "calm"
+    },
+    {
+      "id": "h",
+      "text": "...Tôi sẽ cắt hết mấy sợi dây đó. Tôi không ở lại đây đâu.",
+      "en": "...I'll cut every one of those threads. I'm not staying here.",
+      "speaker": "player",
+      "face": "calm"
+    },
+    {
+      "id": "i",
       "text": "Cầm lấy. Băng gạc với tờ chương trình cũ. Trên kia {anh/chị} sẽ cần. Đừng đọc tên diễn viên to quá.",
       "speaker": "lethanh",
       "face": "calm",
       "en": "Take these. Bandages and an old programme. You'll need them up there. Don't read the cast names aloud."
     },
     {
-      "id": "f",
+      "id": "j",
       "text": "Mỗi người mang được bốn món và bốn kỹ năng. Mở sổ tay, chọn người, chọn thứ cần mang rồi bấm Mang theo. Bà Mai còn kỹ năng chưa mang đó.",
       "speaker": "lethanh",
       "face": "happy",

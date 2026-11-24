@@ -4,3 +4,9 @@ programme,Old programme,Reading it gives 3 XP.,programme,xp,3,board,item
 gung,Ginger,An old ginger root. Rat specters in the box office carry it off.,gung,heal,0,cafe,ingredient
 duong,Sugar,A small packet of sugar; the paper has gone yellow.,duong,heal,0,cafe,ingredient
 giay_gap_tu,Folded note,Folded in four; frayed at the edges. Someone kept it very carefully.,giay_gap_tu,heal,0,cafe,keepsake
+dau_xanh,Mung beans,A twist of dried mung beans; some have sprouted in the dark.,dau_xanh,heal,0,cafe,ingredient
+dao,Knife,An old kitchen knife with a cracked wooden handle. The one thing you woke up holding.,dao,heal,0,cafe,gear
+dao_mo,Scalpel,Doctor Bao's scalpel. The blade is clean; the case is not.,dao_mo,heal,0,cafe,gear
+na,Slingshot,A child's slingshot cut from a guava branch.,na,heal,0,cafe,gear
+ao_khoac_cu,Old coat,A long coat from the cloakroom; the pockets still hold someone's ticket stubs.,ao_khoac_cu,heal,0,cafe,gear
+tram_go,Wooden hairpin,A plain wooden hairpin. Whoever wears it walks a little lighter.,tram_go,heal,0,cafe,gear

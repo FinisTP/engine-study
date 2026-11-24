@@ -142,8 +142,11 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
     std::uint64_t matches = 0;
     std::string shown;
     const std::string hudName = hooks ? "campaign-hud" : "match-hud"; // a stage has the campaign's HUD (plan 5)
+    // A stage's theme on the board, its bass-heavy cut in the battle view (note 17); the fight's when not made yet.
+    const std::string boardMusic = hooks ? game.sounds->MusicOr(hooks->music, "fight") : "";
+    const std::string battleMusic = hooks ? game.sounds->MusicOr(hooks->music + "_battle", boardMusic) : "";
     if (hooks)
-        game.sounds->Music("fight");
+        game.sounds->Music(boardMusic);
     int savedRound = -1;
     bool ended = false;  // the end scene has started
     bool hudOpen = false; // the HUD is open (closed while a fight is staged)
@@ -312,6 +315,8 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
             {
                 const nlohmann::json told = play->UiData();
                 table.SetFight(told.value("fight", std::vector<int>{}), told.value("picking", -1));
+                if (hooks) // the battle view: the same theme with more bass (Music crossfades only on a change)
+                    game.sounds->Music(told.contains("fight") ? battleMusic : boardMusic, 0.6F);
                 table.SetTold(told.value("standing", std::vector<int>{}), told.value("hp", std::vector<int>{}));
             }
             table.SetFocus(play->UiData().value("focus", std::vector<int>{}));

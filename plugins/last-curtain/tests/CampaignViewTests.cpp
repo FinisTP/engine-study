@@ -480,8 +480,8 @@ TEST_CASE("The notebook's slots, pick then place: skills carried and in stock, l
     nlohmann::json p = page();
     REQUIRE(p["loadout"].size() == 4);
     CHECK(p["loadout"][0]["id"] == "basic");
-    CHECK(p["loadout"][1]["id"] == "dao_mo");
-    CHECK(p["loadout"][2]["empty"] == true);
+    CHECK(p["loadout"][1]["empty"] == true); // the scalpel comes with his weapon (note 30)
+    CHECK(p["gear"][0]["item"] == "dao_mo");
     CHECK(has(p["learned"], "chan_doan"));
     REQUIRE(has(p["locked"], "giay_chung_tu"));
     for (const auto &l : p["locked"])
@@ -496,13 +496,13 @@ TEST_CASE("The notebook's slots, pick then place: skills carried and in stock, l
     CHECK(p["card"]["drop"] == false);
     REQUIRE(book.Take());
     p = page();
-    CHECK(p["loadout"][2]["id"] == "chan_doan");
+    CHECK(p["loadout"][1]["id"] == "chan_doan");
     CHECK_FALSE(has(p["learned"], "chan_doan"));
     // 3. A carried one: Bo ra puts it back in stock.
     book.Pick("skill:1");
     CHECK(page()["card"]["drop"] == true);
     REQUIRE(book.Drop());
-    CHECK(has(page()["learned"], "dao_mo"));
+    CHECK(has(page()["learned"], "chan_doan"));
     // 4. Items: storage lists what can be carried (ginger cannot); an empty slot picked first is where it goes.
     p = page();
     CHECK(has(p["store"], "bandage"));

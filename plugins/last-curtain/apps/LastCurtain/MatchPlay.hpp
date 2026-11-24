@@ -12,6 +12,7 @@
 #include <functional>
 
 #include <map>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -182,6 +183,8 @@ private:
         std::string text;
         float left = 3.0F;
     };
+    std::vector<Toasted> passives_;   // passives that just worked: their cards (note 20)
+    std::set<std::size_t> boardActs_; // log lines that begin a board ability (staged like a battle, note 16)
     std::vector<Toasted> toasts_;
     std::string stageTitle_, hurryKey_ = "Space", skipKey_ = "F";
     std::string armed_; // "attack" or "ability:<slot>"

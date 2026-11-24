@@ -257,7 +257,7 @@ namespace umbra::match
 
         void LoadAbilities(const std::filesystem::path &folder, MatchDef &def, Diagnostics &out)
         {
-            Sheet s(out, folder, "abilities.csv", {"id", "name", "use", "class", "target", "hpCost", "ap", "power", "dice", "range", "reach", "animation", "effect", "amount"});
+            Sheet s(out, folder, "abilities.csv", {"id", "name", "use", "class", "target", "hpCost", "ap", "power", "dice", "range", "reach", "animation", "effect", "amount", "uses"});
             for (int r = 0; r < s.Rows(); ++r)
             {
                 AbilityDef a;
@@ -266,10 +266,11 @@ namespace umbra::match
                 a.animation = s.Text(r, "animation");
                 a.use = static_cast<Use>(s.Pick(r, "use", {"battle", "board", "passive"}));
                 a.kind = static_cast<AbilityClass>(s.Pick(r, "class", {"strike", "shield", "heal", "hit", "firststrike", "revive", "remove", "giveap", "hasten", "afterhasten", "effect", "passive"}));
-                a.effect = static_cast<AbilityEffect>(s.Pick(r, "effect", {"none", "mark", "steal", "dart", "speedkill", "deathpaper", "rice", "alarm", "firstshot", "hastemove", "hasteheal", "seawind", "footsteps"}));
+                a.effect = static_cast<AbilityEffect>(s.Pick(r, "effect", {"none", "mark", "steal", "dart", "speedkill", "deathpaper", "rice", "alarm", "firstshot", "hastemove", "hasteheal", "seawind", "footsteps", "rally"}));
                 a.amount = s.Int(r, "amount", 0, 99);
                 a.target = static_cast<Target>(s.Pick(r, "target", {"enemy", "ally", "self", "monster", "room", "any"}));
                 a.hpCost = s.Int(r, "hpCost", 0, 99);
+                a.uses = s.Int(r, "uses", 0, 9);
                 a.ap = s.Int(r, "ap", 0, 2);
                 a.power = s.Int(r, "power", 0, 99);
                 a.range = s.Int(r, "range", 0, 40);
@@ -397,7 +398,7 @@ namespace umbra::match
                 ItemDef i{s.Text(r, "id"), s.Text(r, "name"), s.Text(r, "text"), s.Text(r, "sprite")};
                 i.kind = static_cast<ItemClass>(s.Pick(r, "class", {"heal", "xp", "revive"}));
                 i.amount = s.Int(r, "amount", 0, 999);
-                i.family = static_cast<ItemFamily>(s.Pick(r, "family", {"item", "ingredient", "keepsake"}));
+                i.family = static_cast<ItemFamily>(s.Pick(r, "family", {"item", "ingredient", "keepsake", "gear"}));
                 // 1. "use": places joined by ';' (cafe, board, fight).
                 i.use = 0;
                 const std::string use = s.Text(r, "use");

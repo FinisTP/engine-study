@@ -27,7 +27,7 @@
         1
       ],
       "side": 1,
-      "level": 3,
+      "level": 1,
       "flags": [
         "boss"
       ]
@@ -36,18 +36,6 @@
       "who": "ghost_attacker",
       "at": [
         8,
-        2
-      ],
-      "side": 1,
-      "level": 2,
-      "flags": [
-        "boss"
-      ]
-    },
-    {
-      "who": "ghost_defender",
-      "at": [
-        4,
         2
       ],
       "side": 1,
@@ -92,8 +80,8 @@
       "gimmicks": {
         "windows": {
           "spawn": "rat_specter",
-          "level": 2,
-          "max": 4,
+          "level": 1,
+          "max": 2,
           "pattern": [
             [
               0,
@@ -130,19 +118,7 @@
             1
           ],
           "side": 1,
-          "level": 4,
-          "flags": [
-            "boss"
-          ]
-        },
-        {
-          "who": "ghost_attacker",
-          "at": [
-            9,
-            6
-          ],
-          "side": 1,
-          "level": 4,
+          "level": 1,
           "flags": [
             "boss"
           ]

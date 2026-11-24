@@ -62,3 +62,9 @@ void CampaignText::Fill(umbra::campaign::Memories &memories) const
         for (auto &m : list)
             m.name = Get("memory." + m.id + ".name", m.name);
 }
+
+void CampaignText::Fill(umbra::campaign::Quests &quests) const
+{
+    for (umbra::campaign::Quest &q : quests.list)
+        q.text = table.Get("quest." + q.id, english);
+}

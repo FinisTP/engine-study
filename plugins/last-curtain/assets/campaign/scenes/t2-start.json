@@ -2,16 +2,17 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "t2-start",
-  "note": "Draft for the user's review (2026-11-24): T2 opens: the player is hurt after the foyer; Ba Mai tends the wound and teaches fighting side by side. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
+  "note": "T2 opens: the player is hurt; Ba Mai is afraid too; the lesson: her heal first, then side by side. Rewritten for the player's own feelings and remembered choices (the user, 2026-11-24 23:57, note 28): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
       "text": "Hàng ghế khán phòng phủ một lớp bụi mỏng. Vết cào trên tay {player} vẫn rỉ máu, và máu chảy ngược lên.",
-      "en": "Dust lies thin on the stalls. The scratch on {player}'s arm still bleeds, and the blood runs upward."
+      "en": "The auditorium seats wear a thin coat of dust. The scratch on {player}'s arm is still bleeding, and the blood runs upward."
     },
     {
       "id": "b",
       "text": "Đứng yên đó con. Vết này mà để lâu là nó mọc răng.",
+      "en": "Hold still, child. Leave a wound like that too long and it grows teeth.",
       "speaker": "mai",
       "face": "calm",
       "enter": [
@@ -27,20 +28,42 @@
           "slot": 0,
           "face": "calm"
         }
-      ],
-      "en": "Stand still, child. Leave a wound like that too long and it grows teeth."
+      ]
+    },
+    {
+      "id": "b1",
+      "text": "Con còn giận hả? Tốt. Giận thì còn sống.",
+      "en": "Still angry? Good. Angry means alive.",
+      "speaker": "mai",
+      "face": "calm",
+      "when": "player.t1=angry"
+    },
+    {
+      "id": "b2",
+      "text": "Tay con còn run. Bà cũng run, con à. Bốn mươi năm rồi mà vẫn run.",
+      "en": "Your hands are still shaking. Mine shake too, child. Forty years and they still shake.",
+      "speaker": "mai",
+      "face": "calm",
+      "when": "player.t1=afraid"
     },
     {
       "id": "c",
-      "text": "Bà ở xa vẫn băng được cho con. Đến lượt bà, chọn Kỹ năng rồi chọn con.",
-      "speaker": "mai",
-      "face": "calm",
-      "en": "I can bind you from over here. On my turn, choose Skills, then choose you."
+      "text": "Bà không sợ sao? Mấy thứ đó...",
+      "en": "Aren't you scared? Those things...",
+      "speaker": "player",
+      "face": "calm"
     },
     {
       "id": "d",
-      "text": "Cái bóng to đằng kia một mình con không kham nổi. Đứng chung một ô với bà: hai người đánh chung một trận.",
-      "en": "That big shadow is too much for you alone. Share a square with me: two of us fight one battle together."
+      "text": "Sợ chớ. Sợ mỗi đêm. Nhưng sợ thì vẫn phải lau sàn, vẫn phải băng cho người ta.",
+      "en": "Of course I'm scared. Every night. But scared or not, the floor needs mopping and people need bandaging.",
+      "speaker": "mai",
+      "face": "calm"
+    },
+    {
+      "id": "e",
+      "text": "Lượt bà Mai trước: bà chăm sóc vết thương cho con từ xa. Rồi con bước tới sát cái bóng to và chờ. Lượt sau bà sẽ tới chung ô với con: hai người chung một ô đánh chung một trận.",
+      "en": "Ba Mai goes first: she tends your wound from afar. Then you step beside the big shadow and wait. Next turn she joins you on your square: two on one square fight one battle together."
     }
   ]
 }

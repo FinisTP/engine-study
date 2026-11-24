@@ -2,16 +2,19 @@
   "format": "umbra.lc-scene",
   "version": 1,
   "id": "t1-start",
-  "note": "Draft for the user's review (2026-11-24, written overnight). T1 opens: the strings come down; the first fight. Darker rewrite (the user, 2026-11-24 19:40): draft for review, Vietnamese and English.",
+  "note": "T1 opens: the strings come down; the first fight. The player answers with anger or fear (player.t1). Rewritten for the player's own feelings and remembered choices (the user, 2026-11-24 23:57, note 28): draft for review, Vietnamese and English.",
   "lines": [
     {
       "id": "a",
       "text": "Sợi chỉ đỏ thả xuống một cái bóng nhỏ, lom khom. Cái đuôi dài kéo lê trên thảm, để lại vệt ướt.",
-      "en": "The red thread lowers a small, hunched shadow. Its long tail drags across the carpet and leaves a wet trail."
+      "en": "The red thread lowers a small, hunched shadow. Its long tail drags over the carpet, leaving a wet streak."
     },
     {
       "id": "b",
-      "text": "Nó ngẩng lên. Hai đốm mắt đỏ như tàn thuốc, và cái miệng mở rộng hơn một con chuột có thể mở.",
+      "text": "Cửa... cửa đâu rồi? Mới nãy còn ở đây mà.",
+      "en": "The door... where's the door? It was right here.",
+      "speaker": "player",
+      "face": "afraid",
       "enter": [
         {
           "who": "player",
@@ -19,20 +22,55 @@
           "slot": 0,
           "face": "afraid"
         }
-      ],
-      "en": "It looks up. Two red eyes like cigarette embers, and a mouth that opens wider than any rat's should."
+      ]
     },
     {
       "id": "c",
-      "text": "Chạy đi! ...Không. Cửa khóa rồi. Từ bên ngoài.",
-      "speaker": "player",
-      "face": "afraid",
-      "en": "Run! ...No. The door's locked. From the outside."
+      "text": "Nó ngẩng lên. Hai đốm mắt đỏ như tàn thuốc, và cái miệng mở rộng hơn một con chuột có thể mở.",
+      "en": "It looks up. Two red dots like cigarette embers, and a mouth opening wider than any rat's can."
     },
     {
       "id": "d",
-      "text": "Bấm vào ô sáng để đi. Đứng cạnh nó rồi chọn Đánh. Dãy chân dung ở trên cho biết ai đi trước.",
-      "en": "Click a lit square to move. Stand beside it, then choose Attack. The portraits above show who goes first."
+      "text": "Không ai nghe hết. Không ai biết mình ở đây.",
+      "en": "No one can hear. No one knows I'm here.",
+      "speaker": "player",
+      "face": "afraid",
+      "choices": [
+        {
+          "text": "Lại đây. Tao không chạy nữa.",
+          "en": "Come on, then. I'm done running.",
+          "fact": "player.t1",
+          "value": "angry",
+          "jump": "e1"
+        },
+        {
+          "text": "Làm ơn... để tôi đi. Tôi chỉ muốn về nhà.",
+          "en": "Please... let me go. I just want to go home.",
+          "fact": "player.t1",
+          "value": "afraid",
+          "jump": "e2"
+        }
+      ]
+    },
+    {
+      "id": "e1",
+      "text": "Mày muốn ăn thì phải tốn răng.",
+      "en": "If you want to eat me, it'll cost you teeth.",
+      "speaker": "player",
+      "face": "angry",
+      "jump": "f"
+    },
+    {
+      "id": "e2",
+      "text": "Nó không nghe. Nó chỉ nhìn cổ mình.",
+      "en": "It isn't listening. It's only looking at my throat.",
+      "speaker": "player",
+      "face": "afraid"
+    },
+    {
+      "id": "f",
+      "text": "Bấm Di chuyển, đi tới ô sáng. Đứng cạnh nó rồi chọn Đánh. Dãy chân dung ở trên cho biết ai đi trước.",
+      "en": "Press Move and walk to the lit square. Stand beside it, then choose Attack. The portraits at the top show who goes first."
     }
   ]
 }

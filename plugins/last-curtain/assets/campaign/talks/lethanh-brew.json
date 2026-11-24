@@ -1,0 +1,12 @@
+{
+  "format": "umbra.lc-talk",
+  "version": 1,
+  "id": "lethanh-brew",
+  "who": "lethanh",
+  "scene": "lethanh-brew",
+  "after": "t2",
+  "teaches": [
+    "che_dau_xanh"
+  ],
+  "then": "brew"
+}

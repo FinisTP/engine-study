@@ -110,6 +110,7 @@ namespace umbra::campaign
         bool mustFree = false;
         std::vector<std::string> leaders; // a tutorial's: these cast ids act first for `leadRounds` rounds
         int leadRounds = 0;
+        std::map<std::string, int> spoils; // items.csv id -> count, given on the first win (note 13)
         bool meleeEnemies = false; // tutorials: enemies keep only abilities with range 1 (no Snipe)
         std::vector<int> noRevive; // sides that never revive
         std::map<std::string, int> startHp; // the party starts hurt: HP by cast id (a tutorial)
@@ -150,6 +151,8 @@ namespace umbra::campaign
         std::vector<int> rooms;
         int sight = 4;              // how far a passive unit sees in its room ("dark" lowers it)
         std::string spawnWho;       // what a window lets out (its cast id)
+        bool press = false;         // enemies never idle (Brain.cpp Press); every campaign stage
+        std::map<std::string, std::string> said; // the facts its scenes set (choices), for the save (note 28)
     };
 
     // Which of a stage's scenes have played this attempt, and how much of the log was read.
@@ -206,6 +209,7 @@ namespace umbra::campaign
         std::vector<Choice> choices; // 0 or 2-4
         bool model = false;          // plan 6: the model may reword it
         std::string en;              // the English of text (Localization.md)
+        std::string when;            // plays only when this fact holds ("key" or "key=value"); else skipped (note 28)
     };
 
     struct Scene
