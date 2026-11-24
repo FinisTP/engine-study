@@ -15,6 +15,13 @@
 **P8B/P8C/P8D status:** Verified on Windows by the user (2026-11-08, works with limitations; P8D fixes `#UMBRA-62` awaiting re-check)
 **Phase 7 status:** Implemented. The editor ran on Windows after fixes `#UMBRA-50`/`#UMBRA-51`. Headless tests verified on Linux (32/32, GCC/Clang/ASan); the editor compiles but has not been run; Windows checklist open
 
+## Update 2026-11-24, day (The Last Curtain, the user's requests and plan 8: `#UMBRA-389`-`#UMBRA-399`)
+
+- **The café is a room again** (walk, switch with Tab, E to talk, brew, notebook, door); **everyone has Đánh thường**; **Rút lui** leaves a fight for the map with nothing kept; the **floor plan is painted**.
+- **UI art, slice 1:** lacquer frames, icons and ingredient pictures on every campaign screen; the cast's own figures on the board.
+- **Settings** as specified (full screen, volume, text and enemy speed, language, keys); a Vietnamese pause in stages.
+- **Plan 8 input:** gamepad buttons beside each key, the board cursor, the stick in the café, an on-screen keyboard with Vietnamese tone marks. Windows and gamepad checks open (`testing/s52-campaign-feedback-and-input.md` §4).
+
 ## Update 2026-11-24, overnight (The Last Curtain, campaign plan 4: `#UMBRA-352`-`#UMBRA-364`)
 
 - **Fights you can play (plan 4).** The campaign's rule additions (Tí's Đưa tin and Chân sáo, the Rat's theft and darts, marks, drops, use flags, hazards, breath rows, windows), stage files built into fights, enemy behaviours, scenes at their moments, the slice's six fights (T1, T3, Stage 1, three skirmishes with three twists each) and a campaign soak whose bands hold. Play one with `build stage <id>`; the HUD is still the faction match's until plan 5. Drafts and the play check open (`testing/s48-campaign-stages.md` §4).
