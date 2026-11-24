@@ -25,6 +25,8 @@ namespace umbra::night
             fullScreen = !fullScreen;
         else if (action == "fx-" || action == "fx+")
             effects = std::clamp(effects + (action == "fx+" ? 10 : -10), 0, 100);
+        else if (action == "mu-" || action == "mu+")
+            music = std::clamp(music + (action == "mu+" ? 10 : -10), 0, 100);
         else if (action == "textspeed")
             textSpeed = (textSpeed + 1) % 4;
         else if (action == "enemyspeed")
@@ -40,7 +42,7 @@ namespace umbra::night
             std::filesystem::create_directories(file.parent_path(), error);
             const std::filesystem::path temp = file.string() + ".tmp";
             std::ofstream(temp) << nlohmann::json{{"format", "umbra.lc-screen"}, {"version", 1}, {"crt", crtOn}, {"vhs", vhsOn}, {"bigText", bigText},
-                                             {"fullScreen", fullScreen}, {"effects", effects}, {"textSpeed", textSpeed}, {"enemyFast", enemyFast}, {"english", english}}
+                                             {"fullScreen", fullScreen}, {"effects", effects}, {"music", music}, {"textSpeed", textSpeed}, {"enemyFast", enemyFast}, {"english", english}}
                                     .dump(2) << "\n";
             std::filesystem::rename(temp, file, error);
         }
@@ -50,7 +52,7 @@ namespace umbra::night
     nlohmann::json AnalogScreen::Data() const
     {
         nlohmann::json d{{"crt", crtOn},       {"crtOff", !crtOn},     {"vhs", vhsOn},           {"vhsOff", !vhsOn},     {"bigText", bigText},
-                         {"bigTextOff", !bigText}, {"full", fullScreen}, {"fullOff", !fullScreen}, {"effects", effects},   {"enemyFast", enemyFast},
+                         {"bigTextOff", !bigText}, {"full", fullScreen}, {"fullOff", !fullScreen}, {"effects", effects},   {"music", music},          {"enemyFast", enemyFast},
                          {"enemyNormal", !enemyFast}, {"english", english}, {"vietnamese", !english}};
         for (int i = 0; i < 4; ++i)
             d["textSpeed" + std::to_string(i)] = textSpeed == i;
@@ -77,6 +79,7 @@ namespace umbra::night
             analog.bigText = saved.value("bigText", false);
             analog.fullScreen = saved.value("fullScreen", false);
             analog.effects = std::clamp(saved.value("effects", 100), 0, 100);
+            analog.music = std::clamp(saved.value("music", 70), 0, 100);
             analog.textSpeed = std::clamp(saved.value("textSpeed", 1), 0, 3);
             analog.enemyFast = saved.value("enemyFast", false);
             analog.english = saved.value("english", false);

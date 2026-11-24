@@ -78,6 +78,7 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
         view.Load(sprite);
     const glm::vec2 roomSize{room["size"][0].get<float>(), room["size"][1].get<float>()};
     screens.Ui().Open("cafe-hub");
+    game.sounds->Music("cafe");
     bool brewing = false;
     std::string picked; // a general drink waiting for whom
     umbra::core::DrawList drawList;
@@ -90,7 +91,19 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
             return;
         campaign::Facts chosen;
         screens.Ui().Close("cafe-hub");
-        if (RunScene(game, assets, scene, "", player, chosen) == 0)
+        // The talk plays in the room itself: the camera close on whoever speaks (no backdrop).
+        const SceneBehind room = [&](umbra::core::DrawList &out, float dt, const std::string &speaker) {
+            glm::vec2 at = walk.Position();
+            const nlohmann::json people = hub.Data()["people"]; // kept: a temporary's items would dangle
+            for (const nlohmann::json &p : people)
+                if (p.value("name", "") == speaker)
+                    for (const CampaignRoom::Person &person : walk.People())
+                        if (person.who == p["who"].get<std::string>())
+                            at = person.at;
+            view.Look(at, 1.0F, dt);
+            view.DrawCampaign(walk, sprites, "", out);
+        };
+        if (RunScene(game, assets, scene, "", player, chosen, {}, 0, room) == 0)
             done = true;
         hub.SceneDone(chosen);
         screens.Ui().Open("cafe-hub");

@@ -23,6 +23,9 @@ std::pair<std::string, std::string> RunScreen(GameContext &game, const std::stri
 {
     Screens &screens = *game.screens;
     screens.Ui().Open(screen), screens.Ui().ResetFocus(screen);
+    // The place's music (sounds.csv "music:<place>"); settings, the keyboard and new game keep what plays.
+    if (const std::string place = screen == "worldmap" || screen == "prestage" ? "map" : screen; place == "title" || place == "map" || place == "result" || place == "gameover")
+        game.sounds->Music(place);
     std::pair<std::string, std::string> picked{"quit", ""};
     umbra::core::DrawList drawList;
     std::vector<umbra::core::Diagnostic> ignored;

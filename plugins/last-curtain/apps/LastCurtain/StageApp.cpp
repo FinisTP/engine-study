@@ -93,14 +93,14 @@ int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const
     };
     bool ended = false; // the fight is over and its last scene has played
     hooks.done = [&] { return out != nullptr && ended; };
-    hooks.beat = [&](MatchPlay &play) {
+    hooks.beat = [&](MatchPlay &play, const SceneBehind &board) {
         if (!play.Quiet() || !capture.empty())
             return;
         built.state = play.State();
         campaign::Sync(built);
         play.SetCast(names(), sprites()), play.SetHeights(built.height);
         for (const std::string &scene : campaign::StageMoments(stage, built, play.Told(), moments))
-            if (RunScene(game, assets, scene, stage.backdrop, player, facts) == 0)
+            if (RunScene(game, assets, scene, "", player, facts, {}, 0, board) == 0) // over the board, not a backdrop
                 return;
         if (out && play.State().over && play.Quiet())
             *out = built, ended = true;

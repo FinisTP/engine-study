@@ -4,15 +4,15 @@
   "fonts": {
     "body": {
       "file": "ui/fonts/BeVietnamPro-Regular.ttf",
-      "size": 18
+      "size": 20
     },
     "small": {
       "file": "ui/fonts/BeVietnamPro-Regular.ttf",
-      "size": 15
+      "size": 17
     },
     "strong": {
       "file": "ui/fonts/BeVietnamPro-Medium.ttf",
-      "size": 18
+      "size": 20
     },
     "title": {
       "file": "ui/fonts/PlayfairDisplay.ttf",
@@ -20,11 +20,15 @@
     },
     "heading": {
       "file": "ui/fonts/Lora.ttf",
-      "size": 22
+      "size": 25
     },
     "tag": {
       "file": "ui/fonts/BeVietnamPro-Medium.ttf",
-      "size": 14
+      "size": 15
+    },
+    "dialog": {
+      "file": "ui/fonts/Lora.ttf",
+      "size": 30
     },
     "essence": {
       "file": "ui/fonts/PlayfairDisplay.ttf",
@@ -495,6 +499,7 @@
     "lcBubble": {"base": "small", "color": "#f0e5cc", "image": "art/ui/campaign/frame/bubble.png", "slice": [16, 16, 16, 16], "padding": [14, 10]},
     "lcPlate": {"base": "small", "color": "#f0e5cc", "image": "art/ui/campaign/frame/nameplate.png", "slice": [12, 12, 12, 12], "padding": [12, 5], "hover": {"color": "#fff4d0", "scale": 1.05}, "selected": {"color": "#ffd76a", "image": "art/ui/campaign/frame/button_focus.png", "slice": [16, 16, 16, 16]}},
     "lcTab": {"base": "text", "color": "#c9bca0", "image": "art/ui/campaign/frame/tab.png", "slice": [14, 14, 14, 14], "padding": [16, 8], "hover": {"color": "#fff4d0"}, "selected": {"image": "art/ui/campaign/frame/tab_active.png", "color": "#ffe9b0"}},
-    "lcTicket": {"base": "text", "color": "#f0e5cc", "image": "art/ui/campaign/frame/ticket.png", "slice": [18, 20, 48, 20], "padding": [20, 10, 50, 10], "hover": {"image": "art/ui/campaign/frame/ticket_next.png", "slice": [26, 28, 56, 28], "scale": 1.04}, "selected": {"image": "art/ui/campaign/frame/ticket_next.png", "slice": [26, 28, 56, 28], "color": "#ffe9b0"}, "disabled": {"image": "art/ui/campaign/frame/ticket_unknown.png", "color": "#7a7060"}}
+    "lcTicket": {"base": "text", "color": "#f0e5cc", "image": "art/ui/campaign/frame/ticket.png", "slice": [18, 20, 48, 20], "padding": [20, 10, 50, 10], "hover": {"image": "art/ui/campaign/frame/ticket_next.png", "slice": [26, 28, 56, 28], "scale": 1.04}, "selected": {"image": "art/ui/campaign/frame/ticket_next.png", "slice": [26, 28, 56, 28], "color": "#ffe9b0"}, "disabled": {"image": "art/ui/campaign/frame/ticket_unknown.png", "color": "#7a7060"}},
+    "dialogLine": {"base": "text", "font": "dialog", "color": "#f2e6c8"}
   }
 }

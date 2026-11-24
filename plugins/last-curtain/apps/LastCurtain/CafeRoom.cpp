@@ -94,6 +94,7 @@ umbra::core::TextureHandle CafeRoom::Picture(const std::string &sprite)
         if (umbra::assets::LoadImageFile(assets_ / ("art/sprites/" + folder + "/body_calm.png"), data, error))
         {
             aspects_[sprite] = static_cast<float>(data.width) / static_cast<float>(std::max(1u, data.height));
+            data.clamp = true; // a figure: no bleeding at its edges
             return pictures_[sprite] = renderer_.CreateTexture(data);
         }
     }
@@ -103,8 +104,8 @@ umbra::core::TextureHandle CafeRoom::Picture(const std::string &sprite)
 umbra::core::Camera CafeRoom::Camera() const
 {
     umbra::core::Camera c;
-    c.target = look_ + glm::vec3{0.0F, 0.8F, 0.0F};
-    c.position = look_ + glm::vec3{0.0F, 4.2F, 6.4F};
+    c.target = look_ + glm::vec3{0.0F, 0.8F + 0.5F * close_, 0.0F};
+    c.position = look_ + glm::mix(glm::vec3{0.0F, 4.2F, 6.4F}, glm::vec3{0.0F, 1.9F, 3.4F}, close_);
     return c;
 }
 
@@ -113,12 +114,21 @@ void CafeRoom::Update(const umbra::night::CafePlay &play, float dt)
     Follow(play.Position(), {play.Room()["size"][0].get<float>(), play.Room()["size"][1].get<float>()}, dt);
 }
 
+void CafeRoom::Look(glm::vec2 at, float close, float dt)
+{
+    clock_ += dt;
+    const float k = std::min(1.0F, dt * 3.0F);
+    look_ += (glm::vec3{at.x, 0.0F, at.y} - look_) * k;
+    close_ += (close - close_) * k;
+}
+
 void CafeRoom::Follow(glm::vec2 at, glm::vec2 size, float dt)
 {
     // 1. The camera eases after the walker across the room; the walker faces the way it goes.
     clock_ += dt;
     const glm::vec3 want{std::clamp(at.x, 3.5F, size.x - 3.5F), 0.0F, std::clamp(at.y, 3.0F, size.y - 2.0F)};
     look_ += (want - look_) * std::min(1.0F, dt * 3.0F);
+    close_ -= close_ * std::min(1.0F, dt * 3.0F); // back from a scene's close-up
     if (std::abs(at.x - last_.x) > 0.001F)
         facing_ = at.x > last_.x ? 1.0F : -1.0F;
     walk_ = glm::length(at - last_) > 0.001F ? walk_ + dt : 0.0F;

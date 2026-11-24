@@ -29,12 +29,15 @@ public:
     // The campaign's café in the same room (CampaignRoom.hpp): sprites by cast id, the spot E would use.
     void Load(const std::string &sprite) { (void)Picture(sprite); }
     void Follow(glm::vec2 at, glm::vec2 roomSize, float dt); // the camera and the walker's facing
+    // A scene in the room: the camera eases close onto a floor point (close 1), or back (close 0).
+    void Look(glm::vec2 at, float close, float dt);
     void DrawCampaign(const CampaignRoom &room, const std::map<std::string, std::string> &sprites, const std::string &near, umbra::core::DrawList &out) const;
     // A point above the floor (metres) on the screen, for a name over a head.
     [[nodiscard]] std::optional<glm::vec2> Above(glm::vec2 floor, float height, glm::vec2 pixels) const;
 
 private:
     [[nodiscard]] umbra::core::Camera Camera() const;
+    float close_ = 0.0F; // 0 the walking view, 1 a scene's close-up
     void DrawShell(const nlohmann::json &room, umbra::core::DrawList &out) const; // light, floor, walls, counter, tables
     [[nodiscard]] std::optional<glm::vec2> ScreenPoint(glm::vec3 world, glm::vec2 pixels) const;
     void Figure(const std::string &sprite, glm::vec3 feet, float height, float facing, umbra::core::DrawList &out) const;

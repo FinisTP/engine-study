@@ -30,9 +30,9 @@ struct GameContext
     std::unique_ptr<Sounds> sounds;
     umbra::night::Keys keys; // assets/keys-keyboard.json (Keys.hpp); defaults when missing or broken
 
-    bool Open(const umbra::assets::AssetFolders &assets)
+    bool Open(const umbra::assets::AssetFolders &assets, int width = 1280, int height = 720)
     {
-        if (!window.Create("The Last Curtain", 1280, 720) || !renderer.Initialize(window))
+        if (!window.Create("The Last Curtain", width, height) || !renderer.Initialize(window))
             return false;
         screens = std::make_unique<Screens>(renderer, assets);
         sounds = std::make_unique<Sounds>(assets);
@@ -50,7 +50,7 @@ struct GameContext
         if (screens)
             screens->SetTextScale(settings.TextScale());
         if (sounds)
-            sounds->SetVolume(static_cast<float>(settings.effects) / 100.0F);
+            sounds->SetVolume(static_cast<float>(settings.effects) / 100.0F), sounds->SetMusicVolume(static_cast<float>(settings.music) / 100.0F);
         if (settings.fullScreen != fullScreen)
             window.SetFullScreen(settings.fullScreen), fullScreen = settings.fullScreen;
     }

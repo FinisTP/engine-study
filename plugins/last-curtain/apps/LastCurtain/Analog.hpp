@@ -21,6 +21,7 @@ namespace umbra::night
         bool bigText = false;            // large text (campaign plan 5): fonts x1.25
         bool fullScreen = false, enemyFast = false, english = false;
         int effects = 100;  // sound effects volume, 0..100 by 10
+        int music = 70;     // music volume, the same way
         int textSpeed = 1;  // 0 slow, 1 normal, 2 fast, 3 at once
         [[nodiscard]] float TextScale() const { return bigText ? 1.25F : 1.0F; }
         [[nodiscard]] float LetterScale() const { return textSpeed == 0 ? 0.5F : textSpeed == 2 ? 2.0F : textSpeed == 3 ? 1000.0F : 1.0F; }

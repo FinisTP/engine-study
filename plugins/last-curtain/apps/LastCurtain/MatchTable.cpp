@@ -426,6 +426,7 @@ void MatchTable::Load(const std::string &sprite)
         const std::string key = sprite + "/" + face;
         if (!sprites_.contains(key) && umbra::assets::LoadImageFile(assets_ / ("art/sprites/" + sprite + "/body_" + face + ".png"), data, error))
         {
+            data.clamp = true; // a figure: no bleeding at its edges
             sprites_[key] = renderer_.CreateTexture(data), aspects_[sprite] = static_cast<float>(data.width) / static_cast<float>(std::max(1u, data.height));
             if (!feet_.contains(sprite))
                 feet_[sprite] = umbra::night::FootCentre(data);
@@ -822,4 +823,12 @@ int MatchTable::Pick(const Board &b, glm::vec2 mouse, glm::vec2 pixels) const
     const int x = static_cast<int>(std::floor(p.z / tile + static_cast<float>(b.width) * 0.5F));
     const int y = static_cast<int>(std::floor(-p.x / tile + static_cast<float>(b.height) * 0.5F));
     return x < 0 || y < 0 || x >= b.width || y >= b.height ? -1 : y * b.width + x;
+}
+
+void MatchTable::CloseUp(bool on)
+{
+    if (on && before_ < 0.0F)
+        before_ = view_.Distance(), view_.SetDistance(view_.Distance() * 0.55F);
+    else if (!on && before_ >= 0.0F)
+        view_.SetDistance(before_), before_ = -1.0F;
 }

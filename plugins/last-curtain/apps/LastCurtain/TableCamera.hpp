@@ -27,6 +27,7 @@ public:
     {
         distance_ = distance, minDistance_ = minDistance, maxDistance_ = maxDistance, tilt_ = tilt;
     }
+    void SetDistance(float d) { distance_ = d; } // a close-up may go nearer than the wheel can
     [[nodiscard]] float RoomT() const { return roomT_; } // 0 the table, 1 the room view
     [[nodiscard]] float Distance() const { return distance_; } // the seat's, without a shot
     [[nodiscard]] float Tilt() const { return tilt_; }

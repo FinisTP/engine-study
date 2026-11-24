@@ -16,6 +16,10 @@ public:
     explicit Sounds(const umbra::assets::AssetFolders &assets);
     void Play(const std::string &cue);
     void SetVolume(float volume) { volume_ = volume; } // the player's effects volume, 0..1, times each cue's
+    // The place's music (sounds.csv row "music:<place>"), crossfading over `fade` seconds; a place with
+    // none, or a missing file, fades the music out. The player's music volume, 0..1, applies at once.
+    void Music(const std::string &place, float fade = 1.5F);
+    void SetMusicVolume(float volume);
 
 private:
     struct Cue
@@ -27,5 +31,6 @@ private:
     umbra::audio::SoundBank bank_;
     umbra::platform::AudioDevice device_;
     std::map<std::string, Cue> cues_;
-    float volume_ = 1.0F;
+    float volume_ = 1.0F, musicVolume_ = 0.7F;
+    std::string place_ = "-"; // the place whose music plays ("" silence)
 };

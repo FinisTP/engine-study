@@ -8,13 +8,16 @@
 #include <Options.hpp>
 #include <TextureTools.hpp>
 
+#include <DrawList.hpp>
+
 #include <chrono>
 #include <fstream>
 #include <thread>
 
 
 int RunScene(GameContext &game, const umbra::assets::AssetFolders &assets, const std::string &sceneId, const std::string &backdrop,
-             const umbra::campaign::Speaker &player, umbra::campaign::Facts &facts, const std::filesystem::path &capture, int frames)
+             const umbra::campaign::Speaker &player, umbra::campaign::Facts &facts, const std::filesystem::path &capture, int frames,
+             const SceneBehind &behind)
 {
     // 1. The cast, the scene, the words.
     umbra::campaign::Cast cast;
@@ -48,6 +51,8 @@ int RunScene(GameContext &game, const umbra::assets::AssetFolders &assets, const
     const int lastFrame = frames > 0 ? frames : (capture.empty() ? 0 : 3);
     int frame = 0, result = 0;
     bool captured = false;
+    std::size_t typed = 0; // letters shown so far: a new one ticks the typing sound
+    float tick = 0.0F;
     while (!play.Done())
     {
         game.input.BeginFrame();
@@ -79,6 +84,14 @@ int RunScene(GameContext &game, const umbra::assets::AssetFolders &assets, const
             play.Skip(); // a capture shows the first choice, or the end
         if (const std::string sound = play.TakeSound(); !sound.empty())
             game.sounds->Play(sound);
+        // The typewriter's sound: a soft key every few letters while a line types (sounds.csv "type").
+        const std::size_t letters = play.Shown().size();
+        tick += dt;
+        if (letters > typed && !play.Complete() && tick >= 0.07F)
+            game.sounds->Play("type"), tick = 0.0F;
+        typed = letters;
+        if (backdropFile.empty() && behind)
+            behind(drawList, dt, play.SpeakerName()); // the place itself, its camera on the speaker
 
         // 4. The screens' data and actions.
         nlohmann::json data = DialogData(play, cast, player, exists);

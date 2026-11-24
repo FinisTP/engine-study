@@ -39,6 +39,7 @@
 #include <algorithm>
 #include <utility>
 #include <chrono>
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <optional>
@@ -58,6 +59,7 @@ namespace
         bool watch = false;            // all seven are bots
         bool look = false;             // open Look on the player's first menu (pictures of the stage)
         std::filesystem::path capture; // save the last frame here and quit
+        int width = 1280, height = 720; // --window 1920x1080: the window's size (a capture at that size)
         int frames = 0;                // frames to run (0 = until closed; 3 with --capture)
         bool night = false;            // the old night (--night); else the faction match
         bool cafe = false;             // --cafe: a capture of the café
@@ -156,7 +158,7 @@ namespace
     int RunCareer(const umbra::assets::AssetFolders &assets, const Options &options)
     {
         GameContext game;
-        if (!game.Open(assets))
+        if (!game.Open(assets, options.width, options.height))
             return 1;
         // 1. The career from its file, or a new one (a bad file is reported and left alone).
         umbra::cafe::Career career;
@@ -194,7 +196,7 @@ namespace
                 // One campaign scene on the dialog screen (DialogApp.hpp), for writers and captures.
                 GameContext game;
                 umbra::campaign::Facts facts;
-                result = game.Open(assets) && RunScene(game, assets, options.scene, options.backdrop, options.speaker, facts, options.capture, options.frames) >= 0 ? 0 : 1;
+                result = game.Open(assets, options.width, options.height) && RunScene(game, assets, options.scene, options.backdrop, options.speaker, facts, options.capture, options.frames) >= 0 ? 0 : 1;
                 platform.Shutdown();
                 return result;
             }
@@ -203,7 +205,7 @@ namespace
                 // The campaign: title, new game or continue, the café, the map, the stages (Flow.hpp).
                 GameContext game;
                 const std::filesystem::path prefs = umbra::platform::Platform::PreferencesFolder();
-                result = game.Open(assets) ? RunCampaign(game, assets, (prefs.empty() ? std::filesystem::path(".") : prefs / "last-curtain") / "campaign.json", options.capture, options.frames) : 1;
+                result = game.Open(assets, options.width, options.height) ? RunCampaign(game, assets, (prefs.empty() ? std::filesystem::path(".") : prefs / "last-curtain") / "campaign.json", options.capture, options.frames) : 1;
                 platform.Shutdown();
                 return result;
             }
@@ -215,7 +217,7 @@ namespace
                 save.facts["won:t1"] = save.facts["won:t3"] = save.facts["won:stage1"] = "1";
                 save.recipes = {"mut_gung", "nuoc_gung"};
                 save.storage = {{"gung", 2}, {"duong", 1}, {"giay_gap_tu", 1}};
-                result = game.Open(assets) && RunCafeHub(game, assets, save, options.speaker, options.capture, options.frames) >= 0 ? 0 : 1;
+                result = game.Open(assets, options.width, options.height) && RunCafeHub(game, assets, save, options.speaker, options.capture, options.frames) >= 0 ? 0 : 1;
                 platform.Shutdown();
                 return result;
             }
@@ -223,7 +225,7 @@ namespace
             {
                 // One campaign stage with its scenes (StageApp.hpp), for designers and the soak's checks.
                 GameContext game;
-                result = game.Open(assets) ? RunStage(game, assets, options.stage, options.refill, options.seed, options.speaker, options.capture, options.frames) : 1;
+                result = game.Open(assets, options.width, options.height) ? RunStage(game, assets, options.stage, options.refill, options.seed, options.speaker, options.capture, options.frames) : 1;
                 platform.Shutdown();
                 return result;
             }
@@ -273,7 +275,7 @@ namespace
             umbra::platform::ApplicationEvents events;
             umbra::platform::EventPump pump;
             umbra::platform::Window window;
-            if (!window.Create("The Last Curtain", 1280, 720))
+            if (!window.Create("The Last Curtain", options.width, options.height))
             {
                 platform.Shutdown();
                 return 1;
@@ -605,6 +607,8 @@ int main(int argc, char **argv)
             options.look = true;
         else if (arg == "--capture" && more)
             options.capture = argv[++i];
+        else if (arg == "--window" && more)
+            (void)std::sscanf(argv[++i], "%dx%d", &options.width, &options.height);
         else if (arg == "--frames" && more)
             options.frames = std::atoi(argv[++i]);
         else if (arg == "--night")

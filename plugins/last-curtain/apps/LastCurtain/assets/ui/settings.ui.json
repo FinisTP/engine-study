@@ -157,6 +157,43 @@
                 ]
               },
               {
+                "type": "stack",
+                "direction": "horizontal",
+                "gap": 6,
+                "align": "center",
+                "children": [
+                  {
+                    "type": "text",
+                    "text": "{words.music}",
+                    "size": [
+                      120,
+                      0
+                    ]
+                  },
+                  {
+                    "type": "button",
+                    "style": "lcButton",
+                    "text": "-",
+                    "action": "mu-"
+                  },
+                  {
+                    "type": "text",
+                    "text": "{analog.music}",
+                    "size": [
+                      44,
+                      0
+                    ],
+                    "textAlign": "center"
+                  },
+                  {
+                    "type": "button",
+                    "style": "lcButton",
+                    "text": "+",
+                    "action": "mu+"
+                  }
+                ]
+              },
+              {
                 "type": "text",
                 "style": "heading",
                 "text": "{words.groupGame}"

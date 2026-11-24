@@ -32,3 +32,22 @@ void Sounds::Play(const std::string &cue)
     for (const umbra::core::Diagnostic &problem : bank_.TakeDiagnostics()) // once per missing file
         umbra::diagnostics::Error(umbra::core::Format(problem));
 }
+
+void Sounds::Music(const std::string &place, float fade)
+{
+    if (place == place_ || !device_.IsOpen())
+        return;
+    place_ = place;
+    const auto it = cues_.find("music:" + place);
+    mixer_.PlayMusic(it == cues_.end() ? nullptr : bank_.GetMusic(it->second.file), it == cues_.end() ? 0.0F : it->second.volume * musicVolume_, fade);
+    for (const umbra::core::Diagnostic &problem : bank_.TakeDiagnostics())
+        umbra::diagnostics::Error(umbra::core::Format(problem));
+}
+
+void Sounds::SetMusicVolume(float volume)
+{
+    musicVolume_ = volume;
+    const auto it = cues_.find("music:" + place_);
+    if (it != cues_.end() && device_.IsOpen()) // the same track: only its volume changes
+        mixer_.PlayMusic(bank_.GetMusic(it->second.file), it->second.volume * musicVolume_, 0.3F);
+}

@@ -19,6 +19,13 @@ Screens::Screens(umbra::render::Renderer &renderer, const umbra::assets::AssetFo
     atlas_ = renderer_.CreateTexture(ui_.Atlas());
     ui_.SetAtlasTexture(atlas_);
     ui_.SetImageLoader([this](const std::string &path) { return Image(path); });
+    // 3. The screens are made for 1280 x 720 and drawn scaled to the window (UI.md "UI scale").
+    ui_.SetDesignHeight(720.0F);
+    ui_.SetAtlasUploader([this](const umbra::core::TextureData &atlas) {
+        oldAtlases_.push_back(atlas_); // the renderer may still draw with it this frame
+        atlas_ = renderer_.CreateTexture(atlas);
+        return atlas_;
+    });
 }
 
 void Screens::SetTextScale(float scale)
@@ -49,7 +56,7 @@ umbra::ui::ImageRef Screens::Image(const std::string &path)
     umbra::core::TextureData image;
     std::string error;
     umbra::ui::ImageRef ref;
-    if (umbra::assets::LoadImageFile(assets_ / path, image, error))
+    if (umbra::assets::LoadImageFile(assets_ / path, image, error) && (image.clamp = true))
         ref = {renderer_.CreateTexture(image), {static_cast<float>(image.width), static_cast<float>(image.height)}};
     else
         umbra::diagnostics::Error("UI picture " + path + ": " + error);

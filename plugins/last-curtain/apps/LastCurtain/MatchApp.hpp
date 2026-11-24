@@ -1,5 +1,7 @@
 #pragma once
 
+#include "DialogApp.hpp"
+
 #include <AssetFolders.hpp>
 
 #include <cstdint>
@@ -22,7 +24,7 @@ struct MatchHooks
 {
     std::function<umbra::match::MatchState()> start;
     std::function<umbra::match::Action(const umbra::match::MatchState &)> brain;
-    std::function<void(MatchPlay &)> beat;
+    std::function<void(MatchPlay &, const SceneBehind &)> beat; // scenes are played over the board (`behind`)
     std::function<void(MatchPlay &)> setup; // after each start: names, the stage's title
     std::function<bool()> done;              // true: the flow takes over (RunMatch returns 3)
 };

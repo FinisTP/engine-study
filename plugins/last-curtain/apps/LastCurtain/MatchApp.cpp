@@ -118,6 +118,8 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
     std::uint64_t matches = 0;
     std::string shown;
     const std::string hudName = hooks ? "campaign-hud" : "match-hud"; // a stage has the campaign's HUD (plan 5)
+    if (hooks)
+        game.sounds->Music("fight");
     int savedRound = -1;
     bool ended = false;  // the end scene has started
     bool hudOpen = false; // the HUD is open (closed while a fight is staged)
@@ -215,7 +217,18 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
             if (!paused) // hold Space on their turn to hurry the beats (P16)
                 play->Update(hooks && !play->PlayerTurn() ? dt * analog.EnemyScale() * (game.keys.Held(input, "hurry") ? 3.0F : 1.0F) : dt);
             if (hooks && hooks->beat && !paused)
-                hooks->beat(*play); // a stage's scenes, between beats
+            {
+                // A stage's scenes, between beats, over the board: the camera close on whoever speaks.
+                const SceneBehind board = [&](umbra::core::DrawList &out, float sdt, const std::string &speaker) {
+                    const auto &names = play->Names();
+                    if (const auto it = std::ranges::find(names, speaker); it != names.end())
+                        table.LookAt(play->State(), static_cast<int>(it - names.begin())), table.CloseUp(true);
+                    table.Update(sdt);
+                    table.Draw(play->State(), nlohmann::json::object(), -1, out);
+                };
+                hooks->beat(*play, board);
+                table.CloseUp(false);
+            }
             // What was just told: figures move, sounds play.
             for (const auto &[unit, motion] : play->TakeMoves())
                 table.Play(unit, motion);

@@ -1,224 +1,226 @@
 {
- "format": "umbra.ui",
- "version": 1,
- "modal": true,
- "back": "skip",
- "root": {
-  "type": "panel",
-  "anchor": "fill",
-  "style": "layer",
-  "action": "next",
-  "children": [
-   {
-    "type": "image",
+  "format": "umbra.ui",
+  "version": 1,
+  "modal": true,
+  "back": "skip",
+  "root": {
+    "type": "panel",
     "anchor": "fill",
-    "image": "{dialog.backdrop}",
-    "visible": "{dialog.backdrop}",
-    "fit": "cover"
-   },
-   {
-    "type": "image",
-    "image": "{dialog.slots.l1.image}",
-    "visible": "{dialog.slots.l1.show}",
-    "flip": "{dialog.slots.l1.flip}",
-    "tint": "{dialog.slots.l1.tint}",
-    "anchor": "bottom-left",
-    "offset": [
-     40,
-     -150
-    ],
-    "size": [
-     326,
-     400
-    ],
-    "fit": "contain"
-   },
-   {
-    "type": "image",
-    "image": "{dialog.slots.r1.image}",
-    "visible": "{dialog.slots.r1.show}",
-    "flip": "{dialog.slots.r1.flip}",
-    "tint": "{dialog.slots.r1.tint}",
-    "anchor": "bottom-right",
-    "offset": [
-     -40,
-     -150
-    ],
-    "size": [
-     326,
-     400
-    ],
-    "fit": "contain"
-   },
-   {
-    "type": "image",
-    "image": "{dialog.slots.l0.image}",
-    "visible": "{dialog.slots.l0.show}",
-    "flip": "{dialog.slots.l0.flip}",
-    "tint": "{dialog.slots.l0.tint}",
-    "anchor": "bottom-left",
-    "offset": [
-     250,
-     -150
-    ],
-    "size": [
-     326,
-     400
-    ],
-    "fit": "contain"
-   },
-   {
-    "type": "image",
-    "image": "{dialog.slots.r0.image}",
-    "visible": "{dialog.slots.r0.show}",
-    "flip": "{dialog.slots.r0.flip}",
-    "tint": "{dialog.slots.r0.tint}",
-    "anchor": "bottom-right",
-    "offset": [
-     -250,
-     -150
-    ],
-    "size": [
-     326,
-     400
-    ],
-    "fit": "contain"
-   },
-   {
-    "type": "stack",
-    "anchor": "bottom",
-    "offset": [
-     0,
-     -20
-    ],
-    "style": "hud",
-    "size": [
-     1120,
-     170
-    ],
-    "gap": 8,
+    "style": "layer",
+    "action": "next",
     "children": [
-     {
-      "type": "text",
-      "style": "heading",
-      "text": "{dialog.text}",
-      "wrap": true,
-      "size": [
-       1080,
-       0
-      ]
-     },
-     {
-      "type": "text",
-      "style": "muted",
-      "text": "»",
-      "visible": "{dialog.more}",
-      "textAlign": "right",
-      "size": [
-       1080,
-       0
-      ]
-     }
-    ]
-   },
-   {
-    "type": "stack",
-    "anchor": "bottom-left",
-    "offset": [
-     100,
-     -196
-    ],
-    "style": "panel",
-    "visible": "{dialog.nameLeft}",
-    "children": [
-     {
-      "type": "text",
-      "style": "title",
-      "text": "{dialog.name}"
-     }
-    ]
-   },
-   {
-    "type": "stack",
-    "anchor": "bottom-right",
-    "offset": [
-     -100,
-     -196
-    ],
-    "style": "panel",
-    "visible": "{dialog.nameRight}",
-    "children": [
-     {
-      "type": "text",
-      "style": "title",
-      "text": "{dialog.name}"
-     }
-    ]
-   },
-   {
-    "type": "list",
-    "anchor": "bottom",
-    "offset": [
-     0,
-     -206
-    ],
-    "items": "{dialog.choices}",
-    "as": "c",
-    "gap": 10,
-    "visible": "{dialog.hasChoices}",
-    "action": "choose",
-    "arg": "{c.index}",
-    "entry": {
-     "type": "stack",
-     "style": "button",
-     "size": [
-      640,
-      0
-     ],
-     "children": [
       {
-       "type": "text",
-       "style": "strong",
-       "text": "{c.key}. {c.text}",
-       "wrap": true,
-       "size": [
-        600,
-        0
-       ]
+        "type": "image",
+        "anchor": "fill",
+        "image": "{dialog.backdrop}",
+        "visible": "{dialog.backdrop}",
+        "fit": "cover"
+      },
+      {
+        "type": "image",
+        "image": "{dialog.slots.l1.image}",
+        "visible": "{dialog.slots.l1.show}",
+        "flip": "{dialog.slots.l1.flip}",
+        "tint": "{dialog.slots.l1.tint}",
+        "anchor": "bottom-left",
+        "offset": [
+          40,
+          -150
+        ],
+        "size": [
+          326,
+          400
+        ],
+        "fit": "contain"
+      },
+      {
+        "type": "image",
+        "image": "{dialog.slots.r1.image}",
+        "visible": "{dialog.slots.r1.show}",
+        "flip": "{dialog.slots.r1.flip}",
+        "tint": "{dialog.slots.r1.tint}",
+        "anchor": "bottom-right",
+        "offset": [
+          -40,
+          -150
+        ],
+        "size": [
+          326,
+          400
+        ],
+        "fit": "contain"
+      },
+      {
+        "type": "image",
+        "image": "{dialog.slots.l0.image}",
+        "visible": "{dialog.slots.l0.show}",
+        "flip": "{dialog.slots.l0.flip}",
+        "tint": "{dialog.slots.l0.tint}",
+        "anchor": "bottom-left",
+        "offset": [
+          250,
+          -150
+        ],
+        "size": [
+          326,
+          400
+        ],
+        "fit": "contain"
+      },
+      {
+        "type": "image",
+        "image": "{dialog.slots.r0.image}",
+        "visible": "{dialog.slots.r0.show}",
+        "flip": "{dialog.slots.r0.flip}",
+        "tint": "{dialog.slots.r0.tint}",
+        "anchor": "bottom-right",
+        "offset": [
+          -250,
+          -150
+        ],
+        "size": [
+          326,
+          400
+        ],
+        "fit": "contain"
+      },
+      {
+        "type": "stack",
+        "anchor": "bottom",
+        "offset": [
+          0,
+          -20
+        ],
+        "style": "lcPanel",
+        "size": [
+          1160,
+          190
+        ],
+        "gap": 8,
+        "children": [
+          {
+            "type": "text",
+            "style": "dialogLine",
+            "text": "{dialog.text}",
+            "wrap": true,
+            "size": [
+              1100,
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "style": "muted",
+            "text": "»",
+            "visible": "{dialog.more}",
+            "textAlign": "right",
+            "size": [
+              1100,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "type": "stack",
+        "anchor": "bottom-left",
+        "offset": [
+          100,
+          -196
+        ],
+        "style": "lcPanelGold",
+        "visible": "{dialog.nameLeft}",
+        "children": [
+          {
+            "type": "text",
+            "style": "title",
+            "text": "{dialog.name}"
+          }
+        ]
+      },
+      {
+        "type": "stack",
+        "anchor": "bottom-right",
+        "offset": [
+          -100,
+          -196
+        ],
+        "style": "lcPanelGold",
+        "visible": "{dialog.nameRight}",
+        "children": [
+          {
+            "type": "text",
+            "style": "title",
+            "text": "{dialog.name}"
+          }
+        ]
+      },
+      {
+        "type": "list",
+        "anchor": "bottom",
+        "offset": [
+          0,
+          -206
+        ],
+        "items": "{dialog.choices}",
+        "as": "c",
+        "gap": 10,
+        "visible": "{dialog.hasChoices}",
+        "action": "choose",
+        "arg": "{c.index}",
+        "entry": {
+          "type": "stack",
+          "style": "lcButton",
+          "size": [
+            640,
+            0
+          ],
+          "children": [
+            {
+              "type": "text",
+              "style": "strong",
+              "text": "{c.key}. {c.text}",
+              "wrap": true,
+              "size": [
+                600,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "type": "stack",
+        "anchor": "bottom-right",
+        "offset": [
+          -60,
+          -30
+        ],
+        "direction": "horizontal",
+        "gap": 8,
+        "children": [
+          {
+            "type": "button",
+            "size": [
+              120,
+              40
+            ],
+            "text": "{words.log}",
+            "action": "log",
+            "style": "lcButton"
+          },
+          {
+            "type": "button",
+            "size": [
+              120,
+              40
+            ],
+            "text": "{words.skip}",
+            "action": "skip",
+            "style": "lcButton"
+          }
+        ]
       }
-     ]
-    }
-   },
-   {
-    "type": "stack",
-    "anchor": "bottom-right",
-    "offset": [
-     -60,
-     -30
-    ],
-    "direction": "horizontal",
-    "gap": 8,
-    "children": [
-     {
-      "type": "button",
-      "size": [
-       120,
-       40
-      ],
-      "text": "{words.log}",
-      "action": "log"
-     },
-     {
-      "type": "button",
-      "size": [
-       120,
-       40
-      ],
-      "text": "{words.skip}",
-      "action": "skip"
-     }
     ]
-   }
-  ]
- }
+  }
 }
