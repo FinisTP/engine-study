@@ -68,7 +68,7 @@ namespace umbra::core
         PostBlock p;
         p.exposure = {std::exp2(settings.exposure), std::max(settings.bloom, 0.0F), std::max(settings.bloomThreshold, 0.0F),
                       std::clamp(settings.vignette, 0.0F, 1.0F)};
-        p.sizes = {1.0F / static_cast<float>(std::max(width, 1u)), 1.0F / static_cast<float>(std::max(height, 1u)), float(lutSize), 0.0F};
+        p.sizes = {1.0F / static_cast<float>(std::max(width, 1u)), 1.0F / static_cast<float>(std::max(height, 1u)), float(lutSize), std::clamp(settings.tear, 0.0F, 1.0F)};
         return p;
     }
 

@@ -127,6 +127,14 @@ The pass, in order (`uv` 0..1, `t` seconds, wrapped at 1000 so the noise keeps i
 The random numbers are the usual `fract(sin(dot(p, (12.9898, 78.233))) · 43758.5453)` hash: cheap,
 good enough for noise, no texture needed.
 
+## 6b. A tracking tear (3D view only)
+
+`PostSettings::tear` (0..1) draws a short VHS tracking fault into the finished 3D picture, in the
+composite pass, so menus and text drawn after it stay whole (The Last Curtain's enemy turns). A band
+`0.07` high sits at `y = 1 - tear`: as the game lowers `tear` back to 0 the band slides up the screen
+and fades. Inside it, each row is pushed sideways by `tear * 0.04 * sin(y * 140)` and red and blue
+are read `tear * 0.006` apart. It is packed into `PostBlock::sizes.w`. The browser build ignores it.
+
 ## 7. The `post` component
 
 ```json

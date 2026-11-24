@@ -1470,3 +1470,37 @@ TEST_CASE("The game's sequences and effects load; every effect a cue names is a 
         CHECK(known);
     }
 }
+
+#include <Unease.hpp>
+
+TEST_CASE("Unease: a tear on an enemy's turn that fades, the lamps stutter now and then, a portrait twitches but never the one acting (point 4)", "[match][play][unease]")
+{
+    Unease u;
+    // 1. Nothing at first; an enemy's turn tears the picture, then it fades to nothing.
+    u.Update(0.1F, false, false, false, 5);
+    CHECK(u.tear == 0.0F);
+    u.Update(0.0F, true, false, false, 5);
+    CHECK(u.tear > 0.3F);
+    for (int i = 0; i < 20; ++i)
+        u.Update(0.05F, false, false, false, 5);
+    CHECK(u.tear == 0.0F);
+    // 2. Over a minute the lamps stutter and a portrait twitches, each briefly; never entry 0.
+    float dimmed = 0.0F, twitched = 0.0F;
+    for (int i = 0; i < 1200; ++i)
+    {
+        u.Update(0.05F, false, false, false, 5);
+        dimmed += u.dim > 0.0F ? 0.05F : 0.0F;
+        twitched += u.twitch >= 0 ? 0.05F : 0.0F;
+        CHECK(u.twitch != 0);
+        CHECK(u.twitch < 5);
+    }
+    CHECK(dimmed > 0.0F);
+    CHECK(dimmed < 6.0F);
+    CHECK(twitched > 0.0F);
+    CHECK(twitched < 3.0F);
+    // 3. Giam: a smaller tear.
+    Unease soft;
+    soft.Update(0.0F, true, false, true, 5);
+    CHECK(soft.tear < u.tear + 0.3F);
+    CHECK(soft.tear < 0.3F);
+}

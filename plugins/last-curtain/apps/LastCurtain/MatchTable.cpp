@@ -543,10 +543,14 @@ void MatchTable::Sprite(int index, const Unit &u, glm::vec3 feet, umbra::core::D
     feet += right * ((0.5F - (feet_.contains(folder) ? feet_.at(folder) : 0.5F)) * aspect * h * (facing < 0.0F ? -1.0F : 1.0F));
     const std::uint32_t own = u.kind == 0 ? 0xFFFFFF : def_.monsters[U(u.def)].tint;
     const bool tinted = pose.tint.a > 0.001F;
-    const glm::vec3 tint = tinted ? glm::vec3(pose.tint) : glm::vec3(Hex(own));
-    const float amount = tinted ? pose.tint.a : (u.kind == 0 ? 0.0F : 0.45F);
+    // Dread (note 18): a stage's ghosts are drained to a cold grey and now and then flicker half away.
+    const bool dread = !tinted && dread_ > 0.0F && !figures_.empty() && u.faction == 1;
+    const glm::vec3 tint = tinted ? glm::vec3(pose.tint) : dread ? glm::vec3(0.55F, 0.62F, 0.78F) : glm::vec3(Hex(own));
+    const float amount = tinted ? pose.tint.a : dread ? 0.35F * dread_ : (u.kind == 0 ? 0.0F : 0.45F);
+    const float window = std::floor(clock_ * 9.0F) + static_cast<float>(index) * 17.0F; // a ninth of a second, its own per ghost
+    const float flicker = dread && dread_ >= 1.0F && std::fmod(std::abs(std::sin(window * 12.9898F)) * 43758.5453F, 1.0F) > 0.97F ? 0.55F : 1.0F;
     out.items.push_back({facing < 0.0F ? mirrorQuad_ : quad_, art->second, umbra::night::SpriteModel(pose, feet, right, h, aspect, facing, clock_, up),
-                         glm::vec4(tint, pose.alpha * (Fallen(u, index) ? 0.5F : 1.0F)), 0.0F, std::floor(pose.dissolve * 99.0F) + std::clamp(amount, 0.0F, 1.0F) * 0.99F});
+                         glm::vec4(tint, pose.alpha * flicker * (Fallen(u, index) ? 0.5F : 1.0F)), 0.0F, std::floor(pose.dissolve * 99.0F) + std::clamp(amount, 0.0F, 1.0F) * 0.99F});
     out.items.back().surface = out.SurfaceIndex("sprite");
 }
 

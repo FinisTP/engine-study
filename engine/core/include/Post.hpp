@@ -27,6 +27,7 @@ namespace umbra::core
         std::string lut;             // optional color table image (256x16), asset path
         float crt = 0.0F;            // the analog screen (Post.md "6"): an old CRT, 0 = off .. 1 = strong
         float vhs = 0.0F;            // a worn VHS tape, 0 = off .. 1 = strong
+        float tear = 0.0F;           // a tracking tear across the 3D view only, 0 = none .. 1 (Post.md "6b"); menus stay whole
     };
 
     // How much post work the device does (user decision 2026-11-09: phones get Reduced).

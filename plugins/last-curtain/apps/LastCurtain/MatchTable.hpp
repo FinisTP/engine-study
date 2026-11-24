@@ -41,6 +41,7 @@ public:
     void Zoom(float steps) { view_.Zoom(steps); }
     void Update(float dt) { clock_ += dt, view_.Update(dt), shake_ = std::max(0.0F, shake_ - dt * 2.5F); }
     void Shake(float amount) { shake_ = std::max(shake_, amount); } // a blow's jolt (Sequences.md), fading over 0.4 s at most
+    void SetDread(float amount) { dread_ = amount; } // a stage's ghosts: 1 cold and flickering, 0.5 (Giam) cold only, 0 none
     void SetLook(nlohmann::json look); // assets/match-look.json: the grade, shadows, scenes, painted floors
     // Motions (motions.json): a unit plays one (down holds until revive), then rests in idle.
     void Play(int unit, const std::string &motion);
@@ -128,7 +129,7 @@ private:
     float kickT_ = -1.0F, kickSeconds_ = 0.0F, kickYaw_ = 0.0F, kickNear_ = 1.0F;
     [[nodiscard]] float Kick() const; // 0..1..0 while it plays
     float before_ = -1.0F, roomBefore_ = -1.0F; // the seats' distances before a close-up (table, room view)
-    float clock_ = 0.0F, shake_ = 0.0F;
+    float clock_ = 0.0F, shake_ = 0.0F, dread_ = 1.0F;
     int acting_ = -1, ringUnit_ = -1;
     float ringT_ = 1.0F, sceneT_ = 0.0F;
     bool follow_ = true;

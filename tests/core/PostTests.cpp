@@ -102,3 +102,13 @@ TEST_CASE("The analog screen: off by default, packed for the shader, the CRT bul
     const glm::vec2 corner = CrtWarp({0.0F, 0.0F}, 1.0F);
     CHECK((corner.x < 0.0F && corner.y < 0.0F)); // outside the glass: drawn black
 }
+
+TEST_CASE("A tracking tear is packed for the composite only, kept within 0..1 (Post.md 6b)", "[post]")
+{
+    umbra::core::PostSettings s;
+    CHECK(umbra::core::PackPost(s, 100, 100).sizes.w == 0.0F);
+    s.tear = 0.4F;
+    CHECK(umbra::core::PackPost(s, 100, 100).sizes.w == 0.4F);
+    s.tear = 3.0F;
+    CHECK(umbra::core::PackPost(s, 100, 100).sizes.w == 1.0F);
+}

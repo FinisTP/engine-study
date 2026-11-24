@@ -6,6 +6,7 @@
 #include "MatchPlay.hpp"
 #include "MatchTable.hpp"
 #include "Effects.hpp"
+#include "Unease.hpp"
 #include "Analog.hpp"
 #include "Flow.hpp"
 #include "Screens.hpp"
@@ -120,6 +121,9 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
     Effects effects;
     effects.Load(assets, renderer, analog.reducedFx);
     bool effectsReduced = analog.reducedFx;
+    Unease unease;          // the tear, the lamps, a portrait's twitch (point 4)
+    int lastActor = -1;
+    bool heavy = false;
     Sequences sequences;
     if (std::ifstream in(assets / "vfx" / "sequences.json"); in)
         if (std::vector<std::string> errors; !LoadSequences(nlohmann::json::parse(in, nullptr, false), sequences, errors))
@@ -279,7 +283,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
             const auto on = [&](int unit) { return unit >= 0 && unit < static_cast<int>(st.units.size()); };
             for (const MatchPlay::Fx &fx : play->TakeEffects())
                 if (fx.shake > 0.0F)
-                    analog.reducedFx ? void() : table.Shake(fx.shake);
+                    heavy |= fx.shake >= 0.3F, analog.reducedFx ? void() : table.Shake(fx.shake);
                 else if (on(fx.unit) && on(fx.to))
                     effects.Fly(fx.effect, table.Body(st, fx.unit), table.Body(st, fx.to), fx.seconds);
                 else if (on(fx.unit))
@@ -292,8 +296,17 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                     if (!analog.reducedFx)
                         effects.Follow(static_cast<std::uint64_t>(u) + 1 + (1ULL << 20), "eye_glint", glm::mix(table.FeetShown(st, u), table.Head(st, u), 0.88F));
                 }
+            // Room unease: dust drifting in the lamps' light over the board.
+            if (hooks)
+                effects.Follow(1ULL << 30, "room_dust", table.Body(st, std::max(0, Current(st))) + glm::vec3{0.0F, 0.6F, 0.0F});
             effects.EndFrame();
             effects.Update(pdt);
+            // An enemy's turn tears the picture a moment; the lamps stutter; a waiting portrait twitches.
+            const int actor = Current(st);
+            const bool enemyTurn = hooks && actor >= 0 && actor != std::exchange(lastActor, actor) && st.units[static_cast<std::size_t>(actor)].faction == 1;
+            unease.Update(hooks ? pdt : 0.0F, enemyTurn, std::exchange(heavy, false), analog.reducedFx,
+                          static_cast<int>(play->HudData().value("strip", nlohmann::json::array()).size()));
+            table.SetDread(analog.reducedFx ? 0.5F : 1.0F);
             {
                 const nlohmann::json told = play->UiData();
                 table.SetFight(told.value("fight", std::vector<int>{}), told.value("picking", -1));
@@ -366,6 +379,9 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
             data["words"] = words.value("screens", nlohmann::json::object()); // the screens' labels
             if (play && hooks)
                 data["hud"] = play->HudData(), data["menu"] = play->Menu();
+                if (nlohmann::json &strip = data["hud"]["strip"]; unease.twitch >= 0 && unease.twitch < static_cast<int>(strip.size()))
+                    if (std::string face = strip[static_cast<std::size_t>(unease.twitch)].value("portrait", ""); face.ends_with("face_calm.png"))
+                        strip[static_cast<std::size_t>(unease.twitch)]["portrait"] = face.replace(face.size() - 13, 13, "face_neardead.png");
             data["career"] = career != nullptr; // the end screen leads back to the café
             data["single"] = career == nullptr;
             if (!play)
@@ -489,6 +505,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                 umbra::diagnostics::Info((captured ? "Captured " : "Could not write ") + capture.string());
             });
         analog.Apply(drawList.post);
+        drawList.post.tear = unease.tear, drawList.post.exposure -= unease.dim;
         if (!renderer.RenderFrame(dt, drawList))
         {
             result = 1;

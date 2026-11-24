@@ -4,7 +4,7 @@
 struct PostConstants
 {
     float4 exposure; // x = 2^exposure, y = bloom strength, z = threshold, w = vignette
-    float4 sizes;    // xy = one texel of the source image, z = LUT size
+    float4 sizes;    // xy = one texel of the source image, z = LUT size, w = tear (composite only)
 };
 [[vk::push_constant]] ConstantBuffer<PostConstants> post;
 
@@ -84,8 +84,15 @@ float3 ToLinear(float3 c)
 // (the sRGB screen encodes it).
 float4 CompositePS(Output i) : SV_Target0
 {
+    // 0. A tracking tear (Post.md "6b"): a band that slides up as it fades, its rows pushed sideways, red and blue apart.
+    float2 uv = i.uv;
+    float split = 0.0F;
+    if (post.sizes.w > 0.0F && abs(uv.y - (1.0F - post.sizes.w)) < 0.07F)
+        uv.x += post.sizes.w * 0.04F * sin(uv.y * 140.0F), split = post.sizes.w * 0.006F;
     // 1. HDR light plus the bloom's glow.
-    const float3 hdr = source.Sample(sourceSampler, i.uv).rgb * post.exposure.x + bloom.Sample(bloomSampler, i.uv).rgb * post.exposure.y;
+    float3 hdr = source.Sample(sourceSampler, uv).rgb * post.exposure.x + bloom.Sample(bloomSampler, uv).rgb * post.exposure.y;
+    if (split > 0.0F)
+        hdr.r = source.Sample(sourceSampler, uv + float2(split, 0.0F)).r * post.exposure.x, hdr.b = source.Sample(sourceSampler, uv - float2(split, 0.0F)).b * post.exposure.x;
     // 2. To 0..1, then the grade: the LUT is indexed by sRGB values, centered on its cells.
     const float n = post.sizes.z;
     const float3 cell = ToSrgb(Tonemap(hdr)) * ((n - 1.0F) / n) + 0.5F / n;
