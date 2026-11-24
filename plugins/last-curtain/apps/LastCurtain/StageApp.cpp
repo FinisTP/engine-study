@@ -42,10 +42,13 @@ int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const
         if (static_cast<int>(members.size()) < stage.partyCap)
             members.push_back({who, stage.level + refill, {}}); // a refill comes after a story stage
     campaign::Recipes recipes;
+    campaign::Skills skills; // what each one carries (skills.json and the save)
+    bool haveSkills = false;
     if (save)
     {
         members = campaign::PartyOf(*save, party);
         (void)campaign::LoadRecipes(folder / "recipes.json", def, recipes, d);
+        haveSkills = campaign::LoadSkills(folder / "skills.json", def, skills, d);
     }
 
     // 2. The hooks: a fresh fight, the enemy brain, the scenes between beats.
@@ -82,7 +85,7 @@ int RunStage(GameContext &game, const umbra::assets::AssetFolders &assets, const
     hooks.start = [&] {
         built = campaign::BuildStage(def, cast, growth, stage, members, refill, save ? save->taken : std::set<std::string>{}, tries++);
         if (save)
-            campaign::ApplySave(def, recipes, *save, built);
+            campaign::ApplySave(def, recipes, *save, built, haveSkills ? &skills : nullptr);
         moments = {};
         return built.state;
     };

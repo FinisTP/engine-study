@@ -265,7 +265,7 @@ namespace umbra::campaign
                                {"roster", save.roster}, {"rooms", save.rooms}, {"chapter", save.chapter}, {"riteUnlocked", save.riteUnlocked},
                                {"riteUsed", save.riteUsed}, {"storage", save.storage}, {"recipes", save.recipes}, {"taken", save.taken},
                                {"memories", save.memories}, {"talks", save.talks}, {"joined", save.joined}, {"facts", save.facts},
-                               {"versions", save.versions}, {"boosts", save.boosts}, {"slots", save.slots}, {"party", save.party}};
+                               {"versions", save.versions}, {"boosts", save.boosts}, {"slots", save.slots}, {"party", save.party}, {"skills", save.skills}};
         // 2. A temp file, then renamed over the old one.
         std::error_code ec;
         std::filesystem::create_directories(file.parent_path(), ec);
@@ -294,6 +294,7 @@ namespace umbra::campaign
             s.memories = j.value("memories", s.memories), s.talks = j.value("talks", s.talks), s.joined = j.value("joined", s.joined);
             s.facts = j.value("facts", s.facts), s.versions = j.value("versions", s.versions), s.boosts = j.value("boosts", s.boosts);
             s.slots = j.value("slots", s.slots), s.party = j.value("party", s.party);
+            s.skills = j.value("skills", s.skills);
             save = std::move(s);
             return true;
         }

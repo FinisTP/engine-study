@@ -41,6 +41,7 @@ namespace umbra::campaign
         std::map<std::string, std::map<std::string, int>> boosts; // character -> drink -> how many
         std::map<std::string, std::array<std::string, 4>> slots;  // character -> its 4 battle slots (items.csv ids, "" empty)
         std::vector<std::string> party;                           // who goes to the next fight ("Ra trận")
+        std::map<std::string, std::vector<std::string>> skills;   // character -> the abilities carried (at most 4; Loadout)
     };
 
     struct Recipe
@@ -194,8 +195,27 @@ namespace umbra::campaign
     };
     Over OverFor(const Save &save, const StageDef &stage, const match::MatchState &s);
 
+    // Skills (campaign/skills.json; feedback 2026-11-24 15:10): each ability's unlock level and story, the
+    // recruits' starting loadouts. A character carries at most maxCarried of the abilities it knows.
+    inline constexpr std::size_t maxCarried = 4;
+    struct Skills
+    {
+        std::map<std::string, int> unlock;                         // ability id -> level (missing: 1)
+        std::map<std::string, std::string> lore;                   // ability id -> its line in the story
+        std::map<std::string, std::vector<std::string>> starts;    // character -> what it carries on joining
+    };
+
     // The save into a fight: the party as BuildStage takes it (roster levels, slots), then ApplySave swaps
     // chosen versions for base abilities and adds the drinks' boosts.
     std::vector<PartyMember> PartyOf(const Save &save, const std::vector<std::string> &who);
-    void ApplySave(const match::MatchDef &def, const Recipes &recipes, const Save &save, BuiltStage &built);
+    // With skills, each of ours carries its loadout (Loadout) in place of its whole kit.
+    void ApplySave(const match::MatchDef &def, const Recipes &recipes, const Save &save, BuiltStage &built, const Skills *skills = nullptr);
+
+    bool LoadSkills(const std::filesystem::path &file, const match::MatchDef &def, Skills &out, std::vector<core::Diagnostic> &diagnostics);
+    int UnlockLevel(const Skills &skills, const std::string &ability);
+    // What `who` carries at `level` out of `known` (its kit, in order): the save's choice, else its start, else
+    // the first ones; only known, unlocked ones, at most maxCarried.
+    std::vector<std::string> Loadout(const Skills &skills, const Save &save, const std::string &who, const std::vector<std::string> &known, int level);
+    bool Equip(const Skills &skills, Save &save, const std::string &who, const std::vector<std::string> &known, int level, const std::string &ability);
+    bool Unequip(const Skills &skills, Save &save, const std::string &who, const std::vector<std::string> &known, int level, const std::string &ability);
 }

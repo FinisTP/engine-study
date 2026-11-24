@@ -65,7 +65,7 @@ namespace umbra::campaign
         return out;
     }
 
-    void ApplySave(const match::MatchDef &def, const Recipes &recipes, const Save &save, BuiltStage &built)
+    void ApplySave(const match::MatchDef &def, const Recipes &recipes, const Save &save, BuiltStage &built, const Skills *skills)
     {
         const auto find = [&](const std::string &id) { return static_cast<int>(std::ranges::find(def.abilities, id, &match::AbilityDef::id) - def.abilities.begin()); };
         for (std::size_t i = 0; i < built.state.units.size() && i < built.who.size(); ++i)
@@ -73,6 +73,18 @@ namespace umbra::campaign
             match::Unit &u = built.state.units[i];
             if (u.faction != 0)
                 continue;
+            // 0. What it carries: its loadout out of its kit, in that order.
+            if (skills)
+            {
+                std::vector<std::string> known;
+                for (const auto a : u.abilities)
+                    if (a >= 0)
+                        known.push_back(def.abilities[static_cast<std::size_t>(a)].id);
+                const std::vector<std::string> carried = Loadout(*skills, save, built.who[i], known, u.level);
+                u.abilities.fill(-1);
+                for (std::size_t k = 0; k < carried.size() && k < u.abilities.size(); ++k)
+                    u.abilities[k] = static_cast<std::int8_t>(find(carried[k]));
+            }
             // 1. Versions in place of base abilities.
             for (auto &a : u.abilities)
                 if (a >= 0)

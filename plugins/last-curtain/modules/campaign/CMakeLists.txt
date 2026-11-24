@@ -17,6 +17,7 @@ target_sources(
         src/Progress.cpp
         src/Map.cpp
         src/Around.cpp
+        src/Skills.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include

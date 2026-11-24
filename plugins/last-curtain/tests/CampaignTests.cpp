@@ -1169,3 +1169,49 @@ TEST_CASE("The map's lens: the plan fills the area, zooms about a point and neve
     campaign::Drag(lens, {300.0F, 300.0F}, w, h, aspect);
     CHECK(campaign::Plan(lens, w, h, aspect).x == 0.0F);
 }
+
+TEST_CASE("Skills: unlock levels, a starting loadout, four at most, only unlocked ones; the fight takes the loadout (feedback 2026-11-24 15:10, notes 13 and 17)")
+{
+    const match::MatchDef def = MatchData();
+    campaign::Skills skills;
+    std::vector<core::Diagnostic> d;
+    REQUIRE(campaign::LoadSkills(data / "skills.json", def, skills, d));
+    CHECK(d.empty());
+    const auto ids = [&](const match::Unit &u) {
+        std::vector<std::string> out;
+        for (const int a : u.abilities)
+            if (a >= 0)
+                out.push_back(def.abilities[static_cast<std::size_t>(a)].id);
+        return out;
+    };
+    const std::vector<std::string> known = ids(campaign::MakeUnit(def, TheCast(), TheGrowth(), "bao", 2, 0, false));
+    REQUIRE(known == std::vector<std::string>{"basic", "dao_mo", "chan_doan", "giay_chung_tu"});
+    // 1. Each ability's story; a locked one names its level.
+    CHECK_FALSE(skills.lore.at("dao_mo").empty());
+    CHECK(campaign::UnlockLevel(skills, "giay_chung_tu") == 3);
+    CHECK(campaign::UnlockLevel(skills, "dao_mo") == 1);
+    // 2. Bao starts with two (the tutorial leaves the rest for the player); the save changes that.
+    campaign::Save save;
+    CHECK(campaign::Loadout(skills, save, "bao", known, 2) == std::vector<std::string>{"basic", "dao_mo"});
+    CHECK(campaign::Equip(skills, save, "bao", known, 2, "chan_doan"));
+    CHECK(campaign::Loadout(skills, save, "bao", known, 2) == std::vector<std::string>{"basic", "dao_mo", "chan_doan"});
+    CHECK_FALSE(campaign::Equip(skills, save, "bao", known, 2, "giay_chung_tu")); // locked until level 3
+    CHECK_FALSE(campaign::Equip(skills, save, "bao", known, 2, "chan_doan"));     // already carried
+    CHECK_FALSE(campaign::Equip(skills, save, "bao", known, 2, "slash"));         // not his
+    CHECK(campaign::Equip(skills, save, "bao", known, 3, "giay_chung_tu"));
+    CHECK(campaign::Unequip(skills, save, "bao", known, 3, "dao_mo"));
+    CHECK(campaign::Loadout(skills, save, "bao", known, 3) == std::vector<std::string>{"basic", "chan_doan", "giay_chung_tu"});
+    CHECK_FALSE(campaign::Unequip(skills, save, "bao", known, 3, "dao_mo")); // not carried
+    // 3. Four at most; someone with no starting loadout carries the first four unlocked.
+    const std::vector<std::string> five{"basic", "a", "b", "c", "d"};
+    CHECK(campaign::Loadout(skills, save, "nobody", five, 9).size() == 4);
+    // 4. The fight: Bao's unit carries exactly his loadout.
+    save.roster = {{"player", 2, 0}, {"bao", 3, 0}};
+    const std::vector<campaign::StageDef> stages = TheStages();
+    const campaign::StageDef &st = *std::ranges::find(stages, std::string("sk_props"), &campaign::StageDef::id);
+    campaign::BuiltStage b = campaign::BuildStage(def, TheCast(), TheGrowth(), st, campaign::PartyOf(save, {"player", "bao"}), 0, save.taken, 3);
+    campaign::ApplySave(def, TheRecipes(), save, b, &skills);
+    const std::size_t bao = static_cast<std::size_t>(std::ranges::find(b.who, std::string("bao")) - b.who.begin());
+    REQUIRE(bao < b.state.units.size());
+    CHECK(ids(b.state.units[bao]) == std::vector<std::string>{"basic", "chan_doan", "giay_chung_tu"});
+}

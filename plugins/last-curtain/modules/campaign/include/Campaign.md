@@ -127,6 +127,16 @@ pauses the fight (`Pause`), plays the scenes on the dialog screen and resumes.
 The app gives it to `MatchPlay::SetBrain` for a stage. Reinforcements are rules in the match
 (`Match.md` "Arrivals").
 
+## Skills carried (`skills.json`, `Loadout`)
+
+A character knows its kit (the basic attack, then the cast's kit, or its class line by level). It carries at
+most four (`maxCarried`) into a fight. `skills.json` gives each ability's unlock level (missing: 1) and its
+line in the story, and the starting loadout of a recruit; the tutorial leaves some of Bao's and Mai's out on
+purpose. `Loadout` is the save's choice (`Save::skills`), else the start, else the first four, always only
+known, unlocked ones. `Equip` adds one if there is room; `Unequip` keeps at least one. `ApplySave` with the
+skills puts exactly the loadout on each of ours. The soak builds units without a save, so it fights with the
+whole kit.
+
 ## The soak (`CampaignSoak.hpp`, `UmbraTool campaign-soak <stage> [--seeds 200] [--refill n]`)
 
 Bots play both sides: the party with `PartyAction` (Medium), enemies with `EnemyAction`. The party is the
