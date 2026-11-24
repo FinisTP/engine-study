@@ -72,12 +72,12 @@ umbra::ui::UiInput Screens::MapInput(const umbra::platform::Input &input, glm::v
     ui.mouseMoved = input.MouseMoved();
     ui.click = input.IsMouseButtonPressed(0);
     ui.held = input.IsMouseButtonHeld(0);
-    ui.up = pressed({InputKey::Up});
-    ui.down = pressed({InputKey::Down});
-    ui.left = pressed({InputKey::Left});
-    ui.right = pressed({InputKey::Right});
-    ui.confirm = pressed({InputKey::Enter});
-    ui.back = pressed({InputKey::Escape});
+    ui.up = pressed({InputKey::Up, InputKey::PadUp}); // the d-pad moves the focus too, A confirms, B backs (P1)
+    ui.down = pressed({InputKey::Down, InputKey::PadDown});
+    ui.left = pressed({InputKey::Left, InputKey::PadLeft});
+    ui.right = pressed({InputKey::Right, InputKey::PadRight});
+    ui.confirm = pressed({InputKey::Enter, InputKey::PadA});
+    ui.back = pressed({InputKey::Escape, InputKey::PadB});
     ui.text = input.Text(); // for a focused text field (UI.md "Text fields")
     return ui;
 }

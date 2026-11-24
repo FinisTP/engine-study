@@ -5,6 +5,7 @@
 #include <MatchBots.hpp>
 #include <Options.hpp>
 
+#include <glm/vec2.hpp>
 #include <nlohmann/json.hpp>
 
 #include <functional>
@@ -16,6 +17,20 @@
 // One faction match as the person plays it, without a window (tested; MatchPlay.md): the player's
 // side waits for input, bots and monsters play one beat at a time, and each screen gets its JSON.
 namespace umbra::cafe { struct Career; }
+
+// The board cursor for keys and the gamepad (P4): one square, stepped by a direction, repeating while held.
+struct BoardCursor
+{
+    int cell = -1;
+    // dir: this frame's direction (-1..1 each); start: the acting unit's square when the cursor is off.
+    // True when it stepped.
+    bool Update(glm::ivec2 dir, float dt, int width, int height, int start);
+    void Off() { cell = -1, held_ = 0.0F, dir_ = {0, 0}; }
+
+private:
+    float held_ = 0.0F; // how long this direction has been held
+    glm::ivec2 dir_{0, 0};
+};
 
 class MatchPlay final
 {

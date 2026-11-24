@@ -20,6 +20,14 @@ namespace umbra::night
                 {"F1", InputKey::F1}, {"F5", InputKey::F5}, {"F9", InputKey::F9}};
             return names;
         }
+        const std::vector<std::pair<std::string, InputKey>> &PadNames()
+        {
+            static const std::vector<std::pair<std::string, InputKey>> names{
+                {"PadA", InputKey::PadA},       {"PadB", InputKey::PadB},       {"PadX", InputKey::PadX},         {"PadY", InputKey::PadY},
+                {"PadUp", InputKey::PadUp},     {"PadDown", InputKey::PadDown}, {"PadLeft", InputKey::PadLeft},   {"PadRight", InputKey::PadRight},
+                {"PadStart", InputKey::PadStart}, {"PadBack", InputKey::PadBack}};
+            return names;
+        }
     }
 
     Keys::Keys()
@@ -28,6 +36,8 @@ namespace umbra::night
                  {"endTurn", InputKey::F}, {"skip", InputKey::F}, {"log", InputKey::L}, {"pin", InputKey::I}, {"notebook", InputKey::J},
                  {"menu1", InputKey::Num1}, {"menu2", InputKey::Num2}, {"menu3", InputKey::Num3}, {"menu4", InputKey::Num4},
                  {"menu5", InputKey::Num5}, {"menu6", InputKey::Num6}};
+        pads_ = {{"back", InputKey::PadB},     {"confirm", InputKey::PadA}, {"next", InputKey::PadA},         {"hurry", InputKey::PadA},
+                 {"endTurn", InputKey::PadY},  {"skip", InputKey::PadX},    {"notebook", InputKey::PadBack}, {"pause", InputKey::PadStart}};
     }
 
     bool Keys::Load(const nlohmann::json &json, const std::string &file, std::vector<core::Diagnostic> &d)
@@ -47,7 +57,32 @@ namespace umbra::night
             else
                 known->second = key->second;
         }
+        // The pad buttons ("pad": meaning -> PadA..PadBack), checked the same way.
+        const nlohmann::json pads = json.value("pad", nlohmann::json::object());
+        for (const auto &[meaning, name] : pads.items())
+        {
+            const auto key = std::ranges::find_if(PadNames(), [&](const auto &n) { return name.is_string() && n.first == name.get<std::string>(); });
+            if (!keys_.contains(meaning) && meaning != "pause")
+                d.push_back({core::Severity::Error, "keys", file, "pad." + meaning, "not a meaning the game knows"});
+            else if (key == PadNames().end())
+                d.push_back({core::Severity::Error, "keys", file, "pad." + meaning, "not a pad button (PadA, PadB, PadX, PadY, PadUp, PadDown, PadLeft, PadRight, PadStart, PadBack)"});
+            else
+                pads_[meaning] = key->second;
+        }
         return d.size() == before;
+    }
+
+    platform::InputKey Keys::PadOf(const std::string &meaning) const
+    {
+        const auto it = pads_.find(meaning);
+        return it == pads_.end() ? InputKey::Unknown : it->second;
+    }
+
+    std::string Keys::PadName(const std::string &meaning) const
+    {
+        const InputKey key = PadOf(meaning);
+        const auto it = std::ranges::find_if(PadNames(), [&](const auto &n) { return n.second == key; });
+        return it == PadNames().end() ? std::string() : it->first.substr(3);
     }
 
     platform::InputKey Keys::Of(const std::string &meaning) const

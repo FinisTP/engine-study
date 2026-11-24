@@ -1137,3 +1137,26 @@ TEST_CASE("Toasts: finds, freeing and levels; at most three, each for three seco
     p.Update(2.0F);
     CHECK(p.HudData()["toasts"].empty());
 }
+
+TEST_CASE("The board cursor: starts on the acting unit, steps a square, stays on the board, repeats when held (plan 8, P4)", "[match][play][cursor]")
+{
+    BoardCursor c;
+    // 1. The first press starts it where it is told (the acting unit) and steps from there.
+    CHECK(c.Update({1, 0}, 0.016F, 5, 4, 7)); // 7 = (2, 1)
+    CHECK(c.cell == 8);
+    // 2. Held: nothing until 0.25 s, then a step every 0.08 s.
+    CHECK_FALSE(c.Update({1, 0}, 0.2F, 5, 4, 7));
+    CHECK(c.Update({1, 0}, 0.06F, 5, 4, 7));
+    CHECK(c.cell == 9);
+    CHECK_FALSE(c.Update({1, 0}, 0.05F, 5, 4, 7));
+    // 3. The edge stops it; letting go and pressing again steps at once.
+    CHECK_FALSE(c.Update({1, 0}, 0.1F, 5, 4, 7)); // x 4 is the last column
+    CHECK(c.cell == 9);
+    CHECK_FALSE(c.Update({0, 0}, 0.016F, 5, 4, 7));
+    CHECK(c.Update({0, 1}, 0.016F, 5, 4, 7));
+    CHECK(c.cell == 14);
+    // 4. Off (the mouse moved): the next press starts again from the unit.
+    c.Off();
+    CHECK(c.Update({-1, 0}, 0.016F, 5, 4, 12));
+    CHECK(c.cell == 11);
+}

@@ -112,7 +112,7 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
         drawList.hud.diagnosticsWindow = false;
         const auto [width, height] = game.renderer.Extent();
         const glm::vec2 pixels{static_cast<float>(width), static_cast<float>(height)};
-        const umbra::ui::UiInput uiInput = Screens::MapInput(game.input, {static_cast<float>(game.window.GetWidth()), static_cast<float>(game.window.GetHeight())}, pixels);
+        umbra::ui::UiInput uiInput = Screens::MapInput(game.input, {static_cast<float>(game.window.GetWidth()), static_cast<float>(game.window.GetHeight())}, pixels);
 
         // 3. Walking (WASD, the arrows, a click on the floor), E and Tab, while no screen is over the room.
         const bool free = !brewing && !screens.Ui().IsOpen("notebook");
@@ -120,12 +120,15 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
         if (free)
         {
             const auto held = [&](InputKey a, InputKey b) { return game.input.IsKeyHeld(a) || game.input.IsKeyHeld(b); };
-            walk.Move({(held(InputKey::D, InputKey::Right) ? 1.0F : 0.0F) - (held(InputKey::A, InputKey::Left) ? 1.0F : 0.0F),
-                       (held(InputKey::S, InputKey::Down) ? 1.0F : 0.0F) - (held(InputKey::W, InputKey::Up) ? 1.0F : 0.0F)},
+            // The left stick walks too (P15); A uses what is near, Y switches who walks.
+            const glm::vec2 stick{game.input.Axis(0), game.input.Axis(1)};
+            walk.Move(glm::vec2{(held(InputKey::D, InputKey::Right) ? 1.0F : 0.0F) - (held(InputKey::A, InputKey::Left) ? 1.0F : 0.0F),
+                                (held(InputKey::S, InputKey::Down) ? 1.0F : 0.0F) - (held(InputKey::W, InputKey::Up) ? 1.0F : 0.0F)} +
+                          stick,
                       dt);
-            if (game.input.IsKeyPressed(InputKey::E) || game.input.IsKeyPressed(InputKey::Space))
-                act = "use";
-            if (game.input.IsKeyPressed(InputKey::Tab))
+            if (game.input.IsKeyPressed(InputKey::E) || game.input.IsKeyPressed(InputKey::Space) || game.input.IsKeyPressed(InputKey::PadA))
+                act = "use", uiInput.confirm = false; // A walks up to things here, not the HUD's focus
+            if (game.input.IsKeyPressed(InputKey::Tab) || game.input.IsKeyPressed(InputKey::PadY))
                 act = "switch";
         }
         walk.Update(dt);

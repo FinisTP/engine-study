@@ -1210,3 +1210,30 @@ void MatchPlay::Toast(std::string text)
     if (toasts_.size() > 3)
         toasts_.erase(toasts_.begin());
 }
+
+bool BoardCursor::Update(glm::ivec2 dir, float dt, int width, int height, int start)
+{
+    // 1. A new direction steps at once; the same one held steps at 0.25 s, then every 0.08 s.
+    if (dir == glm::ivec2{0, 0} || width <= 0 || height <= 0)
+        return dir_ = dir, held_ = 0.0F, false;
+    bool step = dir != dir_;
+    if (!step)
+    {
+        const float before = held_;
+        held_ += dt;
+        step = before < 0.25F ? held_ >= 0.25F : static_cast<int>((held_ - 0.25F) / 0.08F) > static_cast<int>((before - 0.25F) / 0.08F);
+    }
+    else
+        held_ = 0.0F;
+    dir_ = dir;
+    if (!step)
+        return false;
+    // 2. From the acting unit when off; one square, never off the board.
+    if (cell < 0)
+        cell = std::clamp(start, 0, width * height - 1);
+    const int x = cell % width + dir.x, y = cell / width + dir.y;
+    if (x < 0 || y < 0 || x >= width || y >= height)
+        return false;
+    cell = y * width + x;
+    return true;
+}

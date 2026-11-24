@@ -36,3 +36,27 @@ TEST_CASE("The key file maps meanings to keys; a remap works; unknown rows are r
     CHECK(d[0].field == "keys.fly");
     CHECK(d[1].field == "keys.log");
 }
+
+TEST_CASE("Each meaning also has a gamepad button (Xbox names); either one presses it (plan 8, P1)", "[keys]")
+{
+    std::vector<umbra::core::Diagnostic> d;
+    umbra::night::Keys keys;
+    // 1. The defaults (interaction-patterns P1): A confirms and goes on, B backs, Y ends the turn, X skips, View the notebook.
+    CHECK(keys.PadOf("confirm") == InputKey::PadA);
+    CHECK(keys.PadOf("back") == InputKey::PadB);
+    CHECK(keys.PadOf("endTurn") == InputKey::PadY);
+    CHECK(keys.PadOf("skip") == InputKey::PadX);
+    CHECK(keys.PadOf("notebook") == InputKey::PadBack);
+    CHECK(keys.PadName("endTurn") == "Y");
+    // 2. The pad button presses the meaning as the key does.
+    umbra::platform::Input input;
+    input.BeginFrame();
+    input.HandleKeyDown(InputKey::PadY, false);
+    CHECK(keys.Pressed(input, "endTurn"));
+    CHECK_FALSE(keys.Pressed(input, "back"));
+    // 3. The file can move a pad button ("pad" beside "keys"); a bad name is refused with its row.
+    REQUIRE(keys.Load({{"format", "umbra.lc-keys"}, {"version", 1}, {"pad", {{"endTurn", "PadX"}}}}, "pad.json", d));
+    CHECK(keys.PadOf("endTurn") == InputKey::PadX);
+    CHECK_FALSE(keys.Load({{"format", "umbra.lc-keys"}, {"version", 1}, {"pad", {{"endTurn", "Q"}}}}, "pad.json", d));
+    CHECK(d.back().field == "pad.endTurn");
+}

@@ -166,6 +166,8 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
     // 4. The loop.
     const int lastFrame = frames > 0 ? frames : (capture.empty() ? 0 : 3);
     int frame = 0, result = 0;
+    BoardCursor cursor; // keys and the gamepad (P4); the mouse takes over when it moves
+    bool cursorOn = false;
     bool wasHeld = false, dragging = false, pressTook = false, captured = false, quit = false, paused = false;
     glm::vec2 pressAt{0.0F}, lastMouse{0.0F};
     while (!quit)
@@ -188,7 +190,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         drawList.Clear();
         drawList.hud.diagnosticsWindow = false;
         // Back (Esc, right-click) steps back one level in a stage's menu first, else pauses (P2).
-        const bool back = game.keys.Pressed(input, "back") || (hooks && input.IsMouseButtonPressed(2));
+        const bool back = game.keys.Pressed(input, "back") || game.keys.Pressed(input, "pause") || (hooks && input.IsMouseButtonPressed(2));
         if (back && play && (paused || !hooks || !play->Back()))
             paused = !paused;
         if (back)
@@ -229,7 +231,23 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                 table.SetCast(play->Names(), play->Heights(), play->Sprites()); // a stage's cast names and ghost heights
             table.Animate(play->State(), dt);
             // A screen over the board (level, treasure, event, battle) takes the mouse: nothing falls through to the board.
-            hover = play->Screen().empty() && !paused ? table.Pick(play->State().board, uiInput.mouse, pixels) : -1;
+            // P4: WASD or the left stick move the board cursor (arrows and the d-pad stay with the menu);
+            // Enter, Space or A then acts on its square, as a click would.
+            if (hooks && !paused && play->Screen().empty())
+            {
+                using umbra::platform::InputKey;
+                const auto key = [&](InputKey k) { return input.IsKeyHeld(k) ? 1 : 0; };
+                const glm::ivec2 dir{key(InputKey::D) - key(InputKey::A) + (input.Axis(0) > 0.5F) - (input.Axis(0) < -0.5F),
+                                     key(InputKey::S) - key(InputKey::W) + (input.Axis(1) > 0.5F) - (input.Axis(1) < -0.5F)};
+                const int actor = Current(play->State());
+                const int start = actor >= 0 ? play->State().units[static_cast<std::size_t>(actor)].cell : 0;
+                cursorOn |= cursor.Update(glm::clamp(dir, glm::ivec2{-1}, glm::ivec2{1}), dt, play->State().board.width, play->State().board.height, start);
+                if (uiInput.mouseMoved)
+                    cursorOn = false, cursor.Off();
+                if (cursorOn)
+                    uiInput.confirm = false; // Enter / A go to the cursor's square, not the menu's focus
+            }
+            hover = !(play->Screen().empty() && !paused) ? -1 : cursorOn ? cursor.cell : table.Pick(play->State().board, uiInput.mouse, pixels);
             play->Hover(hover);
             const bool held = input.IsMouseButtonHeld(0);
             if (held && !wasHeld)
@@ -357,6 +375,9 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
             pressTook = uiTook;
         if (play && !paused && wasHeld && !input.IsMouseButtonHeld(0) && !dragging && !pressTook && play->Screen().empty())
             play->Click(hover);
+        else if (play && !paused && cursorOn && play->Screen().empty() && play->PlayerTurn() &&
+                 (input.IsKeyPressed(umbra::platform::InputKey::Enter) || input.IsKeyPressed(umbra::platform::InputKey::Space) || input.IsKeyPressed(umbra::platform::InputKey::PadA)))
+            play->Click(cursor.cell);
         wasHeld = input.IsMouseButtonHeld(0), lastMouse = uiInput.mouse;
 
         // 7. A capture: save the last frame, then stop.

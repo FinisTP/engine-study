@@ -20,10 +20,14 @@ namespace umbra::night
         bool Load(const nlohmann::json &json, const std::string &file, std::vector<core::Diagnostic> &d);
         [[nodiscard]] platform::InputKey Of(const std::string &meaning) const;
         [[nodiscard]] std::string Name(const std::string &meaning) const; // as shown in prompts ("F", "Esc")
-        [[nodiscard]] bool Pressed(const platform::Input &input, const std::string &meaning) const { return input.IsKeyPressed(Of(meaning)); }
-        [[nodiscard]] bool Held(const platform::Input &input, const std::string &meaning) const { return input.IsKeyHeld(Of(meaning)); }
+        // The gamepad button for the same meaning ("pad" in the file; Unknown when none) and its Xbox name ("Y").
+        [[nodiscard]] platform::InputKey PadOf(const std::string &meaning) const;
+        [[nodiscard]] std::string PadName(const std::string &meaning) const;
+        // The key or the pad button.
+        [[nodiscard]] bool Pressed(const platform::Input &input, const std::string &meaning) const { return input.IsKeyPressed(Of(meaning)) || input.IsKeyPressed(PadOf(meaning)); }
+        [[nodiscard]] bool Held(const platform::Input &input, const std::string &meaning) const { return input.IsKeyHeld(Of(meaning)) || input.IsKeyHeld(PadOf(meaning)); }
 
     private:
-        std::map<std::string, platform::InputKey> keys_;
+        std::map<std::string, platform::InputKey> keys_, pads_;
     };
 }
