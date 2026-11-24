@@ -240,39 +240,35 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
 
     // 3. One fight with its result or game over; the café and the map between.
     const auto fight = [&](const std::string &id, const std::vector<std::string> &party) -> std::string {
-        for (;;)
+        const campaign::Save before = save;
+        campaign::BuiltStage out;
+        const int ran = RunStage(game, assets, id, save.rooms[id].refill, 0, save.player, {}, 0, &save, party, &out);
+        if (ran == 4)
+            return save = before, "map"; // retreat: nothing from the stage is kept
+        if (ran != 3)
+            return "quit";
+        const campaign::StageDef &stage = *stageOf(id);
+        if (out.state.winner == 0)
         {
-            const campaign::Save before = save;
-            campaign::BuiltStage out;
-            const int ran = RunStage(game, assets, id, save.rooms[id].refill, 0, save.player, {}, 0, &save, party, &out);
-            if (ran == 4)
-                return save = before, "map"; // retreat: nothing from the stage is kept
-            if (ran != 3)
-                return "quit";
-            const campaign::StageDef &stage = *stageOf(id);
-            if (out.state.winner == 0)
-            {
-                campaign::WinStage(def, save, stage, out, stages);
-                (void)campaign::SaveCampaign(saveFile, save, error);
-                const campaign::Result r = campaign::ResultOf(before, save);
-                nlohmann::json lines = nlohmann::json::array();
-                for (const std::string &who : r.levels)
-                    lines.push_back({{"text", Fill(words.value("lineLevel", ""), {{"name", who == "player" ? save.player.name : name(who)}, {"n", std::to_string(std::ranges::find(save.roster, who, &campaign::Member::id)->level)}})}});
-                for (const auto &[item, n] : r.found)
-                    lines.push_back({{"text", Fill(words.value("lineFound", ""), {{"item", words["items"].value(item, item)}, {"n", std::to_string(n)}})}});
-                for (const std::string &who : r.freed)
-                    lines.push_back({{"text", Fill(words.value("lineFreed", ""), {{"name", name(who)}})}});
-                const auto [next, unused] = RunScreen(game, "result", {{"words", words}, {"result", {{"title", Fill(words.value("won", ""), {{"name", stage.title}})}, {"lines", lines}}}});
-                return next == "quit" ? "quit" : next == "map" ? "map" : "cafe";
-            }
-            save = campaign::LoseStage(before, out);
-            const campaign::Over o = campaign::OverFor(save, stage, out.state);
-            const std::string reason = Fill(words.value(o.reason == "trapped" ? "reasonTrapped" : o.reason == "playerFell" ? "reasonPlayerFell" : "reasonSideDown", ""),
-                                            {{"player", save.player.name}, {"name", name("ti")}});
-            const auto [next, unused] = RunScreen(game, "gameover", {{"words", words}, {"over", {{"reasonText", reason}, {"rite", false}, {"notRetryOnly", !o.retryOnly}}}});
-            if (next != "retry")
-                return next == "quit" ? "quit" : "map";
+            campaign::WinStage(def, save, stage, out, stages);
+            (void)campaign::SaveCampaign(saveFile, save, error);
+            const campaign::Result r = campaign::ResultOf(before, save);
+            nlohmann::json lines = nlohmann::json::array();
+            for (const std::string &who : r.levels)
+                lines.push_back({{"text", Fill(words.value("lineLevel", ""), {{"name", who == "player" ? save.player.name : name(who)}, {"n", std::to_string(std::ranges::find(save.roster, who, &campaign::Member::id)->level)}})}});
+            for (const auto &[item, n] : r.found)
+                lines.push_back({{"text", Fill(words.value("lineFound", ""), {{"item", words["items"].value(item, item)}, {"n", std::to_string(n)}})}});
+            for (const std::string &who : r.freed)
+                lines.push_back({{"text", Fill(words.value("lineFreed", ""), {{"name", name(who)}})}});
+            const auto [next, unused] = RunScreen(game, "result", {{"words", words}, {"result", {{"title", Fill(words.value("won", ""), {{"name", stage.title}})}, {"lines", lines}}}});
+            return next == "quit" ? "quit" : next == "map" ? "map" : "cafe";
         }
+        save = campaign::LoseStage(before, out);
+        const campaign::Over o = campaign::OverFor(save, stage, out.state);
+        const std::string reason = Fill(words.value(o.reason == "trapped" ? "reasonTrapped" : o.reason == "playerFell" ? "reasonPlayerFell" : "reasonSideDown", ""),
+                                        {{"player", save.player.name}, {"name", name("ti")}});
+        const auto [next, unused] = RunScreen(game, "gameover", {{"words", words}, {"over", {{"reasonText", reason}, {"rite", false}, {"notRetryOnly", !o.retryOnly}}}});
+        return next == "retry" ? "retry" : next == "quit" ? "quit" : "map"; // a retry goes back to who fights first
     };
     std::string where = save.facts.contains("won:t1") ? "cafe" : "t1";
     std::string selected;
@@ -293,7 +289,9 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
                     save.roster.push_back({ally, 2, 0});
         (void)campaign::SaveCampaign(saveFile, save, error);
         if (where == "t1")
-            where = fight("t1", {"player"});
+            while ((where = fight("t1", {"player"})) == "retry") // the first fight has no roster to pick
+            {
+            }
         else if (where == "cafe")
             where = RunCafeHub(game, assets, save, save.player) == 0 ? "quit" : "map";
         else if (where == "map")
@@ -383,25 +381,35 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
                 const auto pre = [&](nlohmann::json &shown) {
                     const campaign::PreStage p = campaign::PreStageFor(def, cast, growth, save, stage, wanted);
                     shown["pre"] = {{"title", stage.title}, {"levelLine", Fill(words.value("levelLine", ""), {{"n", std::to_string(stage.level)}})}, {"reviveWarning", p.reviveWarning}, {"roster", nlohmann::json::array()}};
+                    // Each row says plainly whether that person fights; the player always does.
                     for (const campaign::Member &m : save.roster)
-                        shown["pre"]["roster"].push_back({{"id", m.id}, {"name", m.id == "player" ? save.player.name : name(m.id)}, {"levelText", "Lv " + std::to_string(m.level)},
-                                                          {"in", std::ranges::find(p.party, m.id) != p.party.end()}, {"locked", m.id == "player"}});
+                    {
+                        const bool in = std::ranges::find(p.party, m.id) != p.party.end();
+                        shown["pre"]["roster"].push_back({{"id", m.id}, {"name", m.id == "player" ? save.player.name : name(m.id)},
+                                                          {"levelText", Fill(words.value("levelShort", "Lv {n}"), {{"n", std::to_string(m.level)}})}, {"in", in},
+                                                          {"stateText", words.value(m.id == "player" ? "alwaysPicked" : in ? "picked" : "notPicked", "")}});
+                    }
                     wanted = p.party;
                 };
-                nlohmann::json shown{{"words", words}};
-                pre(shown);
-                const auto [go, unused] = RunScreen(game, "prestage", shown, [&](const std::string &a, const std::string &id, nlohmann::json &s) {
-                    if (a != "toggle")
-                        return false;
-                    if (const auto at = std::ranges::find(wanted, id); at != wanted.end())
-                        wanted.erase(at);
-                    else
-                        wanted.push_back(id);
-                    pre(s);
-                    return true;
-                });
-                save.party = wanted;
-                where = go == "fight" ? fight(arg, wanted) : go == "quit" ? "quit" : "map";
+                do
+                {
+                    nlohmann::json shown{{"words", words}};
+                    pre(shown);
+                    const auto [go, unused] = RunScreen(game, "prestage", shown, [&](const std::string &a, const std::string &id, nlohmann::json &s) {
+                        if (a != "toggle")
+                            return false;
+                        if (id == "player")
+                            return true; // the player always fights
+                        if (const auto at = std::ranges::find(wanted, id); at != wanted.end())
+                            wanted.erase(at);
+                        else
+                            wanted.push_back(id);
+                        pre(s);
+                        return true;
+                    });
+                    save.party = wanted;
+                    where = go == "fight" ? fight(arg, wanted) : go == "quit" ? "quit" : "map";
+                } while (where == "retry"); // a retry starts again from who fights
             }
         }
     }

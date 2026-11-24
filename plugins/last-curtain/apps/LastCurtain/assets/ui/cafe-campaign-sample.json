@@ -558,14 +558,21 @@
     "name": "Linh",
     "levelText": "Cấp 3",
     "in": true,
-    "locked": true
+    "stateText": "Luôn ra trận"
    },
    {
     "id": "bao",
     "name": "Bác sĩ Bảo",
     "levelText": "Cấp 3",
     "in": true,
-    "locked": false
+    "stateText": "Ra trận"
+   },
+   {
+    "id": "mai",
+    "name": "Bà Mai",
+    "levelText": "Cấp 2",
+    "in": false,
+    "stateText": "Ở lại quán"
    }
   ],
   "reviveWarning": true

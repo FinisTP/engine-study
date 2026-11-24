@@ -36,16 +36,15 @@
         "gap": 4,
         "entry": {
           "type": "button",
-          "style": "lcButton",
+          "style": "lcToggle",
           "size": [
             400,
             0
           ],
-          "text": "{m.name}  {m.levelText}",
+          "text": "{m.name}  {m.levelText}  ·  {m.stateText}",
           "action": "toggle",
           "arg": "{m.id}",
-          "selected": "{m.in}",
-          "disabled": "{m.locked}"
+          "selected": "{m.in}"
         }
       },
       {
