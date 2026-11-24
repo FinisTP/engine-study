@@ -724,12 +724,24 @@ TEST_CASE("Whoever a told line is about is in focus for the camera, for as long 
     for (int i = 0; i < 40 && !p.PlayerTurn(); ++i) // the attack is told in beats (T357)
         p.Update(0.25F);
     REQUIRE(p.HandleUi("battle", "pick", "0"));
-    p.Update(0.25F); // the blow is told a beat after the pick
-    // 1. The blow just told: striker and struck.
+    for (int i = 0; i < 20 && p.UiData()["log"].size() < 2; ++i) // the blow is told a beat or so after the pick
+        p.Update(0.1F);
+    REQUIRE(p.UiData()["log"].size() == 2);
+    // 1. The blow just told: the striker first, then (half a beat on) the one struck; never both at once, so the
+    //    camera moves from one to the other instead of backing off (feedback 2026-11-24 16:57, notes 5 and 17).
     REQUIRE(p.UiData().contains("focus"));
-    const std::vector<int> focus = p.UiData()["focus"].get<std::vector<int>>();
-    CHECK(std::ranges::find(focus, me) != focus.end());
-    CHECK(std::ranges::find(focus, enemy) != focus.end());
+    CHECK(p.UiData()["focus"].get<std::vector<int>>() == std::vector<int>{me});
+    p.Update(Pace().beatSeconds * 0.6F);
+    CHECK(p.UiData()["focus"].get<std::vector<int>>() == std::vector<int>{enemy});
+    // 2. The number the blow took rises over the one struck (note 21), red; it rises as it fades.
+    const nlohmann::json pops = p.UiData()["pops"];
+    REQUIRE(pops.size() == 1);
+    CHECK(pops[0]["unit"] == enemy);
+    CHECK(pops[0]["text"].get<std::string>().starts_with("-"));
+    CHECK(pops[0]["hurt"] == true);
+    const float rise = pops[0]["rise"];
+    p.Update(0.1F);
+    CHECK(p.UiData()["pops"][0]["rise"].get<float>() > rise);
 }
 
 TEST_CASE("A battle is told blow by blow: cards follow the told lines, the fallen stand until their fall (T357)", "[match][play]")

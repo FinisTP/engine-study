@@ -168,6 +168,15 @@ private:
     std::vector<int> toldHp_;   // HP as the told lines leave it (cards never run ahead of the blows)
     void SyncHp();
     float focusLeft_ = 0.0F;
+    int focusNext_ = -1;
+    struct Pop // a number rising over a unit when a blow or a heal is told (note 21)
+    {
+        int unit = -1;
+        std::string text;
+        bool hurt = true;
+        float left = 0.0F;
+    };
+    std::vector<Pop> pops_;        // who the camera goes to next (a blow's or a heal's receiver)
     struct Bubble
     {
         int unit = -1;

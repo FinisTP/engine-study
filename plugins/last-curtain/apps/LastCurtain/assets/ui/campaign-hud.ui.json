@@ -313,6 +313,29 @@
           720,
           0
         ]
+      },
+      {
+        "type": "list",
+        "items": "{pops}",
+        "as": "n",
+        "entry": {
+          "type": "stack",
+          "at": "{n.at}",
+          "children": [
+            {
+              "type": "text",
+              "style": "alarm",
+              "text": "{n.text}",
+              "visible": "{n.hurt}"
+            },
+            {
+              "type": "text",
+              "style": "good",
+              "text": "{n.text}",
+              "visible": "{n.heal}"
+            }
+          ]
+        }
       }
     ]
   }

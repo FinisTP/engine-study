@@ -414,7 +414,8 @@ void MatchTable::Animate(const MatchState &s, float dt)
     if (scene_.empty())
     {
         const float e = fightT_ * fightT_ * (3.0F - 2.0F * fightT_), q = focusT_ * focusT_ * (3.0F - 2.0F * focusT_);
-        const float far = spread * Look("follow", "fit", 0.0F, 2.4F) + Look("follow", "margin", 0.0F, 6.0F);
+        // Only two or more in focus need the camera to back off; one is panned to where it is (notes 5, 17).
+        const float far = framed_.size() < 2 ? 0.0F : spread * Look("follow", "fit", 0.0F, 2.4F) + Look("follow", "margin", 0.0F, 6.0F);
         // A move's kick: nearer and turned a little, on top of whatever shot this is.
         kickT_ = kickT_ < 0.0F ? kickT_ : kickT_ + dt;
         const float k = Kick(), near = 1.0F - (1.0F - kickNear_) * k, yaw = kickYaw_ * k;

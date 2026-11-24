@@ -341,6 +341,12 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
             {
                 // Spoken lines ride on their speaker's card as a bubble.
                 data["labels"] = table.Labels(play->State(), pixels);
+                // Numbers rise over whoever a blow or a heal reached (note 21).
+                data["pops"] = nlohmann::json::array();
+                for (const auto &pop : ui.value("pops", nlohmann::json::array()))
+                    if (const auto at = table.HeadOnScreen(play->State(), pop["unit"], pixels))
+                        data["pops"].push_back({{"at", {at->x, at->y - (20.0F + 70.0F * pop["rise"].get<float>()) * screens.Ui().UiScale()}},
+                                                {"text", pop["text"]}, {"hurt", pop["hurt"]}, {"heal", pop["heal"]}});
                 // Armed: the card at the hovered target says what the action would do (no menu while aiming).
                 if (hooks && ui.contains("forecast") && ui["forecast"].is_object() && ui["forecast"].value("kind", "") == "target")
                     if (const auto at = table.HeadOnScreen(play->State(), ui["forecast"].value("unit", -1), pixels))

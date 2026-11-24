@@ -59,6 +59,8 @@ const char *MatchPlay::WhyName(Why why)
     return names[static_cast<int>(why)];
 }
 
+constexpr float popSeconds = 1.2F; // how long a rising number stays
+
 std::string MatchPlay::Word(const std::string &group, const std::string &key) const
 {
     const auto g = words_.find(group);
@@ -145,6 +147,9 @@ bool MatchPlay::Reveal()
         Toast(toast);
     if (const std::string cue = Sound(e); !cue.empty())
         sounds_.push_back(cue);
+    // 1a. The amount rises over the one it reached.
+    if ((e.kind == LogKind::Blow || e.kind == LogKind::Healed) && e.b >= 0)
+        pops_.push_back({e.b, (e.kind == LogKind::Blow ? "-" : "+") + std::to_string(e.c), e.kind == LogKind::Blow, popSeconds});
     // 1b. The cards follow the told lines.
     if (e.kind == LogKind::Blow && U(e.b) < toldHp_.size())
         toldHp_[U(e.b)] = std::max(0, toldHp_[U(e.b)] - e.c);
@@ -171,7 +176,7 @@ bool MatchPlay::Reveal()
     {
     case LogKind::Battle:
     case LogKind::Blow:
-    case LogKind::Healed:
+    case LogKind::Healed: focus_ = {e.a}, focusNext_ = e.b; break; // the one acting, then (Update) the one it reaches
     case LogKind::Down: focus_ = {e.a, e.b}; break;
     case LogKind::Performed:
     case LogKind::Level:
@@ -269,9 +274,14 @@ void MatchPlay::Update(float dt)
     std::erase_if(toasts_, [](const Toasted &t) { return t.left <= 0.0F; });
     diceLeft_ = std::max(0.0F, diceLeft_ - dt);
     if ((focusLeft_ -= dt) <= 0.0F)
-        focus_.clear();
+        focus_.clear(), focusNext_ = -1;
+    else if (focusNext_ >= 0 && focusLeft_ < options_.beatSeconds * 0.5F) // half a beat on: the camera moves to the receiver
+        focus_ = {std::exchange(focusNext_, -1)};
     if ((fightHold_ = std::max(0.0F, fightHold_ - dt)) <= 0.0F && !s_.battle.on && shown_ == s_.log.size())
         fight_[0] = fight_[1] = -1, fighters_.fill(-1); // the battle is told: the board comes back
+    for (Pop &p : pops_)
+        p.left -= dt;
+    std::erase_if(pops_, [](const Pop &p) { return p.left <= 0.0F; });
     for (Bubble &b : bubbles_)
         b.left -= dt;
     std::erase_if(bubbles_, [](const Bubble &b) { return b.left <= 0.0F; });
@@ -587,6 +597,9 @@ nlohmann::json MatchPlay::UiData() const
         j["picking"] = Current(s_); // whose pick it is: the stage's arrow
     if (!focus_.empty())
         j["focus"] = focus_;
+    j["pops"] = nlohmann::json::array();
+    for (const Pop &p : pops_) // rise: 0 when told, 1 when gone
+        j["pops"].push_back({{"unit", p.unit}, {"text", p.text}, {"hurt", p.hurt}, {"heal", !p.hurt}, {"rise", 1.0F - p.left / popSeconds}});
     // Downed by the rules but not yet told: they stand until their fall is told (MatchPlay.md "The battle view").
     nlohmann::json standing = nlohmann::json::array();
     for (std::size_t i = shown_; i < s_.log.size(); ++i)
