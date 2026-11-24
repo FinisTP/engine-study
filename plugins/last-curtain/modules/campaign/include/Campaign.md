@@ -139,6 +139,11 @@ minutes are reported only: the bot never hits the Rat while Tí is strung and pl
 person (the user's check). The `[campaign-balance]` test (ctest `Umbra.Campaign.Balance`, `build soak`)
 checks every stage and refill on 200 seeds.
 
+Every unit's first ability is **Đánh thường** (`basic`, a battle strike costing nothing; the user,
+2026-11-24), put in by `MakeUnit` before the kit. With it the record became: Stage 1 50% (the Rat's attack
+-1 in `cast.csv`, its windows open from round 3), the box office's "Ba cửa" twist 87.5% (its windows let four
+out, one more round in the pattern).
+
 Tuning record (2026-11-24, 200 seeds from seed 1):
 
 | Stage | Wins | Notes |

@@ -31,7 +31,7 @@
   ],
   "mustFree": true,
   "noRevive": [1],
-  "gimmicks": {"windows": {"spawn": "rat_specter", "level": 1, "max": 1, "pattern": [[0], [], [], [2], [], [], [1], [], []],
+  "gimmicks": {"windows": {"spawn": "rat_specter", "level": 1, "max": 1, "pattern": [[], [], [0], [], [], [2], [], [], [1]],
                            "drops": [{"item": "gung", "percent": 30}]}},
   "aims": {"start": "Cắt dây cho bé Tí trước khi con Chuột ngã.", "recap": ""},
   "scenes": {"start": "stage1-start", "round:1": "stage1-ti-seen", "firstAttacked:rat": "stage1-rat-first-hit",

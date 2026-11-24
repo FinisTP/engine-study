@@ -288,7 +288,7 @@ TEST_CASE("Class lines by level, and units made from the cast with their adjustm
     CHECK(ti.move == 12);
     // 3. Enemies: a zodiac's attack and HP x1.33, an ordinary ghost's x0.6 (rounded).
     const match::Unit rat = campaign::MakeUnit(def, cast, growth, "rat", 3, 1, true);
-    CHECK(rat.attack == 8);
+    CHECK(rat.attack == 7); // (6 - 1 of its own) x 1.33
     CHECK(rat.maxHp == 32);
     CHECK(rat.faction == 1);
     const match::Unit ghost = campaign::MakeUnit(def, cast, growth, "ghost_attacker", 3, 1, true);
@@ -1110,4 +1110,22 @@ TEST_CASE("The save goes into a fight: chosen versions replace the base abilitie
     CHECK(std::ranges::none_of(b.state.units[1].abilities, [&](int a) { return id(a) == "dua_tin"; }));
     CHECK(b.state.units[1].maxHp == before + 4);
     CHECK(b.state.units[1].hp == b.state.units[1].maxHp);
+}
+
+TEST_CASE("Every character's first ability is the basic attack, Danh thuong (the user, 2026-11-24)")
+{
+    const match::MatchDef def = MatchData();
+    const campaign::Cast cast = TheCast();
+    for (const char *who : {"player", "ti", "bao", "mai", "rat", "keeper", "ghost_attacker", "ghost_supporter", "rat_specter", "thief_specter"})
+    {
+        INFO(who);
+        const match::Unit u = campaign::MakeUnit(def, cast, TheGrowth(), who, 3, 0, false);
+        REQUIRE(u.abilities[0] >= 0);
+        const match::AbilityDef &a = def.abilities[static_cast<std::size_t>(u.abilities[0])];
+        CHECK(a.id == "basic");
+        CHECK(a.use == match::Use::Battle);
+        CHECK(a.kind == match::AbilityClass::Strike);
+        CHECK(a.hpCost == 0);
+        CHECK(std::ranges::count(u.abilities, u.abilities[0]) == 1);
+    }
 }

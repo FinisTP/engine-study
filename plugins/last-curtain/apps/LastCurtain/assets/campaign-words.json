@@ -11,6 +11,7 @@
   "abilities": {}
  },
  "abilities": {
+  "basic": "Đánh thường",
   "dao_mo": "Dao mổ",
   "chan_doan": "Chẩn đoán",
   "giay_chung_tu": "Giấy chứng tử",

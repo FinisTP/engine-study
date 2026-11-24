@@ -73,9 +73,12 @@ namespace umbra::campaign
         u.attack = static_cast<std::int16_t>(std::lround(u.attack * scale));
         u.hp = u.maxHp;
         u.level = static_cast<std::int8_t>(level);
-        // 4. Its abilities: the kit, else the class's up to this level (jobs.csv).
+        // 4. Its abilities: the basic attack first (every character has one), then the kit, else the class's
+        //    up to this level (jobs.csv).
         u.abilities.fill(-1);
         std::size_t slot = 0;
+        if (const auto basic = std::ranges::find(def.abilities, std::string("basic"), &match::AbilityDef::id); basic != def.abilities.end())
+            u.abilities[slot++] = static_cast<std::int8_t>(basic - def.abilities.begin());
         for (const std::string &a : m->kit)
             for (std::size_t i = 0; i < def.abilities.size(); ++i)
                 if (def.abilities[i].id == a && slot < u.abilities.size())
