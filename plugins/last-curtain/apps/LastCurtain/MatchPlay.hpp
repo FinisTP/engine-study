@@ -72,7 +72,8 @@ public:
     [[nodiscard]] nlohmann::json PreviewFor(const umbra::match::Action &action) const;
     bool Pin(); // the card stays on the hovered unit (I); again unpins
     // What the board marks a round ahead (campaign plan 5): [{cell, kind}], kind hazard, breath, window, arrival.
-    static nlohmann::json Telegraphs(const umbra::match::MatchState &s);
+    // The breath's row only once its drawing in has been told (told: log entries shown; note 15).
+    static nlohmann::json Telegraphs(const umbra::match::MatchState &s, std::size_t told = static_cast<std::size_t>(-1));
     // Toasts (P12): a told find, freeing or level shows top right for 3 s, at most 3 at once.
     [[nodiscard]] std::string ToastText(const umbra::match::LogEntry &e) const; // "" when not a toast
     void Toast(std::string text);

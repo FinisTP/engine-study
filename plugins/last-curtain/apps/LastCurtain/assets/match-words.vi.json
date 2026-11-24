@@ -247,5 +247,11 @@
   "outcome": {
     "won": "Chiến thắng",
     "lost": "Thất bại"
+  },
+  "telegraphs": {
+    "hazard": "Ô bị đánh dấu: vòng tới có thứ rơi xuống đây.",
+    "breath": "Lối hơi thở: ai đứng đây sẽ trúng khi nó thở ra.",
+    "window": "Cửa sổ sắp mở: vòng tới có thứ chui ra.",
+    "arrival": "Vòng tới có kẻ xuất hiện ở ô này."
   }
 }

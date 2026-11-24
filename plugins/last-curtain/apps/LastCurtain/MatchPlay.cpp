@@ -459,7 +459,7 @@ nlohmann::json MatchPlay::UiData() const
     for (int k = 0; static_cast<float>(order.size()) < options_.orderLength + 1.0F && n > 0 && k < n * 4; ++k)
         entry(k % n, true);
     j["order"] = order;
-    j["telegraphs"] = Telegraphs(s_); // marked a round ahead (campaign plan 5)
+    j["telegraphs"] = Telegraphs(s_, shown_); // marked a round ahead (campaign plan 5)
     // 2. The panel: the acting character, else the player's first one standing.
     int shown = Current(s_);
     for (int k = 0; (shown < 0 || s_.units[U(shown)].kind != 0) && k < n; ++k) // a monster's turn: the next character
@@ -802,7 +802,11 @@ nlohmann::json MatchPlay::Forecast() const
         (void)me;
         return f;
     }
-    // 2. The stage, an announced spawn, a unit, else the square's kind.
+    // 2. A marked square says what will happen there.
+    for (const nlohmann::json &t : Telegraphs(s_, shown_))
+        if (t["cell"] == hover_)
+            return {{"kind", "telegraph"}, {"mark", t["kind"]}, {"text", Word("telegraphs", t["kind"].get<std::string>())}};
+    // 2b. The stage, an announced spawn, a unit, else the square's kind.
     if (hover_ == s_.stage)
         return {{"kind", "stage"}, {"text", Word("tiles", "stage")}};
     for (const Spawn &w : s_.spawns)
@@ -1039,15 +1043,17 @@ nlohmann::json MatchPlay::HudData() const
     for (const int r : recruits)
         lines.push_back({{"text", Fill(Word("goals", "free"), {{"name", Name(r)}})}, {"done", (s_.units[U(r)].flags & flag::Freed) != 0}, {"open", (s_.units[U(r)].flags & flag::Freed) == 0}});
     j["goals"] = {{"title", stageTitle_}, {"lines", lines}, {"failed", s_.over && s_.loss == Loss::Trapped}};
-    // 2. This round's strip: from the one acting to the round's end, standing units only.
+    // 2. The strip as a queue (note 16): the one acting, the rest of this round, then those who already acted
+    //    (the next round), standing units only; no one drops out of it.
     nlohmann::json strip = nlohmann::json::array();
-    for (int i = std::max(0, s_.turn); i < static_cast<int>(s_.order.size()); ++i)
+    const int n = static_cast<int>(s_.order.size()), first = std::max(0, s_.turn);
+    for (int k = 0; k < n; ++k)
     {
-        const int u = s_.order[U(i)];
+        const int i = (first + k) % n, u = s_.order[U(i)];
         if (!Up(s_.units[U(u)]))
             continue;
         strip.push_back({{"unit", u}, {"name", Name(u)}, {"portrait", Portrait(Sprite(u))}, {"mine", s_.units[U(u)].faction == 0},
-                         {"theirs", s_.units[U(u)].faction != 0}, {"acting", u == Current(s_)}});
+                         {"theirs", s_.units[U(u)].faction != 0}, {"acting", u == Current(s_)}, {"next", first + k >= n}});
     }
     j["strip"] = strip;
     // 3. The hint (whose turn, the keys) and the last told line.
@@ -1244,12 +1250,18 @@ bool MatchPlay::Pin()
     return unit >= 0;
 }
 
-nlohmann::json MatchPlay::Telegraphs(const MatchState &s)
+nlohmann::json MatchPlay::Telegraphs(const MatchState &s, std::size_t told)
 {
     nlohmann::json out = nlohmann::json::array();
     static const char *kinds[] = {"hazard", "breath", "window"};
+    // The last breath drawn in: its row shows once that line is told.
+    std::size_t drawn = 0;
+    for (std::size_t i = 0; i < s.log.size(); ++i)
+        if (s.log[i].kind == LogKind::Breath)
+            drawn = i + 1;
     for (const Mark &m : s.gimmicks.marks)
-        out.push_back({{"cell", m.cell}, {"kind", kinds[std::clamp<int>(m.kind, 0, 2)]}});
+        if (m.kind != Mark::Kind::Breath || drawn <= told)
+            out.push_back({{"cell", m.cell}, {"kind", kinds[std::clamp<int>(m.kind, 0, 2)]}});
     for (const Arrival &a : s.arrivals)
         if (a.round <= s.round + 1)
             out.push_back({{"cell", a.cell}, {"kind", "arrival"}});

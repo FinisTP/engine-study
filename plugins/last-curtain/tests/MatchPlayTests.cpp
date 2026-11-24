@@ -950,7 +950,9 @@ TEST_CASE("A campaign fight shows cast names; the HUD has goals, this round's st
     REQUIRE_FALSE(hud["strip"].empty());
     CHECK(hud["strip"][0]["unit"] == Current(p.State()));
     CHECK(hud["strip"][0]["acting"] == true);
-    CHECK(hud["strip"].size() <= p.State().order.size());
+    // Everyone standing stays in the strip; who already acted waits at its end for the next round (note 16).
+    const auto standing = std::ranges::count_if(p.State().order, [&](int u) { return Up(p.State().units[static_cast<std::size_t>(u)]); });
+    CHECK(static_cast<long>(hud["strip"].size()) == standing);
     // 4. Hint and log line exist; an enemy's turn says whose.
     CHECK_FALSE(hud["hint"].get<std::string>().empty());
     CHECK(hud.contains("logLine"));
@@ -1231,6 +1233,27 @@ TEST_CASE("Telegraphs: hazards, breath rows, opening windows and arrivals marked
     CHECK(t[3]["kind"] == "arrival");
 }
 
+TEST_CASE("The breath's row lights only once its drawing in is told; a marked square says what it is on hover (feedback 2026-11-24 16:57, notes 3 and 15)", "[match][play][marks]")
+{
+    MatchState s;
+    s.round = 2;
+    s.gimmicks.marks = {{Mark::Kind::Breath, 9}, {Mark::Kind::Hazard, 5}};
+    s.log.push_back({LogKind::Breath, 0, 9});
+    // 1. Not told yet: the hazard shows, the breath does not.
+    nlohmann::json t = MatchPlay::Telegraphs(s, 0);
+    REQUIRE(t.size() == 1);
+    CHECK(t[0]["kind"] == "hazard");
+    // 2. Told: both.
+    CHECK(MatchPlay::Telegraphs(s, 1).size() == 2);
+    // 3. Hovering a lit square: a line about it.
+    const MatchDef def = Data();
+    MatchPlay p = AtPlayer(def, [](MatchState &m) { m.gimmicks.marks = {{Mark::Kind::Hazard, static_cast<std::int16_t>(m.units[static_cast<std::size_t>(Current(m))].cell)}}; });
+    p.Hover(p.State().units[static_cast<std::size_t>(Current(p.State()))].cell);
+    const nlohmann::json f = p.UiData()["forecast"];
+    CHECK(f["kind"] == "telegraph");
+    CHECK(f["text"] == Words()["telegraphs"]["hazard"]);
+}
+
 TEST_CASE("Toasts: finds, freeing and levels; at most three, each for three seconds (campaign plan 5)", "[match][play][toasts]")
 {
     const MatchDef def = Data();
@@ -1270,4 +1293,29 @@ TEST_CASE("The board cursor: starts on the acting unit, steps a square, stays on
     c.Off();
     CHECK(c.Update({-1, 0}, 0.016F, 5, 4, 12));
     CHECK(c.cell == 11);
+}
+
+TEST_CASE("Walks go around enemies, never through their squares (feedback 2026-11-24 16:57, note 2)", "[match][play][menu]")
+{
+    const MatchDef def = Data();
+    int blocked = -1;
+    MatchPlay p = AtPlayer(def, [&](MatchState &s) {
+        // A foe right beside the one about to act.
+        const int me = Current(s);
+        for (std::size_t i = 0; i < s.units.size() && blocked < 0; ++i)
+            if (s.units[i].faction != s.units[static_cast<std::size_t>(me)].faction && Up(s.units[i]))
+                for (int d = 0; d < 4 && blocked < 0; ++d)
+                    if (const int n = Neighbour(s.board, s.units[static_cast<std::size_t>(me)].cell, d); n >= 0)
+                        s.units[i].cell = static_cast<std::int16_t>(n), blocked = n;
+    });
+    REQUIRE(blocked >= 0);
+    REQUIRE(p.MenuKey(1));
+    const nlohmann::json reach = p.UiData()["reach"];
+    for (const auto &c : reach)
+    {
+        CHECK(c.get<int>() != blocked);
+        p.Hover(c.get<int>());
+        const nlohmann::json path = p.UiData()["path"];
+        CHECK(std::ranges::find(path, nlohmann::json(blocked)) == path.end());
+    }
 }

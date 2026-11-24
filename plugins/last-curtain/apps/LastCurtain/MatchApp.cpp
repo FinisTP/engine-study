@@ -364,6 +364,9 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                             l["say"] = b["text"];
             }
             data["tip"] = screens.Ui().Tip();
+            // A marked square under the mouse says what will happen there (note 3).
+            if (data["tip"] == "" && ui.contains("forecast") && ui["forecast"].is_object() && ui["forecast"].value("kind", "") == "telegraph")
+                data["tip"] = ui["forecast"]["text"];
             data["analog"] = analog.Data();
             window.SetTextInput(screens.Ui().WantsText()); // typed text only while a text field has the focus
             game.Keep(drawList); // the place, for a screen opened from it (settings, the result)

@@ -246,5 +246,11 @@
   "outcome": {
     "won": "Victory",
     "lost": "Defeat"
+  },
+  "telegraphs": {
+    "hazard": "Marked: something falls here next round.",
+    "breath": "The breath's path: anyone here is hit when it breathes out.",
+    "window": "A window that opens next round: something comes out.",
+    "arrival": "Someone arrives here next round."
   }
 }

@@ -117,7 +117,8 @@
               "text": "{o.name}",
               "visible": "{o.theirs}"
             }
-          ]
+          ],
+          "disabled": "{o.next}"
         },
         "action": "focus",
         "arg": "{o.unit}"

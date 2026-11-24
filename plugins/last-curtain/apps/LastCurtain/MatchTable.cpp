@@ -298,9 +298,13 @@ void MatchTable::Walk(const MatchState &s, float dt)
             std::vector<int> queue{from};
             if (from >= 0)
                 back[U(from)] = -1;
+            // The route steps around foes standing in the way, as the rules' walk did (note 2).
+            const auto foe = [&](int c) {
+                return std::ranges::any_of(s.units, [&](const Unit &o) { return o.cell == c && o.hp > 0 && o.faction != u.faction; });
+            };
             for (std::size_t q = 0; from >= 0 && q < queue.size() && back[U(u.cell)] == -2; ++q)
                 for (int dir = 0; dir < 4; ++dir)
-                    if (const int n = Neighbour(b, queue[q], dir); n >= 0 && back[U(n)] == -2)
+                    if (const int n = Neighbour(b, queue[q], dir); n >= 0 && back[U(n)] == -2 && (n == u.cell || !foe(n)))
                         back[U(n)] = queue[q], queue.push_back(n);
             if (from < 0 || back[U(u.cell)] == -2)
             {
