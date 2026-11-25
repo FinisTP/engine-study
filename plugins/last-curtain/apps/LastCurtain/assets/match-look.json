@@ -94,7 +94,7 @@
     "base": 0.6
   },
   "battle": {
-    "note": "The battle view: the camera comes down to distance/tilt over seconds, the two fighters stand gap squares either side of their middle at figureScale. 'across': the tiles the battle view shows (the sides stand 'gap' = a quarter of it from the middle, so at 25% and 75% of the screen; the user, notes 5-6); a sequence's camera on one fighter comes to focusNear of the distance and focusPull of the way to it (note 4). The camera stands 'near' farther back, since the fighters stand that much nearer it; seconds is the way in and out, follow the pan between fighters (2026-11-25 notes 2-3).",
+    "note": "The battle view (Octopath, the user 2026-11-25): one fixed wide shot of both sides, 'across' tiles wide, the sides at 25% and 75% ('gap' = a quarter of it). The camera stands 'near' farther back since the fighters stand that much nearer it; seconds is the way in and out, follow the pan onto the stage. A blow: the striker steps 'step' tiles toward the middle and back over stepSeconds; a move's push-in is 'punch' of its board strength, with no turn. A foe that never rises dissolves dieAfter seconds after its fall is told.",
     "seconds": 1.0,
     "distance": 7,
     "tilt": 14,
@@ -119,9 +119,11 @@
     "pairDepth": 0.8,
     "lift": 1.1,
     "across": 10,
-    "focusNear": 0.9,
-    "focusPull": 0.25,
-    "follow": 0.4
+    "follow": 0.4,
+    "punch": 0.4,
+    "step": 1.0,
+    "stepSeconds": 1.4,
+    "dieAfter": 0.5
   },
   "reach": {
     "note": "The player's reach and targets wash the tile half over in their colour, blinking.",
@@ -144,6 +146,11 @@
       "seconds": 1.0,
       "nearer": 0.8,
       "yaw": 0
+    },
+    "hit": {
+      "seconds": 0.3,
+      "nearer": 0.92,
+      "yaw": 0
     }
   },
   "talk": {
@@ -151,5 +158,17 @@
     "near": 0.8,
     "roomNear": 0.8,
     "lift": 0.5
+  },
+  "hd2d": {
+    "note": "The HD-2D look (plan 2026-11-25-hd2d-polish.md, the user chose a light blur): dof is the tilt-shift's blur far from the sharp band, in screen heights (engine Post.md 6c); dofWidth half the band's height. The band follows whoever acts. The diorama (task 4): the board stands on a plinth 'depth' deep and 'rim' wider, its top edge lit gold (edgeGlow), on black velvet; plinthArt (when made) covers its sides. Each room has a warm lamp lampHeight over its middle, the centre a cold one, at most 'lamps' (lampPower, lampRange in tiles).",
+    "dof": 0.004,
+    "dofWidth": 0.22,
+    "rim": 0.6,
+    "depth": 0.9,
+    "edgeGlow": 0.5,
+    "lamps": 10,
+    "lampHeight": 1.6,
+    "lampPower": 1.0,
+    "lampRange": 2.5
   }
 }

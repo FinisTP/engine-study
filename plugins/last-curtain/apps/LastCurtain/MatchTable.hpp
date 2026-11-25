@@ -56,7 +56,9 @@ public:
     [[nodiscard]] bool Walking(int unit) const;
     [[nodiscard]] bool Fallen(const umbra::match::Unit &u, int unit) const; // its fall has been told // still on its way to its square
     void Snap(int unit);                        // its next square is taken at once, no walk (an undone move)
-    void CloseUp(bool on); // a scene's camera: down close; off goes back to the distance before
+    [[nodiscard]] bool Easing() const { return fightT_ > 0.0F && fightT_ < 1.0F; } // the battle view coming in or going out
+    void CloseUp(bool on);
+    void Diorama(const umbra::match::Board &b, umbra::core::DrawList &out) const; // HD-2D task 4: the plinth, its lit edge, the velvet, the room lamps // a scene's camera: down close; off goes back to the distance before
     [[nodiscard]] std::optional<glm::vec2> HeadOnScreen(const umbra::match::MatchState &s, int unit, glm::vec2 pixels) const;
     // The battle view (MatchTable.md): the two fighters stand apart, facing, the camera comes down into their room.
     void SetFight(const std::vector<int> &places, int picking); // by place, two a group (MatchPlay "fight"); empty: none
@@ -87,6 +89,8 @@ private:
     std::vector<std::string> names_;
     std::vector<float> heights_;
     float fightT_ = 0.0F, focusT_ = 0.0F;
+    std::map<int, float> leaving_;  // a fallen unit: seconds since its fall was told (a foe that never rises dissolves)
+    std::map<int, float> stepping_; // a fighter's step in toward the other side: seconds since its blow began
     std::vector<int> focus_, framed_; // asked for; framed (kept while the camera eases back)
     [[nodiscard]] glm::vec3 FightNear() const; // how far toward the camera the fighters stand on their stage
     void DrawFight(const umbra::match::MatchState &s, umbra::core::DrawList &out) const; // the fight's own stage
@@ -122,6 +126,7 @@ private:
     void Arrow(glm::vec3 tip, float size, umbra::core::DrawList &out) const; // a downward gold triangle facing the camera
     void Rope(const umbra::match::MatchState &s, int unit, umbra::core::DrawList &out) const; // a strung unit's rope to its holder
     umbra::core::MeshHandle triangle_;
+    umbra::core::TextureHandle plinthArt_; // match-look.json hd2d.plinthArt (the diorama's sides)
     umbra::core::TextureHandle wallArt_; // match-look.json rooms.wallArt, repeated every wallRepeat metres
     void Edge(glm::vec3 centre, int dir, glm::vec4 color, float glow, umbra::core::DrawList &out) const;
     std::vector<glm::vec3> shown_;            // by unit: the figure's feet, eased along its route

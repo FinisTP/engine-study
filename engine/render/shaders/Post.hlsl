@@ -5,6 +5,7 @@ struct PostConstants
 {
     float4 exposure; // x = 2^exposure, y = bloom strength, z = threshold, w = vignette
     float4 sizes;    // xy = one texel of the source image, z = LUT size, w = tear (composite only)
+    float4 focus;    // tilt-shift (composite only): x = radius in screen heights, y = sharp band's centre, z = its half width
 };
 [[vk::push_constant]] ConstantBuffer<PostConstants> post;
 
@@ -89,8 +90,20 @@ float4 CompositePS(Output i) : SV_Target0
     float split = 0.0F;
     if (post.sizes.w > 0.0F && abs(uv.y - (1.0F - post.sizes.w)) < 0.07F)
         uv.x += post.sizes.w * 0.04F * sin(uv.y * 140.0F), split = post.sizes.w * 0.006F;
-    // 1. HDR light plus the bloom's glow.
-    float3 hdr = source.Sample(sourceSampler, uv).rgb * post.exposure.x + bloom.Sample(bloomSampler, uv).rgb * post.exposure.y;
+    // 1. HDR light plus the bloom's glow; away from the sharp band, the light is a ring average (tilt-shift, Post.md "7").
+    float3 scene = source.Sample(sourceSampler, uv).rgb;
+    const float blur = post.focus.x * smoothstep(0.0F, 0.25F, abs(uv.y - post.focus.y) - post.focus.z);
+    if (blur > 0.0F)
+    {
+        const float2 r = blur * float2(post.sizes.x / post.sizes.y, 1.0F); // round on screen
+        for (int k = 0; k < 8; ++k)
+        {
+            const float2 d = float2(cos(k * 0.785398F), sin(k * 0.785398F));
+            scene += source.Sample(sourceSampler, uv + d * r).rgb + source.Sample(sourceSampler, uv + d * r * 0.5F).rgb;
+        }
+        scene /= 17.0F;
+    }
+    float3 hdr = scene * post.exposure.x + bloom.Sample(bloomSampler, uv).rgb * post.exposure.y;
     if (split > 0.0F)
         hdr.r = source.Sample(sourceSampler, uv + float2(split, 0.0F)).r * post.exposure.x, hdr.b = source.Sample(sourceSampler, uv - float2(split, 0.0F)).b * post.exposure.x;
     // 2. To 0..1, then the grade: the LUT is indexed by sRGB values, centered on its cells.

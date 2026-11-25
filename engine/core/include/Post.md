@@ -135,6 +135,23 @@ composite pass, so menus and text drawn after it stay whole (The Last Curtain's 
 and fades. Inside it, each row is pushed sideways by `tear * 0.04 * sin(y * 140)` and red and blue
 are read `tear * 0.006` apart. It is packed into `PostBlock::sizes.w`. The browser build ignores it.
 
+## 6c. Tilt-shift (3D view only)
+
+A miniature look (HD-2D): a band across the screen stays sharp and the picture softens above and
+below it. Set from code (`PostSettings::dof`, `dofCentre`, `dofWidth`); the scene file has no field.
+
+For a pixel at height `y` (0 top, 1 bottom):
+
+```
+blur = dof * smoothstep(0, 0.25, |y - dofCentre| - dofWidth)
+```
+
+so inside the band (`dofWidth` either side of the centre) `blur` is 0, and it grows to `dof` over
+the next quarter screen. The light there is the average of 17 samples: the pixel, 8 on a ring of
+radius `blur` and 8 on a ring of half that. The radius is in screen heights, made round by scaling
+x by height / width. `dof` is capped at 0.02. The web build does not blur (its composite has no
+room for the extra numbers); everything else matches.
+
 ## 7. The `post` component
 
 ```json

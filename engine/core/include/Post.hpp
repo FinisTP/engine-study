@@ -28,6 +28,9 @@ namespace umbra::core
         float crt = 0.0F;            // the analog screen (Post.md "6"): an old CRT, 0 = off .. 1 = strong
         float vhs = 0.0F;            // a worn VHS tape, 0 = off .. 1 = strong
         float tear = 0.0F;           // a tracking tear across the 3D view only, 0 = none .. 1 (Post.md "6b"); menus stay whole
+        float dof = 0.0F;            // tilt-shift (Post.md "7"): the blur's radius far from focus, in screen heights (0 = off)
+        float dofCentre = 0.5F;      // the sharp band's middle, 0 top .. 1 bottom of the screen
+        float dofWidth = 0.2F;       // half the sharp band's height, in screen heights
     };
 
     // How much post work the device does (user decision 2026-11-09: phones get Reduced).
@@ -52,6 +55,7 @@ namespace umbra::core
     {
         glm::vec4 exposure{1.0F, 0.5F, 1.0F, 0.25F}; // x = 2^exposure, y = bloom, z = threshold, w = vignette
         glm::vec4 sizes{0.0F};                        // xy = 1 / screen size, z = lutSize
+        glm::vec4 focus{0.0F};                        // tilt-shift: x = radius, y = centre, z = half width (composite only)
     };
     [[nodiscard]] PostBlock PackPost(const PostSettings &settings, std::uint32_t width, std::uint32_t height);
 

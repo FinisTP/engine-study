@@ -195,7 +195,8 @@ bool MatchTable::Present(const MatchState &s, int unit) const
     // A fallen foe that can never rise leaves no body (only our side's fallen stay, the user 2026-11-24 note 23).
     const Unit &u = s.units[U(unit)];
     const bool gone = u.hp <= 0 && u.faction > 0 && (s.noRevive & (1 << u.faction));
-    return (u.cell >= 0 && !gone) || std::ranges::find(standing_, unit) != standing_.end();
+    // It stays while its fall and dissolve play (Animate), so the last blow lands on something.
+    return (u.cell >= 0 && !gone) || std::ranges::find(standing_, unit) != standing_.end() || (gone && leaving_.contains(unit));
 }
 
 glm::vec3 MatchTable::SpriteUp() const
@@ -255,7 +256,14 @@ glm::vec3 MatchTable::Shown(const MatchState &s, int unit) const
     forward = glm::normalize(forward);
     const glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3{0, 1, 0}));
     const float e = fightT_ * fightT_ * (3.0F - 2.0F * fightT_), side = place < 2 ? -1.0F : 1.0F, second = static_cast<float>(place % 2);
-    const glm::vec3 stand = stageMiddle_ + right * side * (Look("battle", "gap", 0.0F, 0.7F) + second * Look("battle", "pairGap", 0.0F, 0.9F)) * tile +
+    // A blow: out toward the middle fast, held, then back (smoothsteps over stepSeconds).
+    float step = 0.0F;
+    if (const auto it = stepping_.find(unit); it != stepping_.end())
+    {
+        const float t = it->second / Look("battle", "stepSeconds", 0.0F, 1.4F), a = std::min(1.0F, t / 0.2F), b = std::clamp((t - 0.7F) / 0.3F, 0.0F, 1.0F);
+        step = Look("battle", "step", 0.0F, 1.0F) * (a * a * (3.0F - 2.0F * a)) * (1.0F - b * b * (3.0F - 2.0F * b));
+    }
+    const glm::vec3 stand = stageMiddle_ + right * side * (Look("battle", "gap", 0.0F, 0.7F) + second * Look("battle", "pairGap", 0.0F, 0.9F) - step) * tile +
                             forward * second * Look("battle", "pairDepth", 0.0F, 0.8F);
     return glm::mix(walked(unit), stand, e);
 }
@@ -378,9 +386,13 @@ void MatchTable::Play(int unit, const std::string &motion)
     {
         const nlohmann::json &m = (*moves)[motion];
         kickT_ = 0.0F, kickSeconds_ = m.value("seconds", 0.7F), kickNear_ = m.value("nearer", 0.85F), kickYaw_ = m.value("yaw", 8.0F) * st.facing;
+        if (Staged()) // the battle view never turns: a short zoom punch only (Octopath, the user 2026-11-25)
+            kickYaw_ = 0.0F, kickNear_ = 1.0F - (1.0F - kickNear_) * Look("battle", "punch", 0.0F, 0.4F);
     }
+    if (Fighter(unit) >= 0 && (motion == "attack" || motion == "power" || motion == "lunge"))
+        stepping_[unit] = 0.0F;
     if (motion == "down")
-        st.Hold("down");
+        leaving_[unit] = 0.0F, st.Hold("down");
     else if (motion == "revive")
         st.Release(), st.Play("revive");
     else if (motion == "walk") // the route sets the walk (Walk)
@@ -445,8 +457,7 @@ void MatchTable::Animate(const MatchState &s, float dt)
         // The battle view shows `across` tiles (the two sides at a quarter in from each edge); a sequence's
         // camera on one fighter comes nearer (focusNear), then pulls back out (note 4).
         const float across = Look("battle", "across", 0.0F, 0.0F), battle = across > 0.0F ? DistanceAcross(across) + Look("battle", "near", 0.0F, 2.5F) : Look("battle", "distance", 0.0F, 7.0F);
-        const bool closeUp = Staged() && framed_.size() == 1 && Fighter(framed_[0]) >= 0;
-        const float nearer = closeUp ? 1.0F - (1.0F - Look("battle", "focusNear", 0.0F, 0.75F)) * q : 1.0F;
+        const float nearer = 1.0F; // the battle view holds its wide shot; blows punch in (Kick)
         if (e > 0.0F)
             view_.SetShot(true, (view_.Distance() + (battle * nearer - view_.Distance()) * e) * near, yaw,
                           view_.Tilt() + (Look("battle", "tilt", 0.0F, 30.0F) - view_.Tilt()) * e);
@@ -461,9 +472,7 @@ void MatchTable::Animate(const MatchState &s, float dt)
     {
         glm::vec3 at = Shown(s, now);
         if (Staged()) // a battle: its stage, drawn toward the one a sequence looks at
-            at = Staged() && framed_.size() == 1 && Fighter(framed_[0]) >= 0
-                     ? glm::mix(stageMiddle_, Shown(s, framed_[0]), Look("battle", "focusPull", 0.0F, 0.6F) * focusT_ * focusT_ * (3.0F - 2.0F * focusT_))
-                     : stageMiddle_;
+            at = stageMiddle_; // one wide shot of both sides (Octopath, the user 2026-11-25)
         else if (!framed_.empty()) // a told line: the middle of whom it is about
         {
             at = glm::vec3{0.0F};
@@ -496,6 +505,18 @@ void MatchTable::Animate(const MatchState &s, float dt)
         if (t >= 1.0F && scene_ == "open")
             scene_.clear(), view_.SetShot(false, 0, 0, 50);
     }
+    // 3. A fallen foe that never rises: down, then its dissolve, then gone; a step in lasts its blow.
+    for (auto it = leaving_.begin(); it != leaving_.end();)
+    {
+        const float before = it->second, after = (it->second += dt), wait = Look("battle", "dieAfter", 0.0F, 0.5F);
+        const Unit &u = s.units[U(it->first)];
+        const bool gone = u.hp <= 0 && u.faction > 0 && (s.noRevive & (1 << u.faction));
+        if (gone && before < wait && after >= wait)
+            states_[U(it->first)].Release(), states_[U(it->first)].Play("die");
+        it = !gone || after > wait + 1.7F ? leaving_.erase(it) : std::next(it);
+    }
+    for (auto it = stepping_.begin(); it != stepping_.end();)
+        it = (it->second += dt) > Look("battle", "stepSeconds", 0.0F, 1.4F) ? stepping_.erase(it) : std::next(it);
     for (std::size_t i = 0; i < states_.size(); ++i)
     {
         if (Fighter(static_cast<int>(i)) >= 0) // fighters face each other
@@ -591,6 +612,9 @@ void MatchTable::SetLook(nlohmann::json look)
     floors_.clear();
     if (!look_.contains("rooms"))
         return;
+    if (umbra::core::TextureData data; look_.contains("hd2d") && look_["hd2d"].contains("plinthArt"))
+        if (std::string error; umbra::assets::LoadImageFile(assets_ / look_["hd2d"]["plinthArt"].get<std::string>(), data, error))
+            plinthArt_ = renderer_.CreateTexture(data);
     if (umbra::core::TextureData data; look_["rooms"].contains("wallArt"))
         if (std::string error; umbra::assets::LoadImageFile(assets_ / look_["rooms"]["wallArt"].get<std::string>(), data, error))
             wallArt_ = renderer_.CreateTexture(data);
@@ -762,6 +786,11 @@ void MatchTable::Draw(const MatchState &s, const nlohmann::json &ui, int hover, 
                               {"saturation", &umbra::core::PostSettings::saturation}, {"temperature", &umbra::core::PostSettings::temperature},
                               {"vignette", &umbra::core::PostSettings::vignette}, {"bloom", &umbra::core::PostSettings::bloom}})
         out.post.*field = Look("grade", key, t, out.post.*field);
+    // The miniature look (HD-2D task 1): a sharp band at the height of whoever acts, softer above and below.
+    out.post.dof = Look("hd2d", "dof", 0.0F, 0.0F), out.post.dofWidth = Look("hd2d", "dofWidth", 0.0F, 0.2F);
+    if (const int now = acting_; now >= 0 && U(now) < s.units.size() && Present(s, now))
+        if (const auto at = ScreenPoint(FeetShown(s, now) + SpriteUp() * Height(s.units[U(now)], now) * 0.5F, {1.0F, 1.0F}))
+            out.post.dofCentre = std::clamp(at->y, 0.25F, 0.75F);
     const float stutter = std::max(0.0F, std::sin(clock_ * 7.3F) * std::sin(clock_ * 2.1F + 1.0F));
     const float lamp = 1.0F - Look("flicker", "x", t, 0.0F) * stutter;
     out.lights.push_back({{0.0F, 9.0F, 4.0F}, {1.0F, 0.88F, 0.72F}, 140.0F * lamp, 70.0F, 0.0F});
@@ -789,7 +818,7 @@ void MatchTable::Draw(const MatchState &s, const nlohmann::json &ui, int hover, 
         marks[c] = ui.contains("armed") ? Hex(0xE08A3C) : Hex(0x3FD0E0);
     for (int c : Cells(ui.value("targets", nlohmann::json::array())))
         marks[c] = Hex(0xE8453F);
-    Box(out, box_, {0.0F, -0.2F, 0.0F}, {static_cast<float>(b.height) * tile + 0.6F, 0.2F, static_cast<float>(b.width) * tile + 0.6F}, Hex(0x1a1411));
+    Diorama(b, out);
     for (int c = 0; c < static_cast<int>(b.cells.size()); ++c)
     {
         const CellKind kind = b.cells[U(c)].kind;
@@ -972,4 +1001,47 @@ void MatchTable::CloseUp(bool on)
         view_.SetRoomDistance(roomBefore_ * Look("talk", "roomNear", 0.0F, 0.8F)), view_.SetLookLift(Look("talk", "lift", 0.0F, 0.5F) * FigureScale());
     else if (!on && before_ >= 0.0F)
         view_.SetDistance(before_), view_.SetRoomDistance(roomBefore_), view_.SetLookLift(0.0F), before_ = roomBefore_ = -1.0F;
+}
+
+void MatchTable::Diorama(const Board &b, umbra::core::DrawList &out) const
+{
+    // 1. The plinth: a lacquered block under the board, its top edge lit gold; black velvet around it.
+    const float h = static_cast<float>(b.height) * tile, w = static_cast<float>(b.width) * tile, rim = Look("hd2d", "rim", 0.0F, 0.6F);
+    const float depth = Look("hd2d", "depth", 0.0F, 0.9F), bar = 0.07F;
+    out.items.push_back({box_, plinthArt_, glm::scale(glm::translate(glm::mat4{1.0F}, {0.0F, -depth * 0.5F, 0.0F}), {h + rim, depth, w + rim}),
+                         plinthArt_ ? glm::vec4(0.55F, 0.5F, 0.48F, 1.0F) : Hex(0x24120d), plinthArt_ ? 1.5F : 0.0F});
+    const glm::vec4 gold = Hex(0xC9A15A);
+    const float glow = Look("hd2d", "edgeGlow", 0.0F, 0.5F), x = (h + rim) * 0.5F, z = (w + rim) * 0.5F;
+    Box(out, box_, {x, 0.0F, 0.0F}, {bar, bar, w + rim + bar}, gold, glow);
+    Box(out, box_, {-x, 0.0F, 0.0F}, {bar, bar, w + rim + bar}, gold, glow);
+    Box(out, box_, {0.0F, 0.0F, z}, {h + rim + bar, bar, bar}, gold, glow);
+    Box(out, box_, {0.0F, 0.0F, -z}, {h + rim + bar, bar, bar}, gold, glow);
+    Box(out, box_, {0.0F, -depth - 0.02F, 0.0F}, {400.0F, 0.02F, 400.0F}, Hex(0x040203));
+    // 2. A warm lamp over each room (a flood fill finds them), a cold one over the stage, at most hd2d.lamps.
+    std::vector<int> seen(b.cells.size(), 0);
+    const int most = static_cast<int>(Look("hd2d", "lamps", 0.0F, 10.0F));
+    for (int c = 0; c < static_cast<int>(b.cells.size()) && static_cast<int>(out.lights.size()) < most; ++c)
+    {
+        const CellKind kind = b.cells[U(c)].kind;
+        if (seen[U(c)] || (kind != CellKind::Room && kind != CellKind::Centre))
+            continue;
+        glm::vec3 sum{0.0F};
+        int count = 0;
+        for (std::vector<int> todo{c}; !todo.empty();)
+        {
+            const int at = todo.back();
+            todo.pop_back();
+            if (seen[U(at)] || b.cells[U(at)].kind != kind)
+                continue;
+            seen[U(at)] = 1, sum += Centre(b, at), ++count;
+            const int x0 = at % b.width, y0 = at / b.width;
+            for (const auto [dx, dy] : {std::pair{1, 0}, {-1, 0}, {0, 1}, {0, -1}})
+                if (x0 + dx >= 0 && x0 + dx < b.width && y0 + dy >= 0 && y0 + dy < b.height)
+                    todo.push_back((y0 + dy) * b.width + x0 + dx);
+        }
+        const bool cold = kind == CellKind::Centre;
+        out.lights.push_back({sum / static_cast<float>(count) + glm::vec3{0.0F, Look("hd2d", "lampHeight", 0.0F, 1.6F), 0.0F},
+                              cold ? glm::vec3{0.6F, 0.75F, 1.0F} : glm::vec3{1.0F, 0.72F, 0.42F}, Look("hd2d", "lampPower", 0.0F, 4.0F),
+                              Look("hd2d", "lampRange", 0.0F, 4.0F) * tile, cold ? 0.0F : 0.15F});
+    }
 }

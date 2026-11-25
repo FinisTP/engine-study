@@ -69,6 +69,7 @@ namespace umbra::core
         p.exposure = {std::exp2(settings.exposure), std::max(settings.bloom, 0.0F), std::max(settings.bloomThreshold, 0.0F),
                       std::clamp(settings.vignette, 0.0F, 1.0F)};
         p.sizes = {1.0F / static_cast<float>(std::max(width, 1u)), 1.0F / static_cast<float>(std::max(height, 1u)), float(lutSize), std::clamp(settings.tear, 0.0F, 1.0F)};
+        p.focus = {std::clamp(settings.dof, 0.0F, 0.02F), std::clamp(settings.dofCentre, 0.0F, 1.0F), std::max(settings.dofWidth, 0.0F), 0.0F};
         return p;
     }
 

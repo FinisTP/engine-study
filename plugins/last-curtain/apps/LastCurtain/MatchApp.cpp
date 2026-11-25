@@ -246,7 +246,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
             // A stage's board first finishes its opening shot: nothing plays, no scene starts, until it has (note 4).
             const bool opening = hooks && table.InScene();
             // Hold Space on their turn to hurry the beats (P16); effects keep the same pace.
-            const float pdt = paused || opening ? 0.0F : hooks && !play->PlayerTurn() ? dt * analog.EnemyScale() * (game.keys.Held(input, "hurry") ? 3.0F : 1.0F) : dt;
+            const float pdt = paused || opening || table.Easing() ? 0.0F : hooks && !play->PlayerTurn() ? dt * analog.EnemyScale() * (game.keys.Held(input, "hurry") ? 3.0F : 1.0F) : dt;
             play->SetSequences(&sequences);
             if (pdt > 0.0F)
                 play->Update(pdt);
@@ -414,7 +414,8 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                 // little right of the head (left when that would leave the screen), in the UI's own scale.
                 const int actor = Current(play->State());
                 const float k = screens.Ui().UiScale(), half = 150.0F * k, gap = 70.0F * k;
-                if ((ui.contains("actions") || (hooks && !data["menu"]["rows"].empty())) && !table.Walking(actor))
+                const bool menuShown = hooks ? !data["menu"]["rows"].empty() || !data["menu"].value("title", std::string()).empty() : ui.contains("actions");
+                if (menuShown && !table.Walking(actor)) // no empty box while aiming
                     if (const auto at = table.HeadOnScreen(play->State(), actor, pixels))
                     {
                         const float right = at->x + gap + half, left = at->x - gap - half;
