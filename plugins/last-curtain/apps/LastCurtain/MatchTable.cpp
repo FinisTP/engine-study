@@ -1049,8 +1049,17 @@ void MatchTable::Diorama(const Board &b, umbra::core::DrawList &out) const
                     todo.push_back((y0 + dy) * b.width + x0 + dx);
         }
         const bool cold = kind == CellKind::Centre;
-        out.lights.push_back({sum / static_cast<float>(count) + glm::vec3{0.0F, Look("hd2d", "lampHeight", 0.0F, 1.6F), 0.0F},
-                              cold ? glm::vec3{0.6F, 0.75F, 1.0F} : glm::vec3{1.0F, 0.72F, 0.42F}, Look("hd2d", "lampPower", 0.0F, 4.0F),
-                              Look("hd2d", "lampRange", 0.0F, 4.0F) * tile, cold ? 0.0F : 0.15F});
+        const glm::vec3 colour = cold ? glm::vec3{0.6F, 0.75F, 1.0F} : glm::vec3{1.0F, 0.72F, 0.42F}, middle = sum / static_cast<float>(count);
+        const float lift = Look("hd2d", "lampHeight", 0.0F, 1.6F);
+        out.lights.push_back({middle + glm::vec3{0.0F, lift, 0.0F}, colour, Look("hd2d", "lampPower", 0.0F, 4.0F), Look("hd2d", "lampRange", 0.0F, 4.0F) * tile,
+                              cold ? 0.0F : 0.15F});
+        // A shaft of light under the lamp (task 3): one soft dot stretched to the floor, added faintly; off with Giam (dread below 1).
+        if (const float shaft = Look("hd2d", "shaft", 0.0F, 0.0F); shaft > 0.0F && dread_ >= 1.0F)
+        {
+            const float breathe = 0.85F + 0.15F * std::sin(clock_ * 0.7F + middle.x);
+            out.particles.push_back({middle + glm::vec3{0.0F, lift * 0.5F, 0.0F}, tile * Look("hd2d", "shaftWidth", 0.0F, 0.8F),
+                                     glm::vec4(colour * shaft * breathe, 1.0F), 0.0F, 1.0F, 0.0F, 0.0F, glm::vec3{0.0F, lift * 0.5F, 0.0F}, 0.0F});
+            out.particleBatches.push_back({out.particles.size() - 1, 1, {}});
+        }
     }
 }

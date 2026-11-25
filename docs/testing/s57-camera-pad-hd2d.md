@@ -11,7 +11,8 @@ jobs. Plans: `docs/design/plans/2026-11-25-hd2d-polish.md`, `2026-11-25-gamepad.
 |---|---|
 | `#UMBRA-445` | No empty box beside the actor while aiming (the dock is drawn only with rows or a title). A foe that never rises stays on screen after its fall is told: down, then its dissolve 0.5 s later, then gone (it used to vanish before the last blow landed). Nothing is told while the battle view eases in or out (a board ability no longer starts before the view has arrived). The battle view: one wide shot aimed at the stage, no close-ups, no turn; the striker steps 1 tile in and back over 1.4 s; a move's push-in is 40% of the board's (`battle.punch`). HD-2D: the engine's tilt-shift (`PostSettings::dof`, `Post.md` 6c; light, 0.004 of the screen), its sharp band at the acting figure; the diorama (plinth, gold lit edge, black velvet); a lamp per room; a dark outline on every sprite (`sprite.surface.hlsl`). |
 | `#UMBRA-446` | The pad: `PadL1/R1/L3/R3`, triggers as axes 4 and 5, `Input::PadLast`, `platform::Rumble`. Board: Square opens Kỹ năng, L1/R1 step the camera along the turn order, the right stick pans, L2/R2 zoom; Triangle ends the turn, Circle goes back (as before). Café: L1/R1 switch who walks, Create opens the notebook, L1/R1 turn its tabs. Map: the right stick pans, L2/R2 zoom. Every screen: the left stick moves the focus like the d-pad; the right stick scrolls the top screen's scroll boxes (`UiInput::padScroll`). Prompts: a legend of PlayStation glyphs (`art/ui/pad`, drawn by `tools/art/pad_glyphs.py`) at the bottom right while the pad was used last; the café hint has a pad wording. Settings: Rung tay cầm Bật/Tắt; the pad shakes on a hit and on a fall. |
-| `#UMBRA-447` | The battle floor's reflection (15%). Music and pictures as listed in §3. |
+| `#UMBRA-447` | The battle floor's reflection (15%); records. |
+| `#UMBRA-448` | A faint light shaft under each lamp. |
 
 ## 2. Cloud checks
 
@@ -23,8 +24,9 @@ jobs. Plans: `docs/design/plans/2026-11-25-hd2d-polish.md`, `2026-11-25-gamepad.
 
 ## 3. Not done tonight (and why)
 
-- HD-2D task 3 (light shafts): the renderer has no soft-alpha surface for a cone of light; the
-  sprite surface only cuts pixels in or out. Needs a small transparent pass first.
+- HD-2D task 3 is only half there: each lamp has a faint shaft (one soft particle stretched to the
+  floor, `hd2d.shaft`, off with Giảm); a proper cone with a painted texture needs a soft-alpha
+  surface the renderer does not have yet. The dust near lamps is unchanged.
 - HD-2D task 5 (a slow drift while a unit thinks): the camera's shot mode does not work in the room
   view, so a drift there needs a change to `TableCamera` first.
 - Gamepad task 7 (a prompts test): skipped with the rule-test pause; only two hints name keys.
