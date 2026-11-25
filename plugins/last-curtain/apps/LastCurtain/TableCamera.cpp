@@ -70,7 +70,13 @@ umbra::core::Camera TableCamera::Camera() const
     const glm::vec3 up{0.0F, std::sin(glm::radians(tilt_)), std::cos(glm::radians(tilt_))};
     camera.position = camera.target + distance_ * up;
     if (roomT_ <= 0.0F)
+    {
+        // A drift: the seat turned around the target by a few degrees (the room view keeps its corner).
+        const float d = glm::radians(drift_), c = std::cos(d), s = std::sin(d);
+        const glm::vec3 back = camera.position - camera.target;
+        camera.position = camera.target + glm::vec3{back.x * c + back.z * s, back.y, back.z * c - back.x * s};
         return camera;
+    }
     // 2. The room view: the same place roomScale times larger, from the front corner; on the way the
     //    seat glides from the table's (scaled, so the rooms first appear where the tiles were).
     const float e = roomT_ * roomT_ * (3.0F - 2.0F * roomT_);

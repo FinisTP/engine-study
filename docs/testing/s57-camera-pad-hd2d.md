@@ -13,6 +13,7 @@ jobs. Plans: `docs/design/plans/2026-11-25-hd2d-polish.md`, `2026-11-25-gamepad.
 | `#UMBRA-446` | The pad: `PadL1/R1/L3/R3`, triggers as axes 4 and 5, `Input::PadLast`, `platform::Rumble`. Board: Square opens Kỹ năng, L1/R1 step the camera along the turn order, the right stick pans, L2/R2 zoom; Triangle ends the turn, Circle goes back (as before). Café: L1/R1 switch who walks, Create opens the notebook, L1/R1 turn its tabs. Map: the right stick pans, L2/R2 zoom. Every screen: the left stick moves the focus like the d-pad; the right stick scrolls the top screen's scroll boxes (`UiInput::padScroll`). Prompts: a legend of PlayStation glyphs (`art/ui/pad`, drawn by `tools/art/pad_glyphs.py`) at the bottom right while the pad was used last; the café hint has a pad wording. Settings: Rung tay cầm Bật/Tắt; the pad shakes on a hit and on a fall. |
 | `#UMBRA-447` | The battle floor's reflection (15%); records. |
 | `#UMBRA-448` | A faint light shaft under each lamp. |
+| `#UMBRA-449` | While a foe thinks on the board, the camera sways 1.5° around its target (`hd2d.drift`, `TableCamera::SetDrift`); still on your turn and in a battle. |
 
 ## 2. Cloud checks
 
@@ -27,8 +28,6 @@ jobs. Plans: `docs/design/plans/2026-11-25-hd2d-polish.md`, `2026-11-25-gamepad.
 - HD-2D task 3 is only half there: each lamp has a faint shaft (one soft particle stretched to the
   floor, `hd2d.shaft`, off with Giảm); a proper cone with a painted texture needs a soft-alpha
   surface the renderer does not have yet. The dust near lamps is unchanged.
-- HD-2D task 5 (a slow drift while a unit thinks): the camera's shot mode does not work in the room
-  view, so a drift there needs a change to `TableCamera` first.
 - Gamepad task 7 (a prompts test): skipped with the rule-test pause; only two hints name keys.
 - The battle picks keep their mouse layout; the d-pad moves through them as through any menu.
 
@@ -38,7 +37,7 @@ jobs. Plans: `docs/design/plans/2026-11-25-hd2d-polish.md`, `2026-11-25-gamepad.
    dissolves.
 2. A battle: one wide shot with both sides in; the striker steps in and back; a small zoom on the
    blow; nothing starts until the view has arrived. A board ability waits for the view too.
-3. The board: the plinth's gold edge and the dark around it; top and bottom of the screen a little
+3. The board: on their turn the camera sways a little (tell me if it is too much); the plinth's gold edge and the dark around it; top and bottom of the screen a little
    soft; figures have a thin dark outline. Frame time with and without (`Umbra --benchmark` or the
    overlay) on your laptop.
 4. With the PlayStation pad only: the legend appears at the bottom right once a pad button is

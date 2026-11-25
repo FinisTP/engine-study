@@ -487,6 +487,10 @@ void MatchTable::Animate(const MatchState &s, float dt)
         if (glm::length(target - view_.Target()) > 0.05F)
             view_.Aim(target, Staged() ? Look("battle", "follow", 0.0F, 0.4F) : Look("follow", "seconds", 0.0F, 0.6F));
     }
+    // 1d. While a foe thinks the table breathes: a slow sway of a degree or two (HD-2D task 5); still for ours and in a battle.
+    const bool foeThinks = now >= 0 && U(now) < s.units.size() && s.units[U(now)].faction != 0 && !Staged() && scene_.empty();
+    driftT_ = std::clamp(driftT_ + (foeThinks ? dt : -dt), 0.0F, 1.0F);
+    view_.SetDrift(Look("hd2d", "drift", 0.0F, 0.0F) * std::sin(clock_ * 0.5F) * driftT_ * driftT_ * (3.0F - 2.0F * driftT_));
     // 2. A scene: its shot moves with its clock, then hands the camera back.
     if (!scene_.empty())
     {

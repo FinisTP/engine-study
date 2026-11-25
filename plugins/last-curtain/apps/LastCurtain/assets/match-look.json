@@ -161,7 +161,7 @@
     "lift": 0.5
   },
   "hd2d": {
-    "note": "The HD-2D look (plan 2026-11-25-hd2d-polish.md, the user chose a light blur): dof is the tilt-shift's blur far from the sharp band, in screen heights (engine Post.md 6c); dofWidth half the band's height. The band follows whoever acts. The diorama (task 4): the board stands on a plinth 'depth' deep and 'rim' wider, its top edge lit gold (edgeGlow), on black velvet; plinthArt (when made) covers its sides. Each room has a warm lamp lampHeight over its middle, the centre a cold one, at most 'lamps' (lampPower, lampRange in tiles). shaft: a faint stretched glow from each lamp to the floor (task 3), its strength; shaftWidth in tiles; off when effects are reduced.",
+    "note": "The HD-2D look (plan 2026-11-25-hd2d-polish.md, the user chose a light blur): dof is the tilt-shift's blur far from the sharp band, in screen heights (engine Post.md 6c); dofWidth half the band's height. The band follows whoever acts. The diorama (task 4): the board stands on a plinth 'depth' deep and 'rim' wider, its top edge lit gold (edgeGlow), on black velvet; plinthArt (when made) covers its sides. Each room has a warm lamp lampHeight over its middle, the centre a cold one, at most 'lamps' (lampPower, lampRange in tiles). shaft: a faint stretched glow from each lamp to the floor (task 3), its strength; shaftWidth in tiles; off when effects are reduced. drift: while a foe thinks on the board, the camera sways this many degrees around its target, slowly (task 5).",
     "dof": 0.004,
     "dofWidth": 0.22,
     "rim": 0.6,
@@ -172,6 +172,7 @@
     "lampPower": 1.0,
     "lampRange": 2.5,
     "shaft": 0.12,
-    "shaftWidth": 0.8
+    "shaftWidth": 0.8,
+    "drift": 1.5
   }
 }

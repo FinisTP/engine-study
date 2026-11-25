@@ -88,7 +88,7 @@ private:
     std::vector<int> standing_, toldHp_;
     std::vector<std::string> names_;
     std::vector<float> heights_;
-    float fightT_ = 0.0F, focusT_ = 0.0F;
+    float fightT_ = 0.0F, focusT_ = 0.0F, driftT_ = 0.0F;
     std::map<int, float> leaving_;  // a fallen unit: seconds since its fall was told (a foe that never rises dissolves)
     std::map<int, float> stepping_; // a fighter's step in toward the other side: seconds since its blow began
     std::vector<int> focus_, framed_; // asked for; framed (kept while the camera eases back)

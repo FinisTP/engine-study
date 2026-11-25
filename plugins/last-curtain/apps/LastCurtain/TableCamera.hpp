@@ -33,6 +33,7 @@ public:
     void SetRoomLift(float metres) { roomLift_ = metres; } // the room view looks this high above the floor
     void SetShotLift(float metres) { shotLift_ = metres; } // a shot (the battle view) too
     void SetLookLift(float up) { lookLift_ = up; } // a close-up looks at the body, not the feet
+    void SetDrift(float degrees) { drift_ = degrees; } // the table seat turned a little around the target (a slow breathing)
     [[nodiscard]] float RoomT() const { return roomT_; } // 0 the table, 1 the room view
     [[nodiscard]] float Distance() const { return distance_; } // the seat's, without a shot
     [[nodiscard]] float Tilt() const { return tilt_; }
@@ -48,6 +49,7 @@ private:
     float roomLift_ = 0.7F;      // metres above the floor the room view looks at
     float shotLift_ = 0.0F;
     float lookLift_ = 0.0F;
+    float drift_ = 0.0F;
     float roomT_ = 0.0F;
     bool wantRoom_ = false;
     bool bounded_ = false;
