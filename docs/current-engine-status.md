@@ -28,7 +28,7 @@
 - **Progress:** spoils; the brewing lesson after T2 (Mai's chè and memory); quests with markers; gear with signature skills; Ký ức by year.
 - **Story:** T1–T3 and the café's first talk are rewritten for the player's own feelings. Choices are saved as facts and answered later (`when` lines). Each café person has default lines.
 - **Balance:** every slice 1 stage wins 90% or more of bot runs. Further balance runs and rule tests happen only when the user asks.
-- **Windows play check:** `testing/s56-thirty-notes.md` §4.
+- **Windows play check:** `testing/s56-thirty-notes.md` §4, then `testing/s57-camera-pad-hd2d.md` §4 (the battle view, HD-2D, the PlayStation pad).
 
 ## Update 2026-11-24, evening (The Last Curtain: the 22 notes, effects, localization, darker text: `#UMBRA-423`-`#UMBRA-435`)
 

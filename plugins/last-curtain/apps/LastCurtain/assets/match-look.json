@@ -94,7 +94,7 @@
     "base": 0.6
   },
   "battle": {
-    "note": "The battle view (Octopath, the user 2026-11-25): one fixed wide shot of both sides, 'across' tiles wide, the sides at 25% and 75% ('gap' = a quarter of it). The camera stands 'near' farther back since the fighters stand that much nearer it; seconds is the way in and out, follow the pan onto the stage. A blow: the striker steps 'step' tiles toward the middle and back over stepSeconds; a move's push-in is 'punch' of its board strength, with no turn. A foe that never rises dissolves dieAfter seconds after its fall is told.",
+    "note": "The battle view (Octopath, the user 2026-11-25): one fixed wide shot of both sides, 'across' tiles wide, the sides at 25% and 75% ('gap' = a quarter of it). The camera stands 'near' farther back since the fighters stand that much nearer it; seconds is the way in and out, follow the pan onto the stage. A blow: the striker steps 'step' tiles toward the middle and back over stepSeconds; a move's push-in is 'punch' of its board strength, with no turn. A foe that never rises dissolves dieAfter seconds after its fall is told. reflection: a faint upside-down copy of each fighter on the stage floor (HD-2D task 7), its opacity.",
     "seconds": 1.0,
     "distance": 7,
     "tilt": 14,
@@ -123,7 +123,8 @@
     "punch": 0.4,
     "step": 1.0,
     "stepSeconds": 1.4,
-    "dieAfter": 0.5
+    "dieAfter": 0.5,
+    "reflection": 0.15
   },
   "reach": {
     "note": "The player's reach and targets wash the tile half over in their colour, blinking.",

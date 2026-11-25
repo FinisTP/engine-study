@@ -593,6 +593,15 @@ void MatchTable::Sprite(int index, const Unit &u, glm::vec3 feet, umbra::core::D
     out.items.push_back({facing < 0.0F ? mirrorQuad_ : quad_, art->second, umbra::night::SpriteModel(pose, feet, right, h, aspect, facing, clock_, up),
                          glm::vec4(tint, pose.alpha * flicker * (Fallen(u, index) ? 0.5F : 1.0F)), 0.0F, std::floor(pose.dissolve * 99.0F) + std::clamp(amount, 0.0F, 1.0F) * 0.99F});
     out.items.back().surface = out.SurfaceIndex("sprite");
+    // 3. In the battle view, a faint copy upside down under the feet: the stage floor shines (HD-2D task 7).
+    if (const float shine = Look("battle", "reflection", 0.0F, 0.15F); shine > 0.0F && fightT_ >= 0.5F && Fighter(index) >= 0)
+    {
+        umbra::core::DrawItem copy = out.items.back();
+        copy.model = glm::translate(glm::mat4{1.0F}, feet) * glm::scale(glm::mat4{1.0F}, {1.0F, -1.0F, 1.0F}) * glm::translate(glm::mat4{1.0F}, -feet) * copy.model;
+        copy.mesh = facing < 0.0F ? quad_ : mirrorQuad_; // the flip turns the quad's face around
+        copy.color = glm::vec4(glm::vec3(copy.color) * 0.6F, copy.color.a * shine);
+        out.items.push_back(copy);
+    }
 }
 
 void MatchTable::SetLook(nlohmann::json look)
