@@ -49,7 +49,21 @@ jobs. Plans: `docs/design/plans/2026-11-25-hd2d-polish.md`, `2026-11-25-gamepad.
 
 ## 5. Music
 
-The five candidates were made in `Temp\music-candidates\audio\music` (`cand_X_battle.ogg` the
-battle cut, `cand_X_board.ogg` the board cut). My choice per fight is in the status note of the
-commit that wires them; listen and swap freely: copy a candidate's two cuts over
-`fight_<kind>.ogg` (board) and `fight_<kind>_battle.ogg` (battle).
+Five candidates were made on the PC (`Temp\music-candidates\audio\music\cand_a`..`e.ogg`,
+78 s each; ffmpeg was not on the PC's PATH, so the cuts were made in the cloud). Measured: bass
+(below 150 Hz) against the melody band (400-3000 Hz), and when the melody band first rises:
+
+| Candidate | Style asked | Bass vs melody | Melody from |
+|---|---|---|---|
+| a | violin and brass, marching snare | +11.0 dB | 0 s |
+| b | flute and oboe over fast strings | +9.0 dB | 0 s |
+| c | piano and cello, haunted opera house | -4.4 dB | 1 s |
+| d | Vietnamese bamboo flute and zither over strings | -7.1 dB | 0 s |
+| e | dark waltz, violin and accordion | +1.2 dB | 0 s |
+
+a and b are bass-heavy (the complaint about the last take), so they are out. Chosen:
+**tutorial = c**, **skirmish = d**, **zodiac (boss) = e**. Each is `fight_<kind>_battle.ogg` (the
+take, bass -3 dB, melody band +2 dB, loudness -16 LUFS) and `fight_<kind>.ogg` (the same, rolled off
+above 1.8 kHz and 4 dB quieter, for the board), the same length so the swap keeps its moment. To
+swap one, cut another candidate the same way (`tools\audio\battle-music.bat` has the filters). Listen
+to all five and tell me what to change.
