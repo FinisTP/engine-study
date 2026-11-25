@@ -67,3 +67,11 @@ take, bass -3 dB, melody band +2 dB, loudness -16 LUFS) and `fight_<kind>.ogg` (
 above 1.8 kHz and 4 dB quieter, for the board), the same length so the swap keeps its moment. To
 swap one, cut another candidate the same way (`tools\audio\battle-music.bat` has the filters). Listen
 to all five and tell me what to change.
+
+## 6. Pictures
+
+`tools/art/overnight.bat` (fixed in `#UMBRA-451`) painted the shared item pictures and the plinth
+wood (`Temp\art-shared`). Cut in `#UMBRA-452` with `ui_campaign_compose.icon()`:
+`art/ui/campaign/item/{weapon,armour,accessory,item}.png` and `_pic.png` from `item_dao_61`,
+`item_armour_71`, `item_accessory_72`, `item_item_72`; `art/floors/plinth.jpg` (tileable, from
+`plinth_wood_73`) covers the plinth's sides (`hd2d.plinthArt`).

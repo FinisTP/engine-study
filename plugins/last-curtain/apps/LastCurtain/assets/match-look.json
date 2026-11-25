@@ -173,6 +173,7 @@
     "lampRange": 2.5,
     "shaft": 0.12,
     "shaftWidth": 0.8,
-    "drift": 1.5
+    "drift": 1.5,
+    "plinthArt": "art/floors/plinth.jpg"
   }
 }
