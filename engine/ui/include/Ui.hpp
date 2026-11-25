@@ -125,5 +125,6 @@ namespace umbra::ui
         std::string dragBox_;                // the scroll box a held pointer is dragging ("" none)
         float dragFrom_ = 0.0F, lastMouseY_ = 0.0F;
         bool dragging_ = false;              // past the 6-unit start
+        UiAction pending_;                   // a press inside a scrolling box: clicked on release unless dragged
     };
 }

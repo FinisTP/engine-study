@@ -700,6 +700,9 @@ namespace umbra::ui
             if (input.back && !screens_.at(target).back.empty())
                 actions.push_back({target, screens_.at(target).back, ""});
         }
+        const auto scrolling = [&](const std::string &screen) {
+            return std::ranges::any_of(scrollBoxes_[screen], [&](const ScrollBox &b) { return b.max > 0.0F && b.rect.Contains(input.mouse); });
+        };
         // 1b. A click: the topmost screen with a choice under the mouse takes it; a dimmed screen blocks those below.
         if (input.click)
             for (auto it = stack_.rbegin(); it != stack_.rend(); ++it)
@@ -707,7 +710,9 @@ namespace umbra::ui
                 const auto hit = std::find_if(choices_[*it].begin(), choices_[*it].end(), [&](const Choice &c) { return c.rect.Contains(input.mouse); });
                 if (hit != choices_[*it].end())
                 {
-                    if (hit->field.empty())
+                    if (hit->field.empty() && scrolling(*it))
+                        pending_ = {*it, hit->action, hit->arg};
+                    else if (hit->field.empty())
                         actions.push_back({*it, hit->action, hit->arg});
                     else // a click on a text field gives it the focus
                         focus_[*it] = static_cast<int>(hit - choices_[*it].begin());
@@ -717,12 +722,22 @@ namespace umbra::ui
                 const auto box = std::find_if(boxes_[*it].rbegin(), boxes_[*it].rend(), [&](const Choice &c) { return c.rect.Contains(input.mouse); });
                 if (box != boxes_[*it].rend())
                 {
-                    actions.push_back({*it, box->action, box->arg});
+                    if (scrolling(*it))
+                        pending_ = {*it, box->action, box->arg};
+                    else
+                        actions.push_back({*it, box->action, box->arg});
                     break;
                 }
                 if (screens_.at(*it).dim || std::ranges::any_of(covers_[*it], [&](const Rect &r) { return r.Contains(input.mouse); }))
                     break; // a dimmed screen, or a painted part of this one, keeps the click
             }
+        // 1c. Inside a box that scrolls, a press is only a click once it is let go without dragging (0b').
+        if (!pending_.screen.empty() && !input.held)
+        {
+            if (!dragging_)
+                actions.push_back(pending_);
+            pending_ = {};
+        }
         // 2. The UI's own actions: "close" closes the screen, "open:<screen>" opens one.
         for (const UiAction &action : actions)
         {

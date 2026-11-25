@@ -734,3 +734,34 @@ TEST_CASE("A scroll box shows part of a tall column; the wheel over it moves it,
     CHECK(clickAt(190.0F) == "19");
     CHECK(clickAt(260.0F).empty());
 }
+
+TEST_CASE("In a scroll box a drag moves the column and presses nothing; a press let go in place clicks (UI.md \"Scroll\")")
+{
+    json rows = json::array();
+    for (int i = 0; i < 20; ++i)
+        rows.push_back({{"type", "button"}, {"text", "Row"}, {"action", "row"}, {"arg", std::to_string(i)}, {"size", {100, 40}}});
+    const json screen{{"format", "umbra.ui"}, {"version", 1}, {"modal", true},
+                      {"root", {{"type", "scroll"}, {"id", "list"}, {"anchor", "top-left"}, {"size", {120, 200}}, {"children", rows}}}};
+    ui::UiSystem ui;
+    std::vector<core::Diagnostic> diagnostics;
+    REQUIRE(ui.Load(TestProject("drag", {{"list", screen}}), diagnostics));
+    REQUIRE(ui.Open("list"));
+    core::UiDrawList out;
+    const auto step = [&](float y, bool click, bool held) {
+        ui::UiInput in;
+        in.mouse = {50.0F, y}, in.click = click, in.held = held, in.mouseMoved = true;
+        out = {};
+        return ui.Update({}, {1280.0F, 720.0F}, in, out);
+    };
+    (void)ui.Update({}, {1280.0F, 720.0F}, {}, out);
+    // 1. Press, drag up 60, let go: no click.
+    CHECK(step(150.0F, true, true).empty());
+    CHECK(step(120.0F, false, true).empty());
+    CHECK(step(90.0F, false, true).empty());
+    CHECK(step(90.0F, false, false).empty());
+    // 2. Press and let go in place: the row under it.
+    CHECK(step(150.0F, true, true).empty());
+    const auto acts = step(150.0F, false, false);
+    REQUIRE(acts.size() == 1);
+    CHECK(acts.front().action == "row");
+}
