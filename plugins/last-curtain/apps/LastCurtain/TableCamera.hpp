@@ -16,6 +16,7 @@ class TableCamera
 {
 public:
     void Aim(glm::vec3 target, float seconds); // ease to a table point
+    void Follow(glm::vec3 target, float dt, float seconds); // chase a moving point (no restart each frame)
     void Pan(glm::vec2 pixels);                // a drag: the table moves with the mouse
     void Zoom(float steps);                    // the wheel: the seat's distance, or the room view's
     void Update(float dt);

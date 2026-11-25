@@ -14,6 +14,15 @@ void TableCamera::Aim(glm::vec3 target, float seconds)
     seconds_ = seconds, elapsed_ = 0.0F;
 }
 
+void TableCamera::Follow(glm::vec3 target, float dt, float seconds)
+{
+    // A fixed share of the gap closes every second (about 95% in `seconds`): a moving target is kept up with,
+    // where calling Aim every frame would restart its slow start each time.
+    const glm::vec3 now = Target();
+    from_ = to_ = now + (target - now) * (1.0F - std::exp(-3.0F * dt / std::max(seconds, 0.01F)));
+    seconds_ = 0.0F, elapsed_ = 0.0F;
+}
+
 void TableCamera::Pan(glm::vec2 pixels)
 {
     // A pixel covers about distance / 700 metres; in the room view the rooms are roomScale times

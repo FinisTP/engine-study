@@ -495,7 +495,7 @@ void MatchTable::Animate(const MatchState &s, float dt)
         // A battle is framed on its stage, never pushed in from the board's edge (else a side leaves the screen).
         const glm::vec3 target = Staged() ? glm::vec3{at.x, 0.0F, at.z} : glm::vec3{std::clamp(at.x * pull, -half.x, half.x), 0.0F, std::clamp(at.z * pull, -half.y, half.y)};
         if (glm::length(target - view_.Target()) > 0.05F)
-            view_.Aim(target, Staged() ? Look("battle", "follow", 0.0F, 0.4F) : Look("follow", "seconds", 0.0F, 0.6F));
+            view_.Follow(target, dt, Staged() ? Look("battle", "follow", 0.0F, 0.4F) : Look("follow", "seconds", 0.0F, 0.6F));
     }
     // 1d. While a foe thinks the table breathes: a slow sway of a degree or two (HD-2D task 5); still for ours and in a battle.
     const bool foeThinks = now >= 0 && U(now) < s.units.size() && s.units[U(now)].faction != 0 && !Staged() && scene_.empty();
@@ -525,9 +525,8 @@ void MatchTable::Animate(const MatchState &s, float dt)
         const float before = it->second, after = (it->second += dt), wait = Look("battle", "dieAfter", 0.0F, 0.5F);
         const Unit &u = s.units[U(it->first)];
         const bool gone = u.hp <= 0 && u.faction > 0 && (s.noRevive & (1 << u.faction));
-        if (gone && before < wait && after >= wait)
-            states_[U(it->first)].Release(), states_[U(it->first)].Play("die");
-        it = !gone || after > wait + 1.7F ? leaving_.erase(it) : std::next(it);
+        (void)before; // it stays lying down; Sprite burns it away from `wait` on (no standing back up)
+        it = !gone || after > wait + Look("battle", "burnSeconds", 0.0F, 1.2F) + 0.1F ? leaving_.erase(it) : std::next(it);
     }
     for (auto it = stepping_.begin(); it != stepping_.end();)
         it = (it->second += dt) > Look("battle", "stepSeconds", 0.0F, 1.4F) ? stepping_.erase(it) : std::next(it);
@@ -604,8 +603,13 @@ void MatchTable::Sprite(int index, const Unit &u, glm::vec3 feet, umbra::core::D
     const float amount = tinted ? pose.tint.a : dread ? 0.05F * dread_ : (u.kind == 0 ? 0.0F : 0.45F);
     const float window = std::floor(clock_ * 9.0F) + static_cast<float>(index) * 17.0F; // a ninth of a second, its own per ghost
     const float flicker = dread && dread_ >= 1.0F && std::fmod(std::abs(std::sin(window * 12.9898F)) * 43758.5453F, 1.0F) > 0.97F ? 0.55F : 1.0F;
+    // A fallen foe that never rises burns away where it lies, after `dieAfter` (Present keeps it until then).
+    float burn = pose.dissolve;
+    if (const auto it = leaving_.find(index); it != leaving_.end())
+        burn = std::max(burn, std::clamp((it->second - Look("battle", "dieAfter", 0.0F, 0.5F)) / Look("battle", "burnSeconds", 0.0F, 1.2F), 0.0F, 1.0F));
     out.items.push_back({facing < 0.0F ? mirrorQuad_ : quad_, art->second, umbra::night::SpriteModel(pose, feet, right, h, aspect, facing, clock_, up),
-                         glm::vec4(tint, pose.alpha * flicker * (Fallen(u, index) ? 0.5F : 1.0F)), 0.0F, std::floor(pose.dissolve * 99.0F) + std::clamp(amount, 0.0F, 1.0F) * 0.99F});
+                         glm::vec4(tint, pose.alpha * flicker * (Fallen(u, index) && !leaving_.contains(index) ? 0.5F : 1.0F)), 0.0F,
+                         std::floor(burn * 99.0F) + std::clamp(amount, 0.0F, 1.0F) * 0.99F});
     out.items.back().surface = out.SurfaceIndex("sprite");
     // 3. In the battle view, a faint copy upside down under the feet: the stage floor shines (HD-2D task 7).
     if (const float shine = Look("battle", "reflection", 0.0F, 0.15F); shine > 0.0F && fightT_ >= 0.5F && Fighter(index) >= 0)

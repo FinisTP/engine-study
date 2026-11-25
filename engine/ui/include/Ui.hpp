@@ -122,5 +122,8 @@ namespace umbra::ui
         std::map<std::string, float> scroll_; // "screen#id" -> a scroll box's offset (UI.md "Scroll")
         struct ScrollBox final { std::string key; Rect rect; float max = 0.0F; };
         std::map<std::string, std::vector<ScrollBox>> scrollBoxes_; // last frame's, per screen
+        std::string dragBox_;                // the scroll box a held pointer is dragging ("" none)
+        float dragFrom_ = 0.0F, lastMouseY_ = 0.0F;
+        bool dragging_ = false;              // past the 6-unit start
     };
 }

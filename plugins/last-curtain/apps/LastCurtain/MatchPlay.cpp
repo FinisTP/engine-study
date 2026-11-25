@@ -216,6 +216,14 @@ bool MatchPlay::Reveal()
 {
     if (shown_ >= queued_)
         return false;
+    // A board ability goes onto the battle stage first; its line is told on a later beat, once the app has let the
+    // view arrive (it holds the beats while the view eases, MatchTable::Easing), so nothing plays on the board.
+    if (const LogEntry &n = s_.log[shown_]; !skipping_ && boardActs_.contains(shown_) && !s_.battle.on && fight_[0] < 0 && n.a >= 0 && n.b >= 0 && n.a != n.b)
+    {
+        fight_[0] = n.a, fight_[1] = n.b, fighters_ = {n.a, -1, n.b, -1};
+        clock_ = 0.0F, wait_ = 0.05F;
+        return true;
+    }
     Finish(); // a line still playing ends before the next
     const LogEntry &e = s_.log[shown_++];
     const auto ability = abilityOf_.find(shown_ - 1);

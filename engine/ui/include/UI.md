@@ -201,4 +201,6 @@ never past its top or its end. Only the part of a button seen in the box can be 
 is kept per screen and id while the game runs.
 
 
+A held pointer dragged more than 6 units over a box moves it too, and a thin bar on its right shows where the view is.
+
 A gamepad has no mouse: `UiInput::padScroll` (a stick, in wheel steps) moves every scroll box of the topmost screen that has one.

@@ -219,8 +219,8 @@ nlohmann::json Notebook::Page() const
                 when.replace(k, 3, std::to_string(at));
             p["locked"].push_back({{"id", id}, {"name", name(id)}, {"level", at}, {"when", when}, {"picked", picked_ == "locked:" + id}});
         }
-        else if (std::ranges::find(carried, id) == carried.end())
-            p["learned"].push_back({{"id", id}, {"name", name(id)}, {"picked", picked_ == "learned:" + id}});
+        else if (std::ranges::find(carried, id) == carried.end() && !(skills_ && std::ranges::any_of(skills_->gear, [&](const auto &g) { return g.second.skill == id; })))
+            p["learned"].push_back({{"id", id}, {"name", name(id)}, {"picked", picked_ == "learned:" + id}}); // a weapon's skill comes with the weapon
     // 2a'. Gear: weapon, armour, accessory (note 30).
     p["gear"] = nlohmann::json::array();
     if (skills_)

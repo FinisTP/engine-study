@@ -58,6 +58,23 @@
             "style": "muted",
             "text": "{words.readOnly}",
             "visible": "{book.readOnly}"
+          },
+          {
+            "type": "spacer",
+            "size": [
+              40,
+              0
+            ]
+          },
+          {
+            "type": "button",
+            "style": "lcButton",
+            "text": "{words.close}",
+            "action": "close",
+            "size": [
+              160,
+              0
+            ]
           }
         ]
       },
@@ -99,7 +116,7 @@
             "type": "scroll",
             "size": [
               440,
-              540
+              500
             ],
             "gap": 10,
             "visible": "{book.detail.portrait}",
@@ -327,7 +344,7 @@
             "type": "scroll",
             "size": [
               440,
-              540
+              500
             ],
             "gap": 8,
             "visible": "{book.detail.portrait}",
@@ -521,16 +538,6 @@
               }
             ]
           }
-        ]
-      },
-      {
-        "type": "button",
-        "style": "lcButton",
-        "text": "{words.close}",
-        "action": "close",
-        "size": [
-          200,
-          0
         ]
       }
     ]

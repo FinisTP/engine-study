@@ -34,7 +34,7 @@
     "seconds": 1.0
   },
   "follow": {
-    "seconds": 0.12,
+    "seconds": 0.3,
     "pull": 1.0,
     "edge": 0.45,
     "fit": 2.4,

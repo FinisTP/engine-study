@@ -523,6 +523,13 @@ namespace umbra::ui
             }
             c.painter.PopClip();
             c.view = outer;
+            // A thin bar on the right shows there is more, and where the view is.
+            if (max > 0.0F)
+            {
+                const float thumb = std::max(24.0F, inner.h * inner.h / (inner.h + max)), at = inner.y + (inner.h - thumb) * offset / max;
+                c.painter.Fill({inner.x + inner.w - 4.0F, inner.y, 4.0F, inner.h}, glm::vec4{1.0F, 1.0F, 1.0F, 0.08F});
+                c.painter.Fill({inner.x + inner.w - 4.0F, at, 4.0F, thumb}, glm::vec4{0.84F, 0.7F, 0.41F, 0.8F});
+            }
         }
         else if (node.type == "stack")
         {
@@ -626,6 +633,24 @@ namespace umbra::ui
                         }
                     break;
                 }
+        // 0b'. A drag held over a scroll box moves it with the pointer, once it has gone more than 6 units.
+        if (input.held && dragBox_.empty())
+            for (auto it = stack_.rbegin(); it != stack_.rend() && dragBox_.empty(); ++it)
+                for (const ScrollBox &b : scrollBoxes_[*it])
+                    if (b.rect.Contains(input.mouse) && b.max > 0.0F)
+                        dragBox_ = b.key, dragFrom_ = input.mouse.y, dragging_ = false;
+        if (!input.held)
+            dragBox_.clear();
+        else if (!dragBox_.empty())
+        {
+            dragging_ |= std::abs(input.mouse.y - dragFrom_) > 6.0F;
+            if (dragging_)
+                for (const auto &[screen, boxes] : scrollBoxes_)
+                    for (const ScrollBox &b : boxes)
+                        if (b.key == dragBox_)
+                            scroll_[b.key] = std::clamp(scroll_[b.key] - (input.mouse.y - lastMouseY_), 0.0F, b.max);
+        }
+        lastMouseY_ = input.mouse.y;
         // 0c. A stick scrolls every box of the topmost screen that has one.
         if (input.padScroll != 0.0F)
             for (auto it = stack_.rbegin(); it != stack_.rend(); ++it)
