@@ -1,7 +1,7 @@
 {
   "format": "umbra.lc-keys",
   "version": 1,
-  "note": "What each key means in a campaign fight, the dialog and the cafe (campaign plan 5). Change a key name to remap it; \"pad\" names the Xbox-style gamepad button for the same meaning.",
+  "note": "What each key means in a campaign fight, the dialog and the cafe (campaign plan 5). Change a key name to remap it; \"pad\" names the gamepad button by its place, as SDL does: PadA = south (Cross on a PlayStation pad), PadB = east (Circle), PadX = west (Square), PadY = north (Triangle), PadBack = Create, PadStart = Options, PadL1/PadR1 the shoulders.",
   "keys": {
     "back": "Esc",
     "confirm": "Enter",

@@ -584,3 +584,38 @@ campaign.spoils,Chiến lợi phẩm,Spoils
 campaign.spoilXp,+{n} XP cho mỗi người đã đánh,+{n} XP for each who fought
 campaign.gainXp,+{n} XP,+{n} XP
 campaign.levelUp,Lên cấp {n},Level {n} reached
+match.screens.padPick,Chọn,Pick
+campaign.padPick,Chọn,Pick
+match.screens.padBack,Quay lại,Back
+campaign.padBack,Quay lại,Back
+match.screens.padEnd,Kết thúc lượt,End turn
+campaign.padEnd,Kết thúc lượt,End turn
+match.screens.padSkills,Kỹ năng,Skills
+campaign.padSkills,Kỹ năng,Skills
+match.screens.padOrder,Xem lượt,Turn order
+campaign.padOrder,Xem lượt,Turn order
+match.screens.padCamera,Máy quay,Camera
+campaign.padCamera,Máy quay,Camera
+match.screens.padZoom,Gần · xa,Zoom
+campaign.padZoom,Gần · xa,Zoom
+match.screens.padPause,Tạm dừng,Pause
+campaign.padPause,Tạm dừng,Pause
+match.screens.padNotebook,Sổ tay,Notebook
+campaign.padNotebook,Sổ tay,Notebook
+match.screens.padWalk,Đi,Walk
+campaign.padWalk,Đi,Walk
+match.screens.padTalk,Nói chuyện · dùng,Talk · use
+campaign.padTalk,Nói chuyện · dùng,Talk · use
+match.screens.padSwitch,Đổi người,Switch
+campaign.padSwitch,Đổi người,Switch
+match.screens.padSkip,Bỏ qua,Skip
+campaign.padSkip,Bỏ qua,Skip
+match.screens.padHurry,Giữ: nhanh hơn,Hold: faster
+campaign.padHurry,Giữ: nhanh hơn,Hold: faster
+match.screens.padMove,Ô chọn,Cursor
+campaign.padMove,Ô chọn,Cursor
+match.screens.padTabs,Đổi trang,Tabs
+campaign.padTabs,Đổi trang,Tabs
+campaign.rumbleOn,Rung tay cầm: Bật,Pad rumble: On
+campaign.rumbleOff,Rung tay cầm: Tắt,Pad rumble: Off
+campaign.cafeHintPad,"Cần trái để đi · Chéo: nói chuyện, pha chế, sổ tay, ra cửa · L1/R1: đổi người. Tên vàng: có chuyện mới.","Left stick to walk · Cross: talk, brew, notebook, door · L1/R1: switch. Gold name: something new to say."

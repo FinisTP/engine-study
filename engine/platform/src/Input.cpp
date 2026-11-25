@@ -13,6 +13,7 @@ namespace umbra::platform
             return;
         }
 
+        padLast_ = IsPadKey(key);
         if (key == InputKey::Backspace)
             text_ += '\b'; // held keys repeat: each repeat erases one more letter
         const std::size_t index = ToIndex(key);
@@ -71,14 +72,18 @@ namespace umbra::platform
     {
         // A small dead zone: worn sticks rest a little off center.
         constexpr float deadZone = 0.2F;
-        if (axis >= 0 && axis < 4)
+        if (axis >= 0 && axis < 6)
             axes_[static_cast<std::size_t>(axis)] = std::abs(value) < deadZone ? 0.0F : (value - std::copysign(deadZone, value)) / (1.0F - deadZone);
+        if (std::abs(value) > 0.5F)
+            padLast_ = true;
     }
 
     void Input::HandleMouseMotion(float dx, float dy, float x, float y) noexcept
     {
         mouseDeltaX_ += dx;
         mouseDeltaY_ += dy;
+        if (std::abs(dx) + std::abs(dy) > 2.0F)
+            padLast_ = false;
         if (x >= 0.0F)
             mouseX_ = x, mouseY_ = y;
     }
@@ -90,6 +95,8 @@ namespace umbra::platform
             return;
         }
         const auto index = static_cast<std::size_t>(button);
+        if (down)
+            padLast_ = false;
         if (down && !mouseHeld_[index])
         {
             mousePressed_[index] = true;

@@ -25,7 +25,8 @@ namespace umbra::night
             static const std::vector<std::pair<std::string, InputKey>> names{
                 {"PadA", InputKey::PadA},       {"PadB", InputKey::PadB},       {"PadX", InputKey::PadX},         {"PadY", InputKey::PadY},
                 {"PadUp", InputKey::PadUp},     {"PadDown", InputKey::PadDown}, {"PadLeft", InputKey::PadLeft},   {"PadRight", InputKey::PadRight},
-                {"PadStart", InputKey::PadStart}, {"PadBack", InputKey::PadBack}};
+                {"PadStart", InputKey::PadStart}, {"PadBack", InputKey::PadBack}, {"PadL1", InputKey::PadL1},     {"PadR1", InputKey::PadR1},
+                {"PadL3", InputKey::PadL3},       {"PadR3", InputKey::PadR3}};
             return names;
         }
     }
@@ -65,7 +66,7 @@ namespace umbra::night
             if (!keys_.contains(meaning) && meaning != "pause")
                 d.push_back({core::Severity::Error, "keys", file, "pad." + meaning, "not a meaning the game knows"});
             else if (key == PadNames().end())
-                d.push_back({core::Severity::Error, "keys", file, "pad." + meaning, "not a pad button (PadA, PadB, PadX, PadY, PadUp, PadDown, PadLeft, PadRight, PadStart, PadBack)"});
+                d.push_back({core::Severity::Error, "keys", file, "pad." + meaning, "not a pad button (PadA, PadB, PadX, PadY, PadUp, PadDown, PadLeft, PadRight, PadStart, PadBack, PadL1, PadR1, PadL3, PadR3)"});
             else
                 pads_[meaning] = key->second;
         }

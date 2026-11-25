@@ -307,6 +307,28 @@
                       300,
                       0
                     ],
+                    "text": "{words.rumbleOn}",
+                    "action": "rumble",
+                    "visible": "{analog.rumble}"
+                  },
+                  {
+                    "type": "button",
+                    "style": "lcButton",
+                    "size": [
+                      300,
+                      0
+                    ],
+                    "text": "{words.rumbleOff}",
+                    "action": "rumble",
+                    "visible": "{analog.rumbleOff}"
+                  },
+                  {
+                    "type": "button",
+                    "style": "lcButton",
+                    "size": [
+                      300,
+                      0
+                    ],
                     "text": "{words.langVi}",
                     "action": "language",
                     "visible": "{analog.vietnamese}"

@@ -17,4 +17,7 @@ namespace umbra::platform
     private:
         std::function<void(const void *)> rawHandler_;
     };
+
+    // Shakes every open gamepad for `milliseconds` at `strength` 0..1 (no pad: nothing happens).
+    void Rumble(float strength, int milliseconds);
 }

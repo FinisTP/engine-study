@@ -1,4 +1,5 @@
 #include "CafeHubApp.hpp"
+#include "PadLegend.hpp"
 #include "ItemArt.hpp"
 #include "CampaignText.hpp"
 #include "Localization.hpp"
@@ -97,7 +98,7 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
     for (const auto &[who, sprite] : sprites)
         view.Load(sprite);
     const glm::vec2 roomSize{room["size"][0].get<float>(), room["size"][1].get<float>()};
-    screens.Ui().Open("cafe-hub");
+    screens.Ui().Open("cafe-hub"), screens.Ui().Open("pad-legend");
     game.sounds->Music("cafe");
     bool brewing = false;
     std::string useAt; // someone or a spot clicked: talk:<who> or brew/notebook/door, used once near
@@ -174,8 +175,11 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
                       dt);
             if (game.input.IsKeyPressed(InputKey::E) || game.input.IsKeyPressed(InputKey::Space) || game.input.IsKeyPressed(InputKey::PadA))
                 act = "use", uiInput.confirm = false; // A walks up to things here, not the HUD's focus
-            if (game.input.IsKeyPressed(InputKey::Tab) || game.input.IsKeyPressed(InputKey::PadY))
+            if (game.input.IsKeyPressed(InputKey::Tab) || game.input.IsKeyPressed(InputKey::PadY) || game.input.IsKeyPressed(InputKey::PadL1) ||
+                game.input.IsKeyPressed(InputKey::PadR1))
                 act = "switch";
+            if (game.input.IsKeyPressed(InputKey::PadBack)) // Create: the notebook from anywhere
+                act = "notebook";
         }
         walk.Update(dt);
         view.Follow(walk.Position(), roomSize, dt);
@@ -248,6 +252,10 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
             page["fightText"] = words.value(page["fights"].get<bool>() ? "fightsNext" : "staysNext", std::string());
         }
         data["words"] = words;
+        if (game.input.PadLast()) // the pad's words and prompts (gamepad plan 2026-11-25)
+            data["words"]["cafeHint"] = words.value("cafeHintPad", std::string());
+        data["padOn"] = game.input.PadLast();
+        data["pad"] = PadLegend(words, {{"lstick", "padWalk"}, {"cross", "padTalk"}, {"l1", "padSwitch"}, {"circle", "padBack"}, {"create", "padNotebook"}});
         data["room"]["who"] = walk.Active() == "player" ? campaign::FillTokens("{player}", player, cast) : cast.Find(walk.Active()) ? cast.Find(walk.Active())->name : walk.Active();
         const campaign::Quest *quest = campaign::CurrentQuest(quests, save);
         data["hub"]["quest"] = quest ? quest->text : "";
@@ -321,6 +329,13 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
             else if (a.action == "use")
                 act = "use"; // the prompt clicked: as if E was pressed
         }
+        // L1/R1 turn the notebook's tabs (gamepad plan).
+        if (screens.Ui().IsOpen("notebook") && (game.input.IsKeyPressed(InputKey::PadL1) || game.input.IsKeyPressed(InputKey::PadR1)))
+        {
+            static const std::vector<std::string> tabs{"characters", "ingredients", "keepsakes"};
+            const auto at = std::ranges::find(tabs, book.CurrentTab()) - tabs.begin();
+            book.Tab(tabs[static_cast<std::size_t>((at + (game.input.IsKeyPressed(InputKey::PadR1) ? 1 : 2)) % 3)]);
+        }
         // 4. E at a person talks (a toast when they have nothing new), at the counter brews, at the board
         // opens the notebook, at the door leaves; Tab hands the walk to the next ally.
         if (act == "switch")
@@ -334,7 +349,7 @@ int RunCafeHub(GameContext &game, const umbra::assets::AssetFolders &assets, umb
         }
         else if (act == "use" && near == "brew")
             brewing = true, screens.Ui().Open("brew");
-        else if (act == "use" && near == "notebook")
+        else if ((act == "use" && near == "notebook") || act == "notebook")
             screens.Ui().Open("notebook");
         else if (act == "use" && near == "door")
             result = 1, done = true;

@@ -16,6 +16,7 @@ public:
 
     [[nodiscard]] nlohmann::json Data() const;
     void Tab(const std::string &tab); // characters, ingredients or keepsakes
+    [[nodiscard]] const std::string &CurrentTab() const { return tab_; }
     void Select(const std::string &id);
     void SetReadOnly(bool readOnly) { readOnly_ = readOnly; }
     bool SetSlot(const std::string &character, int slot, const std::string &item); // "" empties it

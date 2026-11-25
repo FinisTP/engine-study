@@ -1,6 +1,8 @@
 #include <EventPump.hpp>
 #include <SDL3/SDL.h>
 
+#include <algorithm>
+
 namespace
 {
     umbra::platform::InputKey TranslateButton(Uint8 button)
@@ -28,6 +30,14 @@ namespace
             return InputKey::PadStart;
         case SDL_GAMEPAD_BUTTON_BACK:
             return InputKey::PadBack;
+        case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER:
+            return InputKey::PadL1;
+        case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER:
+            return InputKey::PadR1;
+        case SDL_GAMEPAD_BUTTON_LEFT_STICK:
+            return InputKey::PadL3;
+        case SDL_GAMEPAD_BUTTON_RIGHT_STICK:
+            return InputKey::PadR3;
         default:
             return InputKey::Unknown;
         }
@@ -203,8 +213,8 @@ namespace umbra::platform
                                    event.type == SDL_EVENT_FINGER_DOWN ? 0 : event.type == SDL_EVENT_FINGER_MOTION ? 1 : 2);
                 break;
             case SDL_EVENT_GAMEPAD_AXIS_MOTION:
-                // Sticks only (triggers are not used): SDL gives -32768..32767.
-                if (event.gaxis.axis <= SDL_GAMEPAD_AXIS_RIGHTY)
+                // Sticks -32768..32767, triggers 0..32767 (SDL's axis numbers match Input::Axis).
+                if (event.gaxis.axis <= SDL_GAMEPAD_AXIS_RIGHT_TRIGGER)
                     input.HandleAxis(event.gaxis.axis, static_cast<float>(event.gaxis.value) / 32767.0F);
                 break;
             case SDL_EVENT_MOUSE_BUTTON_DOWN:
@@ -216,5 +226,20 @@ namespace umbra::platform
                 break;
             }
         }
+    }
+}
+
+namespace umbra::platform
+{
+    void Rumble(float strength, int milliseconds)
+    {
+        // Every open pad: both motors, scaled 0..1.
+        int count = 0;
+        SDL_JoystickID *ids = SDL_GetGamepads(&count);
+        const auto power = static_cast<Uint16>(std::clamp(strength, 0.0F, 1.0F) * 65535.0F);
+        for (int i = 0; ids && i < count; ++i)
+            if (SDL_Gamepad *pad = SDL_GetGamepadFromID(ids[i]))
+                SDL_RumbleGamepad(pad, power, power, static_cast<Uint32>(std::max(milliseconds, 0)));
+        SDL_free(ids);
     }
 }

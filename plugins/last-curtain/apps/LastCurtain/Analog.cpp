@@ -35,6 +35,8 @@ namespace umbra::night
             english = !english;
         else if (action == "vfx")
             reducedFx = !reducedFx;
+        else if (action == "rumble")
+            rumble = !rumble;
         else
             return false;
         // Saved whole at once: a temp file, then moved over the old one.
@@ -44,7 +46,7 @@ namespace umbra::night
             std::filesystem::create_directories(file.parent_path(), error);
             const std::filesystem::path temp = file.string() + ".tmp";
             std::ofstream(temp) << nlohmann::json{{"format", "umbra.lc-screen"}, {"version", 2}, {"crt", crtOn}, {"vhs", vhsOn}, {"bigText", bigText},
-                                             {"fullScreen", fullScreen}, {"effects", effects}, {"music", music}, {"textSpeed", textSpeed}, {"enemyFast", enemyFast}, {"english", english}, {"reducedFx", reducedFx}}
+                                             {"fullScreen", fullScreen}, {"effects", effects}, {"music", music}, {"textSpeed", textSpeed}, {"enemyFast", enemyFast}, {"english", english}, {"reducedFx", reducedFx}, {"rumble", rumble}}
                                     .dump(2) << "\n";
             std::filesystem::rename(temp, file, error);
         }
@@ -56,7 +58,7 @@ namespace umbra::night
         nlohmann::json d{{"crt", crtOn},       {"crtOff", !crtOn},     {"vhs", vhsOn},           {"vhsOff", !vhsOn},     {"bigText", bigText},
                          {"bigTextOff", !bigText}, {"full", fullScreen}, {"fullOff", !fullScreen}, {"effects", effects},   {"music", music},          {"enemyFast", enemyFast},
                          {"enemyNormal", !enemyFast}, {"english", english}, {"vietnamese", !english},
-                         {"vfxFull", !reducedFx}, {"vfxReduced", reducedFx}};
+                         {"vfxFull", !reducedFx}, {"vfxReduced", reducedFx}, {"rumble", rumble}, {"rumbleOff", !rumble}};
         for (int i = 0; i < 4; ++i)
             d["textSpeed" + std::to_string(i)] = textSpeed == i;
         return d;
@@ -87,6 +89,7 @@ namespace umbra::night
             analog.textSpeed = std::clamp(saved.value("textSpeed", 1), 0, 3);
             analog.enemyFast = saved.value("enemyFast", false);
             analog.reducedFx = saved.value("reducedFx", false);
+            analog.rumble = saved.value("rumble", true);
             analog.english = saved.value("english", false);
         }
         return analog;

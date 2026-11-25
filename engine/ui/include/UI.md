@@ -200,3 +200,5 @@ taller column is cut at the box's edges and moved by the mouse wheel over it (40
 never past its top or its end. Only the part of a button seen in the box can be clicked. The offset
 is kept per screen and id while the game runs.
 
+
+A gamepad has no mouse: `UiInput::padScroll` (a stick, in wheel steps) moves every scroll box of the topmost screen that has one.

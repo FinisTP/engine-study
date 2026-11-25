@@ -57,6 +57,10 @@ namespace umbra::platform
         PadBack,
         Num5, // added last so the values above keep their numbers
         Num6,
+        PadL1, // shoulders and stick clicks (L1/R1, L3/R3 on a PlayStation pad)
+        PadR1,
+        PadL3,
+        PadR3,
         Count
     };
 
@@ -128,9 +132,16 @@ namespace umbra::platform
         [[nodiscard]] const std::vector<Finger> &Fingers() const noexcept { return fingers_; }
         [[nodiscard]] bool TouchSeen() const noexcept { return touchSeen_; }
 
-        // Gamepad sticks, -1..1 with a dead zone: 0 left x, 1 left y, 2 right x, 3 right y (y down).
+        // Gamepad sticks, -1..1 with a dead zone: 0 left x, 1 left y, 2 right x, 3 right y (y down);
+        // triggers 0..1: 4 left (L2), 5 right (R2).
         void HandleAxis(int axis, float value) noexcept;
-        [[nodiscard]] float Axis(int axis) const noexcept { return axis >= 0 && axis < 4 ? axes_[static_cast<std::size_t>(axis)] : 0.0F; }
+        [[nodiscard]] float Axis(int axis) const noexcept { return axis >= 0 && axis < 6 ? axes_[static_cast<std::size_t>(axis)] : 0.0F; }
+        // Whether a pad acted last (true) or the keyboard/mouse (false): prompts show that device's buttons.
+        [[nodiscard]] bool PadLast() const noexcept { return padLast_; }
+        [[nodiscard]] static constexpr bool IsPadKey(InputKey key) noexcept
+        {
+            return (key >= InputKey::PadA && key <= InputKey::PadBack) || (key >= InputKey::PadL1 && key <= InputKey::PadR3);
+        }
 
     private:
         static constexpr std::size_t keyCount_ = static_cast<std::size_t>(InputKey::Count);
@@ -157,6 +168,7 @@ namespace umbra::platform
         float mouseX_ = -1.0F, mouseY_ = -1.0F;
         std::vector<Finger> fingers_;
         bool touchSeen_ = false;
-        std::array<float, 4> axes_{};
+        std::array<float, 6> axes_{};
+        bool padLast_ = false;
     };
 }

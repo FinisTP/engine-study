@@ -29,6 +29,7 @@ namespace umbra::ui
         bool confirm = false, back = false;                          // Enter / A, Esc / B
         std::string text; // typed this frame (UTF-8) for a focused text field; '\b' erases a letter
         float wheel = 0.0F; // wheel steps this frame (positive: away from the user); a scroll box under the mouse moves
+        float padScroll = 0.0F; // a stick's steps this frame: every scroll box of the top screen moves (no mouse needed)
     };
 
     // What the player chose: a button's or list entry's action, with its argument.

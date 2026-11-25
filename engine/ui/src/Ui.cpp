@@ -626,6 +626,15 @@ namespace umbra::ui
                         }
                     break;
                 }
+        // 0c. A stick scrolls every box of the topmost screen that has one.
+        if (input.padScroll != 0.0F)
+            for (auto it = stack_.rbegin(); it != stack_.rend(); ++it)
+                if (!scrollBoxes_[*it].empty())
+                {
+                    for (const ScrollBox &b : scrollBoxes_[*it])
+                        scroll_[b.key] = std::clamp(scroll_[b.key] - input.padScroll * 40.0F, 0.0F, b.max);
+                    break;
+                }
         std::vector<UiAction> actions;
         // 1. Input goes to the top modal screen, using last frame's layout of its choices.
         std::string target;

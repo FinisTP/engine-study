@@ -87,5 +87,11 @@ umbra::ui::UiInput Screens::MapInput(const umbra::platform::Input &input, glm::v
     ui.back = pressed({InputKey::Escape, InputKey::PadB});
     ui.text = input.Text(); // for a focused text field (UI.md "Text fields")
     ui.wheel = input.Wheel(); // a scroll box under the mouse (UI.md "Scroll")
+    ui.padScroll = -input.Axis(3) * 0.25F; // the right stick scrolls the top screen's boxes
+    // The left stick steps the focus like the d-pad: once each time it is pushed past half way.
+    static glm::ivec2 was{0};
+    const glm::ivec2 now{input.Axis(0) > 0.6F ? 1 : input.Axis(0) < -0.6F ? -1 : 0, input.Axis(1) > 0.6F ? 1 : input.Axis(1) < -0.6F ? -1 : 0};
+    ui.left |= now.x < 0 && was.x >= 0, ui.right |= now.x > 0 && was.x <= 0, ui.up |= now.y < 0 && was.y >= 0, ui.down |= now.y > 0 && was.y <= 0;
+    was = now;
     return ui;
 }

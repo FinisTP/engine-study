@@ -1,4 +1,5 @@
 #include "MatchApp.hpp"
+#include "PadLegend.hpp"
 
 #include "CareerMatch.hpp"
 #include "GameContext.hpp"
@@ -151,6 +152,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         game.sounds->Music(boardMusic);
     int savedRound = -1;
     bool ended = false;  // the end scene has started
+    int padLook = 0;     // L1/R1: which of the turn order the camera last looked at
     bool hudOpen = false; // the HUD is open (closed while a fight is staged)
     const auto show = [&](const std::string &want) {
         if (!screens.Ready() || want == shown)
@@ -177,7 +179,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
         if (career && !restored)
             play->StartFrom(*career); // the player's side as the career left it
         if (screens.Ready())
-            screens.Ui().Open("match-labels"), screens.Ui().Open(hudName);
+            screens.Ui().Open("match-labels"), screens.Ui().Open(hudName), screens.Ui().Open("pad-legend");
         savedRound = -1, ended = false, hudOpen = true;
         if (!restored)
             table.StartScene("open", -1);
@@ -238,6 +240,19 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
             (void)play->Pin(); // I: the hovered unit's card stays
         if (play && hooks && !paused && game.keys.Pressed(input, "skip") && !ours && !play->State().over)
             (void)play->HandleUi("", "skip", ""); // their turn: F skips (P16)
+        // The pad (gamepad plan): Square opens the skills, L1/R1 look along the turn order, the right
+        // stick pans, L2/R2 zoom.
+        if (play && hooks && !paused && ours && input.IsKeyPressed(umbra::platform::InputKey::PadX))
+            (void)play->MenuPick("skills");
+        if (play && hooks && !paused && (input.IsKeyPressed(umbra::platform::InputKey::PadL1) || input.IsKeyPressed(umbra::platform::InputKey::PadR1)))
+            if (const nlohmann::json strip = play->HudData().value("strip", nlohmann::json::array()); !strip.empty())
+            {
+                padLook = (padLook + (input.IsKeyPressed(umbra::platform::InputKey::PadR1) ? 1 : static_cast<int>(strip.size()) - 1)) % static_cast<int>(strip.size());
+                table.LookAt(play->State(), strip[static_cast<std::size_t>(padLook)].value("unit", -1));
+            }
+        if (const glm::vec2 stick{input.Axis(2), input.Axis(3)}; play && glm::length(stick) > 0.0F)
+            table.Pan(-stick * 900.0F * dt), table.StopFollow();
+        zoom += (input.Axis(5) - input.Axis(4)) * 6.0F * dt;
 
         // 5. The match: bots and monsters play on beats; the board follows the mouse.
         int hover = -1;
@@ -258,7 +273,7 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                 bool hidden = false; // a scene has the screen: the fight's screens step away until it ends (note 1)
                 const SceneBehind board = [&](umbra::core::DrawList &out, float sdt, const std::string &speaker) {
                     if (!std::exchange(hidden, true) && screens.Ready())
-                        for (const std::string &name : {shown, hudName, std::string("match-labels")})
+                        for (const std::string &name : {shown, hudName, std::string("match-labels"), std::string("pad-legend")})
                             if (!name.empty())
                                 screens.Ui().Close(name);
                     const auto &names = play->Names();
@@ -273,14 +288,18 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                 table.CloseUp(false);
                 if (hidden && screens.Ready()) // back as they were; the frame's screen opens again below
                 {
-                    shown.clear(), screens.Ui().Open("match-labels");
+                    shown.clear(), screens.Ui().Open("match-labels"), screens.Ui().Open("pad-legend");
                     if (hudOpen)
                         screens.Ui().Open(hudName);
                 }
             }
             // What was just told: figures move, sounds play.
             for (const auto &[unit, motion] : play->TakeMoves())
+            {
                 table.Play(unit, motion);
+                if (analog.rumble && (motion == "hit" || motion == "down")) // the pad feels blows and falls
+                    umbra::platform::Rumble(motion == "down" ? 0.6F : 0.3F, motion == "down" ? 260 : 110);
+            }
             for (const std::string &cue : play->TakeSounds())
                 sounds.Play(cue);
             for (const int unit : play->TakeSnaps())
@@ -392,6 +411,12 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                     if (std::string face = strip[static_cast<std::size_t>(unease.twitch)].value("portrait", ""); face.ends_with("face_calm.png"))
                         strip[static_cast<std::size_t>(unease.twitch)]["portrait"] = face.replace(face.size() - 13, 13, "face_neardead.png");
             data["career"] = career != nullptr; // the end screen leads back to the café
+            data["padOn"] = hooks && input.PadLast();
+            if (play && play->PlayerTurn())
+                data["pad"] = PadLegend(data["words"], {{"cross", "padPick"}, {"circle", "padBack"}, {"triangle", "padEnd"}, {"square", "padSkills"},
+                                                        {"l1", "padOrder"}, {"rstick", "padCamera"}, {"r2", "padZoom"}, {"options", "padPause"}});
+            else
+                data["pad"] = PadLegend(data["words"], {{"square", "padSkip"}, {"cross", "padHurry"}, {"l1", "padOrder"}, {"options", "padPause"}});
             data["single"] = career == nullptr;
             if (!play)
                 data["pick"] = MatchPlay::PickData(def, picks, canContinue, level);

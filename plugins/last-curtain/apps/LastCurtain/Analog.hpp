@@ -20,6 +20,7 @@ namespace umbra::night
         bool crtOn = true, vhsOn = false; // the player's switches: the old screen on, the worn tape off (the user)
         bool bigText = false;            // large text (campaign plan 5): fonts x1.25
         bool fullScreen = false, enemyFast = false, english = false;
+        bool rumble = true;     // the pad shakes on blows and falls (gamepad plan 2026-11-25)
         bool reducedFx = false; // "Hieu ung hinh anh: Giam": half the particles, no shake, softer horror
         int effects = 100;  // sound effects volume, 0..100 by 10
         int music = 70;     // music volume, the same way

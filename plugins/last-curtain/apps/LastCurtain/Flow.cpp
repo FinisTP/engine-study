@@ -355,6 +355,12 @@ int RunCampaign(GameContext &game, const umbra::assets::AssetFolders &assets, co
                 if (game.input.IsMouseButtonHeld(0) && inside && lensHeld)
                     campaign::Drag(lens, mouse - lensMouse, area.x, area.y, aspect);
                 lensHeld = game.input.IsMouseButtonHeld(0) && inside, lensMouse = mouse;
+                // The pad: the right stick pans the map, L2/R2 zoom about its middle (gamepad plan).
+                const float padDt = 1.0F / 60.0F;
+                if (const glm::vec2 stick{game.input.Axis(2), game.input.Axis(3)}; glm::length(stick) > 0.0F)
+                    campaign::Drag(lens, -stick * 600.0F * padDt, area.x, area.y, aspect);
+                if (const float z = game.input.Axis(5) - game.input.Axis(4); z != 0.0F)
+                    campaign::Zoom(lens, z * 4.0F * padDt, area * 0.5F, area.x, area.y, aspect);
                 const campaign::PlanBox b = campaign::Plan(lens, area.x, area.y, aspect);
                 // "at" is in window pixels: the bottom middle of what stands there.
                 data["map"]["plans"] = nlohmann::json::array();

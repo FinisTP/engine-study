@@ -1,0 +1,44 @@
+{
+  "format": "umbra.ui",
+  "version": 1,
+  "root": {
+    "type": "stack",
+    "anchor": "bottom-right",
+    "offset": [
+      -18,
+      -18
+    ],
+    "style": "lcPanel",
+    "gap": 4,
+    "visible": "{padOn}",
+    "children": [
+      {
+        "type": "list",
+        "items": "{pad}",
+        "as": "g",
+        "gap": 3,
+        "entry": {
+          "type": "stack",
+          "direction": "horizontal",
+          "gap": 8,
+          "align": "center",
+          "children": [
+            {
+              "type": "image",
+              "image": "{g.glyph}",
+              "size": [
+                26,
+                26
+              ]
+            },
+            {
+              "type": "text",
+              "style": "small",
+              "text": "{g.text}"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
