@@ -409,7 +409,8 @@ int RunMatch(GameContext &game, const umbra::assets::AssetFolders &assets, std::
                 data["hud"] = play->HudData(), data["menu"] = play->Menu();
                 if (nlohmann::json &strip = data["hud"]["strip"]; unease.twitch >= 0 && unease.twitch < static_cast<int>(strip.size()))
                     if (std::string face = strip[static_cast<std::size_t>(unease.twitch)].value("portrait", ""); face.ends_with("face_calm.png"))
-                        strip[static_cast<std::size_t>(unease.twitch)]["portrait"] = face.replace(face.size() - 13, 13, "face_neardead.png");
+                        if (face.replace(face.size() - 13, 13, "face_neardead.png"); std::filesystem::exists(assets.RootOf(face) / face)) // monsters may have no such face
+                            strip[static_cast<std::size_t>(unease.twitch)]["portrait"] = face;
             data["career"] = career != nullptr; // the end screen leads back to the café
             data["padOn"] = hooks && input.PadLast();
             if (play && play->PlayerTurn())

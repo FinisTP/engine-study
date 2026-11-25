@@ -56,6 +56,7 @@ public:
     [[nodiscard]] bool Walking(int unit) const;
     [[nodiscard]] bool Fallen(const umbra::match::Unit &u, int unit) const; // its fall has been told // still on its way to its square
     void Snap(int unit);                        // its next square is taken at once, no walk (an undone move)
+    [[nodiscard]] float StepOf(int unit) const; // a fighter's step in toward the other side, 0..1
     [[nodiscard]] bool Easing() const { return fightT_ > 0.0F && fightT_ < 1.0F; } // the battle view coming in or going out
     void CloseUp(bool on);
     void Diorama(const umbra::match::Board &b, umbra::core::DrawList &out) const; // HD-2D task 4: the plinth, its lit edge, the velvet, the room lamps // a scene's camera: down close; off goes back to the distance before

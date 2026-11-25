@@ -257,15 +257,20 @@ glm::vec3 MatchTable::Shown(const MatchState &s, int unit) const
     const glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3{0, 1, 0}));
     const float e = fightT_ * fightT_ * (3.0F - 2.0F * fightT_), side = place < 2 ? -1.0F : 1.0F, second = static_cast<float>(place % 2);
     // A blow: out toward the middle fast, held, then back (smoothsteps over stepSeconds).
-    float step = 0.0F;
-    if (const auto it = stepping_.find(unit); it != stepping_.end())
-    {
-        const float t = it->second / Look("battle", "stepSeconds", 0.0F, 1.4F), a = std::min(1.0F, t / 0.2F), b = std::clamp((t - 0.7F) / 0.3F, 0.0F, 1.0F);
-        step = Look("battle", "step", 0.0F, 1.0F) * (a * a * (3.0F - 2.0F * a)) * (1.0F - b * b * (3.0F - 2.0F * b));
-    }
+    const float step = Look("battle", "step", 0.0F, 1.0F) * StepOf(unit);
     const glm::vec3 stand = stageMiddle_ + right * side * (Look("battle", "gap", 0.0F, 0.7F) + second * Look("battle", "pairGap", 0.0F, 0.9F) - step) * tile +
                             forward * second * Look("battle", "pairDepth", 0.0F, 0.8F);
     return glm::mix(walked(unit), stand, e);
+}
+
+float MatchTable::StepOf(int unit) const
+{
+    // A blow's step: out toward the middle fast, held, then back (smoothsteps over stepSeconds); 0 when not striking.
+    const auto it = stepping_.find(unit);
+    if (it == stepping_.end())
+        return 0.0F;
+    const float t = it->second / Look("battle", "stepSeconds", 0.0F, 1.4F), a = std::min(1.0F, t / 0.2F), b = std::clamp((t - 0.7F) / 0.3F, 0.0F, 1.0F);
+    return (a * a * (3.0F - 2.0F * a)) * (1.0F - b * b * (3.0F - 2.0F * b));
 }
 
 float MatchTable::Kick() const
@@ -472,7 +477,12 @@ void MatchTable::Animate(const MatchState &s, float dt)
     {
         glm::vec3 at = Shown(s, now);
         if (Staged()) // a battle: its stage, drawn toward the one a sequence looks at
-            at = stageMiddle_; // one wide shot of both sides (Octopath, the user 2026-11-25)
+        {
+            // One wide shot of both sides that leans after whoever steps in to strike (the user 2026-11-25).
+            at = stageMiddle_;
+            for (const auto &[unit, t] : stepping_)
+                at = glm::mix(at, Shown(s, unit), Look("battle", "followStep", 0.0F, 0.45F) * StepOf(unit));
+        }
         else if (!framed_.empty()) // a told line: the middle of whom it is about
         {
             at = glm::vec3{0.0F};
@@ -1021,15 +1031,15 @@ void MatchTable::Diorama(const Board &b, umbra::core::DrawList &out) const
     // 1. The plinth: a lacquered block under the board, its top edge lit gold; black velvet around it.
     const float h = static_cast<float>(b.height) * tile, w = static_cast<float>(b.width) * tile, rim = Look("hd2d", "rim", 0.0F, 0.6F);
     const float depth = Look("hd2d", "depth", 0.0F, 0.9F), bar = 0.07F;
-    out.items.push_back({box_, plinthArt_, glm::scale(glm::translate(glm::mat4{1.0F}, {0.0F, -depth * 0.5F, 0.0F}), {h + rim, depth, w + rim}),
+    out.items.push_back({box_, plinthArt_, glm::scale(glm::translate(glm::mat4{1.0F}, {0.0F, -depth * 0.5F - 0.12F, 0.0F}), {h + rim, depth, w + rim}),
                          plinthArt_ ? glm::vec4(0.55F, 0.5F, 0.48F, 1.0F) : Hex(0x24120d), plinthArt_ ? 1.5F : 0.0F});
     const glm::vec4 gold = Hex(0xC9A15A);
     const float glow = Look("hd2d", "edgeGlow", 0.0F, 0.5F), x = (h + rim) * 0.5F, z = (w + rim) * 0.5F;
-    Box(out, box_, {x, 0.0F, 0.0F}, {bar, bar, w + rim + bar}, gold, glow);
-    Box(out, box_, {-x, 0.0F, 0.0F}, {bar, bar, w + rim + bar}, gold, glow);
-    Box(out, box_, {0.0F, 0.0F, z}, {h + rim + bar, bar, bar}, gold, glow);
-    Box(out, box_, {0.0F, 0.0F, -z}, {h + rim + bar, bar, bar}, gold, glow);
-    Box(out, box_, {0.0F, -depth - 0.02F, 0.0F}, {400.0F, 0.02F, 400.0F}, Hex(0x040203));
+    Box(out, box_, {x, -0.1F, 0.0F}, {bar, bar, w + rim + bar}, gold, glow);
+    Box(out, box_, {-x, -0.1F, 0.0F}, {bar, bar, w + rim + bar}, gold, glow);
+    Box(out, box_, {0.0F, -0.1F, z}, {h + rim + bar, bar, bar}, gold, glow);
+    Box(out, box_, {0.0F, -0.1F, -z}, {h + rim + bar, bar, bar}, gold, glow);
+    Box(out, box_, {0.0F, -depth - 0.14F, 0.0F}, {400.0F, 0.02F, 400.0F}, Hex(0x040203));
     // 2. A warm lamp over each room (a flood fill finds them), a cold one over the stage, at most hd2d.lamps.
     std::vector<int> seen(b.cells.size(), 0);
     const int most = static_cast<int>(Look("hd2d", "lamps", 0.0F, 10.0F));

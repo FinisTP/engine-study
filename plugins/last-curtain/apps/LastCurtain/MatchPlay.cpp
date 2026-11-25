@@ -769,7 +769,7 @@ nlohmann::json MatchPlay::UiData() const
     // Downed by the rules but not yet told: they stand until their fall is told (MatchPlay.md "The battle view").
     nlohmann::json standing = nlohmann::json::array();
     for (std::size_t i = shown_; i < s_.log.size(); ++i)
-        if (s_.log[i].kind == LogKind::Down && s_.units[U(s_.log[i].a)].cell < 0)
+        if (s_.log[i].kind == LogKind::Down) // the rules may keep its square or take it: either way it stands until told
             standing.push_back(s_.log[i].a);
     if (!standing.empty())
         j["standing"] = standing;
